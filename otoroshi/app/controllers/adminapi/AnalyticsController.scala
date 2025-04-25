@@ -10,7 +10,18 @@ import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
-import play.api.mvc.{AbstractController, Action, AnyContent, AnyContentAsEmpty, BodyParser, BodyParsers, ControllerComponents, RequestHeader, Result, Results}
+import play.api.mvc.{
+  AbstractController,
+  Action,
+  AnyContent,
+  AnyContentAsEmpty,
+  BodyParser,
+  BodyParsers,
+  ControllerComponents,
+  RequestHeader,
+  Result,
+  Results
+}
 import otoroshi.jobs.updates._
 import utils.EntityFiltering
 

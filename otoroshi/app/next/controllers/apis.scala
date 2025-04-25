@@ -387,18 +387,19 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
-  def fromOpenapi() = ApiAction.async(parse.json) { ctx => {
-    val body = ctx.request.body
-    (
-      body.selectAsOptString("domain"),
-      body.selectAsOptString("openapi"),
-      body.selectAsOptString("serverURL")
-    ) match {
+  def fromOpenapi() = ApiAction.async(parse.json) { ctx =>
+    {
+      val body = ctx.request.body
+      (
+        body.selectAsOptString("domain"),
+        body.selectAsOptString("openapi"),
+        body.selectAsOptString("serverURL")
+      ) match {
         case (Some(domain), Some(openapi), serverURL) =>
           Api
             .fromOpenApi(domain, openapi, serverURL)
             .map(service => Ok(service.json))
-        case _                             => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture
+        case _                                        => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture
       }
     }
   }

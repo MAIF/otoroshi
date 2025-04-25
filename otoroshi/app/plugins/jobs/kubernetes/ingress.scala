@@ -13,7 +13,15 @@ import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import otoroshi.models._
 import org.joda.time.DateTime
-import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgRoute, NgTarget}
+import otoroshi.next.models.{
+  NgBackend,
+  NgClientConfig,
+  NgDomainAndPath,
+  NgFrontend,
+  NgPluginInstance,
+  NgRoute,
+  NgTarget
+}
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
@@ -302,31 +310,46 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
       }
       .foldLeft(route) { case (d, (key, value)) =>
         toCamelCase(key) match {
-          case "raw" => {
-            val raw = Json.parse(value).as[JsObject]
+          case "raw"                             => {
+            val raw     = Json.parse(value).as[JsObject]
             val current = route.json.as[JsObject]
             NgRoute.fromJsons(current.deepMerge(raw))
           }
-          case "groups" => d.copy(groups = Seq(value))
-          case "enabled" => d.copy(enabled = value.toBoolean)
-          case "debugFlow" => d.copy(debugFlow = value.toBoolean)
-          case "debug_flow" => d.copy(debugFlow = value.toBoolean)
-          case "capture" => d.copy(capture = value.toBoolean)
-          case "exportReporting" => d.copy(exportReporting = value.toBoolean)
-          case "export_reporting" => d.copy(exportReporting = value.toBoolean)
-          case "backendRef" => d.copy(backendRef = value.some)
-          case "backend_ref" => d.copy(backendRef = value.some)
-          case "frontend.headers" => d.copy(frontend = d.frontend.copy(headers = value.parseJson.asOpt[Map[String, String]].getOrElse(Map.empty)))
-          case "frontend.query" => d.copy(frontend = d.frontend.copy(query = value.parseJson.asOpt[Map[String, String]].getOrElse(Map.empty)))
-          case "frontend.methods" => d.copy(frontend = d.frontend.copy(methods = value.parseJson.asOpt[Seq[String]].getOrElse(Seq.empty)))
-          case "frontend.stripPath" => d.copy(frontend = d.frontend.copy(stripPath = value.toBoolean))
-          case "frontend.exact" => d.copy(frontend = d.frontend.copy(exact = value.toBoolean))
-          case "backend.rewrite" => d.copy(backend = d.backend.copy(rewrite = value.toBoolean))
-          case "backend.loadBalancing" => d.copy(backend = d.backend.copy(loadBalancing = LoadBalancing.fromString(value)))
-          case "backend.healthCheck" => d.copy(backend = d.backend.copy(healthCheck = Try(HealthCheck.format.reads(value.parseJson).asOpt).toOption.flatten))
-          case "backend.client" => d.copy(backend = d.backend.copy(client = Try(NgClientConfig.format.reads(value.parseJson).asOpt).toOption.flatten.getOrElse(NgClientConfig())))
-          case str if str.startsWith("plugins-") => d.copy(plugins = d.plugins.add(NgPluginInstance.readFrom(value.parseJson)))
-          case _ => d
+          case "groups"                          => d.copy(groups = Seq(value))
+          case "enabled"                         => d.copy(enabled = value.toBoolean)
+          case "debugFlow"                       => d.copy(debugFlow = value.toBoolean)
+          case "debug_flow"                      => d.copy(debugFlow = value.toBoolean)
+          case "capture"                         => d.copy(capture = value.toBoolean)
+          case "exportReporting"                 => d.copy(exportReporting = value.toBoolean)
+          case "export_reporting"                => d.copy(exportReporting = value.toBoolean)
+          case "backendRef"                      => d.copy(backendRef = value.some)
+          case "backend_ref"                     => d.copy(backendRef = value.some)
+          case "frontend.headers"                =>
+            d.copy(frontend =
+              d.frontend.copy(headers = value.parseJson.asOpt[Map[String, String]].getOrElse(Map.empty))
+            )
+          case "frontend.query"                  =>
+            d.copy(frontend = d.frontend.copy(query = value.parseJson.asOpt[Map[String, String]].getOrElse(Map.empty)))
+          case "frontend.methods"                =>
+            d.copy(frontend = d.frontend.copy(methods = value.parseJson.asOpt[Seq[String]].getOrElse(Seq.empty)))
+          case "frontend.stripPath"              => d.copy(frontend = d.frontend.copy(stripPath = value.toBoolean))
+          case "frontend.exact"                  => d.copy(frontend = d.frontend.copy(exact = value.toBoolean))
+          case "backend.rewrite"                 => d.copy(backend = d.backend.copy(rewrite = value.toBoolean))
+          case "backend.loadBalancing"           =>
+            d.copy(backend = d.backend.copy(loadBalancing = LoadBalancing.fromString(value)))
+          case "backend.healthCheck"             =>
+            d.copy(backend =
+              d.backend.copy(healthCheck = Try(HealthCheck.format.reads(value.parseJson).asOpt).toOption.flatten)
+            )
+          case "backend.client"                  =>
+            d.copy(backend =
+              d.backend.copy(client =
+                Try(NgClientConfig.format.reads(value.parseJson).asOpt).toOption.flatten.getOrElse(NgClientConfig())
+              )
+            )
+          case str if str.startsWith("plugins-") =>
+            d.copy(plugins = d.plugins.add(NgPluginInstance.readFrom(value.parseJson)))
+          case _                                 => d
         }
       }
   }
@@ -610,9 +633,9 @@ object KubernetesIngressSyncJob {
 
   def syncIngresses(_conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] =
     env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.ingresses.sync") {
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat             = env.otoroshiMaterializer
       val syncedServiceDescriptors = new AtomicLong(0L)
-      val _client      = new KubernetesClient(_conf, env)
+      val _client                  = new KubernetesClient(_conf, env)
       if (running.compareAndSet(false, true)) {
         shouldRunNext.set(false)
         KubernetesCRDsJob
@@ -643,9 +666,10 @@ object KubernetesIngressSyncJob {
                           val certNames     = ingressRaw.ingress.spec.tls.map(_.secretName).map(_.toLowerCase)
                           val certsToImport = certs.filter(c => certNames.contains(c.name.toLowerCase()))
                           (ingressRaw.ingress.spec.backend match {
-                            case Some(backend) if otoroshiConfig.annotations.get("ingress.otoroshi.io/is-route").contains("true") => {
+                            case Some(backend)
+                                if otoroshiConfig.annotations.get("ingress.otoroshi.io/is-route").contains("true") => {
                               backend.asRoute(ingressRaw.namespace, conf, otoroshiConfig, client, logger).flatMap {
-                                case None       => ().future
+                                case None        => ().future
                                 case Some(route) => route.save()
                               }
                             }
@@ -657,7 +681,8 @@ object KubernetesIngressSyncJob {
                                   desc.save()
                               }
                             }
-                            case None if otoroshiConfig.annotations.get("ingress.otoroshi.io/is-route").contains("true") => {
+                            case None
+                                if otoroshiConfig.annotations.get("ingress.otoroshi.io/is-route").contains("true") => {
                               ingressRaw.updateIngressStatus(client).flatMap { _ =>
                                 ingressRaw.asRoutes(conf, otoroshiConfig, client, logger).flatMap { routes =>
                                   Future.sequence(routes.map(_.save()))
@@ -772,7 +797,7 @@ object KubernetesIngressSyncJob {
 
   private val callsCounter = new AtomicLong(0L)
 
-  def warnAboutServiceDescriptorUsage(counter: AtomicLong)(implicit env: Env, ec: ExecutionContext ): Unit = {
+  def warnAboutServiceDescriptorUsage(counter: AtomicLong)(implicit env: Env, ec: ExecutionContext): Unit = {
     val count = counter.get()
     if (count > 0) {
       val calls = callsCounter.incrementAndGet()
@@ -810,11 +835,11 @@ object KubernetesIngressToDescriptor {
   }
 
   def asRoutes(
-                     obj: KubernetesIngress
-                   )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(implicit
-                                                                                                                       env: Env,
-                                                                                                                       ec: ExecutionContext
-                   ): Future[Seq[NgRoute]] = {
+      obj: KubernetesIngress
+  )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Seq[NgRoute]] = {
     val uid       = obj.uid
     val name      = obj.name
     val namespace = obj.namespace
@@ -971,15 +996,15 @@ object KubernetesIngressToDescriptor {
   }
 
   def asRoutes(
-     uid: String,
-     name: String,
-     namespace: String,
-     ingress: IngressSupport.NetworkingV1beta1IngressItem,
-     conf: KubernetesConfig,
-     otoConfig: OtoAnnotationConfig,
-     client: KubernetesClient,
-     logger: Logger
-   )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
+      uid: String,
+      name: String,
+      namespace: String,
+      ingress: IngressSupport.NetworkingV1beta1IngressItem,
+      conf: KubernetesConfig,
+      otoConfig: OtoAnnotationConfig,
+      client: KubernetesClient,
+      logger: Logger
+  )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
     implicit val mat = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
       .mapAsync(1) {
@@ -1062,17 +1087,18 @@ object KubernetesIngressToDescriptor {
                     env.datastores.routeDataStore
                       .findById(id)
                       .map {
-                        case None       => ("create", env.datastores.routeDataStore.template())
+                        case None        => ("create", env.datastores.routeDataStore.template())
                         case Some(route) => ("update", route)
                       }
                       .map { case (action, route) =>
                         val creationDate: String =
                           if (action == "create") DateTime.now().toString
                           else route.metadata.getOrElse("created-at", DateTime.now().toString)
-                        val newRoute              = route.copy(
+                        val newRoute             = route.copy(
                           id = id,
                           groups = Seq(conf.defaultGroup),
-                          name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path.getOrElse("/"),
+                          name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path
+                            .getOrElse("/"),
                           frontend = NgFrontend(
                             domains = Seq(NgDomainAndPath(rule.host.getOrElse("*") + path.path.getOrElse(""))),
                             headers = Map.empty,
@@ -1087,7 +1113,7 @@ object KubernetesIngressToDescriptor {
                             rewrite = false,
                             loadBalancing = RoundRobin,
                             healthCheck = None,
-                            client = NgClientConfig(),
+                            client = NgClientConfig()
                           ),
                           metadata = Map(
                             "otoroshi-provider"     -> "kubernetes-ingress",
@@ -1362,12 +1388,12 @@ object IngressSupport {
         .map(_.headOption)
     }
     def asRoute(
-                      namespace: String,
-                      conf: KubernetesConfig,
-                      otoConfig: OtoAnnotationConfig,
-                      client: KubernetesClient,
-                      logger: Logger
-                    )(implicit env: Env, ec: ExecutionContext): Future[Option[NgRoute]] = {
+        namespace: String,
+        conf: KubernetesConfig,
+        otoConfig: OtoAnnotationConfig,
+        client: KubernetesClient,
+        logger: Logger
+    )(implicit env: Env, ec: ExecutionContext): Future[Option[NgRoute]] = {
       val ingress = IngressSupport.NetworkingV1beta1IngressItem(
         spec = NetworkingV1beta1IngressSpec(
           backend = None,

@@ -279,14 +279,19 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val extensions         = (exportSource \ "extensions").asOpt[JsObject].getOrElse(Json.obj())
 
     for {
-      _   <- redisCli
-        .keys(s"${env.storageRoot}:*")
-        .flatMap(keys => if (keys.nonEmpty) redisCli.del(keys: _*) else FastFuture.successful(0L))
-      _   <- config.save()
-      _   <- Future.sequence(
-          admins.value.map(v => env.datastores.webAuthnAdminDataStore.registerUser(WebAuthnOtoroshiAdmin.reads(v).get)))
-      _       <- Future.sequence(simpleAdmins.value.map(v =>
-        env.datastores.simpleAdminDataStore.registerUser(SimpleOtoroshiAdmin.reads(v).get)))
+      _ <- redisCli
+             .keys(s"${env.storageRoot}:*")
+             .flatMap(keys => if (keys.nonEmpty) redisCli.del(keys: _*) else FastFuture.successful(0L))
+      _ <- config.save()
+      _ <-
+        Future.sequence(
+          admins.value.map(v => env.datastores.webAuthnAdminDataStore.registerUser(WebAuthnOtoroshiAdmin.reads(v).get))
+        )
+      _ <- Future.sequence(
+             simpleAdmins.value.map(v =>
+               env.datastores.simpleAdminDataStore.registerUser(SimpleOtoroshiAdmin.reads(v).get)
+             )
+           )
       _ <- Future.sequence(serviceGroups.value.map(ServiceGroup.fromJsons).map(_.save()))
       _ <- Future.sequence(apiKeys.value.map(ApiKey.fromJsons).map(_.save()))
       _ <- Future.sequence(serviceDescriptors.value.map(ServiceDescriptor.fromJsons).map(_.save()))

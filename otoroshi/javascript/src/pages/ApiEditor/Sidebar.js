@@ -216,8 +216,9 @@ export default (props) => {
                     search: location.search,
                   }}
                   {...(tooltip || {})}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
-                    } m-0 ${isActive(tab)}`}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                    openedSidebar ? 'ms-3' : ''
+                  } m-0 ${isActive(tab)}`}
                 >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className={`fas ${icon}`} />

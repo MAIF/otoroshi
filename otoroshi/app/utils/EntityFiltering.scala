@@ -142,7 +142,7 @@ object EntityFiltering {
               } else {
                 val isANumber = JsonOperationsHelper.getValueAtPath(sort._1, sortedArray.head)._2 match {
                   case JsNumber(_) => true
-                  case _ => false
+                  case _           => false
                 }
 
                 if (isANumber) {
@@ -150,7 +150,7 @@ object EntityFiltering {
                     .sortBy(r => {
                       JsonOperationsHelper.getValueAtPath(sort._1, r)._2 match {
                         case JsNumber(value) => value.toInt
-                        case value => value.asOpt[Int].getOrElse(0)
+                        case value           => value.asOpt[Int].getOrElse(0)
                       }
                     })(
                       Ordering[Int].reverse

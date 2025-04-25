@@ -214,7 +214,7 @@ export class AuthenticationWizard extends React.Component {
     breadcrumb: ['Informations'],
   };
 
-  onChange = (field, value, callback = () => { }) => {
+  onChange = (field, value, callback = () => {}) => {
     this.setState(
       {
         authenticationConfig: {
@@ -258,10 +258,7 @@ export class AuthenticationWizard extends React.Component {
       return (
         <div className="wizard">
           <div className="wizard-container" ref={this.props.ref}>
-            <div
-              className="d-flex"
-              style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}
-            >
+            <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
               <Header onClose={this.props.hide} mode={mode} />
               <div className="wizard-content">
                 <AuthModuleConfig
@@ -421,10 +418,7 @@ export class AuthenticationWizard extends React.Component {
       return (
         <div className="wizard">
           <div className="wizard-container" ref={this.props.ref}>
-            <div
-              className="d-flex"
-              style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}
-            >
+            <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
               <Header onClose={this.props.hide} mode={mode} />
 
               {mode === 'selector' && (
@@ -473,9 +467,9 @@ export class AuthenticationWizard extends React.Component {
 
                             const allProps = props
                               ? {
-                                ...props,
-                                onChange: (e) => props.onChange(e, i),
-                              }
+                                  ...props,
+                                  onChange: (e) => props.onChange(e, i),
+                                }
                               : defaultProps;
 
                             return React.createElement(component, {
@@ -497,12 +491,12 @@ export class AuthenticationWizard extends React.Component {
                                 transformSettings:
                                   authenticationConfig.strategy?.type === 'Transform'
                                     ? {
-                                      location: authenticationConfig.strategy?.transformSettings
-                                        ?.location
-                                        ? authenticationConfig.source
-                                        : authenticationConfig.strategy?.transformSettings
-                                          ?.out_location?.source,
-                                    }
+                                        location: authenticationConfig.strategy?.transformSettings
+                                          ?.location
+                                          ? authenticationConfig.source
+                                          : authenticationConfig.strategy?.transformSettings
+                                              ?.out_location?.source,
+                                      }
                                     : undefined,
                               },
                             }}
@@ -672,8 +666,7 @@ function TypeStep({ value, onChange }) {
     type: {
       renderer: () => {
         return (
-          <div className='d-flex gap-2 justify-content-start'
-            style={{ flexWrap: 'wrap' }}>
+          <div className="d-flex gap-2 justify-content-start" style={{ flexWrap: 'wrap' }}>
             {PROVIDERS.map(({ type, desc, title }) => (
               <SelectableButton
                 value={type}
@@ -691,8 +684,8 @@ function TypeStep({ value, onChange }) {
 
   return (
     <>
-      <h3 className='mb-3'>Choose your provider</h3>
-      <NgForm value={value} schema={schema} flow={['type']} onChange={() => { }} />
+      <h3 className="mb-3">Choose your provider</h3>
+      <NgForm value={value} schema={schema} flow={['type']} onChange={() => {}} />
     </>
   );
 }
@@ -739,7 +732,7 @@ function OAuth2PreConfiguration({ value, onChange }) {
   return (
     <>
       <h3>Let's start with the OAuth2 configuration</h3>
-      <NgForm value={value} schema={schema} flow={['configuration']} onChange={() => { }} />
+      <NgForm value={value} schema={schema} flow={['configuration']} onChange={() => {}} />
     </>
   );
 }
@@ -1061,7 +1054,7 @@ function InMemoryConfiguration({ value, onChange }) {
 
   return (
     <div>
-      <h3 className='mb-3'>In memory configuration</h3>
+      <h3 className="mb-3">In memory configuration</h3>
 
       <div className="d-flex mb-3">
         <label style={{ flex: 1 }}>Name</label>
@@ -1073,7 +1066,7 @@ function InMemoryConfiguration({ value, onChange }) {
           Actions
         </label>
       </div>
-      <div className='d-flex flex-column'>
+      <div className="d-flex flex-column">
         {(value.users || []).map((user, i) => (
           <User
             {...user}

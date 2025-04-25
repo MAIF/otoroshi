@@ -36,14 +36,16 @@ export class SelectorWizardLauncher extends React.Component {
     const { openComponent, onChange, entityName, entityField } = this.props;
 
     if (!entity) {
-      return <Row title="Authentication module" className='col-sm-10 d-flex align-items-center'>
-        <Button
-          type="info"
-          text="Select a module"
-          onClick={openComponent}
-          className="btn-sm w-100"
-        />
-      </Row>
+      return (
+        <Row title="Authentication module" className="col-sm-10 d-flex align-items-center">
+          <Button
+            type="info"
+            text="Select a module"
+            onClick={openComponent}
+            className="btn-sm w-100"
+          />
+        </Row>
+      );
     } else {
       return (
         <div style={{ flex: 1 }}>

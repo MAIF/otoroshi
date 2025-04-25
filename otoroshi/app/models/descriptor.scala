@@ -235,21 +235,21 @@ object LocalTargetsInflightRequestMonitor {
 }
 
 object LeastConnections extends LoadBalancing {
-  private val reqCounter = new AtomicInteger(0)
-  val needTrackingCookie: Boolean = false
+  private val reqCounter                      = new AtomicInteger(0)
+  val needTrackingCookie: Boolean             = false
   override val needsInflightRequests: Boolean = true
-  override def toJson: JsValue             = Json.obj("type" -> "LeastConnections")
+  override def toJson: JsValue                = Json.obj("type" -> "LeastConnections")
   override def select(
-                       reqId: String,
-                       trackingId: String,
-                       req: RequestHeader,
-                       targets: Seq[Target],
-                       descId: String,
-                       attempts: Int
-                     )(implicit env: Env): Target = {
-    val targetsWithLoad = targets.map(t => (t, LocalTargetsInflightRequestMonitor.inflightFor(t)))
-    val minLoad = targetsWithLoad.map(_._2).min
-    val leastLoadedTargets = targetsWithLoad.collect {
+      reqId: String,
+      trackingId: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      descId: String,
+      attempts: Int
+  )(implicit env: Env): Target = {
+    val targetsWithLoad        = targets.map(t => (t, LocalTargetsInflightRequestMonitor.inflightFor(t)))
+    val minLoad                = targetsWithLoad.map(_._2).min
+    val leastLoadedTargets     = targetsWithLoad.collect {
       case (t, load) if load == minLoad => t
     }
     val leastLoadedTargetsSize = if (leastLoadedTargets.nonEmpty) leastLoadedTargets.size else 1
@@ -259,24 +259,24 @@ object LeastConnections extends LoadBalancing {
 
 object PowerOfTwoRandomChoices extends LoadBalancing {
 
-  val needTrackingCookie: Boolean = false
+  val needTrackingCookie: Boolean             = false
   override val needsInflightRequests: Boolean = true
-  override def toJson: JsValue             = Json.obj("type" -> "PowerOfTwoRandomChoices")
+  override def toJson: JsValue                = Json.obj("type" -> "PowerOfTwoRandomChoices")
   override def select(
-    reqId: String,
-    trackingId: String,
-    req: RequestHeader,
-    targets: Seq[Target],
-    descId: String,
-    attempts: Int
+      reqId: String,
+      trackingId: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      descId: String,
+      attempts: Int
   )(implicit env: Env): Target = {
-    val targetIndex1 = scala.util.Random.nextInt(targets.length)
-    var targetIndex2 = scala.util.Random.nextInt(targets.length)
+    val targetIndex1          = scala.util.Random.nextInt(targets.length)
+    var targetIndex2          = scala.util.Random.nextInt(targets.length)
     if (targetIndex1 == targetIndex2) {
       targetIndex2 = (targetIndex2 + 1) % targets.length
     }
-    val target1 = targets.apply(targetIndex1)
-    val target2 = targets.apply(targetIndex1)
+    val target1               = targets.apply(targetIndex1)
+    val target2               = targets.apply(targetIndex1)
     val inflightTarget1: Long = LocalTargetsInflightRequestMonitor.inflightFor(target1)
     val inflightTarget2: Long = LocalTargetsInflightRequestMonitor.inflightFor(target2)
     if (inflightTarget1 < inflightTarget2) {

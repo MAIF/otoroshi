@@ -799,9 +799,7 @@ class BackOfficeController(
             routes.map(s =>
               SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), "route", "route", s.location)
             ) ++
-            apis.map(s =>
-              SearchedService(s.name, s.id, "default", "api", "api", s.location)
-            )++
+            apis.map(s => SearchedService(s.name, s.id, "default", "api", "api", s.location)) ++
             tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp", s.location))
           finalServices
         }

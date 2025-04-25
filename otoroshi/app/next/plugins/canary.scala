@@ -189,11 +189,11 @@ object TimeControlledCanaryModeConfig {
 
     override def writes(o: TimeControlledCanaryModeConfig): JsValue = {
       Json.obj(
-        "start" -> o.start.toString(),
-        "stop" -> o.stop.toString(),
+        "start"             -> o.start.toString(),
+        "stop"              -> o.stop.toString(),
         "increment_percent" -> o.incrementPercent,
-        "targets" -> JsArray(o.targets.map(_.json)),
-        "root"    -> o.root
+        "targets"           -> JsArray(o.targets.map(_.json)),
+        "root"              -> o.root
       )
     }
   }
@@ -201,7 +201,7 @@ object TimeControlledCanaryModeConfig {
 
 class TimeControlledCanaryMode extends NgPreRouting with NgRequestTransformer {
 
-  private val logger                               = Logger("otoroshi-time-controlled-canary-mode")
+  private val logger      = Logger("otoroshi-time-controlled-canary-mode")
   private val configReads = TimeControlledCanaryModeConfig.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute, NgStep.TransformResponse)
@@ -215,7 +215,8 @@ class TimeControlledCanaryMode extends NgPreRouting with NgRequestTransformer {
   override def transformsResponse: Boolean                 = true
   override def transformsError: Boolean                    = false
   override def name: String                                = "Time controlled Canary mode"
-  override def description: Option[String]                 = "This plugin can split a portion of the traffic to canary backends between two dates".some
+  override def description: Option[String]                 =
+    "This plugin can split a portion of the traffic to canary backends between two dates".some
   override def defaultConfigObject: Option[NgPluginConfig] = TimeControlledCanaryModeConfig().some
 
   override def isPreRouteAsync: Boolean          = true
@@ -223,23 +224,24 @@ class TimeControlledCanaryMode extends NgPreRouting with NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = false
 
   def progress(start: DateTime, end: DateTime, step: Double): Double = {
-    val now = DateTime.now()
-    val clampedNow = if (now.isBefore(start)) start else if (now.isAfter(end)) end else now
+    val now           = DateTime.now()
+    val clampedNow    = if (now.isBefore(start)) start else if (now.isAfter(end)) end else now
     val totalDuration = end.getMillis - start.getMillis
-    val elapsed = clampedNow.getMillis - start.getMillis
-    val res = if (totalDuration <= 0) 100.0
-    else {
-      val rawPercentage = (elapsed.toDouble / totalDuration.toDouble) * 100.0
-      (Math.round(rawPercentage / step) * step).min(100.0).max(0.0)
-    }
+    val elapsed       = clampedNow.getMillis - start.getMillis
+    val res           =
+      if (totalDuration <= 0) 100.0
+      else {
+        val rawPercentage = (elapsed.toDouble / totalDuration.toDouble) * 100.0
+        (Math.round(rawPercentage / step) * step).min(100.0).max(0.0)
+      }
     res / 100.0
   }
 
   override def preRoute(
-    ctx: NgPreRoutingContext
+      ctx: NgPreRoutingContext
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
-    val config     = ctx.cachedConfig(internalName)(configReads).getOrElse(TimeControlledCanaryModeConfig())
-    val now = DateTime.now()
+    val config = ctx.cachedConfig(internalName)(configReads).getOrElse(TimeControlledCanaryModeConfig())
+    val now    = DateTime.now()
     if (now.isBefore(config.start)) {
       Done.rightf
     } else if (now.isAfter(config.stop)) {
@@ -253,9 +255,9 @@ class TimeControlledCanaryMode extends NgPreRouting with NgRequestTransformer {
       ctx.attrs.put(otoroshi.next.plugins.Keys.PossibleBackendsKey -> backends)
       Done.rightf
     } else {
-      val gconfig    = env.datastores.globalConfigDataStore.latest()
-      val reqNumber  = ctx.attrs.get(otoroshi.plugins.Keys.RequestNumberKey).get
-      val trackingId = ctx.attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey).getOrElse {
+      val gconfig       = env.datastores.globalConfigDataStore.latest()
+      val reqNumber     = ctx.attrs.get(otoroshi.plugins.Keys.RequestNumberKey).get
+      val trackingId    = ctx.attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey).getOrElse {
         val maybeCanaryId: Option[String] = ctx.request.cookies
           .get("otoroshi-tc-canary")
           .map(_.value)
@@ -301,7 +303,7 @@ class TimeControlledCanaryMode extends NgPreRouting with NgRequestTransformer {
   }
 
   override def transformResponseSync(
-    ctx: NgTransformerResponseContext
+      ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     ctx.attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey) match {
       case None           => ctx.otoroshiResponse.right

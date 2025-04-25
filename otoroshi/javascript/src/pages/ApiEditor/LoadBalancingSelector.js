@@ -48,8 +48,8 @@ export function LoadBalancingSelector({ onChange, value }) {
           {
             key: 'LeastConnections',
             text: 'Least connections from the list of backend targets.',
-            advice: 'Request is passed to the server with the least number of active connections.'
-          }
+            advice: 'Request is passed to the server with the least number of active connections.',
+          },
         ].map(({ key, text, advice }) => (
           <button
             type="button"

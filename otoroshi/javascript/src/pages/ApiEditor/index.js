@@ -653,63 +653,65 @@ const ROUTE_FORM_SETTINGS = {
         },
       },
       backend: {
-        renderer: (props) => <Row title="Backend">
-          <NgSelectRenderer
-            id="backend_select"
-            value={props.rootValue.backend_ref || props.rootValue.backend}
-            placeholder="Select an existing backend"
-            label={' '}
-            ngOptions={{
-              spread: true,
-            }}
-            isClearable
-            onChange={(backend_ref) => {
-              props.rootOnChange({
-                ...props.rootValue,
-                usingExistingBackend: true,
-                backend: backend_ref,
-              });
-            }}
-            components={{
-              Option: (props) => {
-                return (
-                  <div
-                    className="d-flex align-items-center m-0 p-2"
-                    style={{ gap: '.5rem' }}
-                    onClick={() => {
-                      props.selectOption(props.data);
-                    }}
-                  >
-                    <span
-                      className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}
+        renderer: (props) => (
+          <Row title="Backend">
+            <NgSelectRenderer
+              id="backend_select"
+              value={props.rootValue.backend_ref || props.rootValue.backend}
+              placeholder="Select an existing backend"
+              label={' '}
+              ngOptions={{
+                spread: true,
+              }}
+              isClearable
+              onChange={(backend_ref) => {
+                props.rootOnChange({
+                  ...props.rootValue,
+                  usingExistingBackend: true,
+                  backend: backend_ref,
+                });
+              }}
+              components={{
+                Option: (props) => {
+                  return (
+                    <div
+                      className="d-flex align-items-center m-0 p-2"
+                      style={{ gap: '.5rem' }}
+                      onClick={() => {
+                        props.selectOption(props.data);
+                      }}
                     >
-                      {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
-                    </span>
-                    {props.data.label}
-                  </div>
-                );
-              },
-              SingleValue: (props) => {
-                return (
-                  <div className="d-flex align-items-center m-0" style={{ gap: '.5rem' }}>
-                    <span
-                      className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}
-                    >
-                      {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
-                    </span>
-                    {props.data.label}
-                  </div>
-                );
-              },
-            }}
-            options={[...item.backends, ...backends]}
-            optionsTransformer={(arr) =>
-              arr.map((item) => ({ label: item.name, value: item.id }))
-            }
-          />
-        </Row>
+                      <span
+                        className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}
+                      >
+                        {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
+                      </span>
+                      {props.data.label}
+                    </div>
+                  );
+                },
+                SingleValue: (props) => {
+                  return (
+                    <div className="d-flex align-items-center m-0" style={{ gap: '.5rem' }}>
+                      <span
+                        className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}
+                      >
+                        {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
+                      </span>
+                      {props.data.label}
+                    </div>
+                  );
+                },
+              }}
+              options={[...item.backends, ...backends]}
+              optionsTransformer={(arr) =>
+                arr.map((item) => ({ label: item.name, value: item.id }))
+              }
+            />
+          </Row>
+        ),
       },
-    }
+    };
   },
   flow: [
     {
@@ -972,22 +974,24 @@ const CONSUMER_FORM_SETTINGS = {
       label: 'Name',
     },
     consumer_kind: {
-      renderer: (props) => <Row title="Consumer kind">
-        <NgDotsRenderer
-          value={props.value}
-          options={['keyless', 'apikey', 'mtls', 'oauth2', 'jwt']}
-          ngOptions={{
-            spread: true,
-          }}
-          onChange={(newType) => {
-            props.rootOnChange({
-              ...props.rootValue,
-              settings: TEMPLATES[newType],
-              consumer_kind: newType,
-            });
-          }}
-        />
-      </Row>
+      renderer: (props) => (
+        <Row title="Consumer kind">
+          <NgDotsRenderer
+            value={props.value}
+            options={['keyless', 'apikey', 'mtls', 'oauth2', 'jwt']}
+            ngOptions={{
+              spread: true,
+            }}
+            onChange={(newType) => {
+              props.rootOnChange({
+                ...props.rootValue,
+                settings: TEMPLATES[newType],
+                consumer_kind: newType,
+              });
+            }}
+          />
+        </Row>
+      ),
     },
     status: {
       type: 'dots',
@@ -1533,7 +1537,7 @@ function EditBackend(props) {
 
   const [backend, setBackend] = useState();
 
-  console.log(backend)
+  console.log(backend);
 
   useEffect(() => {
     if (item && !backend) {
@@ -1601,36 +1605,38 @@ function EditBackend(props) {
 }
 
 function TestingConfiguration(props) {
-  return <Row title="Configuration">
-    Enable testing on your API to allow you to call all enabled routes. You just need to pass
-    the following specific header when making the calls. This security measure, enforced by
-    Otoroshi, prevents unauthorized users from accessing your draft API.
-    <div className="d-flex flex-column gap-2 mt-3">
-      <input className="form-control" readOnly type="text" value={props.rootValue?.headerKey} />
-      <div className="input-group">
-        <input
-          className="form-control"
-          disabled
-          type="text"
-          value={props.rootValue?.headerValue}
-        />
+  return (
+    <Row title="Configuration">
+      Enable testing on your API to allow you to call all enabled routes. You just need to pass the
+      following specific header when making the calls. This security measure, enforced by Otoroshi,
+      prevents unauthorized users from accessing your draft API.
+      <div className="d-flex flex-column gap-2 mt-3">
+        <input className="form-control" readOnly type="text" value={props.rootValue?.headerKey} />
+        <div className="input-group">
+          <input
+            className="form-control"
+            disabled
+            type="text"
+            value={props.rootValue?.headerValue}
+          />
 
-        <span
-          className="input-group-text"
-          style={{ cursor: 'pointer' }}
-          title="copy bearer"
-          onClick={() => {
-            props.onSecretRotation({
-              ...props.item.testing,
-              headerValue: v4(),
-            });
-          }}
-        >
-          <i className="fas fa-rotate" />
-        </span>
+          <span
+            className="input-group-text"
+            style={{ cursor: 'pointer' }}
+            title="copy bearer"
+            onClick={() => {
+              props.onSecretRotation({
+                ...props.item.testing,
+                headerValue: v4(),
+              });
+            }}
+          >
+            <i className="fas fa-rotate" />
+          </span>
+        </div>
       </div>
-    </div>
-  </Row>
+    </Row>
+  );
 }
 
 function Testing(props) {
@@ -1668,13 +1674,15 @@ function Testing(props) {
       ),
     },
     routes: {
-      renderer: () => <Row title="Configuration">
-        <div className="relative">
-          <RoutesView api={item} />
-        </div>
-      </Row>
-    }
-  }
+      renderer: () => (
+        <Row title="Configuration">
+          <div className="relative">
+            <RoutesView api={item} />
+          </div>
+        </Row>
+      ),
+    },
+  };
 
   let flow = ['enabled', 'config'];
 
@@ -2044,10 +2052,10 @@ function OpenapiImport(props) {
     openapi: 'https://petstore3.swagger.io/api/v3/openapi.json',
     domain: 'petstore.oto.tools',
     serverURL: undefined,
-    step: 0
-  })
+    step: 0,
+  });
 
-  const [newAPI, setAPI] = useState()
+  const [newAPI, setAPI] = useState();
 
   // 'https://petstore3.swagger.io/api/v3/'
 
@@ -2062,42 +2070,47 @@ function OpenapiImport(props) {
     },
     serverURL: {
       type: 'string',
-      label: 'Server URL'
+      label: 'Server URL',
     },
     action: {
-      renderer: () => <Row title="Server URL" className='col-sm-10 d-flex align-items-center'>
-        <Button
-          type="success"
-          className='btn-sm'
-          text="Read file"
-          onClick={() => {
-            fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/_openapi`, 'POST', state, 'apis.otoroshi.io')
-              .then(api => {
-                console.log(api)
+      renderer: () => (
+        <Row title="Server URL" className="col-sm-10 d-flex align-items-center">
+          <Button
+            type="success"
+            className="btn-sm"
+            text="Read file"
+            onClick={() => {
+              fetchWrapperNext(
+                `/${nextClient.ENTITIES.APIS}/_openapi`,
+                'POST',
+                state,
+                'apis.otoroshi.io'
+              ).then((api) => {
+                console.log(api);
                 setState({
                   ...state,
-                  serverURL: (api.backends?.length > 0 && api.backends[0].backend.targets.length > 0) ? api.backends[0].backend.targets[0].hostname : ''
-                })
-                setAPI(api)
-              })
-          }} />
-      </Row>
-    }
-  }
+                  serverURL:
+                    api.backends?.length > 0 && api.backends[0].backend.targets.length > 0
+                      ? api.backends[0].backend.targets[0].hostname
+                      : '',
+                });
+                setAPI(api);
+              });
+            }}
+          />
+        </Row>
+      ),
+    },
+  };
 
-  let flow = ['openapi', 'domain', 'action']
+  let flow = ['openapi', 'domain', 'action'];
 
-  if (newAPI)
-    flow = ['openapi', 'domain', 'serverURL']
+  if (newAPI) flow = ['openapi', 'domain', 'serverURL'];
 
   return (
     <>
       <div className="modal-body">
-        <NgForm
-          value={state}
-          flow={flow}
-          onChange={setState}
-          schema={schema} />
+        <NgForm value={state} flow={flow} onChange={setState} schema={schema} />
       </div>
       <div className="modal-footer">
         <button
@@ -2110,49 +2123,59 @@ function OpenapiImport(props) {
         >
           Close
         </button>
-        {newAPI && state.serverURL?.length > 0 && <button
-          type="button"
-          className="btn btn-success"
-          onClick={(e) => {
-            e.stopPropagation();
-            props.ok(state);
-          }}
-        >
-          Ok
-        </button>}
+        {newAPI && state.serverURL?.length > 0 && (
+          <button
+            type="button"
+            className="btn btn-success"
+            onClick={(e) => {
+              e.stopPropagation();
+              props.ok(state);
+            }}
+          >
+            Ok
+          </button>
+        )}
       </div>
     </>
   );
 }
 
 function OpenAPILoader() {
-  const history = useHistory()
-  const location = useLocation()
+  const history = useHistory();
+  const location = useLocation();
 
-  const importOpenApiModalResponse = content => {
-    fetchWrapperNext(`/${nextClient.ENTITIES.APIS}/_openapi`, 'POST', content, 'apis.otoroshi.io')
-      .then(api => {
-        nextClient.forEntityNext(nextClient.ENTITIES.APIS)
-          .create(api)
-          .then(() => historyPush(history, location, `/apis/${api.id}`))
-      })
-  }
+  const importOpenApiModalResponse = (content) => {
+    fetchWrapperNext(
+      `/${nextClient.ENTITIES.APIS}/_openapi`,
+      'POST',
+      content,
+      'apis.otoroshi.io'
+    ).then((api) => {
+      nextClient
+        .forEntityNext(nextClient.ENTITIES.APIS)
+        .create(api)
+        .then(() => historyPush(history, location, `/apis/${api.id}`));
+    });
+  };
 
-  return <Row title="OpenAPI">
-    <Button
-      type="success"
-      className="btn-sm d-flex"
-      text="Load openapi"
-      onClick={() => {
-        return window
-          .popup(
-            'Import routes from openapi',
-            (ok, cancel) => <OpenapiImport ok={ok} cancel={cancel} />,
-            { __style: { width: '100%' } }
-          )
-          .then(importOpenApiModalResponse);
-      }} />
-  </Row>
+  return (
+    <Row title="OpenAPI">
+      <Button
+        type="success"
+        className="btn-sm d-flex"
+        text="Load openapi"
+        onClick={() => {
+          return window
+            .popup(
+              'Import routes from openapi',
+              (ok, cancel) => <OpenapiImport ok={ok} cancel={cancel} />,
+              { __style: { width: '100%' } }
+            )
+            .then(importOpenApiModalResponse);
+        }}
+      />
+    </Row>
+  );
 }
 
 function NewAPI(props) {
@@ -2195,17 +2218,19 @@ function NewAPI(props) {
       props: { label: 'Description' },
     },
     openapi: {
-      renderer: OpenAPILoader
-
-    }
+      renderer: OpenAPILoader,
+    },
   };
 
-  const flow = ['location', {
-    type: 'group',
-    name: 'Informations',
-    collapsable: false,
-    fields: ['id', 'name', 'description', 'openapi']
-  }];
+  const flow = [
+    'location',
+    {
+      type: 'group',
+      name: 'Informations',
+      collapsable: false,
+      fields: ['id', 'name', 'description', 'openapi'],
+    },
+  ];
 
   const createApi = () => {
     nextClient
@@ -2395,7 +2420,7 @@ function FlowDesigner(props) {
         history={history}
         value={flow}
         setValue={(value) => setFlow({ value })}
-        setSaveButton={() => { }}
+        setSaveButton={() => {}}
       />
     </div>
   );
@@ -2729,26 +2754,24 @@ function Informations(props) {
                 disabled={inputProps.rootValue?.id === props.globalEnv.adminApiId} // TODO
                 type="danger"
                 onClick={() => {
-                  window
-                    .newConfirm('Are you sure you want to delete this entity ?')
-                    .then((ok) => {
-                      if (ok) {
-                        nextClient
-                          .forEntityNext(nextClient.ENTITIES.APIS)
-                          .deleteById(inputProps.rootValue?.id)
-                          .then(() => {
-                            historyPush(history, location, '/');
-                          });
-                      }
-                    });
+                  window.newConfirm('Are you sure you want to delete this entity ?').then((ok) => {
+                    if (ok) {
+                      nextClient
+                        .forEntityNext(nextClient.ENTITIES.APIS)
+                        .deleteById(inputProps.rootValue?.id)
+                        .then(() => {
+                          historyPush(history, location, '/');
+                        });
+                    }
+                  });
                 }}
               >
                 Delete this API
               </Button>
             </div>
           </Row>
-        )
-      }
+        );
+      },
     },
   };
   const flow = [
@@ -3277,21 +3300,20 @@ function RouteItem({ item, api, ports }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-        <span
-          key={`frontendmethod-${i}`}
-          className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}
-        >
-          {m}
-        </span>
-      ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}
+          >
+            {m}
+          </span>
+        ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');
 
   return frontend.domains.map((domain, idx) => {
     const [copyIconName, setCopyIconName] = useState('fas fa-copy');
-
 
     const copy = (value, method, setCopyIconName) => {
       let command = value;

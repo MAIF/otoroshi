@@ -4,7 +4,11 @@ import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { nextClient } from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
 import CodeInput from '../../components/inputs/CodeInput';
-import { NgCodeRenderer, NgSingleCodeLineRenderer, SingleLineCode } from '../../components/nginputs';
+import {
+  NgCodeRenderer,
+  NgSingleCodeLineRenderer,
+  SingleLineCode,
+} from '../../components/nginputs';
 import { Row } from '../../components/Row';
 import { Button } from '../../components/Button';
 
@@ -43,33 +47,49 @@ export function setupCorazaExtension(registerExtension) {
           type: 'box-bool',
           props: {
             label: 'Inspect request and response bodies',
-            description: <div>
-              It is a ModSecurity directive that enables inspection of the request body (e.g., POST data, JSON, XML).
-
-              <p>With it set to On, ModSecurity can analyze the full content of incoming requests — not just headers and URLs — allowing detection of attacks hidden in form submissions or API calls.</p>
-            </div>
+            description: (
+              <div>
+                It is a ModSecurity directive that enables inspection of the request body (e.g.,
+                POST data, JSON, XML).
+                <p>
+                  With it set to On, ModSecurity can analyze the full content of incoming requests —
+                  not just headers and URLs — allowing detection of attacks hidden in form
+                  submissions or API calls.
+                </p>
+              </div>
+            ),
           },
         },
         inspect_in_body: {
           type: 'box-bool',
           props: {
             label: 'Inspect request body',
-            description: <div>
-              It is a ModSecurity directive that enables inspection of the request body (e.g., POST data, JSON, XML).
-
-              <p>With it set to On, ModSecurity can analyze the full content of incoming requests — not just headers and URLs — allowing detection of attacks hidden in form submissions or API calls.</p>
-            </div>
+            description: (
+              <div>
+                It is a ModSecurity directive that enables inspection of the request body (e.g.,
+                POST data, JSON, XML).
+                <p>
+                  With it set to On, ModSecurity can analyze the full content of incoming requests —
+                  not just headers and URLs — allowing detection of attacks hidden in form
+                  submissions or API calls.
+                </p>
+              </div>
+            ),
           },
         },
         inspect_out_body: {
           type: 'box-bool',
           props: {
             label: 'Inspect response body',
-            description: <div>
-              It is a ModSecurity directive that enables inspection of the response body.
-
-              <p>With it set to On, ModSecurity can analyze the full content of the response — not just headers.</p>
-            </div>
+            description: (
+              <div>
+                It is a ModSecurity directive that enables inspection of the response body.
+                <p>
+                  With it set to On, ModSecurity can analyze the full content of the response — not
+                  just headers.
+                </p>
+              </div>
+            ),
           },
         },
         pool_capacity: {
@@ -86,17 +106,34 @@ export function setupCorazaExtension(registerExtension) {
           type: 'box-bool',
           props: {
             label: 'Is Blocking transaction ?',
-            description: <div>
-              SecRuleEngine is a directive in ModSecurity (a web application firewall) that controls whether rules are enforced or just logged.
-
-              <p><span style={{
-                fontWeight: 'bold'
-              }}>Blocking mode: </span> Rules are fully enforced. Matching requests can trigger disruptive actions such as blocking or redirecting.</p>
-
-              <p><span style={{
-                fontWeight: 'bold'
-              }}>DetectionOnly: </span> Rules are processed, but no disruptive actions (like blocking) are taken. Attack details are logged as events.</p>
-            </div>
+            description: (
+              <div>
+                SecRuleEngine is a directive in ModSecurity (a web application firewall) that
+                controls whether rules are enforced or just logged.
+                <p>
+                  <span
+                    style={{
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    Blocking mode:{' '}
+                  </span>{' '}
+                  Rules are fully enforced. Matching requests can trigger disruptive actions such as
+                  blocking or redirecting.
+                </p>
+                <p>
+                  <span
+                    style={{
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    DetectionOnly:{' '}
+                  </span>{' '}
+                  Rules are processed, but no disruptive actions (like blocking) are taken. Attack
+                  details are logged as events.
+                </p>
+              </div>
+            ),
           },
           // props: {
           //   label: 'Mode',
@@ -109,19 +146,23 @@ export function setupCorazaExtension(registerExtension) {
         include_owasp_crs: {
           type: 'box-bool',
           props: {
-            description: <div>
-              Allows to enable or disable the OWASP Core Rule Set (CRS) for their Coraza Web Application Firewall configuration.
+            description: (
               <div>
-                To know more about it, <Button
-                  className="btn-sm"
-                  onClick={() => {
-                    window.open(
-                      "https://coraza.io/docs/tutorials/coreruleset/",
-                      '_blank'
-                    );
-                  }}>check the ruleset</Button>
+                Allows to enable or disable the OWASP Core Rule Set (CRS) for their Coraza Web
+                Application Firewall configuration.
+                <div>
+                  To know more about it,{' '}
+                  <Button
+                    className="btn-sm"
+                    onClick={() => {
+                      window.open('https://coraza.io/docs/tutorials/coreruleset/', '_blank');
+                    }}
+                  >
+                    check the ruleset
+                  </Button>
+                </div>
               </div>
-            </div>,
+            ),
             label: 'Use OWASP CRS',
           },
         },
@@ -131,15 +172,15 @@ export function setupCorazaExtension(registerExtension) {
             label: 'Custom rules',
             value: (
               <p style={{ marginTop: 6 }}>
-                To know more about {' '}
+                To know more about{' '}
                 <Button
                   className="btn-sm"
                   onClick={() => {
-                    window.open(
-                      "https://coraza.io/docs/seclang/",
-                      '_blank'
-                    );
-                  }}>custom rules</Button>
+                    window.open('https://coraza.io/docs/seclang/', '_blank');
+                  }}
+                >
+                  custom rules
+                </Button>
               </p>
             ),
           },
@@ -148,32 +189,34 @@ export function setupCorazaExtension(registerExtension) {
           type: 'array',
           props: {
             label: 'Directives',
-            component: (props) => <Row>
-              <NgCodeRenderer
-                ngOptions={{
-                  spread: true,
-                }}
-                rawSchema={{
-                  props: {
-                    showGutter: false,
-                    ace_config: {
-                      onLoad: editor => editor.renderer.setPadding(10),
-                      // maxLines: 20,
-                      fontSize: 14,
+            component: (props) => (
+              <Row>
+                <NgCodeRenderer
+                  ngOptions={{
+                    spread: true,
+                  }}
+                  rawSchema={{
+                    props: {
+                      showGutter: false,
+                      ace_config: {
+                        onLoad: (editor) => editor.renderer.setPadding(10),
+                        // maxLines: 20,
+                        fontSize: 14,
+                      },
+                      editorOnly: true,
+                      height: '10rem',
+                      mode: 'prolog',
                     },
-                    editorOnly: true,
-                    height: '10rem',
-                    mode: 'prolog',
-                  },
-                }}
-                value={props.itemValue}
-                onChange={(e) => {
-                  const arr = props.value;
-                  arr[props.idx] = e;
-                  props.onChange(arr);
-                }}
-              />
-            </Row>
+                  }}
+                  value={props.itemValue}
+                  onChange={(e) => {
+                    const arr = props.value;
+                    arr[props.idx] = e;
+                    props.onChange(arr);
+                  }}
+                />
+              </Row>
+            ),
           },
         },
       };
@@ -246,7 +289,7 @@ export function setupCorazaExtension(registerExtension) {
               include_owasp_crs: true,
               pool_capacity: 2,
               mode: 'DetectionOnly',
-              directives: []
+              directives: [],
             }),
             itemName: 'Coraza WAF config',
             formSchema: this.formSchema,

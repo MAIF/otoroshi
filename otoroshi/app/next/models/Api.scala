@@ -15,7 +15,13 @@ import otoroshi.next.plugins._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.UrlSanitizer.sanitize
-import otoroshi.utils.syntax.implicits.{BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterJsValueReader, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{
+  BetterJsLookupResult,
+  BetterJsReadable,
+  BetterJsValue,
+  BetterJsValueReader,
+  BetterSyntax
+}
 import play.api.libs.json._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -791,7 +797,7 @@ object ApiTesting {
 
   val default = ApiTesting(
     headerValue = IdGenerator.uuid
-)
+  )
 
   val _fmt: Format[ApiTesting] = new Format[ApiTesting] {
     override def writes(o: ApiTesting): JsValue             = Json.obj(
@@ -961,7 +967,7 @@ case class Api(
 
 object Api {
 
-   def fromOpenApi(domain: String, openapi: String, serverURL: Option[String])(implicit
+  def fromOpenApi(domain: String, openapi: String, serverURL: Option[String])(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Api] = {
@@ -971,13 +977,13 @@ object Api {
       FastFuture.successful(openapi)
     }
     codef.map { code =>
-      val json                        = Json.parse(code)
-      val name                        = json.select("info").select("title").as[String]
-      val description                 = json.select("info").select("description").asOpt[String].getOrElse("")
-      val version                     = json.select("info").select("version").asOpt[String].getOrElse("")
-      val targets                     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { server =>
-        val serverUrl    = serverURL.getOrElse(server.selectAsString("url"))
-        val serverUri    = Uri(serverUrl)
+      val json        = Json.parse(code)
+      val name        = json.select("info").select("title").as[String]
+      val description = json.select("info").select("description").asOpt[String].getOrElse("")
+      val version     = json.select("info").select("version").asOpt[String].getOrElse("")
+      val targets     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { server =>
+        val serverUrl = serverURL.getOrElse(server.selectAsString("url"))
+        val serverUri = Uri(serverUrl)
 
         val serverDomain = serverUri.authority.host.toString()
         val tls          = serverUri.scheme.toLowerCase().contains("https")
@@ -986,9 +992,10 @@ object Api {
           id = serverUrl,
           hostname = if (serverDomain.isEmpty) serverUrl else serverDomain,
           port = port,
-          tls = tls)
+          tls = tls
+        )
       }
-      val paths                       = json.select("paths").asOpt[JsObject].getOrElse(Json.obj())
+      val paths       = json.select("paths").asOpt[JsObject].getOrElse(Json.obj())
 
       val backend = ApiBackend(
         id = s"${name}_backend",
@@ -1005,8 +1012,7 @@ object Api {
         val cleanPath = path.replace("{", ":").replace("}", "")
         val methods   = obj.as[JsObject].value.toSeq.map(_._1.toUpperCase())
 
-        val name = obj.as[JsObject].value.toSeq.map(_._2.select("summary").asOptString.getOrElse(cleanPath))
-          .headOption
+        val name = obj.as[JsObject].value.toSeq.map(_._2.select("summary").asOptString.getOrElse(cleanPath)).headOption
 
         ApiRoute(
           frontend = NgFrontend(
@@ -1038,18 +1044,19 @@ object Api {
         blueprint = ApiBlueprint.REST,
         state = ApiStaging,
         backends = Seq(backend),
-        consumers = Seq(ApiConsumer(
-          id = "keyless",
-          name = "keyless_consumer",
-          consumerKind = Keyless,
-          autoValidation = true,
-          settings = ApiConsumerSettings.Keyless(),
-          status = ApiConsumerStatus.Published
-        ))
+        consumers = Seq(
+          ApiConsumer(
+            id = "keyless",
+            name = "keyless_consumer",
+            consumerKind = Keyless,
+            autoValidation = true,
+            settings = ApiConsumerSettings.Keyless(),
+            status = ApiConsumerStatus.Published
+          )
+        )
       )
     }
   }
-
 
   private def addPluginToFlow[T <: NgPlugin](consumer: ApiConsumer, flow: ApiFlows)(implicit
       ct: ClassTag[T]

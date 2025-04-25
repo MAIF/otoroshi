@@ -31,12 +31,11 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.util._
 
-
 object CorazaPluginKeys {
   val CorazaWasmVmKey = TypedKey[WasmVm]("otoroshi.next.plugins.CorazaWasmVm")
 
-  val RequestBodyKey  = TypedKey[Future[Source[ByteString, _]]]("otoroshi.next.plugins.RequestBodyKey")
-  val HasBodyKey  = TypedKey[Boolean]("otoroshi.next.plugins.HasBodyKey")
+  val RequestBodyKey = TypedKey[Future[Source[ByteString, _]]]("otoroshi.next.plugins.RequestBodyKey")
+  val HasBodyKey     = TypedKey[Boolean]("otoroshi.next.plugins.HasBodyKey")
 }
 
 trait CorazaImplementation {
@@ -95,23 +94,24 @@ object NgCorazaWAF {
       val url = "wasm/coraza.wasm"
 
       val wasmConfig = WasmConfig(
-          source = WasmSource(
-            kind = WasmSourceKind.ClassPath,
-            path = url
-          ),
-          memoryPages = 10000,
-          functionName = None,
-          wasi = true,
-          // lifetime = WasmVmLifetime.Forever,
-          instances = config.poolCapacity,
-          killOptions = WasmVmKillOptions(
-            maxCalls = 2000,
-            maxMemoryUsage = 0.9,
-            maxAvgCallDuration = 1.day,
-            maxUnusedDuration = 5.minutes
-          ),
-          allowedPaths = Map("/tmp" -> "/tmp"))
-      val p   = new CorazaNextPlugin(wasmConfig, config, url, env)
+        source = WasmSource(
+          kind = WasmSourceKind.ClassPath,
+          path = url
+        ),
+        memoryPages = 10000,
+        functionName = None,
+        wasi = true,
+        // lifetime = WasmVmLifetime.Forever,
+        instances = config.poolCapacity,
+        killOptions = WasmVmKillOptions(
+          maxCalls = 2000,
+          maxMemoryUsage = 0.9,
+          maxAvgCallDuration = 1.day,
+          maxUnusedDuration = 5.minutes
+        ),
+        allowedPaths = Map("/tmp" -> "/tmp")
+      )
+      val p          = new CorazaNextPlugin(wasmConfig, config, url, env)
 
       plugins.put(key, p)
       p
@@ -127,51 +127,52 @@ object NgCorazaWAF {
 
 class NgCorazaWAF extends NgRequestTransformer {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Custom("WAF"))
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def name: String = "Coraza WAF"
-  override def description: Option[String] = "Coraza WAF plugin".some
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Custom("WAF"))
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Coraza WAF"
+  override def description: Option[String]                 = "Coraza WAF plugin".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
 
-  override def isTransformRequestAsync: Boolean = true
+  override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = true
-  override def usesCallbacks: Boolean = true
-  override def transformsRequest: Boolean = true
-  override def transformsResponse: Boolean = true
-  override def transformsError: Boolean = false
+  override def usesCallbacks: Boolean            = true
+  override def transformsRequest: Boolean        = true
+  override def transformsResponse: Boolean       = true
+  override def transformsError: Boolean          = false
 
   override def beforeRequest(
-                              ctx: NgBeforeRequestContext
-                            )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+      ctx: NgBeforeRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
     val plugin = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     plugin.start(ctx.attrs)
   }
 
   override def afterRequest(
-                             ctx: NgAfterRequestContext
-                           )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+      ctx: NgAfterRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     ctx.attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).foreach(_.release())
     ().vfuture
   }
 
   override def transformRequest(
-                                 ctx: NgTransformerRequestContext
-                               )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpRequest]] = {
-    val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
-    val plugin = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpRequest]] = {
+    val config  = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
+    val plugin  = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     val hasBody = ctx.request.theHasBody
 
     ctx.attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.HasBodyKey -> hasBody)
 
     if (hasBody && plugin.config.inspectInputBody) {
-      ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _)
+      ctx.otoroshiRequest.body
+        .runFold(ByteString.empty)(_ ++ _)
         .flatMap { bytes =>
-          val req = ctx.otoroshiRequest.copy(body = bytes.chunks(16 * 1024))
-          val promise   = Promise[Source[ByteString, _]]()
+          val req     = ctx.otoroshiRequest.copy(body = bytes.chunks(16 * 1024))
+          val promise = Promise[Source[ByteString, _]]()
           ctx.attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.RequestBodyKey -> promise.future)
 
           val source = Source(bytes.grouped(16 * 1024).toList)
@@ -186,28 +187,30 @@ class NgCorazaWAF extends NgRequestTransformer {
             )
             .map {
               case Left(result) => Left(result)
-              case Right(_) => Right(req)
+              case Right(_)     => Right(req)
             }
         }
     } else {
-      plugin.runRequestPath(ctx.otoroshiRequest, ctx.attrs, ctx.route.some)
+      plugin
+        .runRequestPath(ctx.otoroshiRequest, ctx.attrs, ctx.route.some)
         .map {
-          case NgAccess.NgAllowed => ctx.otoroshiRequest.right
+          case NgAccess.NgAllowed        => ctx.otoroshiRequest.right
           case NgAccess.NgDenied(result) => result.left
         }
     }
   }
 
   override def transformResponse(
-                                  ctx: NgTransformerResponseContext
-                                )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpResponse]] = {
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
     val plugin = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
 
     val request = NgPluginHttpRequest.fromRequest(ctx.request)
 
     if (plugin.config.inspectOutputBody) {
-      ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _)
+      ctx.otoroshiResponse.body
+        .runFold(ByteString.empty)(_ ++ _)
         .flatMap { bytes =>
           val res = ctx.otoroshiResponse.copy(body = bytes.chunks(16 * 1024))
           plugin
@@ -220,15 +223,15 @@ class NgCorazaWAF extends NgRequestTransformer {
             )
             .map {
               case Left(result) => Left(result)
-              case Right(_) => Right(res)
+              case Right(_)     => Right(res)
             }
         }
-    }
-    else {
-      plugin.runResponsePath(request, ctx.otoroshiResponse, None, ctx.attrs, ctx.route.some)
+    } else {
+      plugin
+        .runResponsePath(request, ctx.otoroshiResponse, None, ctx.attrs, ctx.route.some)
         .map {
           case Left(result) => Left(result)
-          case Right(_) => Right(ctx.otoroshiResponse)
+          case Right(_)     => Right(ctx.otoroshiResponse)
         }
     }
   }
@@ -310,16 +313,17 @@ object CorazaWafConfig {
       "description"       -> o.description,
       "metadata"          -> o.metadata,
       "tags"              -> JsArray(o.tags.map(JsString.apply)),
-      "inspect_in_body"      -> o.inspectInputBody,
-      "inspect_out_body"      -> o.inspectOutputBody,
+      "inspect_in_body"   -> o.inspectInputBody,
+      "inspect_out_body"  -> o.inspectOutputBody,
       "is_blocking_mode"  -> o.isBlockingMode,
       "include_owasp_crs" -> o.includeOwaspCRS,
       "directives"        -> o.directives,
-      "pool_capacity"     -> o.poolCapacity,
+      "pool_capacity"     -> o.poolCapacity
     )
     override def reads(json: JsValue): JsResult[CorazaWafConfig] = Try {
-      val oldConfig = (json \ "config").asOpt[JsObject]
-      val oldDirectives: Option[JsArray] = oldConfig.flatMap(_.selectAsOptObject("directives_map").flatMap(_.selectAsOptArray("default")))
+      val oldConfig                      = (json \ "config").asOpt[JsObject]
+      val oldDirectives: Option[JsArray] =
+        oldConfig.flatMap(_.selectAsOptObject("directives_map").flatMap(_.selectAsOptArray("default")))
 
       CorazaWafConfig(
         location = otoroshi.models.EntityLocation.readFromKey(json),
@@ -437,8 +441,8 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
 
 case class CorazaRule(id: Int = 0, file: String = "", severity: Int = 0) {
   def json = Json.obj(
-    "id" -> id,
-    "file" -> file,
+    "id"       -> id,
+    "file"     -> file,
     "severity" -> severity
   )
 }
@@ -446,8 +450,8 @@ case class CorazaRule(id: Int = 0, file: String = "", severity: Int = 0) {
 case class CorazaError(message: String, uri: String, rule: CorazaRule) {
   def json = Json.obj(
     "message" -> message,
-    "uri" -> uri,
-    "rule" -> rule.json
+    "uri"     -> uri,
+    "rule"    -> rule.json
   )
 }
 
@@ -456,11 +460,11 @@ object CorazaError {
     override def writes(o: CorazaError): JsValue             = o.json
     override def reads(json: JsValue): JsResult[CorazaError] = Try {
       CorazaError(
-        message= json.selectAsString("message"),
+        message = json.selectAsString("message"),
         uri = json.selectAsOptString("uri").getOrElse(""),
         rule = CorazaRule.fmt
-              .reads((json \ "rule").asOpt[JsValue].getOrElse(JsNull))
-              .getOrElse(CorazaRule())
+          .reads((json \ "rule").asOpt[JsValue].getOrElse(JsNull))
+          .getOrElse(CorazaRule())
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -476,7 +480,7 @@ object CorazaRule {
       CorazaRule(
         id = json.selectAsOptInt("id").getOrElse(0),
         file = json.selectAsOptString("file").getOrElse(""),
-        severity = json.selectAsOptInt("severity").getOrElse(0),
+        severity = json.selectAsOptInt("severity").getOrElse(0)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -507,12 +511,13 @@ case class CorazaTrailEvent(
       .toSeq
       .map(line => {
         CorazaError.fmt.reads(Json.parse(line))
-      }).collect {
-        case JsSuccess(e, _) => e
+      })
+      .collect { case JsSuccess(e, _) =>
+        e
       }
 
     Json.obj(
-      "@id" -> `@id`,
+      "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(timestamp),
       "@type"      -> "CorazaTrailEvent",
       "@product"   -> "otoroshi",
@@ -526,83 +531,97 @@ case class CorazaTrailEvent(
   }
 }
 
-
-class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env) extends CorazaImplementation {
+class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env)
+    extends CorazaImplementation {
   private implicit val ec = env.otoroshiExecutionContext
 
   private lazy val pool: WasmVmPool = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
 
   def start(attrs: TypedMap): Future[Unit] = {
-    pool.getPooledVm(WasmVmInitOptions(importDefaultHostFunctions = false, resetMemory = false, _ => Seq.empty)).flatMap { vm =>
-      attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey -> vm)
-      vm.finitialize {
-        var directives = Seq("Include @recommended-conf", "Include @crs-setup-conf", "SecRequestBodyAccess On", "SecResponseBodyAccess On")
-        if (config.includeOwaspCRS) {
-          directives = directives :+ "Include @owasp_crs/*.conf"
+    pool
+      .getPooledVm(WasmVmInitOptions(importDefaultHostFunctions = false, resetMemory = false, _ => Seq.empty))
+      .flatMap { vm =>
+        attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey -> vm)
+        vm.finitialize {
+          var directives = Seq(
+            "Include @recommended-conf",
+            "Include @crs-setup-conf",
+            "SecRequestBodyAccess On",
+            "SecResponseBodyAccess On"
+          )
+          if (config.includeOwaspCRS) {
+            directives = directives :+ "Include @owasp_crs/*.conf"
+          }
+
+          val defaultDirectives = Seq(
+            "SecRuleEngine On",
+            "SecRuleEngine DetectionOnly",
+            "SecRequestBodyAccess On",
+            "SecResponseBodyAccess On",
+            "Include @coraza",
+            "Include @recommended-conf",
+            "Include @crs-setup",
+            "Include @owasp_crs/*.conf",
+            "SecRuleEngine On;",
+            "SecRuleEngine DetectionOnly;",
+            "SecRequestBodyAccess On;",
+            "SecResponseBodyAccess On;",
+            "Include @coraza;",
+            "Include @recommended-conf;",
+            "Include @crs-setup;",
+            "Include @owasp_crs/*.conf;"
+          )
+
+          config.directives
+            .filter(line => !defaultDirectives.contains(line.trim))
+            .foreach(v => directives = directives :+ v)
+
+          if (config.isBlockingMode) {
+            directives = directives :+ "SecRuleEngine On"
+          } else {
+            directives = directives :+ "SecRuleEngine DetectionOnly"
+          }
+          val configStr = Json.obj(
+            "directives"            -> directives.mkString("\n"),
+            "inspect_input_bodies"  -> config.inspectInputBody,
+            "inspect_output_bodies" -> config.inspectOutputBody
+          )
+          vm.callCorazaNext("initialize", "", None, configStr.stringify.some)
         }
-
-        val defaultDirectives = Seq(
-          "SecRuleEngine On",
-          "SecRuleEngine DetectionOnly",
-          "SecRequestBodyAccess On",
-          "SecResponseBodyAccess On",
-          "Include @coraza",
-          "Include @recommended-conf",
-          "Include @crs-setup",
-          "Include @owasp_crs/*.conf",
-          "SecRuleEngine On;",
-          "SecRuleEngine DetectionOnly;",
-          "SecRequestBodyAccess On;",
-          "SecResponseBodyAccess On;",
-          "Include @coraza;",
-          "Include @recommended-conf;",
-          "Include @crs-setup;",
-          "Include @owasp_crs/*.conf;"
-        )
-
-        config
-          .directives
-          .filter(line => !defaultDirectives.contains(line.trim))
-          .foreach(v => directives = directives :+ v)
-
-        if (config.isBlockingMode) {
-          directives = directives :+ "SecRuleEngine On"
-        } else {
-          directives = directives :+ "SecRuleEngine DetectionOnly"
-        }
-        val configStr = Json.obj(
-          "directives" -> directives.mkString("\n"),
-          "inspect_input_bodies" -> config.inspectInputBody,
-          "inspect_output_bodies" -> config.inspectOutputBody,
-        )
-        vm.callCorazaNext("initialize", "", None,  configStr.stringify.some)
       }
-    }
   }
 
-  override def runRequestPath(request: NgPluginHttpRequest, attrs: TypedMap, route: Option[NgRoute]): Future[NgAccess] = {
+  override def runRequestPath(
+      request: NgPluginHttpRequest,
+      attrs: TypedMap,
+      route: Option[NgRoute]
+  ): Future[NgAccess] = {
     val instance: WasmVm = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-    val in = Json.obj(
-        "url" -> request.uri.path.toString(),
-        "method" -> request.method,
-        "headers" -> request.headers,
-        "proto" -> request.version.toUpperCase
+    val in               = Json.obj(
+      "url"     -> request.uri.path.toString(),
+      "method"  -> request.method,
+      "headers" -> request.headers,
+      "proto"   -> request.version.toUpperCase
     )
 
     evaluate(instance, in, isResponse = false, request, route)
   }
 
-  def evaluate(instance: WasmVm,
-               in: JsObject,
-               isResponse: Boolean = false,
-               request: NgPluginHttpRequest,
-               route: Option[NgRoute]) = {
+  def evaluate(
+      instance: WasmVm,
+      in: JsObject,
+      isResponse: Boolean = false,
+      request: NgPluginHttpRequest,
+      route: Option[NgRoute]
+  ) = {
     instance.callCorazaNext(if (isResponse) "evaluateResponse" else "evaluate", in.stringify).map {
-      case Left(err) => rejectCall(Json.stringify(Json.obj("error" -> err)), request, route)
+      case Left(err)    => rejectCall(Json.stringify(Json.obj("error" -> err)), request, route)
       case Right(value) =>
-        val result = Json.parse(value._1)
-        val response = result.select("response").asOpt[String].map(str => if (str.trim.isEmpty) "true" else str).forall(_.toBoolean)
-        val errors = result.select("errors")
+        val result   = Json.parse(value._1)
+        val response =
+          result.select("response").asOpt[String].map(str => if (str.trim.isEmpty) "true" else str).forall(_.toBoolean)
+        val errors   = result
+          .select("errors")
           .asOpt[String]
           .getOrElse(Json.stringify(Json.obj("error" -> "---")))
         if (errors.nonEmpty) {
@@ -616,9 +635,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
     }
   }
 
-  private def rejectCall(errors: String,
-                         request: NgPluginHttpRequest,
-                         route: Option[NgRoute]): NgAccess = {
+  private def rejectCall(errors: String, request: NgPluginHttpRequest, route: Option[NgRoute]): NgAccess = {
     if (config.isBlockingMode) {
       NgAccess.NgDenied(Results.Forbidden)
     } else {
@@ -627,23 +644,24 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
   }
 
   override def runRequestBodyPath(
-                                   req: NgPluginHttpRequest,
-                                   body_bytes: Option[ByteString],
-                                   attrs: TypedMap,
-                                   route: Option[NgRoute]): Future[Either[mvc.Result, Unit]] = {
+      req: NgPluginHttpRequest,
+      body_bytes: Option[ByteString],
+      attrs: TypedMap,
+      route: Option[NgRoute]
+  ): Future[Either[mvc.Result, Unit]] = {
     if (body_bytes.isDefined) {
       val instance = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
-      val in = Json.obj(
-          "url"     -> req.uri.path.toString(),
-          "method"  -> req.method,
-          "headers" -> req.headers,
-          "body"    -> body_bytes.get.toArray[Byte].map(b => b & 0xFF),
-          "proto" -> req.version.toUpperCase
+      val in       = Json.obj(
+        "url"     -> req.uri.path.toString(),
+        "method"  -> req.method,
+        "headers" -> req.headers,
+        "body"    -> body_bytes.get.toArray[Byte].map(b => b & 0xff),
+        "proto"   -> req.version.toUpperCase
       )
 
       evaluate(instance, in, isResponse = false, req, route)
         .map {
-          case NgAccess.NgAllowed => ().right
+          case NgAccess.NgAllowed   => ().right
           case NgAccess.NgDenied(_) => Results.Forbidden.left
         }
     } else {
@@ -651,45 +669,51 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
     }
   }
 
-  override def runResponsePath(request: NgPluginHttpRequest,
-                               response: NgPluginHttpResponse,
-                               body_bytes: Option[ByteString],
-                               attrs: TypedMap,
-                               route: Option[NgRoute]): Future[Either[mvc.Result, Unit]] = {
+  override def runResponsePath(
+      request: NgPluginHttpRequest,
+      response: NgPluginHttpResponse,
+      body_bytes: Option[ByteString],
+      attrs: TypedMap,
+      route: Option[NgRoute]
+  ): Future[Either[mvc.Result, Unit]] = {
     val instance = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).get
 
-    val body_source: Source[ByteString, NotUsed] = attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.RequestBodyKey) match {
-      case None       => Source.single(ByteString.empty)
-      case Some(body) => Source.future(body).flatMapConcat(b => b)
-    }
+    val body_source: Source[ByteString, NotUsed] =
+      attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.RequestBodyKey) match {
+        case None       => Source.single(ByteString.empty)
+        case Some(body) => Source.future(body).flatMapConcat(b => b)
+      }
 
-    body_source.runWith(Sink.head)(env.otoroshiMaterializer)
+    body_source
+      .runWith(Sink.head)(env.otoroshiMaterializer)
       .flatMap(requestBody => {
-         val in = Json.obj(
-          "request" -> Json.obj(
-            "url"     -> request.uri.path.toString(),
-            "method"  -> request.method,
-            "headers" -> request.headers,
-            "proto" -> request.version.toUpperCase,
-          ).applyOnWithOpt(attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.HasBodyKey)) {
-            case (obj, hasBody) =>
+        val in = Json.obj(
+          "request"  -> Json
+            .obj(
+              "url"     -> request.uri.path.toString(),
+              "method"  -> request.method,
+              "headers" -> request.headers,
+              "proto"   -> request.version.toUpperCase
+            )
+            .applyOnWithOpt(attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.HasBodyKey)) { case (obj, hasBody) =>
               if (hasBody)
-                obj.deepMerge(Json.obj("body"-> requestBody.toArray[Byte].map(b => b & 0xFF)))
+                obj.deepMerge(Json.obj("body" -> requestBody.toArray[Byte].map(b => b & 0xff)))
               else
                 obj
-          },
-          "response" -> Json.obj(
-            "headers" -> response.headers,
-            "proto" -> request.version.toUpperCase,
-            "status" -> response.status,
-          ).applyOnWithOpt(body_bytes) {
-            case (obj, body) =>
-              obj.deepMerge(Json.obj("body"-> body.toArray[Byte].map(b => b & 0xFF)))
-          },
+            },
+          "response" -> Json
+            .obj(
+              "headers" -> response.headers,
+              "proto"   -> request.version.toUpperCase,
+              "status"  -> response.status
+            )
+            .applyOnWithOpt(body_bytes) { case (obj, body) =>
+              obj.deepMerge(Json.obj("body" -> body.toArray[Byte].map(b => b & 0xff)))
+            }
         )
         evaluate(instance, in, isResponse = true, request, route)
           .map {
-            case NgAccess.NgAllowed => ().right
+            case NgAccess.NgAllowed   => ().right
             case NgAccess.NgDenied(_) => Results.Forbidden.left
           }
       })

@@ -1049,7 +1049,7 @@ export function findAllEvents(paginationState, serviceId, from, to, limit = 500,
   return findAllWithPagination(
     `/bo/api/proxy/api/services/${serviceId}/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}&order=${order}`,
     paginationState
-  )
+  );
 }
 
 export function findJwtVerifierById(id) {
@@ -2209,8 +2209,7 @@ export const nextClient = {
       schema: () => fetchWrapperNext(`/${entity}/_schema`),
       form: () => fetchWrapperNext(`/${entity}/_form`),
       fetch: (path) => fetchWrapperNext(`/${entity}${path}`),
-      patch: (content, fieldId) =>
-        fetchWrapperNext(`/${entity}/${fieldId}`, 'PATCH', content),
+      patch: (content, fieldId) => fetchWrapperNext(`/${entity}/${fieldId}`, 'PATCH', content),
     };
   },
   forEntityNextWithGroup: (group, entity) => {

@@ -1542,7 +1542,7 @@ object KubernetesCRDsJob {
 
   private val callsCounter = new java.util.concurrent.atomic.AtomicLong(0L)
 
-  def warnAboutServiceDescriptorUsage(ctx: CRDContext)(implicit env: Env, ec: ExecutionContext ): Unit = {
+  def warnAboutServiceDescriptorUsage(ctx: CRDContext)(implicit env: Env, ec: ExecutionContext): Unit = {
     if (ctx.kubernetes.serviceDescriptors.nonEmpty) {
       val calls = callsCounter.incrementAndGet()
       if (calls == 1 || calls % 10 == 0) {

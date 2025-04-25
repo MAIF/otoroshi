@@ -137,9 +137,9 @@ case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
   }
 
   def asRoutes(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(
-    implicit
-    env: Env,
-    ec: ExecutionContext
+      implicit
+      env: Env,
+      ec: ExecutionContext
   ): Future[Seq[NgRoute]] = {
     KubernetesIngressToDescriptor.asRoutes(this)(conf, otoConfig, client, logger)(env, ec)
   }

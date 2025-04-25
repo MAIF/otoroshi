@@ -60,7 +60,7 @@ export class ServiceEventsPage extends Component {
     limit: 500,
     asc: true,
     error: undefined,
-    hasElasticseachExporter: true
+    hasElasticseachExporter: true,
   };
 
   columns = [
@@ -80,15 +80,19 @@ export class ServiceEventsPage extends Component {
         <button
           type="button"
           className="btn btn-success btn-sm"
-          onClick={(e) =>
-            window.wizard("Event content", () => <div className="mt-3 d-flex flex-column" style={{ flex: 1 }}>
-              <JsonViewCompare
-                oldData={item}
-                newData={item}
-              />
-            </div>, {
-              noCancel: true
-            })
+          onClick={
+            (e) =>
+              window.wizard(
+                'Event content',
+                () => (
+                  <div className="mt-3 d-flex flex-column" style={{ flex: 1 }}>
+                    <JsonViewCompare oldData={item} newData={item} />
+                  </div>
+                ),
+                {
+                  noCancel: true,
+                }
+              )
             // <pre style={{ minHeight: 300 }}>
             //   {JSON.stringify(item, null, 2)}
             // </pre>)
@@ -223,7 +227,7 @@ export class ServiceEventsPage extends Component {
     {
       title: 'Headers Count',
       content: (item) => item.headers.length,
-      notFilterable: true
+      notFilterable: true,
     },
     {
       title: 'Calls per sec',
@@ -309,12 +313,13 @@ export class ServiceEventsPage extends Component {
       });
     });
 
-    BackOfficeServices.findAllDataExporterConfigs()
-      .then(exporters => {
-        this.setState({
-          hasElasticseachExporter: exporters?.data?.find(exporter => exporter.type === 'elastic' && exporter.enabled === true)
-        })
-      })
+    BackOfficeServices.findAllDataExporterConfigs().then((exporters) => {
+      this.setState({
+        hasElasticseachExporter: exporters?.data?.find(
+          (exporter) => exporter.type === 'elastic' && exporter.enabled === true
+        ),
+      });
+    });
   }
 
   fetchEvents = (paginationState) => {
@@ -328,16 +333,15 @@ export class ServiceEventsPage extends Component {
       this.state.to,
       limit,
       this.state.asc ? 'asc' : 'desc'
-    )
-      .then(result => {
-        if ((result.data && result.data.error) || result.error) {
-          this.setState({
-            error: result.error ? result.error : result.data.error
-          })
-          return []
-        }
-        return result
-      })
+    ).then((result) => {
+      if ((result.data && result.data.error) || result.error) {
+        this.setState({
+          error: result.error ? result.error : result.data.error,
+        });
+        return [];
+      }
+      return result;
+    });
   };
 
   updateDateRange = (from, to) => {
@@ -350,27 +354,32 @@ export class ServiceEventsPage extends Component {
     if (!this.state.service) return null;
 
     if (this.state.error) {
-      return <div
-        className="alert alert-secondary editor"
-        role="alert"
-        style={{
-          background: 'var(--bg-color_level2)',
-          borderColor: 'var(--bg-color_level2)',
-        }}
-      >
-        <p style={{ color: 'var(--text)' }}>
-          {this.state.error}
-        </p>
-        <div className='d-flex gap-2'>
-          <DangerZoneCard title="Danger Zone"
-            text="Go to the danger zone and add your Elasticsearch configuration."
-            link='/dangerzone?section=Elastic'
-          />
-          {!this.state.hasElasticseachExporter && <DangerZoneCard title="Exporters"
-            text="If you haven't done it yet, go to the Exporters, add a new Elasticsearch exporter and enable it."
-            link="/exporters" />}
+      return (
+        <div
+          className="alert alert-secondary editor"
+          role="alert"
+          style={{
+            background: 'var(--bg-color_level2)',
+            borderColor: 'var(--bg-color_level2)',
+          }}
+        >
+          <p style={{ color: 'var(--text)' }}>{this.state.error}</p>
+          <div className="d-flex gap-2">
+            <DangerZoneCard
+              title="Danger Zone"
+              text="Go to the danger zone and add your Elasticsearch configuration."
+              link="/dangerzone?section=Elastic"
+            />
+            {!this.state.hasElasticseachExporter && (
+              <DangerZoneCard
+                title="Exporters"
+                text="If you haven't done it yet, go to the Exporters, add a new Elasticsearch exporter and enable it."
+                link="/exporters"
+              />
+            )}
+          </div>
         </div>
-      </div>
+      );
     }
 
     return (
@@ -434,13 +443,10 @@ export class ServiceEventsPage extends Component {
 }
 
 function DangerZoneCard({ title, text, link }) {
-  const history = useHistory()
+  const history = useHistory();
 
   return (
-    <div
-      onClick={() => history.push(link)}
-      className="cards apis-cards"
-    >
+    <div onClick={() => history.push(link)} className="cards apis-cards">
       <div className="cards-body">
         <div className="cards-title d-flex align-items-center justify-content-between">
           {title}{' '}

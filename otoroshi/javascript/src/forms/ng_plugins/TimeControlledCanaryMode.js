@@ -158,20 +158,20 @@ export default {
     start: {
       label: 'Start date',
       type: 'date',
-      props: { type: 'datetime' }
+      props: { type: 'datetime' },
     },
     stop: {
       label: 'Stop date',
       type: 'date',
-      props: { type: 'datetime' }
+      props: { type: 'datetime' },
     },
     increment_percent: {
       label: 'Step',
       type: 'number',
       props: {
-        suffix: '%'
-      }
-    }
+        suffix: '%',
+      },
+    },
   },
   config_flow: ['start', 'stop', 'increment_percent', 'root', 'targets'],
 };

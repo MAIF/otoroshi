@@ -1820,7 +1820,7 @@ export class ServicePage extends Component {
                     {
                       value: 'LeastConnections',
                       label: 'LeastConnections',
-                    }
+                    },
                   ]}
                   help="The load balancing algorithm used"
                   onChange={(e) => this.changeTheValue('targetsLoadBalancing', { type: e })}
