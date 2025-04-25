@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.1.0] - 2025-04-25
+
+
+https://github.com/MAIF/otoroshi/milestone/113?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.0.0...v17.1.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.1.0
+
+
+### Added 
+
+- Migrate from proxy-wasm to a vanilla configuration for integrating Coraza. (#2134)
+- New loadbalancing strategy: LeastConnections (#2142)
+- New loadbalancing strategy: Power Of Two Random Choices (#2143)
+- Add ServiceDescriptor migration logs for Kubernetes Ingress job (#2144)
+- Support Route in the Kubernetes Ingress job (#2145)
+- New canary mode plugin with autonomous rollout (#2146)
+- Coraza can inspect input / output bodies separately (#2151)       
+      
+### Changed 
+
+- Remove http-wasm spec (#2140)
+- Remove proxy-wasm spec (#2141)       
+      
+### Fixed 
+
+- CRDs import should warn user when importing ServiceDescriptors (#2130)
+- Coraza only understand unsigned bytes for body payloads (#2150)       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [17.0.0] - 2025-03-31
 
 
