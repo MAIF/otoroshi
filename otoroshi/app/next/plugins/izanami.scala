@@ -78,7 +78,7 @@ object NgIzanamiV1ProxyConfig {
   }
 }
 
- class NgIzanamiV1Proxy extends NgRequestTransformer {
+class NgIzanamiV1Proxy extends NgRequestTransformer {
 
   override def name: String                                = "Izanami v1 APIs Proxy"
   override def description: Option[String]                 =
