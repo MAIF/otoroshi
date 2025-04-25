@@ -682,9 +682,6 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
               obj.deepMerge(Json.obj("body"-> body.toArray[Byte].map(b => b & 0xFF)))
           },
         )
-
-
-
         evaluate(instance, in, isResponse = true, request, route)
           .map {
             case NgAccess.NgAllowed => ().right
