@@ -544,23 +544,32 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
           "Include @coraza",
           "Include @recommended-conf",
           "Include @crs-setup",
-          "Include @owasp_crs/*.conf")
+          "Include @owasp_crs/*.conf",
+          "SecRuleEngine On;",
+          "SecRuleEngine DetectionOnly;",
+          "SecRequestBodyAccess On;",
+          "SecResponseBodyAccess On;",
+          "Include @coraza;",
+          "Include @recommended-conf;",
+          "Include @crs-setup;",
+          "Include @owasp_crs/*.conf;"
+        )
 
         config
           .directives
-          .filter(line => !defaultDirectives.contains(line))
+          .filter(line => !defaultDirectives.contains(line.trim))
           .foreach(v => directives = directives :+ v)
 
-         if (config.isBlockingMode) {
-           directives = directives :+ "SecRuleEngine On"
-         } else {
-           directives = directives :+ "SecRuleEngine DetectionOnly"
-         }
-
-        vm.callCorazaNext("initialize", "", None,  Json.stringify(Json.obj(
+        if (config.isBlockingMode) {
+          directives = directives :+ "SecRuleEngine On"
+        } else {
+          directives = directives :+ "SecRuleEngine DetectionOnly"
+        }
+        val configStr = Json.obj(
           "directives" -> directives.mkString("\n"),
           "inspect_bodies" -> config.inspectBody
-        )).some)
+        )
+        vm.callCorazaNext("initialize", "", None,  configStr.stringify.some)
       }
     }
   }
@@ -586,14 +595,13 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
       case Left(err) => rejectCall(Json.stringify(Json.obj("error" -> err)), request, route)
       case Right(value) =>
         val result = Json.parse(value._1)
-        val response = result.select("response").asOpt[String].forall(_.toBoolean)
+        val response = result.select("response").asOpt[String].map(str => if (str.trim.isEmpty) "true" else str).forall(_.toBoolean)
         val errors = result.select("errors")
           .asOpt[String]
           .getOrElse(Json.stringify(Json.obj("error" -> "---")))
-
-        if(errors.nonEmpty)
+        if (errors.nonEmpty) {
           CorazaTrailEvent(errors, request, route).toAnalytics()(env)
-
+        }
         if (response) {
           NgAccess.NgAllowed
         } else {
