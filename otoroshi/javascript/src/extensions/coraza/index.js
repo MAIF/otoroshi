@@ -50,6 +50,28 @@ export function setupCorazaExtension(registerExtension) {
             </div>
           },
         },
+        inspect_in_body: {
+          type: 'box-bool',
+          props: {
+            label: 'Inspect request body',
+            description: <div>
+              It is a ModSecurity directive that enables inspection of the request body (e.g., POST data, JSON, XML).
+
+              <p>With it set to On, ModSecurity can analyze the full content of incoming requests — not just headers and URLs — allowing detection of attacks hidden in form submissions or API calls.</p>
+            </div>
+          },
+        },
+        inspect_out_body: {
+          type: 'box-bool',
+          props: {
+            label: 'Inspect response body',
+            description: <div>
+              It is a ModSecurity directive that enables inspection of the response body.
+
+              <p>With it set to On, ModSecurity can analyze the full content of the response — not just headers.</p>
+            </div>
+          },
+        },
         pool_capacity: {
           type: 'number',
           props: { label: 'Number of coraza instances' },
@@ -175,7 +197,8 @@ export function setupCorazaExtension(registerExtension) {
         '<<<WAF config.',
         'pool_capacity',
         'is_blocking_mode',
-        'inspect_body',
+        'inspect_in_body',
+        'inspect_out_body',
         'include_owasp_crs',
         'custom_rules_infos',
         'directives',

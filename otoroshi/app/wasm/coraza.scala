@@ -167,7 +167,7 @@ class NgCorazaWAF extends NgRequestTransformer {
 
     ctx.attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.HasBodyKey -> hasBody)
 
-    if (hasBody && plugin.config.inspectBody) {
+    if (hasBody && plugin.config.inspectInputBody) {
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _)
         .flatMap { bytes =>
           val req = ctx.otoroshiRequest.copy(body = bytes.chunks(16 * 1024))
@@ -206,7 +206,7 @@ class NgCorazaWAF extends NgRequestTransformer {
 
     val request = NgPluginHttpRequest.fromRequest(ctx.request)
 
-    if (plugin.config.inspectBody) {
+    if (plugin.config.inspectOutputBody) {
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _)
         .flatMap { bytes =>
           val res = ctx.otoroshiResponse.copy(body = bytes.chunks(16 * 1024))
@@ -269,7 +269,8 @@ case class CorazaWafConfig(
     description: String,
     tags: Seq[String],
     metadata: Map[String, String],
-    inspectBody: Boolean,
+    inspectInputBody: Boolean,
+    inspectOutputBody: Boolean,
     includeOwaspCRS: Boolean = true,
     isBlockingMode: Boolean = true,
     directives: Seq[String] = Seq(
@@ -296,7 +297,8 @@ object CorazaWafConfig {
     description = "New WAF",
     metadata = Map.empty,
     tags = Seq.empty,
-    inspectBody = true,
+    inspectInputBody = true,
+    inspectOutputBody = true,
     includeOwaspCRS = true,
     directives = Seq.empty,
     poolCapacity = 2
@@ -308,7 +310,8 @@ object CorazaWafConfig {
       "description"       -> o.description,
       "metadata"          -> o.metadata,
       "tags"              -> JsArray(o.tags.map(JsString.apply)),
-      "inspect_body"      -> o.inspectBody,
+      "inspect_in_body"      -> o.inspectInputBody,
+      "inspect_out_body"      -> o.inspectOutputBody,
       "is_blocking_mode"  -> o.isBlockingMode,
       "include_owasp_crs" -> o.includeOwaspCRS,
       "directives"        -> o.directives,
@@ -325,7 +328,8 @@ object CorazaWafConfig {
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        inspectBody = (json \ "inspect_body").asOpt[Boolean].getOrElse(true),
+        inspectInputBody = (json \ "inspect_in_body").asOpt[Boolean].getOrElse(true),
+        inspectOutputBody = (json \ "inspect_out_body").asOpt[Boolean].getOrElse(true),
         isBlockingMode = (json \ "is_blocking_mode").asOpt[Boolean].getOrElse(true),
         includeOwaspCRS = (json \ "include_owasp_crs").asOpt[Boolean].getOrElse(true),
         directives = (json \ "directives")
@@ -568,7 +572,8 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
         }
         val configStr = Json.obj(
           "directives" -> directives.mkString("\n"),
-          "inspect_bodies" -> config.inspectBody
+          "inspect_input_bodies" -> config.inspectInputBody,
+          "inspect_output_bodies" -> config.inspectOutputBody,
         )
         vm.callCorazaNext("initialize", "", None,  configStr.stringify.some)
       }
