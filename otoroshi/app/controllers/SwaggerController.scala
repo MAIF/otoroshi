@@ -2887,7 +2887,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
     Json.obj(
       "openapi"      -> "3.0.0",
       "info"         -> Json.obj(
-        "version"     -> "17.2.0-dev",
+        "version"     -> "17.1.1",
         "title"       -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
         "contact"     -> Json.obj(
