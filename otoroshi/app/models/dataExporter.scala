@@ -5,6 +5,7 @@ import com.google.common.hash.Hashing
 import otoroshi.env.Env
 import otoroshi.events.Exporters._
 import otoroshi.events._
+import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.storage.drivers.inmemory.S3Configuration
@@ -14,7 +15,7 @@ import play.api.Logger
 import play.api.libs.json._
 
 import java.nio.charset.StandardCharsets
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -126,6 +127,97 @@ case class MetricsSettings(labels: Map[String, String] = Map()) extends Exporter
     )
 }
 
+case class TCPExporterSettings(host: String, port: Int, unixSocket: Boolean, connectTimeout: FiniteDuration, tls: NgTlsConfig) extends Exporter {
+  override def toJson: JsValue = TCPExporterSettings.format.writes(this)
+}
+
+object TCPExporterSettings {
+  val format = new Format[TCPExporterSettings] {
+    override def reads(json: JsValue): JsResult[TCPExporterSettings] = Try {
+      TCPExporterSettings(
+        host = json.select("host").asOptString.getOrElse("127.0.0.1"),
+        port = json.select("port").asOptInt.getOrElse(6514),
+        unixSocket = json.select("unix_socket").asOptBoolean.getOrElse(false),
+        connectTimeout = json.select("connect_timeout").asOptLong.getOrElse(10000L).millis,
+        tls = json.select("tls").asOpt[JsObject].flatMap(o => NgTlsConfig.format.reads(o).asOpt).getOrElse(NgTlsConfig.default),
+      )
+    } match {
+      case Failure(e) =>
+        e.printStackTrace()
+        JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+
+    override def writes(o: TCPExporterSettings): JsValue = Json.obj(
+      "host" -> o.host,
+      "port" -> o.port,
+      "unix_socket" -> o.unixSocket,
+      "connect_timeout" -> o.connectTimeout.toMillis,
+      "tls" -> o.tls.json,
+    )
+  }
+}
+
+case class UDPExporterSettings(host: String, port: Int, unixSocket: Boolean, connectTimeout: FiniteDuration) extends Exporter {
+  override def toJson: JsValue = UDPExporterSettings.format.writes(this)
+}
+
+object UDPExporterSettings {
+  val format = new Format[UDPExporterSettings] {
+    override def reads(json: JsValue): JsResult[UDPExporterSettings] = Try {
+      UDPExporterSettings(
+        host = json.select("host").asOptString.getOrElse("127.0.0.1"),
+        port = json.select("port").asOptInt.getOrElse(514),
+        unixSocket = json.select("unix_socket").asOptBoolean.getOrElse(false),
+        connectTimeout = json.select("connect_timeout").asOptLong.getOrElse(10000L).millis,
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+
+    override def writes(o: UDPExporterSettings): JsValue = Json.obj(
+      "host" -> o.host,
+      "port" -> o.port,
+      "unix_socket" -> o.unixSocket,
+      "connect_timeout" -> o.connectTimeout.toMillis,
+    )
+  }
+}
+
+case class SyslogExporterSettings(tcp: Boolean, udp: Boolean, host: String, port: Int, unixSocket: Boolean, connectTimeout: FiniteDuration, tls: NgTlsConfig) extends Exporter {
+  override def toJson: JsValue = SyslogExporterSettings.format.writes(this)
+}
+
+object SyslogExporterSettings {
+  val format = new Format[SyslogExporterSettings] {
+    override def reads(json: JsValue): JsResult[SyslogExporterSettings] = Try {
+      SyslogExporterSettings(
+        tcp = json.select("tcp").asOptBoolean.getOrElse(false),
+        udp = json.select("udp").asOptBoolean.getOrElse(true),
+        host = json.select("host").asOptString.getOrElse("/var/run/syslog"),
+        port = json.select("port").asOptInt.getOrElse(514),
+        unixSocket = json.select("unix_socket").asOptBoolean.getOrElse(true),
+        connectTimeout = json.select("connect_timeout").asOptLong.getOrElse(10000L).millis,
+        tls = json.select("tls").asOpt[JsObject].flatMap(o => NgTlsConfig.format.reads(o).asOpt).getOrElse(NgTlsConfig.default),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+
+    override def writes(o: SyslogExporterSettings): JsValue = Json.obj(
+      "tcp" -> o.tcp,
+      "udp" -> o.udp,
+      "host" -> o.host,
+      "port" -> o.port,
+      "unix_socket" -> o.unixSocket,
+      "connect_timeout" -> o.connectTimeout.toMillis,
+      "tls" -> o.tls.json,
+    )
+  }
+}
+
 object DataExporterConfig {
 
   import scala.concurrent.duration._
@@ -227,11 +319,16 @@ object DataExporterConfig {
             case "wasm"          => WasmExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case "otlp-metrics"  => OtlpMetricsExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case "otlp-logs"     => OtlpLogsExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case _               => throw new RuntimeException("Bad config type")
+            case "tcp"           => TCPExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "udp"           => UDPExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "syslog"        => SyslogExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case v               => throw new RuntimeException(s"Bad config type: '${v}'")
           }
         )
       } match {
-        case Failure(e) => JsError(e.getMessage)
+        case Failure(e) =>
+          e.printStackTrace()
+          JsError(e.getMessage)
         case Success(e) => JsSuccess(e)
       }
   }
@@ -239,6 +336,18 @@ object DataExporterConfig {
 
 sealed trait DataExporterConfigType {
   def name: String
+}
+
+case object DataExporterConfigTypeTCP extends DataExporterConfigType {
+  def name: String = "tcp"
+}
+
+case object DataExporterConfigTypeUDP extends DataExporterConfigType {
+  def name: String = "udp"
+}
+
+case object DataExporterConfigTypeSyslog extends DataExporterConfigType {
+  def name: String = "syslog"
 }
 
 case object DataExporterConfigTypeKafka extends DataExporterConfigType {
@@ -328,6 +437,9 @@ object DataExporterConfigType {
   val OtlpMetrics   = DataExporterConfigTypeOtlpMetrics
   val OtlpLogs      = DataExporterConfigTypeOtlpLogs
   val None          = DataExporterConfigTypeNone
+  val TCP           = DataExporterConfigTypeTCP
+  val UDP           = DataExporterConfigTypeUDP
+  val Syslog        = DataExporterConfigTypeSyslog
 
   def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {
@@ -348,6 +460,9 @@ object DataExporterConfigType {
       case "wasm"          => Wasm
       case "otlp-metrics"  => OtlpMetrics
       case "otlp-logs"     => OtlpLogs
+      case "tcp"           => TCP
+      case "udp"           => UDP
+      case "syslog"        => Syslog
       case _               => None
     }
   }
@@ -407,6 +522,9 @@ case class DataExporterConfig(
       case c: WasmExporterSettings        => new WasmExporter(this)
       case c: OtlpMetricsExporterSettings => new OtlpMetricsExporter(this)
       case c: OtlpLogsExporterSettings    => new OtlpLogExporter(this)
+      case c: TCPExporterSettings         => new TCPExporter(this)
+      case c: UDPExporterSettings         => new UDPExporter(this)
+      case c: SyslogExporterSettings      => new SyslogExporter(this)
       case _                              => throw new RuntimeException("unsupported exporter type")
     }
   }

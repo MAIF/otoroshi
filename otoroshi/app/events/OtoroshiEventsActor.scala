@@ -1,83 +1,59 @@
 package otoroshi.events
 
-import java.io.{File, FilenameFilter}
-import java.nio.file.{Files, Paths, StandardOpenOption}
-import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import akka.Done
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.model.{ContentType, ContentTypes}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3.{
-  ApiVersion,
-  ListBucketResultContents,
-  MemoryBufferType,
-  MetaHeaders,
-  S3Attributes,
-  S3Settings
-}
+import akka.stream.alpakka.s3._
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
 import com.spotify.metrics.core.MetricId
+import io.netty.channel.ChannelOption
+import io.netty.channel.unix.DomainSocketAddress
+import io.netty.handler.ssl.SslContextBuilder
 import io.opentelemetry.api.logs.Severity
-import io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter
-import io.opentelemetry.exporter.otlp.http.metrics.OtlpHttpMetricExporter
-import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter
-import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter
-import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.opentelemetry.sdk.logs.SdkLoggerProvider
-import io.opentelemetry.sdk.logs.`export`.{BatchLogRecordProcessor, LogRecordExporter}
-import io.opentelemetry.sdk.metrics.SdkMeterProvider
-import io.opentelemetry.sdk.metrics.`export`.{MetricExporter, PeriodicMetricReader}
-import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
 import io.otoroshi.wasm4s.scaladsl._
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
-import otoroshi.models._
-import org.joda.time.DateTime
 import otoroshi.metrics.opentelemetry.{OpenTelemetryMeter, OtlpSettings}
-import otoroshi.models.{DataExporterConfig, Exporter, ExporterRef, FileSettings}
+import otoroshi.models._
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.plugins.FakeWasmContext
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.security.IdGenerator
+import otoroshi.ssl.{Cert, VeryNiceTrustManager}
 import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
-import play.api.Logger
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsBoolean,
-  JsError,
-  JsNull,
-  JsNumber,
-  JsObject,
-  JsResult,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json
-}
-
-import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Failure, Success, Try}
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.WasmConfig
+import play.api.Logger
+import play.api.libs.json._
+import reactor.core.publisher.Mono
+import reactor.netty.Connection
+import reactor.netty.tcp.{SslProvider, TcpClient}
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
+import java.io.{File, FilenameFilter}
+import java.net.InetAddress
+import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.time.{Instant, ZoneOffset}
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.JavaConverters._
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success, Try}
 
 object OtoroshiEventsActorSupervizer {
   def props(implicit env: Env) = Props(new OtoroshiEventsActorSupervizer(env))
@@ -391,6 +367,267 @@ object DataExporter {
 }
 
 object Exporters {
+
+  class TCPExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+    extends DefaultDataExporter(config)(ec, env) {
+
+    import io.netty.channel.ChannelOption
+    import io.netty.handler.ssl.SslContextBuilder
+    import reactor.netty.tcp.{SslProvider, TcpClient}
+
+    val clientRef = new AtomicReference[Connection](null)
+
+    private def connect(eec: TCPExporterSettings): Unit = {
+      // TODO: handle reconnect on error
+      clientRef.set(
+        TcpClient.create()
+          .applyOnIf(eec.unixSocket) { client =>
+            client.remoteAddress(() => new DomainSocketAddress(eec.host))
+          }
+          .applyOnIf(!eec.unixSocket) { client =>
+            client
+              .host(eec.host)
+              .port(eec.port)
+          }
+          .applyOnIf(!eec.tls.enabled) { client =>
+            client.noSSL()
+          }
+          .applyOnIf(eec.tls.enabled) { client =>
+            if (eec.tls.legit) {
+              val tlsConf = eec.tls.legacy
+              val certs: Seq[Cert]        = tlsConf.actualCerts
+              val trustedCerts: Seq[Cert] = tlsConf.actualTrustedCerts
+              val trustAll: Boolean       = tlsConf.trustAll
+              val ctx                     = SslContextBuilder
+                .forClient()
+                .applyOn { ctx =>
+                  certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
+                  ctx
+                }
+                .applyOn { ctx =>
+                  if (trustAll) {
+                    ctx.trustManager(new VeryNiceTrustManager(Seq.empty))
+                  } else {
+                    ctx.trustManager(trustedCerts.map(_.certificatesChain.head): _*)
+                  }
+                }
+                .build()
+              client
+                .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+            } else {
+              client.secure()
+            }
+          }
+          .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Integer.valueOf(eec.connectTimeout.toMillis.toInt))
+          .connectNow()
+      )
+    }
+
+    override def start(): Future[Unit] = {
+      exporter[TCPExporterSettings].foreach { eec =>
+        connect(eec)
+      }
+      FastFuture.successful(())
+    }
+
+    override def stop(): Future[Unit] = {
+      Option(clientRef.get()).foreach(_.disposeNow())
+      FastFuture.successful(())
+    }
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      if (logger.isDebugEnabled) logger.debug(s"sending ${events.size} events to TCP target !!!")
+      Option(clientRef.get()).map { client =>
+        events.foreach { event =>
+          client.outbound().sendByteArray(Mono.just(event.stringify.applyOn(str => s"$str\n\n").byteString.toArray)).`then`().subscribe()
+        }
+        ExportResult.ExportResultSuccess.vfuture
+      } getOrElse {
+        FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+      }
+    }
+  }
+
+  class UDPExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+    extends DefaultDataExporter(config)(ec, env) {
+
+    import io.netty.channel.unix.DomainSocketAddress
+    import reactor.core.publisher.Mono
+    import reactor.netty.Connection
+    import reactor.netty.udp.UdpClient
+
+    val clientRef = new AtomicReference[Connection](null)
+
+    private def connect(eec: UDPExporterSettings): Unit = {
+      // TODO: handle reconnect on error
+      clientRef.set(
+        UdpClient.create()
+          .applyOnIf(eec.unixSocket) { client =>
+            client
+              .remoteAddress(() => new DomainSocketAddress(eec.host))
+          }
+          .applyOnIf(!eec.unixSocket) { client =>
+            client
+              .host(eec.host)
+              .port(eec.port)
+          }
+          .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Integer.valueOf(eec.connectTimeout.toMillis.toInt))
+          .connectNow()
+      )
+    }
+
+    override def start(): Future[Unit] = {
+      exporter[UDPExporterSettings].foreach { eec =>
+        connect(eec)
+      }
+      FastFuture.successful(())
+    }
+
+    override def stop(): Future[Unit] = {
+      Option(clientRef.get()).foreach(_.disposeNow())
+      FastFuture.successful(())
+    }
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      if (logger.isDebugEnabled) logger.debug(s"sending ${events.size} events to UDP target !!!")
+      Option(clientRef.get()).map { client =>
+        events.foreach { event =>
+          client.outbound().sendByteArray(Mono.just(event.stringify.applyOn(str => s"$str\n\n").byteString.toArray)).`then`().subscribe()
+        }
+        ExportResult.ExportResultSuccess.vfuture
+      } getOrElse {
+        FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+      }
+    }
+  }
+
+  class SyslogExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+    extends DefaultDataExporter(config)(ec, env) {
+
+    val clientRef = new AtomicReference[Connection](null)
+
+    private def connect(eec: SyslogExporterSettings): Unit = {
+      // TODO: handle reconnect on error
+      if (eec.tcp) {
+
+        import io.netty.channel.ChannelOption
+        import io.netty.handler.ssl.SslContextBuilder
+        import reactor.netty.tcp.{SslProvider, TcpClient}
+
+        clientRef.set(
+          TcpClient.create()
+            .applyOnIf(eec.unixSocket) { client =>
+              client.remoteAddress(() => new DomainSocketAddress(eec.host))
+            }
+            .applyOnIf(!eec.unixSocket) { client =>
+              client
+                .host(eec.host)
+                .port(eec.port)
+            }
+            .applyOnIf(!eec.tls.enabled) { client =>
+              client.noSSL()
+            }
+            .applyOnIf(eec.tls.enabled) { client =>
+              if (eec.tls.legit) {
+                val tlsConf = eec.tls.legacy
+                val certs: Seq[Cert] = tlsConf.actualCerts
+                val trustedCerts: Seq[Cert] = tlsConf.actualTrustedCerts
+                val trustAll: Boolean = tlsConf.trustAll
+                val ctx = SslContextBuilder
+                  .forClient()
+                  .applyOn { ctx =>
+                    certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
+                    ctx
+                  }
+                  .applyOn { ctx =>
+                    if (trustAll) {
+                      ctx.trustManager(new VeryNiceTrustManager(Seq.empty))
+                    } else {
+                      ctx.trustManager(trustedCerts.map(_.certificatesChain.head): _*)
+                    }
+                  }
+                  .build()
+                client
+                  .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+              } else {
+                client.secure()
+              }
+            }
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Integer.valueOf(eec.connectTimeout.toMillis.toInt))
+            .connectNow()
+        )
+      } else {
+
+        import io.netty.channel.unix.DomainSocketAddress
+        import reactor.netty.udp.UdpClient
+
+        clientRef.set(
+          UdpClient.create()
+            .applyOnIf(eec.unixSocket) { client =>
+              client
+                .remoteAddress(() => new DomainSocketAddress(eec.host))
+            }
+            .applyOnIf(!eec.unixSocket) { client =>
+              client
+                .host(eec.host)
+                .port(eec.port)
+            }
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Integer.valueOf(eec.connectTimeout.toMillis.toInt))
+            .connectNow()
+        )
+      }
+    }
+
+    override def start(): Future[Unit] = {
+      println("starting syslog exporter")
+      exporter[SyslogExporterSettings].foreach { eec =>
+        connect(eec)
+      }
+      FastFuture.successful(())
+    }
+
+    override def stop(): Future[Unit] = {
+      Option(clientRef.get()).foreach(_.disposeNow())
+      FastFuture.successful(())
+    }
+
+    def formatMessage(msg: String): String = {
+      val facility = 1
+      val severity = 6
+      val priority = s"<${facility * 8 + severity}>"
+      val timestamp = DateTimeFormatter.ofPattern("MMM dd HH:mm:ss")
+        .withZone(ZoneOffset.UTC)
+        .format(Instant.now())
+      val hostname = InetAddress.getLocalHost.getHostName
+      val appName = "otoroshi"
+      s"$priority$timestamp $hostname $appName: $msg"
+    }
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      if (logger.isDebugEnabled) logger.debug(s"sending ${events.size} events to Syslog !!!")
+      logger.debug(s"sending ${events.size} events to Syslog !!!")
+      Option(clientRef.get()).map { client =>
+        events.foreach { event =>
+          val id = event.select("@id").asOptString.getOrElse(IdGenerator.uuid)
+          val head = formatMessage(id + " ")
+          val evstr = event.stringify
+          val msg = head + evstr
+          val len = msg.length
+          // println(s"message length: ${len}")
+          if (len > 2048) {
+            evstr.grouped(1024).foreach { group =>
+              client.outbound().sendByteArray(Mono.just((head + group).byteString.toArray)).`then`().subscribe()
+            }
+          } else {
+            client.outbound().sendByteArray(Mono.just(msg.byteString.toArray)).`then`().subscribe()
+          }
+        }
+        ExportResult.ExportResultSuccess.vfuture
+      } getOrElse {
+        FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+      }
+    }
+  }
 
   class ElasticExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
       extends DefaultDataExporter(config)(ec, env) {

@@ -1974,6 +1974,282 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
+  syslog: {
+    flow: [
+      'tcp',
+      'udp',
+      'host',
+      'port',
+      'unix_socket',
+      'connect_timeout',
+      'tls.enabled',
+      'tls.loose',
+      'tls.trust_all',
+      'tls.certs',
+      'tls.trusted_certs',
+    ],
+    schema: {
+      tcp: {
+        type: 'bool',
+        props: { label: 'tcp' },
+      },
+      udp: {
+        type: 'bool',
+        props: { label: 'udp' },
+      },
+      host: {
+        type: 'string',
+        props: { label: 'host' },
+      },
+      port: {
+        type: 'number',
+        props: { label: 'port' },
+      },
+      unix_socket: {
+        type: 'bool',
+        props: { label: 'unix socket' },
+      },
+      connect_timeout: {
+        type: 'number',
+        props: { label: 'connect timeout' },
+      },
+      'tls.enabled': {
+        type: 'bool',
+        props: { label: 'TLS' },
+      },
+      'tls.loose': {
+        type: 'bool',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: { label: 'TLS loose' },
+      },
+      'tls.trust_all': {
+        type: 'bool',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: { label: 'TrustAll' },
+      },
+      'tls.certs': {
+        type: 'array',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: {
+          label: 'Client certificates',
+          placeholder: 'Choose a client certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: (a) => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
+      'tls.trusted_certs': {
+        type: 'array',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
+        props: {
+          label: 'Trusted certificates',
+          placeholder: 'Choose a trusted certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: (a) => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
+    }
+  },
+  tcp: {
+    flow: [
+      'host',
+      'port',
+      'unix_socket',
+      'connect_timeout',
+      'tls.enabled',
+      'tls.loose',
+      'tls.trust_all',
+      'tls.certs',
+      'tls.trusted_certs',
+    ],
+    schema: {
+      tcp: {
+        type: 'bool',
+        props: { label: 'tcp' },
+      },
+      udp: {
+        type: 'bool',
+        props: { label: 'udp' },
+      },
+      host: {
+        type: 'string',
+        props: { label: 'host' },
+      },
+      port: {
+        type: 'number',
+        props: { label: 'port' },
+      },
+      unix_socket: {
+        type: 'bool',
+        props: { label: 'unix socket' },
+      },
+      connect_timeout: {
+        type: 'number',
+        props: { label: 'connect timeout' },
+      },
+      'tls.enabled': {
+        type: 'bool',
+        props: { label: 'TLS' },
+      },
+      'tls.loose': {
+        type: 'bool',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: { label: 'TLS loose' },
+      },
+      'tls.trust_all': {
+        type: 'bool',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: { label: 'TrustAll' },
+      },
+      'tls.certs': {
+        type: 'array',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: {
+          label: 'Client certificates',
+          placeholder: 'Choose a client certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: (a) => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
+      'tls.trusted_certs': {
+        type: 'array',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
+        props: {
+          label: 'Trusted certificates',
+          placeholder: 'Choose a trusted certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: (a) => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
+    }
+  },
+  udp: {
+    flow: [
+      'host',
+      'port',
+      'unix_socket',
+      'connect_timeout'
+    ],
+    schema: {
+      tcp: {
+        type: 'bool',
+        props: { label: 'tcp' },
+      },
+      udp: {
+        type: 'bool',
+        props: { label: 'udp' },
+      },
+      host: {
+        type: 'string',
+        props: { label: 'host' },
+      },
+      port: {
+        type: 'number',
+        props: { label: 'port' },
+      },
+      unix_socket: {
+        type: 'bool',
+        props: { label: 'unix socket' },
+      },
+      connect_timeout: {
+        type: 'number',
+        props: { label: 'connect timeout' },
+      },
+      'tls.enabled': {
+        type: 'bool',
+        props: { label: 'TLS' },
+      },
+      'tls.loose': {
+        type: 'bool',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: { label: 'TLS loose' },
+      },
+      'tls.trust_all': {
+        type: 'bool',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: { label: 'TrustAll' },
+      },
+      'tls.certs': {
+        type: 'array',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: {
+          label: 'Client certificates',
+          placeholder: 'Choose a client certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: (a) => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
+      'tls.trusted_certs': {
+        type: 'array',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
+        props: {
+          label: 'Trusted certificates',
+          placeholder: 'Choose a trusted certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: (a) => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
+    }
+  }
 };
 
 class TestMatchAndProjectModal extends Component {
