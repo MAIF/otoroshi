@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.1.1] - 2025-05-05
+
+
+https://github.com/MAIF/otoroshi/milestone/114?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.1.0...v17.1.1
+https://github.com/MAIF/otoroshi/releases/tag/v17.1.1
+
+
+
+
+### Fixed 
+
+- ensure OpenAPI is always up to date when releasing otoroshi (#2152)       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [17.1.0] - 2025-04-25
 
 
