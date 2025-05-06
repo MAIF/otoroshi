@@ -317,6 +317,7 @@ class NgProxyState(env: Env) {
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"${idx}-generated-next-gen.oto.tools")),
             headers = Map.empty,
+            cookies = Map.empty,
             query = Map.empty,
             methods = Seq.empty,
             stripPath = true,
@@ -386,6 +387,7 @@ class NgProxyState(env: Env) {
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"path-generated-next-gen.oto.tools/api/${idx}")),
             headers = Map.empty,
+            cookies = Map.empty,
             query = Map.empty,
             methods = Seq.empty,
             stripPath = true,
@@ -449,6 +451,7 @@ class NgProxyState(env: Env) {
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"random-generated-next-gen.oto.tools/api/${idx}")),
             headers = Map.empty,
+            cookies = Map.empty,
             query = Map.empty,
             methods = Seq.empty,
             stripPath = true,
@@ -511,6 +514,7 @@ class NgProxyState(env: Env) {
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"soap-next-gen.oto.tools/text/from/number/:number")),
             headers = Map.empty,
+            cookies = Map.empty,
             query = Map.empty,
             methods = Seq("GET"),
             stripPath = true,

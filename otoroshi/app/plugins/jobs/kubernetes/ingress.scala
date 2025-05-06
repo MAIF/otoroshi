@@ -1102,6 +1102,7 @@ object KubernetesIngressToDescriptor {
                           frontend = NgFrontend(
                             domains = Seq(NgDomainAndPath(rule.host.getOrElse("*") + path.path.getOrElse(""))),
                             headers = Map.empty,
+                            cookies = Map.empty,
                             query = Map.empty,
                             methods = Seq.empty,
                             stripPath = true,

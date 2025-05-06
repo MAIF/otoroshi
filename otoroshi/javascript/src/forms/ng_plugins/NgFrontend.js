@@ -9,6 +9,10 @@ export default {
       label: 'Headers',
       type: 'object',
     },
+    cookies: {
+      label: 'Cookies',
+      type: 'object',
+    },
     methods: {
       type: 'dots',
       label: 'Methods',
@@ -50,5 +54,5 @@ export default {
       },
     },
   },
-  flow: ['domains', 'strip_path', 'exact', 'methods', 'headers', 'query'],
+  flow: ['domains', 'strip_path', 'exact', 'methods', 'headers', 'query', 'cookies'],
 };

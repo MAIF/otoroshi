@@ -131,6 +131,8 @@ case class NgRoute(
           .applyOnIf(frontend.headers.nonEmpty) { firstRes =>
             val headers   = request.headers.toSimpleMap.map(t => (t._1.toLowerCase, t._2))
             val secondRes = frontend.headers.map(t => (t._1.toLowerCase, t._2)).forall {
+              case (key, value) if value == "Exists()" =>
+                headers.contains(key)
               case (key, value) if value.startsWith("Regex(")    =>
                 headers.get(key).exists(str => RegexPool.regex(value.substring(6).init).matches(str))
               case (key, value) if value.startsWith("Wildcard(") =>
@@ -142,6 +144,8 @@ case class NgRoute(
           .applyOnIf(frontend.query.nonEmpty) { firstRes =>
             val query     = request.queryString
             val secondRes = frontend.query.forall {
+              case (key, value) if value == "Exists()" =>
+                query.contains(key)
               case (key, value) if value.startsWith("Regex(")    =>
                 query.get(key).exists { values =>
                   val regex = RegexPool.regex(value.substring(6).init)
@@ -153,6 +157,19 @@ case class NgRoute(
                   values.exists(str => regex.matches(str))
                 }
               case (key, value)                                  => query.get(key).exists(_.contains(value))
+            }
+            firstRes && secondRes
+          }
+          .applyOnIf(frontend.cookies.nonEmpty) { firstRes =>
+            val cookies: Map[String, String] = request.cookies.map(c => (c.name.toLowerCase(), c.value)).toMap
+            val secondRes = frontend.cookies.map(t => (t._1.toLowerCase, t._2)).forall {
+              case (key, value) if value == "Exists()" =>
+                cookies.contains(key)
+              case (key, value) if value.startsWith("Regex(")    =>
+                cookies.get(key).exists(str => RegexPool.regex(value.substring(6).init).matches(str))
+              case (key, value) if value.startsWith("Wildcard(") =>
+                cookies.get(key).exists(str => RegexPool.apply(value.substring(9).init).matches(str))
+              case (key, value)                                  => cookies.get(key).contains(value)
             }
             firstRes && secondRes
           }
@@ -718,6 +735,7 @@ object NgRoute {
     frontend = NgFrontend(
       domains = Seq(NgDomainAndPath("fake-next-gen.oto.tools")),
       headers = Map.empty,
+      cookies = Map.empty,
       query = Map.empty,
       methods = Seq.empty,
       stripPath = true,
@@ -796,6 +814,7 @@ object NgRoute {
     frontend = NgFrontend(
       domains = Seq(NgDomainAndPath("empty.oto.tools")),
       headers = Map.empty,
+      cookies = Map.empty,
       query = Map.empty,
       methods = Seq.empty,
       stripPath = true,
@@ -906,6 +925,7 @@ object NgRoute {
           dap.map(NgDomainAndPath.apply).distinct
         },
         headers = service.matchingHeaders,
+        cookies = Map.empty,
         query = Map.empty,
         methods = Seq.empty, // get from restrictions ???
         stripPath = service.stripPath,
@@ -1306,6 +1326,7 @@ trait NgRouteDataStore extends BasicStore[NgRoute] {
       frontend = NgFrontend(
         domains = Seq(NgDomainAndPath(env.routeBaseDomain)),
         headers = Map.empty,
+        cookies = Map.empty,
         query = Map.empty,
         methods = Seq.empty,
         stripPath = true,

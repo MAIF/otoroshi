@@ -1018,6 +1018,7 @@ object Api {
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"${domain}${cleanPath}")),
             headers = Map.empty,
+            cookies = Map.empty,
             query = Map.empty,
             methods = methods,
             stripPath = false,

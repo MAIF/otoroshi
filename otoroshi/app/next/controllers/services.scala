@@ -187,6 +187,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(env.routeBaseDomain)),
             headers = Map.empty,
+            cookies = Map.empty,
             query = Map.empty,
             methods = Seq.empty,
             stripPath = true,

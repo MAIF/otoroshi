@@ -15,6 +15,7 @@ case class NgFrontend(
     domains: Seq[NgDomainAndPath],
     headers: Map[String, String],
     query: Map[String, String],
+    cookies: Map[String, String],
     methods: Seq[String],
     stripPath: Boolean,
     exact: Boolean
@@ -24,6 +25,7 @@ case class NgFrontend(
     "strip_path" -> stripPath,
     "exact"      -> exact,
     "headers"    -> headers,
+    "cookies"    -> cookies,
     "query"      -> query,
     "methods"    -> methods
   )
@@ -35,6 +37,7 @@ object NgFrontend {
   def empty: NgFrontend = NgFrontend(
     domains = Seq.empty,
     headers = Map.empty,
+    cookies = Map.empty,
     query = Map.empty,
     methods = Seq.empty,
     stripPath = true,
@@ -53,6 +56,7 @@ object NgFrontend {
           stripPath = obj.select("strip_path").asOpt[Boolean].getOrElse(true),
           exact = obj.select("exact").asOpt[Boolean].getOrElse(false),
           headers = obj.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+          cookies = obj.select("cookies").asOpt[Map[String, String]].getOrElse(Map.empty),
           query = obj.select("query").asOpt[Map[String, String]].getOrElse(Map.empty),
           methods = obj.select("methods").asOpt[Seq[String]].getOrElse(Seq.empty)
         )
