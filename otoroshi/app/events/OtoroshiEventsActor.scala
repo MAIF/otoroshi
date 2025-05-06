@@ -907,13 +907,20 @@ object Exporters {
       disconnect()
       if (connecting.compareAndSet(false, true)) {
         if (logger.isDebugEnabled) logger.debug("reconnecting ....")
-        val connectionFactory = new ActiveMQConnectionFactory(eec.url, eec.username.orNull, eec.password.orNull) // need closing
-        val context = connectionFactory.createContext() // need closing
-        val destination: Destination = if (eec.topic) context.createTopic(eec.name) else context.createQueue(eec.name)
-        val producer = context.createProducer()
-        connected.compareAndSet(false, true)
-        connecting.compareAndSet(true, false)
-        clientRef.set(JMSConnection(connectionFactory, context, destination, producer))
+        try {
+          val connectionFactory = new ActiveMQConnectionFactory(eec.url, eec.username.orNull, eec.password.orNull) // need closing
+          val context = connectionFactory.createContext() // need closing
+          val destination: Destination = if (eec.topic) context.createTopic(eec.name) else context.createQueue(eec.name)
+          val producer = context.createProducer()
+          connected.compareAndSet(false, true)
+          connecting.compareAndSet(true, false)
+          clientRef.set(JMSConnection(connectionFactory, context, destination, producer))
+        } catch {
+          case e: Throwable =>
+            logger.error("error while connecting", e)
+            connecting.set(false)
+            connected.set(false)
+        }
       }
     }
 
