@@ -36,7 +36,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import reactor.core.publisher.Mono
-import reactor.netty.Connection
+import reactor.netty.{Connection, ConnectionObserver}
 import reactor.netty.tcp.{SslProvider, TcpClient}
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
@@ -47,8 +47,9 @@ import java.net.InetAddress
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.time.{Instant, ZoneOffset}
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.concurrent.{Executors, TimeUnit}
+import java.util.function.Consumer
 import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -376,11 +377,21 @@ object Exporters {
     import reactor.netty.tcp.{SslProvider, TcpClient}
 
     val clientRef = new AtomicReference[Connection](null)
+    val connecting = new AtomicBoolean(false)
+    val connected = new AtomicBoolean(false)
+
+    private def connectWithDelay(settings: TCPExporterSettings): Unit = {
+      env.otoroshiScheduler.scheduleOnce((1000 + scala.util.Random.nextInt(500)).millis) {
+        connect(settings)
+      }
+    }
 
     private def connect(eec: TCPExporterSettings): Unit = {
-      // TODO: handle reconnect on error
-      clientRef.set(
-        TcpClient.create()
+      disconnect()
+      if (connecting.compareAndSet(false, true)) {
+        if (logger.isDebugEnabled) logger.debug("reconnecting ....")
+        TcpClient
+          .create()
           .applyOnIf(eec.unixSocket) { client =>
             client.remoteAddress(() => new DomainSocketAddress(eec.host))
           }
@@ -419,8 +430,50 @@ object Exporters {
             }
           }
           .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Integer.valueOf(eec.connectTimeout.toMillis.toInt))
-          .connectNow()
-      )
+          .observe(new ConnectionObserver {
+            override def onUncaughtException(connection: Connection, error: Throwable): Unit = {
+              connecting.set(false)
+              connectWithDelay(eec)
+            }
+            override def onStateChange(connection: Connection, newState: ConnectionObserver.State): Unit = {
+              if (newState == ConnectionObserver.State.CONNECTED) {
+                connected.set(true)
+                connecting.set(false)
+              }
+            }
+          })
+          .connect()
+          .subscribe(
+            new Consumer[Connection] {
+              override def accept(conn: Connection): Unit = {
+                clientRef.set(conn)
+              }
+            },
+            new Consumer[Throwable] {
+              override def accept(t: Throwable): Unit = {
+                logger.error("Error while connecting", t)
+                connecting.set(false)
+                exporter[TCPExporterSettings].foreach { eec =>
+                  connectWithDelay(eec)
+                }
+              }
+            },
+            new Runnable {
+              override def run(): Unit = ()
+            }
+          )
+      }
+    }
+
+    def disconnect(): Unit = {
+      if (connected.compareAndExchange(true, false)) {
+        try {
+          Option(clientRef.get()).foreach(_.disposeNow())
+        } catch {
+          case e: Throwable => e.printStackTrace()
+        }
+        clientRef.set(null)
+      }
     }
 
     override def start(): Future[Unit] = {
@@ -431,19 +484,38 @@ object Exporters {
     }
 
     override def stop(): Future[Unit] = {
-      Option(clientRef.get()).foreach(_.disposeNow())
+      disconnect()
       FastFuture.successful(())
     }
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       if (logger.isDebugEnabled) logger.debug(s"sending ${events.size} events to TCP target !!!")
-      Option(clientRef.get()).map { client =>
-        events.foreach { event =>
-          client.outbound().sendByteArray(Mono.just(event.stringify.applyOn(str => s"$str\n\n").byteString.toArray)).`then`().subscribe()
+      if (!connected.get()) {
+        FastFuture.successful(ExportResult.ExportResultFailure("Client not connected!"))
+      } else {
+        Option(clientRef.get()).map { client =>
+          events.foreach { event =>
+            client.outbound().sendByteArray(Mono.just(event.stringify.applyOn(str => s"$str\n\n").byteString.toArray)).`then`().subscribe(
+              new Consumer[Void] {
+                override def accept(t: Void): Unit = ()
+              },
+              new Consumer[Throwable] {
+                override def accept(t: Throwable): Unit = {
+                  logger.error("error while sending", t)
+                  exporter[TCPExporterSettings].foreach { eec =>
+                    connectWithDelay(eec)
+                  }
+                }
+              },
+              new Runnable {
+                override def run(): Unit = ()
+              }
+            )
+          }
+          ExportResult.ExportResultSuccess.vfuture
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
         }
-        ExportResult.ExportResultSuccess.vfuture
-      } getOrElse {
-        FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
     }
   }
@@ -457,10 +529,19 @@ object Exporters {
     import reactor.netty.udp.UdpClient
 
     val clientRef = new AtomicReference[Connection](null)
+    val connecting = new AtomicBoolean(false)
+    val connected = new AtomicBoolean(false)
+
+    private def connectWithDelay(settings: UDPExporterSettings): Unit = {
+      env.otoroshiScheduler.scheduleOnce((1000 + scala.util.Random.nextInt(500)).millis) {
+        connect(settings)
+      }
+    }
 
     private def connect(eec: UDPExporterSettings): Unit = {
-      // TODO: handle reconnect on error
-      clientRef.set(
+      disconnect()
+      if (connecting.compareAndSet(false, true)) {
+        if (logger.isDebugEnabled) logger.debug("reconnecting ....")
         UdpClient.create()
           .applyOnIf(eec.unixSocket) { client =>
             client
@@ -472,8 +553,50 @@ object Exporters {
               .port(eec.port)
           }
           .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Integer.valueOf(eec.connectTimeout.toMillis.toInt))
-          .connectNow()
-      )
+          .observe(new ConnectionObserver {
+            override def onUncaughtException(connection: Connection, error: Throwable): Unit = {
+              connecting.set(false)
+              connectWithDelay(eec)
+            }
+            override def onStateChange(connection: Connection, newState: ConnectionObserver.State): Unit = {
+              if (newState == ConnectionObserver.State.CONNECTED) {
+                connected.set(true)
+                connecting.set(false)
+              }
+            }
+          })
+          .connect()
+          .subscribe(
+            new Consumer[Connection] {
+              override def accept(conn: Connection): Unit = {
+                clientRef.set(conn)
+              }
+            },
+            new Consumer[Throwable] {
+              override def accept(t: Throwable): Unit = {
+                logger.error("Error while connecting", t)
+                connecting.set(false)
+                exporter[UDPExporterSettings].foreach { eec =>
+                  connectWithDelay(eec)
+                }
+              }
+            },
+            new Runnable {
+              override def run(): Unit = ()
+            }
+          )
+      }
+    }
+
+    def disconnect(): Unit = {
+      if (connected.compareAndExchange(true, false)) {
+        try {
+          Option(clientRef.get()).foreach(_.disposeNow())
+        } catch {
+          case e: Throwable => e.printStackTrace()
+        }
+        clientRef.set(null)
+      }
     }
 
     override def start(): Future[Unit] = {
@@ -484,19 +607,37 @@ object Exporters {
     }
 
     override def stop(): Future[Unit] = {
-      Option(clientRef.get()).foreach(_.disposeNow())
+      disconnect()
       FastFuture.successful(())
     }
-
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       if (logger.isDebugEnabled) logger.debug(s"sending ${events.size} events to UDP target !!!")
-      Option(clientRef.get()).map { client =>
-        events.foreach { event =>
-          client.outbound().sendByteArray(Mono.just(event.stringify.applyOn(str => s"$str\n\n").byteString.toArray)).`then`().subscribe()
+      if (!connected.get()) {
+        FastFuture.successful(ExportResult.ExportResultFailure("Client not connected!"))
+      } else {
+        Option(clientRef.get()).map { client =>
+          events.foreach { event =>
+            client.outbound().sendByteArray(Mono.just(event.stringify.applyOn(str => s"$str\n\n").byteString.toArray)).`then`().subscribe(
+              new Consumer[Void] {
+                override def accept(t: Void): Unit = ()
+              },
+              new Consumer[Throwable] {
+                override def accept(t: Throwable): Unit = {
+                  logger.error("error while sending", t)
+                  exporter[UDPExporterSettings].foreach { eec =>
+                    connectWithDelay(eec)
+                  }
+                }
+              },
+              new Runnable {
+                override def run(): Unit = ()
+              }
+            )
+          }
+          ExportResult.ExportResultSuccess.vfuture
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
         }
-        ExportResult.ExportResultSuccess.vfuture
-      } getOrElse {
-        FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
     }
   }
@@ -505,16 +646,23 @@ object Exporters {
     extends DefaultDataExporter(config)(ec, env) {
 
     val clientRef = new AtomicReference[Connection](null)
+    val connecting = new AtomicBoolean(false)
+    val connected = new AtomicBoolean(false)
+
+    private def connectWithDelay(settings: SyslogExporterSettings): Unit = {
+      env.otoroshiScheduler.scheduleOnce((1000 + scala.util.Random.nextInt(500)).millis) {
+        connect(settings)
+      }
+    }
 
     private def connect(eec: SyslogExporterSettings): Unit = {
-      // TODO: handle reconnect on error
-      if (eec.tcp) {
-
-        import io.netty.channel.ChannelOption
-        import io.netty.handler.ssl.SslContextBuilder
-        import reactor.netty.tcp.{SslProvider, TcpClient}
-
-        clientRef.set(
+      disconnect()
+      if (connecting.compareAndSet(false, true)) {
+        if (logger.isDebugEnabled) logger.debug("reconnecting ....")
+        if (eec.tcp) {
+          import io.netty.channel.ChannelOption
+          import io.netty.handler.ssl.SslContextBuilder
+          import reactor.netty.tcp.{SslProvider, TcpClient}
           TcpClient.create()
             .applyOnIf(eec.unixSocket) { client =>
               client.remoteAddress(() => new DomainSocketAddress(eec.host))
@@ -554,14 +702,41 @@ object Exporters {
               }
             }
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Integer.valueOf(eec.connectTimeout.toMillis.toInt))
-            .connectNow()
-        )
-      } else {
-
-        import io.netty.channel.unix.DomainSocketAddress
-        import reactor.netty.udp.UdpClient
-
-        clientRef.set(
+            .observe(new ConnectionObserver {
+              override def onUncaughtException(connection: Connection, error: Throwable): Unit = {
+                connecting.set(false)
+                connectWithDelay(eec)
+              }
+              override def onStateChange(connection: Connection, newState: ConnectionObserver.State): Unit = {
+                if (newState == ConnectionObserver.State.CONNECTED) {
+                  connected.set(true)
+                  connecting.set(false)
+                }
+              }
+            })
+            .connect()
+            .subscribe(
+              new Consumer[Connection] {
+                override def accept(conn: Connection): Unit = {
+                  clientRef.set(conn)
+                }
+              },
+              new Consumer[Throwable] {
+                override def accept(t: Throwable): Unit = {
+                  logger.error("Error while connecting", t)
+                  connecting.set(false)
+                  exporter[SyslogExporterSettings].foreach { eec =>
+                    connectWithDelay(eec)
+                  }
+                }
+              },
+              new Runnable {
+                override def run(): Unit = ()
+              }
+            )
+        } else {
+          import io.netty.channel.unix.DomainSocketAddress
+          import reactor.netty.udp.UdpClient
           UdpClient.create()
             .applyOnIf(eec.unixSocket) { client =>
               client
@@ -573,13 +748,54 @@ object Exporters {
                 .port(eec.port)
             }
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Integer.valueOf(eec.connectTimeout.toMillis.toInt))
-            .connectNow()
-        )
+            .observe(new ConnectionObserver {
+              override def onUncaughtException(connection: Connection, error: Throwable): Unit = {
+                connecting.set(false)
+                connectWithDelay(eec)
+              }
+              override def onStateChange(connection: Connection, newState: ConnectionObserver.State): Unit = {
+                if (newState == ConnectionObserver.State.CONNECTED) {
+                  connected.set(true)
+                  connecting.set(false)
+                }
+              }
+            })
+            .connect()
+            .subscribe(
+              new Consumer[Connection] {
+                override def accept(conn: Connection): Unit = {
+                  clientRef.set(conn)
+                }
+              },
+              new Consumer[Throwable] {
+                override def accept(t: Throwable): Unit = {
+                  logger.error("Error while connecting", t)
+                  connecting.set(false)
+                  exporter[SyslogExporterSettings].foreach { eec =>
+                    connectWithDelay(eec)
+                  }
+                }
+              },
+              new Runnable {
+                override def run(): Unit = ()
+              }
+            )
+        }
+      }
+    }
+
+    def disconnect(): Unit = {
+      if (connected.compareAndExchange(true, false)) {
+        try {
+          Option(clientRef.get()).foreach(_.disposeNow())
+        } catch {
+          case e: Throwable => e.printStackTrace()
+        }
+        clientRef.set(null)
       }
     }
 
     override def start(): Future[Unit] = {
-      println("starting syslog exporter")
       exporter[SyslogExporterSettings].foreach { eec =>
         connect(eec)
       }
@@ -587,7 +803,7 @@ object Exporters {
     }
 
     override def stop(): Future[Unit] = {
-      Option(clientRef.get()).foreach(_.disposeNow())
+      disconnect()
       FastFuture.successful(())
     }
 
@@ -605,26 +821,58 @@ object Exporters {
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       if (logger.isDebugEnabled) logger.debug(s"sending ${events.size} events to Syslog !!!")
-      logger.debug(s"sending ${events.size} events to Syslog !!!")
-      Option(clientRef.get()).map { client =>
-        events.foreach { event =>
-          val id = event.select("@id").asOptString.getOrElse(IdGenerator.uuid)
-          val head = formatMessage(id + " ")
-          val evstr = event.stringify
-          val msg = head + evstr
-          val len = msg.length
-          // println(s"message length: ${len}")
-          if (len > 2048) {
-            evstr.grouped(1024).foreach { group =>
-              client.outbound().sendByteArray(Mono.just((head + group).byteString.toArray)).`then`().subscribe()
+      if (!connected.get()) {
+        FastFuture.successful(ExportResult.ExportResultFailure("Client not connected!"))
+      } else {
+        Option(clientRef.get()).map { client =>
+          events.foreach { event =>
+            val id = event.select("@id").asOptString.getOrElse(IdGenerator.uuid)
+            val head = formatMessage(id + " ")
+            val evstr = event.stringify
+            val msg = head + evstr
+            val len = msg.length
+            if (len > 2048) {
+              evstr.grouped(1024).foreach { group =>
+                client.outbound().sendByteArray(Mono.just((head + group).byteString.toArray)).`then`().subscribe(
+                  new Consumer[Void] {
+                    override def accept(t: Void): Unit = ()
+                  },
+                  new Consumer[Throwable] {
+                    override def accept(t: Throwable): Unit = {
+                      logger.error("error while sending", t)
+                      exporter[SyslogExporterSettings].foreach { eec =>
+                        connectWithDelay(eec)
+                      }
+                    }
+                  },
+                  new Runnable {
+                    override def run(): Unit = ()
+                  }
+                )
+              }
+            } else {
+              client.outbound().sendByteArray(Mono.just(msg.byteString.toArray)).`then`().subscribe(
+                new Consumer[Void] {
+                  override def accept(t: Void): Unit = ()
+                },
+                new Consumer[Throwable] {
+                  override def accept(t: Throwable): Unit = {
+                    logger.error("error while sending", t)
+                    exporter[SyslogExporterSettings].foreach { eec =>
+                      connectWithDelay(eec)
+                    }
+                  }
+                },
+                new Runnable {
+                  override def run(): Unit = ()
+                }
+              )
             }
-          } else {
-            client.outbound().sendByteArray(Mono.just(msg.byteString.toArray)).`then`().subscribe()
           }
+          ExportResult.ExportResultSuccess.vfuture
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
         }
-        ExportResult.ExportResultSuccess.vfuture
-      } getOrElse {
-        FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
     }
   }
