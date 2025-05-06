@@ -218,6 +218,35 @@ object SyslogExporterSettings {
   }
 }
 
+case class JMSExporterSettings(url: String, name: String, topic: Boolean, username: Option[String], password: Option[String]) extends Exporter {
+  override def toJson: JsValue = JMSExporterSettings.format.writes(this)
+}
+
+object JMSExporterSettings {
+  val format = new Format[JMSExporterSettings] {
+    override def reads(json: JsValue): JsResult[JMSExporterSettings] = Try {
+      JMSExporterSettings(
+        url = json.select("url").asOptString.getOrElse("tcp://localhost:61616"),
+        name = json.select("name").asOptString.getOrElse("otoroshi-events"),
+        topic = json.select("topic").asOptBoolean.getOrElse(true),
+        username = json.select("username").asOptString.filterNot(_.isEmpty).filterNot(_.isBlank),
+        password = json.select("password").asOptString.filterNot(_.isEmpty).filterNot(_.isBlank),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+
+    override def writes(o: JMSExporterSettings): JsValue = Json.obj(
+      "url" -> o.url,
+      "name" -> o.name,
+      "topic" -> o.topic,
+      "username" -> o.username.map(_.json).getOrElse(JsNull).asValue,
+      "password" -> o.password.map(_.json).getOrElse(JsNull).asValue,
+    )
+  }
+}
+
 object DataExporterConfig {
 
   import scala.concurrent.duration._
@@ -350,6 +379,10 @@ case object DataExporterConfigTypeSyslog extends DataExporterConfigType {
   def name: String = "syslog"
 }
 
+case object DataExporterConfigTypeJMS extends DataExporterConfigType {
+  def name: String = "jms"
+}
+
 case object DataExporterConfigTypeKafka extends DataExporterConfigType {
   def name: String = "kafka"
 }
@@ -440,6 +473,7 @@ object DataExporterConfigType {
   val TCP           = DataExporterConfigTypeTCP
   val UDP           = DataExporterConfigTypeUDP
   val Syslog        = DataExporterConfigTypeSyslog
+  val JMS           = DataExporterConfigTypeJMS
 
   def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {
@@ -463,6 +497,7 @@ object DataExporterConfigType {
       case "tcp"           => TCP
       case "udp"           => UDP
       case "syslog"        => Syslog
+      case "jms"           => JMS
       case _               => None
     }
   }
@@ -525,6 +560,7 @@ case class DataExporterConfig(
       case c: TCPExporterSettings         => new TCPExporter(this)
       case c: UDPExporterSettings         => new UDPExporter(this)
       case c: SyslogExporterSettings      => new SyslogExporter(this)
+      case c: JMSExporterSettings         => new JMSExporter(this)
       case _                              => throw new RuntimeException("unsupported exporter type")
     }
   }

@@ -68,7 +68,7 @@ lazy val jacksonVersion          = "2.13.4"
 lazy val akkaHttpVersion         = "10.2.10"
 lazy val akkaHttp2Version        = "10.2.10"
 lazy val reactorNettyVersion     = "1.1.18"
-lazy val nettyVersion            = "4.1.109.Final"
+lazy val nettyVersion            = "4.1.119.Final"
 lazy val excludesJackson         = Seq(
   ExclusionRule(organization = "com.fasterxml.jackson.core"),
   ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -215,6 +215,13 @@ libraryDependencies ++= Seq(
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test,
   "com.networknt"                    % "json-schema-validator"                     % "1.3.0" excludeAll (
+    ExclusionRule("org.slf4j"),
+    ExclusionRule(organization = "com.fasterxml.jackson.core"),
+    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
+    ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
+  ),
+  "jakarta.jms" % "jakarta.jms-api" % "3.1.0",
+  "org.apache.activemq" % "artemis-jakarta-client" % "2.41.0" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),

@@ -2249,6 +2249,31 @@ const possibleExporterConfigFormValues = {
         },
       },
     }
+  },
+  jms: {
+    flow: ['url', 'name', 'topic', 'username', 'password'],
+    schema: {
+      url: {
+        type: 'string',
+        props: { label: 'Broker URL' },
+      },
+      name: {
+        type: 'string',
+        props: { label: 'Destination name' },
+      },
+      username: {
+        type: 'string',
+        props: { label: 'Username' },
+      },
+      password: {
+        type: 'password',
+        props: { label: 'Password' },
+      },
+      topic: {
+        type: 'bool',
+        props: { label: 'Destination is a topic' },
+      }
+    }
   }
 };
 

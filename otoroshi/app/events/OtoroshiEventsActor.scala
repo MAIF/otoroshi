@@ -15,6 +15,14 @@ import io.netty.channel.unix.DomainSocketAddress
 import io.netty.handler.ssl.SslContextBuilder
 import io.opentelemetry.api.logs.Severity
 import io.otoroshi.wasm4s.scaladsl._
+import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
+import jakarta.jms.ConnectionFactory
+import jakarta.jms.Destination
+import jakarta.jms.JMSContext
+import jakarta.jms.JMSProducer
+import jakarta.jms.Message
+import jakarta.jms.Session
+import jakarta.jms.TextMessage
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.DataExporter.DefaultDataExporter
@@ -868,6 +876,79 @@ object Exporters {
                 }
               )
             }
+          }
+          ExportResult.ExportResultSuccess.vfuture
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
+  case class JMSConnection(connectionFactory: ActiveMQConnectionFactory, context: JMSContext, destination: Destination, producer: JMSProducer) {
+    def close(): Unit = {
+      context.close()
+      connectionFactory.close()
+    }
+    def isConnected: Boolean = true
+    def send(event: JsValue): Unit = {
+      producer.send(destination, event.stringify)
+    }
+  }
+
+  class JMSExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+    extends DefaultDataExporter(config)(ec, env) {
+
+    val clientRef = new AtomicReference[JMSConnection](null)
+    val connecting = new AtomicBoolean(false)
+    val connected = new AtomicBoolean(false)
+
+    private def connect(eec: JMSExporterSettings): Unit = {
+      disconnect()
+      if (connecting.compareAndSet(false, true)) {
+        if (logger.isDebugEnabled) logger.debug("reconnecting ....")
+        val connectionFactory = new ActiveMQConnectionFactory(eec.url, eec.username.orNull, eec.password.orNull) // need closing
+        val context = connectionFactory.createContext() // need closing
+        val destination: Destination = if (eec.topic) context.createTopic(eec.name) else context.createQueue(eec.name)
+        val producer = context.createProducer()
+        connected.compareAndSet(false, true)
+        connecting.compareAndSet(true, false)
+        clientRef.set(JMSConnection(connectionFactory, context, destination, producer))
+      }
+    }
+
+    def disconnect(): Unit = {
+      if (connected.compareAndExchange(true, false)) {
+        try {
+          Option(clientRef.get()).foreach(_.close())
+        } catch {
+          case e: Throwable => e.printStackTrace()
+        }
+        clientRef.set(null)
+      }
+    }
+
+    override def start(): Future[Unit] = {
+      exporter[JMSExporterSettings].foreach { eec =>
+        connect(eec)
+      }
+      FastFuture.successful(())
+    }
+
+    override def stop(): Future[Unit] = {
+      disconnect()
+      FastFuture.successful(())
+    }
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      if (!connected.get()) {
+        logger.info("restarting JMS connection as the previous one is closed !")
+        start()
+        FastFuture.successful(ExportResult.ExportResultFailure("Client not connected!"))
+      } else {
+        Option(clientRef.get()).map { cli =>
+          events.foreach { event =>
+            cli.send(event)
           }
           ExportResult.ExportResultSuccess.vfuture
         } getOrElse {
