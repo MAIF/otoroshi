@@ -396,6 +396,58 @@ object NgApikeyExtractorCustomHeaders {
   )
 }
 
+case class NgApikeyExtractorOtoBearer(
+                                 enabled: Boolean = true,
+                                 headerName: Option[String] = None,
+                                 queryName: Option[String] = None,
+                                 cookieName: Option[String] = None,
+                                 pathName: Option[String] = None,
+                               ) {
+  def json: JsValue =
+    Json.obj(
+      "enabled"    -> enabled,
+      "header_name" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "query_name"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "cookie_name" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "path_name" -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    )
+
+  def legacy: OtoBearerConstraints = OtoBearerConstraints(
+    enabled = enabled,
+    headerName = headerName,
+    queryName = queryName,
+    cookieName = cookieName,
+    pathName = pathName,
+  )
+}
+
+object NgApikeyExtractorOtoBearer {
+  def fromLegacy(s: OtoBearerConstraints): NgApikeyExtractorOtoBearer = NgApikeyExtractorOtoBearer(
+    enabled = s.enabled,
+    headerName = s.headerName,
+    queryName = s.queryName,
+    cookieName = s.cookieName,
+    pathName = s.pathName,
+  )
+  val format = new Format[NgApikeyExtractorOtoBearer] {
+    override def writes(o: NgApikeyExtractorOtoBearer): JsValue             = o.json
+    override def reads(json: JsValue): JsResult[NgApikeyExtractorOtoBearer] =
+      Try {
+        JsSuccess(
+          NgApikeyExtractorOtoBearer(
+            enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+            headerName = (json \ "header_name").asOpt[String].filterNot(_.trim.isEmpty),
+            queryName = (json \ "query_name").asOpt[String].filterNot(_.trim.isEmpty),
+            cookieName = (json \ "cookie_name").asOpt[String].filterNot(_.trim.isEmpty),
+            pathName = (json \ "path_name").asOpt[String].filterNot(_.trim.isEmpty)
+          )
+        )
+      } recover { case e =>
+        JsError(e.getMessage)
+      } get
+  }
+}
+
 case class NgApikeyExtractorJwt(
     enabled: Boolean = true,
     secretSigned: Boolean = true,
@@ -404,7 +456,8 @@ case class NgApikeyExtractorJwt(
     maxJwtLifespanSec: Option[Long] = None, //Some(10 * 365 * 24 * 60 * 60),
     headerName: Option[String] = None,
     queryName: Option[String] = None,
-    cookieName: Option[String] = None
+    cookieName: Option[String] = None,
+    pathName: Option[String] = None,
 ) {
   lazy val legacy: JwtAuthConstraints = JwtAuthConstraints(
     enabled = enabled,
@@ -414,7 +467,8 @@ case class NgApikeyExtractorJwt(
     maxJwtLifespanSecs = maxJwtLifespanSec,
     headerName = headerName,
     queryName = queryName,
-    cookieName = cookieName
+    cookieName = cookieName,
+    pathName = pathName,
   )
   def json: JsValue                   = Json.obj(
     "enabled"               -> enabled,
@@ -424,7 +478,8 @@ case class NgApikeyExtractorJwt(
     "max_jwt_lifespan_sec"  -> maxJwtLifespanSec.map(l => JsNumber(BigDecimal.exact(l))).getOrElse(JsNull).as[JsValue],
     "header_name"           -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "query_name"            -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "cookie_name"           -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    "cookie_name"           -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "path_name"             -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
   )
 }
 
@@ -441,7 +496,8 @@ object NgApikeyExtractorJwt {
           (json \ "max_jwt_lifespan_sec").asOpt[Long].filter(_ > -1), //.getOrElse(10 * 365 * 24 * 60 * 60),
         headerName = (json \ "header_name").asOpt[String].filterNot(_.trim.isEmpty),
         queryName = (json \ "query_name").asOpt[String].filterNot(_.trim.isEmpty),
-        cookieName = (json \ "cookie_name").asOpt[String].filterNot(_.trim.isEmpty)
+        cookieName = (json \ "cookie_name").asOpt[String].filterNot(_.trim.isEmpty),
+        pathName = (json \ "path_name").asOpt[String].filterNot(_.trim.isEmpty),
       )
     }
   }
@@ -453,7 +509,8 @@ object NgApikeyExtractorJwt {
     maxJwtLifespanSec = s.maxJwtLifespanSecs,
     headerName = s.headerName,
     queryName = s.queryName,
-    cookieName = s.cookieName
+    cookieName = s.cookieName,
+    pathName = s.pathName,
   )
 }
 
@@ -541,13 +598,15 @@ case class NgApikeyExtractors(
     basic: NgApikeyExtractorBasic = NgApikeyExtractorBasic(),
     customHeaders: NgApikeyExtractorCustomHeaders = NgApikeyExtractorCustomHeaders(),
     clientId: NgApikeyExtractorClientId = NgApikeyExtractorClientId(),
-    jwt: NgApikeyExtractorJwt = NgApikeyExtractorJwt()
+    jwt: NgApikeyExtractorJwt = NgApikeyExtractorJwt(),
+    otoBearer: NgApikeyExtractorOtoBearer = NgApikeyExtractorOtoBearer()
 ) {
   def json: JsValue = Json.obj(
     "basic"          -> basic.json,
     "custom_headers" -> customHeaders.json,
     "client_id"      -> clientId.json,
-    "jwt"            -> jwt.json
+    "jwt"            -> jwt.json,
+    "oto_bearer"     -> otoBearer.json
   )
 }
 
@@ -561,7 +620,8 @@ object NgApikeyExtractors {
           .asOpt(NgApikeyExtractorCustomHeaders.format)
           .getOrElse(NgApikeyExtractorCustomHeaders()),
         clientId = (json \ "client_id").asOpt(NgApikeyExtractorClientId.format).getOrElse(NgApikeyExtractorClientId()),
-        jwt = (json \ "jwt").asOpt(NgApikeyExtractorJwt.format).getOrElse(NgApikeyExtractorJwt())
+        jwt = (json \ "jwt").asOpt(NgApikeyExtractorJwt.format).getOrElse(NgApikeyExtractorJwt()),
+        otoBearer = (json \ "oto_bearer").asOpt(NgApikeyExtractorOtoBearer.format).getOrElse(NgApikeyExtractorOtoBearer())
       )
     }
   }
@@ -590,6 +650,7 @@ case class NgApikeyCallsConfig(
     customHeadersAuth = extractors.customHeaders.legacy,
     clientIdAuth = extractors.clientId.legacy,
     jwtAuth = extractors.jwt.legacy,
+    otoBearerAuth = extractors.otoBearer.legacy,
     routing = routing.legacy
   )
 }
@@ -623,7 +684,8 @@ object NgApikeyCallsConfig {
       basic = NgApikeyExtractorBasic.fromLegacy(o.basicAuth),
       customHeaders = NgApikeyExtractorCustomHeaders.fromLegacy(o.customHeadersAuth),
       clientId = NgApikeyExtractorClientId.fromLegacy(o.clientIdAuth),
-      jwt = NgApikeyExtractorJwt.fromLegacy(o.jwtAuth)
+      jwt = NgApikeyExtractorJwt.fromLegacy(o.jwtAuth),
+      otoBearer = NgApikeyExtractorOtoBearer.fromLegacy(o.otoBearerAuth),
     ),
     routing = NgApikeyMatcher.fromLegacy(o.routing),
     validate = true,

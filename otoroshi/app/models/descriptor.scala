@@ -1221,14 +1221,16 @@ case class OtoBearerConstraints(
     enabled: Boolean = true,
     headerName: Option[String] = None,
     queryName: Option[String] = None,
-    cookieName: Option[String] = None
+    cookieName: Option[String] = None,
+    pathName: Option[String] = None,
 ) {
   def json: JsValue =
     Json.obj(
       "enabled"    -> enabled,
       "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "queryName"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "cookieName" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+      "cookieName" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "pathName" -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
     )
 }
 
@@ -1242,7 +1244,8 @@ object OtoBearerConstraints {
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
             headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
             queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty),
-            cookieName = (json \ "cookieName").asOpt[String].filterNot(_.trim.isEmpty)
+            cookieName = (json \ "cookieName").asOpt[String].filterNot(_.trim.isEmpty),
+            pathName = (json \ "pathName").asOpt[String].filterNot(_.trim.isEmpty)
           )
         )
       } recover { case e =>
@@ -1259,7 +1262,8 @@ case class JwtAuthConstraints(
     maxJwtLifespanSecs: Option[Long] = None, //Some(10 * 365 * 24 * 60 * 60),
     headerName: Option[String] = None,
     queryName: Option[String] = None,
-    cookieName: Option[String] = None
+    cookieName: Option[String] = None,
+    pathName: Option[String] = None,
 )                         {
   def json: JsValue =
     Json.obj(
@@ -1270,7 +1274,8 @@ case class JwtAuthConstraints(
       "maxJwtLifespanSecs"       -> maxJwtLifespanSecs.map(l => JsNumber(BigDecimal.exact(l))).getOrElse(JsNull).as[JsValue],
       "headerName"               -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "queryName"                -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "cookieName"               -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+      "cookieName"               -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "pathName"                 -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
     )
 }
 object JwtAuthConstraints {
@@ -1288,7 +1293,8 @@ object JwtAuthConstraints {
               (json \ "maxJwtLifespanSecs").asOpt[Long].filter(_ > -1), //.getOrElse(10 * 365 * 24 * 60 * 60),
             headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
             queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty),
-            cookieName = (json \ "cookieName").asOpt[String].filterNot(_.trim.isEmpty)
+            cookieName = (json \ "cookieName").asOpt[String].filterNot(_.trim.isEmpty),
+            pathName = (json \ "pathName").asOpt[String].filterNot(_.trim.isEmpty)
           )
         )
       } recover { case e =>

@@ -126,6 +126,11 @@ export default {
               type: 'string',
               help: 'The name of the header to get the jwt token',
             },
+            path_name: {
+              label: 'path_name',
+              type: 'string',
+              help: 'The name of the path parameter to get the jwt token',
+            },
             key_pair_signed: {
               label: 'key_pair_signed',
               type: 'box-bool',
@@ -159,6 +164,7 @@ export default {
             'query_name',
             'header_name',
             'cookie_name',
+            'path_name',
             'include_request_attrs',
             'secret_signed',
             'key_pair_signed',
@@ -180,6 +186,11 @@ export default {
               type: 'string',
               help: 'The name of the header to get the bearer token',
             },
+            path_name: {
+              label: 'path_name',
+              type: 'string',
+              help: 'The name of the path parameter to get the bearer token',
+            },
             enabled: {
               label: 'enabled',
               type: 'box-bool',
@@ -194,7 +205,7 @@ export default {
               help: 'The name of the cookie to get the bearer token',
             },
           },
-          flow: ['enabled', 'query_name', 'header_name', 'cookie_name'],
+          flow: ['enabled', 'query_name', 'header_name', 'cookie_name', 'path_name'],
         },
         basic: {
           label: 'basic',
