@@ -3,6 +3,7 @@ package otoroshi.next.utils
 import akka.stream.Materializer
 import akka.util.ByteString
 import otoroshi.next.plugins.api.{NgPluginHttpRequest, NgPluginHttpResponse}
+import otoroshi.utils.TypedMap
 import otoroshi.utils.http.DN
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
@@ -73,7 +74,8 @@ object JsonHelpers {
       )
     }
   }
-  def requestToJson(request: RequestHeader): JsValue = {
+  def requestToJson(request: RequestHeader, attrs: TypedMap): JsValue = {
+    val pathparams: JsObject = JsObject(attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey).map(_.pathParams.toMap.mapValues(_.json)).getOrElse(Map.empty[String, JsValue]))
     Json.obj(
       "id"                -> request.id,
       "method"            -> request.method,
@@ -86,7 +88,8 @@ object JsonHelpers {
       "version"           -> request.version,
       "has_body"          -> request.theHasBody,
       "remote"            -> request.remoteAddress,
-      "client_cert_chain" -> JsonHelpers.clientCertChainToJson(request.clientCertificateChain)
+      "client_cert_chain" -> JsonHelpers.clientCertChainToJson(request.clientCertificateChain),
+      "path_params"       -> pathparams,
     )
   }
   def cookieToJson(cookie: Cookie): JsValue = {

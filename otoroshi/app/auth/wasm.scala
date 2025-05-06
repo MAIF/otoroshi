@@ -133,7 +133,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
     authConfig.wasmRef.flatMap(env.proxyState.wasmPlugin).map { plugin =>
       val route = NgRoute.fromServiceDescriptor(descriptor, false)
       val input = Json.obj(
-        "request"       -> JsonHelpers.requestToJson(request),
+        "request"       -> JsonHelpers.requestToJson(request, TypedMap.empty),
         "global_config" -> config.json,
         "service"       -> descriptor.json,
         "route"         -> route.json,
@@ -200,7 +200,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
     authConfig.wasmRef.flatMap(env.proxyState.wasmPlugin).map { plugin =>
       val route = NgRoute.fromServiceDescriptor(descriptor, false)
       val input = Json.obj(
-        "request"       -> JsonHelpers.requestToJson(request),
+        "request"       -> JsonHelpers.requestToJson(request, TypedMap.empty),
         "global_config" -> config.json,
         "service"       -> descriptor.json,
         "route"         -> route.json,
@@ -258,7 +258,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
     authConfig.wasmRef.flatMap(env.proxyState.wasmPlugin).map { plugin =>
       val route = NgRoute.fromServiceDescriptor(descriptor, false)
       val input = Json.obj(
-        "request"       -> JsonHelpers.requestToJson(request),
+        "request"       -> JsonHelpers.requestToJson(request, TypedMap.empty),
         "global_config" -> config.json,
         "service"       -> descriptor.json,
         "route"         -> route.json
@@ -306,7 +306,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
   ): Future[Result] = {
     authConfig.wasmRef.flatMap(env.proxyState.wasmPlugin).map { plugin =>
       val input = Json.obj(
-        "request"       -> JsonHelpers.requestToJson(request),
+        "request"       -> JsonHelpers.requestToJson(request, TypedMap.empty),
         "global_config" -> config.json
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)
@@ -367,7 +367,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
   ): Future[Either[Result, Option[String]]] = {
     authConfig.wasmRef.flatMap(env.proxyState.wasmPlugin).map { plugin =>
       val input = Json.obj(
-        "request"       -> JsonHelpers.requestToJson(request),
+        "request"       -> JsonHelpers.requestToJson(request, TypedMap.empty),
         "global_config" -> config.json,
         "user"          -> user.json
       )
@@ -422,7 +422,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
   ): Future[Either[ErrorReason, BackOfficeUser]] = {
     authConfig.wasmRef.flatMap(env.proxyState.wasmPlugin).map { plugin =>
       val input = Json.obj(
-        "request"       -> JsonHelpers.requestToJson(request),
+        "request"       -> JsonHelpers.requestToJson(request, TypedMap.empty),
         "global_config" -> config.json
       )
       val ctx   = WasmAuthModuleContext(authConfig.json, NgRoute.empty)

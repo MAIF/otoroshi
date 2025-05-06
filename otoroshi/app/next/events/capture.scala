@@ -157,7 +157,7 @@ case class TrafficCaptureEvent(
         "id"   -> route.id,
         "name" -> route.name
       ),
-      "request"          -> (JsonHelpers.requestToJson(request).asObject ++ Json.obj(
+      "request"          -> (JsonHelpers.requestToJson(request, attrs).asObject ++ Json.obj(
         "id"     -> id,
         "int_id" -> request.id,
         "body"   -> inputBody

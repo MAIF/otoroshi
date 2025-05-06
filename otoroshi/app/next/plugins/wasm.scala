@@ -740,12 +740,12 @@ class WasmRequestHandler extends RequestHandler {
     if (request.theHasBody) {
       implicit val mat = env.otoroshiMaterializer
       request.body.runFold(ByteString.empty)(_ ++ _).map { rawBody =>
-        JsonHelpers.requestToJson(request).asObject ++ Json.obj(
+        JsonHelpers.requestToJson(request, TypedMap.empty).asObject ++ Json.obj(
           "request_body_bytes" -> rawBody.toArray[Byte]
         )
       }
     } else {
-      JsonHelpers.requestToJson(request).vfuture
+      JsonHelpers.requestToJson(request, TypedMap.empty).vfuture
     }
   }
 

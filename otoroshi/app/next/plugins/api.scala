@@ -415,7 +415,7 @@ case class NgPreRoutingContext(
   def json: JsValue     = Json.obj(
     "snowflake"     -> snowflake,
     // "route" -> route.json,
-    "request"       -> JsonHelpers.requestToJson(request),
+    "request"       -> JsonHelpers.requestToJson(request, attrs),
     "config"        -> config,
     "global_config" -> globalConfig,
     "attrs"         -> attrs.json
@@ -493,7 +493,7 @@ case class NgRouterContext(
     attrs: TypedMap
 ) {
   def json: JsValue = Json.obj(
-    "request" -> JsonHelpers.requestToJson(request),
+    "request" -> JsonHelpers.requestToJson(request, attrs),
     "config"  -> config,
     "attrs"   -> attrs.json
   )
@@ -515,7 +515,7 @@ case class NgBeforeRequestContext(
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
     // "route" -> route.json,
-    "request"       -> JsonHelpers.requestToJson(request),
+    "request"       -> JsonHelpers.requestToJson(request, attrs),
     "config"        -> config,
     "global_config" -> globalConfig,
     "attrs"         -> attrs.json
@@ -534,7 +534,7 @@ case class NgAfterRequestContext(
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
     // "route" -> route.json,
-    "request"       -> JsonHelpers.requestToJson(request),
+    "request"       -> JsonHelpers.requestToJson(request, attrs),
     "config"        -> config,
     "global_config" -> globalConfig,
     "attrs"         -> attrs.json
@@ -564,7 +564,7 @@ case class NgTransformerRequestContext(
     "apikey"           -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     "user"             -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     // "route" -> route.json,
-    "request"          -> JsonHelpers.requestToJson(request),
+    "request"          -> JsonHelpers.requestToJson(request, attrs),
     "config"           -> config,
     "global_config"    -> globalConfig,
     "attrs"            -> attrs.json
@@ -605,7 +605,7 @@ case class NgTransformerResponseContext(
     "apikey"            -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     "user"              -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     // "route" -> route.json,
-    "request"           -> JsonHelpers.requestToJson(request),
+    "request"           -> JsonHelpers.requestToJson(request, attrs),
     "config"            -> config,
     "global_config"     -> globalConfig,
     "attrs"             -> attrs.json
@@ -647,7 +647,7 @@ case class NgTransformerErrorContext(
     "apikey"            -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     "user"              -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     // "route" -> route.json,
-    "request"           -> JsonHelpers.requestToJson(request),
+    "request"           -> JsonHelpers.requestToJson(request, attrs),
     "config"            -> config,
     "global_config"     -> globalConfig,
     "attrs"             -> attrs.json
@@ -733,7 +733,7 @@ case class NgAccessContext(
     "apikey"        -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     "user"          -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     // "route" -> route.json,
-    "request"       -> JsonHelpers.requestToJson(request),
+    "request"       -> JsonHelpers.requestToJson(request, attrs),
     "config"        -> config,
     "global_config" -> globalConfig,
     "attrs"         -> attrs.json
@@ -779,7 +779,7 @@ case class NgRequestSinkContext(
   def wasmJson: JsValue = json
   def json: JsValue     = Json.obj(
     "snowflake" -> snowflake,
-    "request"   -> JsonHelpers.requestToJson(request),
+    "request"   -> JsonHelpers.requestToJson(request, attrs),
     "config"    -> config,
     "attrs"     -> attrs.json,
     "origin"    -> origin.name,
@@ -808,7 +808,7 @@ case class NgRouteMatcherContext(
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     // "route" -> route.json,
-    "request"   -> JsonHelpers.requestToJson(request),
+    "request"   -> JsonHelpers.requestToJson(request, attrs),
     "config"    -> config,
     "attrs"     -> attrs.json
   )
@@ -816,7 +816,7 @@ case class NgRouteMatcherContext(
   def wasmJson: JsValue = Json.obj(
     "snowflake" -> snowflake,
     "route"     -> route.json,
-    "request"   -> JsonHelpers.requestToJson(request),
+    "request"   -> JsonHelpers.requestToJson(request, attrs),
     "config"    -> config,
     "attrs"     -> attrs.json
   )
@@ -836,7 +836,7 @@ case class NgTunnelHandlerContext(
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     // "route" -> route.json,
-    "request"   -> JsonHelpers.requestToJson(request),
+    "request"   -> JsonHelpers.requestToJson(request, attrs),
     "config"    -> config,
     "attrs"     -> attrs.json
   )
@@ -873,7 +873,7 @@ case class NgbBackendCallContext(
     "backend"       -> backend.json,
     "apikey"        -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     "user"          -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
-    "raw_request"   -> JsonHelpers.requestToJson(rawRequest),
+    "raw_request"   -> JsonHelpers.requestToJson(rawRequest, attrs),
     "config"        -> config,
     "global_config" -> globalConfig,
     "attrs"         -> attrs.json
@@ -1297,7 +1297,7 @@ case class NgWebsocketPluginContext(
   def json: JsValue     = Json.obj(
     "snowflake" -> snowflake,
     "idx"       -> idx,
-    "request"   -> JsonHelpers.requestToJson(request),
+    "request"   -> JsonHelpers.requestToJson(request, attrs),
     "config"    -> config,
     "target"    -> target.json,
     "attrs"     -> attrs.json
@@ -1554,7 +1554,7 @@ case class NgIncomingRequestValidatorContext(
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
     // "route" -> route.json,
-    "request"       -> JsonHelpers.requestToJson(request),
+    "request"       -> JsonHelpers.requestToJson(request, attrs),
     "config"        -> config,
     "global_config" -> globalConfig,
     "attrs"         -> attrs.json

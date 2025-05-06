@@ -186,7 +186,7 @@ case class CdnPolyfillIoDetectedAlert(
       "payload"        -> payload,
       "occurences_nbr" -> occurences.size,
       "occurences"     -> occurences,
-      "request"        -> JsonHelpers.requestToJson(ctx.request)
+      "request"        -> JsonHelpers.requestToJson(ctx.request, ctx.attrs)
     )
 }
 
@@ -217,6 +217,6 @@ case class CdnPolyfillIoReplacedAlert(
       "payload"        -> payload,
       "occurences_nbr" -> occurences.size,
       "occurences"     -> occurences,
-      "request"        -> JsonHelpers.requestToJson(ctx.request)
+      "request"        -> JsonHelpers.requestToJson(ctx.request, ctx.attrs)
     )
 }
