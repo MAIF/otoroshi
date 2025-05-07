@@ -1,5 +1,7 @@
 package otoroshi.next.workflow
 
+import akka.stream.scaladsl.{Sink, Source}
+import diffson.DiffOps
 import otoroshi.env.Env
 import otoroshi.next.workflow.Node.registerNode
 import otoroshi.utils.syntax.implicits._
@@ -14,6 +16,7 @@ object NodesInitializer {
     registerNode("assign", json => AssignNode(json))
     registerNode("parallel", json => ParallelFlowsNode(json))
     registerNode("switch", json => SwitchNode(json))
+    registerNode("if", json => IfThenElseNode(json))
   }
 }
 
@@ -166,10 +169,71 @@ case class IfThenElseNode(json: JsObject) extends Node {
         WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
       }
     } else {
-      val node = Node.from(json.select("else").asObject)
-      node.internalRun(wfr).recover { case t: Throwable =>
-        WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+      json.select("else").asOpt[JsObject] match {
+        case None => JsNull.rightf
+        case Some(nodeJson) => {
+          val node = Node.from(nodeJson)
+          node.internalRun(wfr).recover { case t: Throwable =>
+            WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+          }
+        }
       }
     }
   }
 }
+
+case class ForEachNode(json: JsObject) extends Node {
+  override def run(
+    wfr: WorkflowRun
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val values =  WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
+    val iterableObject = values.asOpt[JsObject]
+    val iterableArray = values.asOpt[JsArray]
+    if (iterableObject.isDefined) {
+      Source(iterableObject.get.value.toList)
+        .mapAsync(1) { item =>
+          val (key, value) = item
+          wfr.memory.set("foreach_key", key.json)
+          wfr.memory.set("foreach_value", value)
+          val node = Node.from(json.select("node").asObject)
+          node.internalRun(wfr).recover { case t: Throwable =>
+            WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+          }
+        }
+        .takeWhile(_.isLeft, inclusive = true)
+        .runWith(Sink.seq)(env.otoroshiMaterializer).map { seq =>
+          val last = seq.last
+          if (last.isLeft) {
+            last
+          } else {
+            JsArray(seq.collect {
+              case Right(v) => v
+            }).right
+          }
+        }
+    } else if (iterableArray.isDefined) {
+      Source(iterableArray.get.value.toList)
+        .mapAsync(1) { item =>
+          wfr.memory.set("foreach_value", item)
+          val node = Node.from(json.select("node").asObject)
+          node.internalRun(wfr).recover { case t: Throwable =>
+            WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+          }
+        }
+        .takeWhile(_.isLeft, inclusive = true)
+        .runWith(Sink.seq)(env.otoroshiMaterializer).map { seq =>
+          val last = seq.last
+          if (last.isLeft) {
+            last
+          } else {
+            JsArray(seq.collect {
+              case Right(v) => v
+            }).right
+          }
+        }
+    } else {
+      JsNull.rightf
+    }
+  }
+}
+
