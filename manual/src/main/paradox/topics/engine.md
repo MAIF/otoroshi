@@ -97,9 +97,11 @@ The new route allow routes to be matched on a combination of
 * hostname
 * path
 * header values
-    * where values can be `exact_value`, or `Regex(value_regex)`, or `Wildcard(value_with_*)`
+    * where values can be `exact_value`, or `Regex(value_regex)`, or `Wildcard(value_with_*)`, or `Exists()`/`IsDefined()`, or `NotDefined()`
 * query param values
-    * where values can be `exact_value`, or `Regex(value_regex)`, or `Wildcard(value_with_*)`
+    * where values can be `exact_value`, or `Regex(value_regex)`, or `Wildcard(value_with_*)`, or `Exists()`/`IsDefined()`, or `NotDefined()`
+* cookie values
+    * where values can be `exact_value`, or `Regex(value_regex)`, or `Wildcard(value_with_*)`, or `Exists()`/`IsDefined()`, or `NotDefined()`
 
 patch matching works 
 
