@@ -154,3 +154,22 @@ case class SwitchNode(json: JsObject) extends Node {
     }
   }
 }
+
+case class IfThenElseNode(json: JsObject) extends Node {
+  override def run(
+    wfr: WorkflowRun
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val pass = WorkflowOperator.processOperators(json.select("if").asValue, wfr, env).asOptBoolean.getOrElse(false)
+    if (pass) {
+      val node = Node.from(json.select("then").asObject)
+      node.internalRun(wfr).recover { case t: Throwable =>
+        WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+      }
+    } else {
+      val node = Node.from(json.select("else").asObject)
+      node.internalRun(wfr).recover { case t: Throwable =>
+        WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+      }
+    }
+  }
+}
