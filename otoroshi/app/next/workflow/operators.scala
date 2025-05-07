@@ -23,6 +23,7 @@ object WorkflowOperatorsInitializer {
     registerOperator("$str_concat", new StrConcatOperator())
 
     registerOperator("$is_truthy", new IsTruthyOperator())
+    registerOperator("$is_falsy", new IsFalsyOperator())
     registerOperator("$contains", new ContainsOperator())
     registerOperator("$eq", new EqOperator())
     registerOperator("$neq", new NeqOperator())
@@ -34,7 +35,17 @@ object WorkflowOperatorsInitializer {
     registerOperator("$decode_base64", new DecodeBase64Operator())
     registerOperator("$basic_auth", new BasicAuthOperator())
     registerOperator("$now", new NowOperator())
+    registerOperator("$not", new NotOperator())
     // math operations
+  }
+}
+
+class NotOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("value").asOpt[JsValue] match {
+      case Some(JsBoolean(b)) => JsBoolean(!b)
+      case _ => JsBoolean(false)
+    }
   }
 }
 
@@ -157,6 +168,31 @@ class IsTruthyOperator extends WorkflowOperator {
       case JsNumber(v) if v.bigDecimal == java.math.BigDecimal.ZERO => false
       case _                                                        => true
     }).json
+  }
+}
+
+class IsFalsyOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("value").asOpt[JsValue] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    val res = value match {
+      case JsNull                                                   => false
+      case JsString(str) if str.isEmpty                             => false
+      case JsBoolean(false)                                         => false
+      case JsNumber(v) if v.bigDecimal == java.math.BigDecimal.ZERO => false
+      case _                                                        => true
+    }
+    (!res).json
   }
 }
 
