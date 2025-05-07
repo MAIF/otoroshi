@@ -354,7 +354,7 @@ class WasmAccessValidator extends NgAccessValidator {
               val error = (response \ "error").asOpt[JsObject].getOrElse(Json.obj())
               Errors
                 .craftResponseResult(
-                  (error \ "message").asOpt[String].getOrElse("An error occured"),
+                  (error \ "message").asOpt[String].getOrElse("An error occurred"),
                   Results.Status((error \ "status").asOpt[Int].getOrElse(403)),
                   ctx.request,
                   None,
@@ -367,7 +367,7 @@ class WasmAccessValidator extends NgAccessValidator {
           case Left(err)  =>
             Errors
               .craftResponseResult(
-                (err \ "error").asOpt[String].getOrElse("An error occured"),
+                (err \ "error").asOpt[String].getOrElse("An error occurred"),
                 Results.Status(400),
                 ctx.request,
                 None,
@@ -394,7 +394,7 @@ class WasmAccessValidator extends NgAccessValidator {
     //          val error = (response \ "error").asOpt[JsObject].getOrElse(Json.obj())
     //          Errors
     //            .craftResponseResult(
-    //              (error \ "message").asOpt[String].getOrElse("An error occured"),
+    //              (error \ "message").asOpt[String].getOrElse("An error occurred"),
     //              Results.Status((error \ "status").asOpt[Int].getOrElse(403)),
     //              ctx.request,
     //              None,
@@ -407,7 +407,7 @@ class WasmAccessValidator extends NgAccessValidator {
     //      case Left(err) =>
     //        Errors
     //          .craftResponseResult(
-    //            (err \ "error").asOpt[String].getOrElse("An error occured"),
+    //            (err \ "error").asOpt[String].getOrElse("An error occurred"),
     //            Results.Status(400),
     //            ctx.request,
     //            None,
@@ -1048,7 +1048,7 @@ class WasmOPA extends NgAccessValidator {
             NgAccess.NgAllowed.vfuture
           else
             onError("Forbidden access", ctx, 403.some)
-        case Left(err)             => onError((err \ "error").asOpt[String].getOrElse("An error occured"), ctx)
+        case Left(err)             => onError((err \ "error").asOpt[String].getOrElse("An error occurred"), ctx)
       }
       .andThen { case _ =>
         vm.release()

@@ -7,7 +7,7 @@ import otoroshi.next.plugins.BodyHelper
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.WasmUtils
+import otoroshi.wasm.{WasmConfig, WasmUtils}
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
@@ -264,6 +264,70 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
               }
             }
           }
+      }
+    }
+  }
+}
+
+class WorkflowAccessValidator extends NgAccessValidator {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Custom("Workflow"))
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean = true
+  override def core: Boolean = true
+  override def name: String = "Workflow Access control"
+  override def description: Option[String] = "Delegate route access to a worflow".some
+  override def isAccessAsync: Boolean = true
+  override def defaultConfigObject: Option[NgPluginConfig] = WorkflowBackendConfig().some
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+
+    val config = ctx
+      .cachedConfig(internalName)(WorkflowBackendConfig.format)
+      .getOrElse(WorkflowBackendConfig())
+
+    env.adminExtensions
+      .extension[WorkflowAdminExtension]
+      .flatMap(ext => ext.states.workflow(config.ref).map(w => (ext, w))) match {
+      case None =>
+        Errors
+          .craftResponseResult(
+            "workflow not found !",
+            Results.Status(500),
+            ctx.request,
+            None,
+            None,
+            attrs = ctx.attrs,
+            maybeRoute = ctx.route.some
+          )
+          .map(r => NgAccess.NgDenied(r))
+      case Some((extension, workflow)) => {
+        val input = ctx.wasmJson
+        extension.engine.run(Node.from(workflow.config), input.asObject).flatMap { res =>
+          if (res.hasError) {
+            NgAccess.NgDenied(Results.InternalServerError(Json.obj("error" -> res.error.get.json))).vfuture
+          } else {
+            val response = res.json
+            val result   = (response \ "result").asOpt[Boolean].getOrElse(false)
+            if (result) {
+              NgAccess.NgAllowed.vfuture
+            } else {
+              val error = (response \ "error").asOpt[JsObject].getOrElse(Json.obj())
+              Errors
+                .craftResponseResult(
+                  (error \ "message").asOpt[String].getOrElse("An error occurred"),
+                  Results.Status((error \ "status").asOpt[Int].getOrElse(403)),
+                  ctx.request,
+                  None,
+                  None,
+                  attrs = ctx.attrs,
+                  maybeRoute = ctx.route.some
+                )
+                .map(r => NgAccess.NgDenied(r))
+            }
+          }
+        }
       }
     }
   }
