@@ -131,8 +131,10 @@ case class NgRoute(
           .applyOnIf(frontend.headers.nonEmpty) { firstRes =>
             val headers   = request.headers.toSimpleMap.map(t => (t._1.toLowerCase, t._2))
             val secondRes = frontend.headers.map(t => (t._1.toLowerCase, t._2)).forall {
-              case (key, value) if value == "Exists()" =>
+              case (key, value) if value == "Exists()" || value == "IsDefined()" =>
                 headers.contains(key)
+              case (key, value) if value == "NotDefined()" =>
+                !headers.contains(key)
               case (key, value) if value.startsWith("Regex(")    =>
                 headers.get(key).exists(str => RegexPool.regex(value.substring(6).init).matches(str))
               case (key, value) if value.startsWith("Wildcard(") =>
@@ -144,8 +146,10 @@ case class NgRoute(
           .applyOnIf(frontend.query.nonEmpty) { firstRes =>
             val query     = request.queryString
             val secondRes = frontend.query.forall {
-              case (key, value) if value == "Exists()" =>
+              case (key, value) if value == "Exists()" || value == "IsDefined()" =>
                 query.contains(key)
+              case (key, value) if value == "NotDefined()" =>
+                !query.contains(key)
               case (key, value) if value.startsWith("Regex(")    =>
                 query.get(key).exists { values =>
                   val regex = RegexPool.regex(value.substring(6).init)
@@ -163,8 +167,10 @@ case class NgRoute(
           .applyOnIf(frontend.cookies.nonEmpty) { firstRes =>
             val cookies: Map[String, String] = request.cookies.map(c => (c.name.toLowerCase(), c.value)).toMap
             val secondRes = frontend.cookies.map(t => (t._1.toLowerCase, t._2)).forall {
-              case (key, value) if value == "Exists()" =>
+              case (key, value) if value == "Exists()" || value == "IsDefined()" =>
                 cookies.contains(key)
+              case (key, value) if value == "NotDefined()" =>
+                !cookies.contains(key)
               case (key, value) if value.startsWith("Regex(")    =>
                 cookies.get(key).exists(str => RegexPool.regex(value.substring(6).init).matches(str))
               case (key, value) if value.startsWith("Wildcard(") =>
