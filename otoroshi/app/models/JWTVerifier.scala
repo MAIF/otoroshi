@@ -125,7 +125,7 @@ object InHeader                                        extends FromJson[InHeader
 case class InHeader(name: String, remove: String = "") extends JwtTokenLocation           {
   def token(request: RequestHeader): Option[String] = {
     request.headers.get(name).map { h =>
-      h.replaceAll(remove, "")
+      h.replaceAll(remove, "").trim
     }
   }
   def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection =
