@@ -8,11 +8,13 @@ import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
+import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.Results
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.zip.ZipFile
 import scala.collection.concurrent.TrieMap
@@ -222,6 +224,163 @@ class ZipFileBackend extends NgBackendCall {
           }
         }
       }
+    }
+  }
+}
+
+case class ZipBombBackendConfig(
+    predicates: Seq[JsonPathValidator] = Seq.empty,
+    or: Boolean = false,
+    size: String = "10G",
+    status: Option[Int] = None,
+    contentType: Option[String] = None,
+) extends NgPluginConfig {
+  def json: JsValue = ZipBombBackendConfig.format.writes(this)
+}
+
+object ZipBombBackendConfig {
+  val configFlow: Seq[String]        = Seq("or", "size", "status", "content_type", "predicates")
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "predicates" -> Json.parse(
+        """{
+          |  "label": "Predicates",
+          |  "type": "object",
+          |  "array": true,
+          |  "format": "form",
+          |  "schema": {
+          |    "path": {
+          |      "label": "path",
+          |      "type": "string",
+          |      "props": {
+          |        "subTitle": "Example: $.apikey.metadata.foo"
+          |      }
+          |    },
+          |    "value": {
+          |      "type": "code",
+          |      "help": "Example: Contains(bar)",
+          |      "props": {
+          |        "label": "Value",
+          |        "type": "json",
+          |        "editorOnly": true
+          |      }
+          |    }
+          |  },
+          |  "flow": [
+          |    "path",
+          |    "value"
+          |  ]
+          |}""".stripMargin),
+      "or" -> Json.obj("type" -> "bool", "label" -> "Use OR operator"),
+      "status" -> Json.obj("type" -> "number", "label" -> "Response status code"),
+      "content_type" -> Json.obj("type" -> "string", "label" -> "Response content type"),
+      "size"   -> Json.obj(
+        "type"  -> "select",
+        "label" -> s"Size",
+        "props" -> Json.obj(
+          "options" -> Json.arr(
+            Json.obj("label" -> "10M", "value" -> "10M"),
+            Json.obj("label" -> "100M", "value" -> "100M"),
+            Json.obj("label" -> "1G", "value" -> "1G"),
+            Json.obj("label" -> "5G", "value" -> "5G"),
+            Json.obj("label" -> "10G", "value" -> "10G"),
+          )
+        )
+      )
+    )
+  )
+  val format = new Format[ZipBombBackendConfig] {
+    override def writes(o: ZipBombBackendConfig): JsValue             = Json.obj(
+      "predicates" -> JsArray(o.predicates.map(_.json)),
+      "or" -> o.or,
+      "size" -> o.size,
+      "status" -> o.status.map(_.json).getOrElse(JsNull).asValue,
+      "content_type" -> o.contentType.map(_.json).getOrElse(JsNull).asValue,
+    )
+    override def reads(json: JsValue): JsResult[ZipBombBackendConfig] = Try {
+      ZipBombBackendConfig(
+        size = json.select("size").asOptString.getOrElse("10G"),
+        or = json.select("or").asOptBoolean.getOrElse(false),
+        status = json.select("status").asOptInt,
+        contentType = json.select("content_type").asOptString,
+        predicates = (json \ "predicates")
+          .asOpt[Seq[JsValue]]
+          .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
+          .getOrElse(Seq.empty)
+      )
+    } match {
+      case Failure(exception) => JsError(exception.getMessage)
+      case Success(value)     => JsSuccess(value)
+    }
+  }
+}
+
+object ZipBombBackend {
+  val zipCache = new TrieMap[String, ByteString]()
+}
+
+/**
+ * create zip bomb: dd if=/dev/zero bs=1G count=10 | gzip -c > 10G.gz
+ * testing: curl http://zipbomb.oto.tools:9999\?foo\=bar --compressed > zb.res
+ */
+class ZipBombBackend extends NgBackendCall {
+
+  override def useDelegates: Boolean                       = true
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Zip Bomb backend"
+  override def description: Option[String]                 = "This plugin returns zip bomb responses based on predicates".some
+  override def defaultConfigObject: Option[NgPluginConfig] = ZipBombBackendConfig().some
+
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
+  override def noJsForm: Boolean                 = true
+  override def configFlow: Seq[String]           = ZipBombBackendConfig.configFlow
+  override def configSchema: Option[JsObject]    = ZipBombBackendConfig.configSchema
+
+  override def callBackend(
+    ctx: NgbBackendCallContext,
+    delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+    env: Env,
+    ec: ExecutionContext,
+    mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config = ctx
+      .cachedConfig(internalName)(ZipBombBackendConfig.format)
+      .getOrElse(ZipBombBackendConfig())
+    val acceptEncoding = ctx.request.headers.getIgnoreCase("Accept-Encoding").getOrElse("")
+    val gzipAccepted = acceptEncoding.contains("gzip") || acceptEncoding == "*"
+    if (gzipAccepted) {
+      val json = ctx.json
+      val shouldTrigger = if (config.or) {
+        config.predicates.exists(_.validate(json))
+      } else {
+        config.predicates.forall(_.validate(json))
+      }
+      if (shouldTrigger) {
+        val zipPath = config.size.toLowerCase() match {
+          case "10m" => "/zips/10M.gz"
+          case "100m" => "/zips/100M.gz"
+          case "1g" => "/zips/1G.gz"
+          case "5g" => "/zips/5G.gz"
+          case _ => "/zips/10G.gz"
+        }
+        val bytes = ZipBombBackend.zipCache.getOrElseUpdate(zipPath, {
+          val zipFile = env.environment.resourceAsStream(zipPath).get
+          ByteString(zipFile.readAllBytes())
+        }).chunks(64 * 1024)
+        BackendCallResponse(NgPluginHttpResponse.fromResult(
+          Results.Status(config.status.getOrElse(200))
+            .streamed(bytes, None, config.contentType.getOrElse("text/html").some)
+            .withHeaders("Content-Encoding" -> "gzip")
+        ), None).rightf
+      } else {
+        delegates()
+      }
+    } else {
+      delegates()
     }
   }
 }

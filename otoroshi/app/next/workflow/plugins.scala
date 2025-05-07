@@ -143,8 +143,7 @@ class WorkflowBackend extends NgBackendCall {
 class WorkflowRequestTransformer extends NgRequestTransformer {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] =
-    Seq(NgPluginCategory.Custom("Workflow"), NgPluginCategory.Transformations)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Custom("Workflow"))
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
@@ -208,8 +207,7 @@ class WorkflowRequestTransformer extends NgRequestTransformer {
 class WorkflowResponseTransformer extends NgRequestTransformer {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory] =
-    Seq(NgPluginCategory.Custom("Workflow"), NgPluginCategory.Transformations)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Custom("Workflow"))
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
