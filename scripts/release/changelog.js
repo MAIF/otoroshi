@@ -57,6 +57,7 @@ function generateChangelog(version, last_version, milestone, dir) {
         "author": edge.node.author.login,
         "assignees": edge.node.assignees.edges.map(e => e.node.login),
         "labels":  edge.node.labels.edges.map(e => e.node.name),
+        "fixed_by": `fixed by ${edge.node.assignees.edges.map(e => `[${e.node.login}](https://github.com/${e.node.login})`).join(', ')}`
       }
     });
     issues.map(issue => issue.users.map(user => contributors.add(user)));
@@ -79,7 +80,7 @@ function generateChangelog(version, last_version, milestone, dir) {
     if (addedIssues.length > 0) {
       added = `### Added 
 
-${[...addedIssues].map(c => `- ${c.title} (#${c.number})`).join('\n')}       
+${[...addedIssues].map(c => `- ${c.title} (#${c.number} ${c.fixed_by})`).join('\n')}       
       `;
     }
 
@@ -87,7 +88,7 @@ ${[...addedIssues].map(c => `- ${c.title} (#${c.number})`).join('\n')}
     if (changedIssues.length > 0) {
       changed = `### Changed 
 
-${[...changedIssues].map(c => `- ${c.title} (#${c.number})`).join('\n')}       
+${[...changedIssues].map(c => `- ${c.title} (#${c.number} ${c.fixed_by})`).join('\n')}       
       `;
     }
 
@@ -95,7 +96,7 @@ ${[...changedIssues].map(c => `- ${c.title} (#${c.number})`).join('\n')}
     if (fixedIssues.length > 0) {
       fixed = `### Fixed 
 
-${[...fixedIssues].map(c => `- ${c.title} (#${c.number})`).join('\n')}       
+${[...fixedIssues].map(c => `- ${c.title} (#${c.number} ${c.fixed_by})`).join('\n')}       
       `;
     }
 
@@ -103,7 +104,7 @@ ${[...fixedIssues].map(c => `- ${c.title} (#${c.number})`).join('\n')}
     if (documentationIssues.length > 0) {
       docs = `### Documentation 
 
-${[...documentationIssues].map(c => `- ${c.title} (#${c.number})`).join('\n')}       
+${[...documentationIssues].map(c => `- ${c.title} (#${c.number} ${c.fixed_by})`).join('\n')}       
       `;
     }
 
