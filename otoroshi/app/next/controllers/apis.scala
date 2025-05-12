@@ -43,7 +43,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     )
 
     private def round(value: Double): Double = {
-      if (value == 0) {
+      if (value == 0 || value.toString == "Infinity") {
         0
       } else {
         (value * 100).round / 100.toDouble
@@ -393,11 +393,12 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
       (
         body.selectAsOptString("domain"),
         body.selectAsOptString("openapi"),
-        body.selectAsOptString("serverURL")
+        body.selectAsOptString("serverURL"),
+        body.selectAsOptString("root"),
       ) match {
-        case (Some(domain), Some(openapi), serverURL) =>
+        case (Some(domain), Some(openapi), serverURL, root) =>
           Api
-            .fromOpenApi(domain, openapi, serverURL)
+            .fromOpenApi(domain, openapi, serverURL, root)
             .map(service => Ok(service.json))
         case _                                        => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture
       }

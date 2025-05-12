@@ -15,13 +15,8 @@ import otoroshi.next.plugins._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.UrlSanitizer.sanitize
-import otoroshi.utils.syntax.implicits.{
-  BetterJsLookupResult,
-  BetterJsReadable,
-  BetterJsValue,
-  BetterJsValueReader,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits.{BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterJsValueReader, BetterMapOfStringAndB, BetterSyntax}
+import otoroshi.utils.yaml.Yaml
 import play.api.libs.json._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -967,18 +962,22 @@ case class Api(
 
 object Api {
 
-  def fromOpenApi(domain: String, openapi: String, serverURL: Option[String])(implicit
+  def fromOpenApi(domain: String, openapi: String, serverURL: Option[String], root: Option[String])(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Api] = {
-    val codef: Future[String] = if (openapi.startsWith("http://") || openapi.startsWith("https://")) {
-      env.Ws.url(openapi).get().map(_.body)
-    } else {
-      FastFuture.successful(openapi)
-    }
-    codef.map { code =>
-      val json        = Json.parse(code)
-      val name        = json.select("info").select("title").as[String]
+    val codef = env.Ws.url(openapi).get()
+
+    codef.map { response =>
+      val contentType: String = response.headers.getIgnoreCase("Content-Type").map(_.head).getOrElse("application/json")
+
+      val json = contentType match {
+        case "application/yaml" => Yaml.parseSafe(response.body).getOrElse(Json.obj())
+        case "text/yaml"        => Yaml.parseSafe(response.body).getOrElse(Json.obj())
+        case _ => Json.parse(response.body)
+      }
+
+      val name        = json.select("info").select("title").asOpt[String].getOrElse("unknown-name")
       val description = json.select("info").select("description").asOpt[String].getOrElse("")
       val version     = json.select("info").select("version").asOpt[String].getOrElse("")
       val targets     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { server =>
@@ -986,7 +985,7 @@ object Api {
         val serverUri = Uri(serverUrl)
 
         val serverDomain = serverUri.authority.host.toString()
-        val tls          = serverUri.scheme.toLowerCase().contains("https")
+        val tls          = if (openapi.startsWith("https")) { true } else { serverUri.scheme.toLowerCase().contains("https") }
         val port         = if (serverUri.authority.port == 0) (if (tls) 443 else 80) else serverUri.authority.port
         NgTarget(
           id = serverUrl,
@@ -1002,9 +1001,9 @@ object Api {
         name = s"${name}_backend",
         backend = NgBackend.empty.copy(
           targets = targets,
-          root = "/",
+          root = root.getOrElse("/"),
           rewrite = false,
-          loadBalancing = RoundRobin
+          loadBalancing = RoundRobin,
         )
       )
 
@@ -1045,6 +1044,7 @@ object Api {
         blueprint = ApiBlueprint.REST,
         state = ApiStaging,
         backends = Seq(backend),
+        flows = Seq(ApiFlows.empty(env)),
         consumers = Seq(
           ApiConsumer(
             id = "keyless",

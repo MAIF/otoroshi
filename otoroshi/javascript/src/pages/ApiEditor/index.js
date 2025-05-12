@@ -2072,6 +2072,10 @@ function OpenapiImport(props) {
       type: 'string',
       label: 'Server URL',
     },
+    root: {
+      type: 'string',
+      label: 'The root URL of the target service'
+    },
     action: {
       renderer: () => (
         <Row title="Server URL" className="col-sm-10 d-flex align-items-center">
@@ -2093,6 +2097,7 @@ function OpenapiImport(props) {
                     api.backends?.length > 0 && api.backends[0].backend.targets.length > 0
                       ? api.backends[0].backend.targets[0].hostname
                       : '',
+                  root: (api.backends?.length > 0 && api.backends[0].root) ? api.backends[0].root : ''
                 });
                 setAPI(api);
               });
@@ -2105,7 +2110,9 @@ function OpenapiImport(props) {
 
   let flow = ['openapi', 'domain', 'action'];
 
-  if (newAPI) flow = ['openapi', 'domain', 'serverURL'];
+  if (newAPI) {
+    flow = ['openapi', 'domain', 'serverURL', 'root'];
+  }
 
   return (
     <>
@@ -2420,7 +2427,7 @@ function FlowDesigner(props) {
         history={history}
         value={flow}
         setValue={(value) => setFlow({ value })}
-        setSaveButton={() => {}}
+        setSaveButton={() => { }}
       />
     </div>
   );
@@ -3300,14 +3307,14 @@ function RouteItem({ item, api, ports }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}
+        >
+          {m}
+        </span>
+      ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');
