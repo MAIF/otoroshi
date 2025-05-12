@@ -565,6 +565,12 @@ export class NewExporterForm extends Component {
   };
 
   render() {
+    const selectValue = Object.keys(possibleExporterConfigFormValues).map((key) =>
+      possibleExporterConfigFormValues[key].label
+        ? { label: possibleExporterConfigFormValues[key].label, value: key }
+        : { label: key, value: key }
+    );
+    selectValue.sort((a, b) => a.label.localeCompare(b.label))
     return (
       <>
         <Collapse initCollapsed={false} label="Location" lineEnd={true}>
@@ -595,11 +601,7 @@ export class NewExporterForm extends Component {
             placeholder="The type of exporter"
             value={this.data().type}
             onChange={(e) => this.updateType(e)}
-            possibleValues={Object.keys(possibleExporterConfigFormValues).map((key) =>
-              possibleExporterConfigFormValues[key].label
-                ? { label: possibleExporterConfigFormValues[key].label, value: key }
-                : { label: key, value: key }
-            )}
+            possibleValues={selectValue}
             help="The type of event exporter"
           />
           <BooleanInput
