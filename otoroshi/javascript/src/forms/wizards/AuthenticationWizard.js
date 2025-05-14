@@ -17,6 +17,7 @@ import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
 import { v4 as uuid } from 'uuid';
 import { FakeLoader } from './FakeLoader';
 import { AuthModuleConfig } from '../../components/AuthModuleConfig';
+import { SelectableButton } from '../../components/nginputs/SelectableButton';
 
 function WizardStepButton(props) {
   return (
@@ -74,7 +75,7 @@ function Header({ onClose, mode }) {
 function WizardActions({ nextStep, prevStep, step, goBack }) {
   return (
     <div className="d-flex mt-auto justify-content-between align-items-center">
-      <Button type="save" onClick={step !== 1 ? prevStep : goBack} text="Previous" />
+      <Button type="save" onClick={step !== 1 ? prevStep : goBack} text="Back" />
       <WizardStepButton className="ms-auto" onClick={nextStep} text="Continue" />
     </div>
   );
@@ -1312,33 +1313,6 @@ class User extends React.Component {
       </div>
     );
   }
-}
-
-function SelectableButton({ value, expected, title, desc, onChange }) {
-  return (
-    <Button
-      type={value === expected ? 'primaryColor' : 'quiet'}
-      className="py-3 d-flex align-items-center flex-column col-3"
-      style={{
-        gap: '12px',
-        minHeight: '325px',
-        maxWidth: '235px',
-      }}
-      onClick={() => onChange(value)}
-      key={value}
-    >
-      <div style={{ flex: 0.2 }}>
-        <h3 className="wizard-h3--small " style={{ margin: 0 }}>
-          {title}
-        </h3>
-      </div>
-      <div className="d-flex flex-column align-items-center" style={{ flex: 1 }}>
-        <span className="d-flex align-items-center" style={{ textAlign: 'left' }}>
-          {desc}
-        </span>
-      </div>
-    </Button>
-  );
 }
 
 function LdapConfiguration({ value, onChange }) {

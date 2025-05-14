@@ -716,10 +716,9 @@ object ApiConsumerStatus {
   }
 }
 
-case class ApiBackend(id: String, name: String, backend: NgBackend)
+case class ApiBackend(id: String, name: String, backend: NgBackend, client: String)
 
 object ApiBackend {
-
   def empty(implicit env: Env): ApiBackend = ApiBackend(
     IdGenerator.namedId("api_backend", env),
     name = "default_backend",
@@ -732,7 +731,8 @@ object ApiBackend {
           tls = true
         )
       )
-    )
+    ),
+    client = "default_client"
   )
 
   val _fmt: Format[ApiBackend] = new Format[ApiBackend] {
@@ -740,7 +740,8 @@ object ApiBackend {
       ApiBackend(
         id = json.select("id").asString,
         name = json.select("name").asString,
-        backend = json.select("backend").as(NgBackend.fmt)
+        backend = json.select("backend").as(NgBackend.fmt),
+        client = json.select("client").asOpt[String].getOrElse("default_client")
       )
     } match {
       case Failure(ex)    =>
@@ -753,18 +754,27 @@ object ApiBackend {
       Json.obj(
         "id"      -> o.id,
         "name"    -> o.name,
-        "backend" -> NgBackend.fmt.writes(o.backend)
+        "backend" -> NgBackend.fmt.writes(o.backend),
+        "client"  -> o.client
       )
     }
   }
 }
-case class ApiBackendClient(name: String, client: NgClientConfig)
+case class ApiBackendClient(id: String, name: String, client: NgClientConfig)
 
 object ApiBackendClient {
+
+  val defaultClient = ApiBackendClient(
+    id = "default_client",
+    name = "default_client",
+    client = NgClientConfig.default
+  )
+
   val _fmt: Format[ApiBackendClient] = new Format[ApiBackendClient] {
 
     override def reads(json: JsValue): JsResult[ApiBackendClient] = Try {
       ApiBackendClient(
+        id = json.select("id").asString,
         name = json.select("name").asString,
         client = json.select("client").as(NgClientConfig.format)
       )
@@ -776,8 +786,9 @@ object ApiBackendClient {
     }
 
     override def writes(o: ApiBackendClient): JsValue = Json.obj(
-      "name"   -> o.name,
-      "client" -> o.client.json
+      "id"      -> o.id,
+      "name"    -> o.name,
+      "client"  -> o.client.json
     )
   }
 }
@@ -865,14 +876,17 @@ case class Api(
             .map(draft => Api.format.reads(draft.content))
             .collect {
               case JsSuccess(api, _) if api.testing.enabled =>
-                api.copy(routes =
-                  api.routes.map(route =>
+                api.copy(
+                  backends = backends.map(backend => backend
+                    .copy(backend = backend.backend.copy(
+                      client = api.clients.find(_.id == backend.client).map(_.client).getOrElse(NgClientConfig.default)))),
+                  routes = api.routes.map(route =>
                     route.copy(
                       id = s"testing_route_${route.id}",
                       frontend = route.frontend
-                        .copy(headers = route.frontend.headers + (api.testing.headerKey -> api.testing.headerValue))
+                        .copy(headers = route.frontend.headers + (api.testing.headerKey -> api.testing.headerValue)),
                     )
-                  )
+                  ),
                 )
             }
 
@@ -915,14 +929,17 @@ case class Api(
   def routeToNgRoute(apiRoute: ApiRoute, optApi: Option[Api] = None)(implicit env: Env): Future[Option[NgRoute]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
+    val api = optApi.map(api => api).getOrElse(this)
+
     for {
       globalBackendEntity <- env.datastores.backendsDataStore.findById(apiRoute.backend)
-      apiBackend          <-
-        optApi.map(api => api).getOrElse(this).backends.find(_.id == apiRoute.backend).map(_.backend).vfuture
+      apiBackend          <- api.backends.find(_.id == apiRoute.backend).vfuture
     } yield {
       globalBackendEntity
         .map(_.backend)
-        .orElse(apiBackend)
+        .orElse(apiBackend.map(back =>
+          back.backend.copy(client = api.clients.find(_.id == back.client).map(_.client).getOrElse(NgClientConfig.default)))
+        )
         .map(backend =>
           NgRoute(
             location = location,
@@ -1004,7 +1021,8 @@ object Api {
           root = root.getOrElse("/"),
           rewrite = false,
           loadBalancing = RoundRobin,
-        )
+        ),
+        client = "default_client"
       )
 
       val routes: Seq[ApiRoute] = paths.value.toSeq.map { case (path, obj) =>
@@ -1203,8 +1221,7 @@ object Api {
       "routes"           -> o.routes.map(ApiRoute._fmt.writes),
       "backends"         -> o.backends.map(ApiBackend._fmt.writes),
       "flows"            -> o.flows.map(ApiFlows._fmt.writes),
-      // TODO - list of HTTP clients
-      "clients"          -> o.clients.map(ApiBackendClient._fmt.writes),
+      "clients"          -> (if (o.clients.isEmpty) { Seq(ApiBackendClient.defaultClient) } else o.clients).map(ApiBackendClient._fmt.writes),
       "documentation"    -> o.documentation.map(ApiDocumentation._fmt.writes),
       "consumers"        -> o.consumers.map(ApiConsumer._fmt.writes),
       "deployments"      -> o.deployments.map(ApiDeployment._fmt.writes),
@@ -1257,7 +1274,7 @@ object Api {
         clients = (json \ "clients")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiBackendClient._fmt.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq(ApiBackendClient.defaultClient)),
         documentation = (json \ "documentation")
           .asOpt[ApiDocumentation](ApiDocumentation._fmt.reads),
         consumers = (json \ "consumers")
@@ -1304,7 +1321,7 @@ trait ApiDataStore extends BasicStore[Api] {
       routes = Seq.empty,
       backends = Seq(ApiBackend.empty(env)),
       flows = Seq(ApiFlows.empty(env)),
-      clients = Seq.empty,
+      clients = Seq(ApiBackendClient.defaultClient),
       documentation = None,
       consumers = Seq.empty,
       deployments = Seq.empty,

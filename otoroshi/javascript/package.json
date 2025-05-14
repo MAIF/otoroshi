@@ -59,7 +59,7 @@
     "react-select": "^5.7.5",
     "react-sparklines": "1.7.0",
     "react-table": "6.11.4",
-    "react-tooltip": "5.28.0",
+    "react-tooltip": "5.28.1",
     "semver": "^7.7.1",
     "recharts": "^2.15.1",
     "set-value": "4.0.1",

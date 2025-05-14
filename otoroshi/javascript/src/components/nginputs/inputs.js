@@ -66,8 +66,8 @@ export class NgLocationRenderer extends Component {
           setBreadcrumb={this.props.setBreadcrumb} // TODO
           rawSchema={{
             label: 'Location',
-            collapsable: true,
-            collapsed: true,
+            collapsable: props.collapsed !== undefined ? props.collapsable : true,
+            collapsed: props.collapsed !== undefined ? props.collapsed : true,
           }}
         >
           {component}

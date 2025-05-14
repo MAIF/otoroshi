@@ -21,38 +21,38 @@ export default {
       collapsed: true,
       schema: {
         custom_timeouts: {
-          label: 'custom_timeouts',
+          label: 'Custom timeouts',
           type: 'array',
           array: true,
           format: 'form',
           schema: {
             connection_timeout: {
-              label: 'connection_timeout',
+              label: 'Connection timeout',
               type: 'number',
               help: explainations.CIRCUIT_BREAKER_CONNECTION_TIMEOUT,
             },
             call_and_stream_timeout: {
-              label: 'call_and_stream_timeout',
+              label: 'Call and stream timeout',
               type: 'number',
               help: explainations.CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
             },
             path: {
-              label: 'path',
+              label: 'Path',
               type: 'string',
               help: explainations.CIRCUIT_BREAKER_CUSTOM_TIMEOUT_PATH,
             },
             call_timeout: {
-              label: 'call_timeout',
+              label: 'Call timeout',
               type: 'number',
               help: explainations.CIRCUIT_BREAKER_CALL_TIMEOUT,
             },
             idle_timeout: {
-              label: 'idle_timeout',
+              label: 'Idle timeout',
               type: 'number',
               help: explainations.CIRCUIT_BREAKER_IDLE_TIMEOUT,
             },
             global_timeout: {
-              label: 'global_timeout',
+              label: 'Global timeout',
               type: 'number',
               help: explainations.CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
             },
@@ -76,38 +76,38 @@ export default {
           ],
         },
         global_timeout: {
-          label: 'global_timeout',
+          label: 'Global timeout',
           type: 'number',
           help: explainations.CIRCUIT_BREAKER_GLOBAL_TIMEOUT,
         },
         max_errors: {
-          label: 'max_errors',
+          label: 'Max errors',
           type: 'number',
           help: explainations.CIRCUIT_BREAKER_MAX_ERRORS,
         },
         retry_initial_delay: {
-          label: 'retry_initial_delay',
+          label: 'Retry initial delay',
           type: 'number',
           help: explainations.CIRCUIT_BREAKER_RETRY_INITIAL_DELAY,
         },
         backoff_factor: {
-          label: 'backoff_factor',
+          label: 'Backoff factor',
           type: 'number',
           help: explainations.CIRCUIT_BREAKER_BACKOFF_FACTOR,
         },
         cache_connection_settings: {
-          label: 'cache_connection_settings',
+          label: 'Cache connection settings',
           type: 'form',
           collapsable: true,
           collapsed: true,
           schema: {
             queue_size: {
-              label: 'queue_size',
+              label: 'Queue size',
               type: 'number',
               help: explainations.CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_QUEUE_SIZE,
             },
             enabled: {
-              label: 'enabled',
+              label: 'Enabled',
               type: 'box-bool',
               help: explainations.CIRCUIT_BREAKER_CACHE_CONNECTION_SETTINGS_ENABLED,
               props: {
@@ -118,32 +118,32 @@ export default {
           flow: ['queue_size', 'enabled'],
         },
         sample_interval: {
-          label: 'sample_interval',
+          label: 'Sample interval',
           type: 'number',
           help: explainations.CIRCUIT_BREAKER_SAMPLE_INTERVAL,
         },
         call_and_stream_timeout: {
-          label: 'call_and_stream_timeout',
+          label: 'Call and stream timeout',
           type: 'number',
           help: explainations.CIRCUIT_BREAKER_CALL_AND_STREAM_TIMEOUT,
         },
         retries: {
-          label: 'retries',
+          label: 'Retries',
           type: 'number',
           help: explainations.CIRCUIT_BREAKER_CLIENT_RETRIES,
         },
         proxy: {
-          label: 'proxy',
+          label: 'Proxy',
           type: 'form',
           collapsable: true,
           collapsed: true,
           schema: {
             host: {
-              label: 'host',
+              label: 'Host',
               type: 'string',
             },
             port: {
-              label: 'port',
+              label: 'Port',
               type: 'number',
             },
             protocol: {
@@ -154,23 +154,23 @@ export default {
               },
             },
             principal: {
-              label: 'principal',
+              label: 'Principal',
               type: 'string',
             },
             password: {
-              label: 'password',
+              label: 'Password',
               type: 'string',
             },
             ntlmDomain: {
-              label: 'ntlmDomain',
+              label: 'NtlmDomain',
               type: 'string',
             },
             encoding: {
-              label: 'encoding',
+              label: 'Encoding',
               type: 'string',
             },
             nonProxyHosts: {
-              label: 'nonProxyHosts',
+              label: 'Non Proxy Hosts',
               type: 'string',
             },
           },
@@ -186,17 +186,17 @@ export default {
           ],
         },
         call_timeout: {
-          label: 'call_timeout',
+          label: 'Call timeout',
           type: 'number',
           help: 'Specify how long each call should last at most in milliseconds.',
         },
         idle_timeout: {
-          label: 'idle_timeout',
+          label: 'Idle timeout',
           type: 'number',
           help: 'Specify how long each connection can stay in idle state at most in milliseconds.',
         },
         connection_timeout: {
-          label: 'connection_timeout',
+          label: 'Connection timeout',
           type: 'number',
           help: 'Specify how long each connection should last at most in milliseconds.',
         },
@@ -340,7 +340,7 @@ export default {
           },
         },
         hostname: {
-          label: 'hostname',
+          label: 'Hostname',
           type: 'string',
           help: 'Hostname for your service',
           props: {
@@ -348,7 +348,7 @@ export default {
           },
         },
         backup: {
-          label: 'backup',
+          label: 'Backup',
           type: 'bool',
           help: 'Tell if this target is a backup one (a secondary one). Backup targets are only used when all the primary targets have failed',
           props: {
@@ -364,21 +364,21 @@ export default {
           },
         },
         port: {
-          label: 'port',
+          label: 'Port',
           type: 'number',
           props: {
             defaultValue: 80,
           },
         },
         weight: {
-          label: 'weight',
+          label: 'Weight',
           type: 'number',
           props: {
             defaultValue: 1,
           },
         },
         tls: {
-          label: 'tls',
+          label: 'TLS',
           type: 'bool',
         },
         tls_config: {
@@ -388,7 +388,7 @@ export default {
           collapsed: true,
           schema: Object.entries({
             enabled: {
-              label: 'enabled',
+              label: 'Enabled',
               type: 'box-bool',
               props: {
                 description:
@@ -420,7 +420,7 @@ export default {
               },
             },
             loose: {
-              label: 'loose',
+              label: 'Loose',
               type: 'box-bool',
               props: {
                 description:
@@ -428,7 +428,7 @@ export default {
               },
             },
             trust_all: {
-              label: 'trust_all',
+              label: 'Trust all',
               type: 'box-bool',
               props: {
                 description: 'If enabled, Otoroshi will accept trust all certificates',
@@ -452,7 +452,7 @@ export default {
           flow: ['enabled', 'loose', 'trust_all', 'certs', 'trusted_certs'],
         },
         ip_address: {
-          label: 'ip_address',
+          label: 'IP address',
           type: 'string',
           help: 'The ip address of the target. Could be useful to perform manual DNS resolution. Only used with experimental client',
         },

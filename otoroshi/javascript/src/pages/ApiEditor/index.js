@@ -6,7 +6,7 @@ import { API_STATE } from './model';
 import Sidebar from './Sidebar';
 import { Link, Switch, Route, useParams, useHistory, useLocation } from 'react-router-dom';
 import { Uptime } from '../../components/Status';
-import { Form, Table } from '../../components/inputs';
+import { Table } from '../../components/inputs';
 import { v4 as uuid, v4 } from 'uuid';
 import Designer from '../RouteDesigner/Designer';
 import SimpleLoader from './SimpleLoader';
@@ -14,7 +14,7 @@ import { dynamicTitleContent } from '../../components/DynamicTitleSignal';
 import PageTitle from '../../components/PageTitle';
 import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import { fetchWrapperNext, nextClient, routePorts } from '../../services/BackOfficeServices';
-import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
+import { QueryClientProvider, useQuery } from 'react-query';
 import { Button } from '../../components/Button';
 import NgBackend from '../../forms/ng_plugins/NgBackend';
 import { NgDotsRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
@@ -126,6 +126,20 @@ export default function ApiEditor(props) {
             props={props}
           />
 
+          <RouteWithProps exact path="/apis/:apiId/http-client-settings" component={HttpClientSettings} props={props} />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/http-client-settings/new"
+            component={NewHttpClientSettings}
+            props={props}
+          />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/http-client-settings/:httpClientSettingsId/:action"
+            component={EditHttpClientSettings}
+            props={props}
+          />
+
           <RouteWithProps
             exact
             path="/apis/:apiId/deployments"
@@ -133,9 +147,7 @@ export default function ApiEditor(props) {
             props={props}
           />
           <RouteWithProps exact path="/apis/:apiId/testing" component={Testing} props={props} />
-
           <RouteWithProps exact path="/apis/:apiId/new" component={NewAPI} props={props} />
-
           <RouteWithProps path="/apis/:apiId/informations" component={Informations} props={props} />
           <RouteWithProps exact path="/apis" component={Apis} props={props} />
           <RouteWithProps path="/apis/:apiId" component={Dashboard} props={props} />
@@ -1428,7 +1440,7 @@ function Backends(props) {
       hideAddItemAction={true}
       itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/backends/${i.id}/edit`)}
       rawEditUrl={true}
-      hideEditButton={(item) => item.name === 'default_backend'}
+      // hideEditButton={(item) => item.name === 'default_backend'}
       injectTopBar={() => (
         <div className="btn-group input-group-btn">
           <Link
@@ -1510,14 +1522,35 @@ function NewBackend(props) {
                   label: 'Name',
                   type: 'string',
                   placeholder: 'New backend',
+                  disabled: backend?.name === 'default_backend'
+                },
+                client: {
+                  renderer: props => <Row title="HTTP client">
+                    <NgSelectRenderer
+                      id="client_select"
+                      value={props.rootValue.client}
+                      placeholder="Select an existing http client"
+                      label={' '}
+                      ngOptions={{ spread: true }}
+                      isClearable
+                      onChange={(client) => {
+                        props.rootOnChange({
+                          ...props.rootValue,
+                          client
+                        });
+                      }}
+                      options={item.clients}
+                      optionsTransformer={(arr) => arr.map((item) => ({ label: item.name, value: item.id }))}
+                    />
+                  </Row>
                 },
                 backend: {
                   type: 'form',
                   schema: NgBackend.schema,
-                  flow: NgBackend.flow,
+                  flow: NgBackend.flow.filter(f => f !== 'client'),
                 },
               },
-              flow: ['name', 'backend'],
+              flow: ['name', 'client', 'backend'],
               value: backend,
             },
           }}
@@ -1537,8 +1570,6 @@ function EditBackend(props) {
 
   const [backend, setBackend] = useState();
 
-  console.log(backend);
-
   useEffect(() => {
     if (item && !backend) {
       setBackend(item.backends.find((item) => item.id === params.backendId));
@@ -1553,6 +1584,267 @@ function EditBackend(props) {
         return item;
       }),
     }).then(() => historyPush(history, location, `/apis/${params.apiId}/backends`));
+  };
+
+  if (!item || !backend) return <SimpleLoader />;
+
+  return (
+    <>
+      <PageTitle title="Update Backend" {...props} style={{ paddingBottom: 0 }}>
+        <FeedbackButton
+          type="success"
+          className="ms-2 mb-1 d-flex align-items-center"
+          onPress={updateBackend}
+          text={
+            <>
+              Update <VersionBadge size="xs" />
+            </>
+          }
+        />
+      </PageTitle>
+
+      <div
+        style={{
+          maxWidth: MAX_WIDTH,
+          margin: 'auto',
+        }}
+      >
+        <BackendForm
+          state={{
+            form: {
+              schema: {
+                name: {
+                  label: 'Name',
+                  type: 'string',
+                  placeholder: 'New backend',
+                },
+                client: {
+                  renderer: props => <Row title="HTTP client">
+                    <NgSelectRenderer
+                      id="client_select"
+                      value={props.rootValue.client}
+                      placeholder="Select an existing http client"
+                      label={' '}
+                      ngOptions={{ spread: true }}
+                      isClearable
+                      onChange={(client) => {
+                        props.rootOnChange({
+                          ...props.rootValue,
+                          client
+                        });
+                      }}
+                      options={item.clients}
+                      optionsTransformer={(arr) => arr.map((item) => ({ label: item.name, value: item.id }))}
+                    />
+                  </Row>
+                },
+                backend: {
+                  type: 'form',
+                  schema: NgBackend.schema,
+                  flow: NgBackend.flow.filter(f => f !== 'client'),
+                },
+              },
+              flow: ['name', 'client', 'backend'],
+              value: backend,
+            },
+          }}
+          onChange={setBackend}
+        />
+      </div>
+    </>
+  );
+}
+
+// HTTP client settings
+function HttpClientSettings(props) {
+  const history = useHistory();
+  const params = useParams();
+  const location = useLocation();
+
+  const columns = [
+    {
+      title: 'Name',
+      filterId: 'name',
+      content: (item) => item.name,
+    },
+  ];
+
+  const { item, updateItem } = useDraftOfAPI();
+
+  useEffect(() => {
+    props.setTitle({
+      value: 'HTTP client settings',
+      noThumbtack: true,
+      children: <VersionBadge />,
+    });
+
+    return () => props.setTitle('');
+  }, []);
+
+  const client = nextClient.forEntityNext(nextClient.ENTITIES.BACKEND_CLIENTS);
+
+  const deleteItem = (newItem) =>
+    updateItem({
+      ...item,
+      clients: item.clients.filter((f) => f.id !== newItem.id),
+    });
+
+  if (!item) return <SimpleLoader />;
+
+  return (
+    <Table
+      parentProps={{ params }}
+      navigateTo={(item) =>
+        historyPush(history, location, `/apis/${params.apiId}/http-client-settings/${item.id}/edit`)
+      }
+      navigateOnEdit={(item) =>
+        historyPush(history, location, `/apis/${params.apiId}/http-client-settings/${item.id}/edit`)
+      }
+      selfUrl="http-client-settings"
+      defaultTitle="HTTP client settings"
+      itemName="HTTP client settings"
+      columns={columns}
+      deleteItem={deleteItem}
+      fetchTemplate={client.template}
+      fetchItems={() => Promise.resolve(item.clients || [])}
+      defaultSort="name"
+      defaultSortDesc="true"
+      showActions={true}
+      showLink={false}
+      extractKey={(item) => item.id}
+      rowNavigation={true}
+      hideAddItemAction={true}
+      itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/http-client-settings/${i.id}/edit`)}
+      rawEditUrl={true}
+      injectTopBar={() => (
+        <div className="btn-group input-group-btn">
+          <Link
+            className="btn btn-primary btn-sm"
+            to={{
+              pathname: 'http-client-settings/new',
+              search: location.search,
+            }}
+          >
+            <i className="fas fa-plus-circle" /> Create new HTTP client settings
+          </Link>
+          {props.injectTopBar}
+        </div>
+      )}
+    />
+  );
+}
+
+function NewHttpClientSettings(props) {
+  const params = useParams();
+  const history = useHistory();
+  const location = useLocation();
+
+  const [client, setClient] = useState();
+
+  const { item, updateItem } = useDraftOfAPI();
+
+  const saveBackend = () => {
+    return updateItem({
+      ...item,
+      clients: [...item.clients, client],
+    }).then(() => historyPush(history, location, `/apis/${params.apiId}/http-client-settings`));
+  };
+
+  useQuery(['getHttpClientSettingsTemplate'], () => fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${params.apiId}/http-client-settings/_template`, {
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json()), {
+    retry: 0,
+    onSuccess: client =>
+      setClient({
+        id: v4(),
+        name: 'My new HTTP client settings',
+        client,
+      }),
+  });
+
+  if (!client || !item) return <SimpleLoader />;
+
+  return (
+    <>
+      <PageTitle title="New HTTP client settings" {...props} style={{ paddingBottom: 0 }}>
+        <FeedbackButton
+          type="success"
+          className="ms-2 mb-1 d-flex align-items-center"
+          onPress={saveBackend}
+          text={
+            <>
+              Create <VersionBadge size="xs" />
+            </>
+          }
+        />
+      </PageTitle>
+
+      <div
+        style={{
+          maxWidth: MAX_WIDTH,
+          margin: 'auto',
+        }}
+      >
+        <BackendForm
+          state={{
+            form: {
+              schema: {
+                id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
+                name: {
+                  label: 'Name',
+                  type: 'string',
+                  placeholder: 'New HTTP client settings',
+                },
+                client: {
+                  ...NgBackend.schema.client,
+                  collapsable: false,
+                  collapsed: false
+                },
+              },
+              flow: [
+                {
+                  type: 'group',
+                  name: 'Informations',
+                  collapsable: false,
+                  fields: ['name'],
+                },
+                'client'],
+              value: client,
+            },
+          }}
+          onChange={setClient}
+        />
+      </div>
+    </>
+  );
+}
+
+function EditHttpClientSettings(props) {
+  const params = useParams();
+  const history = useHistory();
+  const location = useLocation();
+
+  const { item, updateItem } = useDraftOfAPI();
+
+  const [client, setClient] = useState();
+
+  useEffect(() => {
+    if (item && !client) {
+      setClient(item.clients.find((item) => item.id === params.httpClientSettingsId));
+    }
+  }, [item]);
+
+  const updateBackend = () => {
+    return updateItem({
+      ...item,
+      clients: item.clients.map((item) => {
+        if (item.id === client.id) return client;
+        return item;
+      }),
+    }).then(() => historyPush(history, location, `/apis/${params.apiId}/http-client-settings`));
   };
 
   if (!item) return <SimpleLoader />;
@@ -1585,24 +1877,34 @@ function EditBackend(props) {
                 name: {
                   label: 'Name',
                   type: 'string',
-                  placeholder: 'New backend',
+                  placeholder: 'New HTTP client settings',
+                  disabled: client?.name === 'default_client'
                 },
-                backend: {
-                  type: 'form',
-                  schema: NgBackend.schema,
-                  flow: NgBackend.flow,
+                client: {
+                  ...NgBackend.schema.client,
+                  collapsable: false,
+                  collapsed: false
                 },
               },
-              flow: ['name', 'backend'],
-              value: backend,
-            },
+              flow: [
+                {
+                  type: 'group',
+                  name: 'Informations',
+                  collapsable: false,
+                  fields: ['name'],
+                },
+                'client'
+              ],
+              value: client,
+            }
           }}
-          onChange={setBackend}
+          onChange={setClient}
         />
       </div>
     </>
   );
 }
+/* HTTP client settings */
 
 function TestingConfiguration(props) {
   return (
@@ -2047,17 +2349,9 @@ function NewFlow(props) {
   );
 }
 
-function OpenapiImport(props) {
-  const [state, setState] = useState({
-    openapi: 'https://petstore3.swagger.io/api/v3/openapi.json',
-    domain: 'petstore.oto.tools',
-    serverURL: undefined,
-    step: 0,
-  });
-
-  const [newAPI, setAPI] = useState();
-
-  // 'https://petstore3.swagger.io/api/v3/'
+function OpenAPILoader(props) {
+  const history = useHistory();
+  const location = useLocation();
 
   const schema = {
     openapi: {
@@ -2080,26 +2374,25 @@ function OpenapiImport(props) {
       renderer: () => (
         <Row title="Server URL" className="col-sm-10 d-flex align-items-center">
           <Button
-            type="success"
+            type="primaryColor"
             className="btn-sm"
             text="Read file"
             onClick={() => {
               fetchWrapperNext(
                 `/${nextClient.ENTITIES.APIS}/_openapi`,
                 'POST',
-                state,
+                props.value,
                 'apis.otoroshi.io'
               ).then((api) => {
-                console.log(api);
-                setState({
-                  ...state,
+                props.setValue({
+                  ...props.value,
                   serverURL:
                     api.backends?.length > 0 && api.backends[0].backend.targets.length > 0
                       ? api.backends[0].backend.targets[0].hostname
                       : '',
-                  root: (api.backends?.length > 0 && api.backends[0].root) ? api.backends[0].root : ''
+                  root: (api.backends?.length > 0 && api.backends[0].root) ? api.backends[0].root : '',
+                  api
                 });
-                setAPI(api);
               });
             }}
           />
@@ -2110,79 +2403,11 @@ function OpenapiImport(props) {
 
   let flow = ['openapi', 'domain', 'action'];
 
-  if (newAPI) {
+  if (props.value.serverURL) {
     flow = ['openapi', 'domain', 'serverURL', 'root'];
   }
 
-  return (
-    <>
-      <div className="modal-body">
-        <NgForm value={state} flow={flow} onChange={setState} schema={schema} />
-      </div>
-      <div className="modal-footer">
-        <button
-          type="button"
-          className="btn btn-danger"
-          onClick={(e) => {
-            e.stopPropagation();
-            props.cancel(e);
-          }}
-        >
-          Close
-        </button>
-        {newAPI && state.serverURL?.length > 0 && (
-          <button
-            type="button"
-            className="btn btn-success"
-            onClick={(e) => {
-              e.stopPropagation();
-              props.ok(state);
-            }}
-          >
-            Ok
-          </button>
-        )}
-      </div>
-    </>
-  );
-}
-
-function OpenAPILoader() {
-  const history = useHistory();
-  const location = useLocation();
-
-  const importOpenApiModalResponse = (content) => {
-    fetchWrapperNext(
-      `/${nextClient.ENTITIES.APIS}/_openapi`,
-      'POST',
-      content,
-      'apis.otoroshi.io'
-    ).then((api) => {
-      nextClient
-        .forEntityNext(nextClient.ENTITIES.APIS)
-        .create(api)
-        .then(() => historyPush(history, location, `/apis/${api.id}`));
-    });
-  };
-
-  return (
-    <Row title="OpenAPI">
-      <Button
-        type="success"
-        className="btn-sm d-flex"
-        text="Load openapi"
-        onClick={() => {
-          return window
-            .popup(
-              'Import routes from openapi',
-              (ok, cancel) => <OpenapiImport ok={ok} cancel={cancel} />,
-              { __style: { width: '100%' } }
-            )
-            .then(importOpenApiModalResponse);
-        }}
-      />
-    </Row>
-  );
+  return <NgForm value={props.value} flow={flow} onChange={props.setValue} schema={schema} />
 }
 
 function NewAPI(props) {
@@ -2199,21 +2424,37 @@ function NewAPI(props) {
     return () => props.setTitle(undefined);
   }, []);
 
-  const [value, setValue] = useState({});
+  const [value, setValue] = useState();
 
-  useQuery(['getTemplate'], nextClient.forEntityNext(nextClient.ENTITIES.APIS).template, {
-    retry: 0,
-    onSuccess: (data) =>
+  const [step, setStep] = useState(0)
+  const [choice, setChoice] = useState()
+
+  useEffect(() => {
+    if (choice === 'fromScratch') {
+      nextClient.forEntityNext(nextClient.ENTITIES.APIS).template()
+        .then((data) =>
+          setValue({
+            ...data,
+            id: params.apiId,
+          }))
+    } else {
       setValue({
-        ...data,
-        id: params.apiId,
-      }),
-  });
+        openapi: 'https://petstore3.swagger.io/api/v3/openapi.json',
+        domain: 'petstore.oto.tools',
+        serverURL: undefined,
+        step: 0,
+        api: undefined
+      })
+    }
+  }, [choice])
 
   const schema = {
     location: {
       type: 'location',
-      props: {},
+      props: {
+        collapsed: false,
+        collapsable: false
+      },
     },
     id: { type: 'string', disabled: true, props: { label: 'id', placeholder: '---' } },
     name: {
@@ -2225,35 +2466,113 @@ function NewAPI(props) {
       props: { label: 'Description' },
     },
     openapi: {
-      renderer: OpenAPILoader,
+      renderer: _ => <OpenAPILoader value={value} setValue={setValue} />,
     },
+    picker: {
+      renderer: _ => {
+        return <div className='d-flex flex-column align-items-center'>
+          <h3 className='mt-3'>Which method do you want to explore first ?</h3>
+          <span className='mb-3'>Please choose one for now</span>
+          <div className="d-flex flex-column gap-2" style={{ flexWrap: 'wrap' }}>
+            {[
+              {
+                type: 'fromScratch',
+                title: 'Build from Scratch',
+                desc: 'Design your API manually without using an OpenAPI specification',
+              },
+              {
+                type: 'openapi',
+                title: 'Import OpenAPI',
+                desc: 'Provide your OpenAPI definition to generate the API automatically',
+              }
+            ].map(({ type, desc, title }) => (
+              <Button
+                className='d-flex align-items-center gap-3'
+                style={{
+                  color: 'var(--text)'
+                }}
+                onClick={() => setChoice(type)}
+                type={type === choice ? "primaryColor" : 'secondary'}
+              >
+                <div className='d-flex flex-column align-items-start'>
+                  <p className='m-0' style={{ fontWeight: 'bold' }}>{title}</p>
+                  {desc}
+                </div>
+                {type === choice ? <div style={{
+                  borderRadius: '50%',
+                  border: '1px solid var(--text)',
+                  width: '1.5rem',
+                  height: '1.5rem',
+                  fontSize: '.75rem'
+                }} className='d-flex align-items-center justify-content-center'>
+                  <i className='fa fa-check' />
+                </div> : <div style={{ width: '1.5rem' }} />}
+              </Button>
+            ))}
+            <Button
+              className='ms-auto'
+              type={choice ? "primaryColor" : 'secondary'}
+              disabled={!choice}
+              onClick={() => {
+                setStep(1)
+              }} >
+              Continue
+            </Button>
+          </div>
+        </div>
+      }
+    }
   };
 
-  const flow = [
+  const flow = step === 0 ? ['picker'] : [
     'location',
-    {
+    choice === 'openapi' ? {
+      type: 'group',
+      name: 'OpenAPI',
+      collapsable: false,
+      fields: ['openapi'],
+    } : {
       type: 'group',
       name: 'Informations',
       collapsable: false,
-      fields: ['id', 'name', 'description', 'openapi'],
+      fields: ['id', 'name', 'description'],
     },
   ];
 
   const createApi = () => {
-    nextClient
-      .forEntityNext(nextClient.ENTITIES.APIS)
-      .create(value)
-      .then(() => historyPush(history, location, `/apis/${value.id}`));
+    if (choice === 'fromScratch') {
+      nextClient
+        .forEntityNext(nextClient.ENTITIES.APIS)
+        .create(value)
+        .then(() => historyPush(history, location, `/apis/${value.id}`));
+    } else {
+      fetchWrapperNext(
+        `/${nextClient.ENTITIES.APIS}/_openapi`,
+        'POST',
+        value,
+        'apis.otoroshi.io'
+      ).then((api) => {
+        nextClient
+          .forEntityNext(nextClient.ENTITIES.APIS)
+          .create(api)
+          .then(() => historyPush(history, location, `/apis/${api.id}`));
+      });
+    }
   };
 
   if (!value) return <SimpleLoader />;
 
-  return (
-    <>
-      <NgForm schema={schema} flow={flow} value={value} onChange={setValue} />
-      <Button type="success" className="btn-sm ms-auto d-flex" onClick={createApi} text="Create" />
-    </>
-  );
+  return <div className="mx-auto" style={{ maxWidth: 820 }}>
+    <NgForm schema={schema} flow={flow} value={value} onChange={setValue} />
+    {step === 1 && <div className='d-flex justify-content-between align-items-center'>
+      <Button type="quiet" onClick={() => {
+        setStep(0)
+      }}>
+        <i className='fa fa-chevron-left me-2' />Back
+      </Button>
+      <Button type="primaryColor" className="btn-sm d-flex" onClick={createApi} text="Create" />
+    </div>}
+  </div>
 }
 
 function Apis(props) {
@@ -2533,7 +2852,7 @@ function Flows(props) {
       hideAddItemAction={true}
       itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/flows/${i.id}`)}
       rawEditUrl={true}
-      hideEditButton={(item) => item.name == 'default_flow'}
+      // hideEditButton={(item) => item.name == 'default_flow'}
       injectTopBar={() => (
         <div className="btn-group input-group-btn">
           <Link

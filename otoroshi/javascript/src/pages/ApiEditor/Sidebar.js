@@ -1,9 +1,8 @@
 import React, { useContext } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 import { SidebarContext } from '../../apps/BackOfficeApp';
-import { NgSelectRenderer } from '../../components/nginputs';
-import Select, { components } from 'react-select';
+import Select from 'react-select';
 import { signalVersion } from './VersionSignal';
 import { useSignalValue } from 'signals-react-safe';
 
@@ -36,6 +35,13 @@ const LINKS = (id) =>
       title: 'Backends',
       tab: 'backends',
       tooltip: { ...createTooltip(`Show backends tab`) },
+    },
+    {
+      to: `/apis/${id}/http-client-settings`,
+      icon: 'fa-gamepad',
+      title: 'HTTP client settings',
+      tab: 'http-client-settings',
+      tooltip: { ...createTooltip(`Show http client settings tab`) },
     },
     {
       to: `/apis/${id}/flows`,
@@ -216,9 +222,8 @@ export default (props) => {
                     search: location.search,
                   }}
                   {...(tooltip || {})}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                    openedSidebar ? 'ms-3' : ''
-                  } m-0 ${isActive(tab)}`}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                    } m-0 ${isActive(tab)}`}
                 >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className={`fas ${icon}`} />

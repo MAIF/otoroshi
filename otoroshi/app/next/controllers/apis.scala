@@ -7,7 +7,7 @@ import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
-import otoroshi.next.models.NgRoute
+import otoroshi.next.models.{NgClientConfig, NgRoute}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
@@ -315,6 +315,10 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         updateConsumerStatus(apiId, consumerId, ApiConsumerStatus.Closed)
       }
     }
+  }
+
+  def getHttpClientSettings(apiId: String) = ApiAction.async { _ =>
+    Ok(NgClientConfig.default.json).future
   }
 
   def createNewVersion(apiId: String) = {
