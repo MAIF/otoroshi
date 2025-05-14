@@ -42,6 +42,7 @@ import { ApiKeyStatsPage } from '../pages/ApiKeyStatsPage';
 import { TcpServicesPage } from '../pages/TcpServicesPage';
 import { ProvidersDashboardPage } from '../pages/ProvidersDashboardPage';
 import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
+import { TesterPage } from '../pages/TesterPage';
 import RouteDesignerPage from '../pages/RouteDesigner';
 import ApiEditorPage from '../pages/ApiEditor';
 import { BackendsPage } from '../pages/BackendsPage';
@@ -376,9 +377,8 @@ class BackOfficeAppContainer extends Component {
                 id="sidebar"
               >
                 <i
-                  className={`fas fa-chevron-${
-                    this.state.openedSidebar ? 'left' : 'right'
-                  } sidebar-toggle`}
+                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'
+                    } sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(
@@ -889,6 +889,10 @@ class BackOfficeAppContainer extends Component {
                       <Route
                         path="/resources-loader"
                         component={(props) => this.decorate(ResourceLoaderPage, props)}
+                      />
+                      <Route
+                        path="/tester"
+                        component={(props) => this.decorate(TesterPage, props)}
                       />
                       <Route
                         path="/validation-authorities/:taction/:titem"

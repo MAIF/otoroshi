@@ -24,11 +24,10 @@ const CONTENT_TYPE = ['text', 'javascript', 'json', 'html', 'xml'];
 const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(3);
 const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
 
-export default function ({ route, hide }) {
+export default function ({ route }) {
   const [selectedTab, setSelectedTab] = useState('Headers');
   const [selectedResponseTab, setSelectedResponseTab] = useState('Body');
   const [headersStatus, setHeadersStatus] = useState('down');
-  const { pathname } = useLocation();
 
   const [search, setSearch] = useState('');
   const [unit, setUnit] = useState('ms');
@@ -36,7 +35,6 @@ export default function ({ route, hide }) {
   const [flow, setFlow] = useState('all');
 
   const [lastQuery, setLastQuery] = useState();
-  const [testingRouteHistory, setTestingRouteHistory] = useState();
 
   const [request, updateRequest] = useState({
     path: '/',
