@@ -36,7 +36,7 @@ function createDraft(newDraft) {
   return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).create(newDraft);
 }
 
-function updateSignalFromQuery(response, entityId) {
+function updateSignalFromQuery(response, entityId, queryVersion) {
   if (!response.error) {
     draftSignal.value = {
       draft: response.content,
@@ -57,31 +57,31 @@ function updateSignalFromQuery(response, entityId) {
       entityId,
     };
   }
+
+  draftVersionSignal.value = {
+    ...draftVersionSignal.value,
+    version: queryVersion
+  }
 }
 
 function DraftEditor({ entityId, value, className = '' }) {
-  const versionContext = useSignalValue(draftVersionSignal);
-  const draftContext = useSignalValue(draftSignal);
+  const versionContext = useSignalValue(draftVersionSignal)
+  const draftContext = useSignalValue(draftSignal)
 
-  // const queryParams = new URLSearchParams(window.location.search);
-  // const queryVersion = queryParams.get('version')
+  const queryParams = new URLSearchParams(window.location.search)
+  const queryVersion = queryParams.get('version')
 
-  // useEffect(() => {
-  //   if (queryVersion) {
-  //     updateQueryParams(queryVersion);
-  //     updateSignal(queryVersion);
-  //   }
-  // }, [queryVersion]);
+  useEffect(() => {
+    if (queryVersion) {
+      updateQueryParams(queryVersion)
+    }
+  }, [queryVersion])
 
-  // const updateSignal = (version) => {
-  //   draftVersionSignal.value = version;
-  // };
-
-  // const updateQueryParams = (version) => {
-  //   const queryParams = new URLSearchParams(window.location.search);
-  //   queryParams.set('version', version);
-  //   history.replaceState(null, null, '?' + queryParams.toString());
-  // };
+  const updateQueryParams = (version) => {
+    const queryParams = new URLSearchParams(window.location.search)
+    queryParams.set('version', version)
+    history.replaceState(null, null, '?' + queryParams.toString())
+  };
 
   const query = useQuery(['findDraftById', entityId], () => findDraftByEntityId(entityId), {
     retry: 0,
@@ -99,21 +99,21 @@ function DraftEditor({ entityId, value, className = '' }) {
                   name: entityId,
                   content: value,
                 })
-                updateSignalFromQuery(template, entityId)
+                updateSignalFromQuery(template, entityId, queryVersion)
               })
           })
       } else {
-        updateSignalFromQuery(data, entityId)
+        updateSignalFromQuery(data, entityId, queryVersion)
       }
     },
-  });
+  })
 
   const hasDraft = draftContext.draft;
 
   const templateQuery = useQuery(['getTemplate', hasDraft], getTemplate, {
     retry: 0,
     enabled: !query.isLoading && !hasDraft,
-  });
+  })
 
   const mutation = useMutation(createDraft, {
     onSuccess: (data) => {
@@ -128,7 +128,7 @@ function DraftEditor({ entityId, value, className = '' }) {
   });
 
   const onVersionChange = (newVersion) => {
-    // updateQueryParams(newVersion)
+    updateQueryParams(newVersion)
     if (!hasDraft) {
       mutation.mutate({
         ...templateQuery.data,
@@ -170,34 +170,34 @@ export const DraftStateDaemon = withRouter(
   class _ extends React.Component {
     state = {
       initialized: false,
-    };
+    }
 
     componentDidMount() {
-      resetDraftSignal(this.props);
+      resetDraftSignal(this.props)
 
-      if (this.props.updateEntityURL) this.props.updateEntityURL();
+      if (this.props.updateEntityURL) this.props.updateEntityURL()
 
       this.unsubscribe = draftVersionSignal.subscribe(() => {
-        const { value, setValue } = this.props;
+        const { value, setValue } = this.props
 
         if (draftSignal.value.draft && value) {
           if (draftVersionSignal.value.version === 'draft') {
-            entityContentSignal.value = value;
+            entityContentSignal.value = value
 
-            setValue(draftSignal.value.draft);
+            setValue(draftSignal.value.draft)
           } else {
             if (this.state.initialized) {
               draftSignal.value = {
                 ...draftSignal.value,
                 draft: value,
-              };
-              setValue(entityContentSignal.value ? entityContentSignal.value : value);
+              }
+              setValue(entityContentSignal.value ? entityContentSignal.value : value)
             } else {
-              this.setState({ initialized: true });
+              this.setState({ initialized: true })
             }
           }
         }
-      });
+      })
     }
 
     componentDidUpdate(prevProps) {
@@ -213,7 +213,6 @@ export const DraftStateDaemon = withRouter(
       }
 
       if (prevProps.history.location.pathname !== this.props.history.location.pathname) {
-        console.log('[DraftStateDaemon] : componentDidUpdate');
         resetDraftSignal(this.props);
       }
     }

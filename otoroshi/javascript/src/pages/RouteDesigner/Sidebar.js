@@ -65,6 +65,8 @@ const LINKS = (route) =>
 
 export default ({ route }) => {
   const location = useLocation();
+  const { search } = useLocation();
+
   const { openedSidebar } = useContext(SidebarContext);
 
   const currentTab = location.pathname.split('/').slice(-1)[0];
@@ -81,6 +83,7 @@ export default ({ route }) => {
   };
 
   if (location.pathname.endsWith('/new')) return null;
+
 
   return (
     <div
@@ -103,14 +106,16 @@ export default ({ route }) => {
           </Link>
         </li>
         {openedSidebar && <p className="sidebar-title">Route</p>}
-        {LINKS(route).map(({ to, icon, title, tooltip, tab }) => (
-          <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
+        {LINKS(route).map(({ to, icon, title, tooltip, tab }) => {
+          const queryParams = new URLSearchParams(window.location.search)
+          const queryVersion = queryParams.get('version')
+
+          return <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
             <Link
-              to={to}
+              to={to.includes("?") ? `${to}&version=${queryVersion}` : `${to}?version=${queryVersion}`}
               {...(tooltip || {})}
-              className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                openedSidebar ? 'ms-3' : ''
-              } m-0 ${isActive(tab)}`}
+              className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                } m-0 ${isActive(tab)}`}
             >
               <div style={{ width: '20px' }} className="d-flex justify-content-center">
                 <i className={`fas ${icon}`} />
@@ -118,21 +123,23 @@ export default ({ route }) => {
               <div className="title"> {openedSidebar ? title : ''}</div>
             </Link>
           </li>
-        ))}
+        })}
 
         {openedSidebar && <p className="sidebar-title mt-3">Extensions</p>}
         {Otoroshi.extensions()
           .flatMap((ext) => ext.routeDesignerTabs || [])
           .map((item) => {
-            const to = `/routes/${route.id}?tab=${item.id}`;
+            const queryParams = new URLSearchParams(window.location.search)
+            const queryVersion = queryParams.get('version')
+
+            const to = `/routes/${route.id}?tab=${item.id}&version=${queryVersion}`;
             const tab = ''; // todo
             return (
               <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={item.id}>
                 <Link
                   to={to}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                    openedSidebar ? 'ms-3' : ''
-                  } m-0 ${isActive(tab)}`}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                    } m-0 ${isActive(tab)}`}
                 >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className={`fas ${item.icon}`} />

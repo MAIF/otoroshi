@@ -7,12 +7,27 @@ import { RouteForm } from './form';
 import { Button } from '../../components/Button';
 import { ENTITIES, FormSelector } from '../../components/FormSelector';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
+import { draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
+import { useSignalValue } from 'signals-react-safe';
 
 const capitalize = 'Route';
 const lowercase = 'route';
 const fetchName = 'ROUTES';
 const link = 'routes';
 const entityName = 'route';
+
+function SaveButton({ saveRoute, isCreation, entityName }) {
+  const draftContext = useSignalValue(draftVersionSignal);
+
+  if (draftContext.version === 'draft') return null;
+
+  return <FeedbackButton
+    type="success"
+    className="ms-2 mb-1"
+    onPress={saveRoute}
+    text={isCreation ? `Create ${entityName}` : `Save`}
+  />
+}
 
 export const Informations = forwardRef(
   ({ isCreation, value, setValue, setSaveButton, routeId, ...props }, ref) => {
@@ -27,14 +42,7 @@ export const Informations = forwardRef(
     }));
 
     useEffect(() => {
-      setSaveButton(
-        <FeedbackButton
-          type="success"
-          className="ms-2 mb-1"
-          onPress={saveRoute}
-          text={isCreation ? `Create ${entityName}` : `Save`}
-        />
-      );
+      setSaveButton(<SaveButton saveRoute={saveRoute} isCreation={isCreation} entityName={entityName} />);
     }, [value]);
 
     function saveRoute(customValue) {
