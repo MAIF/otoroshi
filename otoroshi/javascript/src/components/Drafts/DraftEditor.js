@@ -86,7 +86,26 @@ function DraftEditor({ entityId, value, className = '' }) {
   const query = useQuery(['findDraftById', entityId], () => findDraftByEntityId(entityId), {
     retry: 0,
     enabled: !draftContext.draft && !versionContext.notFound,
-    onSuccess: (data) => updateSignalFromQuery(data, entityId),
+    onSuccess: (data) => {
+      if (data.id?.startsWith("route_") && data.consumers && data.deployments) {
+        nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).deleteById(data.id)
+          .then(() => {
+            getTemplate()
+              .then(template => {
+                mutation.mutate({
+                  template,
+                  kind: entityId.split('_')[0],
+                  id: entityId,
+                  name: entityId,
+                  content: value,
+                })
+                updateSignalFromQuery(template, entityId)
+              })
+          })
+      } else {
+        updateSignalFromQuery(data, entityId)
+      }
+    },
   });
 
   const hasDraft = draftContext.draft;

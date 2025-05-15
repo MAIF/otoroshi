@@ -180,7 +180,7 @@ function useDraftOfAPI() {
   );
 
   useQuery(
-    ['findDraftById', params.apiId, version],
+    ['findDraftsById', params.apiId, version],
     () => nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).findById(params.apiId),
     {
       retry: 0,
