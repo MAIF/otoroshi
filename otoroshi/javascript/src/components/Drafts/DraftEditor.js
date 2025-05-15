@@ -63,6 +63,26 @@ function DraftEditor({ entityId, value, className = '' }) {
   const versionContext = useSignalValue(draftVersionSignal);
   const draftContext = useSignalValue(draftSignal);
 
+  // const queryParams = new URLSearchParams(window.location.search);
+  // const queryVersion = queryParams.get('version')
+
+  // useEffect(() => {
+  //   if (queryVersion) {
+  //     updateQueryParams(queryVersion);
+  //     updateSignal(queryVersion);
+  //   }
+  // }, [queryVersion]);
+
+  // const updateSignal = (version) => {
+  //   draftVersionSignal.value = version;
+  // };
+
+  // const updateQueryParams = (version) => {
+  //   const queryParams = new URLSearchParams(window.location.search);
+  //   queryParams.set('version', version);
+  //   history.replaceState(null, null, '?' + queryParams.toString());
+  // };
+
   const query = useQuery(['findDraftById', entityId], () => findDraftByEntityId(entityId), {
     retry: 0,
     enabled: !draftContext.draft && !versionContext.notFound,
@@ -89,10 +109,11 @@ function DraftEditor({ entityId, value, className = '' }) {
   });
 
   const onVersionChange = (newVersion) => {
+    // updateQueryParams(newVersion)
     if (!hasDraft) {
       mutation.mutate({
         ...templateQuery.data,
-        kind: entityId.split('_')[1],
+        kind: entityId.split('_')[0],
         id: entityId,
         name: entityId,
         content: value,
