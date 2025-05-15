@@ -180,7 +180,7 @@ function useDraftOfAPI() {
   );
 
   useQuery(
-    ['findDraftById', params.apiId, version],
+    ['findDraftsById', params.apiId, version],
     () => nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).findById(params.apiId),
     {
       retry: 0,
@@ -200,7 +200,7 @@ function useDraftOfAPI() {
 
             const newDraft = {
               ...template,
-              kind: apiTemplate.id.split('_')[1],
+              kind: apiTemplate.id.split('_')[0],
               id: params.apiId,
               name: apiTemplate.name,
               content: draftApi,
