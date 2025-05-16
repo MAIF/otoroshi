@@ -8,7 +8,6 @@ import {
   routeEntries,
 } from '../../services/BackOfficeServices';
 import { firstLetterUppercase } from '../../util';
-import { useLocation } from 'react-router-dom';
 
 import { Provider } from 'react-redux';
 import { Playground, store, getSettings, setSettingsString } from 'graphql-playground-react';
@@ -24,7 +23,7 @@ const CONTENT_TYPE = ['text', 'javascript', 'json', 'html', 'xml'];
 const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(3);
 const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
 
-export default function ({ route }) {
+export default function ({ route, hideTitle }) {
   const [selectedTab, setSelectedTab] = useState('Headers');
   const [selectedResponseTab, setSelectedResponseTab] = useState('Body');
   const [headersStatus, setHeadersStatus] = useState('down');
@@ -309,7 +308,7 @@ export default function ({ route }) {
   return (
     <div className="graphql-form flex-column" style={{ overflowX: 'hidden' }}>
       <div className="d-flex-between m-2 mb-0">
-        <h3>{route.name}</h3>
+        {!hideTitle && <h3>{route.name}</h3>}
         {route &&
           route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
             <PillButton

@@ -42,7 +42,7 @@ import { ApiKeyStatsPage } from '../pages/ApiKeyStatsPage';
 import { TcpServicesPage } from '../pages/TcpServicesPage';
 import { ProvidersDashboardPage } from '../pages/ProvidersDashboardPage';
 import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
-import { TesterPage } from '../pages/TesterPage';
+import TesterPage from '../pages/TesterPage';
 import RouteDesignerPage from '../pages/RouteDesigner';
 import ApiEditorPage from '../pages/ApiEditor';
 import { BackendsPage } from '../pages/BackendsPage';

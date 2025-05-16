@@ -34,6 +34,7 @@ GET     /bo/dashboard/*ui                                     otoroshi.controlle
 GET     /bo/api/lines/:lineId/:serviceId/docframe             otoroshi.controllers.BackOfficeController.documentationFrame(lineId, serviceId)
 GET     /bo/api/lines/:lineId/:serviceId/docdesc              otoroshi.controllers.BackOfficeController.documentationFrameDescriptor(lineId, serviceId)
 POST    /bo/api/search/services                               otoroshi.controllers.BackOfficeController.searchServicesApi()
+POST    /bo/api/search/next/services                          otoroshi.controllers.BackOfficeController.searchNextServicesApi()
 GET     /bo/api/version                                       otoroshi.controllers.BackOfficeController.version()
 GET     /bo/api/metrics                                       otoroshi.controllers.HealthController.backofficeMetrics()
 GET     /bo/api/env                                           otoroshi.controllers.BackOfficeController.getEnv()
@@ -615,6 +616,7 @@ GET     /apis/proxy.otoroshi.io/v1/drafts/:id/live             otoroshi.next.con
 GET     /apis/apis.otoroshi.io/v1/apis/:id/live                otoroshi.next.controllers.adminapi.ApisController.liveStats(id, every: Option[Int])
 GET     /apis/apis.otoroshi.io/v1/apis/:id/_start              otoroshi.next.controllers.adminapi.ApisController.start(id)
 GET     /apis/apis.otoroshi.io/v1/apis/:id/_stop               otoroshi.next.controllers.adminapi.ApisController.stop(id)
+GET     /apis/apis.otoroshi.io/v1/apis/:id/routes/:routeId     otoroshi.next.controllers.adminapi.ApisController.getRoute(id, routeId)
 
 POST    /apis/apis.otoroshi.io/v1/apis/_openapi                                           otoroshi.next.controllers.adminapi.ApisController.fromOpenapi()
 GET     /apis/apis.otoroshi.io/v1/apis/:apiId/http-client-settings/_template              otoroshi.next.controllers.adminapi.ApisController.getHttpClientSettings(apiId)

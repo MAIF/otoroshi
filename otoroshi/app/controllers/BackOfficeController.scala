@@ -768,6 +768,49 @@ class BackOfficeController(
     def theTags: Seq[String]             = Seq.empty
   }
 
+  def searchNextServicesApi() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    val query                            = (ctx.request.body \ "query").asOpt[String].getOrElse("--").toLowerCase()
+    Audit.send(
+      BackOfficeEvent(
+        env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        ctx.user,
+        "SERVICESEARCH",
+        "user searched for a route or an api",
+        ctx.from,
+        ctx.ua,
+        Json.obj(
+          "query" -> query
+        )
+      )
+    )
+    val fu: Future[Seq[SearchedService]] =
+      for {
+        routes     <- env.datastores.routeDataStore.findAll()
+        apis       <- env.datastores.apiDataStore.findAll()
+      } yield {
+        val finalServices = routes.map(s =>
+              SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), "route", "route", s.location)
+            ) ++
+            apis.map(s => SearchedService(s.name, s.id, "default", "api", "api", s.location))
+        finalServices
+      }
+    fu.map { services =>
+      val filtered = services.filter(ctx.canUserRead).filter { service =>
+        service.id.toLowerCase() == query || service.name.toLowerCase().contains(query) || service.env
+          .toLowerCase()
+          .contains(query)
+      }
+      Ok(
+        JsArray(
+          filtered
+            .sortBy(r => r.name.trim().toLowerCase())
+            .map(s => Json.obj("groupId" -> s.groupId, "serviceId" -> s.id, "name" -> s.name, "env" -> s.env, "type" -> s.typ))
+        )
+      )
+    }
+  }
+
   def searchServicesApi() =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       val query                            = (ctx.request.body \ "query").asOpt[String].getOrElse("--").toLowerCase()

@@ -1238,7 +1238,7 @@ export class NgSelectRenderer extends Component {
               IndicatorSeparator: () => null,
               ...components,
             }}
-            styles={{
+            styles={props.styles || {
               control: (baseStyles) => ({
                 ...baseStyles,
                 border: '1px solid var(--bg-color_level3)',
