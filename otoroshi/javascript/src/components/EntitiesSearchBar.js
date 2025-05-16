@@ -29,7 +29,8 @@ export function EntitiesSearchBar({ value, setValue }) {
         placeholder="Type to search routes and apis"
         loadOptions={debouncedLoadOptions}
         defaultOptions
-        onChange={i => i.action()}
+        onChange={i => i?.action()}
+        isClearable
         styles={{
             control: (baseStyles, state) => ({
                 ...baseStyles,

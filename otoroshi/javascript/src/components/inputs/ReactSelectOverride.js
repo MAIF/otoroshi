@@ -150,6 +150,7 @@ export class ReactSelectOverride extends React.Component {
             ...baseStyles,
             display: 'flex',
           }),
+          ...(this.props.styles || {})
         }}
       />
     );

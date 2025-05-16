@@ -13,6 +13,7 @@ import { Provider } from 'react-redux';
 import { Playground, store, getSettings, setSettingsString } from 'graphql-playground-react';
 import { NgCodeRenderer, NgSelectRenderer } from '../../components/nginputs';
 import { PillButton } from '../../components/PillButton';
+import { Row } from '../../components/Row';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
@@ -84,10 +85,10 @@ export default function ({ route, hideTitle }) {
 
       setTesterView(
         route &&
-          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
-          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
-          playgroundUrl &&
-          lastQuery
+        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
+        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
+        playgroundUrl &&
+        lastQuery
       );
     }
   }, [route]);
@@ -131,7 +132,7 @@ export default function ({ route, hideTitle }) {
       if (storedData && r) {
         setRequest(r);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const saveTestingRouteHistory = (request) => {
@@ -285,28 +286,28 @@ export default function ({ route, hideTitle }) {
       ),
       ...(format === 'basic'
         ? {
-            'authorization-header': {
-              key: apikeyHeader || request.apikeyHeader,
-              value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-            },
-          }
+          'authorization-header': {
+            key: apikeyHeader || request.apikeyHeader,
+            value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+          },
+        }
         : {
-            'Otoroshi-Client-Id': {
-              key: 'Otoroshi-Client-Id',
-              value: clientId,
-            },
-            'Otoroshi-Client-Secret': {
-              key: 'Otoroshi-Client-Secret',
-              value: clientSecret,
-            },
-          }),
+          'Otoroshi-Client-Id': {
+            key: 'Otoroshi-Client-Id',
+            value: clientId,
+          },
+          'Otoroshi-Client-Secret': {
+            key: 'Otoroshi-Client-Secret',
+            value: clientSecret,
+          },
+        }),
     };
   };
 
   const receivedResponse = rawResponse && response;
 
   return (
-    <div className="graphql-form flex-column" style={{ overflowX: 'hidden' }}>
+    <div className="graphql-form flex-column tryIt" style={{ overflowX: 'hidden' }}>
       <div className="d-flex-between m-2 mb-0">
         {!hideTitle && <h3>{route.name}</h3>}
         {route &&
@@ -354,15 +355,9 @@ export default function ({ route, hideTitle }) {
           </Provider>
         </div>
       ) : (
-        <div
-          className="sub-container"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
+        <div className='d-flex flex-column'>
           <div className="d-flex">
-            <div style={{ minWidth: '200px' }}>
+            <div style={{ minWidth: '8rem' }}>
               <NgSelectRenderer
                 options={METHODS}
                 value={request.method}
@@ -373,289 +368,307 @@ export default function ({ route, hideTitle }) {
                 optionsTransformer={(arr) =>
                   (arr || []).map((item) => ({ value: item, label: item }))
                 }
+                styles={{
+                  control: (baseStyles, _) => {
+                    return {
+                      ...baseStyles,
+                      border: '1px solid var(--bg-color_level3)',
+                      color: 'var(--text)',
+                      backgroundColor: 'var(--bg-color_level2)',
+                      boxShadow: 'none',
+                      borderRadius: 0
+                    }
+                  }
+                }}
               />
             </div>
             <input
               type="text"
-              className="form-control mx-2"
+              className="form-control"
+              style={{
+                borderRadius: 0,
+                border: '1px solid var(--bg-color_level3)',
+                borderRight: 0,
+                borderLeft: 0
+              }}
               placeholder="Enter request URL"
               value={request.path}
               onChange={(e) => setRequest({ ...request, path: e.target.value })}
             />
-            <button className="btn btn-primaryColor" onClick={send}>
+            <button className="btn btn-primaryColor" onClick={send} style={{
+              borderRadius: 0,
+            }}>
               Send
             </button>
           </div>
-          <div
-            style={{
-              height: headersStatus === 'down' ? '400px' : 'initial',
-              flexDirection: 'column',
-              overflowY: 'hidden',
-              paddingBottom: headersStatus === 'down' ? '120px' : 0,
-            }}
-          >
-            <div className="d-flex-between mt-3">
-              <div className="d-flex">
-                {[
-                  { label: 'Authorization', value: 'Authorization' },
-                  {
-                    label: 'Headers',
-                    value: `Headers (${Object.keys(request.headers || {}).length})`,
-                  },
-                  { label: 'Body', value: 'Body' },
-                ].map(({ label, value }) => (
-                  <button
-                    onClick={() => {
-                      setHeadersStatus('down');
-                      setSelectedTab(label);
-                    }}
-                    className="pb-2 me-3"
-                    style={{
-                      padding: 0,
-                      border: 0,
-                      borderBottom: selectedTab === label ? '2px solid #f9b000' : 'transparent',
-                      background: 'none',
-                    }}
-                  >
-                    {value}
-                  </button>
-                ))}
-              </div>
-              <i
+          <div className='border-l border-r'>
+            <div
+              style={{
+                height: headersStatus === 'down' ? '400px' : 'initial',
+                flexDirection: 'column',
+                overflowY: 'hidden',
+                paddingBottom: headersStatus === 'down' ? '120px' : 0,
+              }}
+            >
+              <div className="d-flex-between">
+                <div className="d-flex" style={{ minHeight: 30 }}>
+                  {[
+                    { label: 'Authorization', value: 'Authorization' },
+                    {
+                      label: 'Headers',
+                      value: `Headers (${Object.keys(request.headers || {}).length})`,
+                    },
+                    { label: 'Body', value: 'Body' },
+                  ].map(({ label, value }, i) => (
+                    <button
+                      onClick={() => {
+                        setHeadersStatus('down');
+                        setSelectedTab(label);
+                      }}
+                      className="p-2 px-3"
+                      style={{
+                        padding: 0,
+                        border: 'none',
+                        borderRight: i === 1 ? '1px solid var(--bg-color_level3)' : 0,
+                        borderLeft: i === 1 ? '1px solid var(--bg-color_level3)' : 0,
+                        boxShadow: selectedTab === label ? '0 1px 0 0 var(--bg-color_level1)' : 'none',
+                        background: 'none',
+                      }}
+                    >
+                      {value}
+                      {/* <i
                 className={`tab fas fa-chevron-${headersStatus === 'up' ? 'down' : 'up'}`}
                 onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')}
-              />
-            </div>
-            {selectedTab === 'Authorization' && headersStatus === 'down' && (
-              <div className="d-flex">
-                <div className="mt-3 flex">
-                  <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
-                    <BooleanInput
-                      flex={true}
-                      label="Use an apikey"
-                      value={request.useApikey}
-                      onChange={() =>
-                        setRequest({
-                          ...request,
-                          useApikey: !request.useApikey,
-                          headers: apikeyToHeader(),
-                        })
-                      }
-                    />
-                  </div>
-                  {request.useApikey && (
-                    <div className="flex">
-                      <div className="d-flex-between">
-                        <div className="flex mt-2">
-                          <NgSelectRenderer
-                            value={request.apikey}
-                            onChange={(k) => {
-                              setRequest({
-                                ...request,
-                                apikey: k,
-                                headers: apikeyToHeader(
-                                  request.apikeyFormat,
-                                  apikeys.find((a) => a.clientId === k)
-                                ),
-                              });
-                            }}
-                            ngOptions={{
-                              spread: true,
-                            }}
-                            options={apikeys}
-                            optionsTransformer={(arr) =>
-                              arr.map((item) => ({
-                                value: item.clientId,
-                                label: item.clientName,
-                              }))
-                            }
-                          />
-                        </div>
-                      </div>
-                      {request.apikey && (
-                        <div className="pt-3 mt-3" style={{ borderTop: '2px solid #494849' }}>
-                          <div className="d-flex-between">
-                            <span className="me-3">Apikey format</span>
-                            <div className="flex">
-                              <NgSelectRenderer
-                                options={[
-                                  { value: 'basic', label: 'Basic header' },
-                                  {
-                                    value: 'credentials',
-                                    label: 'Client ID/Secret headers',
-                                  },
-                                ]}
-                                ngOptions={{
-                                  spread: true,
-                                }}
-                                value={request.apikeyFormat}
-                                onChange={(k) =>
-                                  setRequest({
-                                    ...request,
-                                    apikeyFormat: k,
-                                    headers: apikeyToHeader(k),
-                                  })
-                                }
-                              />
-                            </div>
-                          </div>
-                          {request.apikeyFormat === 'basic' && (
-                            <div className="d-flex-between mt-3">
-                              <span className="flex">Add to header</span>
-                              <input
-                                type="text"
-                                className="form-control flex"
-                                onChange={(e) => {
-                                  setRequest({
-                                    ...request,
-                                    apikeyHeader: e.target.value,
-                                    headers: apikeyToHeader(
-                                      request.apikeyFormat,
-                                      undefined,
-                                      e.target.value
-                                    ),
-                                  });
-                                }}
-                                value={request.apikeyHeader}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="mt-3 ms-3 flex">
-                  <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
-                    <BooleanInput
-                      flex={true}
-                      label="Use a certificate client"
-                      value={request.useCertificate}
-                      onChange={() =>
-                        setRequest({
-                          ...request,
-                          useCertificate: !request.useCertificate,
-                        })
-                      }
-                    />
-                  </div>
-                  {request.useCertificate && (
-                    <div className="flex mt-2">
-                      <div className="d-flex-between">
-                        <div className="flex">
-                          <NgSelectRenderer
-                            ngOptions={{
-                              spread: true,
-                            }}
-                            options={certificates}
-                            value={request.client_cert}
-                            onChange={(client_cert) =>
-                              setRequest({
-                                ...request,
-                                client_cert,
-                              })
-                            }
-                            optionsTransformer={(arr) =>
-                              arr.map((item) => ({
-                                value: item.id,
-                                label: item.name,
-                              }))
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
+              /> */}
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
-            {selectedTab === 'Headers' && headersStatus === 'down' && (
-              <Headers
-                headers={request.headers}
-                onKeyChange={(id, v) => {
-                  const updatedRequest = {
-                    ...request,
-                    headers: {
-                      ...request.headers,
-                      [id]: { key: v, value: request.headers[id].value },
-                    },
-                  };
-                  let item = {};
-                  if (
-                    Object.values(updatedRequest.headers).every(
-                      (r) => r.key.length > 0 || r.value.length > 0
+              {selectedTab === 'Authorization' && headersStatus === 'down' && (
+                <div className="border">
+                  <Row title="Apikey" containerClassName='py-2 border-b m-0'>
+                    {/* <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
+                      <BooleanInput
+                        flex={true}
+                        label="Use an apikey"
+                        value={request.useApikey}
+                        onChange={() =>
+                          setRequest({
+                            ...request,
+                            useApikey: !request.useApikey,
+                            headers: apikeyToHeader(),
+                          })
+                        }
+                      />
+                    </div> */}
+                    {/* {request.useApikey && ( */}
+                    <NgSelectRenderer
+                      value={request.apikey}
+                      isClearable
+                      onChange={(k) => {
+                        setRequest({
+                          ...request,
+                          apikey: k,
+                          headers: apikeyToHeader(
+                            request.apikeyFormat,
+                            apikeys.find((a) => a.clientId === k)
+                          ),
+                        });
+                      }}
+                      ngOptions={{
+                        spread: true,
+                      }}
+                      options={apikeys}
+                      optionsTransformer={(arr) =>
+                        arr.map((item) => ({
+                          value: item.clientId,
+                          label: item.clientName,
+                        }))
+                      }
+                    />
+                    {request.apikey && (
+                      <div className="pt-3 mt-3" style={{ borderTop: '2px solid #494849' }}>
+                        <div className="d-flex-between">
+                          <span className="me-3">Apikey format</span>
+                          <div className="flex">
+                            <NgSelectRenderer
+                              options={[
+                                { value: 'basic', label: 'Basic header' },
+                                {
+                                  value: 'credentials',
+                                  label: 'Client ID/Secret headers',
+                                },
+                              ]}
+                              ngOptions={{
+                                spread: true,
+                              }}
+                              value={request.apikeyFormat}
+                              onChange={(k) =>
+                                setRequest({
+                                  ...request,
+                                  apikeyFormat: k,
+                                  headers: apikeyToHeader(k),
+                                })
+                              }
+                            />
+                          </div>
+                        </div>
+                        {request.apikeyFormat === 'basic' && (
+                          <div className="d-flex-between mt-3">
+                            <span className="flex">Add to header</span>
+                            <input
+                              type="text"
+                              className="form-control flex"
+                              onChange={(e) => {
+                                setRequest({
+                                  ...request,
+                                  apikeyHeader: e.target.value,
+                                  headers: apikeyToHeader(
+                                    request.apikeyFormat,
+                                    undefined,
+                                    e.target.value
+                                  ),
+                                });
+                              }}
+                              value={request.apikeyHeader}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Row>
+                  <Row title="Certificate client" containerClassName='py-2'>
+                    <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
+                      <BooleanInput
+                        flex={true}
+                        label="Use a certificate client"
+                        value={request.useCertificate}
+                        onChange={() =>
+                          setRequest({
+                            ...request,
+                            useCertificate: !request.useCertificate,
+                          })
+                        }
+                      />
+                    </div>
+                    {request.useCertificate && (
+                      <div className="flex mt-2">
+                        <div className="d-flex-between">
+                          <div className="flex">
+                            <NgSelectRenderer
+                              ngOptions={{
+                                spread: true,
+                              }}
+                              options={certificates}
+                              value={request.client_cert}
+                              onChange={(client_cert) =>
+                                setRequest({
+                                  ...request,
+                                  client_cert,
+                                })
+                              }
+                              optionsTransformer={(arr) =>
+                                arr.map((item) => ({
+                                  value: item.id,
+                                  label: item.name,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </Row>
+                </div>
+              )}
+              {selectedTab === 'Headers' && headersStatus === 'down' && (
+                <Headers
+                  headers={request.headers}
+                  onKeyChange={(id, v) => {
+                    const updatedRequest = {
+                      ...request,
+                      headers: {
+                        ...request.headers,
+                        [id]: { key: v, value: request.headers[id].value },
+                      },
+                    };
+                    let item = {};
+                    if (
+                      Object.values(updatedRequest.headers).every(
+                        (r) => r.key.length > 0 || r.value.length > 0
+                      )
                     )
-                  )
-                    item = { [Date.now()]: { key: '', value: '' } };
+                      item = { [Date.now()]: { key: '', value: '' } };
 
-                  setRequest({
-                    ...updatedRequest,
-                    headers: { ...updatedRequest.headers, ...item },
-                  });
-                }}
-                onValueChange={(id, v) => {
-                  const updatedRequest = {
-                    ...request,
-                    headers: {
-                      ...request.headers,
-                      [id]: { key: request.headers[id].key, value: v },
-                    },
-                  };
+                    setRequest({
+                      ...updatedRequest,
+                      headers: { ...updatedRequest.headers, ...item },
+                    });
+                  }}
+                  onValueChange={(id, v) => {
+                    const updatedRequest = {
+                      ...request,
+                      headers: {
+                        ...request.headers,
+                        [id]: { key: request.headers[id].key, value: v },
+                      },
+                    };
 
-                  let item = {};
-                  if (
-                    Object.values(updatedRequest.headers).every(
-                      (r) => r.key.length > 0 || r.value.length > 0
+                    let item = {};
+                    if (
+                      Object.values(updatedRequest.headers).every(
+                        (r) => r.key.length > 0 || r.value.length > 0
+                      )
                     )
-                  )
-                    item = { [Date.now()]: { key: '', value: '' } };
+                      item = { [Date.now()]: { key: '', value: '' } };
 
-                  setRequest({
-                    ...updatedRequest,
-                    headers: { ...updatedRequest.headers, ...item },
-                  });
-                }}
-              />
-            )}
-            {selectedTab === 'Body' && headersStatus === 'down' && (
-              <div className="mt-3" style={{ overflow: 'hidden' }}>
-                <BooleanInput
-                  label="Use a body"
-                  value={request.body === 'raw' ? true : false}
-                  onChange={() => {
-                    const enabled = request.body === 'raw';
-                    if (enabled) setRequest({ ...request, body: undefined });
-                    else
-                      setRequest({
-                        ...request,
-                        body: 'raw',
-                        contentType: 'json',
-                      });
+                    setRequest({
+                      ...updatedRequest,
+                      headers: { ...updatedRequest.headers, ...item },
+                    });
                   }}
                 />
-                {request.body === 'raw' && (
-                  <>
-                    <NgSelectRenderer
-                      label="Type of content"
-                      options={CONTENT_TYPE}
-                      value={request.contentType}
-                      onChange={(contentType) => setRequest({ ...request, contentType })}
-                      optionsTransformer={(arr) =>
-                        arr.map((item) => ({ value: item, label: item }))
-                      }
-                    />
-                    <Suspense fallback={<div>Loading ...</div>}>
-                      <CodeInput
-                        label="Content"
-                        value={request.bodyContent}
-                        mode={request.contentType}
-                        onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+              )}
+              {selectedTab === 'Body' && headersStatus === 'down' && (
+                <div className="mt-3" style={{ overflow: 'hidden' }}>
+                  <BooleanInput
+                    label="Use a body"
+                    value={request.body === 'raw' ? true : false}
+                    onChange={() => {
+                      const enabled = request.body === 'raw';
+                      if (enabled) setRequest({ ...request, body: undefined });
+                      else
+                        setRequest({
+                          ...request,
+                          body: 'raw',
+                          contentType: 'json',
+                        });
+                    }}
+                  />
+                  {request.body === 'raw' && (
+                    <>
+                      <NgSelectRenderer
+                        label="Type of content"
+                        options={CONTENT_TYPE}
+                        value={request.contentType}
+                        onChange={(contentType) => setRequest({ ...request, contentType })}
+                        optionsTransformer={(arr) =>
+                          arr.map((item) => ({ value: item, label: item }))
+                        }
                       />
-                    </Suspense>
-                  </>
-                )}
-              </div>
-            )}
+                      <Suspense fallback={<div>Loading ...</div>}>
+                        <CodeInput
+                          label="Content"
+                          value={request.bodyContent}
+                          mode={request.contentType}
+                          onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+                        />
+                      </Suspense>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           {receivedResponse && (
             <div className="d-flex flex-row-center mt-3">
@@ -745,7 +758,7 @@ export default function ({ route, hideTitle }) {
                     },
                   }}
                   value={responseBody}
-                  onChange={() => {}}
+                  onChange={() => { }}
                 />
               )}
             </div>
@@ -779,7 +792,8 @@ export default function ({ route, hideTitle }) {
             )
           ) : null}
         </div>
-      )}
+      )
+      }
     </div>
   );
 }
@@ -808,9 +822,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-        [...(step?.ctx?.plugins || [])].find((plugin) =>
-          search.length <= 0 ? true : plugin.name.includes(search)
-        );
+      [...(step?.ctx?.plugins || [])].find((plugin) =>
+        search.length <= 0 ? true : plugin.name.includes(search)
+      );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
@@ -840,8 +854,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                  .filter(isPluginNameMatchingSearch)
-                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                .filter(isPluginNameMatchingSearch)
+                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -915,9 +929,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
             setSelectedStep(-1);
             setSelectedPlugin(-1);
           }}
-          className={`d-flex-between mt-1 px-3 py-2 report-step ${
-            selectedStep === -1 && selectedPlugin === -1 ? 'btn-primary' : ''
-          }`}
+          className={`d-flex-between mt-1 px-3 py-2 report-step ${selectedStep === -1 && selectedPlugin === -1 ? 'btn-primary' : ''
+            }`}
         >
           <span>Report</span>
           <span>
@@ -940,16 +953,14 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                     setSelectedPlugin(-1);
                     setSelectedStep(step.task);
                   }}
-                  className={`d-flex-between mt-1 px-3 py-2 report-step btn-dark ${
-                    step.task === selectedStep && selectedPlugin === -1 ? 'btn-primary' : ''
-                  }`}
+                  className={`d-flex-between mt-1 px-3 py-2 report-step btn-dark ${step.task === selectedStep && selectedPlugin === -1 ? 'btn-primary' : ''
+                    }`}
                 >
                   <div className="d-flex align-items-center">
                     {displaySubList && (
                       <i
-                        className={`fas fa-chevron-${
-                          step.open || flow === 'user' ? 'down' : 'right'
-                        } me-1`}
+                        className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
+                          } me-1`}
                         onClick={() =>
                           setSteps(
                             steps.map((s) =>
@@ -995,11 +1006,10 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                             setSelectedStep(step.task);
                             setSelectedPlugin(plugin.name);
                           }}
-                          className={`d-flex-between mt-1 px-3 py-2 report-step ${
-                            step.task === selectedStep && plugin.name === selectedPlugin
-                              ? 'btn-primary'
-                              : ''
-                          }`}
+                          className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep && plugin.name === selectedPlugin
+                            ? 'btn-primary'
+                            : ''
+                            }`}
                         >
                           <span>{firstLetterUppercase(pluginName)}</span>
                           <span style={{ maxWidth: '100px', textAlign: 'right' }}>
@@ -1032,7 +1042,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
             mode: 'json',
           },
         }}
-        onChange={() => {}}
+        onChange={() => { }}
         value={
           JSON.stringify(
             selectedPlugin === -1
@@ -1040,8 +1050,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                 ? informations
                 : steps.find((t) => t.task === selectedStep)
               : steps
-                  .find((t) => t.task === selectedStep)
-                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+                .find((t) => t.task === selectedStep)
+                ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
             null,
             4
           ) +
