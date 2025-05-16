@@ -2,6 +2,8 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 import { SidebarContext } from '../../apps/BackOfficeApp';
+import { useSignalValue } from 'signals-react-safe';
+import { draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
 
 const LINKS = (route) =>
   [
@@ -65,7 +67,7 @@ const LINKS = (route) =>
 
 export default ({ route }) => {
   const location = useLocation();
-  const { search } = useLocation();
+  const draft = useSignalValue(draftVersionSignal)
 
   const { openedSidebar } = useContext(SidebarContext);
 
@@ -107,12 +109,9 @@ export default ({ route }) => {
         </li>
         {openedSidebar && <p className="sidebar-title">Route</p>}
         {LINKS(route).map(({ to, icon, title, tooltip, tab }) => {
-          const queryParams = new URLSearchParams(window.location.search)
-          const queryVersion = queryParams.get('version')
-
           return <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
             <Link
-              to={to.includes("?") ? `${to}&version=${queryVersion}` : `${to}?version=${queryVersion}`}
+              to={to.includes("?") ? `${to}&version=${draft.version}` : `${to}?version=${draft.version}`}
               {...(tooltip || {})}
               className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
                 } m-0 ${isActive(tab)}`}
@@ -129,10 +128,7 @@ export default ({ route }) => {
         {Otoroshi.extensions()
           .flatMap((ext) => ext.routeDesignerTabs || [])
           .map((item) => {
-            const queryParams = new URLSearchParams(window.location.search)
-            const queryVersion = queryParams.get('version')
-
-            const to = `/routes/${route.id}?tab=${item.id}&version=${queryVersion}`;
+            const to = `/routes/${route.id}?tab=${item.id}&version=${draft.version}`;
             const tab = ''; // todo
             return (
               <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={item.id}>

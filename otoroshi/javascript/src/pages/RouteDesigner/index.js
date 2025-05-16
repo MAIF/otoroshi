@@ -118,7 +118,7 @@ function ManagerTitle({
       }
       {...props}
     >
-      <div
+      {!pathname.includes('routes/new') && <div
         style={{
           position: 'absolute',
           left: 0,
@@ -129,7 +129,7 @@ function ManagerTitle({
         }}
       >
         <DraftEditorContainer entityId={value.id} value={value} />
-      </div>
+      </div>}
 
       <Dropdown className="mb-1">
         {!isCreation && (location.state?.routeFromService ? tab.tab === 'Informations' : true) && (
@@ -137,7 +137,7 @@ function ManagerTitle({
         )}
       </Dropdown>
       {saveButton}
-      <PublisDraftButton className="ms-2 mb-1" />
+      {!pathname.includes('routes/new') && <PublisDraftButton className="ms-2 mb-1" />}
     </PageTitle>
   );
 }

@@ -255,7 +255,7 @@ export function PublisDraftButton(props) {
     }
   }, [pathname]);
 
-  if (publish.version === 'published') return null;
+  if (publish.version !== 'draft') return null;
 
   return (
     <Button
@@ -275,7 +275,6 @@ export function PublisDraftButton(props) {
           })
           .then((ok) => {
             if (ok) {
-              console.log(updateEntityURLSignal);
               if (updateEntityURLSignal && typeof updateEntityURLSignal.value === 'function') {
                 try {
                   updateEntityURLSignal.value().then(() => window.location.reload());
