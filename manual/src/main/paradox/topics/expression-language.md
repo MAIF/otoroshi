@@ -30,9 +30,15 @@ It is possible to combine optional values (that are expression) in only one expr
 ${<expr_1> || <expr_2> || <expr_3> || <expr_n> :: <default_value>}
 ```
 
-of course you can ommit the `:: <default_value>` part if you don't want one. If neither expression is defined, you will end with the `bad-expr` value.
+of course you can ommit the `:: <default_value>` part if you don't want one. 
 
-for example if you're looking for a value that can be located either in headers, cookies and query params of the request you can write something like:
+```
+${<expr_1> || <expr_2> || <expr_3> || <expr_n>}
+```
+
+If neither expression is defined, you will end with the `bad-expr` value.
+
+For example if you're looking for a value that can be located either in headers, cookies and query params of the request you can write something like:
 
 ```
 ${req.headers.foo || req.query.foo || req.cookies.foo :: no-foo}
