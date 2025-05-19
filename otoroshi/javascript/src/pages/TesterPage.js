@@ -40,8 +40,6 @@ function TesterPage() {
     }
   )
 
-  console.log(route)
-
   return <>
     <Row title="Entity">
       <EntitiesSearchBar value={entityId} setValue={newEntityId => {
