@@ -164,7 +164,7 @@ case class SwitchNode(json: JsObject) extends Node {
 
 case class IfThenElseNode(json: JsObject) extends Node {
   override def run(
-    wfr: WorkflowRun
+      wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val pass = WorkflowOperator.processOperators(json.select("if").asValue, wfr, env).asOptBoolean.getOrElse(false)
     if (pass) {
@@ -174,7 +174,7 @@ case class IfThenElseNode(json: JsObject) extends Node {
       }
     } else {
       json.select("else").asOpt[JsObject] match {
-        case None => JsNull.rightf
+        case None           => JsNull.rightf
         case Some(nodeJson) => {
           val node = Node.from(nodeJson)
           node.internalRun(wfr).recover { case t: Throwable =>
@@ -188,34 +188,37 @@ case class IfThenElseNode(json: JsObject) extends Node {
 
 case class ForEachNode(json: JsObject) extends Node {
   override def run(
-    wfr: WorkflowRun
+      wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val values =  WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
-    val node = Node.from(json.select("node").asObject)
+    val values         = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
+    val node           = Node.from(json.select("node").asObject)
     val iterableObject = values.asOpt[JsObject]
-    val iterableArray = values.asOpt[JsArray]
+    val iterableArray  = values.asOpt[JsArray]
     if (iterableObject.isDefined) {
       Source(iterableObject.get.value.toList)
         .mapAsync(1) { item =>
           val (key, value) = item
           wfr.memory.set("foreach_key", key.json)
           wfr.memory.set("foreach_value", value)
-          node.internalRun(wfr).recover { case t: Throwable =>
-            WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
-          }.andThen {
-            case _ =>
+          node
+            .internalRun(wfr)
+            .recover { case t: Throwable =>
+              WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+            }
+            .andThen { case _ =>
               wfr.memory.remove("foreach_key")
               wfr.memory.remove("foreach_value")
-          }
+            }
         }
         .takeWhile(_.isLeft, inclusive = true)
-        .runWith(Sink.seq)(env.otoroshiMaterializer).map { seq =>
+        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .map { seq =>
           val last = seq.last
           if (last.isLeft) {
             last
           } else {
-            JsArray(seq.collect {
-              case Right(v) => v
+            JsArray(seq.collect { case Right(v) =>
+              v
             }).right
           }
         }
@@ -223,21 +226,24 @@ case class ForEachNode(json: JsObject) extends Node {
       Source(iterableArray.get.value.toList)
         .mapAsync(1) { item =>
           wfr.memory.set("foreach_value", item)
-          node.internalRun(wfr).recover { case t: Throwable =>
-            WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
-          }.andThen {
-            case _ =>
+          node
+            .internalRun(wfr)
+            .recover { case t: Throwable =>
+              WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+            }
+            .andThen { case _ =>
               wfr.memory.remove("foreach_value")
-          }
+            }
         }
         .takeWhile(_.isLeft, inclusive = true)
-        .runWith(Sink.seq)(env.otoroshiMaterializer).map { seq =>
+        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .map { seq =>
           val last = seq.last
           if (last.isLeft) {
             last
           } else {
-            JsArray(seq.collect {
-              case Right(v) => v
+            JsArray(seq.collect { case Right(v) =>
+              v
             }).right
           }
         }
@@ -249,30 +255,33 @@ case class ForEachNode(json: JsObject) extends Node {
 
 case class MapNode(json: JsObject) extends Node {
   override def run(
-    wfr: WorkflowRun
+      wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val values = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
-    val node = Node.from(json.select("node").asObject)
+    val node   = Node.from(json.select("node").asObject)
     values match {
       case arr: JsArray => {
         Source(arr.value.toList)
           .mapAsync(1) { item =>
             wfr.memory.set("foreach_value", item)
-            node.internalRun(wfr).recover { case t: Throwable =>
-              WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
-            }.andThen {
-              case _ =>
+            node
+              .internalRun(wfr)
+              .recover { case t: Throwable =>
+                WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+              }
+              .andThen { case _ =>
                 wfr.memory.remove("foreach_value")
-            }
+              }
           }
           .takeWhile(_.isLeft, inclusive = true)
-          .runWith(Sink.seq)(env.otoroshiMaterializer).map { seq =>
+          .runWith(Sink.seq)(env.otoroshiMaterializer)
+          .map { seq =>
             val last = seq.last
             if (last.isLeft) {
               last
             } else {
-              val result = JsArray(seq.collect {
-                case Right(v) => v
+              val result = JsArray(seq.collect { case Right(v) =>
+                v
               })
               json.select("destination").asOptString.foreach { destination =>
                 wfr.memory.set(destination, result)
@@ -281,37 +290,40 @@ case class MapNode(json: JsObject) extends Node {
             }
           }
       }
-      case _ => JsNull.rightf
+      case _            => JsNull.rightf
     }
   }
 }
 
 case class FlatMapNode(json: JsObject) extends Node {
   override def run(
-    wfr: WorkflowRun
+      wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val values = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
-    val node = Node.from(json.select("node").asObject)
+    val node   = Node.from(json.select("node").asObject)
     values match {
       case arr: JsArray => {
         Source(arr.value.toList)
           .mapAsync(1) { item =>
             wfr.memory.set("foreach_value", item)
-            node.internalRun(wfr).recover { case t: Throwable =>
-              WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
-            }.andThen {
-              case _ =>
+            node
+              .internalRun(wfr)
+              .recover { case t: Throwable =>
+                WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+              }
+              .andThen { case _ =>
                 wfr.memory.remove("foreach_value")
-            }
+              }
           }
           .takeWhile(_.isLeft, inclusive = true)
-          .runWith(Sink.seq)(env.otoroshiMaterializer).map { seq =>
+          .runWith(Sink.seq)(env.otoroshiMaterializer)
+          .map { seq =>
             val last = seq.last
             if (last.isLeft) {
               last
             } else {
-              val result = JsArray(seq.collect {
-                case Right(JsArray(v)) => v
+              val result = JsArray(seq.collect { case Right(JsArray(v)) =>
+                v
               }.flatten)
               json.select("destination").asOptString.foreach { destination =>
                 wfr.memory.set(destination, result)
@@ -320,48 +332,56 @@ case class FlatMapNode(json: JsObject) extends Node {
             }
           }
       }
-      case _ => JsNull.rightf
+      case _            => JsNull.rightf
     }
   }
 }
 
 case class FilterNode(json: JsObject) extends Node {
   override def run(
-    wfr: WorkflowRun
+      wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val values = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
-    val node = Node.from(json.select("predicate").asObject)
-    val not = json.select("not").asOptBoolean.getOrElse(false)
+    val node   = Node.from(json.select("predicate").asObject)
+    val not    = json.select("not").asOptBoolean.getOrElse(false)
     values match {
       case arr: JsArray => {
         Source(arr.value.toList)
           .mapAsync(1) { item =>
             wfr.memory.set("foreach_value", item)
-            node.internalRun(wfr).recover { case t: Throwable =>
-              WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
-            }.andThen {
-              case _ =>
+            node
+              .internalRun(wfr)
+              .recover { case t: Throwable =>
+                WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+              }
+              .andThen { case _ =>
                 wfr.memory.remove("foreach_value")
-            }.map { eith =>
-              (item, eith)
-            }
+              }
+              .map { eith =>
+                (item, eith)
+              }
           }
           .takeWhile(_._2.isLeft, inclusive = true)
-          .runWith(Sink.seq)(env.otoroshiMaterializer).map { seq =>
+          .runWith(Sink.seq)(env.otoroshiMaterializer)
+          .map { seq =>
             val last = seq.last
             if (last._2.isLeft) {
               last._2
             } else {
-              val result = JsArray(seq.collect {
-                case (JsBoolean(v), Right(e)) => (v, e)
-              }.filter {
-                case (bool, _) =>
-                  if (not) {
-                    !bool
-                  } else {
-                    bool
+              val result = JsArray(
+                seq
+                  .collect { case (JsBoolean(v), Right(e)) =>
+                    (v, e)
                   }
-              }.map(_._2))
+                  .filter { case (bool, _) =>
+                    if (not) {
+                      !bool
+                    } else {
+                      bool
+                    }
+                  }
+                  .map(_._2)
+              )
               json.select("destination").asOptString.foreach { destination =>
                 wfr.memory.set(destination, result)
               }
@@ -369,8 +389,7 @@ case class FilterNode(json: JsObject) extends Node {
             }
           }
       }
-      case _ => JsNull.rightf
+      case _            => JsNull.rightf
     }
   }
 }
-

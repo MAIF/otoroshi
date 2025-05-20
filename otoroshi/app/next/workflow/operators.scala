@@ -44,7 +44,7 @@ class NotOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("value").asOpt[JsValue] match {
       case Some(JsBoolean(b)) => JsBoolean(!b)
-      case _ => JsBoolean(false)
+      case _                  => JsBoolean(false)
     }
   }
 }
@@ -185,7 +185,7 @@ class IsFalsyOperator extends WorkflowOperator {
         }
       }
     }
-    val res = value match {
+    val res            = value match {
       case JsNull                                                   => false
       case JsString(str) if str.isEmpty                             => false
       case JsBoolean(false)                                         => false

@@ -60,27 +60,27 @@ function updateSignalFromQuery(response, entityId, queryVersion) {
 
   draftVersionSignal.value = {
     ...draftVersionSignal.value,
-    version: queryVersion
-  }
+    version: queryVersion,
+  };
 }
 
 function DraftEditor({ entityId, value, className = '' }) {
-  const versionContext = useSignalValue(draftVersionSignal)
-  const draftContext = useSignalValue(draftSignal)
+  const versionContext = useSignalValue(draftVersionSignal);
+  const draftContext = useSignalValue(draftSignal);
 
-  const queryParams = new URLSearchParams(window.location.search)
-  const queryVersion = queryParams.get('version')
+  const queryParams = new URLSearchParams(window.location.search);
+  const queryVersion = queryParams.get('version');
 
   useEffect(() => {
     if (queryVersion) {
-      updateQueryParams(queryVersion)
+      updateQueryParams(queryVersion);
     }
-  }, [queryVersion])
+  }, [queryVersion]);
 
   const updateQueryParams = (version) => {
-    const queryParams = new URLSearchParams(window.location.search)
-    queryParams.set('version', version)
-    history.replaceState(null, null, '?' + queryParams.toString())
+    const queryParams = new URLSearchParams(window.location.search);
+    queryParams.set('version', version);
+    history.replaceState(null, null, '?' + queryParams.toString());
   };
 
   const query = useQuery(['findDraftById', entityId], () => findDraftByEntityId(entityId), {
@@ -88,33 +88,34 @@ function DraftEditor({ entityId, value, className = '' }) {
     enabled: !draftContext.draft && !versionContext.notFound,
     onSuccess: (data) => {
       // FIX an existing bug where drafts route are converted to apis route
-      if (data.id?.startsWith("route_") && data.consumers && data.deployments) {
-        nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).deleteById(data.id)
+      if (data.id?.startsWith('route_') && data.consumers && data.deployments) {
+        nextClient
+          .forEntityNext(nextClient.ENTITIES.DRAFTS)
+          .deleteById(data.id)
           .then(() => {
-            getTemplate()
-              .then(template => {
-                mutation.mutate({
-                  template,
-                  kind: entityId.split('_')[0],
-                  id: entityId,
-                  name: entityId,
-                  content: value,
-                })
-                updateSignalFromQuery(template, entityId, queryVersion)
-              })
-          })
+            getTemplate().then((template) => {
+              mutation.mutate({
+                template,
+                kind: entityId.split('_')[0],
+                id: entityId,
+                name: entityId,
+                content: value,
+              });
+              updateSignalFromQuery(template, entityId, queryVersion);
+            });
+          });
       } else {
-        updateSignalFromQuery(data, entityId, queryVersion)
+        updateSignalFromQuery(data, entityId, queryVersion);
       }
     },
-  })
+  });
 
   const hasDraft = draftContext.draft;
 
   const templateQuery = useQuery(['getTemplate', hasDraft], getTemplate, {
     retry: 0,
     enabled: !query.isLoading && !hasDraft,
-  })
+  });
 
   const mutation = useMutation(createDraft, {
     onSuccess: (data) => {
@@ -129,7 +130,7 @@ function DraftEditor({ entityId, value, className = '' }) {
   });
 
   const onVersionChange = (newVersion) => {
-    updateQueryParams(newVersion)
+    updateQueryParams(newVersion);
     if (!hasDraft) {
       mutation.mutate({
         ...templateQuery.data,
@@ -171,34 +172,34 @@ export const DraftStateDaemon = withRouter(
   class _ extends React.Component {
     state = {
       initialized: false,
-    }
+    };
 
     componentDidMount() {
-      resetDraftSignal(this.props)
+      resetDraftSignal(this.props);
 
-      if (this.props.updateEntityURL) this.props.updateEntityURL()
+      if (this.props.updateEntityURL) this.props.updateEntityURL();
 
       this.unsubscribe = draftVersionSignal.subscribe(() => {
-        const { value, setValue } = this.props
+        const { value, setValue } = this.props;
 
         if (draftSignal.value.draft && value) {
           if (draftVersionSignal.value.version === 'draft') {
-            entityContentSignal.value = value
+            entityContentSignal.value = value;
 
-            setValue(draftSignal.value.draft)
+            setValue(draftSignal.value.draft);
           } else {
             if (this.state.initialized) {
               draftSignal.value = {
                 ...draftSignal.value,
                 draft: value,
-              }
-              setValue(entityContentSignal.value ? entityContentSignal.value : value)
+              };
+              setValue(entityContentSignal.value ? entityContentSignal.value : value);
             } else {
-              this.setState({ initialized: true })
+              this.setState({ initialized: true });
             }
           }
         }
-      })
+      });
     }
 
     componentDidUpdate(prevProps) {

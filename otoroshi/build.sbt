@@ -220,8 +220,8 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
   ),
-  "jakarta.jms" % "jakarta.jms-api" % "3.1.0",
-  "org.apache.activemq" % "artemis-jakarta-client" % "2.41.0" excludeAll (
+  "jakarta.jms"                      % "jakarta.jms-api"                           % "3.1.0",
+  "org.apache.activemq"              % "artemis-jakarta-client"                    % "2.41.0" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),

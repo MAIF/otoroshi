@@ -1183,26 +1183,26 @@ class Env(
         "cp:otoroshi.next.proxy.ProxyEngine"
       ),
       config = Json.obj(
-        "NextGenProxyEngine"      -> Json.obj(
+        "NextGenProxyEngine" -> Json.obj(
           "enabled"          -> true,
           "debug"            -> false,
           "debug_headers"    -> false,
           "domains"          -> Seq("*"),
           "routing_strategy" -> "tree"
         ),
-        "ng" -> Json.arr(
+        "ng"                 -> Json.arr(
           Json.obj(
-            "config" -> Json.obj(
-              "expiration" -> 1.hour.toMillis,
+            "config"  -> Json.obj(
+              "expiration"       -> 1.hour.toMillis,
               "default_key_pair" -> Cert.OtoroshiJwtSigning,
-              "domain" -> "*",
-              "secure" -> true
+              "domain"           -> "*",
+              "secure"           -> true
             ),
-            "debug" -> false,
+            "debug"   -> false,
             "enabled" -> true,
             "exclude" -> Json.arr(),
             "include" -> Json.arr(),
-            "plugin" -> "cp:otoroshi.next.plugins.NgClientCredentials"
+            "plugin"  -> "cp:otoroshi.next.plugins.NgClientCredentials"
           )
         )
       )

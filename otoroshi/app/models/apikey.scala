@@ -796,9 +796,13 @@ object ApiKeyHelper {
           .map(_.value)
       )
       .orElse(
-        attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey).flatMap(_.pathParams.get(
-          descriptor.apiKeyConstraints.jwtAuth.pathName.getOrElse("apikey_jwt")
-        ))
+        attrs
+          .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+          .flatMap(
+            _.pathParams.get(
+              descriptor.apiKeyConstraints.jwtAuth.pathName.getOrElse("apikey_jwt")
+            )
+          )
       )
       .filter(_.split("\\.").length == 3)
     val authBasic                  = req.headers
@@ -1066,9 +1070,13 @@ object ApiKeyHelper {
           .map(_.value)
       )
       .orElse(
-        attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey).flatMap(_.pathParams.get(
-          descriptor.apiKeyConstraints.jwtAuth.pathName.getOrElse("apikey_jwt")
-        ))
+        attrs
+          .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+          .flatMap(
+            _.pathParams.get(
+              descriptor.apiKeyConstraints.jwtAuth.pathName.getOrElse("apikey_jwt")
+            )
+          )
       )
       .filter(_.split("\\.").length == 3)
     val authBasic                  = req.headers
@@ -1255,9 +1263,13 @@ object ApiKeyHelper {
           .map(_.value)
       )
       .orElse(
-        attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey).flatMap(_.pathParams.get(
-          descriptor.apiKeyConstraints.jwtAuth.pathName.getOrElse("apikey_jwt")
-        ))
+        attrs
+          .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+          .flatMap(
+            _.pathParams.get(
+              descriptor.apiKeyConstraints.jwtAuth.pathName.getOrElse("apikey_jwt")
+            )
+          )
       )
       .filter(_.split("\\.").length == 3)
     val authBasic                  = req.headers
@@ -1740,15 +1752,19 @@ object ApiKeyHelper {
               )
           )
           .orElse(
-            attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey).flatMap(_.pathParams.get(
-              constraints.jwtAuth.pathName.getOrElse("apikey_jwt")
-            ))
-            .seffectOnWithPredicate(_.isDefined)(_ =>
-              location = ApikeyLocation(
-                ApikeyLocationKind.Cookie,
-                constraints.jwtAuth.cookieName.getOrElse(env.Headers.OtoroshiJWTAuthorization)
+            attrs
+              .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+              .flatMap(
+                _.pathParams.get(
+                  constraints.jwtAuth.pathName.getOrElse("apikey_jwt")
+                )
               )
-            )
+              .seffectOnWithPredicate(_.isDefined)(_ =>
+                location = ApikeyLocation(
+                  ApikeyLocationKind.Cookie,
+                  constraints.jwtAuth.cookieName.getOrElse(env.Headers.OtoroshiJWTAuthorization)
+                )
+              )
           )
           .filter(_.split("\\.").length == 3)
           .flatMap(v => Try(JWT.decode(v)).toOption)
@@ -2195,10 +2211,14 @@ object OtoroshiBearerToken {
       .init
       .mkString("_")
   }
-  def extractTokenFromRequest(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(implicit env: Env): Option[String] = {
+  def extractTokenFromRequest(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(implicit
+      env: Env
+  ): Option[String] = {
     extractTokenFromRequest(req, descriptor.apiKeyConstraints, attrs)
   }
-  def extractTokenFromRequest(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap)(implicit env: Env): Option[String] = {
+  def extractTokenFromRequest(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap)(implicit
+      env: Env
+  ): Option[String] = {
     req.headers
       .get(
         constraints.otoBearerAuth.headerName
@@ -2240,9 +2260,13 @@ object OtoroshiBearerToken {
           .map(_.value)
       )
       .orElse(
-        attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey).flatMap(_.pathParams.get(
-          constraints.otoBearerAuth.pathName.getOrElse("apikey_bearer")
-        ))
+        attrs
+          .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+          .flatMap(
+            _.pathParams.get(
+              constraints.otoBearerAuth.pathName.getOrElse("apikey_bearer")
+            )
+          )
       )
       .filter(v => v.startsWith("otoapk_"))
   }

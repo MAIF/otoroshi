@@ -570,7 +570,7 @@ export class NewExporterForm extends Component {
         ? { label: possibleExporterConfigFormValues[key].label, value: key }
         : { label: key, value: key }
     );
-    selectValue.sort((a, b) => a.label.localeCompare(b.label))
+    selectValue.sort((a, b) => a.label.localeCompare(b.label));
     return (
       <>
         <Collapse initCollapsed={false} label="Location" lineEnd={true}>
@@ -2069,7 +2069,7 @@ const possibleExporterConfigFormValues = {
           }),
         },
       },
-    }
+    },
   },
   tcp: {
     flow: [
@@ -2162,15 +2162,10 @@ const possibleExporterConfigFormValues = {
           }),
         },
       },
-    }
+    },
   },
   udp: {
-    flow: [
-      'host',
-      'port',
-      'unix_socket',
-      'connect_timeout'
-    ],
+    flow: ['host', 'port', 'unix_socket', 'connect_timeout'],
     schema: {
       tcp: {
         type: 'bool',
@@ -2250,7 +2245,7 @@ const possibleExporterConfigFormValues = {
           }),
         },
       },
-    }
+    },
   },
   jms: {
     flow: ['url', 'name', 'topic', 'username', 'password'],
@@ -2274,9 +2269,9 @@ const possibleExporterConfigFormValues = {
       topic: {
         type: 'bool',
         props: { label: 'Destination is a topic' },
-      }
-    }
-  }
+      },
+    },
+  },
 };
 
 class TestMatchAndProjectModal extends Component {

@@ -7,7 +7,10 @@ import { RouteForm } from './form';
 import { Button } from '../../components/Button';
 import { ENTITIES, FormSelector } from '../../components/FormSelector';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
-import { draftVersionSignal, updateEntityURLSignal } from '../../components/Drafts/DraftEditorSignal';
+import {
+  draftVersionSignal,
+  updateEntityURLSignal,
+} from '../../components/Drafts/DraftEditorSignal';
 import { useSignalValue } from 'signals-react-safe';
 
 const capitalize = 'Route';
@@ -21,23 +24,25 @@ function SaveButton({ saveRoute, isCreation, entityName }) {
 
   if (draftContext.version === 'draft') return null;
 
-  return <FeedbackButton
-    type="success"
-    className="ms-2 mb-1"
-    onPress={saveRoute}
-    text={isCreation ? `Create ${entityName}` : `Save`}
-  />
+  return (
+    <FeedbackButton
+      type="success"
+      className="ms-2 mb-1"
+      onPress={saveRoute}
+      text={isCreation ? `Create ${entityName}` : `Save`}
+    />
+  );
 }
 
 export const Informations = forwardRef(
   ({ isCreation, value, setValue, setSaveButton, routeId, ...props }, ref) => {
     const history = useHistory();
     const location = useLocation();
-    const valueRef = useRef()
+    const valueRef = useRef();
 
     useEffect(() => {
-      valueRef.current = value
-    }, [value])
+      valueRef.current = value;
+    }, [value]);
 
     const [showAdvancedForm, toggleAdvancedForm] = useState(false);
 
@@ -48,25 +53,26 @@ export const Informations = forwardRef(
     }));
 
     useEffect(() => {
-      setSaveButton(<SaveButton saveRoute={saveRoute} isCreation={isCreation} entityName={entityName} />);
+      setSaveButton(
+        <SaveButton saveRoute={saveRoute} isCreation={isCreation} entityName={entityName} />
+      );
     }, [value]);
-
 
     const saveRoute = () => {
       if (isCreation || location.state?.routeFromService) {
         return nextClient
-        .forEntityNext(nextClient.ENTITIES[fetchName])
-        .create(value)
-        .then(() => history.push(`/${link}/${value.id}?tab=flow`));
+          .forEntityNext(nextClient.ENTITIES[fetchName])
+          .create(value)
+          .then(() => history.push(`/${link}/${value.id}?tab=flow`));
       } else {
         return nextClient
           .forEntityNext(nextClient.ENTITIES[fetchName])
           .update(valueRef.current)
           .then((res) => {
-            window.location.reload()
+            window.location.reload();
           });
       }
-    }
+    };
 
     const schema = {
       id: {
@@ -387,13 +393,14 @@ export const Informations = forwardRef(
       <>
         <DraftStateDaemon
           value={value}
-          setValue={newValue => {
-            setValue(newValue)
-            valueRef.current = newValue
+          setValue={(newValue) => {
+            setValue(newValue);
+            valueRef.current = newValue;
           }}
           updateEntityURL={() => {
             updateEntityURLSignal.value = saveRoute;
-          }} />
+          }}
+        />
 
         {showAdvancedForm ? (
           <RouteForm

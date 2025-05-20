@@ -240,7 +240,7 @@ case class NgTlsConfig(
     trustAll: Boolean = false
 ) {
   def json: JsValue           = NgTlsConfig.format.writes(this)
-  lazy val legit: Boolean = certs.nonEmpty || trustedCerts.nonEmpty || trustAll || loose
+  lazy val legit: Boolean     = certs.nonEmpty || trustedCerts.nonEmpty || trustAll || loose
   lazy val legacy: MtlsConfig = MtlsConfig(
     certs = certs,
     trustedCerts = trustedCerts,

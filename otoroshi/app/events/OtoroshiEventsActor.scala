@@ -378,15 +378,15 @@ object DataExporter {
 object Exporters {
 
   class TCPExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(config)(ec, env) {
+      extends DefaultDataExporter(config)(ec, env) {
 
     import io.netty.channel.ChannelOption
     import io.netty.handler.ssl.SslContextBuilder
     import reactor.netty.tcp.{SslProvider, TcpClient}
 
-    val clientRef = new AtomicReference[Connection](null)
+    val clientRef  = new AtomicReference[Connection](null)
     val connecting = new AtomicBoolean(false)
-    val connected = new AtomicBoolean(false)
+    val connected  = new AtomicBoolean(false)
 
     private def connectWithDelay(settings: TCPExporterSettings): Unit = {
       env.otoroshiScheduler.scheduleOnce((1000 + scala.util.Random.nextInt(500)).millis) {
@@ -413,7 +413,7 @@ object Exporters {
           }
           .applyOnIf(eec.tls.enabled) { client =>
             if (eec.tls.legit) {
-              val tlsConf = eec.tls.legacy
+              val tlsConf                 = eec.tls.legacy
               val certs: Seq[Cert]        = tlsConf.actualCerts
               val trustedCerts: Seq[Cert] = tlsConf.actualTrustedCerts
               val trustAll: Boolean       = tlsConf.trustAll
@@ -457,7 +457,7 @@ object Exporters {
                 clientRef.set(conn)
               }
             },
-            new Consumer[Throwable] {
+            new Consumer[Throwable]  {
               override def accept(t: Throwable): Unit = {
                 logger.error("Error while connecting", t)
                 connecting.set(false)
@@ -466,7 +466,7 @@ object Exporters {
                 }
               }
             },
-            new Runnable {
+            new Runnable             {
               override def run(): Unit = ()
             }
           )
@@ -503,22 +503,26 @@ object Exporters {
       } else {
         Option(clientRef.get()).map { client =>
           events.foreach { event =>
-            client.outbound().sendByteArray(Mono.just(event.stringify.applyOn(str => s"$str\n\n").byteString.toArray)).`then`().subscribe(
-              new Consumer[Void] {
-                override def accept(t: Void): Unit = ()
-              },
-              new Consumer[Throwable] {
-                override def accept(t: Throwable): Unit = {
-                  logger.error("error while sending", t)
-                  exporter[TCPExporterSettings].foreach { eec =>
-                    connectWithDelay(eec)
+            client
+              .outbound()
+              .sendByteArray(Mono.just(event.stringify.applyOn(str => s"$str\n\n").byteString.toArray))
+              .`then`()
+              .subscribe(
+                new Consumer[Void]      {
+                  override def accept(t: Void): Unit = ()
+                },
+                new Consumer[Throwable] {
+                  override def accept(t: Throwable): Unit = {
+                    logger.error("error while sending", t)
+                    exporter[TCPExporterSettings].foreach { eec =>
+                      connectWithDelay(eec)
+                    }
                   }
+                },
+                new Runnable            {
+                  override def run(): Unit = ()
                 }
-              },
-              new Runnable {
-                override def run(): Unit = ()
-              }
-            )
+              )
           }
           ExportResult.ExportResultSuccess.vfuture
         } getOrElse {
@@ -529,16 +533,16 @@ object Exporters {
   }
 
   class UDPExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(config)(ec, env) {
+      extends DefaultDataExporter(config)(ec, env) {
 
     import io.netty.channel.unix.DomainSocketAddress
     import reactor.core.publisher.Mono
     import reactor.netty.Connection
     import reactor.netty.udp.UdpClient
 
-    val clientRef = new AtomicReference[Connection](null)
+    val clientRef  = new AtomicReference[Connection](null)
     val connecting = new AtomicBoolean(false)
-    val connected = new AtomicBoolean(false)
+    val connected  = new AtomicBoolean(false)
 
     private def connectWithDelay(settings: UDPExporterSettings): Unit = {
       env.otoroshiScheduler.scheduleOnce((1000 + scala.util.Random.nextInt(500)).millis) {
@@ -550,7 +554,8 @@ object Exporters {
       disconnect()
       if (connecting.compareAndSet(false, true)) {
         if (logger.isDebugEnabled) logger.debug("reconnecting ....")
-        UdpClient.create()
+        UdpClient
+          .create()
           .applyOnIf(eec.unixSocket) { client =>
             client
               .remoteAddress(() => new DomainSocketAddress(eec.host))
@@ -580,7 +585,7 @@ object Exporters {
                 clientRef.set(conn)
               }
             },
-            new Consumer[Throwable] {
+            new Consumer[Throwable]  {
               override def accept(t: Throwable): Unit = {
                 logger.error("Error while connecting", t)
                 connecting.set(false)
@@ -589,7 +594,7 @@ object Exporters {
                 }
               }
             },
-            new Runnable {
+            new Runnable             {
               override def run(): Unit = ()
             }
           )
@@ -625,22 +630,26 @@ object Exporters {
       } else {
         Option(clientRef.get()).map { client =>
           events.foreach { event =>
-            client.outbound().sendByteArray(Mono.just(event.stringify.applyOn(str => s"$str\n\n").byteString.toArray)).`then`().subscribe(
-              new Consumer[Void] {
-                override def accept(t: Void): Unit = ()
-              },
-              new Consumer[Throwable] {
-                override def accept(t: Throwable): Unit = {
-                  logger.error("error while sending", t)
-                  exporter[UDPExporterSettings].foreach { eec =>
-                    connectWithDelay(eec)
+            client
+              .outbound()
+              .sendByteArray(Mono.just(event.stringify.applyOn(str => s"$str\n\n").byteString.toArray))
+              .`then`()
+              .subscribe(
+                new Consumer[Void]      {
+                  override def accept(t: Void): Unit = ()
+                },
+                new Consumer[Throwable] {
+                  override def accept(t: Throwable): Unit = {
+                    logger.error("error while sending", t)
+                    exporter[UDPExporterSettings].foreach { eec =>
+                      connectWithDelay(eec)
+                    }
                   }
+                },
+                new Runnable            {
+                  override def run(): Unit = ()
                 }
-              },
-              new Runnable {
-                override def run(): Unit = ()
-              }
-            )
+              )
           }
           ExportResult.ExportResultSuccess.vfuture
         } getOrElse {
@@ -651,11 +660,11 @@ object Exporters {
   }
 
   class SyslogExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(config)(ec, env) {
+      extends DefaultDataExporter(config)(ec, env) {
 
-    val clientRef = new AtomicReference[Connection](null)
+    val clientRef  = new AtomicReference[Connection](null)
     val connecting = new AtomicBoolean(false)
-    val connected = new AtomicBoolean(false)
+    val connected  = new AtomicBoolean(false)
 
     private def connectWithDelay(settings: SyslogExporterSettings): Unit = {
       env.otoroshiScheduler.scheduleOnce((1000 + scala.util.Random.nextInt(500)).millis) {
@@ -671,7 +680,8 @@ object Exporters {
           import io.netty.channel.ChannelOption
           import io.netty.handler.ssl.SslContextBuilder
           import reactor.netty.tcp.{SslProvider, TcpClient}
-          TcpClient.create()
+          TcpClient
+            .create()
             .applyOnIf(eec.unixSocket) { client =>
               client.remoteAddress(() => new DomainSocketAddress(eec.host))
             }
@@ -685,11 +695,11 @@ object Exporters {
             }
             .applyOnIf(eec.tls.enabled) { client =>
               if (eec.tls.legit) {
-                val tlsConf = eec.tls.legacy
-                val certs: Seq[Cert] = tlsConf.actualCerts
+                val tlsConf                 = eec.tls.legacy
+                val certs: Seq[Cert]        = tlsConf.actualCerts
                 val trustedCerts: Seq[Cert] = tlsConf.actualTrustedCerts
-                val trustAll: Boolean = tlsConf.trustAll
-                val ctx = SslContextBuilder
+                val trustAll: Boolean       = tlsConf.trustAll
+                val ctx                     = SslContextBuilder
                   .forClient()
                   .applyOn { ctx =>
                     certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
@@ -729,7 +739,7 @@ object Exporters {
                   clientRef.set(conn)
                 }
               },
-              new Consumer[Throwable] {
+              new Consumer[Throwable]  {
                 override def accept(t: Throwable): Unit = {
                   logger.error("Error while connecting", t)
                   connecting.set(false)
@@ -738,14 +748,15 @@ object Exporters {
                   }
                 }
               },
-              new Runnable {
+              new Runnable             {
                 override def run(): Unit = ()
               }
             )
         } else {
           import io.netty.channel.unix.DomainSocketAddress
           import reactor.netty.udp.UdpClient
-          UdpClient.create()
+          UdpClient
+            .create()
             .applyOnIf(eec.unixSocket) { client =>
               client
                 .remoteAddress(() => new DomainSocketAddress(eec.host))
@@ -775,7 +786,7 @@ object Exporters {
                   clientRef.set(conn)
                 }
               },
-              new Consumer[Throwable] {
+              new Consumer[Throwable]  {
                 override def accept(t: Throwable): Unit = {
                   logger.error("Error while connecting", t)
                   connecting.set(false)
@@ -784,7 +795,7 @@ object Exporters {
                   }
                 }
               },
-              new Runnable {
+              new Runnable             {
                 override def run(): Unit = ()
               }
             )
@@ -816,14 +827,15 @@ object Exporters {
     }
 
     def formatMessage(msg: String): String = {
-      val facility = 1
-      val severity = 6
-      val priority = s"<${facility * 8 + severity}>"
-      val timestamp = DateTimeFormatter.ofPattern("MMM dd HH:mm:ss")
+      val facility  = 1
+      val severity  = 6
+      val priority  = s"<${facility * 8 + severity}>"
+      val timestamp = DateTimeFormatter
+        .ofPattern("MMM dd HH:mm:ss")
         .withZone(ZoneOffset.UTC)
         .format(Instant.now())
-      val hostname = InetAddress.getLocalHost.getHostName
-      val appName = "otoroshi"
+      val hostname  = InetAddress.getLocalHost.getHostName
+      val appName   = "otoroshi"
       s"$priority$timestamp $hostname $appName: $msg"
     }
 
@@ -834,15 +846,41 @@ object Exporters {
       } else {
         Option(clientRef.get()).map { client =>
           events.foreach { event =>
-            val id = event.select("@id").asOptString.getOrElse(IdGenerator.uuid)
-            val head = formatMessage(id + " ")
+            val id    = event.select("@id").asOptString.getOrElse(IdGenerator.uuid)
+            val head  = formatMessage(id + " ")
             val evstr = event.stringify
-            val msg = head + evstr
-            val len = msg.length
+            val msg   = head + evstr
+            val len   = msg.length
             if (len > 2048) {
               evstr.grouped(1024).foreach { group =>
-                client.outbound().sendByteArray(Mono.just((head + group).byteString.toArray)).`then`().subscribe(
-                  new Consumer[Void] {
+                client
+                  .outbound()
+                  .sendByteArray(Mono.just((head + group).byteString.toArray))
+                  .`then`()
+                  .subscribe(
+                    new Consumer[Void]      {
+                      override def accept(t: Void): Unit = ()
+                    },
+                    new Consumer[Throwable] {
+                      override def accept(t: Throwable): Unit = {
+                        logger.error("error while sending", t)
+                        exporter[SyslogExporterSettings].foreach { eec =>
+                          connectWithDelay(eec)
+                        }
+                      }
+                    },
+                    new Runnable            {
+                      override def run(): Unit = ()
+                    }
+                  )
+              }
+            } else {
+              client
+                .outbound()
+                .sendByteArray(Mono.just(msg.byteString.toArray))
+                .`then`()
+                .subscribe(
+                  new Consumer[Void]      {
                     override def accept(t: Void): Unit = ()
                   },
                   new Consumer[Throwable] {
@@ -853,28 +891,10 @@ object Exporters {
                       }
                     }
                   },
-                  new Runnable {
+                  new Runnable            {
                     override def run(): Unit = ()
                   }
                 )
-              }
-            } else {
-              client.outbound().sendByteArray(Mono.just(msg.byteString.toArray)).`then`().subscribe(
-                new Consumer[Void] {
-                  override def accept(t: Void): Unit = ()
-                },
-                new Consumer[Throwable] {
-                  override def accept(t: Throwable): Unit = {
-                    logger.error("error while sending", t)
-                    exporter[SyslogExporterSettings].foreach { eec =>
-                      connectWithDelay(eec)
-                    }
-                  }
-                },
-                new Runnable {
-                  override def run(): Unit = ()
-                }
-              )
             }
           }
           ExportResult.ExportResultSuccess.vfuture
@@ -885,7 +905,12 @@ object Exporters {
     }
   }
 
-  case class JMSConnection(connectionFactory: ActiveMQConnectionFactory, context: JMSContext, destination: Destination, producer: JMSProducer) {
+  case class JMSConnection(
+      connectionFactory: ActiveMQConnectionFactory,
+      context: JMSContext,
+      destination: Destination,
+      producer: JMSProducer
+  ) {
     def close(): Unit = {
       context.close()
       connectionFactory.close()
@@ -897,21 +922,22 @@ object Exporters {
   }
 
   class JMSExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(config)(ec, env) {
+      extends DefaultDataExporter(config)(ec, env) {
 
-    val clientRef = new AtomicReference[JMSConnection](null)
+    val clientRef  = new AtomicReference[JMSConnection](null)
     val connecting = new AtomicBoolean(false)
-    val connected = new AtomicBoolean(false)
+    val connected  = new AtomicBoolean(false)
 
     private def connect(eec: JMSExporterSettings): Unit = {
       disconnect()
       if (connecting.compareAndSet(false, true)) {
         if (logger.isDebugEnabled) logger.debug("reconnecting ....")
         try {
-          val connectionFactory = new ActiveMQConnectionFactory(eec.url, eec.username.orNull, eec.password.orNull) // need closing
-          val context = connectionFactory.createContext() // need closing
+          val connectionFactory =
+            new ActiveMQConnectionFactory(eec.url, eec.username.orNull, eec.password.orNull) // need closing
+          val context                  = connectionFactory.createContext() // need closing
           val destination: Destination = if (eec.topic) context.createTopic(eec.name) else context.createQueue(eec.name)
-          val producer = context.createProducer()
+          val producer                 = context.createProducer()
           connected.compareAndSet(false, true)
           connecting.compareAndSet(true, false)
           clientRef.set(JMSConnection(connectionFactory, context, destination, producer))

@@ -67,21 +67,25 @@ object GlobalExpressionLanguage {
         lazy val headCert: Option[X509Certificate] = req.flatMap(_.clientCertificateChain).flatMap(_.headOption)
         Try {
           expressionReplacer.replaceOn(value) {
-            case expr if expr.contains("||") => env.metrics.withTimer(s"el.apply.chain") {
-              val _parts = expr.split("\\|\\|").toList
-              val last = _parts.lastOption
-              val hasDefaultValue = last.exists(_.contains("::"))
-              val lastParts: List[String] = if (hasDefaultValue) last.map(_.split("::").toList.map(_.trim)).getOrElse(List.empty) else List.empty
-              val parts: List[String] = if (hasDefaultValue) _parts.init ++ lastParts.headOption else _parts
-              val defaultValue = if (hasDefaultValue) lastParts.lastOption.getOrElse("no-chain-value-d") else "no-chain-value"
-              parts
-                .iterator
-                .map { str =>
-                  apply(s"""$${${str.trim}}""", req, service, route, apiKey, user, context, attrs, env)
-                }.find { str =>
-                  str != "bad-expr" && !str.startsWith("no-")
-                }.getOrElse(defaultValue)
-            }
+            case expr if expr.contains("||")      =>
+              env.metrics.withTimer(s"el.apply.chain") {
+                val _parts                  = expr.split("\\|\\|").toList
+                val last                    = _parts.lastOption
+                val hasDefaultValue         = last.exists(_.contains("::"))
+                val lastParts: List[String] =
+                  if (hasDefaultValue) last.map(_.split("::").toList.map(_.trim)).getOrElse(List.empty) else List.empty
+                val parts: List[String]     = if (hasDefaultValue) _parts.init ++ lastParts.headOption else _parts
+                val defaultValue            =
+                  if (hasDefaultValue) lastParts.lastOption.getOrElse("no-chain-value-d") else "no-chain-value"
+                parts.iterator
+                  .map { str =>
+                    apply(s"""$${${str.trim}}""", req, service, route, apiKey, user, context, attrs, env)
+                  }
+                  .find { str =>
+                    str != "bad-expr" && !str.startsWith("no-")
+                  }
+                  .getOrElse(defaultValue)
+              }
             case r"item.$field@(.*)"              =>
               context.getOrElse(s"item.$field", s"no-item-$field")
             case r"params.$field@(.*)"            =>
@@ -452,7 +456,7 @@ object GlobalExpressionLanguage {
               headCert.get.rawDomain.get
             case "req.client_cert.issuer_dn" if req.isDefined && headCert.isDefined                                  =>
               DN(headCert.get.getIssuerDN.getName).stringify
-            case expr => "bad-expr" //s"$${$expr}"
+            case expr                                                                                                => "bad-expr" //s"$${$expr}"
           }
         } recover { case e =>
           logger.error(s"Error while parsing expression, returning raw value: $value", e)

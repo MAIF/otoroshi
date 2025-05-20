@@ -799,7 +799,8 @@ object TransformSettings                                                        
     Try {
       for {
         location        <- JwtTokenLocation.fromJson((json \ "location").as[JsValue])
-        mappingSettings <- MappingSettings.fromJson((json \ "mappingSettings").asOpt[JsValue].getOrElse(MappingSettings().asJson))
+        mappingSettings <-
+          MappingSettings.fromJson((json \ "mappingSettings").asOpt[JsValue].getOrElse(MappingSettings().asJson))
       } yield TransformSettings(location, mappingSettings)
     } recover { case e =>
       Left(e)

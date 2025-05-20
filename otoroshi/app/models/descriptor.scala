@@ -1222,7 +1222,7 @@ case class OtoBearerConstraints(
     headerName: Option[String] = None,
     queryName: Option[String] = None,
     cookieName: Option[String] = None,
-    pathName: Option[String] = None,
+    pathName: Option[String] = None
 ) {
   def json: JsValue =
     Json.obj(
@@ -1230,7 +1230,7 @@ case class OtoBearerConstraints(
       "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "queryName"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "cookieName" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "pathName" -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+      "pathName"   -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
     )
 }
 
@@ -1263,7 +1263,7 @@ case class JwtAuthConstraints(
     headerName: Option[String] = None,
     queryName: Option[String] = None,
     cookieName: Option[String] = None,
-    pathName: Option[String] = None,
+    pathName: Option[String] = None
 )                         {
   def json: JsValue =
     Json.obj(

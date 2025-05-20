@@ -82,25 +82,26 @@ object Draft {
     val kind = newDraft.content.selectAsOptString("kind").getOrElse("route")
 
     kind match {
-      case "api" | "apis.otoroshi.io/Api" => Api.format.reads(newDraft.content) match {
-        case JsSuccess(api, _) =>
-          Api
-            .writeValidator(
-              api,
-              Json.obj(),
-              oldEntity.map(oldDraft => (Api.format.reads(oldDraft._1.content).get, Json.obj())),
-              _singularName,
-              _id,
-              action,
-              env
-            )
-            .flatMap {
-              case Left(value) => value.leftf
-              case Right(newApi) => newDraft.copy(content = newApi.json).rightf
-            }
-        case JsError(_) => newDraft.rightf
-      }
-      case _ => newDraft.rightf
+      case "api" | "apis.otoroshi.io/Api" =>
+        Api.format.reads(newDraft.content) match {
+          case JsSuccess(api, _) =>
+            Api
+              .writeValidator(
+                api,
+                Json.obj(),
+                oldEntity.map(oldDraft => (Api.format.reads(oldDraft._1.content).get, Json.obj())),
+                _singularName,
+                _id,
+                action,
+                env
+              )
+              .flatMap {
+                case Left(value)   => value.leftf
+                case Right(newApi) => newDraft.copy(content = newApi.json).rightf
+              }
+          case JsError(_)        => newDraft.rightf
+        }
+      case _                              => newDraft.rightf
     }
   }
 

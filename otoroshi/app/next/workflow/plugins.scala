@@ -271,14 +271,14 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
 
 class WorkflowAccessValidator extends NgAccessValidator {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Custom("Workflow"))
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def name: String = "Workflow Access control"
-  override def description: Option[String] = "Delegate route access to a worflow".some
-  override def isAccessAsync: Boolean = true
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Workflow"))
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Workflow Access control"
+  override def description: Option[String]                 = "Delegate route access to a worflow".some
+  override def isAccessAsync: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = WorkflowBackendConfig().some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -290,7 +290,7 @@ class WorkflowAccessValidator extends NgAccessValidator {
     env.adminExtensions
       .extension[WorkflowAdminExtension]
       .flatMap(ext => ext.states.workflow(config.ref).map(w => (ext, w))) match {
-      case None =>
+      case None                        =>
         Errors
           .craftResponseResult(
             "workflow not found !",

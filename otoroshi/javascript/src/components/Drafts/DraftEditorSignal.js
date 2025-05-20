@@ -45,7 +45,6 @@ const saveDraft = debounce(() => {
         newValue = processCallback(newValue);
       }
 
-
       if (draftSignal.value.rawDraft)
         nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).update({
           ...draftSignal.value.rawDraft,

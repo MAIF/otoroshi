@@ -15,8 +15,8 @@ object WorkflowTest {
     implicit val executorContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
     val env: Env                 = ???
     val engine                   = new WorkflowEngine(env)
-    val workflow = Json.parse(
-      """
+    val workflow                 = Json
+      .parse("""
          |{
          |  "id": "main",
          |  "kind": "workflow",
@@ -120,14 +120,14 @@ object WorkflowTest {
          |    }
          |  }
          |}
-         |""".stripMargin).asObject
+         |""".stripMargin)
+      .asObject
     val node                     = Node.from(workflow)
     Files.writeString(new File("./workflow_test_1.json").toPath, workflow.prettify)
     engine.run(node, Json.obj("name" -> "foo")).map { res =>
       println(s"result: ${res.lightJson.prettify}")
     }
   }
-
 
   def main(args: Array[String]): Unit = {
     implicit val executorContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
