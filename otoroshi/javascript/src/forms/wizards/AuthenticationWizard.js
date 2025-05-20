@@ -103,8 +103,8 @@ function Selector({ setMode, disableSelectMode }) {
           disabled ? null : (
             <Button
               key={mode}
-              type="quiet"
-              className="py-3 my-2"
+              type="primaryColor"
+              className="py-2 my-2"
               style={{ border: '1px solid #f9b000' }}
               onClick={() => setMode(mode)}
             >

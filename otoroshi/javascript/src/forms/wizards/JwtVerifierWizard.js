@@ -66,7 +66,7 @@ function Header({ onClose, mode }) {
 function WizardActions({ nextStep, prevStep, step, goBack }) {
   return (
     <div className="d-flex mt-auto justify-content-between align-items-center">
-      <Button type="save" text="Previous" onClick={step !== 1 ? prevStep : goBack} />
+      <Button type="quiet" text="Previous" onClick={step !== 1 ? prevStep : goBack} />
       <WizardStepButton className="ms-auto" onClick={nextStep} text="Continue" />
     </div>
   );
@@ -85,13 +85,13 @@ function Selector({ setMode, disableSelectMode }) {
             mode: 'edition',
             disabled: disableSelectMode,
           },
-          { title: 'CLONE', text: 'Create a new one fron an existing JWT verifier', mode: 'clone' },
+          { title: 'CLONE', text: 'Create a new one from an existing JWT verifier', mode: 'clone' },
         ].map(({ title, text, mode, disabled }) =>
           disabled ? null : (
             <Button
               key={mode}
-              type="dark"
-              className="py-3 my-2"
+              type="primaryColor"
+              className="py-2 my-2"
               style={{ border: '1px solid #f9b000' }}
               onClick={() => setMode(mode)}
             >
@@ -599,7 +599,7 @@ function InformationsStep({ name, onChange }) {
           flex={true}
           className="my-3"
           style={{
-            fontSize: '2em',
+            fontSize: '1.5em',
           }}
           label="Route name"
           value={name}
@@ -645,7 +645,7 @@ function StrategyStep({ value, onChange }) {
             ].map(({ strategy, desc, title, tags }) => {
               return (
                 <Button
-                  type={value === strategy ? 'primaryColor' : 'dark'}
+                  type={value === strategy ? 'primaryColor' : 'quiet'}
                   className="py-3 d-flex align-items-center flex-column col-3"
                   style={{
                     gap: '12px',
