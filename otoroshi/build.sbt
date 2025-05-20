@@ -402,6 +402,7 @@ reStart / javaOptions ++= Seq(
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=ext:foo",
   "-Dotoroshi.storage=file",
+  //"-Dotoroshi.storage=inmemory",
   "-DVAULT_VALUE=admin-api-apikey-secret"
   // "-Dotoroshi.storage=redis",
 //   "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",

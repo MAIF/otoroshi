@@ -1180,8 +1180,7 @@ class Env(
     plugins = Plugins(
       enabled = true,
       refs = Seq(
-        "cp:otoroshi.next.proxy.ProxyEngine",
-        "cp:otoroshi.plugins.apikeys.ClientCredentialService"
+        "cp:otoroshi.next.proxy.ProxyEngine"
       ),
       config = Json.obj(
         "NextGenProxyEngine"      -> Json.obj(
@@ -1191,11 +1190,20 @@ class Env(
           "domains"          -> Seq("*"),
           "routing_strategy" -> "tree"
         ),
-        "ClientCredentialService" -> Json.obj(
-          "domain"         -> "*",
-          "expiration"     -> 1.hour.toMillis,
-          "defaultKeyPair" -> Cert.OtoroshiJwtSigning,
-          "secure"         -> true
+        "ng" -> Json.arr(
+          Json.obj(
+            "config" -> Json.obj(
+              "expiration" -> 1.hour.toMillis,
+              "default_key_pair" -> Cert.OtoroshiJwtSigning,
+              "domain" -> "*",
+              "secure" -> true
+            ),
+            "debug" -> false,
+            "enabled" -> true,
+            "exclude" -> Json.arr(),
+            "include" -> Json.arr(),
+            "plugin" -> "cp:otoroshi.next.plugins.NgClientCredentials"
+          )
         )
       )
     )
