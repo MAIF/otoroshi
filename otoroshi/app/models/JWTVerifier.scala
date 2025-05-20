@@ -818,8 +818,8 @@ object VerificationSettings extends FromJson[VerificationSettings] {
     Try {
       Right(
         VerificationSettings(
-          (json \ "fields").as[Map[String, String]],
-          (json \ "arrayFields").as[Map[String, String]]
+          (json \ "fields").asOpt[Map[String, String]].getOrElse(Map.empty),
+          (json \ "arrayFields").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       )
     } recover { case e =>

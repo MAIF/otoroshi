@@ -372,8 +372,7 @@ export class JwtVerifierWizard extends React.Component {
                     transformSettings.location === undefined ? true : transformSettings.location;
                   const outLocation = transformSettings.out_location?.source?.type || '';
                   this.updateBreadcrumb(
-                    `${
-                      sameLocation ? this.state.jwtVerifier.source?.type : outLocation
+                    `${sameLocation ? this.state.jwtVerifier.source?.type : outLocation
                     } Out location.`,
                     index
                   );
@@ -437,9 +436,9 @@ export class JwtVerifierWizard extends React.Component {
 
                             const allProps = props
                               ? {
-                                  ...props,
-                                  onChange: (e) => props.onChange(e, i),
-                                }
+                                ...props,
+                                onChange: (e) => props.onChange(e, i),
+                              }
                               : defaultProps;
 
                             return React.createElement(component, {
@@ -461,11 +460,11 @@ export class JwtVerifierWizard extends React.Component {
                                 transformSettings:
                                   jwtVerifier.strategy?.type === 'Transform'
                                     ? {
-                                        location: jwtVerifier.strategy?.transformSettings?.location
-                                          ? jwtVerifier.source
-                                          : jwtVerifier.strategy?.transformSettings?.out_location
-                                              ?.source,
-                                      }
+                                      location: jwtVerifier.strategy?.transformSettings?.location
+                                        ? jwtVerifier.source
+                                        : jwtVerifier.strategy?.transformSettings?.out_location
+                                          ?.source,
+                                    }
                                     : undefined,
                               },
                             }}
@@ -693,9 +692,8 @@ function StrategyStep({ value, onChange }) {
                             }}
                           >
                             <i
-                              className={`fas fa-${
-                                tags.includes(tag.toLocaleLowerCase()) ? 'check' : 'times'
-                              } me-1`}
+                              className={`fas fa-${tags.includes(tag.toLocaleLowerCase()) ? 'check' : 'times'
+                                } me-1`}
                               style={{
                                 color: tags.includes(tag.toLocaleLowerCase())
                                   ? 'var(--color-primary)'
@@ -916,22 +914,21 @@ function TokenSignatureStep({ root, value, onChange, title }) {
 
 function TokenTransformStep({ value, onChange }) {
   const schema = {
-    location: {
-      type: 'bool',
-      label: 'Use the same location than the entry token',
-      props: {
-        defaultValue: true,
-      },
-    },
+    // location: {
+    //   type: 'bool',
+    //   label: 'Use the same location than the entry token',
+    //   props: {
+    //     defaultValue: true,
+    //   },
+    // },
     out_location: {
-      visible: (props) => props?.location === false,
       label: 'New location',
       type: 'form',
       ...TokenLocationForm,
     },
   };
 
-  const flow = ['location', 'out_location'];
+  const flow = ['out_location'];
 
   return (
     <>
