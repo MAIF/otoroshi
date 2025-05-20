@@ -20,11 +20,17 @@ async function deleteAPI(page) {
 async function createAPI(page) {
     await page.goto('/bo/dashboard/apis')
     await page.getByRole('link', { name: ' Create new API' }).click()
-    await page.getByRole('textbox', { name: 'Name' }).click()
-    await page.getByRole('textbox', { name: 'Name' }).press('ControlOrMeta+a')
-    await page.getByRole('textbox', { name: 'Name' }).fill('My new API')
-    await page.getByRole('textbox', { name: 'Name' }).press('Tab')
-    await page.getByRole('textbox', { name: 'Description' }).fill('The best API')
+
+
+    await page.getByRole('button', { name: 'Build from Scratch Design' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    // await page.getByRole('textbox').nth(1).click();
+
+    await page.getByRole('textbox').nth(1).click()
+    await page.getByRole('textbox').nth(1).press('ControlOrMeta+a')
+    await page.getByRole('textbox').nth(1).fill('My new API')
+    await page.getByRole('textbox').nth(1).press('Tab')
+    await page.getByRole('textbox').nth(2).fill('The best API')
     await page.getByRole('button', { name: 'Create' }).click()
     await expect(page.getByText('DEV', { exact: true })).toBeVisible()
     await expect(page.getByText('0/sec')).toBeVisible()
@@ -43,14 +49,14 @@ async function publishedDraftAPI(page) {
     await page.getByRole('textbox').press('ControlOrMeta+ArrowLeft')
     await page.getByRole('textbox').press('Alt+Shift+ArrowRight')
     await page.getByRole('textbox').fill('my-frst-api.oto.tools')
-    
+
     await page.getByText('3. Add plugins to your route').click();
     await expect(page.getByText('default_flow')).toBeVisible()
 
     await page.getByText('4. Configure the backend').click();
     await expect(page.getByText('LOCALdefault_backend')).toBeVisible()
 
-    await page.getByText('5. Additional informations').click();    
+    await page.getByText('5. Additional informations').click();
     await page.getByRole('textbox', { name: 'My users route' }).click()
     await page.getByRole('textbox', { name: 'My users route' }).fill('My first API route')
     await page.getByRole('button', { name: 'Create DEV' }).click()
@@ -136,9 +142,9 @@ test('Draft version should be promote in production environment', async () => {
     await createAPI(page)
     await publishedDraftAPI(page)
 
-
-    await page.locator('#sidebar svg').nth(1).click();
+    await page.locator('div').filter({ hasText: /^PRODPublished$/ }).nth(2).click();
     await page.getByRole('option', { name: 'Draft' }).click();
+
     await page.getByRole('link', { name: ' Informations' }).click();
     await page.getByRole('textbox').first().click();
     await page.getByRole('textbox').first().press('ControlOrMeta+a');
@@ -148,9 +154,7 @@ test('Draft version should be promote in production environment', async () => {
     await page.getByRole('button', { name: 'major' }).click();
 
     await page.getByRole('button', { name: 'I want to publish this API' }).click();
-
-
     await expect(page.getByRole('heading', { name: 'my draft version PROD' })).toBeVisible();
 
-    // await deleteAPI(page)
+    await deleteAPI(page)
 })

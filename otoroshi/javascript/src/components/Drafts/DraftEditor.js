@@ -87,6 +87,7 @@ function DraftEditor({ entityId, value, className = '' }) {
     retry: 0,
     enabled: !draftContext.draft && !versionContext.notFound,
     onSuccess: (data) => {
+      // FIX an existing bug where drafts route are converted to apis route
       if (data.id?.startsWith("route_") && data.consumers && data.deployments) {
         nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).deleteById(data.id)
           .then(() => {
@@ -271,13 +272,15 @@ export function PublisDraftButton(props) {
             style: { width: '100%' },
             noCancel: false,
             okClassName: 'ms-2',
-            okLabel: 'I want to publish this route',
+            okLabel: 'I want to publish this draft to production',
           })
           .then((ok) => {
             if (ok) {
               if (updateEntityURLSignal && typeof updateEntityURLSignal.value === 'function') {
                 try {
-                  updateEntityURLSignal.value().then(() => window.location.reload());
+                  updateEntityURLSignal.value().then(() => {
+                    // window.location.reload()
+                  });
                 } catch (err) {
                   console.log(err);
                   alert('Something bad happened.');

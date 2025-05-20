@@ -3233,7 +3233,7 @@ function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
                             history.push(`/apis/${api.id}`);
                           });
                         }
-                      });
+                      })
                   });
               }}
             />

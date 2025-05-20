@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { LabelAndInput, NgBoxBooleanRenderer, NgForm } from '../../components/nginputs';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { RouteForm } from './form';
 import { Button } from '../../components/Button';
 import { ENTITIES, FormSelector } from '../../components/FormSelector';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
-import { draftVersionSignal } from '../../components/Drafts/DraftEditorSignal';
+import { draftVersionSignal, updateEntityURLSignal } from '../../components/Drafts/DraftEditorSignal';
 import { useSignalValue } from 'signals-react-safe';
 
 const capitalize = 'Route';
@@ -33,6 +33,12 @@ export const Informations = forwardRef(
   ({ isCreation, value, setValue, setSaveButton, routeId, ...props }, ref) => {
     const history = useHistory();
     const location = useLocation();
+    const valueRef = useRef()
+
+    useEffect(() => {
+      valueRef.current = value
+    }, [value])
+
     const [showAdvancedForm, toggleAdvancedForm] = useState(false);
 
     useImperativeHandle(ref, () => ({
@@ -45,20 +51,19 @@ export const Informations = forwardRef(
       setSaveButton(<SaveButton saveRoute={saveRoute} isCreation={isCreation} entityName={entityName} />);
     }, [value]);
 
-    function saveRoute(customValue) {
-      const finalValue = customValue || value;
 
+    const saveRoute = () => {
       if (isCreation || location.state?.routeFromService) {
         return nextClient
-          .forEntityNext(nextClient.ENTITIES[fetchName])
-          .create(finalValue)
-          .then(() => history.push(`/${link}/${finalValue.id}?tab=flow`));
+        .forEntityNext(nextClient.ENTITIES[fetchName])
+        .create(value)
+        .then(() => history.push(`/${link}/${value.id}?tab=flow`));
       } else {
         return nextClient
           .forEntityNext(nextClient.ENTITIES[fetchName])
-          .update(finalValue)
+          .update(valueRef.current)
           .then((res) => {
-            if (!res.error) setValue(res);
+            window.location.reload()
           });
       }
     }
@@ -380,7 +385,15 @@ export const Informations = forwardRef(
 
     return (
       <>
-        <DraftStateDaemon value={value} setValue={setValue} />
+        <DraftStateDaemon
+          value={value}
+          setValue={newValue => {
+            setValue(newValue)
+            valueRef.current = newValue
+          }}
+          updateEntityURL={() => {
+            updateEntityURLSignal.value = saveRoute;
+          }} />
 
         {showAdvancedForm ? (
           <RouteForm

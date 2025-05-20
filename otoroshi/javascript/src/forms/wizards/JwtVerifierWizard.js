@@ -759,62 +759,6 @@ const TokenLocationForm = {
             subTitle: '(Optional): String to remove from the value to access to the token',
           },
         },
-        debug: {
-          renderer: () => {
-            return (
-              <LabelAndInput label="Examples">
-                <NgForm
-                  schema={{
-                    header: {
-                      ngOptions: {
-                        spread: true,
-                      },
-                      type: 'json',
-                      props: {
-                        editorOnly: true,
-                        height: '50px',
-                        defaultValue: {
-                          Authorization: 'Bearer XXX.XXX.XXX',
-                        },
-                      },
-                    },
-                    result: {
-                      type: 'form',
-                      label: 'Form values',
-                      schema: {
-                        headerName: {
-                          type: 'string',
-                          label: 'Name',
-                          props: {
-                            disabled: true,
-                            defaultValue: 'Authorization',
-                          },
-                        },
-                        remove: {
-                          type: 'string',
-                          label: 'Remove value',
-                          props: {
-                            disabled: true,
-                            defaultValue: 'Bearer ',
-                          },
-                        },
-                      },
-                      flow: ['headerName', 'remove'],
-                    },
-                  }}
-                  flow={[
-                    {
-                      type: 'group',
-                      collapsable: false,
-                      name: 'A bearer token expected in Authorization header',
-                      fields: ['header', 'result'],
-                    },
-                  ]}
-                />
-              </LabelAndInput>
-            );
-          },
-        },
       },
       flow: [
         'type',
@@ -823,7 +767,7 @@ const TokenLocationForm = {
           collapsable: false,
           visible: (props) => props?.type === 'InHeader',
           name: 'Header informations',
-          fields: ['name', 'remove', 'debug'],
+          fields: ['name', 'remove'],
         },
         {
           type: 'group',

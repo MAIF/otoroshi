@@ -45,10 +45,12 @@ const saveDraft = debounce(() => {
         newValue = processCallback(newValue);
       }
 
-      nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).update({
-        ...draftSignal.value.rawDraft,
-        content: newValue,
-      });
+
+      if (draftSignal.value.rawDraft)
+        nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).update({
+          ...draftSignal.value.rawDraft,
+          content: newValue,
+        });
     }
   } else draftSignal.value.initialized = true;
 }, 1000);
