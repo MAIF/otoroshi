@@ -1,5 +1,6 @@
 package otoroshi.next.workflow
 
+import akka.util.ByteString
 import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 import org.joda.time.DateTime
 import otoroshi.env.Env
@@ -11,6 +12,8 @@ import otoroshi.wasm.WasmConfig
 import play.api.Logger
 import play.api.libs.json._
 
+import java.io.File
+import java.nio.file.Files
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,7 +31,72 @@ object WorkflowFunctionsInitializer {
     WorkflowFunction.registerFunction("core.store_set", new StoreSetFunction())
     WorkflowFunction.registerFunction("core.store_del", new StoreDelFunction())
     WorkflowFunction.registerFunction("core.emit_event", new EmitEventFunction())
+    WorkflowFunction.registerFunction("core.file_read", new FileReadFunction())
+    WorkflowFunction.registerFunction("core.file_write", new FileWriteFunction())
+    WorkflowFunction.registerFunction("core.file_del", new FileDeleteFunction())
     // access otoroshi resources (apikeys, etc)
+  }
+}
+
+class FileDeleteFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val path = args.select("path").asString
+    try {
+      new File(path).delete()
+      JsNull.rightf
+    } catch {
+      case t: Throwable => WorkflowError(t.getMessage, None, None).leftf
+    }
+  }
+}
+
+class FileReadFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val path = args.select("path").asString
+    val parseJson = args.select("parse_json").asOptBoolean.getOrElse(false)
+    val encodeBase64 = args.select("encode_base64").asOptBoolean.getOrElse(false)
+    try {
+      val content = Files.readAllBytes(new File(path).toPath)
+      if (parseJson) {
+        Json.parse(content).rightf
+      } else if (encodeBase64) {
+        ByteString(content).encodeBase64.utf8String.json.rightf
+      } else {
+        ByteString(content).utf8String.json.rightf
+      }
+    } catch {
+      case t: Throwable => WorkflowError(t.getMessage, None, None).leftf
+    }
+  }
+}
+
+class FileWriteFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val path = args.select("path").asString
+    val value = args.select("value").asValue
+    val prettify = args.select("prettify").asOptBoolean.getOrElse(false)
+    try {
+      val f = new File(path)
+      if (!f.exists()) {
+        f.createNewFile()
+      }
+      if (prettify) {
+        Files.writeString(new File(path).toPath, value.prettify)
+        JsNull.rightf
+      } else {
+        Files.writeString(new File(path).toPath, value match {
+          case JsString(s) => s
+          case JsNumber(s) => s.toString()
+          case JsBoolean(s) => s.toString()
+          case JsArray(_) => value.stringify
+          case JsObject(_) => value.stringify
+          case JsNull => "null"
+        })
+        JsNull.rightf
+      }
+    } catch {
+      case t: Throwable => WorkflowError(t.getMessage, None, None).leftf
+    }
   }
 }
 
@@ -137,8 +205,8 @@ class SystemCallFunction extends WorkflowFunction {
           println(s"[stderr] $err")
         }
       )
-      command.!(processLogger)
-      Json.obj("stdout" -> stdout, "stderr" -> stderr).rightf
+      val code = command.!(processLogger)
+      Json.obj("stdout" -> stdout, "stderr" -> stderr, "code" -> code).rightf
     } catch {
       case t: Throwable => Left(WorkflowError(t.getMessage, None, None)).vfuture
     }

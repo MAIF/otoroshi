@@ -85,7 +85,7 @@ class WorkflowBackend extends NgBackendCall {
           )
           .map(r => NgProxyEngineError.NgResultProxyEngineError(r).left)
       case Some((extension, workflow)) => {
-        ctx.wasmJson
+        ctx.jsonWithTypedBody
           .flatMap { input =>
             val f = extension.engine.run(Node.from(workflow.config), input.asObject)
             if (config.async) {
@@ -104,7 +104,7 @@ class WorkflowBackend extends NgBackendCall {
                     )
                   )
                 } else {
-                  val respBody = res.json
+                  val respBody = res.json.select("returned").asValue
                   val status   = respBody.select("status").asOpt[Int]
                   val headers  = respBody.select("headers").asOpt[Map[String, String]]
                   val body     = BodyHelper.extractBodyFromOpt(respBody)
@@ -179,13 +179,13 @@ class WorkflowRequestTransformer extends NgRequestTransformer {
           )
           .map(r => r.left)
       case Some((extension, workflow)) => {
-        ctx.wasmJson
+        ctx.jsonWithTypedBody
           .flatMap { input =>
             extension.engine.run(Node.from(workflow.config), input.asObject).map { res =>
               if (res.hasError) {
                 Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
               } else {
-                val response = res.json
+                val response = res.json.select("returned").asValue
                 val body     = BodyHelper.extractBodyFromOpt(response)
                 Right(
                   ctx.otoroshiRequest.copy(
@@ -245,13 +245,13 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
           )
           .map(r => r.left)
       case Some((extension, workflow)) => {
-        ctx.wasmJson
+        ctx.jsonWithTypedBody
           .flatMap { input =>
             extension.engine.run(Node.from(workflow.config), input.asObject).map { res =>
               if (res.hasError) {
                 Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
               } else {
-                val response = res.json
+                val response = res.json.select("returned").asValue
                 val body     = BodyHelper.extractBodyFromOpt(response)
                 Right(
                   ctx.otoroshiResponse.copy(
@@ -308,7 +308,7 @@ class WorkflowAccessValidator extends NgAccessValidator {
           if (res.hasError) {
             NgAccess.NgDenied(Results.InternalServerError(Json.obj("error" -> res.error.get.json))).vfuture
           } else {
-            val response = res.json
+            val response = res.json.select("returned").asValue
             val result   = (response \ "result").asOpt[Boolean].getOrElse(false)
             if (result) {
               NgAccess.NgAllowed.vfuture
