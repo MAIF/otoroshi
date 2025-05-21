@@ -75,6 +75,7 @@ class FileWriteFunction extends WorkflowFunction {
     val path = args.select("path").asString
     val value = args.select("value").asValue
     val prettify = args.select("prettify").asOptBoolean.getOrElse(false)
+    val decodeBase64 = args.select("from_base64").asOptBoolean.getOrElse(false)
     try {
       val f = new File(path)
       if (!f.exists()) {
@@ -82,6 +83,9 @@ class FileWriteFunction extends WorkflowFunction {
       }
       if (prettify) {
         Files.writeString(new File(path).toPath, value.prettify)
+        JsNull.rightf
+      } else if (decodeBase64) {
+        Files.write(new File(path).toPath, value.asString.byteString.decodeBase64.toArray)
         JsNull.rightf
       } else {
         Files.writeString(new File(path).toPath, value match {
