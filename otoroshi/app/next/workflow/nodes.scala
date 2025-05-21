@@ -1,9 +1,7 @@
 package otoroshi.next.workflow
 
 import akka.stream.scaladsl.{Sink, Source}
-import diffson.DiffOps
 import otoroshi.env.Env
-import otoroshi.next.workflow.Node.registerNode
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
@@ -11,16 +9,16 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object NodesInitializer {
   def initDefaults(): Unit = {
-    registerNode("workflow", json => WorkflowNode(json))
-    registerNode("call", json => CallNode(json))
-    registerNode("assign", json => AssignNode(json))
-    registerNode("parallel", json => ParallelFlowsNode(json))
-    registerNode("switch", json => SwitchNode(json))
-    registerNode("if", json => IfThenElseNode(json))
-    registerNode("foreach", json => ForEachNode(json))
-    registerNode("map", json => MapNode(json))
-    registerNode("filter", json => FilterNode(json))
-    registerNode("flatmap", json => FlatMapNode(json))
+    Node.registerNode("workflow", json => WorkflowNode(json))
+    Node.registerNode("call", json => CallNode(json))
+    Node.registerNode("assign", json => AssignNode(json))
+    Node.registerNode("parallel", json => ParallelFlowsNode(json))
+    Node.registerNode("switch", json => SwitchNode(json))
+    Node.registerNode("if", json => IfThenElseNode(json))
+    Node.registerNode("foreach", json => ForEachNode(json))
+    Node.registerNode("map", json => MapNode(json))
+    Node.registerNode("filter", json => FilterNode(json))
+    Node.registerNode("flatmap", json => FlatMapNode(json))
   }
 }
 

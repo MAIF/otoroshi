@@ -10,13 +10,18 @@ const extensionId = 'otoroshi.extensions.Workflows';
 export function setupWorkflowsExtension(registerExtension) {
   registerExtension(extensionId, true, (ctx) => {
     class WorkflowTester extends Component {
+
       state = {
-        input: '{\n  "name": "foo"\n}',
+        input: this.props.rawValue.test_payload ? JSON.stringify(this.props.rawValue.test_payload, null, 2) : '{\n  "name": "foo"\n}',
         running: false,
         result: null,
         run: null,
         error: null,
       };
+
+      componentDidMount() {
+        console.log("tester", this.props)
+      }
 
       run = () => {
         this.setState(
@@ -68,7 +73,10 @@ export function setupWorkflowsExtension(registerExtension) {
               label="Input"
               height="150px"
               value={this.state.input}
-              onChange={(e) => this.setState({ input: e })}
+              onChange={(e) => {
+                this.setState({ input: e })
+                this.props.rawOnChange({ ...this.props.rawValue, test_payload: JSON.parse(e) });
+              }}
             />
             <div className="row mb-3">
               <label className="col-sm-2 col-form-label"></label>

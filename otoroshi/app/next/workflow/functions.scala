@@ -3,10 +3,9 @@ package otoroshi.next.workflow
 import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.events.{AnalyticEvent, AuditEvent}
+import otoroshi.events.AnalyticEvent
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.BodyHelper
-import otoroshi.next.workflow.WorkflowFunction.registerFunction
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
@@ -17,17 +16,18 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object WorkflowFunctionsInitializer {
   def initDefaults(): Unit = {
-    registerFunction("core.log", new LogFunction())
-    registerFunction("core.hello", new HelloFunction())
-    registerFunction("core.http_client", new HttpClientFunction())
-    registerFunction("core.wasm_call", new WasmCallFunction())
-    registerFunction("core.workflow_call", new WorkflowCallFunction())
-    registerFunction("core.store_mget", new StoreMgetFunction())
-    registerFunction("core.store_match", new StoreMatchFunction())
-    registerFunction("core.store_get", new StoreGetFunction())
-    registerFunction("core.store_set", new StoreSetFunction())
-    registerFunction("core.store_del", new StoreDelFunction())
-    registerFunction("core.emit_event", new EmitEventFunction())
+    WorkflowFunction.registerFunction("core.log", new LogFunction())
+    WorkflowFunction.registerFunction("core.hello", new HelloFunction())
+    WorkflowFunction.registerFunction("core.http_client", new HttpClientFunction())
+    WorkflowFunction.registerFunction("core.wasm_call", new WasmCallFunction())
+    WorkflowFunction.registerFunction("core.workflow_call", new WorkflowCallFunction())
+    WorkflowFunction.registerFunction("core.system_call", new SystemCallFunction())
+    WorkflowFunction.registerFunction("core.store_mget", new StoreMgetFunction())
+    WorkflowFunction.registerFunction("core.store_match", new StoreMatchFunction())
+    WorkflowFunction.registerFunction("core.store_get", new StoreGetFunction())
+    WorkflowFunction.registerFunction("core.store_set", new StoreSetFunction())
+    WorkflowFunction.registerFunction("core.store_del", new StoreDelFunction())
+    WorkflowFunction.registerFunction("core.emit_event", new EmitEventFunction())
     // access otoroshi resources (apikeys, etc)
   }
 }
@@ -114,6 +114,33 @@ class WorkflowCallFunction extends WorkflowFunction {
           case res                 => Right(res.returned.get)
         }
       }
+    }
+  }
+}
+
+class SystemCallFunction extends WorkflowFunction {
+
+  import scala.sys.process._
+
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    try {
+      var stdout = ""
+      var stderr = ""
+      val command = args.select("command").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val processLogger = ProcessLogger(
+        out => {
+          stdout = stdout + out
+          println(s"[stdout] $out")
+        },
+        err => {
+          stderr = stderr + err
+          println(s"[stderr] $err")
+        }
+      )
+      command.!(processLogger)
+      Json.obj("stdout" -> stdout, "stderr" -> stderr).rightf
+    } catch {
+      case t: Throwable => Left(WorkflowError(t.getMessage, None, None)).vfuture
     }
   }
 }

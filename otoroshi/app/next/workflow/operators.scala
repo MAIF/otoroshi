@@ -1,41 +1,40 @@
 package otoroshi.next.workflow
 
 import otoroshi.env.Env
-import otoroshi.next.workflow.WorkflowOperator.registerOperator
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
 object WorkflowOperatorsInitializer {
   def initDefaults(): Unit = {
-    registerOperator("$mem_ref", new MemRefOperator())
-    registerOperator("$array_append", new ArrayAppendOperator())
-    registerOperator("$array_prepend", new ArrayPrependOperator())
-    registerOperator("$array_at", new ArrayAtOperator())
-    registerOperator("$array_del", new ArrayDelOperator())
-    registerOperator("$array_page", new ArrayPageOperator())
-    registerOperator("$projection", new ProjectionOperator())
+    WorkflowOperator.registerOperator("$mem_ref", new MemRefOperator())
+    WorkflowOperator.registerOperator("$array_append", new ArrayAppendOperator())
+    WorkflowOperator.registerOperator("$array_prepend", new ArrayPrependOperator())
+    WorkflowOperator.registerOperator("$array_at", new ArrayAtOperator())
+    WorkflowOperator.registerOperator("$array_del", new ArrayDelOperator())
+    WorkflowOperator.registerOperator("$array_page", new ArrayPageOperator())
+    WorkflowOperator.registerOperator("$projection", new ProjectionOperator())
 
-    registerOperator("$map_put", new MapPutOperator())
-    registerOperator("$map_get", new MapGetOperator())
-    registerOperator("$map_del", new MapDelOperator())
+    WorkflowOperator.registerOperator("$map_put", new MapPutOperator())
+    WorkflowOperator.registerOperator("$map_get", new MapGetOperator())
+    WorkflowOperator.registerOperator("$map_del", new MapDelOperator())
 
-    registerOperator("$json_parse", new JsonParseOperator())
-    registerOperator("$str_concat", new StrConcatOperator())
+    WorkflowOperator.registerOperator("$json_parse", new JsonParseOperator())
+    WorkflowOperator.registerOperator("$str_concat", new StrConcatOperator())
 
-    registerOperator("$is_truthy", new IsTruthyOperator())
-    registerOperator("$is_falsy", new IsFalsyOperator())
-    registerOperator("$contains", new ContainsOperator())
-    registerOperator("$eq", new EqOperator())
-    registerOperator("$neq", new NeqOperator())
-    registerOperator("$gt", new GtOperator())
-    registerOperator("$lt", new LtOperator())
-    registerOperator("$gte", new GteOperator())
-    registerOperator("$lte", new LteOperator())
-    registerOperator("$encode_base64", new EncodeBase64Operator())
-    registerOperator("$decode_base64", new DecodeBase64Operator())
-    registerOperator("$basic_auth", new BasicAuthOperator())
-    registerOperator("$now", new NowOperator())
-    registerOperator("$not", new NotOperator())
+    WorkflowOperator.registerOperator("$is_truthy", new IsTruthyOperator())
+    WorkflowOperator.registerOperator("$is_falsy", new IsFalsyOperator())
+    WorkflowOperator.registerOperator("$contains", new ContainsOperator())
+    WorkflowOperator.registerOperator("$eq", new EqOperator())
+    WorkflowOperator.registerOperator("$neq", new NeqOperator())
+    WorkflowOperator.registerOperator("$gt", new GtOperator())
+    WorkflowOperator.registerOperator("$lt", new LtOperator())
+    WorkflowOperator.registerOperator("$gte", new GteOperator())
+    WorkflowOperator.registerOperator("$lte", new LteOperator())
+    WorkflowOperator.registerOperator("$encode_base64", new EncodeBase64Operator())
+    WorkflowOperator.registerOperator("$decode_base64", new DecodeBase64Operator())
+    WorkflowOperator.registerOperator("$basic_auth", new BasicAuthOperator())
+    WorkflowOperator.registerOperator("$now", new NowOperator())
+    WorkflowOperator.registerOperator("$not", new NotOperator())
     // math operations
   }
 }
