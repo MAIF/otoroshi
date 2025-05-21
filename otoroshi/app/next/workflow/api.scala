@@ -119,37 +119,43 @@ object WorkflowFunction {
 
 trait Node {
   def json: JsObject
-  def id: String                = json.select("id").asString
+  def id: String                = json.select("id").asOptString.getOrElse(ULID.random().toLowerCase)
   def kind: String              = json.select("kind").asString
+  def enabled: Boolean          = json.select("enabled").asOptBoolean.getOrElse(true)
   def result: Option[String]    = json.select("result").asOptString
   def returned: Option[JsValue] = json.select("returned").asOpt[JsValue]
   def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
   final def internalRun(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    wfr.log(s"starting '${id}'", this)
-    run(wfr)
-      .map {
-        case Left(err)  => {
-          wfr.log(s"ending with error '${id}'", this, err.some)
-          Left(err)
+    if (!enabled) {
+      // println(s"skipping ${id}")
+      JsNull.rightf
+    } else {
+      wfr.log(s"starting '${id}'", this)
+      run(wfr)
+        .map {
+          case Left(err) => {
+            wfr.log(s"ending with error '${id}'", this, err.some)
+            Left(err)
+          }
+          case Right(res) => {
+            wfr.log(s"ending '${id}'", this)
+            result.foreach(name => wfr.memory.set(name, res))
+            returned
+              .map(v => WorkflowOperator.processOperators(v, wfr, env))
+              .map(v => Right(v))
+              .getOrElse(Right(res)) // TODO: el like
+          }
         }
-        case Right(res) => {
-          wfr.log(s"ending '${id}'", this)
-          result.foreach(name => wfr.memory.set(name, res))
-          returned
-            .map(v => WorkflowOperator.processOperators(v, wfr, env))
-            .map(v => Right(v))
-            .getOrElse(Right(res)) // TODO: el like
+        .recover {
+          case t: Throwable => {
+            val error = WorkflowError(s"caught exception on task: '${id}'", None, Some(t))
+            wfr.log(s"ending with exception '${id}'", this, error.some)
+            Left(error)
+          }
         }
-      }
-      .recover {
-        case t: Throwable => {
-          val error = WorkflowError(s"caught exception on task: '${id}'", None, Some(t))
-          wfr.log(s"ending with exception '${id}'", this, error.some)
-          Left(error)
-        }
-      }
+    }
   }
 }
 
@@ -215,7 +221,7 @@ object WorkflowOperator {
       val path  = parts.tail.mkString(".")
       wfr.memory.get(name) match {
         case None        => JsNull
-        case Some(value) => value.at(path).asValue
+        case Some(value) => value.at(path).asOpt[JsValue].getOrElse(JsNull)
       }
     }
     case _                                                                                => value

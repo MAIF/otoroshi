@@ -164,7 +164,7 @@ case class IfThenElseNode(json: JsObject) extends Node {
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val pass = WorkflowOperator.processOperators(json.select("if").asValue, wfr, env).asOptBoolean.getOrElse(false)
+    val pass = WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
     if (pass) {
       val node = Node.from(json.select("then").asObject)
       node.internalRun(wfr).recover { case t: Throwable =>

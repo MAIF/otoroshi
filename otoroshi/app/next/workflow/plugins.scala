@@ -104,7 +104,7 @@ class WorkflowBackend extends NgBackendCall {
                     )
                   )
                 } else {
-                  val respBody = res.json.select("returned").asValue
+                  val respBody = res.returned.getOrElse(Json.obj())
                   val status   = respBody.select("status").asOpt[Int]
                   val headers  = respBody.select("headers").asOpt[Map[String, String]]
                   val body     = BodyHelper.extractBodyFromOpt(respBody)
@@ -185,7 +185,7 @@ class WorkflowRequestTransformer extends NgRequestTransformer {
               if (res.hasError) {
                 Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
               } else {
-                val response = res.json.select("returned").asValue
+                val response = res.returned.getOrElse(Json.obj())
                 val body     = BodyHelper.extractBodyFromOpt(response)
                 Right(
                   ctx.otoroshiRequest.copy(
@@ -251,7 +251,7 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
               if (res.hasError) {
                 Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
               } else {
-                val response = res.json.select("returned").asValue
+                val response = res.returned.getOrElse(Json.obj())
                 val body     = BodyHelper.extractBodyFromOpt(response)
                 Right(
                   ctx.otoroshiResponse.copy(
@@ -308,7 +308,7 @@ class WorkflowAccessValidator extends NgAccessValidator {
           if (res.hasError) {
             NgAccess.NgDenied(Results.InternalServerError(Json.obj("error" -> res.error.get.json))).vfuture
           } else {
-            val response = res.json.select("returned").asValue
+            val response = res.returned.getOrElse(Json.obj())
             val result   = (response \ "result").asOpt[Boolean].getOrElse(false)
             if (result) {
               NgAccess.NgAllowed.vfuture
