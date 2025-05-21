@@ -112,7 +112,7 @@ object GlobalExpressionLanguage {
               DateTime.parse(date).minusMillis(field.toInt).getMillis.toString
             case r"date\($date@(.*)\).minus_ms\($field@(.*)\).epoch_sec"                =>
               TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).minusMillis(field.toInt).getMillis).toString
-            case r"date\($date@(.*)\).format\('$format@(.*)'\)"                         => DateTime.parse(date).getMillis.toString
+            case r"date\($date@(.*)\).format\('$format@(.*)'\)"                         => DateTime.parse(date).toString(format)
             case r"date\($date@(.*)\).epoch_ms"                                         => DateTime.parse(date).getMillis.toString
             case r"date\($date@(.*)\).epoch_sec"                                        =>
               TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).getMillis).toString
