@@ -259,46 +259,43 @@ export function setupWorkflowsExtension(registerExtension) {
 
     return {
       id: extensionId,
-      categories: [],
-      // categories:[{
-      //   title: 'Workflows',
-      //   description: 'All the features related to Otoroshi Workflows',
-      //   features: [
-      //     {
-      //       title: 'Workflows',
-      //       description: 'All your Workflows',
-      //       absoluteImg: '',
-      //       link: '/extensions/workflows/workflows',
-      //       display: () => true,
-      //       icon: () => 'fa-cubes',
-      //     }
-      //   ]
-      // }],
+      categories:[{
+        title: 'Workflows',
+        description: 'All the features related to Otoroshi Workflows',
+        features: [
+          {
+            title: 'Workflows',
+            description: 'All your Workflows',
+            absoluteImg: '',
+            link: '/extensions/workflows/workflows',
+            display: () => true,
+            icon: () => 'fa-cubes',
+          }
+        ]
+      }],
       sidebarItems: [],
       creationItems: [],
       dangerZoneParts: [],
-      features: [],
-      //features: [
-      //  {
-      //    title: 'Workflows',
-      //    description: 'All your Workflows',
-      //    img: 'private-apps',
-      //    link: '/extensions/workflows/workflows',
-      //    display: () => true,
-      //    icon: () => 'fa-cubes',
-      //  },
-      //],
-      searchItems: [],
-      //searchItems: [
-      //  {
-      //    action: () => {
-      //      window.location.href = `/bo/dashboard/extensions/workflows/workflows`;
-      //    },
-      //    env: <span className="fas fa-cubes" />,
-      //    label: 'Workflows',
-      //    value: 'workflows',
-      //  },
-      //],
+      features: [
+        {
+          title: 'Workflows',
+          description: 'All your Workflows',
+          img: 'private-apps',
+          link: '/extensions/workflows/workflows',
+          display: () => true,
+          icon: () => 'fa-cubes',
+        },
+      ],
+      searchItems: [
+        {
+          action: () => {
+            window.location.href = `/bo/dashboard/extensions/workflows/workflows`;
+          },
+          env: <span className="fas fa-cubes" />,
+          label: 'Workflows',
+          value: 'workflows',
+        },
+      ],
       routes: [
         {
           path: '/extensions/workflows/workflows/:taction/:titem',
