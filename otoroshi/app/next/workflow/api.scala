@@ -107,7 +107,8 @@ case class WorkflowRun(id: String, attrs: TypedMap, env: Env) {
 }
 
 trait WorkflowFunction {
-  def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]]
+  def callWithRun(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = call(args)
+  def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = Left(WorkflowError("not implemented", None, None)).vfuture
 }
 
 object WorkflowFunction {

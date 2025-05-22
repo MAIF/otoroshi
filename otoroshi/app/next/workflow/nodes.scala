@@ -72,7 +72,7 @@ case class CallNode(json: JsObject) extends Node {
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     WorkflowFunction.get(functionName) match {
       case None           => WorkflowError(s"function '${functionName}' not supported in task '${id}'", None, None).leftf
-      case Some(function) => function.call(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
+      case Some(function) => function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
     }
   }
 }
