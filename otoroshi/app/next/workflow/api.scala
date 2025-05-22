@@ -224,6 +224,8 @@ object WorkflowOperator {
         case Some(value) => value.at(path).asOpt[JsValue].getOrElse(JsNull)
       }
     }
+    case JsString(str) if str.contains("${now_str}") => JsString(str.replace("${now_str}", DateTime.now().toString))
+    case JsString(str) if str.contains("${now}") => JsString(str.replace("${now}", System.currentTimeMillis().toString))
     case _                                                                                => value
   }
 }
