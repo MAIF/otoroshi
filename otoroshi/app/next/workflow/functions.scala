@@ -42,8 +42,9 @@ class FileDeleteFunction extends WorkflowFunction {
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val path = args.select("path").asString
     try {
-      new File(path).delete()
-      JsNull.rightf
+      val f = new File(path)
+      f.delete()
+      Json.obj("file_path" -> f.getAbsolutePath).rightf
     } catch {
       case t: Throwable => WorkflowError(t.getMessage, None, None).leftf
     }
@@ -72,7 +73,7 @@ class FileReadFunction extends WorkflowFunction {
 
 class FileWriteFunction extends WorkflowFunction {
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val path = args.select("path").asString
+    val path = args.select("path").asOptString.getOrElse(Files.createTempFile("llm-ext-fw-", ".tmp").toFile.getAbsolutePath)
     val value = args.select("value").asValue
     val prettify = args.select("prettify").asOptBoolean.getOrElse(false)
     val decodeBase64 = args.select("from_base64").asOptBoolean.getOrElse(false)
@@ -82,13 +83,13 @@ class FileWriteFunction extends WorkflowFunction {
         f.createNewFile()
       }
       if (prettify) {
-        Files.writeString(new File(path).toPath, value.prettify)
-        JsNull.rightf
+        Files.writeString(f.toPath, value.prettify)
+        Json.obj("file_path" -> f.getAbsolutePath).rightf
       } else if (decodeBase64) {
-        Files.write(new File(path).toPath, value.asString.byteString.decodeBase64.toArray)
-        JsNull.rightf
+        Files.write(f.toPath, value.asString.byteString.decodeBase64.toArray)
+        Json.obj("file_path" -> f.getAbsolutePath).rightf
       } else {
-        Files.writeString(new File(path).toPath, value match {
+        Files.writeString(f.toPath, value match {
           case JsString(s) => s
           case JsNumber(s) => s.toString()
           case JsBoolean(s) => s.toString()
@@ -96,7 +97,7 @@ class FileWriteFunction extends WorkflowFunction {
           case JsObject(_) => value.stringify
           case JsNull => "null"
         })
-        JsNull.rightf
+        Json.obj("file_path" -> f.getAbsolutePath).rightf
       }
     } catch {
       case t: Throwable => WorkflowError(t.getMessage, None, None).leftf
