@@ -20,6 +20,7 @@ case class WorkflowBackendConfig(json: JsValue = Json.obj()) extends NgPluginCon
 
 object WorkflowBackendConfig {
   val configFlow: Seq[String]        = Seq("ref", "async")
+  val configFlowNoAsync: Seq[String]        = Seq("ref")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
       "async" -> Json.obj("type" -> "bool", "label" -> "Async"),
@@ -156,6 +157,9 @@ class WorkflowRequestTransformer extends NgRequestTransformer {
   override def description: Option[String]                 =
     "Transform the content of the request with a workflow".some
   override def defaultConfigObject: Option[NgPluginConfig] = WorkflowBackendConfig().some
+  override def noJsForm: Boolean                 = true
+  override def configFlow: Seq[String]           = WorkflowBackendConfig.configFlowNoAsync
+  override def configSchema: Option[JsObject]    = WorkflowBackendConfig.configSchema
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
@@ -222,6 +226,9 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
   override def description: Option[String]                 =
     "Transform the content of a response with a workflow".some
   override def defaultConfigObject: Option[NgPluginConfig] = WorkflowBackendConfig().some
+  override def noJsForm: Boolean                 = true
+  override def configFlow: Seq[String]           = WorkflowBackendConfig.configFlowNoAsync
+  override def configSchema: Option[JsObject]    = WorkflowBackendConfig.configSchema
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
@@ -280,6 +287,9 @@ class WorkflowAccessValidator extends NgAccessValidator {
   override def description: Option[String]                 = "Delegate route access to a worflow".some
   override def isAccessAsync: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = WorkflowBackendConfig().some
+  override def noJsForm: Boolean                 = true
+  override def configFlow: Seq[String]           = WorkflowBackendConfig.configFlowNoAsync
+  override def configSchema: Option[JsObject]    = WorkflowBackendConfig.configSchema
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
 
