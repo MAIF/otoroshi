@@ -208,6 +208,7 @@ object WorkflowOperator {
     }
     case JsArray(arr)                                                                     => JsArray(arr.map(v => processOperators(v, wfr, env)))
     case JsObject(map)                                                                    => JsObject(map.mapValues(v => processOperators(v, wfr, env)))
+    case JsString("${now}")                                                               => System.currentTimeMillis().json
     case JsString(str) if str.startsWith("${") && str.endsWith("}") && !str.contains(".") => {
       val name = str.substring(2).init
       wfr.memory.get(name) match {
@@ -224,8 +225,8 @@ object WorkflowOperator {
         case Some(value) => value.at(path).asOpt[JsValue].getOrElse(JsNull)
       }
     }
-    case JsString(str) if str.contains("${now_str}") => JsString(str.replace("${now_str}", DateTime.now().toString))
-    case JsString(str) if str.contains("${now}") => JsString(str.replace("${now}", System.currentTimeMillis().toString))
+    case JsString(str) if str.contains("${now_str}")                                      => JsString(str.replace("${now_str}", DateTime.now().toString))
+    case JsString(str) if str.contains("${now}")                                          => JsString(str.replace("${now}", System.currentTimeMillis().toString))
     case _                                                                                => value
   }
 }

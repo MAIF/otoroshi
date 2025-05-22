@@ -1,5 +1,7 @@
 package otoroshi.next.workflow
 
+import org.joda.time.DateTime
+import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -35,7 +37,80 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$basic_auth", new BasicAuthOperator())
     WorkflowOperator.registerOperator("$now", new NowOperator())
     WorkflowOperator.registerOperator("$not", new NotOperator())
+    WorkflowOperator.registerOperator("$parse_datetime", new ParseDateTimeOperator())
+    WorkflowOperator.registerOperator("$parse_date", new ParseDateOperator())
+    WorkflowOperator.registerOperator("$parse_time", new ParseTimeOperator())
+    WorkflowOperator.registerOperator("$add", new AddOperator())
+    WorkflowOperator.registerOperator("$subtract", new SubtractOperator())
+    WorkflowOperator.registerOperator("$multiply", new MultiplyOperator())
+    WorkflowOperator.registerOperator("$divide", new DivideOperator())
     // math operations
+  }
+}
+
+class AddOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("values").asOpt[Seq[JsNumber]] match {
+      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a + b.value))
+      case _             => 0.json
+    }
+  }
+}
+
+class SubtractOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("values").asOpt[Seq[JsNumber]] match {
+      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a - b.value))
+      case _             => 0.json
+    }
+  }
+}
+
+class MultiplyOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("values").asOpt[Seq[JsNumber]] match {
+      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a * b.value))
+      case _             => 0.json
+    }
+  }
+}
+
+class DivideOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("values").asOpt[Seq[JsNumber]] match {
+      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a / b.value))
+      case _             => 0.json
+    }
+  }
+}
+
+class ParseDateTimeOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val pattern = opts.select("pattern").asOpt[String].map(p => DateTimeFormat.forPattern(p)).getOrElse(ISODateTimeFormat.dateTimeParser.withOffsetParsed)
+    opts.select("value").asOpt[String] match {
+      case Some(dateStr) => DateTime.parse(dateStr, pattern).toDate.getTime.json
+      case _             => JsBoolean(false)
+    }
+  }
+}
+
+class ParseDateOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val pattern = opts.select("pattern").asOpt[String].map(p => DateTimeFormat.forPattern(p)).getOrElse(DateTimeFormat.forPattern("yyyy-MM-dd"))
+    opts.select("value").asOpt[String] match {
+      case Some(dateStr) => DateTime.parse(dateStr, pattern).withTimeAtStartOfDay().toDate.getTime.json
+      case _             => JsNull
+    }
+  }
+}
+
+class ParseTimeOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val pattern = opts.select("pattern").asOpt[String].map(p => DateTimeFormat.forPattern(s"yyyy-MM-dd ${p}")).getOrElse(DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss"))
+    opts.select("value").asOpt[String] match {
+      case Some(timeStr) => DateTime.parse(s"${DateTime.now().toString("yyyy-MM-dd")} ${timeStr}", pattern).withTimeAtStartOfDay().toDate.getTime.json
+      case _             => JsNull
+    }
   }
 }
 
@@ -43,7 +118,7 @@ class NotOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("value").asOpt[JsValue] match {
       case Some(JsBoolean(b)) => JsBoolean(!b)
-      case _                  => JsBoolean(false)
+      case _             => JsNull
     }
   }
 }
