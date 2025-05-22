@@ -5,7 +5,8 @@ import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.DurationLong
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object NodesInitializer {
   def initDefaults(): Unit = {
@@ -19,6 +20,29 @@ object NodesInitializer {
     Node.registerNode("map", json => MapNode(json))
     Node.registerNode("filter", json => FilterNode(json))
     Node.registerNode("flatmap", json => FlatMapNode(json))
+    Node.registerNode("wait", json => WaitNode(json))
+    Node.registerNode("error", json => ErrorNode(json))
+  }
+}
+
+case class ErrorNode(json: JsObject) extends Node {
+  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val message = json.select("message").asOpt[String].getOrElse("")
+    val details = json.select("details").asOpt[JsObject]
+    WorkflowError(
+      message = message, details = details, exception = None
+    ).leftf
+  }
+}
+
+case class WaitNode(json: JsObject) extends Node {
+  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val duration = json.select("duration").asOpt[Long].getOrElse(0L).millis
+    val promise = Promise[Either[WorkflowError, JsValue]]()
+    env.otoroshiScheduler.scheduleOnce(duration) {
+      promise.trySuccess(JsNull.right)
+    }
+    promise.future
   }
 }
 
