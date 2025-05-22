@@ -8,6 +8,7 @@ import otoroshi.models.{BackOfficeUser, EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -192,7 +193,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             val input    = payload.select("input").asString.parseJson.asObject
             val workflow = payload.select("workflow").asObject
             val node     = Node.from(workflow)
-            engine.run(node, input).map { res =>
+            engine.run(node, input, TypedMap.empty).map { res =>
               Results.Ok(res.json)
             }
           }

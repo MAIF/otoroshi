@@ -2,6 +2,7 @@ package otoroshi.next.workflow
 
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -44,7 +45,26 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$subtract", new SubtractOperator())
     WorkflowOperator.registerOperator("$multiply", new MultiplyOperator())
     WorkflowOperator.registerOperator("$divide", new DivideOperator())
-    // math operations
+    WorkflowOperator.registerOperator("$expression_language", new ExpressionLanguageOperator())
+  }
+}
+
+class ExpressionLanguageOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("expression").asOpt[String] match {
+      case Some(expression) => GlobalExpressionLanguage.apply(
+        value = expression,
+        req = wfr.attrs.get(otoroshi.plugins.Keys.RequestKey),
+        service = wfr.attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy),
+        route = wfr.attrs.get(otoroshi.next.plugins.Keys.RouteKey),
+        apiKey = wfr.attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        user = wfr.attrs.get(otoroshi.plugins.Keys.UserKey),
+        context = Map.empty,
+        attrs = wfr.attrs,
+        env = env,
+      ).json
+      case _ => JsNull
+    }
   }
 }
 

@@ -88,7 +88,7 @@ class WorkflowBackend extends NgBackendCall {
       case Some((extension, workflow)) => {
         ctx.jsonWithTypedBody
           .flatMap { input =>
-            val f = extension.engine.run(Node.from(workflow.config), input.asObject)
+            val f = extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs)
             if (config.async) {
               Right(
                 BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(Json.obj("ack" -> true))), None)
@@ -185,7 +185,7 @@ class WorkflowRequestTransformer extends NgRequestTransformer {
       case Some((extension, workflow)) => {
         ctx.jsonWithTypedBody
           .flatMap { input =>
-            extension.engine.run(Node.from(workflow.config), input.asObject).map { res =>
+            extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).map { res =>
               if (res.hasError) {
                 Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
               } else {
@@ -254,7 +254,7 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
       case Some((extension, workflow)) => {
         ctx.jsonWithTypedBody
           .flatMap { input =>
-            extension.engine.run(Node.from(workflow.config), input.asObject).map { res =>
+            extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).map { res =>
               if (res.hasError) {
                 Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
               } else {
@@ -314,7 +314,7 @@ class WorkflowAccessValidator extends NgAccessValidator {
           .map(r => NgAccess.NgDenied(r))
       case Some((extension, workflow)) => {
         val input = ctx.wasmJson
-        extension.engine.run(Node.from(workflow.config), input.asObject).flatMap { res =>
+        extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).flatMap { res =>
           if (res.hasError) {
             NgAccess.NgDenied(Results.InternalServerError(Json.obj("error" -> res.error.get.json))).vfuture
           } else {

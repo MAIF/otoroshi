@@ -39,7 +39,7 @@ object WorkflowFunctionsInitializer {
 }
 
 class FileDeleteFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val path = args.select("path").asString
     try {
       val f = new File(path)
@@ -52,7 +52,7 @@ class FileDeleteFunction extends WorkflowFunction {
 }
 
 class FileReadFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val path = args.select("path").asString
     val parseJson = args.select("parse_json").asOptBoolean.getOrElse(false)
     val encodeBase64 = args.select("encode_base64").asOptBoolean.getOrElse(false)
@@ -72,7 +72,7 @@ class FileReadFunction extends WorkflowFunction {
 }
 
 class FileWriteFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val path = args.select("path").asOptString.getOrElse(Files.createTempFile("llm-ext-fw-", ".tmp").toFile.getAbsolutePath)
     val value = args.select("value").asValue
     val prettify = args.select("prettify").asOptBoolean.getOrElse(false)
@@ -106,7 +106,7 @@ class FileWriteFunction extends WorkflowFunction {
 }
 
 class EmitEventFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val event = args.select("event").asOpt[JsObject].getOrElse(Json.obj())
     WorkflowEmitEvent(event, env).toAnalytics()
     JsNull.rightf
@@ -118,7 +118,7 @@ object LogFunction {
 }
 
 class LogFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val message = args.select("message").asString
     val params  = args.select("params").asOpt[Seq[JsValue]].getOrElse(Seq.empty).map(_.stringify).mkString(" ")
     LogFunction.logger.info(message + " " + params)
@@ -127,7 +127,7 @@ class LogFunction extends WorkflowFunction {
 }
 
 class HelloFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val name    = args.select("name").asOptString.getOrElse("Stranger")
     val message = s"Hello ${name} !"
     println(message)
@@ -136,7 +136,7 @@ class HelloFunction extends WorkflowFunction {
 }
 
 class HttpClientFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val url       = args.select("url").asString
     val method    = args.select("method").asOptString.getOrElse("GET")
     val headers   = args.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -174,7 +174,7 @@ class HttpClientFunction extends WorkflowFunction {
 
 class WorkflowCallFunction extends WorkflowFunction {
 
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val workflowId = args.select("workflow_id").asString
     val input      = args.select("input").asObject
     val extension  = env.adminExtensions.extension[WorkflowAdminExtension].get
@@ -182,7 +182,7 @@ class WorkflowCallFunction extends WorkflowFunction {
       case None           => Left(WorkflowError("workflow not found", Some(Json.obj("workflow_id" -> workflowId)), None)).vfuture
       case Some(workflow) => {
         val node = Node.from(workflow.config)
-        extension.engine.run(node, input).map {
+        extension.engine.run(node, input, wfr.attrs).map {
           case res if res.hasError => Left(res.error.get)
           case res                 => Right(res.returned.get)
         }
@@ -195,7 +195,7 @@ class SystemCallFunction extends WorkflowFunction {
 
   import scala.sys.process._
 
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     try {
       var stdout = ""
       var stderr = ""
@@ -219,7 +219,7 @@ class SystemCallFunction extends WorkflowFunction {
 }
 
 class WasmCallFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val wasmSource   = args.select("wasm_plugin").asString
     val functionName = args.select("function").asOptString.getOrElse("call")
     val params       = args.select("params").asValue.stringify
@@ -254,7 +254,7 @@ class WasmCallFunction extends WorkflowFunction {
 }
 
 class StoreDelFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty)
     env.datastores.rawDataStore.del(keys).map { r =>
       Right(r.json)
@@ -263,7 +263,7 @@ class StoreDelFunction extends WorkflowFunction {
 }
 
 class StoreGetFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     args.select("key").asOptString match {
       case None      => Right(JsNull).vfuture
       case Some(key) =>
@@ -276,7 +276,7 @@ class StoreGetFunction extends WorkflowFunction {
 }
 
 class StoreSetFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val key   = args.select("key").asString
     val value = args.select("value").asValue
     val ttl   = args.select("ttl").asOptLong
@@ -287,7 +287,7 @@ class StoreSetFunction extends WorkflowFunction {
 }
 
 class StoreMgetFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty)
     env.datastores.rawDataStore.mget(keys).map { seq =>
       Right(JsArray(seq.collect { case Some(bs) => bs.utf8String.json }))
@@ -296,7 +296,7 @@ class StoreMgetFunction extends WorkflowFunction {
 }
 
 class StoreMatchFunction extends WorkflowFunction {
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val pattern = args.select("pattern").asString
     env.datastores.rawDataStore.allMatching(pattern).map { seq =>
       Right(JsArray(seq.map(_.utf8String.json)))
