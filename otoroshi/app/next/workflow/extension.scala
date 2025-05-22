@@ -130,7 +130,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
     implicit val ec = env.otoroshiExecutionContext
     implicit val ev = env
     for {
-      configs <- datastores.workflowsDatastore.findAll()
+      configs <- datastores.workflowsDatastore.findAllAndFillSecrets()
     } yield {
       states.updateWorkflows(configs)
       ()
@@ -185,12 +185,16 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
       case None             => Results.Ok(Json.obj("done" -> false, "error" -> "no body")).vfuture
       case Some(bodySource) =>
         bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-          val payload  = bodyRaw.utf8String.parseJson
-          val input    = payload.select("input").asString.parseJson.asObject
-          val workflow = payload.select("workflow").asObject
-          val node     = Node.from(workflow)
-          engine.run(node, input).map { res =>
-            Results.Ok(res.json)
+          val payload_raw  = bodyRaw.utf8String
+          val secretFillFuture = if (payload_raw.contains("${vault://")) env.vaults.fillSecretsAsync("workflow-test", payload_raw) else payload_raw.vfuture
+          secretFillFuture.flatMap { payload_filled =>
+            val payload  = payload_filled.parseJson
+            val input    = payload.select("input").asString.parseJson.asObject
+            val workflow = payload.select("workflow").asObject
+            val node     = Node.from(workflow)
+            engine.run(node, input).map { res =>
+              Results.Ok(res.json)
+            }
           }
         }
     }).recover {
