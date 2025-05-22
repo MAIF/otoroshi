@@ -228,7 +228,7 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
   ),
   // https://github.com/mvel/mvel
-  "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
+  // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
 )
 
 scalacOptions ++= Seq(
