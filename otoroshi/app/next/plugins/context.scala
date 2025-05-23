@@ -180,7 +180,9 @@ class ContextValidation extends NgAccessValidator {
       "token" -> token
     )
     // java.nio.file.Files.writeString(new java.io.File("./ctx.json").toPath, json.prettify.debugPrintln)
-    config.validators.forall(validator => validator.validate(json))
+    config.validators
+      .map(v => v.copy(path = v.path.evaluateEl(ctx.attrs), value = v.value.asOptString.map(_.evaluateEl(ctx.attrs).json).getOrElse(JsNull)))
+      .forall(validator => validator.validate(json))
   }
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {

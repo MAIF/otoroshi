@@ -8,12 +8,13 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import org.apache.commons.codec.binary.{Base64, Hex}
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.models.WSProxyServerJson
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.{AsyncUtils, JsonPathUtils, Regex, RegexPool}
+import otoroshi.utils.{AsyncUtils, JsonPathUtils, Regex, RegexPool, TypedMap}
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSProxyServer}
 import play.api.mvc.Cookie
@@ -284,6 +285,7 @@ object implicits {
         .generateCertificate(new ByteArrayInputStream(DynamicSSLEngineProvider.base64Decode(obj)))
         .asInstanceOf[X509Certificate]
     }
+    def evaluateEl(attrs: TypedMap)(implicit env: Env): String = GlobalExpressionLanguage.apply(obj, attrs, env)
   }
   implicit class BetterByteString(private val obj: ByteString) extends AnyVal {
     def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
