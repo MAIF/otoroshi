@@ -48,6 +48,24 @@ object GlobalExpressionLanguage {
   }
 
   def apply(
+    value: String,
+    attrs: TypedMap,
+    env: Env
+  ): String = {
+    apply(
+      value = value,
+      req = attrs.get(otoroshi.plugins.Keys.RequestKey),
+      service = attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy),
+      route = attrs.get(otoroshi.next.plugins.Keys.RouteKey),
+      apiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+      user = attrs.get(otoroshi.plugins.Keys.UserKey),
+      context = attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+      attrs = attrs,
+      env = env,
+    )
+  }
+
+  def apply(
       value: String,
       req: Option[RequestHeader],
       service: Option[ServiceDescriptor],
