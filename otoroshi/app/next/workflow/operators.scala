@@ -59,7 +59,7 @@ class ExpressionLanguageOperator extends WorkflowOperator {
         route = wfr.attrs.get(otoroshi.next.plugins.Keys.RouteKey),
         apiKey = wfr.attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
         user = wfr.attrs.get(otoroshi.plugins.Keys.UserKey),
-        context = Map.empty,
+        context = wfr.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
         attrs = wfr.attrs,
         env = env,
       ).json

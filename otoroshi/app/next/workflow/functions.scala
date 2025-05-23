@@ -34,7 +34,37 @@ object WorkflowFunctionsInitializer {
     WorkflowFunction.registerFunction("core.file_read", new FileReadFunction())
     WorkflowFunction.registerFunction("core.file_write", new FileWriteFunction())
     WorkflowFunction.registerFunction("core.file_del", new FileDeleteFunction())
-    // access otoroshi resources (apikeys, etc)
+    WorkflowFunction.registerFunction("core.state_get_all", new StateGetAllFunction())
+    WorkflowFunction.registerFunction("core.state_get", new StateGetOneFunction())
+  }
+}
+
+class StateGetAllFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val name = args.select("name").asString
+    val group = args.select("group").asOptString.getOrElse("any")
+    val version = args.select("version").asOptString.getOrElse("any")
+    env.allResources.resources.find { res =>
+      res.group == group && res.version.name == version && res.pluralName == name
+    } match {
+      case None => WorkflowError(s"resources not found", Some(Json.obj("name" -> name, "group" -> group, "version" -> version)), None).leftf
+      case Some(resource) => JsArray(resource.access.allJson()).rightf
+    }
+  }
+}
+
+class StateGetOneFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val id = args.select("id").asString
+    val name = args.select("name").asString
+    val group = args.select("group").asOptString.getOrElse("any")
+    val version = args.select("version").asOptString.getOrElse("any")
+    env.allResources.resources.find { res =>
+      res.group == group && res.version.name == version && res.singularName == name
+    } match {
+      case None => WorkflowError(s"resources not found", Some(Json.obj("name" -> name, "group" -> group, "version" -> version)), None).leftf
+      case Some(resource) => resource.access.oneJson(id).getOrElse(JsNull).rightf
+    }
   }
 }
 
