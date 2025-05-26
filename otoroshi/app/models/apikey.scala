@@ -711,6 +711,7 @@ object ApikeyLocationKind                                         {
   case object Header extends ApikeyLocationKind { def name: String = "Header" }
   case object Cookie extends ApikeyLocationKind { def name: String = "Cookie" }
   case object Query  extends ApikeyLocationKind { def name: String = "Query"  }
+  case object Path  extends ApikeyLocationKind { def name: String = "Path"  }
 }
 case class ApikeyLocation(kind: ApikeyLocationKind, name: String) {
   def json: JsValue = Json.obj(
@@ -748,6 +749,7 @@ object ApikeyTuple {
             kind = loc.select("kind").asString match {
               case "Query"  => ApikeyLocationKind.Query
               case "Cookie" => ApikeyLocationKind.Cookie
+              case "Path"   => ApikeyLocationKind.Path
               case _        => ApikeyLocationKind.Header
             }
           )
@@ -824,6 +826,25 @@ object ApiKeyHelper {
           .flatMap(_.lastOption)
           .flatMap(e => Try(decodeBase64(e)).toOption)
       )
+      .orElse(
+        req.cookies
+          .get(
+            descriptor.apiKeyConstraints.basicAuth.pathName
+              .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+          )
+          .map(_.value)
+          .flatMap(e => Try(decodeBase64(e)).toOption)
+      )
+      .orElse(
+        attrs
+          .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+          .flatMap(
+            _.pathParams.get(
+              descriptor.apiKeyConstraints.basicAuth.pathName.getOrElse("apikey_basic")
+            )
+          )
+          .flatMap(e => Try(decodeBase64(e)).toOption)
+      )
     val authByCustomHeaders        = req.headers
       .get(
         descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName
@@ -849,6 +870,23 @@ object ApiKeyHelper {
               .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
           )
           .flatMap(_.lastOption)
+      )
+      .orElse(
+        req.cookies
+          .get(
+            descriptor.apiKeyConstraints.clientIdAuth.cookieName
+              .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+          )
+          .map(_.value)
+      )
+      .orElse(
+        attrs
+          .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+          .flatMap(
+            _.pathParams.get(
+              descriptor.apiKeyConstraints.clientIdAuth.pathName.getOrElse("apikey_simple_id")
+            )
+          )
       )
 
     val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
@@ -1098,6 +1136,25 @@ object ApiKeyHelper {
           .flatMap(_.lastOption)
           .flatMap(e => Try(decodeBase64(e)).toOption)
       )
+      .orElse(
+        req.cookies
+          .get(
+            descriptor.apiKeyConstraints.basicAuth.pathName
+              .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+          )
+          .map(_.value)
+          .flatMap(e => Try(decodeBase64(e)).toOption)
+      )
+      .orElse(
+        attrs
+          .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+          .flatMap(
+            _.pathParams.get(
+              descriptor.apiKeyConstraints.basicAuth.pathName.getOrElse("apikey_basic")
+            )
+          )
+          .flatMap(e => Try(decodeBase64(e)).toOption)
+      )
     val authByCustomHeaders        = req.headers
       .get(
         descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName
@@ -1123,6 +1180,23 @@ object ApiKeyHelper {
               .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
           )
           .flatMap(_.lastOption)
+      )
+      .orElse(
+        req.cookies
+          .get(
+            descriptor.apiKeyConstraints.clientIdAuth.cookieName
+              .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+          )
+          .map(_.value)
+      )
+      .orElse(
+        attrs
+          .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+          .flatMap(
+            _.pathParams.get(
+              descriptor.apiKeyConstraints.clientIdAuth.pathName.getOrElse("apikey_simple_id")
+            )
+          )
       )
     val preExtractedApiKey         = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
     if (preExtractedApiKey.isDefined) {
@@ -1291,6 +1365,25 @@ object ApiKeyHelper {
           .flatMap(_.lastOption)
           .flatMap(e => Try(decodeBase64(e)).toOption)
       )
+      .orElse(
+        req.cookies
+          .get(
+            descriptor.apiKeyConstraints.basicAuth.pathName
+              .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+          )
+          .map(_.value)
+          .flatMap(e => Try(decodeBase64(e)).toOption)
+      )
+      .orElse(
+        attrs
+          .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+          .flatMap(
+            _.pathParams.get(
+              descriptor.apiKeyConstraints.basicAuth.pathName.getOrElse("apikey_basic")
+            )
+          )
+          .flatMap(e => Try(decodeBase64(e)).toOption)
+      )
     val authByCustomHeaders        = req.headers
       .get(
         descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName
@@ -1316,6 +1409,23 @@ object ApiKeyHelper {
               .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
           )
           .flatMap(_.lastOption)
+      )
+      .orElse(
+        req.cookies
+          .get(
+            descriptor.apiKeyConstraints.clientIdAuth.cookieName
+              .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+          )
+          .map(_.value)
+      )
+      .orElse(
+        attrs
+          .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+          .flatMap(
+            _.pathParams.get(
+              descriptor.apiKeyConstraints.clientIdAuth.pathName.getOrElse("apikey_simple_id")
+            )
+          )
       )
 
     val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
@@ -1761,7 +1871,7 @@ object ApiKeyHelper {
               )
               .seffectOnWithPredicate(_.isDefined)(_ =>
                 location = ApikeyLocation(
-                  ApikeyLocationKind.Cookie,
+                  ApikeyLocationKind.Path,
                   constraints.jwtAuth.cookieName.getOrElse(env.Headers.OtoroshiJWTAuthorization)
                 )
               )
@@ -1813,6 +1923,37 @@ object ApiKeyHelper {
                 )
               )
           )
+          .orElse(
+            req.cookies
+              .get(
+                constraints.basicAuth.pathName
+                  .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+              )
+              .map(_.value)
+              .flatMap(e => Try(decodeBase64(e)).toOption)
+              .seffectOnWithPredicate(_.isDefined)(_ =>
+                location = ApikeyLocation(
+                  ApikeyLocationKind.Path,
+                  constraints.basicAuth.pathName.getOrElse(env.Headers.OtoroshiBasicAuthorization)
+                )
+              )
+          )
+          .orElse(
+            attrs
+              .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+              .flatMap(
+                _.pathParams.get(
+                  constraints.basicAuth.pathName.getOrElse("apikey_basic")
+                )
+              )
+              .flatMap(e => Try(decodeBase64(e)).toOption)
+              .seffectOnWithPredicate(_.isDefined)(_ =>
+                location = ApikeyLocation(
+                  ApikeyLocationKind.Path,
+                  constraints.basicAuth.pathName.getOrElse("apikey_basic")
+                )
+              )
+          )
           .map(_.split(":"))
           .collect {
             case arr if arr.length == 2 => arr
@@ -1860,6 +2001,34 @@ object ApiKeyHelper {
                 location = ApikeyLocation(
                   ApikeyLocationKind.Query,
                   constraints.clientIdAuth.queryName.getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+                )
+              )
+          )
+          .orElse(
+            req.cookies
+              .get(
+                constraints.clientIdAuth.cookieName
+                  .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+              )
+              .map(_.value)
+              .seffectOnWithPredicate(_.isDefined)(_ =>
+                location = ApikeyLocation(
+                  ApikeyLocationKind.Cookie,
+                  constraints.clientIdAuth.cookieName.getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+                )
+              )
+          )
+          .orElse(
+            attrs
+              .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+              .flatMap(
+                _.pathParams.get(
+                  constraints.clientIdAuth.pathName.getOrElse("apikey_simple_id")
+                )
+              ).seffectOnWithPredicate(_.isDefined)(_ =>
+                location = ApikeyLocation(
+                  ApikeyLocationKind.Cookie,
+                  constraints.clientIdAuth.pathName.getOrElse("apikey_simple_id")
                 )
               )
           )

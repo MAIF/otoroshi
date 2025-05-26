@@ -294,17 +294,23 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
 case class NgApikeyExtractorBasic(
     enabled: Boolean = true,
     headerName: Option[String] = None,
-    queryName: Option[String] = None
+    queryName: Option[String] = None,
+    cookieName: Option[String] = None,
+    pathName: Option[String] = None
 ) {
   lazy val legacy: BasicAuthConstraints = BasicAuthConstraints(
     enabled = enabled,
     headerName = headerName,
-    queryName = queryName
+    queryName = queryName,
+    cookieName = cookieName,
+    pathName = pathName,
   )
   def json: JsValue                     = Json.obj(
     "enabled"     -> enabled,
     "header_name" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "query_name"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    "query_name"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "cookie_name" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "path_name"   -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
   )
 }
 
@@ -315,31 +321,41 @@ object NgApikeyExtractorBasic {
       NgApikeyExtractorBasic(
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
         headerName = (json \ "header_name").asOpt[String].filterNot(_.trim.isEmpty),
-        queryName = (json \ "query_name").asOpt[String].filterNot(_.trim.isEmpty)
+        queryName = (json \ "query_name").asOpt[String].filterNot(_.trim.isEmpty),
+        cookieName = (json \ "cookie_name").asOpt[String].filterNot(_.trim.isEmpty),
+        pathName = (json \ "path_name").asOpt[String].filterNot(_.trim.isEmpty),
       )
     }
   }
   def fromLegacy(s: BasicAuthConstraints): NgApikeyExtractorBasic = NgApikeyExtractorBasic(
     enabled = s.enabled,
     headerName = s.headerName,
-    queryName = s.queryName
+    queryName = s.queryName,
+    cookieName = s.cookieName,
+    pathName = s.pathName,
   )
 }
 
 case class NgApikeyExtractorClientId(
     enabled: Boolean = true,
     headerName: Option[String] = None,
-    queryName: Option[String] = None
+    queryName: Option[String] = None,
+    cookieName: Option[String] = None,
+    pathName: Option[String] = None,
 ) {
   lazy val legacy: ClientIdAuthConstraints = ClientIdAuthConstraints(
     enabled = enabled,
     headerName = headerName,
-    queryName = queryName
+    queryName = queryName,
+    cookieName = cookieName,
+    pathName = pathName,
   )
   def json: JsValue                        = Json.obj(
     "enabled"     -> enabled,
     "header_name" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "query_name"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    "query_name"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "cookie_name" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "path_name"   -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
   )
 }
 
@@ -350,14 +366,18 @@ object NgApikeyExtractorClientId {
       NgApikeyExtractorClientId(
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
         headerName = (json \ "header_name").asOpt[String].filterNot(_.trim.isEmpty),
-        queryName = (json \ "query_name").asOpt[String].filterNot(_.trim.isEmpty)
+        queryName = (json \ "query_name").asOpt[String].filterNot(_.trim.isEmpty),
+        cookieName = (json \ "cookie_name").asOpt[String].filterNot(_.trim.isEmpty),
+        pathName = (json \ "path_name").asOpt[String].filterNot(_.trim.isEmpty)
       )
     }
   }
   def fromLegacy(s: ClientIdAuthConstraints): NgApikeyExtractorClientId = NgApikeyExtractorClientId(
     enabled = s.enabled,
     headerName = s.headerName,
-    queryName = s.queryName
+    queryName = s.queryName,
+    cookieName = s.cookieName,
+    pathName = s.pathName,
   )
 }
 

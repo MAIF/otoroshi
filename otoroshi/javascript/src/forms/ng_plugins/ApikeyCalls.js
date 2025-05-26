@@ -5,7 +5,7 @@ export default {
       label: 'wipe_backend_request',
       type: 'box-bool',
       props: {
-        description: 'Remove the apikey fromcall made to downstream service',
+        description: 'Remove the apikey from the call made to downstream service',
       },
     },
     routing: {
@@ -213,6 +213,16 @@ export default {
           collapsable: true,
           collapsed: true,
           schema: {
+            path_name: {
+              label: 'path_name',
+              type: 'string',
+              help: 'The name of the path parameter to get the basic auth. value',
+            },
+            cookie_name: {
+              label: 'cookie_name',
+              type: 'string',
+              help: 'The name of the cookie to get the basic auth. value',
+            },
             query_name: {
               label: 'query_name',
               type: 'string',
@@ -232,7 +242,7 @@ export default {
               },
             },
           },
-          flow: ['enabled', 'query_name', 'header_name'],
+          flow: ['enabled', 'query_name', 'header_name', 'cookie_name', 'path_name'],
         },
         client_id: {
           label: 'client_id',
@@ -240,6 +250,16 @@ export default {
           collapsable: true,
           collapsed: true,
           schema: {
+            path_name: {
+              label: 'path_name',
+              type: 'string',
+              help: 'The name of the path parameter to get the basic auth. value',
+            },
+            cookie_name: {
+              label: 'cookie_name',
+              type: 'string',
+              help: 'The name of the cookie to get the basic auth. value',
+            },
             query_name: {
               label: 'query_name',
               type: 'string',
@@ -259,7 +279,7 @@ export default {
               },
             },
           },
-          flow: ['enabled', 'query_name', 'header_name'],
+          flow: ['enabled', 'query_name', 'header_name', 'cookie_name', 'path_name'],
         },
         custom_headers: {
           label: 'custom_headers',
