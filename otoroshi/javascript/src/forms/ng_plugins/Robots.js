@@ -10,7 +10,7 @@ export default {
       type: 'bool',
     },
     robot_enabled: {
-      label: 'robot_enabled',
+      label: 'robot_txt_enabled',
       type: 'bool',
     },
     robot_txt_content: {
@@ -28,10 +28,10 @@ export default {
   },
   config_flow: [
     'meta_enabled',
+    'meta_content',
     'header_enabled',
     'header_content',
-    'robot_enabled',
-    'meta_content',
+    'robot_txt_enabled',
     'robot_txt_content',
   ],
 };
