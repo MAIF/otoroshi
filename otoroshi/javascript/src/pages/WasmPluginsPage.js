@@ -65,7 +65,7 @@ export class WasmSourcePath extends Component {
       .catch((_) => ({ json: () => [] }))
       .then((r) => {
         if (r.status !== 200) {
-          return Promise.reject([]);
+          return Promise.resolve([]);
         } else return r.json();
       })
       .then((plugins) => {

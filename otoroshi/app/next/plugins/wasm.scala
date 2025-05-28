@@ -468,15 +468,8 @@ class WasmRequestTransformer extends NgRequestTransformer {
               None
             ).map {
               case Right(res)  =>
-//                val response = Try {
                 val response = Json.parse(res._1)
-//                } recover {
-//                  case t: Throwable => {
-//                    println("le json recu de l'execution", res._1)
-//                    t.printStackTrace()
-//                    Json.obj()
-//                  }
-//                } get
+
                 AttrsHelper.updateAttrs(ctx.attrs, response)
                 if (response.select("error").asOpt[Boolean].getOrElse(false)) {
                   val status      = response.select("status").asOpt[Int].getOrElse(500)
