@@ -228,7 +228,7 @@ export default function ({ route, hideTitle }) {
       {
         ...request,
         headers: Object.values(request.headers)
-          .filter((d) => d.key.length > 0)
+          .filter((d) => d.key.length > 0 && d.checked)
           .reduce((a, c) => ({ ...a, [c.key]: c.value }), {}),
       },
       'route'
@@ -687,8 +687,6 @@ export default function ({ route, hideTitle }) {
                         style={{
                           padding: 0,
                           border: 0,
-                          borderBottom:
-                            selectedResponseTab === label ? '2px solid #f9b000' : 'transparent',
                           background: 'none',
                         }}
                       >
@@ -713,9 +711,9 @@ export default function ({ route, hideTitle }) {
                         {bytesToSize(rawResponse.headers.get('content-length'))}
                       </span>
                     </div>
-                    <button className="btn btn-sm btn-primaryColor" onClick={saveResponse}>
-                      Save Response
-                    </button>
+                    {/* <button className="btn btn-sm btn-primaryColor" onClick={saveResponse}>
+                      Copy
+                    </button> */}
                   </div>
                 </div>
               </div>
@@ -938,9 +936,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
             setSelectedStep(-1);
             setSelectedPlugin(-1);
           }}
-          className={`d-flex-between mt-1 px-3 py-2 report-step ${selectedStep === -1 && selectedPlugin === -1 ? 'btn-primary' : ''
-            }`}
-        >
+          className={`d-flex-between mt-1 px-3 py-2 report-step`}>
           <span>Report</span>
           <span>
             {reportDuration()} {unit}
@@ -1085,7 +1081,7 @@ const Headers = ({ headers, onKeyChange, onValueChange, onCheckedChange, addNewH
       <div className='p-2 border-r' style={{ cursor: 'pointer' }} onClick={deleteAllHeaders}>Delete all</div>
     </div>}
     {Object.entries(headers || {})
-      .reduce((acc, curr) => (curr[1].key.length === 0 ? [...acc, curr] : [curr, ...acc]), [])
+      .reduce((acc, curr) => (curr[1].key?.length === 0 ? [...acc, curr] : [curr, ...acc]), [])
       .map(([id, { key, value, checked }]) => (
         <div className="d-flex align-items-center mb-2 gap-2 px-2" key={id}>
           <input
