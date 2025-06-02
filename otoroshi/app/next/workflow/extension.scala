@@ -8,6 +8,7 @@ import otoroshi.models.{BackOfficeUser, EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -25,7 +26,8 @@ case class Workflow(
     description: String,
     tags: Seq[String],
     metadata: Map[String, String],
-    config: JsObject
+    config: JsObject,
+    testPayload: JsObject,
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = Workflow.format.writes(this)
@@ -43,7 +45,8 @@ object Workflow {
     description = "New Workflow",
     metadata = Map.empty,
     tags = Seq.empty,
-    config = Node.default
+    config = Node.default,
+    testPayload = Json.obj("name" -> "foo")
   )
   val format               = new Format[Workflow] {
     override def writes(o: Workflow): JsValue             = o.location.jsonWithKey ++ Json.obj(
@@ -52,7 +55,8 @@ object Workflow {
       "description" -> o.description,
       "metadata"    -> o.metadata,
       "tags"        -> JsArray(o.tags.map(JsString.apply)),
-      "config"      -> o.config
+      "config"      -> o.config,
+      "test_payload" -> o.testPayload
     )
     override def reads(json: JsValue): JsResult[Workflow] = Try {
       Workflow(
@@ -62,7 +66,8 @@ object Workflow {
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj())
+        config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
+        testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo")),
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -126,7 +131,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
     implicit val ec = env.otoroshiExecutionContext
     implicit val ev = env
     for {
-      configs <- datastores.workflowsDatastore.findAll()
+      configs <- datastores.workflowsDatastore.findAllAndFillSecrets()
     } yield {
       states.updateWorkflows(configs)
       ()
@@ -168,6 +173,10 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
     )
   }
 
+  def workflows(): Seq[Workflow] = states.allWorkflows()
+
+  def workflow(id: String): Option[Workflow] = states.workflow(id)
+
   def handleWorkflowTest(
       ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
       req: RequestHeader,
@@ -181,12 +190,16 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
       case None             => Results.Ok(Json.obj("done" -> false, "error" -> "no body")).vfuture
       case Some(bodySource) =>
         bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-          val payload  = bodyRaw.utf8String.parseJson
-          val input    = payload.select("input").asString.parseJson.asObject
-          val workflow = payload.select("workflow").asObject
-          val node     = Node.from(workflow)
-          engine.run(node, input).map { res =>
-            Results.Ok(res.json)
+          val payload_raw  = bodyRaw.utf8String
+          val secretFillFuture = if (payload_raw.contains("${vault://")) env.vaults.fillSecretsAsync("workflow-test", payload_raw) else payload_raw.vfuture
+          secretFillFuture.flatMap { payload_filled =>
+            val payload  = payload_filled.parseJson
+            val input    = payload.select("input").asString.parseJson.asObject
+            val workflow = payload.select("workflow").asObject
+            val node     = Node.from(workflow)
+            engine.run(node, input, TypedMap.empty).map { res =>
+              Results.Ok(res.json)
+            }
           }
         }
     }).recover {

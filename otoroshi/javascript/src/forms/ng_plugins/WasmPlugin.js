@@ -104,13 +104,6 @@ const schema = {
       description: 'The WASM source is an OPA rego policy compiled to WASM',
     },
   },
-  httpwasm: {
-    type: 'box-bool',
-    label: 'HTTP-WASM',
-    props: {
-      description: 'The WASM source is a HTTP WASM',
-    },
-  },
   authorizations: {
     label: 'Host functions authorizations',
     type: 'form',
@@ -274,7 +267,6 @@ export default {
       // v.source.kind.toLowerCase() !== 'local' && 'lifetime',
       v.source.kind.toLowerCase() !== 'local' && 'authorizations',
       v.source.kind.toLowerCase() !== 'local' && 'killOptions',
-      'httpwasm',
       v.source.kind.toLowerCase() !== 'local' && {
         type: 'group',
         name: 'Advanced settings',

@@ -1,6 +1,7 @@
 package otoroshi.next.workflow
 
 import otoroshi.env.Env
+import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.Json
 
@@ -15,8 +16,8 @@ object WorkflowTest {
     implicit val executorContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
     val env: Env                 = ???
     val engine                   = new WorkflowEngine(env)
-    val workflow = Json.parse(
-      """
+    val workflow                 = Json
+      .parse("""
          |{
          |  "id": "main",
          |  "kind": "workflow",
@@ -120,14 +121,14 @@ object WorkflowTest {
          |    }
          |  }
          |}
-         |""".stripMargin).asObject
+         |""".stripMargin)
+      .asObject
     val node                     = Node.from(workflow)
     Files.writeString(new File("./workflow_test_1.json").toPath, workflow.prettify)
-    engine.run(node, Json.obj("name" -> "foo")).map { res =>
+    engine.run(node, Json.obj("name" -> "foo"), TypedMap.empty).map { res =>
       println(s"result: ${res.lightJson.prettify}")
     }
   }
-
 
   def main(args: Array[String]): Unit = {
     implicit val executorContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
@@ -164,7 +165,7 @@ object WorkflowTest {
     )
     val node                     = Node.from(workflow)
     Files.writeString(new File("./workflow_test.json").toPath, workflow.prettify)
-    engine.run(node, Json.obj("foo" -> Json.obj("bar" -> "qix"))).map { res =>
+    engine.run(node, Json.obj("foo" -> Json.obj("bar" -> "qix")), TypedMap.empty).map { res =>
       println(s"result: ${res.lightJson.prettify}")
     }
   }

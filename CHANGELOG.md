@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.2.0] - 2025-05-20
+
+
+https://github.com/MAIF/otoroshi/milestone/115?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.1.1...v17.2.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.2.0
+
+
+### Added 
+
+- zip bomb backend plugin (#2153 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- TCP data exporter (#2154 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- UDP data exporter (#2155 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- syslog data exporter (#2156 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- ForEach node for Workflows (#2157 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Map node for Workflows (#2158 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Filter node for Workflows (#2159 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- FlatMap node for Workflows (#2160 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- IfThenElse node for Workflows (#2161 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- JMS data exporter (#2162 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add `path_params` in request serialization of plugin contexts (#2163 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- apikey can be extracted from a named path param (#2164 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Router can now match routes based on cookie values (#2165 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Router can now match routes based on the existance of a specific headers, query param, cookie (#2166 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Router can now match routes based wether a specific headers, query param, cookie is missing (#2167 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add `IsDefined()` and `NotDefined()` in JsonValidator operators (#2168 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add `AccessValidator` plugin for `Workflow` (#2169 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support chaining expressions in the global expression language (#2172 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Add assignee mention in release notes (#2170 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Sort data exporter alphabetically (#2171 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- bad JWKs format (#2173 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Default config. references an old ClientCredentials plugin (#2174 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [17.1.1] - 2025-05-05
 
 

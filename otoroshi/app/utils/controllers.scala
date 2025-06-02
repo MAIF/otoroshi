@@ -715,7 +715,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       rawBody ++ Json.obj("id" -> id)
     }
     readAndValidateEntity(body, ctx.backOfficeUser) match {
-      case Left(e)                                    => BadRequest(Json.obj("error" -> "bad_format", "error_description" -> "Bad entity format")).future
+      case Left(e)                                    =>
+        e.debugPrintln
+        BadRequest(Json.obj("error" -> "bad_format", "error_description" -> "Bad entity format")).future
       case Right(entity) if !ctx.canUserWrite(entity) =>
         Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
       case Right(newentity)                           => {

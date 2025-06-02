@@ -1,34 +1,171 @@
 package otoroshi.next.workflow
 
+import akka.util.ByteString
 import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.events.{AnalyticEvent, AuditEvent}
+import otoroshi.events.AnalyticEvent
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.BodyHelper
-import otoroshi.next.workflow.WorkflowFunction.registerFunction
+import otoroshi.utils.mailer._
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
 import play.api.libs.json._
 
+import java.io.File
+import java.nio.file.Files
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object WorkflowFunctionsInitializer {
   def initDefaults(): Unit = {
-    registerFunction("core.log", new LogFunction())
-    registerFunction("core.hello", new HelloFunction())
-    registerFunction("core.http_client", new HttpClientFunction())
-    registerFunction("core.wasm_call", new WasmCallFunction())
-    registerFunction("core.workflow_call", new WorkflowCallFunction())
-    registerFunction("core.store_mget", new StoreMgetFunction())
-    registerFunction("core.store_match", new StoreMatchFunction())
-    registerFunction("core.store_get", new StoreGetFunction())
-    registerFunction("core.store_set", new StoreSetFunction())
-    registerFunction("core.store_del", new StoreDelFunction())
-    registerFunction("core.emit_event", new EmitEventFunction())
-    // access otoroshi resources (apikeys, etc)
+    WorkflowFunction.registerFunction("core.log", new LogFunction())
+    WorkflowFunction.registerFunction("core.hello", new HelloFunction())
+    WorkflowFunction.registerFunction("core.http_client", new HttpClientFunction())
+    WorkflowFunction.registerFunction("core.wasm_call", new WasmCallFunction())
+    WorkflowFunction.registerFunction("core.workflow_call", new WorkflowCallFunction())
+    WorkflowFunction.registerFunction("core.system_call", new SystemCallFunction())
+    WorkflowFunction.registerFunction("core.store_keys", new StoreKeysFunction())
+    WorkflowFunction.registerFunction("core.store_mget", new StoreMgetFunction())
+    WorkflowFunction.registerFunction("core.store_match", new StoreMatchFunction())
+    WorkflowFunction.registerFunction("core.store_get", new StoreGetFunction())
+    WorkflowFunction.registerFunction("core.store_set", new StoreSetFunction())
+    WorkflowFunction.registerFunction("core.store_del", new StoreDelFunction())
+    WorkflowFunction.registerFunction("core.emit_event", new EmitEventFunction())
+    WorkflowFunction.registerFunction("core.file_read", new FileReadFunction())
+    WorkflowFunction.registerFunction("core.file_write", new FileWriteFunction())
+    WorkflowFunction.registerFunction("core.file_del", new FileDeleteFunction())
+    WorkflowFunction.registerFunction("core.state_get_all", new StateGetAllFunction())
+    WorkflowFunction.registerFunction("core.state_get", new StateGetOneFunction())
+    WorkflowFunction.registerFunction("core.send_mail", new SendMailFunction())
+  }
+}
+
+class SendMailFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val config = args.select("mailer_config").asOpt[JsObject].getOrElse(Json.obj())
+    val from: EmailLocation = EmailLocation.format.reads(args.select("from").asValue).get
+    val to: Seq[EmailLocation] = args.select("from").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty)
+    val subject = args.select("subject").asString
+    val html = args.select("html").asString
+    args.select("mailer_config").select("kind").asOptString.getOrElse("mailgun").toLowerCase match {
+      case "mailgun" => {
+        val mailer = new MailgunMailer(env, env.datastores.globalConfigDataStore.latest(), MailgunSettings.format.reads(config).get)
+        mailer.send(from, to, subject, html).map { _ =>
+          Json.obj("sent" -> true).right
+        }
+      }
+      case "mailjet" => {
+        val mailer = new MailjetMailer(env, env.datastores.globalConfigDataStore.latest(), MailjetSettings.format.reads(config).get)
+        mailer.send(from, to, subject, html).map { _ =>
+          Json.obj("sent" -> true).right
+        }
+      }
+      case "sendgrid" => {
+        val mailer = new SendgridMailer(env, env.datastores.globalConfigDataStore.latest(), SendgridSettings.format.reads(config).get)
+        mailer.send(from, to, subject, html).map { _ =>
+          Json.obj("sent" -> true).right
+        }
+      }
+      case v => WorkflowError(s"mailer '${v}' not supported", None, None).leftf
+    }
+  }
+}
+
+class StateGetAllFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val name = args.select("name").asString
+    val group = args.select("group").asOptString.getOrElse("any")
+    val version = args.select("version").asOptString.getOrElse("any")
+    env.allResources.resources.find { res =>
+      res.group == group && res.version.name == version && res.pluralName == name
+    } match {
+      case None => WorkflowError(s"resources not found", Some(Json.obj("name" -> name, "group" -> group, "version" -> version)), None).leftf
+      case Some(resource) => JsArray(resource.access.allJson()).rightf
+    }
+  }
+}
+
+class StateGetOneFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val id = args.select("id").asString
+    val name = args.select("name").asString
+    val group = args.select("group").asOptString.getOrElse("any")
+    val version = args.select("version").asOptString.getOrElse("any")
+    env.allResources.resources.find { res =>
+      res.group == group && res.version.name == version && res.singularName == name
+    } match {
+      case None => WorkflowError(s"resources not found", Some(Json.obj("name" -> name, "group" -> group, "version" -> version)), None).leftf
+      case Some(resource) => resource.access.oneJson(id).getOrElse(JsNull).rightf
+    }
+  }
+}
+
+class FileDeleteFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val path = args.select("path").asString
+    try {
+      val f = new File(path)
+      f.delete()
+      Json.obj("file_path" -> f.getAbsolutePath).rightf
+    } catch {
+      case t: Throwable => WorkflowError(t.getMessage, None, None).leftf
+    }
+  }
+}
+
+class FileReadFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val path = args.select("path").asString
+    val parseJson = args.select("parse_json").asOptBoolean.getOrElse(false)
+    val encodeBase64 = args.select("encode_base64").asOptBoolean.getOrElse(false)
+    try {
+      val content = Files.readAllBytes(new File(path).toPath)
+      if (parseJson) {
+        Json.parse(content).rightf
+      } else if (encodeBase64) {
+        ByteString(content).encodeBase64.utf8String.json.rightf
+      } else {
+        ByteString(content).utf8String.json.rightf
+      }
+    } catch {
+      case t: Throwable => WorkflowError(t.getMessage, None, None).leftf
+    }
+  }
+}
+
+class FileWriteFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val path = args.select("path").asOptString.getOrElse(Files.createTempFile("llm-ext-fw-", ".tmp").toFile.getAbsolutePath)
+    val value = args.select("value").asValue
+    val prettify = args.select("prettify").asOptBoolean.getOrElse(false)
+    val decodeBase64 = args.select("from_base64").asOptBoolean.getOrElse(false)
+    try {
+      val f = new File(path)
+      if (!f.exists()) {
+        f.createNewFile()
+      }
+      if (prettify) {
+        Files.writeString(f.toPath, value.prettify)
+        Json.obj("file_path" -> f.getAbsolutePath).rightf
+      } else if (decodeBase64) {
+        Files.write(f.toPath, value.asString.byteString.decodeBase64.toArray)
+        Json.obj("file_path" -> f.getAbsolutePath).rightf
+      } else {
+        Files.writeString(f.toPath, value match {
+          case JsString(s) => s
+          case JsNumber(s) => s.toString()
+          case JsBoolean(s) => s.toString()
+          case JsArray(_) => value.stringify
+          case JsObject(_) => value.stringify
+          case JsNull => "null"
+        })
+        Json.obj("file_path" -> f.getAbsolutePath).rightf
+      }
+    } catch {
+      case t: Throwable => WorkflowError(t.getMessage, None, None).leftf
+    }
   }
 }
 
@@ -101,7 +238,7 @@ class HttpClientFunction extends WorkflowFunction {
 
 class WorkflowCallFunction extends WorkflowFunction {
 
-  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def callWithRun(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val workflowId = args.select("workflow_id").asString
     val input      = args.select("input").asObject
     val extension  = env.adminExtensions.extension[WorkflowAdminExtension].get
@@ -109,11 +246,38 @@ class WorkflowCallFunction extends WorkflowFunction {
       case None           => Left(WorkflowError("workflow not found", Some(Json.obj("workflow_id" -> workflowId)), None)).vfuture
       case Some(workflow) => {
         val node = Node.from(workflow.config)
-        extension.engine.run(node, input).map {
+        extension.engine.run(node, input, wfr.attrs).map {
           case res if res.hasError => Left(res.error.get)
           case res                 => Right(res.returned.get)
         }
       }
+    }
+  }
+}
+
+class SystemCallFunction extends WorkflowFunction {
+
+  import scala.sys.process._
+
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    try {
+      var stdout = ""
+      var stderr = ""
+      val command = args.select("command").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val processLogger = ProcessLogger(
+        out => {
+          stdout = stdout + out
+          println(s"[stdout] $out")
+        },
+        err => {
+          stderr = stderr + err
+          println(s"[stderr] $err")
+        }
+      )
+      val code = command.!(processLogger)
+      Json.obj("stdout" -> stdout, "stderr" -> stderr, "code" -> code).rightf
+    } catch {
+      case t: Throwable => Left(WorkflowError(t.getMessage, None, None)).vfuture
     }
   }
 }
@@ -185,6 +349,16 @@ class StoreSetFunction extends WorkflowFunction {
     }
   }
 }
+
+class StoreKeysFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val pattern = args.select("pattern").asString
+    env.datastores.rawDataStore.keys(pattern).map { seq =>
+      Right(JsArray(seq.map(_.json)))
+    }
+  }
+}
+
 
 class StoreMgetFunction extends WorkflowFunction {
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {

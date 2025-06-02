@@ -20,6 +20,7 @@ case class WorkflowBackendConfig(json: JsValue = Json.obj()) extends NgPluginCon
 
 object WorkflowBackendConfig {
   val configFlow: Seq[String]        = Seq("ref", "async")
+  val configFlowNoAsync: Seq[String]        = Seq("ref")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
       "async" -> Json.obj("type" -> "bool", "label" -> "Async"),
@@ -85,9 +86,9 @@ class WorkflowBackend extends NgBackendCall {
           )
           .map(r => NgProxyEngineError.NgResultProxyEngineError(r).left)
       case Some((extension, workflow)) => {
-        ctx.wasmJson
+        ctx.jsonWithTypedBody
           .flatMap { input =>
-            val f = extension.engine.run(Node.from(workflow.config), input.asObject)
+            val f = extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs)
             if (config.async) {
               Right(
                 BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(Json.obj("ack" -> true))), None)
@@ -104,7 +105,7 @@ class WorkflowBackend extends NgBackendCall {
                     )
                   )
                 } else {
-                  val respBody = res.json
+                  val respBody = res.returned.getOrElse(Json.obj())
                   val status   = respBody.select("status").asOpt[Int]
                   val headers  = respBody.select("headers").asOpt[Map[String, String]]
                   val body     = BodyHelper.extractBodyFromOpt(respBody)
@@ -156,6 +157,9 @@ class WorkflowRequestTransformer extends NgRequestTransformer {
   override def description: Option[String]                 =
     "Transform the content of the request with a workflow".some
   override def defaultConfigObject: Option[NgPluginConfig] = WorkflowBackendConfig().some
+  override def noJsForm: Boolean                 = true
+  override def configFlow: Seq[String]           = WorkflowBackendConfig.configFlowNoAsync
+  override def configSchema: Option[JsObject]    = WorkflowBackendConfig.configSchema
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
@@ -179,13 +183,13 @@ class WorkflowRequestTransformer extends NgRequestTransformer {
           )
           .map(r => r.left)
       case Some((extension, workflow)) => {
-        ctx.wasmJson
+        ctx.jsonWithTypedBody
           .flatMap { input =>
-            extension.engine.run(Node.from(workflow.config), input.asObject).map { res =>
+            extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).map { res =>
               if (res.hasError) {
                 Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
               } else {
-                val response = res.json
+                val response = res.returned.getOrElse(Json.obj())
                 val body     = BodyHelper.extractBodyFromOpt(response)
                 Right(
                   ctx.otoroshiRequest.copy(
@@ -222,6 +226,9 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
   override def description: Option[String]                 =
     "Transform the content of a response with a workflow".some
   override def defaultConfigObject: Option[NgPluginConfig] = WorkflowBackendConfig().some
+  override def noJsForm: Boolean                 = true
+  override def configFlow: Seq[String]           = WorkflowBackendConfig.configFlowNoAsync
+  override def configSchema: Option[JsObject]    = WorkflowBackendConfig.configSchema
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
@@ -245,13 +252,13 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
           )
           .map(r => r.left)
       case Some((extension, workflow)) => {
-        ctx.wasmJson
+        ctx.jsonWithTypedBody
           .flatMap { input =>
-            extension.engine.run(Node.from(workflow.config), input.asObject).map { res =>
+            extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).map { res =>
               if (res.hasError) {
                 Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
               } else {
-                val response = res.json
+                val response = res.returned.getOrElse(Json.obj())
                 val body     = BodyHelper.extractBodyFromOpt(response)
                 Right(
                   ctx.otoroshiResponse.copy(
@@ -271,15 +278,18 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
 
 class WorkflowAccessValidator extends NgAccessValidator {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Custom("Workflow"))
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def name: String = "Workflow Access control"
-  override def description: Option[String] = "Delegate route access to a worflow".some
-  override def isAccessAsync: Boolean = true
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Workflow"))
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Workflow Access control"
+  override def description: Option[String]                 = "Delegate route access to a worflow".some
+  override def isAccessAsync: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = WorkflowBackendConfig().some
+  override def noJsForm: Boolean                 = true
+  override def configFlow: Seq[String]           = WorkflowBackendConfig.configFlowNoAsync
+  override def configSchema: Option[JsObject]    = WorkflowBackendConfig.configSchema
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
 
@@ -290,7 +300,7 @@ class WorkflowAccessValidator extends NgAccessValidator {
     env.adminExtensions
       .extension[WorkflowAdminExtension]
       .flatMap(ext => ext.states.workflow(config.ref).map(w => (ext, w))) match {
-      case None =>
+      case None                        =>
         Errors
           .craftResponseResult(
             "workflow not found !",
@@ -304,11 +314,11 @@ class WorkflowAccessValidator extends NgAccessValidator {
           .map(r => NgAccess.NgDenied(r))
       case Some((extension, workflow)) => {
         val input = ctx.wasmJson
-        extension.engine.run(Node.from(workflow.config), input.asObject).flatMap { res =>
+        extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).flatMap { res =>
           if (res.hasError) {
             NgAccess.NgDenied(Results.InternalServerError(Json.obj("error" -> res.error.get.json))).vfuture
           } else {
-            val response = res.json
+            val response = res.returned.getOrElse(Json.obj())
             val result   = (response \ "result").asOpt[Boolean].getOrElse(false)
             if (result) {
               NgAccess.NgAllowed.vfuture

@@ -127,7 +127,13 @@ case class MetricsSettings(labels: Map[String, String] = Map()) extends Exporter
     )
 }
 
-case class TCPExporterSettings(host: String, port: Int, unixSocket: Boolean, connectTimeout: FiniteDuration, tls: NgTlsConfig) extends Exporter {
+case class TCPExporterSettings(
+    host: String,
+    port: Int,
+    unixSocket: Boolean,
+    connectTimeout: FiniteDuration,
+    tls: NgTlsConfig
+) extends Exporter {
   override def toJson: JsValue = TCPExporterSettings.format.writes(this)
 }
 
@@ -139,7 +145,11 @@ object TCPExporterSettings {
         port = json.select("port").asOptInt.getOrElse(6514),
         unixSocket = json.select("unix_socket").asOptBoolean.getOrElse(false),
         connectTimeout = json.select("connect_timeout").asOptLong.getOrElse(10000L).millis,
-        tls = json.select("tls").asOpt[JsObject].flatMap(o => NgTlsConfig.format.reads(o).asOpt).getOrElse(NgTlsConfig.default),
+        tls = json
+          .select("tls")
+          .asOpt[JsObject]
+          .flatMap(o => NgTlsConfig.format.reads(o).asOpt)
+          .getOrElse(NgTlsConfig.default)
       )
     } match {
       case Failure(e) =>
@@ -149,16 +159,17 @@ object TCPExporterSettings {
     }
 
     override def writes(o: TCPExporterSettings): JsValue = Json.obj(
-      "host" -> o.host,
-      "port" -> o.port,
-      "unix_socket" -> o.unixSocket,
+      "host"            -> o.host,
+      "port"            -> o.port,
+      "unix_socket"     -> o.unixSocket,
       "connect_timeout" -> o.connectTimeout.toMillis,
-      "tls" -> o.tls.json,
+      "tls"             -> o.tls.json
     )
   }
 }
 
-case class UDPExporterSettings(host: String, port: Int, unixSocket: Boolean, connectTimeout: FiniteDuration) extends Exporter {
+case class UDPExporterSettings(host: String, port: Int, unixSocket: Boolean, connectTimeout: FiniteDuration)
+    extends Exporter {
   override def toJson: JsValue = UDPExporterSettings.format.writes(this)
 }
 
@@ -169,7 +180,7 @@ object UDPExporterSettings {
         host = json.select("host").asOptString.getOrElse("127.0.0.1"),
         port = json.select("port").asOptInt.getOrElse(514),
         unixSocket = json.select("unix_socket").asOptBoolean.getOrElse(false),
-        connectTimeout = json.select("connect_timeout").asOptLong.getOrElse(10000L).millis,
+        connectTimeout = json.select("connect_timeout").asOptLong.getOrElse(10000L).millis
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -177,15 +188,23 @@ object UDPExporterSettings {
     }
 
     override def writes(o: UDPExporterSettings): JsValue = Json.obj(
-      "host" -> o.host,
-      "port" -> o.port,
-      "unix_socket" -> o.unixSocket,
-      "connect_timeout" -> o.connectTimeout.toMillis,
+      "host"            -> o.host,
+      "port"            -> o.port,
+      "unix_socket"     -> o.unixSocket,
+      "connect_timeout" -> o.connectTimeout.toMillis
     )
   }
 }
 
-case class SyslogExporterSettings(tcp: Boolean, udp: Boolean, host: String, port: Int, unixSocket: Boolean, connectTimeout: FiniteDuration, tls: NgTlsConfig) extends Exporter {
+case class SyslogExporterSettings(
+    tcp: Boolean,
+    udp: Boolean,
+    host: String,
+    port: Int,
+    unixSocket: Boolean,
+    connectTimeout: FiniteDuration,
+    tls: NgTlsConfig
+) extends Exporter {
   override def toJson: JsValue = SyslogExporterSettings.format.writes(this)
 }
 
@@ -199,7 +218,11 @@ object SyslogExporterSettings {
         port = json.select("port").asOptInt.getOrElse(514),
         unixSocket = json.select("unix_socket").asOptBoolean.getOrElse(true),
         connectTimeout = json.select("connect_timeout").asOptLong.getOrElse(10000L).millis,
-        tls = json.select("tls").asOpt[JsObject].flatMap(o => NgTlsConfig.format.reads(o).asOpt).getOrElse(NgTlsConfig.default),
+        tls = json
+          .select("tls")
+          .asOpt[JsObject]
+          .flatMap(o => NgTlsConfig.format.reads(o).asOpt)
+          .getOrElse(NgTlsConfig.default)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -207,18 +230,24 @@ object SyslogExporterSettings {
     }
 
     override def writes(o: SyslogExporterSettings): JsValue = Json.obj(
-      "tcp" -> o.tcp,
-      "udp" -> o.udp,
-      "host" -> o.host,
-      "port" -> o.port,
-      "unix_socket" -> o.unixSocket,
+      "tcp"             -> o.tcp,
+      "udp"             -> o.udp,
+      "host"            -> o.host,
+      "port"            -> o.port,
+      "unix_socket"     -> o.unixSocket,
       "connect_timeout" -> o.connectTimeout.toMillis,
-      "tls" -> o.tls.json,
+      "tls"             -> o.tls.json
     )
   }
 }
 
-case class JMSExporterSettings(url: String, name: String, topic: Boolean, username: Option[String], password: Option[String]) extends Exporter {
+case class JMSExporterSettings(
+    url: String,
+    name: String,
+    topic: Boolean,
+    username: Option[String],
+    password: Option[String]
+) extends Exporter {
   override def toJson: JsValue = JMSExporterSettings.format.writes(this)
 }
 
@@ -230,7 +259,7 @@ object JMSExporterSettings {
         name = json.select("name").asOptString.getOrElse("otoroshi-events"),
         topic = json.select("topic").asOptBoolean.getOrElse(true),
         username = json.select("username").asOptString.filterNot(_.isEmpty).filterNot(_.isBlank),
-        password = json.select("password").asOptString.filterNot(_.isEmpty).filterNot(_.isBlank),
+        password = json.select("password").asOptString.filterNot(_.isEmpty).filterNot(_.isBlank)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -238,11 +267,11 @@ object JMSExporterSettings {
     }
 
     override def writes(o: JMSExporterSettings): JsValue = Json.obj(
-      "url" -> o.url,
-      "name" -> o.name,
-      "topic" -> o.topic,
+      "url"      -> o.url,
+      "name"     -> o.name,
+      "topic"    -> o.topic,
       "username" -> o.username.map(_.json).getOrElse(JsNull).asValue,
-      "password" -> o.password.map(_.json).getOrElse(JsNull).asValue,
+      "password" -> o.password.map(_.json).getOrElse(JsNull).asValue
     )
   }
 }

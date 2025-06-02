@@ -75,7 +75,12 @@ object JsonHelpers {
     }
   }
   def requestToJson(request: RequestHeader, attrs: TypedMap): JsValue = {
-    val pathparams: JsObject = JsObject(attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey).map(_.pathParams.toMap.mapValues(_.json)).getOrElse(Map.empty[String, JsValue]))
+    val pathparams: JsObject = JsObject(
+      attrs
+        .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+        .map(_.pathParams.toMap.mapValues(_.json))
+        .getOrElse(Map.empty[String, JsValue])
+    )
     Json.obj(
       "id"                -> request.id,
       "method"            -> request.method,
@@ -89,7 +94,7 @@ object JsonHelpers {
       "has_body"          -> request.theHasBody,
       "remote"            -> request.remoteAddress,
       "client_cert_chain" -> JsonHelpers.clientCertChainToJson(request.clientCertificateChain),
-      "path_params"       -> pathparams,
+      "path_params"       -> pathparams
     )
   }
   def cookieToJson(cookie: Cookie): JsValue = {

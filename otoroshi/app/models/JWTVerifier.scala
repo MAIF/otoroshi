@@ -799,7 +799,8 @@ object TransformSettings                                                        
     Try {
       for {
         location        <- JwtTokenLocation.fromJson((json \ "location").as[JsValue])
-        mappingSettings <- MappingSettings.fromJson((json \ "mappingSettings").as[JsValue])
+        mappingSettings <-
+          MappingSettings.fromJson((json \ "mappingSettings").asOpt[JsValue].getOrElse(MappingSettings().asJson))
       } yield TransformSettings(location, mappingSettings)
     } recover { case e =>
       Left(e)
@@ -818,8 +819,8 @@ object VerificationSettings extends FromJson[VerificationSettings] {
     Try {
       Right(
         VerificationSettings(
-          (json \ "fields").as[Map[String, String]],
-          (json \ "arrayFields").as[Map[String, String]]
+          (json \ "fields").asOpt[Map[String, String]].getOrElse(Map.empty),
+          (json \ "arrayFields").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       )
     } recover { case e =>

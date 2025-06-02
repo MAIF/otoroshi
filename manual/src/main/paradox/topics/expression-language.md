@@ -22,13 +22,35 @@ The expression language provides an important mechanism for accessing and manipu
 If an input contains a string starting by `${`, Otoroshi will try to evaluate the content. If the content doesn't match a known expression,
 the 'bad-expr' value will be set.
 
+## Combining optional values
+
+It is possible to combine optional values (that are expression) in only one expression. Here the expression language will choose the first `defined` value, or fallback on the `default` value. The syntax it the following: 
+
+```
+${<expr_1> || <expr_2> || <expr_3> || <expr_n> :: <default_value>}
+```
+
+of course you can ommit the `:: <default_value>` part if you don't want one. 
+
+```
+${<expr_1> || <expr_2> || <expr_3> || <expr_n>}
+```
+
+If neither expression is defined, you will end with the `bad-expr` value.
+
+For example if you're looking for a value that can be located either in headers, cookies and query params of the request you can write something like:
+
+```
+${req.headers.foo || req.query.foo || req.cookies.foo :: no-foo}
+```
+
 ## Test the expression language
 
 You can test to get the same values than the right part by creating these following services. 
 
 ```sh
 # Let's start by downloading the latest Otoroshi.
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v17.2.0-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v17.3.0-dev/otoroshi.jar'
 
 # Once downloading, run Otoroshi.
 java -Dotoroshi.adminPassword=password -jar otoroshi.jar 

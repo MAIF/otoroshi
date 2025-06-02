@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "17.2.0-dev"
+version := "17.3.0-dev"
 scalaVersion := scalaLangVersion
 
 inThisBuild(
@@ -178,7 +178,7 @@ libraryDependencies ++= Seq(
   "org.bigtesting"                   % "routd"                                     % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
-  "fr.maif"                         %% "wasm4s"                                    % "4.0.0" classifier "bundle",
+  "fr.maif"                         %% "wasm4s"                                    % "4.1.1" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                      % "1.16.0",
   // included in libs as jitpack is not stable at all
   // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
@@ -220,13 +220,15 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
   ),
-  "jakarta.jms" % "jakarta.jms-api" % "3.1.0",
-  "org.apache.activemq" % "artemis-jakarta-client" % "2.41.0" excludeAll (
+  "jakarta.jms"                      % "jakarta.jms-api"                           % "3.1.0",
+  "org.apache.activemq"              % "artemis-jakarta-client"                    % "2.41.0" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
-  )
+  ),
+  // https://github.com/mvel/mvel
+  // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
 )
 
 scalacOptions ++= Seq(
@@ -402,6 +404,7 @@ reStart / javaOptions ++= Seq(
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=ext:foo",
   "-Dotoroshi.storage=file",
+  //"-Dotoroshi.storage=inmemory",
   "-DVAULT_VALUE=admin-api-apikey-secret"
   // "-Dotoroshi.storage=redis",
 //   "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",

@@ -70,6 +70,11 @@ in the previous example, we instanciate a vault of type `kubernetes` with name `
 
 `${vault://MYVAULT/namespace/secret_name/secret_key}`
 
+you can even provide multiple secrets in one expression and let the vault system choose 
+
+- one randomly with the `&&` operator: `${vault://MYVAULT/secret_1 && vault://MYVAULT/secret_2 && vault://MYVAULT/secret_3}`
+- the first existing with the `||` operator: `${vault://MYVAULT/secret_1 || vault://MYVAULT/secret_2 || vault://MYVAULT/secret_3}`
+
 ## Entities with secrets management
 
 the entities that support secrets management are the following 

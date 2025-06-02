@@ -14,6 +14,16 @@ document.addEventListener("DOMContentLoaded", function () {
             description:
               "same field that the previous but with a chosen format.",
           },
+          {
+            expression: "${date_el(req.header.date).format('<format>')}",
+            description:
+              "get the date value from an el expression and formats it.",
+          },
+          {
+            expression: "${date_el(req.header.date).format('<format>')}",
+            description:
+              "get the date value from an el expression and formats it.",
+          },
         ],
         values: [
           {
@@ -21,8 +31,12 @@ document.addEventListener("DOMContentLoaded", function () {
             description: "2021-11-25T10:53:25.366+01:00",
           },
           {
-            expression: "${date.format('yyy-MM-dd')}",
+            expression: "${date.format('yyyy-MM-dd')}",
             description: "2021-11-25",
+          },
+          {
+            expression: "${date_el(req.header.date).epoch_ms",
+            description: "1747816667560",
           },
         ],
       },

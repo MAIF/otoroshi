@@ -1,7 +1,7 @@
 // #curl
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v17.2.0-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v17.3.0-dev/otoroshi.jar'
 // #curl
 
 // #wget
-wget 'https://github.com/MAIF/otoroshi/releases/download/v17.2.0-dev/otoroshi.jar'
+wget 'https://github.com/MAIF/otoroshi/releases/download/v17.3.0-dev/otoroshi.jar'
 // #wget

@@ -1,42 +1,136 @@
 package otoroshi.next.workflow
 
+import org.joda.time.DateTime
+import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.next.workflow.WorkflowOperator.registerOperator
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
 object WorkflowOperatorsInitializer {
   def initDefaults(): Unit = {
-    registerOperator("$mem_ref", new MemRefOperator())
-    registerOperator("$array_append", new ArrayAppendOperator())
-    registerOperator("$array_prepend", new ArrayPrependOperator())
-    registerOperator("$array_at", new ArrayAtOperator())
-    registerOperator("$array_del", new ArrayDelOperator())
-    registerOperator("$array_page", new ArrayPageOperator())
-    registerOperator("$projection", new ProjectionOperator())
+    WorkflowOperator.registerOperator("$mem_ref", new MemRefOperator())
+    WorkflowOperator.registerOperator("$array_append", new ArrayAppendOperator())
+    WorkflowOperator.registerOperator("$array_prepend", new ArrayPrependOperator())
+    WorkflowOperator.registerOperator("$array_at", new ArrayAtOperator())
+    WorkflowOperator.registerOperator("$array_del", new ArrayDelOperator())
+    WorkflowOperator.registerOperator("$array_page", new ArrayPageOperator())
+    WorkflowOperator.registerOperator("$projection", new ProjectionOperator())
 
-    registerOperator("$map_put", new MapPutOperator())
-    registerOperator("$map_get", new MapGetOperator())
-    registerOperator("$map_del", new MapDelOperator())
+    WorkflowOperator.registerOperator("$map_put", new MapPutOperator())
+    WorkflowOperator.registerOperator("$map_get", new MapGetOperator())
+    WorkflowOperator.registerOperator("$map_del", new MapDelOperator())
 
-    registerOperator("$json_parse", new JsonParseOperator())
-    registerOperator("$str_concat", new StrConcatOperator())
+    WorkflowOperator.registerOperator("$json_parse", new JsonParseOperator())
+    WorkflowOperator.registerOperator("$str_concat", new StrConcatOperator())
 
-    registerOperator("$is_truthy", new IsTruthyOperator())
-    registerOperator("$is_falsy", new IsFalsyOperator())
-    registerOperator("$contains", new ContainsOperator())
-    registerOperator("$eq", new EqOperator())
-    registerOperator("$neq", new NeqOperator())
-    registerOperator("$gt", new GtOperator())
-    registerOperator("$lt", new LtOperator())
-    registerOperator("$gte", new GteOperator())
-    registerOperator("$lte", new LteOperator())
-    registerOperator("$encode_base64", new EncodeBase64Operator())
-    registerOperator("$decode_base64", new DecodeBase64Operator())
-    registerOperator("$basic_auth", new BasicAuthOperator())
-    registerOperator("$now", new NowOperator())
-    registerOperator("$not", new NotOperator())
-    // math operations
+    WorkflowOperator.registerOperator("$is_truthy", new IsTruthyOperator())
+    WorkflowOperator.registerOperator("$is_falsy", new IsFalsyOperator())
+    WorkflowOperator.registerOperator("$contains", new ContainsOperator())
+    WorkflowOperator.registerOperator("$eq", new EqOperator())
+    WorkflowOperator.registerOperator("$neq", new NeqOperator())
+    WorkflowOperator.registerOperator("$gt", new GtOperator())
+    WorkflowOperator.registerOperator("$lt", new LtOperator())
+    WorkflowOperator.registerOperator("$gte", new GteOperator())
+    WorkflowOperator.registerOperator("$lte", new LteOperator())
+    WorkflowOperator.registerOperator("$encode_base64", new EncodeBase64Operator())
+    WorkflowOperator.registerOperator("$decode_base64", new DecodeBase64Operator())
+    WorkflowOperator.registerOperator("$basic_auth", new BasicAuthOperator())
+    WorkflowOperator.registerOperator("$now", new NowOperator())
+    WorkflowOperator.registerOperator("$not", new NotOperator())
+    WorkflowOperator.registerOperator("$parse_datetime", new ParseDateTimeOperator())
+    WorkflowOperator.registerOperator("$parse_date", new ParseDateOperator())
+    WorkflowOperator.registerOperator("$parse_time", new ParseTimeOperator())
+    WorkflowOperator.registerOperator("$add", new AddOperator())
+    WorkflowOperator.registerOperator("$subtract", new SubtractOperator())
+    WorkflowOperator.registerOperator("$multiply", new MultiplyOperator())
+    WorkflowOperator.registerOperator("$divide", new DivideOperator())
+    WorkflowOperator.registerOperator("$expression_language", new ExpressionLanguageOperator())
+  }
+}
+
+class ExpressionLanguageOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("expression").asOpt[String] match {
+      case Some(expression) => GlobalExpressionLanguage.apply(
+        value = expression,
+        req = wfr.attrs.get(otoroshi.plugins.Keys.RequestKey),
+        service = wfr.attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy),
+        route = wfr.attrs.get(otoroshi.next.plugins.Keys.RouteKey),
+        apiKey = wfr.attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        user = wfr.attrs.get(otoroshi.plugins.Keys.UserKey),
+        context = wfr.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+        attrs = wfr.attrs,
+        env = env,
+      ).json
+      case _ => JsNull
+    }
+  }
+}
+
+class AddOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("values").asOpt[Seq[JsNumber]] match {
+      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a + b.value))
+      case _             => 0.json
+    }
+  }
+}
+
+class SubtractOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("values").asOpt[Seq[JsNumber]] match {
+      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a - b.value))
+      case _             => 0.json
+    }
+  }
+}
+
+class MultiplyOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("values").asOpt[Seq[JsNumber]] match {
+      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a * b.value))
+      case _             => 0.json
+    }
+  }
+}
+
+class DivideOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("values").asOpt[Seq[JsNumber]] match {
+      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a / b.value))
+      case _             => 0.json
+    }
+  }
+}
+
+class ParseDateTimeOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val pattern = opts.select("pattern").asOpt[String].map(p => DateTimeFormat.forPattern(p)).getOrElse(ISODateTimeFormat.dateTimeParser.withOffsetParsed)
+    opts.select("value").asOpt[String] match {
+      case Some(dateStr) => DateTime.parse(dateStr, pattern).toDate.getTime.json
+      case _             => JsBoolean(false)
+    }
+  }
+}
+
+class ParseDateOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val pattern = opts.select("pattern").asOpt[String].map(p => DateTimeFormat.forPattern(p)).getOrElse(DateTimeFormat.forPattern("yyyy-MM-dd"))
+    opts.select("value").asOpt[String] match {
+      case Some(dateStr) => DateTime.parse(dateStr, pattern).withTimeAtStartOfDay().toDate.getTime.json
+      case _             => JsNull
+    }
+  }
+}
+
+class ParseTimeOperator extends WorkflowOperator {
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val pattern = opts.select("pattern").asOpt[String].map(p => DateTimeFormat.forPattern(s"yyyy-MM-dd ${p}")).getOrElse(DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss"))
+    opts.select("value").asOpt[String] match {
+      case Some(timeStr) => DateTime.parse(s"${DateTime.now().toString("yyyy-MM-dd")} ${timeStr}", pattern).withTimeAtStartOfDay().toDate.getTime.json
+      case _             => JsNull
+    }
   }
 }
 
@@ -44,7 +138,7 @@ class NotOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("value").asOpt[JsValue] match {
       case Some(JsBoolean(b)) => JsBoolean(!b)
-      case _ => JsBoolean(false)
+      case _             => JsNull
     }
   }
 }
@@ -185,7 +279,7 @@ class IsFalsyOperator extends WorkflowOperator {
         }
       }
     }
-    val res = value match {
+    val res            = value match {
       case JsNull                                                   => false
       case JsString(str) if str.isEmpty                             => false
       case JsBoolean(false)                                         => false

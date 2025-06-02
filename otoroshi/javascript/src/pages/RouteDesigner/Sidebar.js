@@ -67,7 +67,7 @@ const LINKS = (route) =>
 
 export default ({ route }) => {
   const location = useLocation();
-  const draft = useSignalValue(draftVersionSignal)
+  const draft = useSignalValue(draftVersionSignal);
 
   const { openedSidebar } = useContext(SidebarContext);
 
@@ -85,7 +85,6 @@ export default ({ route }) => {
   };
 
   if (location.pathname.endsWith('/new')) return null;
-
 
   return (
     <div
@@ -109,19 +108,26 @@ export default ({ route }) => {
         </li>
         {openedSidebar && <p className="sidebar-title">Route</p>}
         {LINKS(route).map(({ to, icon, title, tooltip, tab }) => {
-          return <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
-            <Link
-              to={to.includes("?") ? `${to}&version=${draft.version}` : `${to}?version=${draft.version}`}
-              {...(tooltip || {})}
-              className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+          return (
+            <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
+              <Link
+                to={
+                  to.includes('?')
+                    ? `${to}&version=${draft.version}`
+                    : `${to}?version=${draft.version}`
+                }
+                {...(tooltip || {})}
+                className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                  openedSidebar ? 'ms-3' : ''
                 } m-0 ${isActive(tab)}`}
-            >
-              <div style={{ width: '20px' }} className="d-flex justify-content-center">
-                <i className={`fas ${icon}`} />
-              </div>
-              <div className="title"> {openedSidebar ? title : ''}</div>
-            </Link>
-          </li>
+              >
+                <div style={{ width: '20px' }} className="d-flex justify-content-center">
+                  <i className={`fas ${icon}`} />
+                </div>
+                <div className="title"> {openedSidebar ? title : ''}</div>
+              </Link>
+            </li>
+          );
         })}
 
         {openedSidebar && <p className="sidebar-title mt-3">Extensions</p>}
@@ -134,8 +140,9 @@ export default ({ route }) => {
               <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={item.id}>
                 <Link
                   to={to}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
-                    } m-0 ${isActive(tab)}`}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                    openedSidebar ? 'ms-3' : ''
+                  } m-0 ${isActive(tab)}`}
                 >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className={`fas ${item.icon}`} />

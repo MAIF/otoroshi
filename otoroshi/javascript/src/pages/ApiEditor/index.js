@@ -126,7 +126,12 @@ export default function ApiEditor(props) {
             props={props}
           />
 
-          <RouteWithProps exact path="/apis/:apiId/http-client-settings" component={HttpClientSettings} props={props} />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/http-client-settings"
+            component={HttpClientSettings}
+            props={props}
+          />
           <RouteWithProps
             exact
             path="/apis/:apiId/http-client-settings/new"
@@ -1522,32 +1527,36 @@ function NewBackend(props) {
                   label: 'Name',
                   type: 'string',
                   placeholder: 'New backend',
-                  disabled: backend?.name === 'default_backend'
+                  disabled: backend?.name === 'default_backend',
                 },
                 client: {
-                  renderer: props => <Row title="HTTP client">
-                    <NgSelectRenderer
-                      id="client_select"
-                      value={props.rootValue.client}
-                      placeholder="Select an existing http client"
-                      label={' '}
-                      ngOptions={{ spread: true }}
-                      isClearable
-                      onChange={(client) => {
-                        props.rootOnChange({
-                          ...props.rootValue,
-                          client
-                        });
-                      }}
-                      options={item.clients}
-                      optionsTransformer={(arr) => arr.map((item) => ({ label: item.name, value: item.id }))}
-                    />
-                  </Row>
+                  renderer: (props) => (
+                    <Row title="HTTP client">
+                      <NgSelectRenderer
+                        id="client_select"
+                        value={props.rootValue.client}
+                        placeholder="Select an existing http client"
+                        label={' '}
+                        ngOptions={{ spread: true }}
+                        isClearable
+                        onChange={(client) => {
+                          props.rootOnChange({
+                            ...props.rootValue,
+                            client,
+                          });
+                        }}
+                        options={item.clients}
+                        optionsTransformer={(arr) =>
+                          arr.map((item) => ({ label: item.name, value: item.id }))
+                        }
+                      />
+                    </Row>
+                  ),
                 },
                 backend: {
                   type: 'form',
                   schema: NgBackend.schema,
-                  flow: NgBackend.flow.filter(f => f !== 'client'),
+                  flow: NgBackend.flow.filter((f) => f !== 'client'),
                 },
               },
               flow: ['name', 'client', 'backend'],
@@ -1619,29 +1628,33 @@ function EditBackend(props) {
                   placeholder: 'New backend',
                 },
                 client: {
-                  renderer: props => <Row title="HTTP client">
-                    <NgSelectRenderer
-                      id="client_select"
-                      value={props.rootValue.client}
-                      placeholder="Select an existing http client"
-                      label={' '}
-                      ngOptions={{ spread: true }}
-                      isClearable
-                      onChange={(client) => {
-                        props.rootOnChange({
-                          ...props.rootValue,
-                          client
-                        });
-                      }}
-                      options={item.clients}
-                      optionsTransformer={(arr) => arr.map((item) => ({ label: item.name, value: item.id }))}
-                    />
-                  </Row>
+                  renderer: (props) => (
+                    <Row title="HTTP client">
+                      <NgSelectRenderer
+                        id="client_select"
+                        value={props.rootValue.client}
+                        placeholder="Select an existing http client"
+                        label={' '}
+                        ngOptions={{ spread: true }}
+                        isClearable
+                        onChange={(client) => {
+                          props.rootOnChange({
+                            ...props.rootValue,
+                            client,
+                          });
+                        }}
+                        options={item.clients}
+                        optionsTransformer={(arr) =>
+                          arr.map((item) => ({ label: item.name, value: item.id }))
+                        }
+                      />
+                    </Row>
+                  ),
                 },
                 backend: {
                   type: 'form',
                   schema: NgBackend.schema,
-                  flow: NgBackend.flow.filter(f => f !== 'client'),
+                  flow: NgBackend.flow.filter((f) => f !== 'client'),
                 },
               },
               flow: ['name', 'client', 'backend'],
@@ -1714,7 +1727,9 @@ function HttpClientSettings(props) {
       extractKey={(item) => item.id}
       rowNavigation={true}
       hideAddItemAction={true}
-      itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/http-client-settings/${i.id}/edit`)}
+      itemUrl={(i) =>
+        linkWithQuery(`/bo/dashboard/apis/${params.apiId}/http-client-settings/${i.id}/edit`)
+      }
       rawEditUrl={true}
       injectTopBar={() => (
         <div className="btn-group input-group-btn">
@@ -1750,20 +1765,28 @@ function NewHttpClientSettings(props) {
     }).then(() => historyPush(history, location, `/apis/${params.apiId}/http-client-settings`));
   };
 
-  useQuery(['getHttpClientSettingsTemplate'], () => fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${params.apiId}/http-client-settings/_template`, {
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then(r => r.json()), {
-    retry: 0,
-    onSuccess: client =>
-      setClient({
-        id: v4(),
-        name: 'My new HTTP client settings',
-        client,
-      }),
-  });
+  useQuery(
+    ['getHttpClientSettingsTemplate'],
+    () =>
+      fetch(
+        `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${params.apiId}/http-client-settings/_template`,
+        {
+          credentials: 'include',
+          headers: {
+            Accept: 'application/json',
+          },
+        }
+      ).then((r) => r.json()),
+    {
+      retry: 0,
+      onSuccess: (client) =>
+        setClient({
+          id: v4(),
+          name: 'My new HTTP client settings',
+          client,
+        }),
+    }
+  );
 
   if (!client || !item) return <SimpleLoader />;
 
@@ -1801,7 +1824,7 @@ function NewHttpClientSettings(props) {
                 client: {
                   ...NgBackend.schema.client,
                   collapsable: false,
-                  collapsed: false
+                  collapsed: false,
                 },
               },
               flow: [
@@ -1811,7 +1834,8 @@ function NewHttpClientSettings(props) {
                   collapsable: false,
                   fields: ['name'],
                 },
-                'client'],
+                'client',
+              ],
               value: client,
             },
           }}
@@ -1878,12 +1902,12 @@ function EditHttpClientSettings(props) {
                   label: 'Name',
                   type: 'string',
                   placeholder: 'New HTTP client settings',
-                  disabled: client?.name === 'default_client'
+                  disabled: client?.name === 'default_client',
                 },
                 client: {
                   ...NgBackend.schema.client,
                   collapsable: false,
-                  collapsed: false
+                  collapsed: false,
                 },
               },
               flow: [
@@ -1893,10 +1917,10 @@ function EditHttpClientSettings(props) {
                   collapsable: false,
                   fields: ['name'],
                 },
-                'client'
+                'client',
               ],
               value: client,
-            }
+            },
           }}
           onChange={setClient}
         />
@@ -2368,7 +2392,7 @@ function OpenAPILoader(props) {
     },
     root: {
       type: 'string',
-      label: 'The root URL of the target service'
+      label: 'The root URL of the target service',
     },
     action: {
       renderer: () => (
@@ -2390,8 +2414,9 @@ function OpenAPILoader(props) {
                     api.backends?.length > 0 && api.backends[0].backend.targets.length > 0
                       ? api.backends[0].backend.targets[0].hostname
                       : '',
-                  root: (api.backends?.length > 0 && api.backends[0].root) ? api.backends[0].root : '',
-                  api
+                  root:
+                    api.backends?.length > 0 && api.backends[0].root ? api.backends[0].root : '',
+                  api,
                 });
               });
             }}
@@ -2407,7 +2432,7 @@ function OpenAPILoader(props) {
     flow = ['openapi', 'domain', 'serverURL', 'root'];
   }
 
-  return <NgForm value={props.value} flow={flow} onChange={props.setValue} schema={schema} />
+  return <NgForm value={props.value} flow={flow} onChange={props.setValue} schema={schema} />;
 }
 
 function NewAPI(props) {
@@ -2426,34 +2451,37 @@ function NewAPI(props) {
 
   const [value, setValue] = useState();
 
-  const [step, setStep] = useState(0)
-  const [choice, setChoice] = useState()
+  const [step, setStep] = useState(0);
+  const [choice, setChoice] = useState();
 
   useEffect(() => {
     if (choice === 'fromScratch') {
-      nextClient.forEntityNext(nextClient.ENTITIES.APIS).template()
+      nextClient
+        .forEntityNext(nextClient.ENTITIES.APIS)
+        .template()
         .then((data) =>
           setValue({
             ...data,
             id: params.apiId,
-          }))
+          })
+        );
     } else {
       setValue({
         openapi: 'https://petstore3.swagger.io/api/v3/openapi.json',
         domain: 'petstore.oto.tools',
         serverURL: undefined,
         step: 0,
-        api: undefined
-      })
+        api: undefined,
+      });
     }
-  }, [choice])
+  }, [choice]);
 
   const schema = {
     location: {
       type: 'location',
       props: {
         collapsed: false,
-        collapsable: false
+        collapsable: false,
       },
     },
     id: { type: 'string', disabled: true, props: { label: 'id', placeholder: '---' } },
@@ -2466,78 +2494,95 @@ function NewAPI(props) {
       props: { label: 'Description' },
     },
     openapi: {
-      renderer: _ => <OpenAPILoader value={value} setValue={setValue} />,
+      renderer: (_) => <OpenAPILoader value={value} setValue={setValue} />,
     },
     picker: {
-      renderer: _ => {
-        return <div className='d-flex flex-column align-items-center'>
-          <h3 className='mt-3'>Which method do you want to explore first ?</h3>
-          <span className='mb-3'>Please choose one for now</span>
-          <div className="d-flex flex-column gap-2" style={{ flexWrap: 'wrap' }}>
-            {[
-              {
-                type: 'fromScratch',
-                title: 'Build from Scratch',
-                desc: 'Design your API manually without using an OpenAPI specification',
-              },
-              {
-                type: 'openapi',
-                title: 'Import OpenAPI',
-                desc: 'Provide your OpenAPI definition to generate the API automatically',
-              }
-            ].map(({ type, desc, title }) => (
+      renderer: (_) => {
+        return (
+          <div className="d-flex flex-column align-items-center">
+            <h3 className="mt-3">Which method do you want to explore first ?</h3>
+            <span className="mb-3">Please choose one for now</span>
+            <div className="d-flex flex-column gap-2" style={{ flexWrap: 'wrap' }}>
+              {[
+                {
+                  type: 'fromScratch',
+                  title: 'Build from Scratch',
+                  desc: 'Design your API manually without using an OpenAPI specification',
+                },
+                {
+                  type: 'openapi',
+                  title: 'Import OpenAPI',
+                  desc: 'Provide your OpenAPI definition to generate the API automatically',
+                },
+              ].map(({ type, desc, title }) => (
+                <Button
+                  className="d-flex align-items-center gap-3"
+                  style={{
+                    color: 'var(--text)',
+                  }}
+                  onClick={() => setChoice(type)}
+                  type={type === choice ? 'primaryColor' : 'secondary'}
+                >
+                  <div className="d-flex flex-column align-items-start">
+                    <p className="m-0" style={{ fontWeight: 'bold' }}>
+                      {title}
+                    </p>
+                    {desc}
+                  </div>
+                  {type === choice ? (
+                    <div
+                      style={{
+                        borderRadius: '50%',
+                        border: '1px solid var(--text)',
+                        width: '1.5rem',
+                        height: '1.5rem',
+                        fontSize: '.75rem',
+                      }}
+                      className="d-flex align-items-center justify-content-center"
+                    >
+                      <i className="fa fa-check" />
+                    </div>
+                  ) : (
+                    <div style={{ width: '1.5rem' }} />
+                  )}
+                </Button>
+              ))}
               <Button
-                className='d-flex align-items-center gap-3'
-                style={{
-                  color: 'var(--text)'
+                className="ms-auto"
+                type={choice ? 'primaryColor' : 'secondary'}
+                disabled={!choice}
+                onClick={() => {
+                  setStep(1);
                 }}
-                onClick={() => setChoice(type)}
-                type={type === choice ? "primaryColor" : 'secondary'}
               >
-                <div className='d-flex flex-column align-items-start'>
-                  <p className='m-0' style={{ fontWeight: 'bold' }}>{title}</p>
-                  {desc}
-                </div>
-                {type === choice ? <div style={{
-                  borderRadius: '50%',
-                  border: '1px solid var(--text)',
-                  width: '1.5rem',
-                  height: '1.5rem',
-                  fontSize: '.75rem'
-                }} className='d-flex align-items-center justify-content-center'>
-                  <i className='fa fa-check' />
-                </div> : <div style={{ width: '1.5rem' }} />}
+                Continue
               </Button>
-            ))}
-            <Button
-              className='ms-auto'
-              type={choice ? "primaryColor" : 'secondary'}
-              disabled={!choice}
-              onClick={() => {
-                setStep(1)
-              }} >
-              Continue
-            </Button>
+            </div>
           </div>
-        </div>
-      }
-    }
+        );
+      },
+    },
   };
 
-  const flow = step === 0 ? ['picker'] : [
-    'location',
-    choice === 'openapi' ? {
-      type: 'group',
-      name: 'OpenAPI',
-      collapsable: false,
-      fields: ['openapi'],
-    } : {
-      type: 'group',
-      name: 'Informations',
-      collapsable: false,
-      fields: ['id', 'name', 'description'],
-    },
-  ];
+  const flow =
+    step === 0
+      ? ['picker']
+      : [
+          'location',
+          choice === 'openapi'
+            ? {
+                type: 'group',
+                name: 'OpenAPI',
+                collapsable: false,
+                fields: ['openapi'],
+              }
+            : {
+                type: 'group',
+                name: 'Informations',
+                collapsable: false,
+                fields: ['id', 'name', 'description'],
+              },
+        ];
 
   const createApi = () => {
     if (choice === 'fromScratch') {
@@ -2562,17 +2607,25 @@ function NewAPI(props) {
 
   if (!value) return <SimpleLoader />;
 
-  return <div className="mx-auto" style={{ maxWidth: 820 }}>
-    <NgForm schema={schema} flow={flow} value={value} onChange={setValue} />
-    {step === 1 && <div className='d-flex justify-content-between align-items-center'>
-      <Button type="quiet" onClick={() => {
-        setStep(0)
-      }}>
-        <i className='fa fa-chevron-left me-2' />Back
-      </Button>
-      <Button type="primaryColor" className="btn-sm d-flex" onClick={createApi} text="Create" />
-    </div>}
-  </div>
+  return (
+    <div className="mx-auto" style={{ maxWidth: 820 }}>
+      <NgForm schema={schema} flow={flow} value={value} onChange={setValue} />
+      {step === 1 && (
+        <div className="d-flex justify-content-between align-items-center">
+          <Button
+            type="quiet"
+            onClick={() => {
+              setStep(0);
+            }}
+          >
+            <i className="fa fa-chevron-left me-2" />
+            Back
+          </Button>
+          <Button type="primaryColor" className="btn-sm d-flex" onClick={createApi} text="Create" />
+        </div>
+      )}
+    </div>
+  );
 }
 
 function Apis(props) {
@@ -2746,7 +2799,7 @@ function FlowDesigner(props) {
         history={history}
         value={flow}
         setValue={(value) => setFlow({ value })}
-        setSaveButton={() => { }}
+        setSaveButton={() => {}}
       />
     </div>
   );
@@ -3626,14 +3679,14 @@ function RouteItem({ item, api, ports }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-        <span
-          key={`frontendmethod-${i}`}
-          className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}
-        >
-          {m}
-        </span>
-      ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}
+          >
+            {m}
+          </span>
+        ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');

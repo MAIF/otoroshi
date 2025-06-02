@@ -15,7 +15,14 @@ import otoroshi.next.plugins._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.UrlSanitizer.sanitize
-import otoroshi.utils.syntax.implicits.{BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterJsValueReader, BetterMapOfStringAndB, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{
+  BetterJsLookupResult,
+  BetterJsReadable,
+  BetterJsValue,
+  BetterJsValueReader,
+  BetterMapOfStringAndB,
+  BetterSyntax
+}
 import otoroshi.utils.yaml.Yaml
 import play.api.libs.json._
 
@@ -786,9 +793,9 @@ object ApiBackendClient {
     }
 
     override def writes(o: ApiBackendClient): JsValue = Json.obj(
-      "id"      -> o.id,
-      "name"    -> o.name,
-      "client"  -> o.client.json
+      "id"     -> o.id,
+      "name"   -> o.name,
+      "client" -> o.client.json
     )
   }
 }
@@ -877,16 +884,22 @@ case class Api(
             .collect {
               case JsSuccess(api, _) if api.testing.enabled =>
                 api.copy(
-                  backends = backends.map(backend => backend
-                    .copy(backend = backend.backend.copy(
-                      client = api.clients.find(_.id == backend.client).map(_.client).getOrElse(NgClientConfig.default)))),
+                  backends = backends.map(backend =>
+                    backend
+                      .copy(backend =
+                        backend.backend.copy(
+                          client =
+                            api.clients.find(_.id == backend.client).map(_.client).getOrElse(NgClientConfig.default)
+                        )
+                      )
+                  ),
                   routes = api.routes.map(route =>
                     route.copy(
                       id = s"testing_route_${route.id}",
                       frontend = route.frontend
-                        .copy(headers = route.frontend.headers + (api.testing.headerKey -> api.testing.headerValue)),
+                        .copy(headers = route.frontend.headers + (api.testing.headerKey -> api.testing.headerValue))
                     )
-                  ),
+                  )
                 )
             }
 
@@ -937,8 +950,11 @@ case class Api(
     } yield {
       globalBackendEntity
         .map(_.backend)
-        .orElse(apiBackend.map(back =>
-          back.backend.copy(client = api.clients.find(_.id == back.client).map(_.client).getOrElse(NgClientConfig.default)))
+        .orElse(
+          apiBackend.map(back =>
+            back.backend
+              .copy(client = api.clients.find(_.id == back.client).map(_.client).getOrElse(NgClientConfig.default))
+          )
         )
         .map(backend =>
           NgRoute(
@@ -991,7 +1007,7 @@ object Api {
       val json = contentType match {
         case "application/yaml" => Yaml.parseSafe(response.body).getOrElse(Json.obj())
         case "text/yaml"        => Yaml.parseSafe(response.body).getOrElse(Json.obj())
-        case _ => Json.parse(response.body)
+        case _                  => Json.parse(response.body)
       }
 
       val name        = json.select("info").select("title").asOpt[String].getOrElse("unknown-name")
@@ -1002,7 +1018,8 @@ object Api {
         val serverUri = Uri(serverUrl)
 
         val serverDomain = serverUri.authority.host.toString()
-        val tls          = if (openapi.startsWith("https")) { true } else { serverUri.scheme.toLowerCase().contains("https") }
+        val tls          = if (openapi.startsWith("https")) { true }
+        else { serverUri.scheme.toLowerCase().contains("https") }
         val port         = if (serverUri.authority.port == 0) (if (tls) 443 else 80) else serverUri.authority.port
         NgTarget(
           id = serverUrl,
@@ -1020,7 +1037,7 @@ object Api {
           targets = targets,
           root = root.getOrElse("/"),
           rewrite = false,
-          loadBalancing = RoundRobin,
+          loadBalancing = RoundRobin
         ),
         client = "default_client"
       )
@@ -1221,7 +1238,8 @@ object Api {
       "routes"           -> o.routes.map(ApiRoute._fmt.writes),
       "backends"         -> o.backends.map(ApiBackend._fmt.writes),
       "flows"            -> o.flows.map(ApiFlows._fmt.writes),
-      "clients"          -> (if (o.clients.isEmpty) { Seq(ApiBackendClient.defaultClient) } else o.clients).map(ApiBackendClient._fmt.writes),
+      "clients"          -> (if (o.clients.isEmpty) { Seq(ApiBackendClient.defaultClient) }
+                    else o.clients).map(ApiBackendClient._fmt.writes),
       "documentation"    -> o.documentation.map(ApiDocumentation._fmt.writes),
       "consumers"        -> o.consumers.map(ApiConsumer._fmt.writes),
       "deployments"      -> o.deployments.map(ApiDeployment._fmt.writes),

@@ -433,13 +433,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         body.selectAsOptString("domain"),
         body.selectAsOptString("openapi"),
         body.selectAsOptString("serverURL"),
-        body.selectAsOptString("root"),
+        body.selectAsOptString("root")
       ) match {
         case (Some(domain), Some(openapi), serverURL, root) =>
           Api
             .fromOpenApi(domain, openapi, serverURL, root)
             .map(service => Ok(service.json))
-        case _                                        => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture
+        case _                                              => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture
       }
     }
   }

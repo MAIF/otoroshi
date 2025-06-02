@@ -91,6 +91,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends 
       frontend = NgFrontend(
         domains = Seq(NgDomainAndPath(serviceHost)),
         headers = Map(),
+        cookies = Map(),
         query = Map(),
         methods = Seq(),
         stripPath = true,

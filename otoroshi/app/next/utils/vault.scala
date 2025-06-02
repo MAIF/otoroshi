@@ -27,7 +27,7 @@ import play.api.{Configuration, Logger}
 import java.net.URLEncoder
 import java.util.Base64
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import javax.crypto.Cipher
 import javax.crypto.spec.{GCMParameterSpec, SecretKeySpec}
 import scala.collection.concurrent.TrieMap
@@ -1095,6 +1095,7 @@ class Vaults(env: Env) {
   val leaderFetchOnly: Boolean =
     vaultConfig.getOptionalWithFileSupport[Boolean]("leader-fetch-only").getOrElse(false)
 
+  private val counter                        = new AtomicInteger(0)
   private val cache                          = Caches.bounded[String, CachedVaultSecret](cachedSecrets.toInt)
   // Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
   private val expressionReplacer             = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")
@@ -1277,7 +1278,7 @@ class Vaults(env: Env) {
 
   def fillSecretsAsync(id: String, source: String)(implicit ec: ExecutionContext): Future[String] = {
     if (enabled) {
-      expressionReplacer.replaceOnAsync(source) { expr =>
+      def runResolve(expr: String): Future[String] = {
         resolveExpression(expr, force = false)
           .map {
             case CachedVaultSecretStatus.SecretReadSuccess(value) =>
@@ -1293,6 +1294,39 @@ class Vaults(env: Env) {
             logger.error(s"filling secret on '${id}' from '${expr}' failed because of '${error.value}'")
             "not-found"
           }
+      }
+      expressionReplacer.replaceOnAsync(source) { _expr =>
+        if (_expr.contains("||")) {
+          def runOr(parts: Seq[String]): Future[String] = {
+            if (parts.nonEmpty) {
+              val head = parts.head
+              resolveExpression(head, force = false).flatMap {
+                case CachedVaultSecretStatus.SecretReadSuccess(value) => value.vfuture
+                case _ if parts.length > 1 => runOr(parts.tail)
+                case status =>
+                  logger.error(s"filling secret on '${id}' from '${head}' failed because of '${status.value}'")
+                  "not-found".vfuture
+              }.recoverWith { case e: Throwable =>
+                logger.error(s"filling secret on '${id}' from '${head}' failed because of '${e.getMessage}'")
+                if (parts.length > 1) {
+                  runOr(parts.tail)
+                } else {
+                  "not-found".vfuture
+                }
+              }
+            } else {
+              logger.error(s"filling secret on '${id}' from '${_expr}' failed because none of the expressions could be resolved")
+              "not-found".vfuture
+            }
+          }
+          runOr(_expr.split("\\|\\|").map(_.trim))
+        } else if (_expr.contains("&&")) {
+          val parts = _expr.split("&&").map(_.trim)
+          val index = counter.incrementAndGet() % (if (parts.nonEmpty) parts.length else 1)
+          runResolve(parts(index))
+        } else {
+          runResolve(_expr)
+        }
       }
     } else {
       source.vfuture

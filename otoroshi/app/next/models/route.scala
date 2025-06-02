@@ -133,13 +133,13 @@ case class NgRoute(
             val secondRes = frontend.headers.map(t => (t._1.toLowerCase, t._2)).forall {
               case (key, value) if value == "Exists()" || value == "IsDefined()" =>
                 headers.contains(key)
-              case (key, value) if value == "NotDefined()" =>
+              case (key, value) if value == "NotDefined()"                       =>
                 !headers.contains(key)
-              case (key, value) if value.startsWith("Regex(")    =>
+              case (key, value) if value.startsWith("Regex(")                    =>
                 headers.get(key).exists(str => RegexPool.regex(value.substring(6).init).matches(str))
-              case (key, value) if value.startsWith("Wildcard(") =>
+              case (key, value) if value.startsWith("Wildcard(")                 =>
                 headers.get(key).exists(str => RegexPool.apply(value.substring(9).init).matches(str))
-              case (key, value)                                  => headers.get(key).contains(value)
+              case (key, value)                                                  => headers.get(key).contains(value)
             }
             firstRes && secondRes
           }
@@ -148,34 +148,34 @@ case class NgRoute(
             val secondRes = frontend.query.forall {
               case (key, value) if value == "Exists()" || value == "IsDefined()" =>
                 query.contains(key)
-              case (key, value) if value == "NotDefined()" =>
+              case (key, value) if value == "NotDefined()"                       =>
                 !query.contains(key)
-              case (key, value) if value.startsWith("Regex(")    =>
+              case (key, value) if value.startsWith("Regex(")                    =>
                 query.get(key).exists { values =>
                   val regex = RegexPool.regex(value.substring(6).init)
                   values.exists(str => regex.matches(str))
                 }
-              case (key, value) if value.startsWith("Wildcard(") =>
+              case (key, value) if value.startsWith("Wildcard(")                 =>
                 query.get(key).exists { values =>
                   val regex = RegexPool.apply(value.substring(9).init)
                   values.exists(str => regex.matches(str))
                 }
-              case (key, value)                                  => query.get(key).exists(_.contains(value))
+              case (key, value)                                                  => query.get(key).exists(_.contains(value))
             }
             firstRes && secondRes
           }
           .applyOnIf(frontend.cookies.nonEmpty) { firstRes =>
             val cookies: Map[String, String] = request.cookies.map(c => (c.name.toLowerCase(), c.value)).toMap
-            val secondRes = frontend.cookies.map(t => (t._1.toLowerCase, t._2)).forall {
+            val secondRes                    = frontend.cookies.map(t => (t._1.toLowerCase, t._2)).forall {
               case (key, value) if value == "Exists()" || value == "IsDefined()" =>
                 cookies.contains(key)
-              case (key, value) if value == "NotDefined()" =>
+              case (key, value) if value == "NotDefined()"                       =>
                 !cookies.contains(key)
-              case (key, value) if value.startsWith("Regex(")    =>
+              case (key, value) if value.startsWith("Regex(")                    =>
                 cookies.get(key).exists(str => RegexPool.regex(value.substring(6).init).matches(str))
-              case (key, value) if value.startsWith("Wildcard(") =>
+              case (key, value) if value.startsWith("Wildcard(")                 =>
                 cookies.get(key).exists(str => RegexPool.apply(value.substring(9).init).matches(str))
-              case (key, value)                                  => cookies.get(key).contains(value)
+              case (key, value)                                                  => cookies.get(key).contains(value)
             }
             firstRes && secondRes
           }

@@ -233,7 +233,7 @@ case class ZipBombBackendConfig(
     or: Boolean = false,
     size: String = "10G",
     status: Option[Int] = None,
-    contentType: Option[String] = None,
+    contentType: Option[String] = None
 ) extends NgPluginConfig {
   def json: JsValue = ZipBombBackendConfig.format.writes(this)
 }
@@ -242,8 +242,7 @@ object ZipBombBackendConfig {
   val configFlow: Seq[String]        = Seq("or", "size", "status", "content_type", "predicates")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "predicates" -> Json.parse(
-        """{
+      "predicates"   -> Json.parse("""{
           |  "label": "Predicates",
           |  "type": "object",
           |  "array": true,
@@ -271,31 +270,31 @@ object ZipBombBackendConfig {
           |    "value"
           |  ]
           |}""".stripMargin),
-      "or" -> Json.obj("type" -> "bool", "label" -> "Use OR operator"),
-      "status" -> Json.obj("type" -> "number", "label" -> "Response status code"),
+      "or"           -> Json.obj("type" -> "bool", "label" -> "Use OR operator"),
+      "status"       -> Json.obj("type" -> "number", "label" -> "Response status code"),
       "content_type" -> Json.obj("type" -> "string", "label" -> "Response content type"),
-      "size"   -> Json.obj(
+      "size"         -> Json.obj(
         "type"  -> "select",
         "label" -> s"Size",
         "props" -> Json.obj(
           "options" -> Json.arr(
-            Json.obj("label" -> "10M", "value" -> "10M"),
+            Json.obj("label" -> "10M", "value"  -> "10M"),
             Json.obj("label" -> "100M", "value" -> "100M"),
-            Json.obj("label" -> "1G", "value" -> "1G"),
-            Json.obj("label" -> "5G", "value" -> "5G"),
-            Json.obj("label" -> "10G", "value" -> "10G"),
+            Json.obj("label" -> "1G", "value"   -> "1G"),
+            Json.obj("label" -> "5G", "value"   -> "5G"),
+            Json.obj("label" -> "10G", "value"  -> "10G")
           )
         )
       )
     )
   )
-  val format = new Format[ZipBombBackendConfig] {
+  val format                         = new Format[ZipBombBackendConfig] {
     override def writes(o: ZipBombBackendConfig): JsValue             = Json.obj(
-      "predicates" -> JsArray(o.predicates.map(_.json)),
-      "or" -> o.or,
-      "size" -> o.size,
-      "status" -> o.status.map(_.json).getOrElse(JsNull).asValue,
-      "content_type" -> o.contentType.map(_.json).getOrElse(JsNull).asValue,
+      "predicates"   -> JsArray(o.predicates.map(_.json)),
+      "or"           -> o.or,
+      "size"         -> o.size,
+      "status"       -> o.status.map(_.json).getOrElse(JsNull).asValue,
+      "content_type" -> o.contentType.map(_.json).getOrElse(JsNull).asValue
     )
     override def reads(json: JsValue): JsResult[ZipBombBackendConfig] = Try {
       ZipBombBackendConfig(
@@ -340,20 +339,20 @@ class ZipBombBackend extends NgBackendCall {
   override def configSchema: Option[JsObject]    = ZipBombBackendConfig.configSchema
 
   override def callBackend(
-    ctx: NgbBackendCallContext,
-    delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
   )(implicit
-    env: Env,
-    ec: ExecutionContext,
-    mat: Materializer
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
-    val config = ctx
+    val config         = ctx
       .cachedConfig(internalName)(ZipBombBackendConfig.format)
       .getOrElse(ZipBombBackendConfig())
     val acceptEncoding = ctx.request.headers.getIgnoreCase("Accept-Encoding").getOrElse("")
-    val gzipAccepted = acceptEncoding.contains("gzip") || acceptEncoding == "*"
+    val gzipAccepted   = acceptEncoding.contains("gzip") || acceptEncoding == "*"
     if (gzipAccepted) {
-      val json = ctx.json
+      val json          = ctx.json
       val shouldTrigger = if (config.or) {
         config.predicates.exists(_.validate(json))
       } else {
@@ -361,21 +360,29 @@ class ZipBombBackend extends NgBackendCall {
       }
       if (shouldTrigger) {
         val zipPath = config.size.toLowerCase() match {
-          case "10m" => "/zips/10M.gz"
+          case "10m"  => "/zips/10M.gz"
           case "100m" => "/zips/100M.gz"
-          case "1g" => "/zips/1G.gz"
-          case "5g" => "/zips/5G.gz"
-          case _ => "/zips/10G.gz"
+          case "1g"   => "/zips/1G.gz"
+          case "5g"   => "/zips/5G.gz"
+          case _      => "/zips/10G.gz"
         }
-        val bytes = ZipBombBackend.zipCache.getOrElseUpdate(zipPath, {
-          val zipFile = env.environment.resourceAsStream(zipPath).get
-          ByteString(zipFile.readAllBytes())
-        }).chunks(64 * 1024)
-        BackendCallResponse(NgPluginHttpResponse.fromResult(
-          Results.Status(config.status.getOrElse(200))
-            .streamed(bytes, None, config.contentType.getOrElse("text/html").some)
-            .withHeaders("Content-Encoding" -> "gzip")
-        ), None).rightf
+        val bytes   = ZipBombBackend.zipCache
+          .getOrElseUpdate(
+            zipPath, {
+              val zipFile = env.environment.resourceAsStream(zipPath).get
+              ByteString(zipFile.readAllBytes())
+            }
+          )
+          .chunks(64 * 1024)
+        BackendCallResponse(
+          NgPluginHttpResponse.fromResult(
+            Results
+              .Status(config.status.getOrElse(200))
+              .streamed(bytes, None, config.contentType.getOrElse("text/html").some)
+              .withHeaders("Content-Encoding" -> "gzip")
+          ),
+          None
+        ).rightf
       } else {
         delegates()
       }

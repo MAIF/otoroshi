@@ -52,6 +52,7 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
     frontend = NgFrontend(
       domains = Seq(NgDomainAndPath("foo.oto.tools")),
       headers = Map(),
+      cookies = Map(),
       query = Map(),
       methods = Seq(),
       stripPath = true,

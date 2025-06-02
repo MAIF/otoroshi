@@ -1180,22 +1180,30 @@ class Env(
     plugins = Plugins(
       enabled = true,
       refs = Seq(
-        "cp:otoroshi.next.proxy.ProxyEngine",
-        "cp:otoroshi.plugins.apikeys.ClientCredentialService"
+        "cp:otoroshi.next.proxy.ProxyEngine"
       ),
       config = Json.obj(
-        "NextGenProxyEngine"      -> Json.obj(
+        "NextGenProxyEngine" -> Json.obj(
           "enabled"          -> true,
           "debug"            -> false,
           "debug_headers"    -> false,
           "domains"          -> Seq("*"),
           "routing_strategy" -> "tree"
         ),
-        "ClientCredentialService" -> Json.obj(
-          "domain"         -> "*",
-          "expiration"     -> 1.hour.toMillis,
-          "defaultKeyPair" -> Cert.OtoroshiJwtSigning,
-          "secure"         -> true
+        "ng"                 -> Json.arr(
+          Json.obj(
+            "config"  -> Json.obj(
+              "expiration"       -> 1.hour.toMillis,
+              "default_key_pair" -> Cert.OtoroshiJwtSigning,
+              "domain"           -> "*",
+              "secure"           -> true
+            ),
+            "debug"   -> false,
+            "enabled" -> true,
+            "exclude" -> Json.arr(),
+            "include" -> Json.arr(),
+            "plugin"  -> "cp:otoroshi.next.plugins.NgClientCredentials"
+          )
         )
       )
     )
@@ -1263,7 +1271,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "17.2.0-dev"
+  lazy val otoroshiVersion    = "17.3.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 

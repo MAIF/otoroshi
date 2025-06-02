@@ -2,7 +2,6 @@
 
 in this section, we will explain some mainstream Otoroshi usage scenario's 
 
-* @ref:[Http WASM](./http-wasm.md)
 * @ref:[Otoroshi and WASM](./wasm-usage.md)
 * @ref:[Wasmo](./wasmo-installation.md)
 * @ref:[Tailscale integration](./tailscale-integration.md)
@@ -33,7 +32,6 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 
 @@@ index
 
-* [Http WASM](./http-wasm.md)
 * [WASM usage](./wasm-usage.md)
 * [wasmo](./wasmo-installation.md)
 * [Tailscale integration](./tailscale-integration.md)

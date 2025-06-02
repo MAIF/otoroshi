@@ -118,18 +118,20 @@ function ManagerTitle({
       }
       {...props}
     >
-      {!pathname.includes('routes/new') && <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          margin: 'auto',
-          bottom: '1.25rem',
-          width: 'fit-content',
-        }}
-      >
-        <DraftEditorContainer entityId={value.id} value={value} />
-      </div>}
+      {!pathname.includes('routes/new') && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            margin: 'auto',
+            bottom: '1.25rem',
+            width: 'fit-content',
+          }}
+        >
+          <DraftEditorContainer entityId={value.id} value={value} />
+        </div>
+      )}
 
       <Dropdown className="mb-1">
         {!isCreation && (location.state?.routeFromService ? tab.tab === 'Informations' : true) && (

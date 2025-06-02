@@ -4,6 +4,7 @@ import io.azam.ulidj.ULID
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
+import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
@@ -17,8 +18,8 @@ class WorkflowEngine(env: Env) {
 
   implicit val executorContext = env.otoroshiExecutionContext
 
-  def run(node: Node, input: JsObject): Future[WorkflowResult] = {
-    val wfRun = WorkflowRun(ULID.random())
+  def run(node: Node, input: JsObject, attrs: TypedMap): Future[WorkflowResult] = {
+    val wfRun = WorkflowRun(ULID.random(), attrs, env)
     wfRun.memory.set("input", input)
     node
       .internalRun(wfRun)(env, executorContext)
@@ -90,7 +91,7 @@ class WorkflowLog {
   def log(item: WorkflowLogItem): Unit = queue.offer(item)
 }
 
-case class WorkflowRun(id: String) {
+case class WorkflowRun(id: String, attrs: TypedMap, env: Env) {
   val memory             = new WorkflowMemory()
   val runlog             = new WorkflowLog()
   def log(message: String, node: Node, error: Option[WorkflowError] = None): Unit = {
@@ -106,7 +107,10 @@ case class WorkflowRun(id: String) {
 }
 
 trait WorkflowFunction {
-  def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
+  def inputSchema: Option[JsObject] = None
+  def outputSchema: Option[JsObject] = None
+  def callWithRun(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = call(args)
+  def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = Left(WorkflowError("not implemented", None, None)).vfuture
 }
 
 object WorkflowFunction {
@@ -119,37 +123,44 @@ object WorkflowFunction {
 
 trait Node {
   def json: JsObject
-  def id: String                = json.select("id").asString
+  def id: String                = json.select("id").asOptString.getOrElse(ULID.random().toLowerCase)
+  def description: String       = json.select("description").asOptString.getOrElse("")
   def kind: String              = json.select("kind").asString
+  def enabled: Boolean          = json.select("enabled").asOptBoolean.getOrElse(true)
   def result: Option[String]    = json.select("result").asOptString
   def returned: Option[JsValue] = json.select("returned").asOpt[JsValue]
   def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
   final def internalRun(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    wfr.log(s"starting '${id}'", this)
-    run(wfr)
-      .map {
-        case Left(err)  => {
-          wfr.log(s"ending with error '${id}'", this, err.some)
-          Left(err)
+    if (!enabled) {
+      // println(s"skipping ${id}")
+      JsNull.rightf
+    } else {
+      wfr.log(s"starting '${id}'", this)
+      run(wfr)
+        .map {
+          case Left(err) => {
+            wfr.log(s"ending with error '${id}'", this, err.some)
+            Left(err)
+          }
+          case Right(res) => {
+            wfr.log(s"ending '${id}'", this)
+            result.foreach(name => wfr.memory.set(name, res))
+            returned
+              .map(v => WorkflowOperator.processOperators(v, wfr, env))
+              .map(v => Right(v))
+              .getOrElse(Right(res)) // TODO: el like
+          }
         }
-        case Right(res) => {
-          wfr.log(s"ending '${id}'", this)
-          result.foreach(name => wfr.memory.set(name, res))
-          returned
-            .map(v => WorkflowOperator.processOperators(v, wfr, env))
-            .map(v => Right(v))
-            .getOrElse(Right(res)) // TODO: el like
+        .recover {
+          case t: Throwable => {
+            val error = WorkflowError(s"caught exception on task: '${id}'", None, Some(t))
+            wfr.log(s"ending with exception '${id}'", this, error.some)
+            Left(error)
+          }
         }
-      }
-      .recover {
-        case t: Throwable => {
-          val error = WorkflowError(s"caught exception on task: '${id}'", None, Some(t))
-          wfr.log(s"ending with exception '${id}'", this, error.some)
-          Left(error)
-        }
-      }
+    }
   }
 }
 
@@ -202,6 +213,7 @@ object WorkflowOperator {
     }
     case JsArray(arr)                                                                     => JsArray(arr.map(v => processOperators(v, wfr, env)))
     case JsObject(map)                                                                    => JsObject(map.mapValues(v => processOperators(v, wfr, env)))
+    case JsString("${now}")                                                               => System.currentTimeMillis().json
     case JsString(str) if str.startsWith("${") && str.endsWith("}") && !str.contains(".") => {
       val name = str.substring(2).init
       wfr.memory.get(name) match {
@@ -215,9 +227,11 @@ object WorkflowOperator {
       val path  = parts.tail.mkString(".")
       wfr.memory.get(name) match {
         case None        => JsNull
-        case Some(value) => value.at(path).asValue
+        case Some(value) => value.at(path).asOpt[JsValue].getOrElse(JsNull)
       }
     }
+    case JsString(str) if str.contains("${now_str}")                                      => JsString(str.replace("${now_str}", DateTime.now().toString))
+    case JsString(str) if str.contains("${now}")                                          => JsString(str.replace("${now}", System.currentTimeMillis().toString))
     case _                                                                                => value
   }
 }
