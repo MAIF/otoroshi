@@ -173,6 +173,10 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
     )
   }
 
+  def workflows(): Seq[Workflow] = states.allWorkflows()
+
+  def workflow(id: String): Option[Workflow] = states.workflow(id)
+
   def handleWorkflowTest(
       ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
       req: RequestHeader,
