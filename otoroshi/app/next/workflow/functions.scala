@@ -7,6 +7,7 @@ import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.BodyHelper
+import otoroshi.utils.mailer._
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
@@ -25,6 +26,7 @@ object WorkflowFunctionsInitializer {
     WorkflowFunction.registerFunction("core.wasm_call", new WasmCallFunction())
     WorkflowFunction.registerFunction("core.workflow_call", new WorkflowCallFunction())
     WorkflowFunction.registerFunction("core.system_call", new SystemCallFunction())
+    WorkflowFunction.registerFunction("core.store_keys", new StoreKeysFunction())
     WorkflowFunction.registerFunction("core.store_mget", new StoreMgetFunction())
     WorkflowFunction.registerFunction("core.store_match", new StoreMatchFunction())
     WorkflowFunction.registerFunction("core.store_get", new StoreGetFunction())
@@ -36,6 +38,38 @@ object WorkflowFunctionsInitializer {
     WorkflowFunction.registerFunction("core.file_del", new FileDeleteFunction())
     WorkflowFunction.registerFunction("core.state_get_all", new StateGetAllFunction())
     WorkflowFunction.registerFunction("core.state_get", new StateGetOneFunction())
+    WorkflowFunction.registerFunction("core.send_mail", new SendMailFunction())
+  }
+}
+
+class SendMailFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val config = args.select("mailer_config").asOpt[JsObject].getOrElse(Json.obj())
+    val from: EmailLocation = EmailLocation.format.reads(args.select("from").asValue).get
+    val to: Seq[EmailLocation] = args.select("from").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty)
+    val subject = args.select("subject").asString
+    val html = args.select("html").asString
+    args.select("mailer_config").select("kind").asOptString.getOrElse("mailgun").toLowerCase match {
+      case "mailgun" => {
+        val mailer = new MailgunMailer(env, env.datastores.globalConfigDataStore.latest(), MailgunSettings.format.reads(config).get)
+        mailer.send(from, to, subject, html).map { _ =>
+          Json.obj("sent" -> true).right
+        }
+      }
+      case "mailjet" => {
+        val mailer = new MailjetMailer(env, env.datastores.globalConfigDataStore.latest(), MailjetSettings.format.reads(config).get)
+        mailer.send(from, to, subject, html).map { _ =>
+          Json.obj("sent" -> true).right
+        }
+      }
+      case "sendgrid" => {
+        val mailer = new SendgridMailer(env, env.datastores.globalConfigDataStore.latest(), SendgridSettings.format.reads(config).get)
+        mailer.send(from, to, subject, html).map { _ =>
+          Json.obj("sent" -> true).right
+        }
+      }
+      case v => WorkflowError(s"mailer '${v}' not supported", None, None).leftf
+    }
   }
 }
 
@@ -315,6 +349,16 @@ class StoreSetFunction extends WorkflowFunction {
     }
   }
 }
+
+class StoreKeysFunction extends WorkflowFunction {
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val pattern = args.select("pattern").asString
+    env.datastores.rawDataStore.keys(pattern).map { seq =>
+      Right(JsArray(seq.map(_.json)))
+    }
+  }
+}
+
 
 class StoreMgetFunction extends WorkflowFunction {
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
