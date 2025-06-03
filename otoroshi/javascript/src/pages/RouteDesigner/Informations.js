@@ -111,9 +111,14 @@ export const Informations = forwardRef(
                           )
                           .then((ok) => {
                             if (ok) {
-                              saveRoute({ ...value, enabled: false }).then(() =>
-                                window.location.reload()
-                              );
+                              valueRef.current = {
+                                ...value,
+                                enabled: false
+                              }
+                              saveRoute()
+                                .then(() =>
+                                  window.location.reload()
+                                );
                             }
                           });
                       }}
@@ -124,7 +129,12 @@ export const Informations = forwardRef(
                       className="btn-sm mb-3"
                       text="Publish this route"
                       onClick={() => {
-                        saveRoute({ ...value, enabled: true }).then(() => window.location.reload());
+                        valueRef.current = {
+                          ...value,
+                          enabled: true
+                        }
+                        saveRoute()
+                          .then(() => window.location.reload());
                       }}
                     />
                   )}
