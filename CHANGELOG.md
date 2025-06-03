@@ -6,6 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.3.0] - 2025-06-03
+
+
+https://github.com/MAIF/otoroshi/milestone/116?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.2.0...v17.3.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.3.0
+
+
+### Added 
+
+- secret vault expression can now have multiple values using the `||` and `&&` operators (#2175 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add new notations in the EL to evaluate dates from EL expressions (#2177 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add file base functions to Workflows (#2178 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- expose workflows to all users (#2180 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add expression language operator to workflows (#2181 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- error node in Workflows (#2182 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- wait node in Workflows (#2183 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add syntax helper to apply EL more easily (#2184 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Context validator plugin can use EL expressions (#2185 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Apikey can be extracted from cookie value in `simple_id` mode (#2186 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Apikey can be extracted from cookie value in `basic_auth` mode (#2187 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Apikey can be extracted from path param value in `simple_id` mode (#2188 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Apikey can be extracted from path param value in `basic_auth` mode (#2189 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add `send_mail` function in workflow (#2191 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- EL expression date(value).format('expr') does not format (#2176 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- workflow tester does not fill secrets (#2179 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- bad data binding for the robots.txt plugin (#2190 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- oom error let wasm vms unusable in certain circumstances (#2192 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [17.2.0] - 2025-05-20
 
 
