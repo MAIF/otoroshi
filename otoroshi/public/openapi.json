@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.2.0",
+    "version" : "17.3.0",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:45003",
+    "url" : "http://otoroshi-api.oto.tools:35363",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -23821,6 +23821,14 @@
           "queryName" : {
             "type" : "string",
             "minLength" : 1
+          },
+          "cookieName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "pathName" : {
+            "type" : "string",
+            "minLength" : 1
           }
         },
         "title" : "Client id auth constraints",
@@ -25009,6 +25017,14 @@
           "queryName" : {
             "type" : "string",
             "minLength" : 1
+          },
+          "cookieName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "pathName" : {
+            "type" : "string",
+            "minLength" : 1
           }
         },
         "title" : "Basic auth constraints",
@@ -25786,10 +25802,13 @@
           },
           "config" : {
             "$ref" : "#/components/schemas/jsobject"
+          },
+          "testPayload" : {
+            "$ref" : "#/components/schemas/jsobject"
           }
         },
         "title" : "Workflow",
-        "required" : [ "location", "id", "name", "description", "tags", "metadata", "config" ]
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "config", "testPayload" ]
       },
       "ngtarget" : {
         "type" : "object",
@@ -27194,16 +27213,10 @@
         "properties" : {
           "x$1" : {
             "type" : "number"
-          },
-          "x$2" : {
-            "type" : "number"
-          },
-          "x$3" : {
-            "type" : "number"
           }
         },
         "title" : "Local time",
-        "required" : [ "x$1", "x$2", "x$3" ]
+        "required" : [ "x$1" ]
       },
       "mappingsettings" : {
         "type" : "object",
