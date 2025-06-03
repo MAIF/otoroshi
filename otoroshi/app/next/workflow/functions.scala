@@ -44,44 +44,62 @@ object WorkflowFunctionsInitializer {
 
 class SendMailFunction extends WorkflowFunction {
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val config = args.select("mailer_config").asOpt[JsObject].getOrElse(Json.obj())
-    val from: EmailLocation = EmailLocation.format.reads(args.select("from").asValue).get
-    val to: Seq[EmailLocation] = args.select("from").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty)
-    val subject = args.select("subject").asString
-    val html = args.select("html").asString
+    val config                 = args.select("mailer_config").asOpt[JsObject].getOrElse(Json.obj())
+    val from: EmailLocation    = EmailLocation.format.reads(args.select("from").asValue).get
+    val to: Seq[EmailLocation] =
+      args.select("from").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty)
+    val subject                = args.select("subject").asString
+    val html                   = args.select("html").asString
     args.select("mailer_config").select("kind").asOptString.getOrElse("mailgun").toLowerCase match {
-      case "mailgun" => {
-        val mailer = new MailgunMailer(env, env.datastores.globalConfigDataStore.latest(), MailgunSettings.format.reads(config).get)
+      case "mailgun"  => {
+        val mailer = new MailgunMailer(
+          env,
+          env.datastores.globalConfigDataStore.latest(),
+          MailgunSettings.format.reads(config).get
+        )
         mailer.send(from, to, subject, html).map { _ =>
           Json.obj("sent" -> true).right
         }
       }
-      case "mailjet" => {
-        val mailer = new MailjetMailer(env, env.datastores.globalConfigDataStore.latest(), MailjetSettings.format.reads(config).get)
+      case "mailjet"  => {
+        val mailer = new MailjetMailer(
+          env,
+          env.datastores.globalConfigDataStore.latest(),
+          MailjetSettings.format.reads(config).get
+        )
         mailer.send(from, to, subject, html).map { _ =>
           Json.obj("sent" -> true).right
         }
       }
       case "sendgrid" => {
-        val mailer = new SendgridMailer(env, env.datastores.globalConfigDataStore.latest(), SendgridSettings.format.reads(config).get)
+        val mailer = new SendgridMailer(
+          env,
+          env.datastores.globalConfigDataStore.latest(),
+          SendgridSettings.format.reads(config).get
+        )
         mailer.send(from, to, subject, html).map { _ =>
           Json.obj("sent" -> true).right
         }
       }
-      case v => WorkflowError(s"mailer '${v}' not supported", None, None).leftf
+      case v          => WorkflowError(s"mailer '${v}' not supported", None, None).leftf
     }
   }
 }
 
 class StateGetAllFunction extends WorkflowFunction {
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val name = args.select("name").asString
-    val group = args.select("group").asOptString.getOrElse("any")
+    val name    = args.select("name").asString
+    val group   = args.select("group").asOptString.getOrElse("any")
     val version = args.select("version").asOptString.getOrElse("any")
     env.allResources.resources.find { res =>
       res.group == group && res.version.name == version && res.pluralName == name
     } match {
-      case None => WorkflowError(s"resources not found", Some(Json.obj("name" -> name, "group" -> group, "version" -> version)), None).leftf
+      case None           =>
+        WorkflowError(
+          s"resources not found",
+          Some(Json.obj("name" -> name, "group" -> group, "version" -> version)),
+          None
+        ).leftf
       case Some(resource) => JsArray(resource.access.allJson()).rightf
     }
   }
@@ -89,14 +107,19 @@ class StateGetAllFunction extends WorkflowFunction {
 
 class StateGetOneFunction extends WorkflowFunction {
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val id = args.select("id").asString
-    val name = args.select("name").asString
-    val group = args.select("group").asOptString.getOrElse("any")
+    val id      = args.select("id").asString
+    val name    = args.select("name").asString
+    val group   = args.select("group").asOptString.getOrElse("any")
     val version = args.select("version").asOptString.getOrElse("any")
     env.allResources.resources.find { res =>
       res.group == group && res.version.name == version && res.singularName == name
     } match {
-      case None => WorkflowError(s"resources not found", Some(Json.obj("name" -> name, "group" -> group, "version" -> version)), None).leftf
+      case None           =>
+        WorkflowError(
+          s"resources not found",
+          Some(Json.obj("name" -> name, "group" -> group, "version" -> version)),
+          None
+        ).leftf
       case Some(resource) => resource.access.oneJson(id).getOrElse(JsNull).rightf
     }
   }
@@ -117,8 +140,8 @@ class FileDeleteFunction extends WorkflowFunction {
 
 class FileReadFunction extends WorkflowFunction {
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val path = args.select("path").asString
-    val parseJson = args.select("parse_json").asOptBoolean.getOrElse(false)
+    val path         = args.select("path").asString
+    val parseJson    = args.select("parse_json").asOptBoolean.getOrElse(false)
     val encodeBase64 = args.select("encode_base64").asOptBoolean.getOrElse(false)
     try {
       val content = Files.readAllBytes(new File(path).toPath)
@@ -137,9 +160,10 @@ class FileReadFunction extends WorkflowFunction {
 
 class FileWriteFunction extends WorkflowFunction {
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val path = args.select("path").asOptString.getOrElse(Files.createTempFile("llm-ext-fw-", ".tmp").toFile.getAbsolutePath)
-    val value = args.select("value").asValue
-    val prettify = args.select("prettify").asOptBoolean.getOrElse(false)
+    val path         =
+      args.select("path").asOptString.getOrElse(Files.createTempFile("llm-ext-fw-", ".tmp").toFile.getAbsolutePath)
+    val value        = args.select("value").asValue
+    val prettify     = args.select("prettify").asOptBoolean.getOrElse(false)
     val decodeBase64 = args.select("from_base64").asOptBoolean.getOrElse(false)
     try {
       val f = new File(path)
@@ -153,14 +177,17 @@ class FileWriteFunction extends WorkflowFunction {
         Files.write(f.toPath, value.asString.byteString.decodeBase64.toArray)
         Json.obj("file_path" -> f.getAbsolutePath).rightf
       } else {
-        Files.writeString(f.toPath, value match {
-          case JsString(s) => s
-          case JsNumber(s) => s.toString()
-          case JsBoolean(s) => s.toString()
-          case JsArray(_) => value.stringify
-          case JsObject(_) => value.stringify
-          case JsNull => "null"
-        })
+        Files.writeString(
+          f.toPath,
+          value match {
+            case JsString(s)  => s
+            case JsNumber(s)  => s.toString()
+            case JsBoolean(s) => s.toString()
+            case JsArray(_)   => value.stringify
+            case JsObject(_)  => value.stringify
+            case JsNull       => "null"
+          }
+        )
         Json.obj("file_path" -> f.getAbsolutePath).rightf
       }
     } catch {
@@ -238,7 +265,9 @@ class HttpClientFunction extends WorkflowFunction {
 
 class WorkflowCallFunction extends WorkflowFunction {
 
-  override def callWithRun(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
+  override def callWithRun(
+      args: JsObject
+  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val workflowId = args.select("workflow_id").asString
     val input      = args.select("input").asObject
     val extension  = env.adminExtensions.extension[WorkflowAdminExtension].get
@@ -261,9 +290,9 @@ class SystemCallFunction extends WorkflowFunction {
 
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     try {
-      var stdout = ""
-      var stderr = ""
-      val command = args.select("command").asOpt[Seq[String]].getOrElse(Seq.empty)
+      var stdout        = ""
+      var stderr        = ""
+      val command       = args.select("command").asOpt[Seq[String]].getOrElse(Seq.empty)
       val processLogger = ProcessLogger(
         out => {
           stdout = stdout + out
@@ -274,7 +303,7 @@ class SystemCallFunction extends WorkflowFunction {
           println(s"[stderr] $err")
         }
       )
-      val code = command.!(processLogger)
+      val code          = command.!(processLogger)
       Json.obj("stdout" -> stdout, "stderr" -> stderr, "code" -> code).rightf
     } catch {
       case t: Throwable => Left(WorkflowError(t.getMessage, None, None)).vfuture
@@ -358,7 +387,6 @@ class StoreKeysFunction extends WorkflowFunction {
     }
   }
 }
-
 
 class StoreMgetFunction extends WorkflowFunction {
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {

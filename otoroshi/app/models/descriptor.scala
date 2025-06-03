@@ -1135,14 +1135,14 @@ case class BasicAuthConstraints(
     queryName: Option[String] = None,
     cookieName: Option[String] = None,
     pathName: Option[String] = None
-) {
+)                                   {
   def json: JsValue =
     Json.obj(
       "enabled"    -> enabled,
       "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "queryName"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "cookieName" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "pathName"   -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "pathName"   -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
     )
 }
 object BasicAuthConstraints         {
@@ -1156,7 +1156,7 @@ object BasicAuthConstraints         {
             headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
             queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty),
             cookieName = (json \ "cookie_name").asOpt[String].filterNot(_.trim.isEmpty),
-            pathName = (json \ "path_name").asOpt[String].filterNot(_.trim.isEmpty),
+            pathName = (json \ "path_name").asOpt[String].filterNot(_.trim.isEmpty)
           )
         )
       } recover { case e =>
@@ -1170,7 +1170,7 @@ case class ClientIdAuthConstraints(
     queryName: Option[String] = None,
     cookieName: Option[String] = None,
     pathName: Option[String] = None
-) {
+)                                   {
   def json: JsValue =
     Json.obj(
       "enabled"    -> enabled,

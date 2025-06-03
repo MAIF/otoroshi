@@ -395,7 +395,9 @@ trait NgCachedConfigContext {
   }.toOption.flatten
   def rawConfig[A](reads: Reads[A]): Option[A]                                  = reads.reads(config).asOpt
   def rawConfigFn[A](reads: JsValue => Option[A]): Option[A]                    = reads(config)
-  def extractBody(request: NgPluginHttpRequest)(implicit env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
+  def extractBody(
+      request: NgPluginHttpRequest
+  )(implicit env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
     implicit val mat = env.otoroshiMaterializer
     if (request.hasBody) {
       request.body.runFold(ByteString.empty)(_ ++ _).map { b =>
@@ -408,17 +410,19 @@ trait NgCachedConfigContext {
 
   def extractTypedBody(request: NgPluginHttpRequest)(implicit env: Env, ec: ExecutionContext): Future[JsObject] = {
     extractBody(request).map {
-      case None => Json.obj()
-      case Some((bytes, "application/json")) => Json.obj("body_json" -> Json.parse(bytes.toArray))
-      case Some((bytes, "application/xml")) => Json.obj("body_str" -> bytes.utf8String)
+      case None                                              => Json.obj()
+      case Some((bytes, "application/json"))                 => Json.obj("body_json" -> Json.parse(bytes.toArray))
+      case Some((bytes, "application/xml"))                  => Json.obj("body_str" -> bytes.utf8String)
       case Some((bytes, ctype)) if ctype.startsWith("text/") => Json.obj("body_str" -> bytes.utf8String)
-      case Some((bytes, _)) => {
+      case Some((bytes, _))                                  => {
         val array = Writes.arrayWrites[Byte].writes(bytes.toArray[Byte])
         Json.obj("body_bytes" -> array)
       }
     }
   }
-  def extractBody(response: NgPluginHttpResponse)(implicit env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
+  def extractBody(
+      response: NgPluginHttpResponse
+  )(implicit env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
     implicit val mat = env.otoroshiMaterializer
     response.body.runFold(ByteString.empty)(_ ++ _).map { b =>
       Some((b, response.contentType.getOrElse("application/octet-stream")))
@@ -427,11 +431,11 @@ trait NgCachedConfigContext {
 
   def extractTypedBody(response: NgPluginHttpResponse)(implicit env: Env, ec: ExecutionContext): Future[JsObject] = {
     extractBody(response).map {
-      case None => Json.obj()
-      case Some((bytes, "application/json")) => Json.obj("body_json" -> Json.parse(bytes.toArray))
-      case Some((bytes, "application/xml")) => Json.obj("body_str" -> bytes.utf8String)
+      case None                                              => Json.obj()
+      case Some((bytes, "application/json"))                 => Json.obj("body_json" -> Json.parse(bytes.toArray))
+      case Some((bytes, "application/xml"))                  => Json.obj("body_str" -> bytes.utf8String)
       case Some((bytes, ctype)) if ctype.startsWith("text/") => Json.obj("body_str" -> bytes.utf8String)
-      case Some((bytes, _)) => {
+      case Some((bytes, _))                                  => {
         val array = Writes.arrayWrites[Byte].writes(bytes.toArray[Byte])
         Json.obj("body_bytes" -> array)
       }
@@ -623,7 +627,7 @@ case class NgTransformerRequestContext(
   }
   def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     val baseObject = json.asObject ++ Json.obj(
-      "route"              -> route.json,
+      "route" -> route.json
     )
     extractTypedBody(otoroshiRequest).map { obj =>
       baseObject ++ Json.obj("request" -> (baseObject.select("request").asObject ++ obj))
@@ -673,7 +677,7 @@ case class NgTransformerResponseContext(
 
   def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     val baseObject = json.asObject ++ Json.obj(
-      "route"              -> route.json,
+      "route" -> route.json
     )
     extractTypedBody(otoroshiResponse).map { obj =>
       baseObject ++ Json.obj("otoroshi_response" -> (baseObject.select("otoroshi_response").asObject ++ obj))
@@ -952,8 +956,8 @@ case class NgbBackendCallContext(
   def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     extractTypedBody(request).map { obj =>
       json.asObject ++ Json.obj(
-        "route"              -> route.json,
-        "request"            -> (request.json.asObject ++ obj)
+        "route"   -> route.json,
+        "request" -> (request.json.asObject ++ obj)
       )
     }
   }

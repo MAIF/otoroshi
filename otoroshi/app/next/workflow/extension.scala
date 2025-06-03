@@ -27,7 +27,7 @@ case class Workflow(
     tags: Seq[String],
     metadata: Map[String, String],
     config: JsObject,
-    testPayload: JsObject,
+    testPayload: JsObject
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = Workflow.format.writes(this)
@@ -50,12 +50,12 @@ object Workflow {
   )
   val format               = new Format[Workflow] {
     override def writes(o: Workflow): JsValue             = o.location.jsonWithKey ++ Json.obj(
-      "id"          -> o.id,
-      "name"        -> o.name,
-      "description" -> o.description,
-      "metadata"    -> o.metadata,
-      "tags"        -> JsArray(o.tags.map(JsString.apply)),
-      "config"      -> o.config,
+      "id"           -> o.id,
+      "name"         -> o.name,
+      "description"  -> o.description,
+      "metadata"     -> o.metadata,
+      "tags"         -> JsArray(o.tags.map(JsString.apply)),
+      "config"       -> o.config,
       "test_payload" -> o.testPayload
     )
     override def reads(json: JsValue): JsResult[Workflow] = Try {
@@ -67,7 +67,7 @@ object Workflow {
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
-        testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo")),
+        testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo"))
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -190,8 +190,10 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
       case None             => Results.Ok(Json.obj("done" -> false, "error" -> "no body")).vfuture
       case Some(bodySource) =>
         bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-          val payload_raw  = bodyRaw.utf8String
-          val secretFillFuture = if (payload_raw.contains("${vault://")) env.vaults.fillSecretsAsync("workflow-test", payload_raw) else payload_raw.vfuture
+          val payload_raw      = bodyRaw.utf8String
+          val secretFillFuture =
+            if (payload_raw.contains("${vault://")) env.vaults.fillSecretsAsync("workflow-test", payload_raw)
+            else payload_raw.vfuture
           secretFillFuture.flatMap { payload_filled =>
             val payload  = payload_filled.parseJson
             val input    = payload.select("input").asString.parseJson.asObject

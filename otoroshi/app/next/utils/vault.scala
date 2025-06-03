@@ -1300,22 +1300,26 @@ class Vaults(env: Env) {
           def runOr(parts: Seq[String]): Future[String] = {
             if (parts.nonEmpty) {
               val head = parts.head
-              resolveExpression(head, force = false).flatMap {
-                case CachedVaultSecretStatus.SecretReadSuccess(value) => value.vfuture
-                case _ if parts.length > 1 => runOr(parts.tail)
-                case status =>
-                  logger.error(s"filling secret on '${id}' from '${head}' failed because of '${status.value}'")
-                  "not-found".vfuture
-              }.recoverWith { case e: Throwable =>
-                logger.error(s"filling secret on '${id}' from '${head}' failed because of '${e.getMessage}'")
-                if (parts.length > 1) {
-                  runOr(parts.tail)
-                } else {
-                  "not-found".vfuture
+              resolveExpression(head, force = false)
+                .flatMap {
+                  case CachedVaultSecretStatus.SecretReadSuccess(value) => value.vfuture
+                  case _ if parts.length > 1                            => runOr(parts.tail)
+                  case status                                           =>
+                    logger.error(s"filling secret on '${id}' from '${head}' failed because of '${status.value}'")
+                    "not-found".vfuture
                 }
-              }
+                .recoverWith { case e: Throwable =>
+                  logger.error(s"filling secret on '${id}' from '${head}' failed because of '${e.getMessage}'")
+                  if (parts.length > 1) {
+                    runOr(parts.tail)
+                  } else {
+                    "not-found".vfuture
+                  }
+                }
             } else {
-              logger.error(s"filling secret on '${id}' from '${_expr}' failed because none of the expressions could be resolved")
+              logger.error(
+                s"filling secret on '${id}' from '${_expr}' failed because none of the expressions could be resolved"
+              )
               "not-found".vfuture
             }
           }

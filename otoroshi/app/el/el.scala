@@ -48,9 +48,9 @@ object GlobalExpressionLanguage {
   }
 
   def apply(
-    value: String,
-    attrs: TypedMap,
-    env: Env
+      value: String,
+      attrs: TypedMap,
+      env: Env
   ): String = {
     apply(
       value = value,
@@ -61,7 +61,7 @@ object GlobalExpressionLanguage {
       user = attrs.get(otoroshi.plugins.Keys.UserKey),
       context = attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
       attrs = attrs,
-      env = env,
+      env = env
     )
   }
 
@@ -110,52 +110,111 @@ object GlobalExpressionLanguage {
               context.getOrElse(s"params.$field", s"no-params-$field")
 
             // legacy notation
-            case "date" => DateTime.now().toString()
+            case "date"                           => DateTime.now().toString()
             case r"date.format\('$format@(.*)'\)" => DateTime.now().toString(format)
             case r"date.epoch_ms"                 => DateTime.now().getMillis.toString
             case r"date.epoch_sec"                => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().getMillis).toString
 
             // specific date notation
-            case str if str.startsWith("date(") => str match {
-              case r"date\($date@(.*)\).plus_ms\($field@(.*)\)" => DateTime.parse(date).plusMillis(field.toInt).toString()
-              case r"date\($date@(.*)\).plus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
-                DateTime.parse(date).plusMillis(field.toInt).toString(format)
-              case r"date\($date@(.*)\).plus_ms\($field@(.*)\).epoch_ms" =>
-                DateTime.parse(date).plusMillis(field.toInt).getMillis.toString
-              case r"date\($date@(.*)\).plus_ms\($field@(.*)\).epoch_sec" =>
-                TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).plusMillis(field.toInt).getMillis).toString
-              case r"date\($date@(.*)\).minus_ms\($field@(.*)\)" =>
-                DateTime.parse(date).minusMillis(field.toInt).toString()
-              case r"date\($date@(.*)\).minus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
-                DateTime.parse(date).minusMillis(field.toInt).toString(format)
-              case r"date\($date@(.*)\).minus_ms\($field@(.*)\).epoch_ms" =>
-                DateTime.parse(date).minusMillis(field.toInt).getMillis.toString
-              case r"date\($date@(.*)\).minus_ms\($field@(.*)\).epoch_sec" =>
-                TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).minusMillis(field.toInt).getMillis).toString
-              case r"date\($date@(.*)\).format\('$format@(.*)'\)" => DateTime.parse(date).toString(format)
-              case r"date\($date@(.*)\).epoch_ms" => DateTime.parse(date).getMillis.toString
-              case r"date\($date@(.*)\).epoch_sec" =>
-                TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).getMillis).toString
-            }
+            case str if str.startsWith("date(")    =>
+              str match {
+                case r"date\($date@(.*)\).plus_ms\($field@(.*)\)"                           =>
+                  DateTime.parse(date).plusMillis(field.toInt).toString()
+                case r"date\($date@(.*)\).plus_ms\($field@(.*)\).format\('$format@(.*)'\)"  =>
+                  DateTime.parse(date).plusMillis(field.toInt).toString(format)
+                case r"date\($date@(.*)\).plus_ms\($field@(.*)\).epoch_ms"                  =>
+                  DateTime.parse(date).plusMillis(field.toInt).getMillis.toString
+                case r"date\($date@(.*)\).plus_ms\($field@(.*)\).epoch_sec"                 =>
+                  TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).plusMillis(field.toInt).getMillis).toString
+                case r"date\($date@(.*)\).minus_ms\($field@(.*)\)"                          =>
+                  DateTime.parse(date).minusMillis(field.toInt).toString()
+                case r"date\($date@(.*)\).minus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
+                  DateTime.parse(date).minusMillis(field.toInt).toString(format)
+                case r"date\($date@(.*)\).minus_ms\($field@(.*)\).epoch_ms"                 =>
+                  DateTime.parse(date).minusMillis(field.toInt).getMillis.toString
+                case r"date\($date@(.*)\).minus_ms\($field@(.*)\).epoch_sec"                =>
+                  TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).minusMillis(field.toInt).getMillis).toString
+                case r"date\($date@(.*)\).format\('$format@(.*)'\)"                         => DateTime.parse(date).toString(format)
+                case r"date\($date@(.*)\).epoch_ms"                                         => DateTime.parse(date).getMillis.toString
+                case r"date\($date@(.*)\).epoch_sec"                                        =>
+                  TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).getMillis).toString
+              }
             // date from EL notation
-            case str if str.startsWith("date_el(") => str match {
-              case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\)" => DateTime.parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env)).plusMillis(field.toInt).toString()
-              case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).format\('$format@(.*)'\)" => DateTime.parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env)).plusMillis(field.toInt).toString(format)
-              case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).epoch_ms" => DateTime.parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env)).plusMillis(field.toInt).getMillis.toString
-              case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).epoch_sec" => TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env)).plusMillis(field.toInt).getMillis).toString
-              case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\)" => DateTime.parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env)).minusMillis(field.toInt).toString()
-              case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).format\('$format@(.*)'\)" => DateTime.parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env)).minusMillis(field.toInt).toString(format)
-              case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).epoch_ms" => DateTime.parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env)).minusMillis(field.toInt).getMillis.toString
-              case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).epoch_sec" => TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env)).minusMillis(field.toInt).getMillis).toString
-              case r"date_el\($date@(.*)\).format\('$format@(.*)'\)" => DateTime.parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env)).toString(format)
-              case r"date_el\($date@(.*)\).epoch_ms" => DateTime.parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env)).getMillis.toString
-              case r"date_el\($date@(.*)\).epoch_sec" => TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env)).getMillis).toString
-            }
+            case str if str.startsWith("date_el(") =>
+              str match {
+                case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\)"                           =>
+                  DateTime
+                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .plusMillis(field.toInt)
+                    .toString()
+                case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).format\('$format@(.*)'\)"  =>
+                  DateTime
+                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .plusMillis(field.toInt)
+                    .toString(format)
+                case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).epoch_ms"                  =>
+                  DateTime
+                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .plusMillis(field.toInt)
+                    .getMillis
+                    .toString
+                case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).epoch_sec"                 =>
+                  TimeUnit.MILLISECONDS
+                    .toSeconds(
+                      DateTime
+                        .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                        .plusMillis(field.toInt)
+                        .getMillis
+                    )
+                    .toString
+                case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\)"                          =>
+                  DateTime
+                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .minusMillis(field.toInt)
+                    .toString()
+                case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
+                  DateTime
+                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .minusMillis(field.toInt)
+                    .toString(format)
+                case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).epoch_ms"                 =>
+                  DateTime
+                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .minusMillis(field.toInt)
+                    .getMillis
+                    .toString
+                case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).epoch_sec"                =>
+                  TimeUnit.MILLISECONDS
+                    .toSeconds(
+                      DateTime
+                        .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                        .minusMillis(field.toInt)
+                        .getMillis
+                    )
+                    .toString
+                case r"date_el\($date@(.*)\).format\('$format@(.*)'\)"                         =>
+                  DateTime
+                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .toString(format)
+                case r"date_el\($date@(.*)\).epoch_ms"                                         =>
+                  DateTime
+                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .getMillis
+                    .toString
+                case r"date_el\($date@(.*)\).epoch_sec"                                        =>
+                  TimeUnit.MILLISECONDS
+                    .toSeconds(
+                      DateTime
+                        .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                        .getMillis
+                    )
+                    .toString
+              }
 
             // relative date notation
-            case r"now.format\('$format@(.*)'\)" => DateTime.now().toString(format)
-            case r"now.epoch_ms"                 => DateTime.now().getMillis.toString
-            case r"now.epoch_sec"                => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().getMillis).toString
+            case r"now.format\('$format@(.*)'\)"   => DateTime.now().toString(format)
+            case r"now.epoch_ms"                   => DateTime.now().getMillis.toString
+            case r"now.epoch_sec"                  => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().getMillis).toString
 
             case r"now.plus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
               DateTime.now().plusMillis(field.toInt).toString(format)

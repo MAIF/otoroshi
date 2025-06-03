@@ -21,7 +21,7 @@ import * as Inputs from './components/inputs';
 import * as NgInputs from './components/nginputs';
 import lodash from 'lodash';
 import moment from 'moment';
-import showdown from "showdown";
+import showdown from 'showdown';
 import { v4 as uuid } from 'uuid';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';

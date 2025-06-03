@@ -711,7 +711,7 @@ object ApikeyLocationKind                                         {
   case object Header extends ApikeyLocationKind { def name: String = "Header" }
   case object Cookie extends ApikeyLocationKind { def name: String = "Cookie" }
   case object Query  extends ApikeyLocationKind { def name: String = "Query"  }
-  case object Path  extends ApikeyLocationKind { def name: String = "Path"  }
+  case object Path   extends ApikeyLocationKind { def name: String = "Path"   }
 }
 case class ApikeyLocation(kind: ApikeyLocationKind, name: String) {
   def json: JsValue = Json.obj(
@@ -2025,7 +2025,8 @@ object ApiKeyHelper {
                 _.pathParams.get(
                   constraints.clientIdAuth.pathName.getOrElse("apikey_simple_id")
                 )
-              ).seffectOnWithPredicate(_.isDefined)(_ =>
+              )
+              .seffectOnWithPredicate(_.isDefined)(_ =>
                 location = ApikeyLocation(
                   ApikeyLocationKind.Cookie,
                   constraints.clientIdAuth.pathName.getOrElse("apikey_simple_id")

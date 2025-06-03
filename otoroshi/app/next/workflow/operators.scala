@@ -52,18 +52,21 @@ object WorkflowOperatorsInitializer {
 class ExpressionLanguageOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("expression").asOpt[String] match {
-      case Some(expression) => GlobalExpressionLanguage.apply(
-        value = expression,
-        req = wfr.attrs.get(otoroshi.plugins.Keys.RequestKey),
-        service = wfr.attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy),
-        route = wfr.attrs.get(otoroshi.next.plugins.Keys.RouteKey),
-        apiKey = wfr.attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
-        user = wfr.attrs.get(otoroshi.plugins.Keys.UserKey),
-        context = wfr.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-        attrs = wfr.attrs,
-        env = env,
-      ).json
-      case _ => JsNull
+      case Some(expression) =>
+        GlobalExpressionLanguage
+          .apply(
+            value = expression,
+            req = wfr.attrs.get(otoroshi.plugins.Keys.RequestKey),
+            service = wfr.attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy),
+            route = wfr.attrs.get(otoroshi.next.plugins.Keys.RouteKey),
+            apiKey = wfr.attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+            user = wfr.attrs.get(otoroshi.plugins.Keys.UserKey),
+            context = wfr.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+            attrs = wfr.attrs,
+            env = env
+          )
+          .json
+      case _                => JsNull
     }
   }
 }
@@ -106,7 +109,11 @@ class DivideOperator extends WorkflowOperator {
 
 class ParseDateTimeOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val pattern = opts.select("pattern").asOpt[String].map(p => DateTimeFormat.forPattern(p)).getOrElse(ISODateTimeFormat.dateTimeParser.withOffsetParsed)
+    val pattern = opts
+      .select("pattern")
+      .asOpt[String]
+      .map(p => DateTimeFormat.forPattern(p))
+      .getOrElse(ISODateTimeFormat.dateTimeParser.withOffsetParsed)
     opts.select("value").asOpt[String] match {
       case Some(dateStr) => DateTime.parse(dateStr, pattern).toDate.getTime.json
       case _             => JsBoolean(false)
@@ -116,7 +123,11 @@ class ParseDateTimeOperator extends WorkflowOperator {
 
 class ParseDateOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val pattern = opts.select("pattern").asOpt[String].map(p => DateTimeFormat.forPattern(p)).getOrElse(DateTimeFormat.forPattern("yyyy-MM-dd"))
+    val pattern = opts
+      .select("pattern")
+      .asOpt[String]
+      .map(p => DateTimeFormat.forPattern(p))
+      .getOrElse(DateTimeFormat.forPattern("yyyy-MM-dd"))
     opts.select("value").asOpt[String] match {
       case Some(dateStr) => DateTime.parse(dateStr, pattern).withTimeAtStartOfDay().toDate.getTime.json
       case _             => JsNull
@@ -126,9 +137,19 @@ class ParseDateOperator extends WorkflowOperator {
 
 class ParseTimeOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val pattern = opts.select("pattern").asOpt[String].map(p => DateTimeFormat.forPattern(s"yyyy-MM-dd ${p}")).getOrElse(DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss"))
+    val pattern = opts
+      .select("pattern")
+      .asOpt[String]
+      .map(p => DateTimeFormat.forPattern(s"yyyy-MM-dd ${p}"))
+      .getOrElse(DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss"))
     opts.select("value").asOpt[String] match {
-      case Some(timeStr) => DateTime.parse(s"${DateTime.now().toString("yyyy-MM-dd")} ${timeStr}", pattern).withTimeAtStartOfDay().toDate.getTime.json
+      case Some(timeStr) =>
+        DateTime
+          .parse(s"${DateTime.now().toString("yyyy-MM-dd")} ${timeStr}", pattern)
+          .withTimeAtStartOfDay()
+          .toDate
+          .getTime
+          .json
       case _             => JsNull
     }
   }
@@ -138,7 +159,7 @@ class NotOperator extends WorkflowOperator {
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("value").asOpt[JsValue] match {
       case Some(JsBoolean(b)) => JsBoolean(!b)
-      case _             => JsNull
+      case _                  => JsNull
     }
   }
 }

@@ -181,7 +181,12 @@ class ContextValidation extends NgAccessValidator {
     )
     // java.nio.file.Files.writeString(new java.io.File("./ctx.json").toPath, json.prettify.debugPrintln)
     config.validators
-      .map(v => v.copy(path = v.path.evaluateEl(ctx.attrs), value = v.value.asOptString.map(_.evaluateEl(ctx.attrs).json).getOrElse(JsNull)))
+      .map(v =>
+        v.copy(
+          path = v.path.evaluateEl(ctx.attrs),
+          value = v.value.asOptString.map(_.evaluateEl(ctx.attrs).json).getOrElse(JsNull)
+        )
+      )
       .forall(validator => validator.validate(json))
   }
 

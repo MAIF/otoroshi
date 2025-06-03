@@ -107,10 +107,14 @@ case class WorkflowRun(id: String, attrs: TypedMap, env: Env) {
 }
 
 trait WorkflowFunction {
-  def inputSchema: Option[JsObject] = None
-  def outputSchema: Option[JsObject] = None
-  def callWithRun(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = call(args)
-  def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = Left(WorkflowError("not implemented", None, None)).vfuture
+  def inputSchema: Option[JsObject]                                                                         = None
+  def outputSchema: Option[JsObject]                                                                        = None
+  def callWithRun(
+      args: JsObject
+  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]]      = call(args)
+  def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = Left(
+    WorkflowError("not implemented", None, None)
+  ).vfuture
 }
 
 object WorkflowFunction {
@@ -140,7 +144,7 @@ trait Node {
       wfr.log(s"starting '${id}'", this)
       run(wfr)
         .map {
-          case Left(err) => {
+          case Left(err)  => {
             wfr.log(s"ending with error '${id}'", this, err.some)
             Left(err)
           }

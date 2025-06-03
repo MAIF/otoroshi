@@ -26,19 +26,25 @@ object NodesInitializer {
 }
 
 case class ErrorNode(json: JsObject) extends Node {
-  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def run(
+      wfr: WorkflowRun
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val message = json.select("message").asOpt[String].getOrElse("")
     val details = json.select("details").asOpt[JsObject]
     WorkflowError(
-      message = message, details = details, exception = None
+      message = message,
+      details = details,
+      exception = None
     ).leftf
   }
 }
 
 case class WaitNode(json: JsObject) extends Node {
-  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def run(
+      wfr: WorkflowRun
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val duration = json.select("duration").asOpt[Long].getOrElse(0L).millis
-    val promise = Promise[Either[WorkflowError, JsValue]]()
+    val promise  = Promise[Either[WorkflowError, JsValue]]()
     env.otoroshiScheduler.scheduleOnce(duration) {
       promise.trySuccess(JsNull.right)
     }
@@ -96,7 +102,8 @@ case class CallNode(json: JsObject) extends Node {
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     WorkflowFunction.get(functionName) match {
       case None           => WorkflowError(s"function '${functionName}' not supported in task '${id}'", None, None).leftf
-      case Some(function) => function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
+      case Some(function) =>
+        function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
     }
   }
 }
@@ -188,7 +195,8 @@ case class IfThenElseNode(json: JsObject) extends Node {
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val pass = WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
+    val pass =
+      WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
     if (pass) {
       val node = Node.from(json.select("then").asObject)
       node.internalRun(wfr).recover { case t: Throwable =>

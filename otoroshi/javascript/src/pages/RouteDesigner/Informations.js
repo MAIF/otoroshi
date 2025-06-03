@@ -113,12 +113,9 @@ export const Informations = forwardRef(
                             if (ok) {
                               valueRef.current = {
                                 ...value,
-                                enabled: false
-                              }
-                              saveRoute()
-                                .then(() =>
-                                  window.location.reload()
-                                );
+                                enabled: false,
+                              };
+                              saveRoute().then(() => window.location.reload());
                             }
                           });
                       }}
@@ -131,10 +128,9 @@ export const Informations = forwardRef(
                       onClick={() => {
                         valueRef.current = {
                           ...value,
-                          enabled: true
-                        }
-                        saveRoute()
-                          .then(() => window.location.reload());
+                          enabled: true,
+                        };
+                        saveRoute().then(() => window.location.reload());
                       }}
                     />
                   )}

@@ -303,14 +303,14 @@ case class NgApikeyExtractorBasic(
     headerName = headerName,
     queryName = queryName,
     cookieName = cookieName,
-    pathName = pathName,
+    pathName = pathName
   )
   def json: JsValue                     = Json.obj(
     "enabled"     -> enabled,
     "header_name" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "query_name"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "cookie_name" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "path_name"   -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "path_name"   -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
   )
 }
 
@@ -323,7 +323,7 @@ object NgApikeyExtractorBasic {
         headerName = (json \ "header_name").asOpt[String].filterNot(_.trim.isEmpty),
         queryName = (json \ "query_name").asOpt[String].filterNot(_.trim.isEmpty),
         cookieName = (json \ "cookie_name").asOpt[String].filterNot(_.trim.isEmpty),
-        pathName = (json \ "path_name").asOpt[String].filterNot(_.trim.isEmpty),
+        pathName = (json \ "path_name").asOpt[String].filterNot(_.trim.isEmpty)
       )
     }
   }
@@ -332,7 +332,7 @@ object NgApikeyExtractorBasic {
     headerName = s.headerName,
     queryName = s.queryName,
     cookieName = s.cookieName,
-    pathName = s.pathName,
+    pathName = s.pathName
   )
 }
 
@@ -341,21 +341,21 @@ case class NgApikeyExtractorClientId(
     headerName: Option[String] = None,
     queryName: Option[String] = None,
     cookieName: Option[String] = None,
-    pathName: Option[String] = None,
+    pathName: Option[String] = None
 ) {
   lazy val legacy: ClientIdAuthConstraints = ClientIdAuthConstraints(
     enabled = enabled,
     headerName = headerName,
     queryName = queryName,
     cookieName = cookieName,
-    pathName = pathName,
+    pathName = pathName
   )
   def json: JsValue                        = Json.obj(
     "enabled"     -> enabled,
     "header_name" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "query_name"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "cookie_name" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "path_name"   -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "path_name"   -> pathName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
   )
 }
 
@@ -377,7 +377,7 @@ object NgApikeyExtractorClientId {
     headerName = s.headerName,
     queryName = s.queryName,
     cookieName = s.cookieName,
-    pathName = s.pathName,
+    pathName = s.pathName
   )
 }
 
