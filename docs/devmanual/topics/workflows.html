@@ -611,6 +611,90 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   }
 }
 </code></pre>
+<p>run at <code>2025-06-04T11:48:00.000</code> with input like:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;request&quot;: {
+    &quot;query&quot;: {
+      &quot;date&quot;: [
+        &quot;2025-06-04T11:00:00.000&quot;
+      ]
+    }
+  }
+}
+</code></pre>
+<p>the result:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;returned&quot;: {
+    &quot;result&quot;: true,
+    &quot;error&quot;: null
+  },
+  &quot;error&quot;: null
+}
+</code></pre>
+<p>the memory content: </p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;query_date&quot;: 1749027600000,
+  &quot;call_res&quot;: {
+    &quot;result&quot;: true,
+    &quot;error&quot;: null
+  },
+  &quot;max_date&quot;: 1749037738115,
+  &quot;input&quot;: {
+    &quot;request&quot;: {
+      &quot;query&quot;: {
+        &quot;date&quot;: [
+          &quot;2025-06-04T11:00:00.000&quot;
+        ]
+      }
+    }
+  }
+}
+</code></pre>
+<p>run at <code>2025-06-04T11:48:00.000</code> with input like:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;request&quot;: {
+    &quot;query&quot;: {
+      &quot;date&quot;: [
+        &quot;2025-06-04T18:00:00.000&quot;
+      ]
+    }
+  }
+}
+</code></pre>
+<p>the result:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;returned&quot;: {
+    &quot;result&quot;: false,
+    &quot;error&quot;: {
+      &quot;status&quot;: 400,
+      &quot;message&quot;: &quot;Bad query param value&quot;
+    }
+  },
+  &quot;error&quot;: null
+}
+</code></pre>
+<p>the memory content: </p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;query_date&quot;: 1749052800000,
+  &quot;call_res&quot;: {
+    &quot;result&quot;: false,
+    &quot;error&quot;: {
+      &quot;status&quot;: 400,
+      &quot;message&quot;: &quot;Bad query param value&quot;
+    }
+  },
+  &quot;max_date&quot;: 1749037844696,
+  &quot;input&quot;: {
+    &quot;request&quot;: {
+      &quot;query&quot;: {
+        &quot;date&quot;: [
+          &quot;2025-06-04T18:00:00.000&quot;
+        ]
+      }
+    }
+  }
+}
+</code></pre>
 <h3><a href="#api-consumer-transformer" name="api-consumer-transformer" class="anchor"><span class="anchor-link"></span></a>API Consumer &amp; Transformer</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;kind&quot;: &quot;workflow&quot;,
@@ -670,6 +754,52 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
       &quot;name&quot;: &quot;pokemon_names&quot;
     }
   }
+}
+</code></pre>
+<p>the result:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;returned&quot;: [
+    &quot;charizard&quot;,
+    &quot;squirtle&quot;,
+    &quot;wartortle&quot;,
+    &quot;blastoise&quot;,
+    &quot;caterpie&quot;
+  ],
+  &quot;error&quot;: null
+}
+</code></pre>
+<p>the memory content:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;pokemons&quot;: [
+    {
+      &quot;name&quot;: &quot;charizard&quot;,
+      &quot;url&quot;: &quot;https://pokeapi.co/api/v2/pokemon/6/&quot;
+    },
+    {
+      &quot;name&quot;: &quot;squirtle&quot;,
+      &quot;url&quot;: &quot;https://pokeapi.co/api/v2/pokemon/7/&quot;
+    },
+    {
+      &quot;name&quot;: &quot;wartortle&quot;,
+      &quot;url&quot;: &quot;https://pokeapi.co/api/v2/pokemon/8/&quot;
+    },
+    {
+      &quot;name&quot;: &quot;blastoise&quot;,
+      &quot;url&quot;: &quot;https://pokeapi.co/api/v2/pokemon/9/&quot;
+    },
+    {
+      &quot;name&quot;: &quot;caterpie&quot;,
+      &quot;url&quot;: &quot;https://pokeapi.co/api/v2/pokemon/10/&quot;
+    }
+  ],
+  &quot;pokemon_names&quot;: [
+    &quot;charizard&quot;,
+    &quot;squirtle&quot;,
+    &quot;wartortle&quot;,
+    &quot;blastoise&quot;,
+    &quot;caterpie&quot;
+  ],
+  &quot;input&quot;: {}
 }
 </code></pre>
 <h3><a href="#ai-agent" name="ai-agent" class="anchor"><span class="anchor-link"></span></a>AI Agent</h3>
@@ -1046,6 +1176,72 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   &quot;kind&quot;: &quot;ai-gateway.extensions.cloud-apim.com/PersistentMemory&quot;
 }
 </code></pre>
+<p>when run with input like:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;request&quot;: {
+    &quot;body_json&quot;: {
+      &quot;text&quot;: &quot;hey jarvis, what are the news today ?&quot;
+    }
+  }
+}
+</code></pre>
+<p>the result is:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;returned&quot;: {
+    &quot;status&quot;: 200,
+    &quot;headers&quot;: {
+      &quot;Content-Type&quot;: &quot;application/json&quot;
+    },
+    &quot;body_json&quot;: {
+      &quot;text&quot;: &quot;Ah, dear Sir, allow me to present you with a concise overview of the most noteworthy events of the day, as of June 4th, 2025.\n\nOn the international stage, Poland has elected a new president — the conservative Karol Nawrocki — following a tightly contested vote, while in South Korea, opposition leader Lee Jae-myung secured victory in the June 3rd presidential elections.\n\nIn the United States, President Donald Trump is making headlines once again, this time with a series of executive orders, including a controversial revision of diversity and inclusion policies. *The Daily Show* has, of course, offered its trademark satirical take on the developments.\n\nAs for the weather in New York, skies are a brilliant blue, with temperatures ranging from a mild 63°F (17°C) this morning to a predicted high of 82°F (28°C) later today.\n\nOn the financial front, the markets are showing modest gains — the SPDR S&amp;P 500 is slightly up, along with the Dow Jones and the QQQ.\n\nAnd finally, for those with a taste for rock, the band Volbeat is set to release its new album *God of Angels Trust* on June 6th, followed by the eagerly awaited Oasis reunion tour, kicking off on July 4th in Cardiff.\n\nShould you wish to delve deeper into any of these topics, I remain entirely at your disposal, of course.&quot;,
+      &quot;audio_base64&quot;: {
+        &quot;content_type&quot;: &quot;audio/mpeg&quot;,
+        &quot;base64&quot;: &quot;...&quot;
+      }
+    }
+  },
+  &quot;error&quot;: null
+}
+</code></pre>
+<p>the memory content is:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;call_res&quot;: {
+    &quot;status&quot;: 200,
+    &quot;headers&quot;: {
+      &quot;Content-Type&quot;: &quot;application/json&quot;
+    },
+    &quot;body_json&quot;: {
+      &quot;text&quot;: &quot;Ah, dear Sir, allow me to present you with a concise overview of the most noteworthy events of the day, as of June 4th, 2025.\n\nOn the international stage, Poland has elected a new president — the conservative Karol Nawrocki — following a tightly contested vote, while in South Korea, opposition leader Lee Jae-myung secured victory in the June 3rd presidential elections.\n\nIn the United States, President Donald Trump is making headlines once again, this time with a series of executive orders, including a controversial revision of diversity and inclusion policies. *The Daily Show* has, of course, offered its trademark satirical take on the developments.\n\nAs for the weather in New York, skies are a brilliant blue, with temperatures ranging from a mild 63°F (17°C) this morning to a predicted high of 82°F (28°C) later today.\n\nOn the financial front, the markets are showing modest gains — the SPDR S&amp;P 500 is slightly up, along with the Dow Jones and the QQQ.\n\nAnd finally, for those with a taste for rock, the band Volbeat is set to release its new album *God of Angels Trust* on June 6th, followed by the eagerly awaited Oasis reunion tour, kicking off on July 4th in Cardiff.\n\nShould you wish to delve deeper into any of these topics, I remain entirely at your disposal, of course.&quot;,
+      &quot;audio_base64&quot;: {
+        &quot;content_type&quot;: &quot;audio/mpeg&quot;,
+        &quot;base_64&quot;: &quot;...&quot;
+      }
+    }
+  },
+  &quot;play&quot;: {
+    &quot;stdout&quot;: &quot;&quot;,
+    &quot;stderr&quot;: &quot;&quot;,
+    &quot;code&quot;: 0
+  },
+  &quot;jarvis&quot;: &quot;Ah, dear Sir, allow me to present you with a concise overview of the most noteworthy events of the day, as of June 4th, 2025.\n\nOn the international stage, Poland has elected a new president — the conservative Karol Nawrocki — following a tightly contested vote, while in South Korea, opposition leader Lee Jae-myung secured victory in the June 3rd presidential elections.\n\nIn the United States, President Donald Trump is making headlines once again, this time with a series of executive orders, including a controversial revision of diversity and inclusion policies. *The Daily Show* has, of course, offered its trademark satirical take on the developments.\n\nAs for the weather in New York, skies are a brilliant blue, with temperatures ranging from a mild 63°F (17°C) this morning to a predicted high of 82°F (28°C) later today.\n\nOn the financial front, the markets are showing modest gains — the SPDR S&amp;P 500 is slightly up, along with the Dow Jones and the QQQ.\n\nAnd finally, for those with a taste for rock, the band Volbeat is set to release its new album *God of Angels Trust* on June 6th, followed by the eagerly awaited Oasis reunion tour, kicking off on July 4th in Cardiff.\n\nShould you wish to delve deeper into any of these topics, I remain entirely at your disposal, of course.&quot;,
+  &quot;agent-1&quot;: &quot;Here are the latest news updates for today, June 4, 2025:\n\n### International News\n- **Poland Elects New President**: Karol Nawrocki, a conservative historian, recently won the Polish presidential election in a narrow victory.\n- **South Korea&#39;s Presidential Election**: The opposition candidate, Lee Jae-myung, secured a decisive win in South Korea&#39;s presidential election on June 3.\n\n### United States News\n- **Political Developments**: President Donald Trump is making headlines with a series of executive orders, including the rollback of government diversity, equity, and inclusion (DEI) and affirmative action rules.\n- **Media and Entertainment**: \&quot;The Daily Show\&quot; continues to cover current events, focusing on President Trump&#39;s recent actions.\n\n### Weather Update for New York, NY\n- **Current Conditions**: Mostly sunny, 63°F (17°C).\n- **Hourly Forecast**:\n  - 12:00 PM: 78°F (26°C)\n  - 1:00 PM: 80°F (26°C)\n  - 2:00 PM: 82°F (28°C)\n\n### Financial Markets\n- **SPDR S&amp;P 500 ETF Trust (SPY)**: Trading at $596.09, up $3.37 (0.57%).\n- **SPDR Dow Jones Industrial Average ETF (DIA)**: Trading at $426.01, up $2.22 (0.52%).\n- **Invesco QQQ Trust Series 1 (QQQ)**: Trading at $527.30, up $4.14 (0.79%).\n\n### Upcoming Events\n- **Volbeat&#39;s Album Release**: Their ninth studio album, \&quot;God of Angels Trust,\&quot; is set to be released on June 6, 2025.\n- **Oasis Reunion Tour**: The band&#39;s reunion tour, \&quot;Oasis Live &#39;25,\&quot; will kick off on July 4 in Cardiff, UK.\n\nFor more details, feel free to ask!&quot;,
+  &quot;input_text&quot;: &quot;hey jarvis, what are the news today ?&quot;,
+  &quot;audio_base64&quot;: {
+    &quot;content_type&quot;: &quot;audio/mpeg&quot;,
+    &quot;base_64&quot;: &quot;...&quot;
+  },
+  &quot;audio_file&quot;: {
+    &quot;file_path&quot;: &quot;/var/folders/b4/_vkrx8n14qq2hx2y4hwln09w0000gn/T/llm-ext-fw-6827936985828753129.tmp&quot;
+  },
+  &quot;input&quot;: {
+    &quot;request&quot;: {
+      &quot;body_json&quot;: {
+        &quot;text&quot;: &quot;hey jarvis, what are the news today ?&quot;
+      }
+    }
+  }
+}
+</code></pre>
 <h2><a href="#next-steps" name="next-steps" class="anchor"><span class="anchor-link"></span></a>Next Steps</h2>
 <p>Workflows in Otoroshi open the door to advanced runtime logic inside your API Gateway. You can build integrations, automations, validators, orchestrations, and more — all in pure JSON.</p>
 <p>For production-grade scenarios, consider:</p>
@@ -1053,7 +1249,6 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   <li>Building and testing reusable workflows</li>
   <li>Adding your own functions/operators</li>
   <li>Securing workflows with access rights and guards</li>
-  <li>Using workflows in conjunction with AI features</li>
 </ul>
 <p>You can even go as far as using workflows to implement AI agents, task runners, or content pipelines.</p>
 <div class="nav-next">
