@@ -786,13 +786,13 @@ class BackOfficeController(
     )
     val fu: Future[Seq[SearchedService]] =
       for {
-        routes     <- env.datastores.routeDataStore.findAll()
-        apis       <- env.datastores.apiDataStore.findAll()
+        routes <- env.datastores.routeDataStore.findAll()
+        apis   <- env.datastores.apiDataStore.findAll()
       } yield {
         val finalServices = routes.map(s =>
-              SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), "route", "route", s.location)
-            ) ++
-            apis.map(s => SearchedService(s.name, s.id, "default", "api", "api", s.location))
+          SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), "route", "route", s.location)
+        ) ++
+          apis.map(s => SearchedService(s.name, s.id, "default", "api", "api", s.location))
         finalServices
       }
     fu.map { services =>
@@ -805,7 +805,9 @@ class BackOfficeController(
         JsArray(
           filtered
             .sortBy(r => r.name.trim().toLowerCase())
-            .map(s => Json.obj("groupId" -> s.groupId, "serviceId" -> s.id, "name" -> s.name, "env" -> s.env, "type" -> s.typ))
+            .map(s =>
+              Json.obj("groupId" -> s.groupId, "serviceId" -> s.id, "name" -> s.name, "env" -> s.env, "type" -> s.typ)
+            )
         )
       )
     }

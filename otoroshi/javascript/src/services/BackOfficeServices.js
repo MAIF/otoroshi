@@ -2042,7 +2042,7 @@ export function searchNextServices(query) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ query: query.trim() }),
-  })
+  });
 }
 
 export function graphqlSchemaToJson(schema) {

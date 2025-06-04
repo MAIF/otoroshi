@@ -27,7 +27,9 @@ object NodesInitializer {
 }
 
 case class ValueNode(json: JsObject) extends Node {
-  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def run(
+      wfr: WorkflowRun
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val value = WorkflowOperator.processOperators(json.select("value").asValue, wfr, env)
     value.rightf
   }
