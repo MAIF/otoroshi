@@ -153,7 +153,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         Resource(
           "Workflow",
           "workflows",
-          "workflows",
+          "workflow",
           "plugins.otoroshi.io",
           ResourceVersion("v1", true, false, true),
           GenericResourceAccessApiWithState[Workflow](
