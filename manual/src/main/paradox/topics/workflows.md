@@ -76,7 +76,15 @@ Each workflow execution comes with its own **memory**, where variables can be re
 
 The `assign` node lets you manipulate memory directly, often combined with operators to compute values.
 
-At any moment you can access the memory using an expression language like `${input.name}`.
+At any moment you can access the memory using an expression language like `${input.name}` given a memory containing something like:
+
+```json
+{
+  "input": {
+    "name": "foo"
+  }
+}
+```
 
 ---
 
@@ -429,7 +437,6 @@ the memory content:
 ```
 
 run at `2025-06-04T11:48:00.000` with input like:
-
 
 ```json
 {
