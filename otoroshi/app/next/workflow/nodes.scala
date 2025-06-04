@@ -303,7 +303,7 @@ case class MapNode(json: JsObject) extends Node {
                 wfr.memory.remove("foreach_value")
               }
           }
-          .takeWhile(_.isLeft, inclusive = true)
+          .takeWhile(_.isRight, inclusive = true)
           .runWith(Sink.seq)(env.otoroshiMaterializer)
           .map { seq =>
             val last = seq.last
@@ -345,7 +345,7 @@ case class FlatMapNode(json: JsObject) extends Node {
                 wfr.memory.remove("foreach_value")
               }
           }
-          .takeWhile(_.isLeft, inclusive = true)
+          .takeWhile(_.isRight, inclusive = true)
           .runWith(Sink.seq)(env.otoroshiMaterializer)
           .map { seq =>
             val last = seq.last
@@ -391,7 +391,7 @@ case class FilterNode(json: JsObject) extends Node {
                 (item, eith)
               }
           }
-          .takeWhile(_._2.isLeft, inclusive = true)
+          .takeWhile(_._2.isRight, inclusive = true)
           .runWith(Sink.seq)(env.otoroshiMaterializer)
           .map { seq =>
             val last = seq.last

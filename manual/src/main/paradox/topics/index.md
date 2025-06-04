@@ -25,6 +25,8 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Green score](./green-score.md)
 * @ref:[Custom HTTP Listeners](./http-listeners.md)
 * @ref:[Sunsetting Service Descriptors](./deprecating-sd.md)
+* @ref:[Otoroshi workflows](./workflows.md)
+
 
 @@@ index
 
@@ -51,5 +53,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Green score](./green-score.md)
 * [Custom HTTP Listeners](./http-listeners.md)
 * [Sunsetting Service Descriptors](./deprecating-sd.md)
+* [Otoroshi workflows](./workflows.md)
   
 @@@

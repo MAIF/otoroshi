@@ -16,14 +16,11 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$array_del", new ArrayDelOperator())
     WorkflowOperator.registerOperator("$array_page", new ArrayPageOperator())
     WorkflowOperator.registerOperator("$projection", new ProjectionOperator())
-
     WorkflowOperator.registerOperator("$map_put", new MapPutOperator())
     WorkflowOperator.registerOperator("$map_get", new MapGetOperator())
     WorkflowOperator.registerOperator("$map_del", new MapDelOperator())
-
     WorkflowOperator.registerOperator("$json_parse", new JsonParseOperator())
     WorkflowOperator.registerOperator("$str_concat", new StrConcatOperator())
-
     WorkflowOperator.registerOperator("$is_truthy", new IsTruthyOperator())
     WorkflowOperator.registerOperator("$is_falsy", new IsFalsyOperator())
     WorkflowOperator.registerOperator("$contains", new ContainsOperator())
