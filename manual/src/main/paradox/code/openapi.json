@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:35363",
+    "url" : "http://otoroshi-api.oto.tools:40311",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -88,8 +88,8 @@
     "name" : "apiconsumersubscription",
     "description" : "all the operations about the apiconsumersubscription entity"
   }, {
-    "name" : "workflows",
-    "description" : "all the operations about the workflows entity"
+    "name" : "workflow",
+    "description" : "all the operations about the workflow entity"
   }, {
     "name" : "coraza-config",
     "description" : "all the operations about the coraza-config entity"
@@ -7826,7 +7826,7 @@
     },
     "/apis/plugins.otoroshi.io/v1/workflows/_template" : {
       "get" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Return a template of a resource of kind Workflow",
         "operationId" : "plugins.otoroshi.io.Workflow.template",
         "parameters" : [ ],
@@ -11367,7 +11367,7 @@
     },
     "/apis/plugins.otoroshi.io/v1/workflows/_count" : {
       "get" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Get number of entity of kind Workflow",
         "operationId" : "plugins.otoroshi.io.Workflow.count",
         "parameters" : [ ],
@@ -15849,7 +15849,7 @@
     },
     "/apis/plugins.otoroshi.io/v1/workflows/{id}" : {
       "get" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Find resource of kind Workflow by its id",
         "operationId" : "plugins.otoroshi.io.Workflow.findById",
         "parameters" : [ {
@@ -15909,7 +15909,7 @@
         }
       },
       "put" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Updates a specific Workflow using its id",
         "operationId" : "plugins.otoroshi.io.Workflow.updateById",
         "parameters" : [ {
@@ -15979,7 +15979,7 @@
         }
       },
       "patch" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Updates (using json-patch) a specific Workflow using its id",
         "operationId" : "plugins.otoroshi.io.Workflow.pathById",
         "parameters" : [ {
@@ -16049,7 +16049,7 @@
         }
       },
       "delete" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Deletes a specific Workflow using its id",
         "operationId" : "plugins.otoroshi.io.Workflow.deleteById",
         "parameters" : [ {
@@ -19328,7 +19328,7 @@
     },
     "/apis/plugins.otoroshi.io/v1/workflows/_bulk" : {
       "post" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Create multiple Workflow at the same time",
         "operationId" : "plugins.otoroshi.io.Workflow.bulk_create",
         "parameters" : [ ],
@@ -19393,7 +19393,7 @@
         }
       },
       "put" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Update multiple Workflow at the same time",
         "operationId" : "plugins.otoroshi.io.Workflow.bulk_update",
         "parameters" : [ ],
@@ -19458,7 +19458,7 @@
         }
       },
       "patch" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Update (using json-patch) multiple Workflow at the same time",
         "operationId" : "plugins.otoroshi.io.Workflow.bulk_patch",
         "parameters" : [ ],
@@ -19520,7 +19520,7 @@
         }
       },
       "delete" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Delete multiple Workflow at the same time",
         "operationId" : "plugins.otoroshi.io.Workflow.bulk_delete",
         "parameters" : [ ],
@@ -20392,7 +20392,7 @@
     },
     "/apis/plugins.otoroshi.io/v1/workflows" : {
       "get" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Find all possible Workflow entities",
         "operationId" : "plugins.otoroshi.io.Workflow.findAll",
         "parameters" : [ ],
@@ -20446,7 +20446,7 @@
         }
       },
       "post" : {
-        "tags" : [ "workflows", "plugins.otoroshi.io" ],
+        "tags" : [ "workflow", "plugins.otoroshi.io" ],
         "summary" : "Creates a Workflow",
         "operationId" : "plugins.otoroshi.io.Workflow.create",
         "parameters" : [ ],
@@ -27213,10 +27213,16 @@
         "properties" : {
           "x$1" : {
             "type" : "number"
+          },
+          "x$2" : {
+            "type" : "number"
+          },
+          "x$3" : {
+            "type" : "number"
           }
         },
         "title" : "Local time",
-        "required" : [ "x$1" ]
+        "required" : [ "x$1", "x$2", "x$3" ]
       },
       "mappingsettings" : {
         "type" : "object",
