@@ -237,6 +237,19 @@ Operators are one-key JSON objects (e.g. `{ "$eq": { ... } }`) used to manipulat
 * Create auth headers (`$basic_auth`)
 * Check containment (`$contains`)
 
+Example:
+
+```json
+{
+  "$eq": {
+    "a": "foo",
+    "b": "bar"
+  }
+}
+```
+
+Result: `false`
+
 ### Full List of Operators
 
 * `$mem_ref`
