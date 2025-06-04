@@ -367,7 +367,13 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 <h2><a href="#memory" name="memory" class="anchor"><span class="anchor-link"></span></a>Memory</h2>
 <p>Each workflow execution comes with its own <strong>memory</strong>, where variables can be read from or written to. This memory enables communication between steps.</p>
 <p>The <code>assign</code> node lets you manipulate memory directly, often combined with operators to compute values.</p>
-<p>At any moment you can access the memory using an expression language like <code>${input.name}</code>.</p>
+<p>At any moment you can access the memory using an expression language like <code>${input.name}</code> given a memory containing something like:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;input&quot;: {
+    &quot;name&quot;: &quot;foo&quot;
+  }
+}
+</code></pre>
 <hr/>
 <h2><a href="#nodes" name="nodes" class="anchor"><span class="anchor-link"></span></a>Nodes</h2>
 <p>Each node must declare a <code>kind</code> field and can optionally define:</p>
