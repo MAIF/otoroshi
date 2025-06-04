@@ -679,7 +679,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   &quot;kind&quot;: &quot;workflow&quot;,
   &quot;steps&quot;: [
     {
-      &quot;id&quot;: &quot;checkifaudio&quot;,
+      &quot;description&quot;: &quot;check if input is audio or text&quot;,
       &quot;kind&quot;: &quot;if&quot;,
       &quot;predicate&quot;: {
         &quot;$is_truthy&quot;: {
@@ -687,6 +687,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
         }
       },
       &quot;then&quot;: {
+        &quot;description&quot;: &quot;if audio, transform to text&quot;,
         &quot;kind&quot;: &quot;call&quot;,
         &quot;function&quot;: &quot;extensions.com.cloud-apim.llm-extension.audio_stt&quot;,
         &quot;args&quot;: {
@@ -700,7 +701,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
         &quot;result&quot;: &quot;input_text&quot;
       },
       &quot;else&quot;: {
-        &quot;id&quot;: &quot;assign-text&quot;,
+        &quot;description&quot;: &quot;if not audio, just assign in memory&quot;,
         &quot;kind&quot;: &quot;assign&quot;,
         &quot;values&quot;: [
           {
@@ -711,7 +712,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
       }
     },
     {
-      &quot;id&quot;: &quot;agent-1&quot;,
+      &quot;description&quot;: &quot;call the first llm with all the context, memory and tool needed like websearch, URL wrawling, etc to get a first raw response&quot;,
       &quot;kind&quot;: &quot;call&quot;,
       &quot;function&quot;: &quot;extensions.com.cloud-apim.llm-extension.llm_call&quot;,
       &quot;args&quot;: {
@@ -719,9 +720,9 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
         &quot;openai_format&quot;: false,
         &quot;memory&quot;: &quot;persistent-memory_local&quot;,
         &quot;tool_functions&quot;: [
-	      &quot;tool-function_site2md&quot;,
-	      &quot;tool-function_websearch&quot;
-	    ],
+          &quot;tool-function_site2md&quot;,
+          &quot;tool-function_websearch&quot;
+        ],
         &quot;payload&quot;: {
           &quot;model&quot;: &quot;gpt-4o&quot;,
           &quot;max_tokens&quot;: 3000,
@@ -740,7 +741,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
       &quot;result&quot;: &quot;agent-1&quot;
     },
     {
-      &quot;id&quot;: &quot;assign-1&quot;,
+      &quot;description&quot;: &quot;extract the text response from the LLM API response&quot;,
       &quot;kind&quot;: &quot;assign&quot;,
       &quot;values&quot;: [
         {
@@ -755,7 +756,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
       ]
     },
     {
-      &quot;id&quot;: &quot;agent-jarvis&quot;,
+      &quot;description&quot;: &quot;now, ask a second LLM model to rewrite the raw response with an agent personnality&quot;,
       &quot;kind&quot;: &quot;call&quot;,
       &quot;function&quot;: &quot;extensions.com.cloud-apim.llm-extension.llm_call&quot;,
       &quot;args&quot;: {
@@ -779,7 +780,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
       &quot;result&quot;: &quot;jarvis&quot;
     },
     {
-      &quot;id&quot;: &quot;assign-2&quot;,
+      &quot;description&quot;: &quot;extract the text response from the LLM API response&quot;,
       &quot;kind&quot;: &quot;assign&quot;,
       &quot;values&quot;: [
         {
@@ -794,7 +795,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
       ]
     },
     {
-      &quot;id&quot;: &quot;agent-audio&quot;,
+      &quot;description&quot;: &quot;transform jarvis response to audio&quot;,
       &quot;kind&quot;: &quot;call&quot;,
       &quot;function&quot;: &quot;extensions.com.cloud-apim.llm-extension.audio_tts&quot;,
       &quot;args&quot;: {
@@ -811,9 +812,10 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
       &quot;result&quot;: &quot;audio_base64&quot;
     },
     {
-      &quot;id&quot;: &quot;write-audio-file&quot;,
+      &quot;description&quot;: &quot;write the audio as file, used for local debug only&quot;,
       &quot;kind&quot;: &quot;call&quot;,
       &quot;function&quot;: &quot;core.file_write&quot;,
+      &quot;enabled&quot;: false,
       &quot;args&quot;: {
         &quot;value&quot;: &quot;${audio_base64.base64}&quot;,
         &quot;from_base64&quot;: true
@@ -821,6 +823,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
       &quot;result&quot;: &quot;audio_file&quot;
     },
     {
+      &quot;description&quot;: &quot;create the http respond that will be send back to the consumer, containing the audio file base64 encoded&quot;,
       &quot;kind&quot;: &quot;assign&quot;,
       &quot;values&quot;: [
         {
@@ -837,6 +840,21 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
           }
         }
       ]
+    },
+    {
+      &quot;description&quot;: &quot;play the audio file using VLC, used for local debug only&quot;,
+      &quot;kind&quot;: &quot;call&quot;,
+      &quot;function&quot;: &quot;core.system_call&quot;,
+      &quot;enabled&quot;: false,
+      &quot;args&quot;: {
+        &quot;command&quot;: [
+          &quot;open&quot;,
+          &quot;-a&quot;,
+          &quot;VLC&quot;,
+          &quot;${audio_file.file_path}&quot;
+        ]
+      },
+      &quot;result&quot;: &quot;play&quot;
     }
   ],
   &quot;returned&quot;: {
@@ -846,7 +864,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   }
 }
 </code></pre>
-<p>avec les resources associées:</p>
+<p>with the associated resources to make it work: </p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;_loc&quot;: {
     &quot;tenant&quot;: &quot;default&quot;,
