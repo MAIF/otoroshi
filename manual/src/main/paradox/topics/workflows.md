@@ -76,6 +76,8 @@ Each workflow execution comes with its own **memory**, where variables can be re
 
 The `assign` node lets you manipulate memory directly, often combined with operators to compute values.
 
+At any moment you can access the memory using an expression language like `${input.name}`.
+
 ---
 
 ## Nodes
