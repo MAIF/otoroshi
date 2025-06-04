@@ -62,8 +62,6 @@ export default function ({ route, hideTitle }) {
   const [playgroundUrl, setPlaygroundUrl] = useState();
   const [testerView, setTesterView] = useState('rest');
 
-  console.log(request)
-
   // patch weird react graphql playground behaviour
   // https://github.com/graphql/graphql-playground/issues/1037
   useEffect(() => {
@@ -241,7 +239,7 @@ export default function ({ route, hideTitle }) {
         setReponse(res);
         setLoading(false);
 
-        if (res.status > 300) setSelectedResponseTab('Body');
+        // if (res.status > 300) setSelectedResponseTab('Body');
 
         try {
           setResponseBody(JSON.stringify(JSON.parse(atob(res.body_base_64)), null, 4));
@@ -310,7 +308,7 @@ export default function ({ route, hideTitle }) {
   const isAuthorizationTabVisible = selectedTab === 'Authorization' && headersStatus === 'down'
 
   return (
-    <div className="graphql-form flex-column tryIt" style={{ overflowX: 'hidden' }}>
+    <div className="graphql-form flex-column tryIt d-flex">
       <div className="d-flex-between m-2 mb-0">
         {!hideTitle && <h3>{route.name}</h3>}
         {route &&
@@ -330,127 +328,130 @@ export default function ({ route, hideTitle }) {
             />
           )}
       </div>
-      {testerView === 'graphql' ? (
-        <div style={{ minHeight: 'calc(100vh - 164px)' }}>
-          <Provider store={store}>
-            <Playground
-              settings={{
-                'schema.polling.enable': false,
-                introspection: true,
-              }}
-              codeTheme={{
-                editorBackground: '#3c3c3c',
-                resultBackground: '#494948',
-                textInactive: '#fff !important',
-                executeButtonBorder: 'transparent',
-              }}
-              tabs={[
-                {
-                  endpoint: `/bo/api/graphqlproxy?url=${encodeURIComponent(playgroundUrl)}`,
-                  query: lastQuery,
-                  name: Date.now(),
-                  // variables?: string
-                  // responses?: string[]
-                  // headers?: { [key: string]: string }
-                },
-              ]}
-            />
-          </Provider>
-        </div>
-      ) : (
-        <div className='d-flex flex-column'>
-          <div className="d-flex">
-            <div style={{ minWidth: '8rem' }}>
-              <NgSelectRenderer
-                options={METHODS}
-                value={request.method}
-                ngOptions={{
-                  spread: true,
+      {
+        testerView === 'graphql' ? (
+          <div style={{ minHeight: 'calc(100vh - 164px)' }}>
+            <Provider store={store}>
+              <Playground
+                settings={{
+                  'schema.polling.enable': false,
+                  introspection: true,
                 }}
-                onChange={(method) => setRequest({ ...request, method })}
-                optionsTransformer={(arr) =>
-                  (arr || []).map((item) => ({ value: item, label: item }))
-                }
-                styles={{
-                  control: (baseStyles, _) => {
-                    return {
-                      ...baseStyles,
-                      border: '1px solid var(--bg-color_level3)',
-                      color: 'var(--text)',
-                      backgroundColor: 'var(--bg-color_level2)',
-                      boxShadow: 'none',
-                      borderRadius: 0
-                    }
-                  }
+                codeTheme={{
+                  editorBackground: '#3c3c3c',
+                  resultBackground: '#494948',
+                  textInactive: '#fff !important',
+                  executeButtonBorder: 'transparent',
                 }}
-              />
-            </div>
-            <input
-              type="text"
-              className="form-control"
-              style={{
-                borderRadius: 0,
-                border: '1px solid var(--bg-color_level3)',
-                borderRight: 0,
-                borderLeft: 0
-              }}
-              placeholder="Enter request URL"
-              value={request.path}
-              onChange={(e) => setRequest({ ...request, path: e.target.value })}
-            />
-            <button className="btn btn-primaryColor" onClick={send} style={{
-              borderRadius: 0,
-            }}>
-              Send
-            </button>
-          </div>
-          <div className='border-l border-r'>
-            <div
-              style={{
-                minHeight: headersStatus === 'down' ? '280px' : 'initial',
-                flexDirection: 'column',
-                overflowY: 'auto',
-                // paddingBottom: headersStatus === 'down' ? '120px' : 0,
-              }}
-            >
-              <div className={`d-flex align-items-center ${headersStatus === 'up' ? 'border-b' : ''}`} style={{ minHeight: 30 }}>
-                {[
-                  { label: 'Authorization', value: 'Authorization' },
+                tabs={[
                   {
-                    label: 'Headers',
-                    value: `Headers (${Object.keys(request.headers || {}).length})`,
+                    endpoint: `/bo/api/graphqlproxy?url=${encodeURIComponent(playgroundUrl)}`,
+                    query: lastQuery,
+                    name: Date.now(),
+                    // variables?: string
+                    // responses?: string[]
+                    // headers?: { [key: string]: string }
                   },
-                  { label: 'Body', value: 'Body' },
-                ].map(({ label, value }, i) => (
-                  <button
-                    onClick={() => {
-                      setHeadersStatus('down');
-                      setSelectedTab(label);
-                    }}
-                    className="p-2 px-3"
-                    style={{
-                      padding: 0,
-                      border: 'none',
-                      borderRight: (i === 1 || i === 2) ? '1px solid var(--bg-color_level3)' : 0,
-                      borderLeft: i === 1 ? '1px solid var(--bg-color_level3)' : 0,
-                      boxShadow: (selectedTab === label && i !== 1) ? '0 1px 0 0 var(--bg-color_level1)' : 'none',
-                      background: 'none',
-                    }}
-                  >
-                    {value}
-                  </button>
-                ))}
-                <i
-                  className={`ms-auto px-3 tab fas fa-chevron-${headersStatus === 'up' ? 'down' : 'up'}`}
-                  style={{
-                    cursor: 'pointer'
+                ]}
+              />
+            </Provider>
+          </div>
+        ) : (
+          <div className='d-flex flex-column' style={{ flex: 1 }}>
+            <div className="d-flex">
+              <div style={{ minWidth: '8rem' }}>
+                <NgSelectRenderer
+                  options={METHODS}
+                  value={request.method}
+                  ngOptions={{
+                    spread: true,
                   }}
-                  onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')}
+                  onChange={(method) => setRequest({ ...request, method })}
+                  optionsTransformer={(arr) =>
+                    (arr || []).map((item) => ({ value: item, label: item }))
+                  }
+                  styles={{
+                    control: (baseStyles, _) => {
+                      return {
+                        ...baseStyles,
+                        border: '1px solid var(--bg-color_level3)',
+                        color: 'var(--text)',
+                        backgroundColor: 'var(--bg-color_level2)',
+                        boxShadow: 'none',
+                        borderRadius: 0
+                      }
+                    }
+                  }}
                 />
               </div>
-              {isAuthorizationTabVisible && <div className='border-b border-t'>
-                <Row title="Apikey" containerClassName='py-2 m-0'>
-                  {/* <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
+              <input
+                type="text"
+                className="form-control"
+                style={{
+                  borderRadius: 0,
+                  border: '1px solid var(--bg-color_level3)',
+                  borderRight: 0,
+                  borderLeft: 0
+                }}
+                placeholder="Enter request URL"
+                value={request.path}
+                onChange={(e) => setRequest({ ...request, path: e.target.value })}
+              />
+              <button className="btn btn-primaryColor" onClick={send} style={{
+                borderRadius: 0,
+              }}>
+                Send
+              </button>
+            </div>
+            <div className='border-l border-r'>
+              <div
+                style={{
+                  minHeight: headersStatus === 'down' ? '280px' : 'initial',
+                  flexDirection: 'column',
+                  overflowY: 'auto',
+                  // paddingBottom: headersStatus === 'down' ? '120px' : 0,
+                }}
+              >
+                <div className={`d-flex align-items-center ${headersStatus === 'up' ? 'border-b' : ''}`} style={{ minHeight: 30 }}>
+                  {[
+                    { label: 'Authorization', value: 'Authorization' },
+                    {
+                      label: 'Headers',
+                      value: <div className='tab-with-number'>
+                        Headers <span>{Object.keys(request.headers || {}).length} </span>
+                      </div>,
+                    },
+                    { label: 'Body', value: 'Body' },
+                  ].map(({ label, value }, i) => {
+                    return <button
+                      onClick={() => {
+                        setHeadersStatus('down');
+                        setSelectedTab(label);
+                      }}
+                      className="p-2 px-3"
+                      style={{
+                        padding: 0,
+                        border: 'none',
+                        borderRight: (i === 1 || i === 2) ? '1px solid var(--bg-color_level3)' : 0,
+                        borderLeft: i === 1 ? '1px solid var(--bg-color_level3)' : 0,
+                        boxShadow: selectedTab === label ? '0 1px 0 0 var(--bg-color_level1)' : 'none',
+                        background: 'none',
+                      }}
+                    >
+                      {value}
+                    </button>
+                  })}
+                  <i
+                    className={`ms-auto px-3 tab fas fa-chevron-${headersStatus === 'up' ? 'down' : 'up'}`}
+                    style={{
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')}
+                  />
+                </div>
+                {isAuthorizationTabVisible && <div className='border-b border-t'>
+                  <Row title="Apikey" containerClassName='py-2 m-0'>
+                    {/* <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
                       <BooleanInput
                         flex={true}
                         label="Use an apikey"
@@ -464,78 +465,78 @@ export default function ({ route, hideTitle }) {
                         }
                       />
                     </div> */}
-                  {/* {request.useApikey && ( */}
-                  <NgSelectRenderer
-                    value={request.apikey}
-                    isClearable
-                    onChange={(k) => {
-                      setRequest({
-                        ...request,
-                        apikey: k,
-                        headers: apikeyToHeader(
-                          request.apikeyFormat,
-                          apikeys.find((a) => a.clientId === k)
-                        ),
-                      });
-                    }}
-                    ngOptions={{
-                      spread: true,
-                    }}
-                    options={apikeys}
-                    optionsTransformer={(arr) =>
-                      arr.map((item) => ({
-                        value: item.clientId,
-                        label: item.clientName,
-                      }))
-                    }
-                  />
-                </Row>
-                {request.apikey &&
-                  <Row title="Apikey format" containerClassName='py-2 m-0'>
+                    {/* {request.useApikey && ( */}
                     <NgSelectRenderer
-                      options={[
-                        { value: 'basic', label: 'Basic header' },
-                        {
-                          value: 'credentials',
-                          label: 'Client ID/Secret headers',
-                        },
-                      ]}
-                      ngOptions={{
-                        spread: true,
-                      }}
-                      value={request.apikeyFormat}
-                      onChange={(k) =>
+                      value={request.apikey}
+                      isClearable
+                      onChange={(k) => {
                         setRequest({
                           ...request,
-                          apikeyFormat: k,
-                          headers: apikeyToHeader(k),
-                        })
-                      }
-                    />
-                  </Row>}
-                {request.apikey &&
-                  request.apikeyFormat === 'basic' &&
-                  <Row title="Add to header" containerClassName='py-2 border-b m-0'>
-                    <input
-                      type="text"
-                      className="form-control flex"
-                      onChange={(e) => {
-                        setRequest({
-                          ...request,
-                          apikeyHeader: e.target.value,
+                          apikey: k,
                           headers: apikeyToHeader(
                             request.apikeyFormat,
-                            undefined,
-                            e.target.value
+                            apikeys.find((a) => a.clientId === k)
                           ),
                         });
                       }}
-                      value={request.apikeyHeader}
+                      ngOptions={{
+                        spread: true,
+                      }}
+                      options={apikeys}
+                      optionsTransformer={(arr) =>
+                        arr.map((item) => ({
+                          value: item.clientId,
+                          label: item.clientName,
+                        }))
+                      }
                     />
-                  </Row>}
-              </div>}
-              {isAuthorizationTabVisible && <Row title="Certificate client" containerClassName='py-2 border-b m-0'>
-                {/* <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
+                  </Row>
+                  {request.apikey &&
+                    <Row title="Apikey format" containerClassName='py-2 m-0'>
+                      <NgSelectRenderer
+                        options={[
+                          { value: 'basic', label: 'Basic header' },
+                          {
+                            value: 'credentials',
+                            label: 'Client ID/Secret headers',
+                          },
+                        ]}
+                        ngOptions={{
+                          spread: true,
+                        }}
+                        value={request.apikeyFormat}
+                        onChange={(k) =>
+                          setRequest({
+                            ...request,
+                            apikeyFormat: k,
+                            headers: apikeyToHeader(k),
+                          })
+                        }
+                      />
+                    </Row>}
+                  {request.apikey &&
+                    request.apikeyFormat === 'basic' &&
+                    <Row title="Add to header" containerClassName='py-2 border-b m-0'>
+                      <input
+                        type="text"
+                        className="form-control flex"
+                        onChange={(e) => {
+                          setRequest({
+                            ...request,
+                            apikeyHeader: e.target.value,
+                            headers: apikeyToHeader(
+                              request.apikeyFormat,
+                              undefined,
+                              e.target.value
+                            ),
+                          });
+                        }}
+                        value={request.apikeyHeader}
+                      />
+                    </Row>}
+                </div>}
+                {isAuthorizationTabVisible && <Row title="Certificate client" containerClassName='py-2 border-b m-0'>
+                  {/* <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
                   <BooleanInput
                     flex={true}
                     label="Use a certificate client"
@@ -548,258 +549,251 @@ export default function ({ route, hideTitle }) {
                     }
                   />
                 </div> */}
-                <NgSelectRenderer
-                  isClearable
-                  ngOptions={{
-                    spread: true,
-                  }}
-                  options={certificates}
-                  value={request.client_cert}
-                  onChange={(client_cert) =>
-                    setRequest({
-                      ...request,
-                      client_cert,
-                    })
-                  }
-                  optionsTransformer={(arr) =>
-                    arr.map((item) => ({
-                      value: item.id,
-                      label: item.name,
-                    }))
-                  }
-                />
-              </Row>}
-              {selectedTab === 'Headers' && headersStatus === 'down' && <div className='border-b border-t'>
-                <Headers
-                  headers={request.headers}
-                  deleteHeader={key => {
-                    const { [key]: value, ...newHeaders } = request.headers;
-
-                    console.log(newHeaders)
-
-                    setRequest({
-                      ...request,
-                      headers: newHeaders,
-                    })
-                  }}
-                  addNewHeader={() => {
-                    setRequest({
-                      ...request,
-                      headers: { ...request.headers, [Date.now()]: { key: '', value: '', checked: true } },
-                    })
-                  }}
-                  deleteAllHeaders={() => {
-                    setRequest({
-                      ...request,
-                      headers: {},
-                    })
-                  }}
-                  onKeyChange={(id, v) => {
-                    const updatedRequest = {
-                      ...request,
-                      headers: {
-                        ...request.headers,
-                        [id]: { key: v, value: request.headers[id].value, checked: request.headers[id].checked },
-                      },
-                    };
-
-                    setRequest({
-                      ...updatedRequest,
-                      headers: { ...updatedRequest.headers },
-                    });
-                  }}
-                  onValueChange={(id, v) => {
-                    const updatedRequest = {
-                      ...request,
-                      headers: {
-                        ...request.headers,
-                        [id]: { key: request.headers[id].key, value: v, checked: request.headers[id].checked },
-                      },
-                    };
-
-                    setRequest({
-                      ...updatedRequest,
-                      headers: { ...updatedRequest.headers },
-                    });
-                  }}
-                  onCheckedChange={(id) => {
-                    const updatedRequest = {
-                      ...request,
-                      headers: {
-                        ...request.headers,
-                        [id]: { ...request.headers[id], checked: !request.headers[id].checked },
-                      },
-                    };
-
-                    setRequest({
-                      ...updatedRequest,
-                      headers: { ...updatedRequest.headers },
-                    });
-                  }}
-                />
-              </div>}
-              {selectedTab === 'Body' && headersStatus === 'down' && <div className='border-b border-t'>
-                <Row title="Format" containerClassName='py-2 m-0'>
                   <NgSelectRenderer
+                    isClearable
                     ngOptions={{
                       spread: true,
                     }}
-                    options={['No Body', 'Plain Text', 'JSON', 'HTML', 'XML', 'YAML']}
-                    value={request.contentType}
-                    onChange={(contentType) => {
-                      setRequest({ ...request, contentType })
-                    }}
+                    options={certificates}
+                    value={request.client_cert}
+                    onChange={(client_cert) =>
+                      setRequest({
+                        ...request,
+                        client_cert,
+                      })
+                    }
                     optionsTransformer={(arr) =>
-                      arr.map((item) => ({ value: item, label: item }))
+                      arr.map((item) => ({
+                        value: item.id,
+                        label: item.name,
+                      }))
                     }
                   />
-                </Row>
-                {request.contentType !== 'No Body' && <Suspense fallback={<div>Loading ...</div>}>
-                  <Row title="Content" containerClassName='m-0 pb-3'>
-                    <CodeInput
-                      editorOnly
-                      value={request.bodyContent}
-                      mode={request.contentType?.toLowerCase()}
-                      onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+                </Row>}
+                {selectedTab === 'Headers' && headersStatus === 'down' && <div className='border-b'>
+                  <Headers
+                    headers={request.headers}
+                    deleteHeader={key => {
+                      const { [key]: value, ...newHeaders } = request.headers;
+
+                      console.log(newHeaders)
+
+                      setRequest({
+                        ...request,
+                        headers: newHeaders,
+                      })
+                    }}
+                    addNewHeader={() => {
+                      setRequest({
+                        ...request,
+                        headers: { ...request.headers, [Date.now()]: { key: '', value: '', checked: true } },
+                      })
+                    }}
+                    deleteAllHeaders={() => {
+                      setRequest({
+                        ...request,
+                        headers: {},
+                      })
+                    }}
+                    onKeyChange={(id, v) => {
+                      const updatedRequest = {
+                        ...request,
+                        headers: {
+                          ...request.headers,
+                          [id]: { key: v, value: request.headers[id].value, checked: request.headers[id].checked },
+                        },
+                      };
+
+                      setRequest({
+                        ...updatedRequest,
+                        headers: { ...updatedRequest.headers },
+                      });
+                    }}
+                    onValueChange={(id, v) => {
+                      const updatedRequest = {
+                        ...request,
+                        headers: {
+                          ...request.headers,
+                          [id]: { key: request.headers[id].key, value: v, checked: request.headers[id].checked },
+                        },
+                      };
+
+                      setRequest({
+                        ...updatedRequest,
+                        headers: { ...updatedRequest.headers },
+                      });
+                    }}
+                    onCheckedChange={(id) => {
+                      const updatedRequest = {
+                        ...request,
+                        headers: {
+                          ...request.headers,
+                          [id]: { ...request.headers[id], checked: !request.headers[id].checked },
+                        },
+                      };
+
+                      setRequest({
+                        ...updatedRequest,
+                        headers: { ...updatedRequest.headers },
+                      });
+                    }}
+                  />
+                </div>}
+                {selectedTab === 'Body' && headersStatus === 'down' && <div className='border-b border-t'>
+                  <Row title="Format" containerClassName='py-2 m-0'>
+                    <NgSelectRenderer
+                      ngOptions={{
+                        spread: true,
+                      }}
+                      options={['No Body', 'Plain Text', 'JSON', 'HTML', 'XML', 'YAML']}
+                      value={request.contentType}
+                      onChange={(contentType) => {
+                        setRequest({ ...request, contentType })
+                      }}
+                      optionsTransformer={(arr) =>
+                        arr.map((item) => ({ value: item, label: item }))
+                      }
                     />
                   </Row>
-                </Suspense>}
-              </div>}
+                  {request.contentType !== 'No Body' && <Suspense fallback={<div>Loading ...</div>}>
+                    <Row title="Content" containerClassName='m-0 pb-3'>
+                      <CodeInput
+                        editorOnly
+                        value={request.bodyContent}
+                        mode={request.contentType?.toLowerCase()}
+                        onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+                      />
+                    </Row>
+                  </Suspense>}
+                </div>}
+              </div>
             </div>
-          </div>
-          {
-            receivedResponse && (
-              <div className="d-flex flex-row-center py-3 border border-t-0">
-                <div className="d-flex justify-content-between align-items-center" style={{ flex: 1 }}>
-                  <div>
-                    {[
-                      { label: 'Report', value: 'Report' },
-                      { label: 'Body', value: 'Body' },
-                      { label: 'Cookies', value: 'Cookies' },
-                      {
-                        label: 'Headers',
-                        value: `Headers (${([...rawResponse.headers] || []).length})`,
-                      },
-                    ].map(({ label, value }) => (
-                      <button
-                        onClick={() => setSelectedResponseTab(label)}
-                        className="pb-2 ms-3"
-                        style={{
-                          padding: 0,
-                          border: 0,
-                          background: 'none',
-                        }}
-                      >
-                        {value}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="d-flex flex-row-center align-items-center">
-                    <div className="d-flex flex-row-center me-3">
-                      <span className="me-1">Status:</span>
-                      <span style={{ color: 'var(--bs-success)' }}>{response.status}</span>
+            {
+              receivedResponse && (
+                <div className="d-flex flex-row-center border border-b-0">
+                  <div className="d-flex justify-content-between align-items-flex-end" style={{ flex: 1 }}>
+                    <div className='d-flex flex-row-center'>
+                      {[
+                        { label: 'Report', value: 'Report' },
+                        { label: 'Preview', value: 'Preview' },
+                        // { label: 'Cookies', value: 'Cookies' },
+                        {
+                          label: 'Headers',
+                          value: <div className='tab-with-number'>
+                            Headers <span>{([...rawResponse.headers] || []).length} </span>
+                          </div>,
+                        },
+                      ].map(({ label, value }, i) => (
+                        <button
+                          onClick={() => setSelectedResponseTab(label)}
+                          className="p-2 px-3"
+                          style={{
+                            padding: 0,
+                            border: 'none',
+                            borderRight: (i === 1 || i === 2) ? '1px solid var(--bg-color_level3)' : 0,
+                            borderLeft: i === 1 ? '1px solid var(--bg-color_level3)' : 0,
+                            boxShadow: (selectedResponseTab === label && i !== 1) ? '0 1px 0 0 var(--bg-color_level1)' : 'none',
+                            background: 'none',
+                          }}
+                        >
+                          {value}
+                        </button>
+                      ))}
                     </div>
-                    <div className="d-flex flex-row-center me-3">
-                      <span className="me-1">Time:</span>
-                      <span style={{ color: 'var(--bs-success)' }}>
-                        {roundNsTo(response.report?.duration_ns)} ms
-                      </span>
-                    </div>
-                    <div className="d-flex flex-row-center me-3">
-                      <span className="me-1">Size:</span>
-                      <span style={{ color: 'var(--bs-success)' }}>
-                        {bytesToSize(rawResponse.headers.get('content-length'))}
-                      </span>
+                    <div className="d-flex flex-row-center align-items-center">
+                      <span className='report-information'>{response.status}</span>
+                      <span className='report-information'>{roundNsTo(response.report?.duration_ns)} ms</span>
+                      <span className='report-information'>{bytesToSize(rawResponse.headers.get('content-length'))}</span>
                     </div>
                     {/* <button className="btn btn-sm btn-primaryColor" onClick={saveResponse}>
                       Copy
                     </button> */}
                   </div>
                 </div>
-              </div>
-            )
-          }
-          {
-            receivedResponse && selectedResponseTab === 'Headers' && (
-              <Headers
-                headers={[...rawResponse.headers].reduce(
-                  (acc, [key, value], index) => ({
-                    ...acc,
-                    [`${Date.now()}-${index}`]: { key, value },
-                  }),
-                  {}
-                )}
-              />
-            )
-          }
+              )
+            }
+            {
+              receivedResponse && selectedResponseTab === 'Headers' && (
+                <Headers
+                  className="pt-3"
+                  headers={[...rawResponse.headers].reduce(
+                    (acc, [key, value], index) => ({
+                      ...acc,
+                      [`${Date.now()}-${index}`]: { key, value },
+                    }),
+                    {}
+                  )}
+                />
+              )
+            }
 
-          {
-            receivedResponse && responseBody && selectedResponseTab === 'Body' && (
-              <div className="mt-3" style={{ flex: 1 }}>
-                {responseBody.startsWith('<!') ? (
-                  <iframe
-                    srcDoc={responseBody}
-                    style={{ flex: 1, minHeight: '750px', width: '100%' }}
+            {
+              receivedResponse && responseBody && selectedResponseTab === 'Body' && (
+                <div className="pt-3 border" style={{ flex: 1 }}>
+                  {responseBody.startsWith('<!') ? (
+                    <iframe
+                      srcDoc={responseBody}
+                      style={{ flex: 1, minHeight: '750px', width: '100%' }}
+                    />
+                  ) : (
+                    <NgCodeRenderer
+                      ngOptions={{
+                        spread: true,
+                      }}
+                      rawSchema={{
+                        props: {
+                          ace_config: {
+                            maxLines: Infinity,
+                            fontSize: 14,
+                          },
+                          editorOnly: true,
+                          height: '100%',
+                          mode: 'json',
+                        },
+                      }}
+                      value={responseBody}
+                      onChange={() => { }}
+                    />
+                  )}
+                </div>
+              )
+            }
+            {
+              !receivedResponse && !loading && (
+                <div className="py-3 text-center border">
+                  <span>Enter the URL and click Send to get a response</span>
+                </div>
+              )
+            }
+            {
+              loading && (
+                <div className="d-flex justify-content-center">
+                  <i className="fas fa-cog fa-spin" style={{ fontSize: '40px' }} />
+                </div>
+              )
+            }
+
+            {
+              receivedResponse && selectedResponseTab === 'Report' ? (
+                response.report ? (
+                  <ReportView
+                    report={response.report}
+                    search={search}
+                    setSearch={setSearch}
+                    unit={unit}
+                    setUnit={setUnit}
+                    sort={sort}
+                    setSort={setSort}
+                    flow={flow}
+                    setFlow={setFlow}
                   />
                 ) : (
-                  <NgCodeRenderer
-                    ngOptions={{
-                      spread: true,
-                    }}
-                    rawSchema={{
-                      props: {
-                        ace_config: {
-                          maxLines: Infinity,
-                          fontSize: 14,
-                        },
-                        editorOnly: true,
-                        height: '100%',
-                        mode: 'json',
-                      },
-                    }}
-                    value={responseBody}
-                    onChange={() => { }}
-                  />
-                )}
-              </div>
-            )
-          }
-          {
-            !receivedResponse && !loading && (
-              <div className="py-3 text-center border">
-                <span>Enter the URL and click Send to get a response</span>
-              </div>
-            )
-          }
-          {
-            loading && (
-              <div className="d-flex justify-content-center">
-                <i className="fas fa-cog fa-spin" style={{ fontSize: '40px' }} />
-              </div>
-            )
-          }
-
-          {
-            receivedResponse && selectedResponseTab === 'Report' ? (
-              response.report ? (
-                <ReportView
-                  report={response.report}
-                  search={search}
-                  setSearch={setSearch}
-                  unit={unit}
-                  setUnit={setUnit}
-                  sort={sort}
-                  setSort={setSort}
-                  flow={flow}
-                  setFlow={setFlow}
-                />
-              ) : (
-                <span className="mt-3">No report is available</span>
-              )
-            ) : null
-          }
-        </div >
-      )
+                  <span className="mt-3">No report is available</span>
+                )
+              ) : null
+            }
+          </div >
+        )
       }
     </div >
   );
@@ -876,166 +870,138 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     }
   };
 
-  const spaces = range(0, 50)
-    .map((i) => '          ')
-    .join('');
   return (
-    <div className="d-flex mt-3 flex reportview">
-      <div className="main-view me-2" style={{ flex: 0.5, minWidth: '250px' }}>
-        <div
-          onClick={() => setSelectedStep(-1)}
-          className="d-flex-between py-2"
-          style={{ width: '100%' }}
-        >
-          <input
-            type="text"
-            className="form-control"
-            value={search}
-            placeholder="Search a step"
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <div className="d-flex-between ms-1">
-            <button
-              className={getUnitButtonClass(unit === 'ns')}
-              onClick={() => setUnit('ns')}
-              title="Display the steps in nanoseconds"
-            >
-              ns
-            </button>
-            <button
-              className={`${getUnitButtonClass(unit === 'ms')} mx-1`}
-              onClick={() => setUnit('ms')}
-              title="Display the steps in milliseconds"
-            >
-              ms
-            </button>
-            <button
-              className={getUnitButtonClass(unit === '%')}
-              onClick={() => setUnit('%')}
-              title="Display the steps in percentage"
-            >
-              %
-            </button>
-          </div>
-        </div>
-        <div className="d-flex-between mb-2" style={{ width: '100%' }}>
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={() =>
-              setFlow(flow === 'internal' ? 'user' : flow === 'user' ? 'all' : 'internal')
-            }
+    <div className="d-flex border" style={{ flex: 1 }}>
+      <div className="main-view px-2 border-r pt-2" style={{ flex: 0.5, minWidth: '250px' }}>
+        <NgSelectRenderer
+          margin="mb-1"
+          value={unit}
+          label="Unit"
+          onChange={setUnit}
+          options={['ns', 'ms', '%'].map((item) => ({ label: item, value: item }))} />
+
+        <NgSelectRenderer
+          margin="mb-1"
+          value={flow}
+          label="Flow"
+          onChange={setFlow}
+          options={['internal', 'user', 'all'].map((item) => ({ label: firstLetterUppercase(item), value: item }))} />
+
+        <NgSelectRenderer
+          margin="mb-1"
+          value={sort}
+          label="Sort"
+          onChange={setSort}
+          options={['flow', 'duration'].map((item) => ({ label: `by ${item}`, value: item }))} />
+
+        <input
+          name="step"
+          type="text"
+          className="form-control my-1"
+          value={search}
+          placeholder="Search a step"
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <div className='d-flex flex-column'>
+          <div
+            onClick={() => {
+              setSelectedStep(-1);
+              setSelectedPlugin(-1);
+            }}
+            className={`d-flex-between report-step ${selectedStep === -1 && selectedPlugin === -1 ? 'btn-primaryColor' : 'btn-quiet'}`}
           >
-            {getNextFlowName()} flow
-          </button>
-          <button className="btn btn-sm btn-primary" onClick={() => setSort(getNextSortName())}>
-            Sort by {getNextSortName()}
-          </button>
-        </div>
-        <div
-          onClick={() => {
-            setSelectedStep(-1);
-            setSelectedPlugin(-1);
-          }}
-          className={`d-flex-between mt-1 px-3 py-2 report-step`}>
-          <span>Report</span>
-          <span>
-            {reportDuration()} {unit}
-          </span>
-        </div>
-        {[...steps]
-          .filter(isOnFlow)
-          .filter(isMatchingSearchWords)
-          .sort(sortByFlow)
-          .map((step) => {
-            const name = step.task.replace(/-/g, ' ');
-            const percentage = durationInPercentage(step.duration_ns, report.duration_ns);
-            const displaySubList = step.ctx?.plugins?.length > 0 && flow !== 'internal';
+            <span>Report</span>
+            <span>
+              {reportDuration()} {unit}
+            </span>
+          </div>
+          {[...steps]
+            .filter(isOnFlow)
+            .filter(isMatchingSearchWords)
+            .sort(sortByFlow)
+            .map((step) => {
+              const name = step.task.replace(/-/g, ' ');
+              const percentage = durationInPercentage(step.duration_ns, report.duration_ns);
+              const displaySubList = step.ctx?.plugins?.length > 0 && flow !== 'internal';
 
-            return (
-              <div key={step.task} style={{ width: '100%' }}>
-                <div
-                  onClick={() => {
-                    setSelectedPlugin(-1);
-                    setSelectedStep(step.task);
-                  }}
-                  className={`d-flex-between mt-1 px-3 py-2 report-step btn-dark ${step.task === selectedStep && selectedPlugin === -1 ? 'btn-primary' : ''
-                    }`}
-                >
-                  <div className="d-flex align-items-center">
-                    {displaySubList && (
-                      <i
-                        className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
-                          } me-1`}
-                        onClick={() =>
-                          setSteps(
-                            steps.map((s) =>
-                              s.task === step.task ? { ...s, open: !step.open } : s
+              return (
+                <div key={step.task} style={{ width: '100%' }}>
+                  <div
+                    onClick={() => {
+                      setSelectedPlugin(-1);
+                      setSelectedStep(step.task);
+                    }}
+                    className={`d-flex-between report-step ${step.task === selectedStep && selectedPlugin === -1 ? 'btn-primaryColor' : 'btn-quiet'}`}>
+                    <div className="d-flex align-items-center">
+                      {displaySubList && (
+                        <i
+                          className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
+                            } me-1`}
+                          onClick={() =>
+                            setSteps(
+                              steps.map((s) =>
+                                s.task === step.task ? { ...s, open: !step.open } : s
+                              )
                             )
-                          )
-                        }
-                      />
+                          }
+                        />
+                      )}
+                      <span>{firstLetterUppercase(name)}</span>
+                    </div>
+                    {(flow !== 'user' || step.task === 'call-backend') && (
+                      <span style={{ maxWidth: '100px', textAlign: 'right' }}>
+                        {unit === 'ms'
+                          ? roundNsTo(step.duration_ns)
+                          : unit === 'ns'
+                            ? step.duration_ns
+                            : percentage}{' '}
+                        {unit}
+                      </span>
                     )}
-                    <span>{firstLetterUppercase(name)}</span>
                   </div>
-                  {(flow !== 'user' || step.task === 'call-backend') && (
-                    <span style={{ maxWidth: '100px', textAlign: 'right' }}>
-                      {unit === 'ms'
-                        ? roundNsTo(step.duration_ns)
-                        : unit === 'ns'
-                          ? step.duration_ns
-                          : percentage}{' '}
-                      {unit}
-                    </span>
-                  )}
-                </div>
-                {(step.open || flow === 'user') &&
-                  flow !== 'internal' &&
-                  [...(step?.ctx?.plugins || [])]
-                    .filter(isPluginNameMatchingSearch)
-                    .sort(sortByFlow)
-                    .map((plugin) => {
-                      const pluginName = plugin.name.replace(/-/g, ' ').split('.').pop();
-                      const pluginPercentage = durationInPercentage(
-                        plugin.duration_ns,
-                        report.duration_ns
-                      );
+                  {(step.open || flow === 'user') &&
+                    flow !== 'internal' &&
+                    [...(step?.ctx?.plugins || [])]
+                      .filter(isPluginNameMatchingSearch)
+                      .sort(sortByFlow)
+                      .map((plugin) => {
+                        const pluginName = plugin.name.replace(/-/g, ' ').split('.').pop();
+                        const pluginPercentage = durationInPercentage(
+                          plugin.duration_ns,
+                          report.duration_ns
+                        );
 
-                      return (
-                        <div
-                          key={plugin.name}
-                          style={{
-                            width: 'calc(100% - 12px)',
-                            marginLeft: '12px',
-                          }}
-                          onClick={() => {
-                            setSelectedStep(step.task);
-                            setSelectedPlugin(plugin.name);
-                          }}
-                          className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep && plugin.name === selectedPlugin
-                            ? 'btn-primary'
-                            : ''
-                            }`}
-                        >
-                          <span>{firstLetterUppercase(pluginName)}</span>
-                          <span style={{ maxWidth: '100px', textAlign: 'right' }}>
-                            {unit === 'ms'
-                              ? roundNsTo(plugin.duration_ns)
-                              : unit === 'ns'
-                                ? plugin.duration_ns
-                                : pluginPercentage}{' '}
-                            {unit}
-                          </span>
-                        </div>
-                      );
-                    })}
-              </div>
-            );
-          })}
+                        return (
+                          <div
+                            key={plugin.name}
+                            style={{
+                              width: 'calc(100% - 12px)',
+                              marginLeft: '12px',
+                            }}
+                            onClick={() => {
+                              setSelectedStep(step.task);
+                              setSelectedPlugin(plugin.name);
+                            }}
+                            className={`d-flex-between report-step ${step.task === selectedStep && plugin.name === selectedPlugin ? 'btn-primary' : 'btn-quiet'}`}>
+                            <span>{firstLetterUppercase(pluginName)}</span>
+                            <span style={{ maxWidth: '100px', textAlign: 'right' }}>
+                              {unit === 'ms'
+                                ? roundNsTo(plugin.duration_ns)
+                                : unit === 'ns'
+                                  ? plugin.duration_ns
+                                  : pluginPercentage}{' '}
+                              {unit}
+                            </span>
+                          </div>
+                        );
+                      })}
+                </div>
+              );
+            })}
+        </div>
       </div>
       <NgCodeRenderer
-        ngOptions={{
-          spread: true,
-        }}
+        ngOptions={{ spread: true }}
         rawSchema={{
           props: {
             ace_config: {
@@ -1059,21 +1025,19 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                 ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
             null,
             4
-          ) +
-          '\n' +
-          spaces
+          )
         }
       />
-    </div>
+    </div >
   );
 };
 
-const Headers = ({ headers, onKeyChange, onValueChange, onCheckedChange, addNewHeader, deleteAllHeaders, deleteHeader }) => (
+const Headers = ({ headers, onKeyChange, onValueChange, onCheckedChange, addNewHeader, deleteAllHeaders, deleteHeader, className }) => (
   <div
-    className="w-100 div-overflowy pb-3"
+    className={`w-100 div-overflowy border pb-3 ${className}`}
     style={{
       height: onKeyChange ? '100%' : 'initial',
-      overflowY: 'scroll',
+      // overflowY: 'scroll',
     }}
   >
     {addNewHeader && <div className='d-flex align-items-center border-b mb-3'>

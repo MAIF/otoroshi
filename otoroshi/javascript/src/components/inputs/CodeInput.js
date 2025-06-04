@@ -17,7 +17,7 @@ import 'ace-builds/src-noconflict/mode-prolog';
 import 'ace-builds/src-noconflict/ext-language_tools';
 import 'ace-builds/src-noconflict/ext-searchbox';
 
-import 'ace-builds/src-noconflict/theme-monokai';
+import 'ace-builds/src-noconflict/theme-dracula';
 import 'ace-builds/src-noconflict/theme-xcode';
 import isEqual from 'lodash/isEqual';
 
@@ -31,7 +31,7 @@ export class JsonObjectAsCodeInput extends Component {
         onChange={(e) => {
           try {
             this.props.onChange(JSON.parse(e));
-          } catch (ex) {}
+          } catch (ex) { }
         }}
       />
     );
@@ -63,7 +63,7 @@ export class JsonObjectAsCodeInputUpdatable extends Component {
             this.setState({ value }, () => {
               this.props.onChange(value);
             });
-          } catch (ex) {}
+          } catch (ex) { }
         }}
       />
     );
@@ -91,7 +91,7 @@ export default class CodeInput extends Component {
   state = {
     value: null,
     mounted: true,
-    theme: document.body.classList.contains('white-mode') ? 'xcode' : 'monokai',
+    theme: document.body.classList.contains('white-mode') ? 'xcode' : 'dracula',
   };
 
   componentDidMount() {
@@ -245,7 +245,7 @@ export default class CodeInput extends Component {
                 </div>
                 <AceEditor
                   mode="json"
-                  theme="monokai"
+                  theme={this.state.theme}
                   readOnly={true}
                   showGutter={false}
                   value={JSON.stringify(this.props.example, null, 2)}
