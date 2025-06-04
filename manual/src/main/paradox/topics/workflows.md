@@ -828,7 +828,6 @@ For production-grade scenarios, consider:
 * Building and testing reusable workflows
 * Adding your own functions/operators
 * Securing workflows with access rights and guards
-* Using workflows in conjunction with AI features
 
 You can even go as far as using workflows to implement AI agents, task runners, or content pipelines.
 
