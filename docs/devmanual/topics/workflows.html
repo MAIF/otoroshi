@@ -367,6 +367,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 <h2><a href="#memory" name="memory" class="anchor"><span class="anchor-link"></span></a>Memory</h2>
 <p>Each workflow execution comes with its own <strong>memory</strong>, where variables can be read from or written to. This memory enables communication between steps.</p>
 <p>The <code>assign</code> node lets you manipulate memory directly, often combined with operators to compute values.</p>
+<p>At any moment you can access the memory using an expression language like <code>${input.name}</code>.</p>
 <hr/>
 <h2><a href="#nodes" name="nodes" class="anchor"><span class="anchor-link"></span></a>Nodes</h2>
 <p>Each node must declare a <code>kind</code> field and can optionally define:</p>
@@ -490,6 +491,15 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   <li>Create auth headers (<code>$basic_auth</code>)</li>
   <li>Check containment (<code>$contains</code>)</li>
 </ul>
+<p>Example:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;$eq&quot;: {
+    &quot;a&quot;: &quot;foo&quot;,
+    &quot;b&quot;: &quot;bar&quot;
+  }
+}
+</code></pre>
+<p>Result: <code>false</code></p>
 <h3><a href="#full-list-of-operators" name="full-list-of-operators" class="anchor"><span class="anchor-link"></span></a>Full List of Operators</h3>
 <ul>
   <li><code>$mem_ref</code></li>
