@@ -22,6 +22,14 @@ object NodesInitializer {
     Node.registerNode("flatmap", json => FlatMapNode(json))
     Node.registerNode("wait", json => WaitNode(json))
     Node.registerNode("error", json => ErrorNode(json))
+    Node.registerNode("value", json => ValueNode(json))
+  }
+}
+
+case class ValueNode(json: JsObject) extends Node {
+  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val value = WorkflowOperator.processOperators(json.select("value").asValue, wfr, env)
+    value.rightf
   }
 }
 
@@ -240,7 +248,7 @@ case class ForEachNode(json: JsObject) extends Node {
               wfr.memory.remove("foreach_value")
             }
         }
-        .takeWhile(_.isLeft, inclusive = true)
+        .takeWhile(_.isRight, inclusive = true)
         .runWith(Sink.seq)(env.otoroshiMaterializer)
         .map { seq =>
           val last = seq.last
@@ -265,7 +273,7 @@ case class ForEachNode(json: JsObject) extends Node {
               wfr.memory.remove("foreach_value")
             }
         }
-        .takeWhile(_.isLeft, inclusive = true)
+        .takeWhile(_.isRight, inclusive = true)
         .runWith(Sink.seq)(env.otoroshiMaterializer)
         .map { seq =>
           val last = seq.last

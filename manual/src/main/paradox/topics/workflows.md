@@ -527,7 +527,7 @@ the memory content:
       ]
     },
     {
-      "kind": "map",
+      "kind": "foreach",
       "description": "for each pokemon, just extract its name",
       "values": "${pokemons}",
       "node": {
