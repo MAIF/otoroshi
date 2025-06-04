@@ -527,23 +527,14 @@ the memory content:
       ]
     },
     {
-      "kind": "foreach",
+      "kind": "map",
       "description": "for each pokemon, just extract its name",
       "values": "${pokemons}",
       "node": {
-        "kind": "assign",
-        "values": [
-          {
-            "name": "pokemon_names",
-            "value": {
-              "$array_append": {
-                "array": "${pokemon_names}",
-                "value": "${foreach_value.name}"
-              }
-            }
-          }
-        ]
-      }
+        "kind": "value",
+        "value": "${foreach_value.name}"
+      },
+      "result": "pokemon_names"
     }
   ],
   "returned": {
