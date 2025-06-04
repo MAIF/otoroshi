@@ -439,7 +439,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
   "kind": "workflow",
   "steps": [
     {
-      "id": "checkifaudio",
+      "description": "check if input is audio or text",
       "kind": "if",
       "predicate": {
         "$is_truthy": {
@@ -447,6 +447,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
         }
       },
       "then": {
+        "description": "if audio, transform to text",
         "kind": "call",
         "function": "extensions.com.cloud-apim.llm-extension.audio_stt",
         "args": {
@@ -460,7 +461,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
         "result": "input_text"
       },
       "else": {
-        "id": "assign-text",
+        "description": "if not audio, just assign in memory",
         "kind": "assign",
         "values": [
           {
@@ -471,7 +472,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
       }
     },
     {
-      "id": "agent-1",
+      "description": "call the first llm with all the context, memory and tool needed like websearch, URL wrawling, etc to get a first raw response",
       "kind": "call",
       "function": "extensions.com.cloud-apim.llm-extension.llm_call",
       "args": {
@@ -479,9 +480,9 @@ An AI agent with persistent memory, tools and that can support audio as input an
         "openai_format": false,
         "memory": "persistent-memory_local",
         "tool_functions": [
-	      "tool-function_site2md",
-	      "tool-function_websearch"
-	    ],
+          "tool-function_site2md",
+          "tool-function_websearch"
+        ],
         "payload": {
           "model": "gpt-4o",
           "max_tokens": 3000,
@@ -500,7 +501,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
       "result": "agent-1"
     },
     {
-      "id": "assign-1",
+      "description": "extract the text response from the LLM API response",
       "kind": "assign",
       "values": [
         {
@@ -515,7 +516,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
       ]
     },
     {
-      "id": "agent-jarvis",
+      "description": "now, ask a second LLM model to rewrite the raw response with an agent personnality",
       "kind": "call",
       "function": "extensions.com.cloud-apim.llm-extension.llm_call",
       "args": {
@@ -539,7 +540,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
       "result": "jarvis"
     },
     {
-      "id": "assign-2",
+      "description": "extract the text response from the LLM API response",
       "kind": "assign",
       "values": [
         {
@@ -554,7 +555,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
       ]
     },
     {
-      "id": "agent-audio",
+      "description": "transform jarvis response to audio",
       "kind": "call",
       "function": "extensions.com.cloud-apim.llm-extension.audio_tts",
       "args": {
@@ -571,9 +572,10 @@ An AI agent with persistent memory, tools and that can support audio as input an
       "result": "audio_base64"
     },
     {
-      "id": "write-audio-file",
+      "description": "write the audio as file, used for local debug only",
       "kind": "call",
       "function": "core.file_write",
+      "enabled": false,
       "args": {
         "value": "${audio_base64.base64}",
         "from_base64": true
@@ -581,6 +583,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
       "result": "audio_file"
     },
     {
+      "description": "create the http respond that will be send back to the consumer, containing the audio file base64 encoded",
       "kind": "assign",
       "values": [
         {
@@ -597,6 +600,21 @@ An AI agent with persistent memory, tools and that can support audio as input an
           }
         }
       ]
+    },
+    {
+      "description": "play the audio file using VLC, used for local debug only",
+      "kind": "call",
+      "function": "core.system_call",
+      "enabled": false,
+      "args": {
+        "command": [
+          "open",
+          "-a",
+          "VLC",
+          "${audio_file.file_path}"
+        ]
+      },
+      "result": "play"
     }
   ],
   "returned": {
@@ -607,7 +625,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
 }
 ```
 
-avec les resources associées:
+with the associated resources to make it work: 
 
 ```json
 {
