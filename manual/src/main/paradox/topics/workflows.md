@@ -365,6 +365,109 @@ Workflows can be used inside routes using:
 }
 ```
 
+run at `2025-06-04T11:48:00.000` with input like:
+
+```json
+{
+  "request": {
+    "query": {
+      "date": [
+        "2025-06-04T11:00:00.000"
+      ]
+    }
+  }
+}
+```
+
+the result:
+
+```json
+{
+  "returned": {
+    "result": true,
+    "error": null
+  },
+  "error": null
+}
+```
+
+the memory content: 
+
+```json
+{
+  "query_date": 1749027600000,
+  "call_res": {
+    "result": true,
+    "error": null
+  },
+  "max_date": 1749037738115,
+  "input": {
+    "request": {
+      "query": {
+        "date": [
+          "2025-06-04T11:00:00.000"
+        ]
+      }
+    }
+  }
+}
+```
+
+run at `2025-06-04T11:48:00.000` with input like:
+
+
+```json
+{
+  "request": {
+    "query": {
+      "date": [
+        "2025-06-04T18:00:00.000"
+      ]
+    }
+  }
+}
+```
+
+the result:
+
+```json
+{
+  "returned": {
+    "result": false,
+    "error": {
+      "status": 400,
+      "message": "Bad query param value"
+    }
+  },
+  "error": null
+}
+```
+
+the memory content: 
+
+```json
+{
+  "query_date": 1749052800000,
+  "call_res": {
+    "result": false,
+    "error": {
+      "status": 400,
+      "message": "Bad query param value"
+    }
+  },
+  "max_date": 1749037844696,
+  "input": {
+    "request": {
+      "query": {
+        "date": [
+          "2025-06-04T18:00:00.000"
+        ]
+      }
+    }
+  }
+}
+```
+
 ### API Consumer & Transformer
 
 ```json
@@ -426,6 +529,58 @@ Workflows can be used inside routes using:
       "name": "pokemon_names"
     }
   }
+}
+```
+
+the result:
+
+```json
+{
+  "returned": [
+    "charizard",
+    "squirtle",
+    "wartortle",
+    "blastoise",
+    "caterpie"
+  ],
+  "error": null
+}
+```
+
+the memory content:
+
+```json
+{
+  "pokemons": [
+    {
+      "name": "charizard",
+      "url": "https://pokeapi.co/api/v2/pokemon/6/"
+    },
+    {
+      "name": "squirtle",
+      "url": "https://pokeapi.co/api/v2/pokemon/7/"
+    },
+    {
+      "name": "wartortle",
+      "url": "https://pokeapi.co/api/v2/pokemon/8/"
+    },
+    {
+      "name": "blastoise",
+      "url": "https://pokeapi.co/api/v2/pokemon/9/"
+    },
+    {
+      "name": "caterpie",
+      "url": "https://pokeapi.co/api/v2/pokemon/10/"
+    }
+  ],
+  "pokemon_names": [
+    "charizard",
+    "squirtle",
+    "wartortle",
+    "blastoise",
+    "caterpie"
+  ],
+  "input": {}
 }
 ```
 
@@ -816,6 +971,81 @@ with the associated resources to make it work:
     }
   },
   "kind": "ai-gateway.extensions.cloud-apim.com/PersistentMemory"
+}
+```
+
+when run with input like:
+
+```json
+{
+  "request": {
+    "body_json": {
+      "text": "hey jarvis, what are the news today ?"
+    }
+  }
+}
+```
+
+the result is:
+
+```json
+{
+  "returned": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body_json": {
+      "text": "Ah, dear Sir, allow me to present you with a concise overview of the most noteworthy events of the day, as of June 4th, 2025.\n\nOn the international stage, Poland has elected a new president — the conservative Karol Nawrocki — following a tightly contested vote, while in South Korea, opposition leader Lee Jae-myung secured victory in the June 3rd presidential elections.\n\nIn the United States, President Donald Trump is making headlines once again, this time with a series of executive orders, including a controversial revision of diversity and inclusion policies. *The Daily Show* has, of course, offered its trademark satirical take on the developments.\n\nAs for the weather in New York, skies are a brilliant blue, with temperatures ranging from a mild 63°F (17°C) this morning to a predicted high of 82°F (28°C) later today.\n\nOn the financial front, the markets are showing modest gains — the SPDR S&P 500 is slightly up, along with the Dow Jones and the QQQ.\n\nAnd finally, for those with a taste for rock, the band Volbeat is set to release its new album *God of Angels Trust* on June 6th, followed by the eagerly awaited Oasis reunion tour, kicking off on July 4th in Cardiff.\n\nShould you wish to delve deeper into any of these topics, I remain entirely at your disposal, of course.",
+      "audio_base64": {
+        "content_type": "audio/mpeg",
+        "base64": "..."
+      }
+    }
+  },
+  "error": null
+}
+```
+
+the memory content is:
+
+```json
+{
+  "call_res": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body_json": {
+      "text": "Ah, dear Sir, allow me to present you with a concise overview of the most noteworthy events of the day, as of June 4th, 2025.\n\nOn the international stage, Poland has elected a new president — the conservative Karol Nawrocki — following a tightly contested vote, while in South Korea, opposition leader Lee Jae-myung secured victory in the June 3rd presidential elections.\n\nIn the United States, President Donald Trump is making headlines once again, this time with a series of executive orders, including a controversial revision of diversity and inclusion policies. *The Daily Show* has, of course, offered its trademark satirical take on the developments.\n\nAs for the weather in New York, skies are a brilliant blue, with temperatures ranging from a mild 63°F (17°C) this morning to a predicted high of 82°F (28°C) later today.\n\nOn the financial front, the markets are showing modest gains — the SPDR S&P 500 is slightly up, along with the Dow Jones and the QQQ.\n\nAnd finally, for those with a taste for rock, the band Volbeat is set to release its new album *God of Angels Trust* on June 6th, followed by the eagerly awaited Oasis reunion tour, kicking off on July 4th in Cardiff.\n\nShould you wish to delve deeper into any of these topics, I remain entirely at your disposal, of course.",
+      "audio_base64": {
+        "content_type": "audio/mpeg",
+        "base_64": "..."
+      }
+    }
+  },
+  "play": {
+    "stdout": "",
+    "stderr": "",
+    "code": 0
+  },
+  "jarvis": "Ah, dear Sir, allow me to present you with a concise overview of the most noteworthy events of the day, as of June 4th, 2025.\n\nOn the international stage, Poland has elected a new president — the conservative Karol Nawrocki — following a tightly contested vote, while in South Korea, opposition leader Lee Jae-myung secured victory in the June 3rd presidential elections.\n\nIn the United States, President Donald Trump is making headlines once again, this time with a series of executive orders, including a controversial revision of diversity and inclusion policies. *The Daily Show* has, of course, offered its trademark satirical take on the developments.\n\nAs for the weather in New York, skies are a brilliant blue, with temperatures ranging from a mild 63°F (17°C) this morning to a predicted high of 82°F (28°C) later today.\n\nOn the financial front, the markets are showing modest gains — the SPDR S&P 500 is slightly up, along with the Dow Jones and the QQQ.\n\nAnd finally, for those with a taste for rock, the band Volbeat is set to release its new album *God of Angels Trust* on June 6th, followed by the eagerly awaited Oasis reunion tour, kicking off on July 4th in Cardiff.\n\nShould you wish to delve deeper into any of these topics, I remain entirely at your disposal, of course.",
+  "agent-1": "Here are the latest news updates for today, June 4, 2025:\n\n### International News\n- **Poland Elects New President**: Karol Nawrocki, a conservative historian, recently won the Polish presidential election in a narrow victory.\n- **South Korea's Presidential Election**: The opposition candidate, Lee Jae-myung, secured a decisive win in South Korea's presidential election on June 3.\n\n### United States News\n- **Political Developments**: President Donald Trump is making headlines with a series of executive orders, including the rollback of government diversity, equity, and inclusion (DEI) and affirmative action rules.\n- **Media and Entertainment**: \"The Daily Show\" continues to cover current events, focusing on President Trump's recent actions.\n\n### Weather Update for New York, NY\n- **Current Conditions**: Mostly sunny, 63°F (17°C).\n- **Hourly Forecast**:\n  - 12:00 PM: 78°F (26°C)\n  - 1:00 PM: 80°F (26°C)\n  - 2:00 PM: 82°F (28°C)\n\n### Financial Markets\n- **SPDR S&P 500 ETF Trust (SPY)**: Trading at $596.09, up $3.37 (0.57%).\n- **SPDR Dow Jones Industrial Average ETF (DIA)**: Trading at $426.01, up $2.22 (0.52%).\n- **Invesco QQQ Trust Series 1 (QQQ)**: Trading at $527.30, up $4.14 (0.79%).\n\n### Upcoming Events\n- **Volbeat's Album Release**: Their ninth studio album, \"God of Angels Trust,\" is set to be released on June 6, 2025.\n- **Oasis Reunion Tour**: The band's reunion tour, \"Oasis Live '25,\" will kick off on July 4 in Cardiff, UK.\n\nFor more details, feel free to ask!",
+  "input_text": "hey jarvis, what are the news today ?",
+  "audio_base64": {
+    "content_type": "audio/mpeg",
+    "base_64": "..."
+  },
+  "audio_file": {
+    "file_path": "/var/folders/b4/_vkrx8n14qq2hx2y4hwln09w0000gn/T/llm-ext-fw-6827936985828753129.tmp"
+  },
+  "input": {
+    "request": {
+      "body_json": {
+        "text": "hey jarvis, what are the news today ?"
+      }
+    }
+  }
 }
 ```
 
