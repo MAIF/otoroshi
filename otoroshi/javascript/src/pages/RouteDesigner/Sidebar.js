@@ -22,13 +22,6 @@ const LINKS = (route) =>
       tooltip: { ...createTooltip(`Show designer tab`) },
     },
     {
-      to: `/routes/${route.id}?tab=flow&showTryIt=true`,
-      icon: 'fa-vials',
-      title: 'Tester',
-      tab: 'showTryIt',
-      tooltip: { ...createTooltip(`Show tester tab`) },
-    },
-    {
       to: `/routes/${route.id}/health`,
       icon: 'fa-heart',
       title: 'Health',
@@ -74,14 +67,9 @@ export default ({ route }) => {
   const currentTab = location.pathname.split('/').slice(-1)[0];
   const isActive = (tab) => {
     const params = new URLSearchParams(window.location.search);
-    const onTryIt = window.location.search.includes('showTryIt') ? 'showTryIt' : '';
     const queryTab = params.get('tab');
 
-    if (onTryIt) {
-      return onTryIt === tab ? 'active' : '';
-    } else {
-      return currentTab === tab || queryTab === tab ? 'active' : '';
-    }
+    return currentTab === tab || queryTab === tab ? 'active' : '';
   };
 
   if (location.pathname.endsWith('/new')) return null;
@@ -117,9 +105,8 @@ export default ({ route }) => {
                     : `${to}?version=${draft.version}`
                 }
                 {...(tooltip || {})}
-                className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                  openedSidebar ? 'ms-3' : ''
-                } m-0 ${isActive(tab)}`}
+                className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                  } m-0 ${isActive(tab)}`}
               >
                 <div style={{ width: '20px' }} className="d-flex justify-content-center">
                   <i className={`fas ${icon}`} />
@@ -140,9 +127,8 @@ export default ({ route }) => {
               <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={item.id}>
                 <Link
                   to={to}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                    openedSidebar ? 'ms-3' : ''
-                  } m-0 ${isActive(tab)}`}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                    } m-0 ${isActive(tab)}`}
                 >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className={`fas ${item.icon}`} />

@@ -1,0 +1,94 @@
+.tryIt {
+
+  flex: 1;
+
+  .border {
+    border: 1px solid var(--bg-color_level3) !important;
+  }
+
+  .border-0 {
+    border: none;
+  }
+
+  .border-r {
+    border-right: 1px solid var(--bg-color_level3);
+  }
+
+  .border-l {
+    border-left: 1px solid var(--bg-color_level3);
+  }
+
+  .border-t {
+    border-top: 1px solid var(--bg-color_level3);
+  }
+
+  .border-b {
+    border-bottom: 1px solid var(--bg-color_level3);
+  }
+
+  .border-r-0 {
+    border-right: 0 !important;
+  }
+
+  .border-l-0 {
+    border-left: 0 !important;
+  }
+
+  .border-t-0 {
+    border-top: 0 !important;
+  }
+
+  .border-b-0 {
+    border-bottom: 0 !important;
+  }
+
+  .report-information {
+    background: var(--bg-color_level2);
+    font-size: 1.1rem;
+    padding: .1rem .75rem;
+    margin: 0 .25rem;
+  }
+
+  .tab-with-number {
+    position: relative;
+  }
+
+  .tab-with-number span {
+    position: absolute;
+    right: -18px;
+    top: -8px;
+    background-color: var(--bg-color_level2);
+    padding: .05rem .3rem;
+    font-size: .75rem;
+    border-radius: 2px;
+  }
+
+  .ace_editor,
+  .ace_scroller,
+  .ace_content,
+  .ace_gutter {
+    background: none !important;
+  }
+
+  .ace_marker-layer,
+  .ace_print-margin {
+    background: none !important;
+  }
+
+  .d-flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .report-step {
+    padding: .35rem 1rem;
+    margin-bottom: .35rem;
+    cursor: pointer;
+  }
+
+  .try-it-body {
+    border: 1px solid var(--bg-color_level3) !important;
+
+  }
+}

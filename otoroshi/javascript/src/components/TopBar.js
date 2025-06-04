@@ -1785,7 +1785,7 @@ export class TopBar extends Component {
                         </span>
                       </div>
                     )}
-                    <div className="mx-2">
+                    {window.location.pathname !== '/bo/dashboard/tester' && <div className="mx-2">
                       <Async
                         ref={(r) => (this.selector = r)}
                         name="service-search"
@@ -1935,7 +1935,7 @@ export class TopBar extends Component {
                           },
                         }}
                       />
-                    </div>
+                    </div>}
                     <div className="dropdown">
                       <Button
                         type="quiet"

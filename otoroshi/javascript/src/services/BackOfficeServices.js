@@ -2033,6 +2033,18 @@ export function graphQLTryIt(url) {
   return fetch(`/bo/api/graphqlproxy?url=${url}`).then((r) => r.json());
 }
 
+export function searchNextServices(query) {
+  return fetch(`/bo/api/search/next/services`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: query.trim() }),
+  })
+}
+
 export function graphqlSchemaToJson(schema) {
   return fetch(`/bo/api/graphql_to_json`, {
     method: 'POST',

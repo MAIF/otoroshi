@@ -10,6 +10,14 @@ export const graph = (env) => {
       description: 'Some tools to help you with otoroshi',
       features: [
         {
+          title: 'Tester',
+          img: 'tester',
+          description: 'A tool for testing and validating Otoroshi components such as services, routes, and plugins.',
+          display: () => true,
+          link: '/tester',
+          icon: () => 'fa-hammer',
+        },
+        {
           title: 'Resources loader',
           img: 'resource-loader',
           description: 'Load one or more resources from text or files in one shot',

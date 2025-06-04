@@ -223,6 +223,41 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
+  def getRoute(apiId: String, routeId: String) = {
+    ApiAction.async { ctx =>
+      ctx.canReadService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_APIS",
+            "User get route of api",
+            ctx.from,
+            ctx.ua,
+            Json.obj("apiId" -> apiId, "routeId" -> routeId)
+          )
+        )
+
+        val notFoundMessage = Json.obj("error" -> "route not found")
+
+        env.datastores.apiDataStore.findById(apiId)
+          .flatMap {
+            case Some(api) => api.routes
+              .find(_.id == routeId)
+              .map(route => api.routeToNgRoute(route).map {
+                case Some(route) => route.json
+                case None => notFoundMessage
+              })
+              .getOrElse(notFoundMessage.vfuture)
+              .map(data => Ok(data))
+            case None => Results.NotFound(notFoundMessage).vfuture
+          }
+      }
+    }
+  }
+
   def publishConsumer(apiId: String, consumerId: String): Action[AnyContent] = {
     ApiAction.async { ctx =>
       ctx.canReadService(apiId) {

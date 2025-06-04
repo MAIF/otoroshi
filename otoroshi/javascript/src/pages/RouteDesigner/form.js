@@ -582,10 +582,6 @@ export class RouteForm extends Component {
     this.loadPlugins();
   }
 
-  onTestingButtonClick(history, value) {
-    history.push(`/routes/${value.id}?tab=flow`, { showTryIt: true });
-  }
-
   loadPlugins = () => {
     return fetch('/bo/api/proxy/api/plugins/all', {
       method: 'GET',
