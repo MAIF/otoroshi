@@ -5,7 +5,7 @@ import debounce from 'lodash/debounce';
 import _ from 'lodash';
 import { searchNextServices } from '../services/BackOfficeServices';
 
-export function EntitiesSearchBar({ value, setValue }) {
+export function EntitiesSearchBar({ value, setValue, entityFromQueryParams }) {
 
     const searchServicesOptions = (query) => {
         return searchNextServices(query)
@@ -25,11 +25,20 @@ export function EntitiesSearchBar({ value, setValue }) {
                 .then(callback)
         }, 300), []);
 
+    // if (!entityFromQueryParams)
+    //     return null
+
     return <Async
         placeholder="Type to search routes and apis"
         loadOptions={debouncedLoadOptions}
         defaultOptions
-        onChange={i => i?.action()}
+        defaultValue={entityFromQueryParams}
+        onChange={i => {
+            if (!i)
+                setValue(undefined)
+            else
+                i?.action()
+        }}
         isClearable
         styles={{
             control: (baseStyles, state) => ({

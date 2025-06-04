@@ -2,8 +2,9 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { NgSelectRenderer } from '../components/nginputs';
 import { EntitiesSearchBar } from '../components/EntitiesSearchBar';
 import { useQuery, QueryClient, QueryClientProvider } from 'react-query';
-import { nextClient } from '../services/BackOfficeServices';
+import { nextClient, searchNextServices } from '../services/BackOfficeServices';
 import { Row } from '../components/Row';
+import { useLocation, useParams } from 'react-router-dom';
 
 const TryIt = React.lazy(() => import('./RouteDesigner/TryIt'));
 
@@ -17,11 +18,42 @@ export const queryClient = new QueryClient({
 });
 
 function TesterPage() {
-  const [entityId, setEntityId] = useState()
+  const location = useLocation()
+  const queryParams = new URLSearchParams(location.search);
+
+  const queryParamEntity = queryParams.get('entity')
+
+  const [loading, setLoading] = useState(true)
+  const [entityFromQueryParams, setEntityFromQueryParams] = useState()
+
+  const [entityId, setEntityId] = useState(queryParamEntity)
   const [entity, setEntity] = useState()
   const [route, setRoute] = useState()
 
   const isAPI = entity && entityId && entityId.startsWith('api')
+
+  useEffect(() => {
+    if (queryParamEntity) {
+      searchNextServices(queryParamEntity)
+        .then((r) => r.json())
+        .then((results) => {
+          if (results?.length > 0) {
+            const ressource = {
+              type: results[0].type,
+              label: results[0].name,
+              value: results[0].serviceId,
+              env: results[0].env,
+              action: () => setValue(results[0].serviceId)
+            }
+
+            setEntityFromQueryParams(ressource)
+            setLoading(false)
+          }
+        })
+    } else {
+      setLoading(false)
+    }
+  }, [])
 
   useQuery(['getEntity', entityId],
     () => {
@@ -40,13 +72,28 @@ function TesterPage() {
     }
   )
 
-  return <>
+  const addEntityToURL = newEntityId => {
+    queryParams.delete('entity');
+
+    if (newEntityId)
+      queryParams.append('entity', newEntityId)
+
+    window.history.replaceState(null, null, '?' + queryParams.toString());
+  }
+
+  const handleSelectEntity = newEntityId => {
+    addEntityToURL(newEntityId)
+    setEntityId(newEntityId)
+    setEntity(undefined)
+    setRoute(undefined)
+  }
+
+  return <div style={{ maxWidth: 1440 }}>
     <Row title="Entity">
-      <EntitiesSearchBar value={entityId} setValue={newEntityId => {
-        setEntityId(newEntityId)
-        setEntity(undefined)
-        setRoute(undefined)
-      }} />
+      {!loading && <EntitiesSearchBar
+        entityFromQueryParams={entityFromQueryParams}
+        value={entityId}
+        setValue={handleSelectEntity} />}
     </Row>
     {isAPI && <Row title="Route">
       <NgSelectRenderer
@@ -68,9 +115,9 @@ function TesterPage() {
     </Row>}
 
     {route && <Suspense fallback={null}>
-      <TryIt route={route} hideTitle />
+      <TryIt route={route} />
     </Suspense>}
-  </>
+  </div>
 }
 
 export default ({ setTitle }) => {

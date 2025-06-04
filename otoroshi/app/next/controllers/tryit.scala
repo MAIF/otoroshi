@@ -173,6 +173,8 @@ class TryItController(
             case None          => wsRequest.execute()
             case Some(content) => wsRequest.withBody(Source(content.grouped(32 * 1024).toList)).execute()
           }
+
+          val curl = s"curl -X $method $url ${headers.map { case (key, value) => s"""-H "$key: $value"""" }.mkString(" ")}"
           respF.flatMap { resp =>
             val report: JsValue = env.proxyState.report(requestId).map(_.json).getOrElse(JsNull)
             val status          = resp.status
@@ -184,7 +186,8 @@ class TryItController(
                   "headers"      -> headers,
                   "body_base_64" -> respBodyRaw.encodeBase64.utf8String,
                   "cookies"      -> JsArray(resp.cookies.map(c => JsonHelpers.wsCookieToJson(c))),
-                  "report"       -> report
+                  "report"       -> report,
+                  "curl"         -> curl
                 )
               )
             }

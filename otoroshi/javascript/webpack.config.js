@@ -50,8 +50,6 @@ module.exports = (env, argv) => {
             // path.resolve(__dirname, 'node_modules', 'yaml'),
             path.resolve(__dirname, 'node_modules/set-value'),
             path.resolve(__dirname, 'node_modules/get-value'),
-            path.resolve(__dirname, 'node_modules/graphiql'),
-            path.resolve(__dirname, 'node_modules/graphql'),
           ],
           exclude: /\.(d\.ts|d\.ts\.map|spec\.tsx)$/,
 

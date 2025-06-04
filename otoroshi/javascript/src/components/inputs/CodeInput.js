@@ -17,7 +17,7 @@ import 'ace-builds/src-noconflict/mode-prolog';
 import 'ace-builds/src-noconflict/ext-language_tools';
 import 'ace-builds/src-noconflict/ext-searchbox';
 
-import 'ace-builds/src-noconflict/theme-dracula';
+import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/theme-xcode';
 import isEqual from 'lodash/isEqual';
 
@@ -91,7 +91,7 @@ export default class CodeInput extends Component {
   state = {
     value: null,
     mounted: true,
-    theme: document.body.classList.contains('white-mode') ? 'xcode' : 'dracula',
+    theme: document.body.classList.contains('white-mode') ? 'xcode' : 'monokai',
   };
 
   componentDidMount() {
@@ -183,6 +183,7 @@ export default class CodeInput extends Component {
         value={code}
         defaultValue={code || ''}
         name="scriptParam"
+        className={this.props.className || ''}
         editorProps={{ $blockScrolling: true }}
         height={this.props.height || '300px'}
         width="100%"
