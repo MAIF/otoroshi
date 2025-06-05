@@ -1,5 +1,0 @@
-
-dependencies {
-  compile group: 'fr.maif', name: 'otoroshi_2.12', version: '17.3.1'
-  compile group: 'fr.maif', name: 'otoroshi_2.12', version: '17.3.1', classifier 'assets'
-}
