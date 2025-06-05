@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
 import CodeInput from '../../components/inputs/CodeInput';
-import { Help } from '../../components/inputs';
+import WorkflowsDesigner from './WorkflowsDesigner';
 
 const extensionId = 'otoroshi.extensions.Workflows';
 
@@ -242,10 +242,14 @@ export function setupWorkflowsExtension(registerExtension) {
             updateItem: (content) => this.client.update(content),
             createItem: (content) => this.client.create(content),
             deleteItem: this.client.delete,
+            // navigateTo: (item) => {
+            //   window.location = `/bo/dashboard/extensions/workflows/workflows/edit/${item.id}`;
+            // },
+            // itemUrl: (item) => `/bo/dashboard/extensions/workflows/workflows/edit/${item.id}`,
             navigateTo: (item) => {
-              window.location = `/bo/dashboard/extensions/workflows/workflows/edit/${item.id}`;
+              window.location = `/bo/dashboard/extensions/workflows/workflows/${item.id}/designer`;
             },
-            itemUrl: (item) => `/bo/dashboard/extensions/workflows/workflows/edit/${item.id}`,
+            itemUrl: (item) => `/bo/dashboard/extensions/workflows/workflows/e${item.id}/designer`,
             showActions: true,
             showLink: true,
             rowNavigation: true,
@@ -301,6 +305,12 @@ export function setupWorkflowsExtension(registerExtension) {
       ],
       routes: [
         {
+          path: '/extensions/workflows/workflows/:workflowId/designer',
+          component: (props) => {
+            return <WorkflowsDesigner {...props} />;
+          },
+        },
+        {
           path: '/extensions/workflows/workflows/:taction/:titem',
           component: (props) => {
             return <WorkflowsPage {...props} />;
@@ -317,7 +327,7 @@ export function setupWorkflowsExtension(registerExtension) {
           component: (props) => {
             return <WorkflowsPage {...props} />;
           },
-        },
+        }
       ],
     };
   });
