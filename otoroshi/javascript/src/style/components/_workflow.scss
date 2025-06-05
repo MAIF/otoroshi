@@ -1,6 +1,12 @@
 .workflow {
+  position: relative;
+
+  p {
+    margin: 0;
+  }
+
   .node {
-    background: rgb(45, 46, 46);
+    background: var(--bg-color_level3);
     border: 2px solid hsl(220, 18%, 80%);
     border-radius: .75rem;
     min-width: 120px;
@@ -17,5 +23,49 @@
     justify-content: center;
     gap: .5rem;
     z-index: 1;
+  }
+
+  .workflow-navbar {
+    width: 100%;
+    background-color: var(--bg-color_level2);
+    border: 1px solid var(--bg-color_level3);
+    border-left: 0;
+    border-right: 0;
+    z-index: 1;
+    padding: 0 1.5rem;
+    height: 56px;
+  }
+
+  .d-flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .add-tag {
+    border: none;
+    background: none;
+    color: var(--text);
+    opacity: .8;
+    gap: .25rem;
+    display: flex;
+    align-items: center;
+    font-size: .75rem;
+  }
+
+  .nodes-explorer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    top: 56px;
+    width: 0;
+    height: 100%;
+    z-index: 1;
+    background: var(--bg-color_level2);
+    transition: width;
+  }
+
+  .nodes-explorer--opened {
+    width: 400px;
   }
 }

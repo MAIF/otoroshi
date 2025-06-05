@@ -1,10 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from "react-query"
 import { useParams } from "react-router-dom";
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Background } from './Background'
 import { Node } from './Node'
 import { DesignerActions } from './DesignerActions'
+import { Navbar } from './Navbar'
+import { NodesExplorer } from './NodesExplorer'
+import Loader from '../../components/Loader';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -51,20 +54,24 @@ function WorkflowsDesigner() {
         ['getWorkflow', params.workflowId],
         () => client.findById(params.workflowId));
 
-    console.log(workflow)
 
-    return <QueryClientProvider client={queryClient}>
+    const [selectedNode, setSelectedNode] = useState()
+
+    return <Loader loading={!workflow.data}>
         <div className='workflow'>
             <DesignerActions />
+            <Navbar workflow={workflow.data} save={() => Promise.resolve('saved')} />
+
+            <NodesExplorer isOpen={selectedNode} />
             <Background>
-                {/* <Navbar />
+                {/* 
             <NewTaskButton /> */}
 
-                <Node>
+                <Node data={{}} onClick={setSelectedNode}>
                     <p>Coucou</p>
                 </Node>
 
             </Background>
         </div>
-    </QueryClientProvider>
+    </Loader>
 }
