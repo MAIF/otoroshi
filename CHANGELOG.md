@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.3.2] - 2025-06-05
+
+
+https://github.com/MAIF/otoroshi/milestone/118?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.3.1...v17.3.2
+https://github.com/MAIF/otoroshi/releases/tag/v17.3.2
+
+
+
+
+### Fixed 
+
+- Bad JMS data exporter parsing (#2197 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [17.3.1] - 2025-06-04
 
 
