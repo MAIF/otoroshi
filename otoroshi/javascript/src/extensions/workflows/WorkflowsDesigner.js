@@ -7,13 +7,13 @@ import { DesignerActions } from './DesignerActions'
 import { Navbar } from './Navbar'
 import { NodesExplorer } from './NodesExplorer'
 import Loader from '../../components/Loader';
-import { Nodes } from './Nodes';
 
 import {
     applyNodeChanges,
     applyEdgeChanges,
     addEdge,
 } from '@xyflow/react';
+import { NewTask } from './NewTask';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -64,22 +64,23 @@ function WorkflowsDesigner() {
 
     const [isOnCreation, setOnCreationMode] = useState(false)
 
+
     const initialNodes = [
         {
             id: '1', // required
             position: { x: 0, y: 0 }, // required
             type: 'simple',
-            data: { label: <i className='fas fa-arrow-pointer' /> }, // required
+            data: { label: <i className='fas fa-arrow-pointer' />, onDoubleClick: setSelectedNode },
         },
         {
             id: '2',
-            data: { label: 'World' },
+            data: { label: 'World', onDoubleClick: setSelectedNode },
             type: 'simple',
             position: { x: 250, y: 0 },
         },
         {
             id: '3',
-            data: { label: 'alsut' },
+            data: { label: 'alsut', onDoubleClick: setSelectedNode },
             type: 'simple',
             position: { x: 550, y: 0 },
         },
@@ -112,16 +113,24 @@ function WorkflowsDesigner() {
             <DesignerActions />
             <Navbar workflow={workflow.data} save={() => Promise.resolve('saved')} />
 
-            <NodesExplorer isOpen={isOnCreation} />
+            <NewTask onClick={() => setOnCreationMode(true)}/>
+
+            <NodesExplorer
+                isOpen={isOnCreation}
+                isEdition={selectedNode}
+                node={selectedNode} />
             {/* <NewTaskButton /> */}
             <Flow
                 onConnect={onConnect}
                 onEdgesChange={onEdgesChange}
                 onNodesChange={onNodesChange}
-                onClick={(() => setOnCreationMode(false))}
-                nodes={nodes}
-                edges={edges}>
-            </Flow>
-        </div>
-    </Loader>
+                onClick={() => {
+                    setOnCreationMode(false)
+                    setSelectedNode(false)
+                }}
+            nodes={nodes}
+            edges={edges}>
+        </Flow>
+    </div>
+    </Loader >
 }

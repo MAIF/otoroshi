@@ -81,12 +81,16 @@
     width: 0;
     height: 100%;
     z-index: 1;
-    background: var(--bg-color_level2);
+    background: var(--bg-color_level3);
     transition: width 0.15s;
   }
 
   .nodes-explorer--opened {
     width: 400px;
+  }
+
+  .nodes-explorer--large-opened {
+    width: 600px;
   }
 
   .node--selected {
@@ -111,22 +115,22 @@
   }
 
   .react-flow__handle.target {
-   background: none; 
+    background: none;
   }
 
   .target:before {
     content: "";
     background: var(--color_level1);
-    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="4" stroke="%23e5e5e5"><path fill="%23e5e5e5" stroke-linecap="round" stroke-linejoin="round" d="M14 5 14 19 21 12m0 0L14 5M14 5 14 19" /></svg>');
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 30 25" stroke-width="4" stroke="%23e5e5e5"><path fill="%23e5e5e5" stroke-linecap="round" stroke-linejoin="round" d="M14 5 14 19m6-7L14 5M14 5 14 19 20 12M25 6 21 6 21 18 25 18 25 6" /></svg>');
     mask-size: contain;
     mask-repeat: no-repeat;
     mask-position: center;
     margin-left: -1rem;
-    margin-top: -.25rem;
-    width: 1.5rem;
-    height: 1.5rem;
+    margin-top: -.5rem;
+    width: 2rem;
+    height: 2rem;
     display: inline-block;
-    
+
   }
 
   .react-flow__edge-path {
@@ -174,5 +178,12 @@
   .node-one-output-add:hover {
     border-color: var(--color-primary);
     color: var(--color-primary);
+  }
+  
+  .new-task {
+    position: absolute;
+    top: calc(56px + 1rem);
+    right: 1rem;
+    z-index: 1;
   }
 }

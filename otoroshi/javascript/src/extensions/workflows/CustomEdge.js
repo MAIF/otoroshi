@@ -88,7 +88,7 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY }) {
                     <div className='node-one-output-add'
                         onClick={e => {
                             e.stopPropagation()
-
+                            
                         }}>
                         <i className='fas fa-plus' />
                     </div>
