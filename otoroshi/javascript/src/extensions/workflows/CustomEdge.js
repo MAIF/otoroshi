@@ -17,13 +17,8 @@ const listeners = id => {
 
     const actions = [...(labelEl.getElementsByClassName('node-one-output-add') || [])]
 
-    const actionOnEnter = () => {
-        onEnter()
-    }
-
-    const actionOnLeave = () => {
-        onLeave()
-    }
+    const actionOnEnter = () => onEnter()
+    const actionOnLeave = () => onLeave()
 
     actions.forEach(action => {
         action.addEventListener('mouseenter', actionOnEnter)

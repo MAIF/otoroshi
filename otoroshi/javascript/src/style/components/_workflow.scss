@@ -15,6 +15,25 @@
     position: relative;
   }
 
+  .node:hover {
+    border-color: var(--color-primary);
+  }
+
+  .node:hover .node-trash {
+    opacity: 1;
+  }
+
+  .node-trash {
+    opacity: 0;
+    transition: opacity 0.15s;
+    position: absolute;
+    top: -1.5rem;
+    margin: auto;
+    left: 0;
+    right: 0;
+    padding-bottom: 1rem;
+  }
+
   .designer-actions {
     position: fixed;
     bottom: 1rem;
@@ -75,14 +94,8 @@
   }
 
   .node-one-output {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    margin: auto;
-    left: calc(100% - .5rem);
-
-    display: flex;
-    align-items: center;
+    font-size: 40px;
+    line-height: 40px;
   }
 
   .react-flow__handle,
@@ -93,12 +106,36 @@
     height: 1rem;
     border-radius: 50%;
     background: var(--color_level1);
+    border: none;
     z-index: 10;
+  }
+
+  .react-flow__handle.target {
+   background: none; 
+  }
+
+  .target:before {
+    content: "";
+    background: var(--color_level1);
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="4" stroke="%23e5e5e5"><path fill="%23e5e5e5" stroke-linecap="round" stroke-linejoin="round" d="M14 5 14 19 21 12m0 0L14 5M14 5 14 19" /></svg>');
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    margin-left: -1rem;
+    margin-top: -.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: inline-block;
+    
   }
 
   .react-flow__edge-path {
     transition: stroke-width 0.2s ease, stroke 0.2s ease;
     stroke-width: 2px;
+  }
+
+  .react-flow__edge path {
+    stroke: var(--color_level1);
   }
 
   .react-flow__edge-hover {
