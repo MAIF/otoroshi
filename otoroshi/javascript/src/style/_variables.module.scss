@@ -42,7 +42,8 @@ $color-white-4-opa80: #e1dfdf80;
   // globals
   --color-primary: #{$primaryColor};
   --color-primary-lighter: #{$primaryColor-lighter};
-  --color-green: #5cb85c; 
+  // --color-green: #5cb85c; 
+  --color-green: rgb(82, 161, 107); 
   --color-blue: #{$colorBleue};
   --color-blue-lighter: #{$colorBleue-lighter};
   --color-red: #d5443f;

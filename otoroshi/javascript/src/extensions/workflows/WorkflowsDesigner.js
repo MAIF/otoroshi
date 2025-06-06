@@ -1,13 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from "react-query"
 import { useParams } from "react-router-dom";
 import * as BackOfficeServices from '../../services/BackOfficeServices';
-import { Background } from './Background'
-import { Node } from './Node'
+import { Flow } from './Flow'
 import { DesignerActions } from './DesignerActions'
 import { Navbar } from './Navbar'
 import { NodesExplorer } from './NodesExplorer'
 import Loader from '../../components/Loader';
+import { Nodes } from './Nodes';
+
+import {
+    applyNodeChanges,
+    applyEdgeChanges,
+    addEdge,
+} from '@xyflow/react';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -54,24 +60,68 @@ function WorkflowsDesigner() {
         ['getWorkflow', params.workflowId],
         () => client.findById(params.workflowId));
 
-
     const [selectedNode, setSelectedNode] = useState()
+
+    const [isOnCreation, setOnCreationMode] = useState(false)
+
+    const initialNodes = [
+        {
+            id: '1', // required
+            position: { x: 0, y: 0 }, // required
+            type: 'simple',
+            data: { label: <i className='fas fa-arrow-pointer' /> }, // required
+        },
+        {
+            id: '2',
+            data: { label: 'World' },
+            type: 'simple',
+            position: { x: 250, y: 0 },
+        },
+        {
+            id: '3',
+            data: { label: 'alsut' },
+            type: 'simple',
+            position: { x: 550, y: 0 },
+        },
+    ]
+
+    const initialEdges = [
+        { id: '1-2', source: '1', target: '2', type: 'customEdge' },
+        { id: '2-3', source: '2', target: '3', type: 'customEdge' }
+    ];
+
+    const [nodes, setNodes] = useState(initialNodes);
+    const [edges, setEdges] = useState(initialEdges);
+
+    const onNodesChange = useCallback(
+        (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+        [],
+    );
+    const onEdgesChange = useCallback(
+        (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+        [],
+    );
+
+    const onConnect = useCallback(
+        (params) => setEdges((eds) => addEdge(params, eds)),
+        [],
+    );
 
     return <Loader loading={!workflow.data}>
         <div className='workflow'>
             <DesignerActions />
             <Navbar workflow={workflow.data} save={() => Promise.resolve('saved')} />
 
-            <NodesExplorer isOpen={selectedNode} />
-            <Background>
-                {/* 
-            <NewTaskButton /> */}
-
-                <Node data={{}} onClick={setSelectedNode}>
-                    <p>Coucou</p>
-                </Node>
-
-            </Background>
+            <NodesExplorer isOpen={isOnCreation} />
+            {/* <NewTaskButton /> */}
+            <Flow
+                onConnect={onConnect}
+                onEdgesChange={onEdgesChange}
+                onNodesChange={onNodesChange}
+                onClick={(() => setOnCreationMode(false))}
+                nodes={nodes}
+                edges={edges}>
+            </Flow>
         </div>
     </Loader>
 }

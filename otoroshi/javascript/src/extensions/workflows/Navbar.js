@@ -3,8 +3,6 @@ import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton'
 
 export function Navbar({ workflow, save }) {
 
-    console.log(workflow)
-
     return <div className='workflow-navbar d-flex align-items-center justify-content-between'>
         <div className='d-flex-center gap-3'>
             <p>{workflow.name}</p>

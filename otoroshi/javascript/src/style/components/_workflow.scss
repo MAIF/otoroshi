@@ -11,7 +11,8 @@
     border-radius: .75rem;
     min-width: 120px;
     min-height: 120px;
-    z-index: 1;
+    // z-index: 1;
+    position: relative;
   }
 
   .designer-actions {
@@ -22,7 +23,7 @@
     display: flex;
     justify-content: center;
     gap: .5rem;
-    z-index: 1;
+    z-index: 2;
   }
 
   .workflow-navbar {
@@ -62,10 +63,79 @@
     height: 100%;
     z-index: 1;
     background: var(--bg-color_level2);
-    transition: width;
+    transition: width 0.15s;
   }
 
   .nodes-explorer--opened {
     width: 400px;
+  }
+
+  .node--selected {
+    border-color: rgb(82, 162, 108);
+  }
+
+  .node-one-output {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    margin: auto;
+    left: calc(100% - .5rem);
+
+    display: flex;
+    align-items: center;
+  }
+
+  .react-flow__handle,
+  .node-one-output-dot {
+    min-width: 1rem;
+    min-height: 1rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: var(--color_level1);
+    z-index: 10;
+  }
+
+  .react-flow__edge-path {
+    transition: stroke-width 0.2s ease, stroke 0.2s ease;
+    stroke-width: 2px;
+  }
+
+  .react-flow__edge-hover {
+    stroke: var(--color-primary);
+  }
+
+  .edge-label-renderer {
+    opacity: 0;
+    transition: opacity .15s;
+  }
+
+  .edge-content-hovered {
+    opacity: 1;
+  }
+
+  .node-one-output-bar {
+    height: .1rem;
+    background: var(--color_level1);
+    width: 3rem;
+  }
+
+  .node-one-output-add {
+    border: 2px solid var(--color_level1);
+    background: var(--bg-color_level2);
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: .25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .node-one-output-add:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
   }
 }
