@@ -1,5 +1,7 @@
+import React from 'react'
+
 export const FilterNode = {
-    img: "",
+    label: <i className="fas fa-filter" />,
     name: 'Filter',
     description: 'Remove items matching a condition'
     //     {

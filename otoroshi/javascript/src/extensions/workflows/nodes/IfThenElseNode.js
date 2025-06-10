@@ -1,5 +1,7 @@
+import React from 'react'
+
 export const IfThenElseNode = {
-    img: "",
+    label: <i className='fas fa-question' />,
     name: 'If',
     description: 'Route items to different branches (true/false)'
     //     {

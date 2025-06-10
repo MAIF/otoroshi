@@ -1,5 +1,7 @@
+import React from 'react'
+
 export const ValueNode = {
-    img: "",
+    label: <i className='fas fa-cube' />,
     name: 'Value',
     description: 'Apply operators on value'
     //     {

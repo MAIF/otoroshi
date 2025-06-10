@@ -1,5 +1,7 @@
+import React from 'react'
+
 export const ErrorNode = {
-    img: "",
+    label: <i className="fas fa-exclamation-triangle" />,
     name: 'Stop and Error',
     description: 'Throw an error in the workflow'
     //     {

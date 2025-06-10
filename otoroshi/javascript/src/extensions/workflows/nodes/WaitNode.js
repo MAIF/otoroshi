@@ -1,5 +1,7 @@
+import React from 'react'
+
 export const WaitNode = {
-    img: "",
+    label: <i className='fas fa-clock' />,
     name: 'Wait',
     description: 'Wait before continue with execution'
     //     {

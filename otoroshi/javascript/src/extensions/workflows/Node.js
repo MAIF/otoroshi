@@ -3,12 +3,17 @@ import React from 'react'
 
 import { Handle, Position } from '@xyflow/react';
 
-export function Node({ data }) {
+export function Node(props) {
+
+    const { data } = props
+
     const isSelected = false
+
+    const isTargetConnected = data.edges?.find(f => f.target === props.id)
 
     return (
         <>
-            <Handle type="target" position={Position.Left} />
+            <Handle type="source" position={Position.Left} />
 
             <button
                 className={`d-flex-center m-0 node ${isSelected ? 'node--selected' : ''}`}
@@ -16,20 +21,23 @@ export function Node({ data }) {
                     data.onDoubleClick(data)
                 }}>
                 <div className='node-one-output d-flex-center'>
-                    {data.label}
-                    {/* <div className='node-one-output-dot'></div>
-                    <div className='node-one-output-bar'></div>
-                    <div className='node-one-output-add' onClick={e => {
-                        e.stopPropagation()
-                        openNodesExplorer()
-                    }}>
-                        <i className='fas fa-plus' />
-                    </div> */}
+                    {data.label || data.item?.label}
                 </div>
                 <i className='fas fa-trash node-trash' />
             </button>
-            <Handle type="source" position={Position.Right} id="a" />
-            {/* <Handle type="source" position={Position.Bottom} id="b" style={handleStyle} /> */}
+
+            <Handle type="target" position={Position.Right} id="a" />
+
+            {!isTargetConnected &&
+                <div className='node-one-output-dot'>
+                    <div className='node-one-output-bar'></div>
+                    <div className='node-one-output-add' onClick={e => {
+                        e.stopPropagation()
+                        data.openNodesExplorer(props)
+                    }}>
+                        <i className='fas fa-plus' />
+                    </div>
+                </div>}
         </>
     );
 }

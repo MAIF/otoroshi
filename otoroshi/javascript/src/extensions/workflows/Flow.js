@@ -25,7 +25,7 @@ export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onCo
             }}
         >
             <Background />
-            <Controls />
+            {/* <Controls /> */}
         </ReactFlow>
     </div>
 }

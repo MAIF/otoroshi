@@ -83,6 +83,11 @@
     z-index: 1;
     background: var(--bg-color_level3);
     transition: width 0.15s;
+    padding-bottom: 4rem;
+
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
   }
 
   .nodes-explorer--opened {
@@ -102,35 +107,45 @@
     line-height: 40px;
   }
 
-  .react-flow__handle,
+  .react-flow__handle.target,
   .node-one-output-dot {
     min-width: 1rem;
     min-height: 1rem;
     width: 1rem;
     height: 1rem;
     border-radius: 50%;
-    background: var(--color_level1);
     border: none;
     z-index: 10;
   }
 
-  .react-flow__handle.target {
-    background: none;
+  .node-one-output-dot {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translate(0%, -50%);
+    margin-right: -1.5rem;
+    display: flex;
+    align-items: center;
   }
 
-  .target:before {
+
+  .react-flow__handle.target {
+    background: var(--color_level1);
+  }
+
+  .source::before {
     content: "";
     background: var(--color_level1);
     mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 30 25" stroke-width="4" stroke="%23e5e5e5"><path fill="%23e5e5e5" stroke-linecap="round" stroke-linejoin="round" d="M14 5 14 19m6-7L14 5M14 5 14 19 20 12M25 6 21 6 21 18 25 18 25 6" /></svg>');
     mask-size: contain;
     mask-repeat: no-repeat;
     mask-position: center;
-    margin-left: -1rem;
-    margin-top: -.5rem;
-    width: 2rem;
-    height: 2rem;
+    margin-left: -1.5rem;
+    margin-top: -16px;
+    width: 36px;
+    height: 36px;
     display: inline-block;
-
+    z-index: 10000;
   }
 
   .react-flow__edge-path {
@@ -156,9 +171,9 @@
   }
 
   .node-one-output-bar {
-    height: .1rem;
-    background: var(--color_level1);
-    width: 3rem;
+    min-height: .1rem;
+    border-bottom: 3px dashed var(--text);
+    min-width: 5rem;
   }
 
   .node-one-output-add {
@@ -179,11 +194,31 @@
     border-color: var(--color-primary);
     color: var(--color-primary);
   }
-  
+
   .new-task {
     position: absolute;
     top: calc(56px + 1rem);
     right: 1rem;
     z-index: 1;
+  }
+
+  .whats-next-title {
+    background: var(--bg-color_level2);
+    font-size: 1.25rem;
+  }
+
+  .whats-new-category {
+    cursor: pointer;
+
+    border-left: 2px solid transparent;
+  }
+
+  .whats-new-category:hover {
+    background: var(--bg-color_level2);
+    border-color: var(--color-primary);
+  }
+
+  .whats-next-category-informations p:first-child {
+    font-weight: bold;
   }
 }

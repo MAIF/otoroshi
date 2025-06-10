@@ -1,5 +1,7 @@
+import React from 'react'
+
 export const ForEachNode = {
-    img: "",
+    label: <i className="fas fa-sync" />,
     name: 'For Each',
     description: 'Apply node for each item'
     //     {

@@ -1,39 +1,35 @@
-import React from "react"
-import { WorkflowNode } from "./nodes/WorkflowNode"
-import { CallNode } from "./nodes/CallNode"
-import { AssignNode } from "./nodes/AssignNode"
-import { ParallelFlowsNode } from "./nodes/ParallelFlowsNode"
-import { SwitchNode } from "./nodes/SwitchNode"
-import { IfThenElseNode } from "./nodes/IfThenElseNode"
-import { ForEachNode } from "./nodes/ForEachNode"
-import { MapNode } from "./nodes/MapNode"
-import { FilterNode } from "./nodes/FilterNode"
-import { FlatMapNode } from "./nodes/FlatMapNode"
-import { WaitNode } from "./nodes/WaitNode"
-import { ErrorNode } from "./nodes/ErrorNode"
-import { ValueNode } from "./nodes/ValueNode"
+import React, { useState } from "react"
 
-const NODES = {
-    "workflow": WorkflowNode,
-    "call": CallNode,
-    "assign": AssignNode,
-    "parallel": ParallelFlowsNode,
-    "switch": SwitchNode,
-    "if": IfThenElseNode,
-    "foreach": ForEachNode,
-    "map": MapNode,
-    "filter": FilterNode,
-    "flatmap": FlatMapNode,
-    "wait": WaitNode,
-    "error": ErrorNode,
-    "value": ValueNode,
+import { NgStringRenderer } from "../../components/nginputs"
+import { Items } from "./WhatsNextItemsSelector"
+
+function Search({ query, onChange }) {
+    return <div className="m-3">
+        <NgStringRenderer
+            value={query}
+            schema={{
+                props: {
+                    placeholder: "Search nodes..."
+                }
+            }}
+            label={' '}
+            ngOptions={{ spread: true }}
+            onChange={onChange} />
+    </div>
 }
 
-export function WhatsNext() {
+export function WhatsNext({ handleSelectNode, isOpen }) {
+
+    const [query, setQuery] = useState("")
+    const [title, setTitle] = useState("What happens next ?")
 
     return <>
-        What happens next ?
+        <div className="p-3 whats-next-title">
+            {title}
+        </div>
 
+        <Search query={query} onChange={setQuery} />
 
+        <Items setTitle={setTitle} handleSelectNode={handleSelectNode} isOpen={isOpen} />
     </>
 }

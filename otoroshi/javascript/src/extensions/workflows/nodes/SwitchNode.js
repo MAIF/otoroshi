@@ -1,5 +1,7 @@
+import React from 'react'
+
 export const SwitchNode = {
-    img: "",
+    label: <i className='fas fa-exchange-alt' />,
     name: 'Switch',
     description: 'Route items depending on defined expressions or rules'
     //     {

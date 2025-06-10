@@ -3,6 +3,9 @@ import React, { useEffect } from 'react'
 import {
     BaseEdge,
     EdgeLabelRenderer,
+    getBezierPath,
+    getSimpleBezierPath,
+    getSmoothStepPath,
     getStraightPath,
     useReactFlow,
 } from '@xyflow/react';
@@ -72,6 +75,7 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY }) {
 
     useEffect(() => listeners(id), [id]);
 
+
     return (
         <>
             <BaseEdge id={id} path={edgePath} />
@@ -88,7 +92,7 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY }) {
                     <div className='node-one-output-add'
                         onClick={e => {
                             e.stopPropagation()
-                            
+
                         }}>
                         <i className='fas fa-plus' />
                     </div>

@@ -1,6 +1,8 @@
+import React from 'react'
+
 export const MapNode = {
-    img: "",
-    name: 'If',
+    label: <i className='fas fa-map' />,
+    name: 'Map',
     description: 'Route items to different branches (true/false)'
     //     {
     //   "kind": "foreach",
