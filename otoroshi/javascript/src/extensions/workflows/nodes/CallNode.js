@@ -1,14 +1,27 @@
 import React from 'react'
+import { ArgsInput } from '../ArgsInput'
+import { CORE_FUNCTIONS } from '../models/Functions'
 
-export const CallNode = (_workflow) => ({
-    label: <i className='fas fa-play' />,
-    name: 'Call',
-    description: 'Execute a function with args',
-    workflow: _workflow,
-    //     {
-    //   "kind": "call",
-    //   "function": "<function_name>",
-    //   "args": { ... },
-    //   "result": "<memory_var_name>"
-    // }
-})
+export function CallNode(_workflow) {
+    return {
+        label: <i className='fas fa-play' />,
+        name: 'Call',
+        description: 'Execute a function with args',
+        workflow: _workflow,
+        flow: ['function', 'args'],
+        schema: {
+            function: {
+                type: 'select',
+                props: {
+                    creatable: true,
+                    options: Object.keys(CORE_FUNCTIONS),
+                },
+                label: 'Function',
+                placeholder: 'Select a function to execute'
+            },
+            args: {
+                renderer: ArgsInput
+            }
+        }
+    }
+}

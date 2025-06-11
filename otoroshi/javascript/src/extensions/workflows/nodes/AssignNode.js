@@ -5,6 +5,13 @@ export const AssignNode = _workflow => ({
     name: 'Assign',
     description: 'Assign value to an another variable',
     workflow: _workflow,
+    flow: ['values'],
+    schema: {
+        values: {
+            type: 'object',
+            label: 'Values'
+        }
+    }
     // {
     //   "kind": "assign",
     //   "values": [

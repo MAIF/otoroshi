@@ -39,10 +39,12 @@
     bottom: 1rem;
     right: 0;
     left: 0;
+    margin: auto;
     display: flex;
     justify-content: center;
     gap: .5rem;
     z-index: 2;
+    width: fit-content;
   }
 
   .workflow-navbar {
@@ -105,6 +107,22 @@
   .node--first {
     border-top-left-radius: 35%;
     border-bottom-left-radius: 35%;
+  }
+
+  .node--first::before {
+    content: "";
+    background: var(--color-primary);
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23f9b000" viewBox="0 0 24 24"><path fill-rule="evenodd" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>');
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    position: absolute;
+    left: 0;
+    transform: translate(-100%, 0);
+    width: 36px;
+    height: 36px;
+    display: inline-block;
+    z-index: 10000;
   }
 
   .node-one-output {
@@ -225,5 +243,27 @@
 
   .whats-next-category-informations p:first-child {
     font-weight: bold;
+  }
+
+  .react-flow__controls-button {
+    color: var(--text);
+    border: 1px solid var(--color-primary) !important;
+    background-color: transparent;
+    z-index: 200000;
+    width: 42px;
+    height: 42px;
+    border-radius: .5rem;
+  }
+
+  .react-flow__controls-button:hover {
+    color: var(--color-dark);
+    border: 1px solid;
+    border-color: var(--color-primary-lighter);
+    background-color: var(--color-primary-lighter);
+  }
+
+  .react-flow__panel.bottom {
+    bottom: 52px;
+    gap: 1rem;
   }
 }

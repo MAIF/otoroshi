@@ -27,7 +27,7 @@ export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onCo
             }}
         >
             <Background />
-            {/* <Controls /> */}
+            <Controls orientation='horizontal' showInteractive={false} />
         </ReactFlow>
     </div>
 }

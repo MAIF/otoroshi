@@ -16,8 +16,7 @@ import {
 } from '@xyflow/react';
 import { NewTask } from './NewTask';
 import { findNonOverlappingPosition } from './NewNodeSpawn';
-import { WorkflowNode } from './nodes/WorkflowNode';
-import { NODES } from './WhatsNextItemsSelector';
+import { NODES } from './models/Functions';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -70,8 +69,7 @@ function Container(props) {
 }
 
 function defaultNode(nodes, node, firstStep) {
-
-    console.log(NODES, node.kind.toLowerCase())
+    console.log(NODES, node.kind.toLowerCase(), NODES[node.kind.toLowerCase()])
     return {
         id: uuid(),
         position: findNonOverlappingPosition(nodes),
@@ -87,7 +85,7 @@ function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
     if (!workflow)
         return { edges: [], nodes: [] }
 
-    console.log(workflow)
+    // console.log(workflow)
 
     if (workflow.kind === 'workflow') {
         const nodes = workflow.steps.reduce((acc, child, idx) => {
@@ -165,7 +163,10 @@ function WorkflowsDesigner(props) {
     )
     const onConnect = useCallback(
         (connection) => {
-            const edge = { ...connection, type: 'customEdge' }
+            const edge = {
+                ...connection, type: 'customEdge',
+                animated: true,
+            }
             setEdges((eds) => {
                 if (!eds.find(e => e.source === edge.source))
                     return addEdge(edge, eds)

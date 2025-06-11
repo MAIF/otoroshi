@@ -14,22 +14,6 @@ import { WaitNode } from "./nodes/WaitNode"
 import { ErrorNode } from "./nodes/ErrorNode"
 import { ValueNode } from "./nodes/ValueNode"
 
-export const NODES = {
-    "assign": AssignNode,
-    "parallel": ParallelFlowsNode,
-    "switch": SwitchNode,
-    "if": IfThenElseNode,
-    "foreach": ForEachNode,
-    "map": MapNode,
-    "filter": FilterNode,
-    "flatmap": FlatMapNode,
-    "workflow": WorkflowNode,
-    "call": CallNode,
-    "wait": WaitNode,
-    "error": ErrorNode,
-    "value": ValueNode,
-}
-
 const ITEMS_BY_CATEGORY = [
     {
         name: "Flow",
@@ -82,7 +66,7 @@ function UnFoldedCategory({ nodes, onClick, query }) {
 
     return filteredNodes
         .map(([_, node]) => <div
-            className='d-flex align-items-center px-3 py-2'
+            className='whats-news-category d-flex align-items-center px-3 py-2'
             style={{ cursor: 'pointer' }}
             onClick={() => onClick(node)}>
             <div className='d-flex-center' style={{

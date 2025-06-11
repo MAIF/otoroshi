@@ -102,8 +102,8 @@ case class WorkflowNode(json: JsObject) extends Node {
 
 case class CallNode(json: JsObject) extends Node {
 
-  lazy val functionName: String = json.select("function").asString
-  lazy val args: JsObject       = json.select("args").asObject
+  lazy val functionName: String = json.selectAsString("function")
+  lazy val args: JsObject       = json.selectAsObject("args")
 
   override def run(
       wfr: WorkflowRun
