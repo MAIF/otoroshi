@@ -3,9 +3,6 @@ import React, { useEffect } from 'react'
 import {
     BaseEdge,
     EdgeLabelRenderer,
-    getBezierPath,
-    getSimpleBezierPath,
-    getSmoothStepPath,
     getStraightPath,
     useReactFlow,
 } from '@xyflow/react';
@@ -74,7 +71,6 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY }) {
     });
 
     useEffect(() => listeners(id), [id]);
-
 
     return (
         <>

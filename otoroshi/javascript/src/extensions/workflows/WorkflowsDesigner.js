@@ -16,6 +16,8 @@ import {
 } from '@xyflow/react';
 import { NewTask } from './NewTask';
 import { findNonOverlappingPosition } from './NewNodeSpawn';
+import { WorkflowNode } from './nodes/WorkflowNode';
+import { NODES } from './WhatsNextItemsSelector';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -42,18 +44,18 @@ const applyStyles = () => {
     }
 }
 
-export default function Container(props) {
+export default function QueryContainer(props) {
     useEffect(() => {
         props.setTitle(undefined)
         return applyStyles()
     }, [])
 
     return <QueryClientProvider client={queryClient}>
-        <WorkflowsDesigner {...props} />
+        <Container {...props} />
     </QueryClientProvider>
 }
 
-function WorkflowsDesigner(props) {
+function Container(props) {
     const params = useParams()
 
     const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
@@ -62,46 +64,89 @@ function WorkflowsDesigner(props) {
         ['getWorkflow', params.workflowId],
         () => client.findById(params.workflowId));
 
-    const [selectedNode, setSelectedNode] = useState()
+    return <Loader loading={workflow.isLoading}>
+        <WorkflowsDesigner {...props} workflow={workflow.data} />
+    </Loader>
+}
 
+function defaultNode(nodes, node, firstStep) {
+
+    console.log(NODES, node.kind.toLowerCase())
+    return {
+        id: uuid(),
+        position: findNonOverlappingPosition(nodes),
+        type: node.type || 'simple',
+        data: {
+            isFirst: firstStep,
+            ...NODES[node.kind.toLowerCase()](node)
+        }
+    }
+}
+
+function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
+    if (!workflow)
+        return { edges: [], nodes: [] }
+
+    console.log(workflow)
+
+    if (workflow.kind === 'workflow') {
+        const nodes = workflow.steps.reduce((acc, child, idx) => {
+            return [
+                ...acc,
+                addInformationsToNode(
+                    defaultNode(acc.map(r => r.position),
+                        child,
+                        idx === 0
+                    ))
+            ]
+        }, [])
+
+        // nodes.push()
+
+        const edges = []
+        for (let i = 0; i < nodes.length - 1; i++) {
+            edges.push({
+                id: uuid(),
+                target: nodes[i].id,
+                source: nodes[i + 1].id,
+                type: 'customEdge',
+                animated: true,
+            })
+        }
+
+        return { edges, nodes }
+
+    } else {
+        // TODO - manage other kind
+        return { edges: [], nodes: [] }
+    }
+}
+
+function WorkflowsDesigner(props) {
+    // const params = useParams()
+    // const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
+
+    const [selectedNode, setSelectedNode] = useState()
     const [isOnCreation, setOnCreationMode] = useState(false)
 
-    const initialNodes = [
-        {
-            id: '1', // required
-            position: { x: 250, y: 50 }, // required
-            type: 'simple',
-            data: {
-                label: <i className='fas fa-arrow-pointer' />,
-                onDoubleClick: setSelectedNode,
-                openNodesExplorer: setOnCreationMode
-            },
-        },
-        {
-            id: '2',
-            data: {
-                label: 'World',
-                onDoubleClick: setSelectedNode,
-                openNodesExplorer: setOnCreationMode
-            },
-            type: 'simple',
-            position: { x: 0, y: 0 },
-        },
-        // {
-        //     id: '3',
-        //     data: { label: 'alsut', onDoubleClick: setSelectedNode },
-        //     type: 'simple',
-        //     position: { x: 550, y: 0 },
-        // }
-    ]
+    const initialState = getInitialNodesFromWorkflow(props.workflow?.config, addInformationsToNode);
 
-    const initialEdges = [
-        { id: '1-2', source: '1', target: '2', type: 'customEdge', animated: true, },
-        // { id: '2-3', source: '2', target: '3', type: 'customEdge' }
-    ]
+    const [nodes, internalSetNodes] = useState(initialState.nodes);
+    const [edges, setEdges] = useState(initialState.edges);
 
-    const [nodes, internalSetNodes] = useState(initialNodes);
-    const [edges, setEdges] = useState(initialEdges);
+    function addInformationsToNode(node) {
+        return {
+            ...node,
+            data: {
+                ...(node.data || {}),
+                functions: {
+                    onDoubleClick: setSelectedNode,
+                    openNodesExplorer: setOnCreationMode,
+                },
+                edges
+            },
+        }
+    }
 
     const setNodes = nodes => {
         internalSetNodes(nodes.map(node => ({
@@ -122,7 +167,6 @@ function WorkflowsDesigner(props) {
         (connection) => {
             const edge = { ...connection, type: 'customEdge' }
             setEdges((eds) => {
-                console.log(eds, edge)
                 if (!eds.find(e => e.source === edge.source))
                     return addEdge(edge, eds)
                 else
@@ -133,8 +177,6 @@ function WorkflowsDesigner(props) {
     );
 
     const handleSelectNode = item => {
-        console.log('new item', item)
-
         const targetId = uuid()
 
         if (isOnCreation) {
@@ -151,48 +193,62 @@ function WorkflowsDesigner(props) {
         }
 
 
-        setNodes([...nodes,
-        {
-            id: targetId,
-            position: findNonOverlappingPosition(nodes.map(n => n.position)),
-            type: item.type || 'simple',
-            data: {
-                onDoubleClick: setSelectedNode,
-                item,
-                edges,
-                openNodesExplorer: setOnCreationMode
-            },
-        }
+        setNodes([
+            ...nodes,
+            ...addInformationsToNode({
+                id: targetId,
+                position: findNonOverlappingPosition(nodes.map(n => n.position)),
+                type: item.type || 'simple'
+            })
         ])
 
         setOnCreationMode(false)
     }
 
-    console.log(workflow, isOnCreation)
+    function run() {
+        fetch('/extensions/workflows/_test', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                input: JSON.stringify({}, null, 4),
+                workflow: props.workflow.config,
+            }),
+        })
+            .then((r) => r.json())
+            .then((r) => {
+                console.log({
+                    result: r.returned,
+                    run: r.run,
+                    error: r.error,
+                    running: false,
+                })
+            })
+    }
 
-    return <Loader loading={!workflow.data}>
-        <div className='workflow'>
-            <DesignerActions />
-            <Navbar workflow={workflow.data} save={() => Promise.resolve('saved')} />
+    return <div className='workflow'>
+        <DesignerActions run={run} />
+        <Navbar workflow={props.workflow} save={() => Promise.resolve('saved')} />
 
-            <NewTask onClick={() => setOnCreationMode(true)} />
+        <NewTask onClick={() => setOnCreationMode(true)} />
 
-            <NodesExplorer
-                isOpen={isOnCreation}
-                isEdition={selectedNode}
-                node={selectedNode}
-                handleSelectNode={handleSelectNode} />
-            <Flow
-                onConnect={onConnect}
-                onEdgesChange={onEdgesChange}
-                onNodesChange={onNodesChange}
-                onClick={() => {
-                    setOnCreationMode(false)
-                    setSelectedNode(false)
-                }}
-                nodes={nodes}
-                edges={edges}>
-            </Flow>
-        </div>
-    </Loader >
+        <NodesExplorer
+            isOpen={isOnCreation}
+            isEdition={selectedNode}
+            node={selectedNode}
+            handleSelectNode={handleSelectNode} />
+        <Flow
+            onConnect={onConnect}
+            onEdgesChange={onEdgesChange}
+            onNodesChange={onNodesChange}
+            onClick={() => {
+                setOnCreationMode(false)
+                setSelectedNode(false)
+            }}
+            nodes={nodes}
+            edges={edges}>
+        </Flow>
+    </div>
 }

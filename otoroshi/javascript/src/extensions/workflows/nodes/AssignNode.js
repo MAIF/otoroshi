@@ -1,9 +1,10 @@
 import React from 'react'
 
-export const AssignNode = {
+export const AssignNode = _workflow => ({
     label: <i className="fas fa-equals" />,
     name: 'Assign',
-    description: 'Assign value to an another variable'
+    description: 'Assign value to an another variable',
+    workflow: _workflow,
     // {
     //   "kind": "assign",
     //   "values": [
@@ -13,4 +14,4 @@ export const AssignNode = {
     //     }
     //   ]
     // }
-}
+})

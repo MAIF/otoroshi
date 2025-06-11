@@ -102,6 +102,11 @@
     border-color: rgb(82, 162, 108);
   }
 
+  .node--first {
+    border-top-left-radius: 35%;
+    border-bottom-left-radius: 35%;
+  }
+
   .node-one-output {
     font-size: 40px;
     line-height: 40px;

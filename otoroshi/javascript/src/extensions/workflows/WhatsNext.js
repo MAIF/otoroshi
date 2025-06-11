@@ -30,6 +30,10 @@ export function WhatsNext({ handleSelectNode, isOpen }) {
 
         <Search query={query} onChange={setQuery} />
 
-        <Items setTitle={setTitle} handleSelectNode={handleSelectNode} isOpen={isOpen} />
+        <Items
+            query={query}
+            setTitle={setTitle}
+            handleSelectNode={handleSelectNode}
+            isOpen={isOpen} />
     </>
 }

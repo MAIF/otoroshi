@@ -44,8 +44,10 @@ export function ModalEditor({ node }) {
         }
     ]
 
+    console.log(node)
+
     return <div className='modal-editor p-3'>
-        <p style={{ fontSize: '1.15rem' }}>Code</p>
+        <p style={{ fontSize: '1.15rem' }}>{node.name}</p>
         <NgForm
             schema={schema}
             flow={flow}
