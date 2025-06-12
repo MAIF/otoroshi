@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from "react-query"
 import { useParams } from "react-router-dom";
 import * as BackOfficeServices from '../../services/BackOfficeServices';
@@ -13,6 +13,7 @@ import {
     applyNodeChanges,
     applyEdgeChanges,
     addEdge,
+    useReactFlow,
 } from '@xyflow/react';
 import { NewTask } from './NewTask';
 import { findNonOverlappingPosition } from './NewNodeSpawn';
@@ -69,14 +70,15 @@ function Container(props) {
 }
 
 function defaultNode(nodes, node, firstStep) {
-    console.log(NODES, node.kind.toLowerCase(), NODES[node.kind.toLowerCase()])
+    const data = NODES[node.kind.toLowerCase()](node)
+
     return {
         id: uuid(),
         position: findNonOverlappingPosition(nodes),
-        type: node.type || 'simple',
+        type: node.type || data.type || 'simple',
         data: {
             isFirst: firstStep,
-            ...NODES[node.kind.toLowerCase()](node)
+            ...data
         }
     }
 }
@@ -121,16 +123,30 @@ function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
 }
 
 function WorkflowsDesigner(props) {
-    // const params = useParams()
-    // const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
-
     const [selectedNode, setSelectedNode] = useState()
     const [isOnCreation, setOnCreationMode] = useState(false)
+
+    const [rfInstance, setRfInstance] = useState(null);
 
     const initialState = getInitialNodesFromWorkflow(props.workflow?.config, addInformationsToNode);
 
     const [nodes, internalSetNodes] = useState(initialState.nodes);
     const [edges, setEdges] = useState(initialState.edges);
+
+    function updateData(props, changes) {
+        setNodes(nodes.map(node => {
+            if (node.id === props.id) {
+                return {
+                    ...node,
+                    data: {
+                        ...node.data,
+                        ...changes
+                    }
+                }
+            }
+            return node
+        }))
+    }
 
     function addInformationsToNode(node) {
         return {
@@ -140,27 +156,50 @@ function WorkflowsDesigner(props) {
                 functions: {
                     onDoubleClick: setSelectedNode,
                     openNodesExplorer: setOnCreationMode,
-                },
-                edges
+                    handleDeleteNode: handleDeleteNode,
+                    updateData: updateData
+                }
             },
         }
     }
 
-    const setNodes = nodes => {
-        internalSetNodes(nodes.map(node => ({
-            ...node,
-            data: {
-                ...node.data,
-                edges
-            }
-        })))
+    function handleDeleteNode(nodeId) {
+        console.log('handle delete note')
+        setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+        setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
     }
+
+    const setNodes = nodes => internalSetNodes(nodes)
 
     const onNodesChange = changes => setNodes(applyNodeChanges(changes, nodes))
     const onEdgesChange = useCallback(
         (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
         [],
     )
+
+    const onConnectEnd = useCallback(
+        (event, connectionState) => {
+            if (!connectionState.isValid) {
+                event.stopPropagation()
+                setTimeout(() => {
+                    const { clientX, clientY } = 'changedTouches' in event ? event.changedTouches[0] : event;
+
+                    setOnCreationMode({
+                        ...connectionState.fromNode,
+                        fromOrigin: rfInstance.screenToFlowPosition({
+                            x: clientX,
+                            y: clientY
+                        })
+                    })
+                    // setSelectedNode(connectionState.fromNode)
+                }, 250)
+            }
+        },
+        [rfInstance],
+    );
+
+    console.log(selectedNode)
+
     const onConnect = useCallback(
         (connection) => {
             const edge = {
@@ -177,8 +216,57 @@ function WorkflowsDesigner(props) {
         [setEdges],
     );
 
+    const extentParent = node => {
+        return {
+            ...node,
+            data: {
+                ...node.data,
+                extent: 'parent'
+            },
+            extent: 'parent',
+        }
+    }
+
     const handleSelectNode = item => {
         const targetId = uuid()
+
+        console.log("handleSelectNode", "isOnCreation", isOnCreation, item)
+
+        if (isOnCreation && isOnCreation.isInternalNode) {
+            const newNode = addInformationsToNode(defaultNode(nodes, item, false));
+            setNodes([
+                ...nodes,
+                extentParent({
+                    ...newNode,
+                    parentId: isOnCreation.id,
+                    data: {
+                        ...newNode.data,
+                        parentId: isOnCreation.id,
+                        isFirst: true
+                    },
+                })
+            ])
+            // setNodes(nodes.map(node => {
+            //     if (node.id === isOnCreation.id) {
+            //         return {
+            //             ...node,
+            //             data: {
+            //                 ...node.data,
+            //                 workflow: {
+            //                     ...node.data.workflow,
+            //                     node: addInformationsToNode({
+            //                         ...item,
+            //                         ...NODES[item.kind.toLowerCase()](item)
+            //                     })
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     return node
+            // }))
+            setOnCreationMode(false)
+            return
+        }
 
         if (isOnCreation) {
             setEdges([
@@ -193,14 +281,19 @@ function WorkflowsDesigner(props) {
             ])
         }
 
+        const newNode = addInformationsToNode({
+            ...defaultNode([], item, false),
+            id: targetId,
+            position: isOnCreation.fromOrigin ? isOnCreation.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position)),
+            type: item.type || 'simple'
+        })
 
         setNodes([
             ...nodes,
-            ...addInformationsToNode({
-                id: targetId,
-                position: findNonOverlappingPosition(nodes.map(n => n.position)),
-                type: item.type || 'simple'
-            })
+            {
+                ...(isOnCreation.data.extent ? extentParent(newNode) : newNode),
+                parentId: isOnCreation.data.parentId ? isOnCreation.data.parentId : undefined,
+            }
         ])
 
         setOnCreationMode(false)
@@ -229,6 +322,22 @@ function WorkflowsDesigner(props) {
             })
     }
 
+    // FIX ??
+    window.addEventListener('error', e => {
+        if (e.message === 'ResizeObserver loop completed with undelivered notifications.') {
+            const resizeObserverErrDiv = document.getElementById('webpack-dev-server-client-overlay-div');
+            const resizeObserverErr = document.getElementById('webpack-dev-server-client-overlay');
+            if (resizeObserverErr) {
+                resizeObserverErr.setAttribute('style', 'display: none');
+            }
+            if (resizeObserverErrDiv) {
+                resizeObserverErrDiv.setAttribute('style', 'display: none');
+            }
+        }
+    });
+
+    console.log(rfInstance)
+
     return <div className='workflow'>
         <DesignerActions run={run} />
         <Navbar workflow={props.workflow} save={() => Promise.resolve('saved')} />
@@ -241,12 +350,18 @@ function WorkflowsDesigner(props) {
             node={selectedNode}
             handleSelectNode={handleSelectNode} />
         <Flow
+            setRfInstance={setRfInstance}
+            onConnectEnd={onConnectEnd}
             onConnect={onConnect}
             onEdgesChange={onEdgesChange}
             onNodesChange={onNodesChange}
             onClick={() => {
                 setOnCreationMode(false)
                 setSelectedNode(false)
+            }}
+            onGroupNodeClick={groupNode => {
+                setOnCreationMode(groupNode)
+                setSelectedNode(groupNode)
             }}
             nodes={nodes}
             edges={edges}>

@@ -5,11 +5,16 @@ export const ForEachNode = (_workflow) => ({
     name: 'For Each',
     description: 'Apply node for each item',
     workflow: _workflow,
+    type: 'group',
+    kind: 'foreach',
     flow: ['values'],
     schema: {
         values: {
-            type: 'object',
-            label: 'Values'
+            type: 'code',
+            label: 'Values to iterate',
+            props: {
+                editorOnly: true,
+            },
         },
         // node: {
         //     renderer: NodeRenderer

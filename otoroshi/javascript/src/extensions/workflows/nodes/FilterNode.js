@@ -5,6 +5,7 @@ export const FilterNode = (_workflow) => ({
     name: 'Filter',
     description: 'Remove items matching a condition',
     workflow: _workflow,
+    kind: 'filter',
     //     {
     //   "kind": "foreach",
     //   "values": <array_expr>,

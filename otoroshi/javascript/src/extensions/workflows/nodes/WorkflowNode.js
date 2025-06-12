@@ -7,6 +7,7 @@ export const WorkflowNode = (_workflow) => {
         description: 'Helpers for calling other Otoroshi workflows.',
         type: 'group',
         workflow: _workflow,
+        kind: 'workflow',
         // {
         //   "kind": "workflow",
         //   "steps": [ <Node> ],

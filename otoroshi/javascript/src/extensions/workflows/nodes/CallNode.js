@@ -6,6 +6,7 @@ export function CallNode(_workflow) {
     return {
         label: <i className='fas fa-play' />,
         name: 'Call',
+        kind: 'call',
         description: 'Execute a function with args',
         workflow: _workflow,
         flow: ['function', 'args'],

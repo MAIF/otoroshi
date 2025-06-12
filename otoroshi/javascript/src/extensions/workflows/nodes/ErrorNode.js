@@ -5,6 +5,7 @@ export const ErrorNode = (_workflow) => ({
     name: 'Stop and Error',
     description: 'Throw an error in the workflow',
     workflow: _workflow,
+    kind: 'error',
     //     {
     //   "kind": "error",
     //   "message": "<error_message>",

@@ -10,6 +10,6 @@ export function NodesExplorer({ isOpen, isEdition, node, handleSelectNode }) {
 
         {isEdition && <ModalEditor node={node} />}
 
-        {!isEdition && <WhatsNext handleSelectNode={handleSelectNode} isOpen={isOpen} />}
+        {!isEdition && <WhatsNext handleSelectNode={handleSelectNode} isOpen={isOpen} node={node}/>}
     </div>
 }

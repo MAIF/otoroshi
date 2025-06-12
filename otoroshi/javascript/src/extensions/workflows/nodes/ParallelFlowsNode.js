@@ -6,6 +6,7 @@ export const ParallelFlowsNode = (_workflow) => ({
     description: 'Run node in parallel',
     type: 'group',
     workflow: _workflow,
+    kind: 'parallel',
     // {
     //   "kind": "parallel",
     //   "paths": [ <workflow>, ... ]

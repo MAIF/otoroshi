@@ -6,6 +6,8 @@ export function ModalEditor({ node }) {
     if (!node)
         return null
 
+    console.log(node)
+
     const [state, setState] = useState()
 
     const schema = {
@@ -16,24 +18,18 @@ export function ModalEditor({ node }) {
         },
         enabled: {
             label: 'Enabled',
-            type: 'box-bool',
-            props: {
-                description: 'Boolean to toggle the node',
-            },
+            type: 'bool',
         },
         result: {
             type: 'string',
             label: 'Result',
-            props: {
-                description: 'Name of memory variable to store output'
-            }
+            help: 'Name of memory variable to store output'
+
         },
         returned: {
             label: 'Returned value',
             type: 'string',
-            props: {
-                description: 'Immediate result to return from the workflow '
-            }
+            help: 'Immediate result to return from the workflow'
         },
         ...node.schema
     }
@@ -41,13 +37,13 @@ export function ModalEditor({ node }) {
         {
             type: 'group',
             name: 'Informations',
-            collapsable: false,
-            fields: ['description', 'enabled', 'result', 'returned'],
+            // collapsed: true,
+            fields: ['enabled', 'description'],
         },
         {
             type: 'group',
             name: 'Configuration',
-            fields: node.flow
+            fields: [...(node.flow || []), 'result', 'returned']
         }
     ]
 
