@@ -1,12 +1,15 @@
 import React from 'react';
 
-import { Node } from './Node'
-import { GroupNode } from './GroupNode'
-import { CustomEdge } from './CustomEdge'
-import { ReactFlow, Background, Controls, useReactFlow } from '@xyflow/react';
+import { Node } from './flow/Node'
+import { GroupNode } from './flow/GroupNode'
+import { IfThenElseNode } from './flow/IfThenElseNode'
+import { CustomEdge } from './flow/CustomEdge'
+import { AddNode } from './nodes/AddNode'
+import { ReactFlow, Background, Controls } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onConnect, onConnectEnd, onGroupNodeClick, setRfInstance }) {
+
     return <div style={{ height: 'calc(100vh - 52px)' }} onClick={onClick}>
         <ReactFlow
             nodes={nodes}
@@ -20,9 +23,12 @@ export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onCo
             fitViewOptions={{
                 padding: .5
             }}
+            connectionLineType='smoothstep'
             nodeTypes={{
                 simple: Node,
-                group: GroupNode
+                group: GroupNode,
+                IfThenElse: IfThenElseNode,
+                AddNode: AddNode
             }}
             edgeTypes={{
                 customEdge: CustomEdge,

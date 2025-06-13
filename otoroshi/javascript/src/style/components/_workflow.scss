@@ -9,8 +9,8 @@
     background: var(--bg-color_level3);
     border: 2px solid hsl(220, 18%, 80%);
     border-radius: .75rem;
-    min-width: 120px;
-    min-height: 120px;
+    min-width: 200px;
+    min-height: 100px;
     // z-index: 1;
     position: relative;
   }
@@ -108,8 +108,7 @@
   }
 
   .node--first {
-    border-top-left-radius: 35%;
-    border-bottom-left-radius: 35%;
+    min-width: 140px !important;
   }
 
   .node--first::before {
@@ -129,49 +128,34 @@
   }
 
   .node-one-output {
-    font-size: 40px;
-    line-height: 40px;
-  }
-
-  .react-flow__handle.target,
-  .node-one-output-dot {
-    min-width: 1rem;
-    min-height: 1rem;
-    width: 1rem;
-    height: 1rem;
-    border-radius: 50%;
-    border: none;
-    z-index: 10;
-  }
-
-  .node-one-output-dot {
     position: absolute;
-    top: 50%;
+    top: 0;
+    left: 0;
     right: 0;
-    transform: translate(0%, -50%);
-    margin-right: -1.5rem;
+    padding: .25rem 1rem;
+    height: 30px;
     display: flex;
     align-items: center;
-  }
-
-
-  .react-flow__handle.target {
-    background: var(--color_level1);
+    justify-content: flex-start;
+    gap: .5rem;
+    background-color: var(--bg-color_level2);
+    border-top-left-radius: .75rem;
+    border-top-right-radius: .75rem;
   }
 
   .source::before {
-    content: "";
-    background: var(--color_level1);
-    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 30 25" stroke-width="4" stroke="%23e5e5e5"><path fill="%23e5e5e5" stroke-linecap="round" stroke-linejoin="round" d="M14 5 14 19m6-7L14 5M14 5 14 19 20 12M25 6 21 6 21 18 25 18 25 6" /></svg>');
-    mask-size: contain;
-    mask-repeat: no-repeat;
-    mask-position: center;
-    margin-left: -1.5rem;
-    margin-top: -16px;
-    width: 36px;
-    height: 36px;
-    display: inline-block;
-    z-index: 10000;
+    // content: "";
+    // background: var(--color_level1);
+    // mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 30 25" stroke-width="4" stroke="%23e5e5e5"><path fill="%23e5e5e5" stroke-linecap="round" stroke-linejoin="round" d="M14 5 14 19m6-7L14 5M14 5 14 19 20 12M25 6 21 6 21 18 25 18 25 6" /></svg>');
+    // mask-size: contain;
+    // mask-repeat: no-repeat;
+    // mask-position: center;
+    // margin-left: -1.5rem;
+    // margin-top: -16px;
+    // width: 36px;
+    // height: 36px;
+    // display: inline-block;
+    // z-index: 10000;
   }
 
   .react-flow__edge-path {
@@ -270,14 +254,15 @@
     gap: 1rem;
   }
 
+  .react-flow__node-IfThenElse,
   .react-flow__node-group {
-    // background: var(--bg-color_level3);
+    background: rgba(240, 240, 240, 0.25);
     border: 2px solid hsl(220, 18%, 80%) !important;
     border-radius: .5rem;
     width: fit-content;
     padding: 2rem;
-    min-width: 256px;
-    min-height: 256px;
+    min-width: 200px;
+    min-height: 100px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -313,5 +298,90 @@
     border: 2px solid var(--color-primary) !important;
     width: .5rem;
     height: .5rem;
+    z-index: 10;
+  }
+
+  .handles {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    z-index: 1000;
+  }
+
+  .handles.sources {
+    right: 0;
+    top: 30px;
+    margin-top: .5rem;
+    display: flex;
+    flex-direction: column;
+    justify-items: flex-end;
+    align-items: flex-end;
+  }
+
+  // .handles.sources div[data-handleid="output"] {
+  //   content: ' ';
+  //   background: var(--color_level1);
+  //   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23f9b000" viewBox="0 0 24 24" stroke-width="1.5" stroke="%23e5e5e5"><path fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round" d="M20.625 13.949c1.5-.866 1.5-3.032 0-3.898L7.874 2.697c-1.5-.866-3.374.217-3.374 1.948v14.71c0 1.73 1.874 2.813 3.374 1.948l12.751-7.354Z" /></svg>');
+  //   // mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23f9b000" viewBox="0 0 24 24"><path fill-rule="evenodd" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>');
+  //   // %23e5e5e5
+  //   mask-size: contain;
+  //   mask-repeat: no-repeat;
+  //   mask-position: center;
+  //   width: 16px;
+  //   height: 16px;
+  //   display: inline-block;
+  //   z-index: 10000;
+  // }
+
+  .handles.targets {
+    left: 0;
+    top: 30px;
+    margin-top: .5rem;
+  }
+
+  .handles .react-flow__handle {
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: fit-content;
+    height: initial;
+    background: none;
+    border: none;
+  }
+
+  .react-flow__handle.connectionindicator {
+    cursor: pointer;
+  }
+
+  .handle-dot {
+    border-radius: 50%;
+    min-width: 12px;
+    min-height: 12px;
+    border: 1px solid var(--color_level1);
+    pointer-events: none;
+  }
+
+  .react-flow__connection-path {
+    stroke: var(--color_level1);
+  }
+
+  .handle-dot--connected {
+    background-color: var(--color_level1);
+  }
+
+  .react-flow__handle.target {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: .5rem;
+  }
+
+  .react-flow__handle.source {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: .5rem;
   }
 }

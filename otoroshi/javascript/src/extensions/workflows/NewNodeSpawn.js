@@ -1,4 +1,4 @@
-const NODE_SIZE = 120;
+const NODE_SIZE = 100;
 const PADDING = 150;
 const TOTAL_SIZE = NODE_SIZE + PADDING;
 const CANVAS_WIDTH = window.innerWidth;
@@ -21,7 +21,7 @@ function isOverlapping(x, y, nodes) {
     })
 }
 
-function findRandomPosition(existingNodes) {
+export function findRandomPosition(existingNodes) {
     for (let i = 0; i < MAX_RANDOM_ATTEMPTS; i++) {
         const x = Math.random() * (CANVAS_WIDTH - NODE_SIZE);
         const y = Math.random() * (CANVAS_HEIGHT - NODE_SIZE);

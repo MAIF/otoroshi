@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
 import CodeInput from '../../components/inputs/CodeInput';
-import WorkflowsDesigner from './WorkflowsDesigner';
+import { QueryContainer as WorkflowsDesigner} from './WorkflowsDesigner';
 
 const extensionId = 'otoroshi.extensions.Workflows';
 

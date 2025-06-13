@@ -1,3 +1,4 @@
+import { AddNode } from "../nodes/AddNode"
 import { AssignNode } from "../nodes/AssignNode"
 import { CallNode } from "../nodes/CallNode"
 import { ErrorNode } from "../nodes/ErrorNode"
@@ -26,6 +27,7 @@ export const NODES = {
     "wait": WaitNode,
     "error": ErrorNode,
     "value": ValueNode,
+    "addnode": AddNode
 }
 
 export const CORE_FUNCTIONS = {

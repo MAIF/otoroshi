@@ -6,6 +6,21 @@ export const FlatMapNode = (_workflow) => ({
     description: 'Combine a field from many items into a list in a single item',
     workflow: _workflow,
     kind: 'flatmap',
+    type: 'group',
+    flow: ['values'],
+    schema: {
+        values: {
+            type: 'code',
+            label: 'Values to iterate',
+            props: {
+                editorOnly: true,
+            },
+        },
+        destination: {
+            type: 'string',
+            label: 'Destination'
+        }
+    }
     //     {
     //   "kind": "foreach",
     //   "values": <array_expr>,

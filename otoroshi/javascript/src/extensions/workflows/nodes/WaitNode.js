@@ -6,6 +6,13 @@ export const WaitNode = (_workflow) => ({
     description: 'Wait before continue with execution',
     workflow: _workflow,
     kind: 'wait',
+    flow: ['duration'],
+    schema: {
+        duration: {
+            type: 'number',
+            label:' Duration'
+        }
+    }
     //     {
     //   "kind": "wait",
     //   "duration": 1000

@@ -8,14 +8,16 @@ import { Navbar } from './Navbar'
 import { NodesExplorer } from './NodesExplorer'
 import Loader from '../../components/Loader';
 import { v4 as uuid } from 'uuid';
+import useLayoutNodes from './useLayoutNodes'
 
 import {
     applyNodeChanges,
     applyEdgeChanges,
     addEdge,
     useReactFlow,
+    ReactFlowProvider,
 } from '@xyflow/react';
-import { NewTask } from './NewTask';
+import { NewTask } from './flow/NewTask';
 import { findNonOverlappingPosition } from './NewNodeSpawn';
 import { NODES } from './models/Functions';
 
@@ -44,7 +46,7 @@ const applyStyles = () => {
     }
 }
 
-export default function QueryContainer(props) {
+export function QueryContainer(props) {
     useEffect(() => {
         props.setTitle(undefined)
         return applyStyles()
@@ -65,12 +67,14 @@ function Container(props) {
         () => client.findById(params.workflowId));
 
     return <Loader loading={workflow.isLoading}>
-        <WorkflowsDesigner {...props} workflow={workflow.data} />
+        <ReactFlowProvider>
+            <WorkflowsDesigner {...props} workflow={workflow.data} />
+        </ReactFlowProvider>
     </Loader>
 }
 
-function defaultNode(nodes, node, firstStep) {
-    const data = NODES[node.kind.toLowerCase()](node)
+export function defaultNode(nodes, node, firstStep) {
+    const data = NODES[(node.kind || node.data.kind).toLowerCase()](node)
 
     return {
         id: uuid(),
@@ -87,31 +91,66 @@ function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
     if (!workflow)
         return { edges: [], nodes: [] }
 
-    // console.log(workflow)
-
     if (workflow.kind === 'workflow') {
-        const nodes = workflow.steps.reduce((acc, child, idx) => {
+        let nodes = workflow.steps.reduce((acc, child, idx) => {
+            const newNode = addInformationsToNode(
+                defaultNode(acc.map(r => r.position),
+                    child,
+                    idx === 0
+                ))
             return [
                 ...acc,
-                addInformationsToNode(
-                    defaultNode(acc.map(r => r.position),
-                        child,
-                        idx === 0
-                    ))
+                {
+                    ...newNode,
+                    id: `${idx}`,
+                    data: {
+                        ...newNode.data,
+                        targetHandles: [],
+                        sourceHandles: []
+                    }
+                }
             ]
         }, [])
 
-        // nodes.push()
+        for (let i = 0; i < nodes.length; i++) {
+            const me = nodes[i].id
+            // const optSource = nodes[i + 1]?.id
+            // const optTarget = nodes[i - 1]?.id
+
+            // const sourceHandles = !optSource ? [] : [{ id: `${me}-s-${optSource}` }]
+            // const targetHandles = !optTarget ? [] : [{ id: `${optTarget}-t-${me}` }]
+
+            const { targets = [], sources = [] } = nodes[i].data
+            nodes[i] = {
+                ...nodes[i],
+                data: {
+                    ...nodes[i].data,
+                    targetHandles: i === 0 ? [] : ['input', ...targets].map((target, i) => {
+                        return { id: target }
+                    }),
+                    sourceHandles: [...sources, 'output'].map((source, i) => {
+                        return { id: source }
+                    })
+                }
+            }
+        }
 
         const edges = []
         for (let i = 0; i < nodes.length - 1; i++) {
-            edges.push({
-                id: uuid(),
-                target: nodes[i].id,
-                source: nodes[i + 1].id,
-                type: 'customEdge',
-                animated: true,
-            })
+            // const me = nodes[i].id
+            // const optSource = nodes[i + 1]?.id
+            // const optTarget = nodes[i + 1]?.id
+
+            // if (optTarget)
+            //     edges.push({
+            //         id: uuid(),
+            //         source: me,
+            //         sourceHandle: `output`,
+            //         target: optTarget,
+            //         targetHandle: `input`,
+            //         type: 'customEdge',
+            //         animated: true,
+            //     })
         }
 
         return { edges, nodes }
@@ -129,9 +168,68 @@ function WorkflowsDesigner(props) {
     const [rfInstance, setRfInstance] = useState(null);
 
     const initialState = getInitialNodesFromWorkflow(props.workflow?.config, addInformationsToNode);
+    // const initialState = getInitialNodesFromWorkflow({
+    //     kind: 'workflow',
+    //     steps: [
+    //         {
+    //             "kind": "call",
+    //             "description": "get all pokemons from the pokeapi",
+    //             "function": "core.http_client",
+    //             "args": {
+    //                 "method": "GET",
+    //                 "url": "https://pokeapi.co/api/v2/pokemon"
+    //             },
+    //             "result": "pokemons"
+    //         },
+    //         {
+    //             "kind": "assign",
+    //             "description": "extract results from the response, and only keep the 5 first pokemons",
+    //             "values": [
+    //                 {
+    //                     "name": "pokemons",
+    //                     "value": {
+    //                         "$array_page": {
+    //                             "array": "${pokemons.body_json.results}",
+    //                             "page": 1,
+    //                             "page_size": 5
+    //                         }
+    //                     }
+    //                 },
+    //                 {
+    //                     "name": "pokemon_names",
+    //                     "value": []
+    //                 }
+    //             ]
+    //         },
+    //         {
+    //             "kind": "assign",
+    //             "description": "extract results from the response, and only keep the 5 first pokemons",
+    //             "values": [
+    //                 {
+    //                     "name": "pokemons",
+    //                     "value": {
+    //                         "$array_page": {
+    //                             "array": "${pokemons.body_json.results}",
+    //                             "page": 1,
+    //                             "page_size": 5
+    //                         }
+    //                     }
+    //                 },
+    //                 {
+    //                     "name": "pokemon_names",
+    //                     "value": []
+    //                 }
+    //             ]
+    //         }
+    //     ]
+    // }, addInformationsToNode);
 
     const [nodes, internalSetNodes] = useState(initialState.nodes);
     const [edges, setEdges] = useState(initialState.edges);
+
+    // console.log(nodes.map(node => {
+    //     return `${node.id} - ${node.data.sourceHandles.map(i => i.id).join(" | ")} - ${node.data.targetHandles.map(i => i.id).join(" | ")}`
+    // }), edges)
 
     function updateData(props, changes) {
         setNodes(nodes.map(node => {
@@ -181,24 +279,17 @@ function WorkflowsDesigner(props) {
         (event, connectionState) => {
             if (!connectionState.isValid) {
                 event.stopPropagation()
+                console.log({ connectionState })
                 setTimeout(() => {
-                    const { clientX, clientY } = 'changedTouches' in event ? event.changedTouches[0] : event;
-
                     setOnCreationMode({
                         ...connectionState.fromNode,
-                        fromOrigin: rfInstance.screenToFlowPosition({
-                            x: clientX,
-                            y: clientY
-                        })
+                        handle: connectionState.fromHandle
                     })
-                    // setSelectedNode(connectionState.fromNode)
-                }, 250)
+                }, 2)
             }
         },
         [rfInstance],
     );
-
-    console.log(selectedNode)
 
     const onConnect = useCallback(
         (connection) => {
@@ -216,87 +307,84 @@ function WorkflowsDesigner(props) {
         [setEdges],
     );
 
-    const extentParent = node => {
-        return {
-            ...node,
-            data: {
-                ...node.data,
-                extent: 'parent'
-            },
-            extent: 'parent',
-        }
-    }
-
     const handleSelectNode = item => {
         const targetId = uuid()
 
         console.log("handleSelectNode", "isOnCreation", isOnCreation, item)
 
-        if (isOnCreation && isOnCreation.isInternalNode) {
-            const newNode = addInformationsToNode(defaultNode(nodes, item, false));
-            setNodes([
-                ...nodes,
-                extentParent({
-                    ...newNode,
-                    parentId: isOnCreation.id,
-                    data: {
-                        ...newNode.data,
-                        parentId: isOnCreation.id,
-                        isFirst: true
-                    },
-                })
-            ])
-            // setNodes(nodes.map(node => {
-            //     if (node.id === isOnCreation.id) {
-            //         return {
-            //             ...node,
-            //             data: {
-            //                 ...node.data,
-            //                 workflow: {
-            //                     ...node.data.workflow,
-            //                     node: addInformationsToNode({
-            //                         ...item,
-            //                         ...NODES[item.kind.toLowerCase()](item)
-            //                     })
-            //                 }
-            //             }
-            //         }
-            //     }
-            //     return node
-            // }))
-            setOnCreationMode(false)
-            return
-        }
-
-        if (isOnCreation) {
-            setEdges([
-                ...edges,
-                {
-                    id: uuid(),
-                    source: targetId,
-                    target: isOnCreation.id,
-                    type: 'customEdge',
-                    animated: true,
-                }
-            ])
-        }
-
-        const newNode = addInformationsToNode({
+        let newNode = addInformationsToNode({
             ...defaultNode([], item, false),
             id: targetId,
             position: isOnCreation.fromOrigin ? isOnCreation.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position)),
-            type: item.type || 'simple'
+            type: item.type || 'simple',
         })
+
+        let newEdges = []
+
+        if (isOnCreation && isOnCreation.handle) {
+            // id: 'a-b',
+            // source: 'a',
+            // sourceHandle: 'a-s-a',
+            // target: 'b',
+            // targetHandle: 'b-t-a',
+
+            const sourceHandle = isOnCreation.handle.id
+
+            newEdges.push({
+                id: uuid(),
+                source: isOnCreation.id,
+                sourceHandle,
+                target: newNode.id,
+                targetHandle: 'input',
+                type: 'customEdge',
+                animated: true,
+            })
+
+            console.log(newEdges)
+        }
+
+        const { targets = [], sources = [] } = newNode.data
+        newNode = {
+            ...newNode,
+            data: {
+                ...newNode.data,
+                targetHandles: ['input', ...targets].map((target, i) => {
+                    return { id: target }
+                }),
+                sourceHandles: [...sources, 'output'].map((source, i) => {
+                    return { id: source }
+                })
+            }
+        }
 
         setNodes([
             ...nodes,
-            {
-                ...(isOnCreation.data.extent ? extentParent(newNode) : newNode),
-                parentId: isOnCreation.data.parentId ? isOnCreation.data.parentId : undefined,
-            }
+            newNode
+            // ...childrenNodes
         ])
 
+        setEdges([...edges, ...newEdges])
+
         setOnCreationMode(false)
+    }
+
+    function createDefaultEdge(target, source) {
+        return {
+            id: uuid(),
+            target: target.id,
+            source: source.id,
+            type: 'customEdge',
+            animated: true,
+        }
+    }
+
+    function createDefaultNode(item, nodes) {
+        return addInformationsToNode({
+            ...defaultNode([], item, false),
+            id: uuid(),
+            position: findNonOverlappingPosition(nodes.map(n => n.position)),
+            type: item.type || 'simple'
+        })
     }
 
     function run() {
@@ -336,7 +424,8 @@ function WorkflowsDesigner(props) {
         }
     });
 
-    console.log(rfInstance)
+    // useLayoutNodes()
+    console.log(edges)
 
     return <div className='workflow'>
         <DesignerActions run={run} />

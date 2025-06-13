@@ -6,6 +6,21 @@ export const MapNode = (_workflow) => ({
     description: 'Route items to different branches (true/false)',
     workflow: _workflow,
     kind: 'map',
+    type: 'group',
+    flow: ['values'],
+    schema: {
+        values: {
+            type: 'code',
+            label: 'Values to iterate',
+            props: {
+                editorOnly: true,
+            },
+        },
+        destination: {
+            type: 'string',
+            label: 'Destination'
+        }
+    }
     //     {
     //   "kind": "foreach",
     //   "values": <array_expr>,

@@ -5,8 +5,8 @@ export const ForEachNode = (_workflow) => ({
     name: 'For Each',
     description: 'Apply node for each item',
     workflow: _workflow,
-    type: 'group',
     kind: 'foreach',
+    type: 'group',
     flow: ['values'],
     schema: {
         values: {
@@ -15,14 +15,8 @@ export const ForEachNode = (_workflow) => ({
             props: {
                 editorOnly: true,
             },
-        },
-        // node: {
-        //     renderer: NodeRenderer
-        // }
-    }
-    //     {
-    //   "kind": "foreach",
-    //   "values": <array_expr>,
-    //   "node": <workflow>
-    // }
+        }
+    },
+    sources: ['node'],
+    targets: []
 })

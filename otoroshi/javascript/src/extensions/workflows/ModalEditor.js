@@ -6,8 +6,6 @@ export function ModalEditor({ node }) {
     if (!node)
         return null
 
-    console.log(node)
-
     const [state, setState] = useState()
 
     const schema = {

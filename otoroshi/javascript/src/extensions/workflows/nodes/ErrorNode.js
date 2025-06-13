@@ -6,6 +6,20 @@ export const ErrorNode = (_workflow) => ({
     description: 'Throw an error in the workflow',
     workflow: _workflow,
     kind: 'error',
+    flow: ['message', 'details'],
+    schema: {
+        message: {
+            type: 'string',
+            label: "Message"
+        },
+        details: {
+            type: 'code',
+            labe: 'Details',
+            props: {
+                editorOnly: true
+            }
+        }
+    }
     //     {
     //   "kind": "error",
     //   "message": "<error_message>",
