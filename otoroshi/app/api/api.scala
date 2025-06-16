@@ -2571,4 +2571,37 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       case _                        => Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
     }
   }
+
+  def workflowDescriptorJson() = Action {
+    val body = otoroshi.next.workflow.WorkflowGenerators.generateJsonDescriptor().prettify
+    Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
+  }
+
+  def workflowDescriptorMarkdown() = Action {
+    val body = otoroshi.next.workflow.WorkflowGenerators.generateMarkdownDescriptor()
+    Ok(body).as("text/plain").withHeaders("Access-Control-Allow-Origin" -> "*")
+  }
+
+  def workflowDescriptorWeb() = Action {
+    val body =
+      s"""<html>
+         |  <head>
+         |    <title>Workflow doc</title>
+         |    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js" integrity="sha512-LhccdVNGe2QMEfI3x4DVV3ckMRe36TfydKss6mJpdHjNFiV07dFpS2xzeZedptKZrwxfICJpez09iNioiSZ3hA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+         |  </head>
+         |  <body>
+         |    <div id="root"></div>
+         |    <script>
+         |      var converter = new showdown.Converter();
+         |      fetch('/apis/workflows/doc.md').then(r => r.text()).then(md => {
+         |        var html = converter.makeHtml(md);
+         |        document.getElementById("root").innerHTML = html;
+         |      });
+         |    </script>
+         |  </body>
+         |</html>
+         |""".stripMargin
+
+    Ok(body).as("text/html").withHeaders("Access-Control-Allow-Origin" -> "*")
+  }
 }

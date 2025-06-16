@@ -14,6 +14,8 @@ import scala.concurrent._
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 import scala.util.Success
 
+// TODO: time budget per node
+// TODO: fuel budget per run, with fuel consumption per node
 class WorkflowEngine(env: Env) {
 
   implicit val executorContext = env.otoroshiExecutionContext
@@ -107,8 +109,11 @@ case class WorkflowRun(id: String, attrs: TypedMap, env: Env) {
 }
 
 trait WorkflowFunction {
-  def inputSchema: Option[JsObject]                                                                         = None
-  def outputSchema: Option[JsObject]                                                                        = None
+  def documentationName: String = this.getClass.getName.replace("$", "")
+  def documentationDescription: String = "no description"
+  def documentationInputSchema: Option[JsObject]  = None
+  def documentationOutputSchema: Option[JsObject] = None
+  def documentationExample: Option[JsObject] = None
   def callWithRun(
       args: JsObject
   )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]]      = call(args)
@@ -134,6 +139,10 @@ trait Node {
   def result: Option[String]    = json.select("result").asOptString
   def returned: Option[JsValue] = json.select("returned").asOpt[JsValue]
   def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
+  def documentationName: String = this.getClass.getSimpleName.replace("$", "").toLowerCase()
+  def documentationDescription: String = "no description"
+  def documentationInputSchema: Option[JsObject]  = None
+  def documentationExample: Option[JsObject] = None
   final def internalRun(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
@@ -183,6 +192,18 @@ object Node {
     ),
     "returned" -> Json.obj("$mem_ref" -> Json.obj("name" -> "call_res"))
   )
+  val baseInputSchema = Json.obj(
+    "type" -> "object",
+    "required" -> Seq("kind"),
+    "properties" -> Json.obj(
+      "id" -> Json.obj("type" -> "string", "description" -> "id of the node (optional). for debug purposes only"),
+      "description" -> Json.obj("type" -> "string", "description" -> "The description of what this node does in the workflow (optional). for debug purposes only"),
+      "kind" -> Json.obj("type" -> "string", "description" -> "The kind of the node"),
+      "enabled" -> Json.obj("type" -> "boolean", "description" -> "Is the node enabled (optional)"),
+      "result" -> Json.obj("type" -> "string", "description" -> "The name of the memory that will be assigned with the result of this node (optional)"),
+      "returned" -> Json.obj("type" -> "string", "description" -> "Overrides the output of the node with the result of an operator (optional)"),
+    )
+  )
   val nodes   = new TrieMap[String, (JsObject) => Node]()
   def registerNode(name: String, f: (JsObject) => Node): Unit = {
     nodes.put(name, f)
@@ -197,11 +218,15 @@ object Node {
 }
 
 trait WorkflowOperator {
+  def documentationName: String = this.getClass.getName.replace("$", "")
+  def documentationDescription: String = "no description"
+  def documentationInputSchema: Option[JsObject]  = None
+  def documentationExample: Option[JsObject] = None
   def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue
 }
 
 object WorkflowOperator {
-  private val operators                                                     = new TrieMap[String, WorkflowOperator]()
+  val operators                                                     = new TrieMap[String, WorkflowOperator]()
   def registerOperator(name: String, operator: WorkflowOperator): Unit = {
     operators.put(name, operator)
   }

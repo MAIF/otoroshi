@@ -646,6 +646,9 @@ GET     /apis/openapi.yaml                                    otoroshi.api.Gener
 GET     /apis/openapi.yml                                     otoroshi.api.GenericApiController.openapiYaml()
 GET     /apis/openapi.json                                    otoroshi.api.GenericApiController.openapiJson()
 GET     /apis/openapi                                         otoroshi.api.GenericApiController.openapi()
+GET     /apis/workflows/doc.json                              otoroshi.api.GenericApiController.workflowDescriptorJson()
+GET     /apis/workflows/doc.md                                otoroshi.api.GenericApiController.workflowDescriptorMarkdown()
+GET     /apis/workflows/doc                                   otoroshi.api.GenericApiController.workflowDescriptorWeb()
 
 ########################################################################################################################
 
