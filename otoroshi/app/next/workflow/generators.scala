@@ -13,19 +13,26 @@ object WorkflowGenerators {
           Json.obj(
             "name" -> node.documentationName,
             "description" -> node.documentationDescription,
-            "schema" -> node.documentationInputSchema
+            "schema" -> node.documentationInputSchema,
+            "example" -> node.documentationExample
           )
       }.toSeq),
       "functions" -> JsArray(WorkflowFunction.functions.map {
         case (key, value) =>
           Json.obj(
             "name" -> key,
+            "description" -> value.documentationDescription,
+            "schema" -> value.documentationInputSchema,
+            "example" -> value.documentationExample
           )
       }.toSeq),
       "operators" -> JsArray(WorkflowOperator.operators.map {
         case (key, value) =>
           Json.obj(
             "name" -> key,
+            "description" -> value.documentationDescription,
+            "schema" -> value.documentationInputSchema,
+            "example" -> value.documentationExample
           )
       }.toSeq),
     )
