@@ -32,8 +32,6 @@
     position: absolute;
     top: -1.5rem;
     margin: auto;
-    left: 0;
-    right: 0;
     padding-bottom: 1rem;
   }
 
@@ -139,11 +137,11 @@
     justify-content: flex-start;
     gap: .5rem;
     background-color: var(--bg-color_level2);
-    border-top-left-radius: .75rem;
-    border-top-right-radius: .75rem;
+    border-top-left-radius: .5rem;
+    border-top-right-radius: .5rem;
   }
 
-  .source::before {
+  // .source::before {
     // content: "";
     // background: var(--color_level1);
     // mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 30 25" stroke-width="4" stroke="%23e5e5e5"><path fill="%23e5e5e5" stroke-linecap="round" stroke-linejoin="round" d="M14 5 14 19m6-7L14 5M14 5 14 19 20 12M25 6 21 6 21 18 25 18 25 6" /></svg>');
@@ -156,7 +154,7 @@
     // height: 36px;
     // display: inline-block;
     // z-index: 10000;
-  }
+  // }
 
   .react-flow__edge-path {
     transition: stroke-width 0.2s ease, stroke 0.2s ease;
@@ -262,14 +260,10 @@
     width: fit-content;
     padding: 2rem;
     min-width: 200px;
-    min-height: 100px;
+    min-height: 112px;
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .parent {
-    // padding: 12rem;
   }
 
   .node-group-label {
@@ -312,6 +306,7 @@
   .handles.sources {
     right: 0;
     top: 30px;
+    bottom: 0;
     margin-top: .5rem;
     display: flex;
     flex-direction: column;
@@ -336,6 +331,7 @@
 
   .handles.targets {
     left: 0;
+    bottom: 0;
     top: 30px;
     margin-top: .5rem;
   }
@@ -383,5 +379,18 @@
     align-items: center;
     justify-content: center;
     margin-right: .5rem;
+  }
+
+  .add-handle {
+    // border: none;
+    // background: none;
+    font-size: .6rem;
+    margin-right: 0.5rem;
+    margin-top: .25rem;
+    padding: .2rem;
+  }
+
+  .handle-dot--selected {
+    background-color: var(--color_level1) !important;
   }
 }

@@ -1,16 +1,14 @@
-const NODE_SIZE = 100;
-const PADDING = 150;
-const TOTAL_SIZE = NODE_SIZE + PADDING;
-const CANVAS_WIDTH = window.innerWidth;
-const CANVAS_HEIGHT = window.innerHeight;
-const MAX_RANDOM_ATTEMPTS = 100;
+const NODE_SIZE = 200
+const PADDING = 100
+const TOTAL_SIZE = NODE_SIZE + PADDING
+const CANVAS_WIDTH = window.innerWidth
+const CANVAS_HEIGHT = window.innerHeight
 
 const DIRECTIONS = [
-    // { dx: 0, dy: TOTAL_SIZE },
-    // { dx: 0, dy: -TOTAL_SIZE }
-
     { dy: 0, dx: TOTAL_SIZE },
-    { dy: 0, dx: -TOTAL_SIZE }
+    { dy: 0, dx: -TOTAL_SIZE },
+    { dx: 0, dy: TOTAL_SIZE },
+    { dx: 0, dy: -TOTAL_SIZE }
 ];
 
 function isOverlapping(x, y, nodes) {
@@ -19,18 +17,6 @@ function isOverlapping(x, y, nodes) {
         const dy = Math.abs(y - node.y);
         return dx < TOTAL_SIZE && dy < TOTAL_SIZE;
     })
-}
-
-export function findRandomPosition(existingNodes) {
-    for (let i = 0; i < MAX_RANDOM_ATTEMPTS; i++) {
-        const x = Math.random() * (CANVAS_WIDTH - NODE_SIZE);
-        const y = Math.random() * (CANVAS_HEIGHT - NODE_SIZE);
-
-        if (!isOverlapping(x, y, existingNodes)) {
-            return { x, y }
-        }
-    }
-    return null;
 }
 
 function findNearbyPosition(existingNodes) {
@@ -59,13 +45,8 @@ export function findNonOverlappingPosition(existingNodes) {
         return position
     }
 
-    position = findRandomPosition(existingNodes);
-    if (position) {
-        return position
-    }
-
     return {
-        x: existingNodes[0].position.x,
-        y: existingNodes[0].position.y + PADDING
+        x: existingNodes[0].x,
+        y: existingNodes[0].y + PADDING
     }
 }

@@ -8,6 +8,8 @@ export const WorkflowNode = (_workflow) => {
         type: 'group',
         workflow: _workflow,
         kind: 'workflow',
+        sources: [],
+        targets: []
         // {
         //   "kind": "workflow",
         //   "steps": [ <Node> ],

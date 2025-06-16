@@ -7,6 +7,9 @@ export const ParallelFlowsNode = (_workflow) => ({
     type: 'group',
     workflow: _workflow,
     kind: 'parallel',
+    sourcesIsArray: true,
+    sources: ['path-1'],
+    targets: []
     // {
     //   "kind": "parallel",
     //   "paths": [ <workflow>, ... ]

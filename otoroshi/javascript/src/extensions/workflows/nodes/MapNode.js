@@ -20,10 +20,7 @@ export const MapNode = (_workflow) => ({
             type: 'string',
             label: 'Destination'
         }
-    }
-    //     {
-    //   "kind": "foreach",
-    //   "values": <array_expr>,
-    //   "node": <workflow>
-    // }
+    },
+    sources: ['node'],
+    targets: []
 })

@@ -8,7 +8,6 @@ import { Navbar } from './Navbar'
 import { NodesExplorer } from './NodesExplorer'
 import Loader from '../../components/Loader';
 import { v4 as uuid } from 'uuid';
-import useLayoutNodes from './useLayoutNodes'
 
 import {
     applyNodeChanges,
@@ -168,61 +167,6 @@ function WorkflowsDesigner(props) {
     const [rfInstance, setRfInstance] = useState(null);
 
     const initialState = getInitialNodesFromWorkflow(props.workflow?.config, addInformationsToNode);
-    // const initialState = getInitialNodesFromWorkflow({
-    //     kind: 'workflow',
-    //     steps: [
-    //         {
-    //             "kind": "call",
-    //             "description": "get all pokemons from the pokeapi",
-    //             "function": "core.http_client",
-    //             "args": {
-    //                 "method": "GET",
-    //                 "url": "https://pokeapi.co/api/v2/pokemon"
-    //             },
-    //             "result": "pokemons"
-    //         },
-    //         {
-    //             "kind": "assign",
-    //             "description": "extract results from the response, and only keep the 5 first pokemons",
-    //             "values": [
-    //                 {
-    //                     "name": "pokemons",
-    //                     "value": {
-    //                         "$array_page": {
-    //                             "array": "${pokemons.body_json.results}",
-    //                             "page": 1,
-    //                             "page_size": 5
-    //                         }
-    //                     }
-    //                 },
-    //                 {
-    //                     "name": "pokemon_names",
-    //                     "value": []
-    //                 }
-    //             ]
-    //         },
-    //         {
-    //             "kind": "assign",
-    //             "description": "extract results from the response, and only keep the 5 first pokemons",
-    //             "values": [
-    //                 {
-    //                     "name": "pokemons",
-    //                     "value": {
-    //                         "$array_page": {
-    //                             "array": "${pokemons.body_json.results}",
-    //                             "page": 1,
-    //                             "page_size": 5
-    //                         }
-    //                     }
-    //                 },
-    //                 {
-    //                     "name": "pokemon_names",
-    //                     "value": []
-    //                 }
-    //             ]
-    //         }
-    //     ]
-    // }, addInformationsToNode);
 
     const [nodes, internalSetNodes] = useState(initialState.nodes);
     const [edges, setEdges] = useState(initialState.edges);
@@ -255,10 +199,29 @@ function WorkflowsDesigner(props) {
                     onDoubleClick: setSelectedNode,
                     openNodesExplorer: setOnCreationMode,
                     handleDeleteNode: handleDeleteNode,
-                    updateData: updateData
+                    updateData: updateData,
+                    addHandleSource: addHandleSource
                 }
             },
         }
+    }
+
+    function addHandleSource(nodeId) {
+        setNodes(eds => eds.map(node => {
+            if (node.id === nodeId) {
+                return {
+                    ...node,
+                    data: {
+                        ...node.data,
+                        sourceHandles: [
+                            ...node.data.sourceHandles,
+                            { id: `path-${node.data.sourceHandles.length}` }
+                        ]
+                    }
+                }
+            }
+            return node
+        }))
     }
 
     function handleDeleteNode(nodeId) {
@@ -297,6 +260,7 @@ function WorkflowsDesigner(props) {
                 ...connection, type: 'customEdge',
                 animated: true,
             }
+            console.log(edge)
             setEdges((eds) => {
                 if (!eds.find(e => e.source === edge.source))
                     return addEdge(edge, eds)
@@ -318,6 +282,16 @@ function WorkflowsDesigner(props) {
             position: isOnCreation.fromOrigin ? isOnCreation.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position)),
             type: item.type || 'simple',
         })
+
+        if (nodes.length === 0)
+            newNode = {
+                ...newNode,
+                data: {
+                    ...newNode.data,
+                    isFirst: true
+                }
+            }
+
 
         let newEdges = []
 
@@ -368,25 +342,6 @@ function WorkflowsDesigner(props) {
         setOnCreationMode(false)
     }
 
-    function createDefaultEdge(target, source) {
-        return {
-            id: uuid(),
-            target: target.id,
-            source: source.id,
-            type: 'customEdge',
-            animated: true,
-        }
-    }
-
-    function createDefaultNode(item, nodes) {
-        return addInformationsToNode({
-            ...defaultNode([], item, false),
-            id: uuid(),
-            position: findNonOverlappingPosition(nodes.map(n => n.position)),
-            type: item.type || 'simple'
-        })
-    }
-
     function run() {
         fetch('/extensions/workflows/_test', {
             method: 'POST',
@@ -424,8 +379,7 @@ function WorkflowsDesigner(props) {
         }
     });
 
-    // useLayoutNodes()
-    console.log(edges)
+    console.log(nodes)
 
     return <div className='workflow'>
         <DesignerActions run={run} />
