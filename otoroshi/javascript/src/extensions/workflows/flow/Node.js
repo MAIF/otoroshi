@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 
 import Handles from './Handles';
 import NodeTrashButton from './NodeTrashButton';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, NodeResizer, Position } from '@xyflow/react';
 
 export function Node(props) {
     const { data } = props
@@ -12,6 +12,13 @@ export function Node(props) {
     return (
         <>
             <Handles {...props} />
+
+            <NodeResizer
+                color="#ff0071"
+                isVisible={props.selected}
+                minWidth={200}
+                minHeight={100}
+            />
 
             <button
                 className={`

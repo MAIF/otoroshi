@@ -174,7 +174,8 @@ class TryItController(
             case Some(content) => wsRequest.withBody(Source(content.grouped(32 * 1024).toList)).execute()
           }
 
-          val curl = s"curl -X $method $url ${headers.map { case (key, value) => s"""-H "$key: $value"""" }.mkString(" ")}"
+          val curl =
+            s"curl -X $method $url ${headers.map { case (key, value) => s"""-H "$key: $value"""" }.mkString(" ")}"
           respF.flatMap { resp =>
             val report: JsValue = env.proxyState.report(requestId).map(_.json).getOrElse(JsNull)
             val status          = resp.status

@@ -18,19 +18,19 @@ export const queryClient = new QueryClient({
 });
 
 function TesterPage() {
-  const location = useLocation()
+  const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
 
-  const queryParamEntity = queryParams.get('entity')
+  const queryParamEntity = queryParams.get('entity');
 
-  const [loading, setLoading] = useState(true)
-  const [entityFromQueryParams, setEntityFromQueryParams] = useState()
+  const [loading, setLoading] = useState(true);
+  const [entityFromQueryParams, setEntityFromQueryParams] = useState();
 
-  const [entityId, setEntityId] = useState(queryParamEntity)
-  const [entity, setEntity] = useState()
-  const [route, setRoute] = useState()
+  const [entityId, setEntityId] = useState(queryParamEntity);
+  const [entity, setEntity] = useState();
+  const [route, setRoute] = useState();
 
-  const isAPI = entity && entityId && entityId.startsWith('api')
+  const isAPI = entity && entityId && entityId.startsWith('api');
 
   useEffect(() => {
     if (queryParamEntity) {
@@ -43,90 +43,105 @@ function TesterPage() {
               label: results[0].name,
               value: results[0].serviceId,
               env: results[0].env,
-              action: () => setValue(results[0].serviceId)
-            }
+              action: () => setValue(results[0].serviceId),
+            };
 
-            setEntityFromQueryParams(ressource)
-            setLoading(false)
+            setEntityFromQueryParams(ressource);
+            setLoading(false);
           }
-        })
+        });
     } else {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
-  useQuery(['getEntity', entityId],
+  useQuery(
+    ['getEntity', entityId],
     () => {
-      return (entityId.startsWith('route') ?
-        nextClient.forEntityNext(nextClient.ENTITIES.ROUTES) :
-        nextClient.forEntityNext(nextClient.ENTITIES.APIS)).findById(entityId)
+      return (
+        entityId.startsWith('route')
+          ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES)
+          : nextClient.forEntityNext(nextClient.ENTITIES.APIS)
+      ).findById(entityId);
     },
     {
       enabled: !!entityId,
-      onSuccess: data => {
-        setEntity(data)
+      onSuccess: (data) => {
+        setEntity(data);
         if (entityId.startsWith('route')) {
-          setRoute(data)
+          setRoute(data);
         }
       },
     }
-  )
+  );
 
-  const addEntityToURL = newEntityId => {
+  const addEntityToURL = (newEntityId) => {
     queryParams.delete('entity');
 
-    if (newEntityId)
-      queryParams.append('entity', newEntityId)
+    if (newEntityId) queryParams.append('entity', newEntityId);
 
     window.history.replaceState(null, null, '?' + queryParams.toString());
-  }
+  };
 
-  const handleSelectEntity = newEntityId => {
-    addEntityToURL(newEntityId)
-    setEntityId(newEntityId)
-    setEntity(undefined)
-    setRoute(undefined)
-  }
+  const handleSelectEntity = (newEntityId) => {
+    addEntityToURL(newEntityId);
+    setEntityId(newEntityId);
+    setEntity(undefined);
+    setRoute(undefined);
+  };
 
-  return <div style={{ maxWidth: 1440 }}>
-    <Row title="Entity">
-      {!loading && <EntitiesSearchBar
-        entityFromQueryParams={entityFromQueryParams}
-        value={entityId}
-        setValue={handleSelectEntity} />}
-    </Row>
-    {isAPI && <Row title="Route">
-      <NgSelectRenderer
-        id="routes"
-        ngOptions={{ spread: true }}
-        value={route}
-        options={entity.routes?.map(r => ({ label: r.name, value: r }))}
-        onChange={route => {
-          return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${entity.id}/routes/${route.id}`, {
-            credentials: 'include',
-            headers: {
-              Accept: 'application/json',
-            }
-          })
-            .then((r) => r.json())
-            .then(setRoute)
-        }}
-      />
-    </Row>}
+  return (
+    <div style={{ maxWidth: 1440 }}>
+      <Row title="Entity">
+        {!loading && (
+          <EntitiesSearchBar
+            entityFromQueryParams={entityFromQueryParams}
+            value={entityId}
+            setValue={handleSelectEntity}
+          />
+        )}
+      </Row>
+      {isAPI && (
+        <Row title="Route">
+          <NgSelectRenderer
+            id="routes"
+            ngOptions={{ spread: true }}
+            value={route}
+            options={entity.routes?.map((r) => ({ label: r.name, value: r }))}
+            onChange={(route) => {
+              return fetch(
+                `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${entity.id}/routes/${route.id}`,
+                {
+                  credentials: 'include',
+                  headers: {
+                    Accept: 'application/json',
+                  },
+                }
+              )
+                .then((r) => r.json())
+                .then(setRoute);
+            }}
+          />
+        </Row>
+      )}
 
-    {route && <Suspense fallback={null}>
-      <TryIt route={route} />
-    </Suspense>}
-  </div>
+      {route && (
+        <Suspense fallback={null}>
+          <TryIt route={route} />
+        </Suspense>
+      )}
+    </div>
+  );
 }
 
 export default ({ setTitle }) => {
-
   useEffect(() => {
     setTitle('Tester');
   }, []);
 
-  return <QueryClientProvider client={queryClient}>
-    <TesterPage />
-  </QueryClientProvider>
-}
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TesterPage />
+    </QueryClientProvider>
+  );
+};

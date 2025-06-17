@@ -12,7 +12,8 @@ export const graph = (env) => {
         {
           title: 'Tester',
           img: 'tester',
-          description: 'A tool for testing and validating Otoroshi components such as services, routes, and plugins.',
+          description:
+            'A tool for testing and validating Otoroshi components such as services, routes, and plugins.',
           display: () => true,
           link: '/tester',
           icon: () => 'fa-hammer',

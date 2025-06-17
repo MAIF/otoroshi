@@ -4,8 +4,6 @@ import {
     BaseEdge,
     EdgeLabelRenderer,
     getSimpleBezierPath,
-    getSmoothStepPath,
-    getStraightPath,
     useReactFlow,
 } from '@xyflow/react';
 

@@ -1,9 +1,5 @@
 import React, { Suspense, useEffect, useState } from 'react';
-import {
-  tryIt,
-  findAllCertificates,
-  fetchApiKeysForPage,
-} from '../../services/BackOfficeServices';
+import { tryIt, findAllCertificates, fetchApiKeysForPage } from '../../services/BackOfficeServices';
 import { firstLetterUppercase } from '../../util';
 
 import { NgCodeRenderer, NgSelectRenderer } from '../../components/nginputs';
@@ -14,7 +10,7 @@ const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inp
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
 
-const LOCAL_STORAGE_KEY = 'global-tester'
+const LOCAL_STORAGE_KEY = 'global-tester';
 
 const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(3);
 const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
@@ -54,7 +50,6 @@ export default function ({ route }) {
   const [responseBody, setResponseBody] = useState();
   const [loading, setLoading] = useState(false);
 
-
   useEffect(() => {
     if (route && route.id) {
       updateRequest({
@@ -80,7 +75,7 @@ export default function ({ route }) {
       if (storedData && r) {
         setRequest(r);
       }
-    } catch (_) { }
+    } catch (_) {}
   };
 
   const saveTestingRouteHistory = (request) => {
@@ -130,7 +125,7 @@ export default function ({ route }) {
   };
 
   useEffect(() => {
-    fetchApiKeysForPage(route.id).then(setApikeys)
+    fetchApiKeysForPage(route.id).then(setApikeys);
     findAllCertificates().then((res) => setCertificates(res.data));
   }, []);
 
@@ -143,7 +138,10 @@ export default function ({ route }) {
       headers: Object.values(request.headers)
         .filter((d) => d.key.length > 0 && d.checked)
         .reduce((a, c) => ({ ...a, [c.key]: c.value }), {}),
-      body: request.contentType === 'GRAPHQL' ? JSON.stringify({ query: request.bodyContent }, null, 2) : request.bodyContent
+      body:
+        request.contentType === 'GRAPHQL'
+          ? JSON.stringify({ query: request.bodyContent }, null, 2)
+          : request.bodyContent,
     })
       .then((res) => res.json())
       .then((res) => {
@@ -179,124 +177,137 @@ export default function ({ route }) {
       ),
       ...(format === 'basic'
         ? {
-          'authorization-header': {
-            key: apikeyHeader || request.apikeyHeader,
-            value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-            checked: true
-          },
-        }
+            'authorization-header': {
+              key: apikeyHeader || request.apikeyHeader,
+              value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+              checked: true,
+            },
+          }
         : {
-          'Otoroshi-Client-Id': {
-            key: 'Otoroshi-Client-Id',
-            value: clientId,
-            checked: true
-          },
-          'Otoroshi-Client-Secret': {
-            key: 'Otoroshi-Client-Secret',
-            value: clientSecret,
-            checked: true
-          },
-        }),
+            'Otoroshi-Client-Id': {
+              key: 'Otoroshi-Client-Id',
+              value: clientId,
+              checked: true,
+            },
+            'Otoroshi-Client-Secret': {
+              key: 'Otoroshi-Client-Secret',
+              value: clientSecret,
+              checked: true,
+            },
+          }),
     };
   };
 
   const receivedResponse = response;
 
-  const isAuthorizationTabVisible = selectedTab === 'Authorization' && headersStatus === 'down'
+  const isAuthorizationTabVisible = selectedTab === 'Authorization' && headersStatus === 'down';
 
-  return <div className="d-flex flex-column tryIt" style={{ flex: 1 }}>
-    <div className="d-flex">
-      <div style={{ minWidth: '8rem' }}>
-        <NgSelectRenderer
-          options={METHODS}
-          value={request.method}
-          ngOptions={{
-            spread: true,
-          }}
-          onChange={(method) => setRequest({ ...request, method })}
-          optionsTransformer={(arr) =>
-            (arr || []).map((item) => ({ value: item, label: item }))
-          }
-          styles={{
-            control: (baseStyles, _) => {
-              return {
-                ...baseStyles,
-                border: '1px solid var(--bg-color_level3)',
-                color: 'var(--text)',
-                backgroundColor: 'var(--bg-color_level2)',
-                boxShadow: 'none',
-                borderRadius: 0
-              }
-            }
-          }}
-        />
-      </div>
-      <input
-        type="text"
-        className="form-control"
-        style={{
-          borderRadius: 0,
-          border: '1px solid var(--bg-color_level3)',
-          borderRight: 0,
-          borderLeft: 0
-        }}
-        placeholder="Enter request URL"
-        value={request.path}
-        onChange={(e) => setRequest({ ...request, path: e.target.value })}
-      />
-      <button className="btn btn-primaryColor" onClick={send} style={{
-        borderRadius: 0,
-      }}>
-        Send
-      </button>
-    </div>
-    <div className='border-l border-r'>
-      <div
-        style={{
-          flexDirection: 'column'
-          // paddingBottom: headersStatus === 'down' ? '120px' : 0,
-        }}
-      >
-        <div className="d-flex align-items-center" style={{ minHeight: 30 }}>
-          {[
-            { label: 'Authorization', value: 'Authorization' },
-            {
-              label: 'Headers',
-              value: <div className='tab-with-number'>
-                Headers <span>{Object.keys(request.headers || {}).length} </span>
-              </div>,
-            },
-            { label: 'Body', value: 'Body' },
-          ].map(({ label, value }, i) => {
-            return <button
-              onClick={() => {
-                setHeadersStatus('down');
-                setSelectedTab(label);
-              }}
-              className="p-2 px-3"
-              style={{
-                padding: 0,
-                border: 'none',
-                borderRight: (i === 1 || i === 2) ? '1px solid var(--bg-color_level3)' : 0,
-                borderLeft: i === 1 ? '1px solid var(--bg-color_level3)' : 0,
-                boxShadow: headersStatus === 'up' ? 'none' : (selectedTab === label ? '0 1px 0 0 var(--bg-color_level1)' : 'none'),
-                background: 'none',
-              }}
-            >
-              {value}
-            </button>
-          })}
-          <i
-            className={`ms-auto px-3 tab fas fa-chevron-${headersStatus === 'up' ? 'down' : 'up'}`}
-            style={{
-              cursor: 'pointer'
+  return (
+    <div className="d-flex flex-column tryIt" style={{ flex: 1 }}>
+      <div className="d-flex">
+        <div style={{ minWidth: '8rem' }}>
+          <NgSelectRenderer
+            options={METHODS}
+            value={request.method}
+            ngOptions={{
+              spread: true,
             }}
-            onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')}
+            onChange={(method) => setRequest({ ...request, method })}
+            optionsTransformer={(arr) => (arr || []).map((item) => ({ value: item, label: item }))}
+            styles={{
+              control: (baseStyles, _) => {
+                return {
+                  ...baseStyles,
+                  border: '1px solid var(--bg-color_level3)',
+                  color: 'var(--text)',
+                  backgroundColor: 'var(--bg-color_level2)',
+                  boxShadow: 'none',
+                  borderRadius: 0,
+                };
+              },
+            }}
           />
         </div>
-        {isAuthorizationTabVisible && <div className='border-t'>
-          <Row title="Apikey" containerClassName='py-2 m-0'>
-            {/* <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
+        <input
+          type="text"
+          className="form-control"
+          style={{
+            borderRadius: 0,
+            border: '1px solid var(--bg-color_level3)',
+            borderRight: 0,
+            borderLeft: 0,
+          }}
+          placeholder="Enter request URL"
+          value={request.path}
+          onChange={(e) => setRequest({ ...request, path: e.target.value })}
+        />
+        <button
+          className="btn btn-primaryColor"
+          onClick={send}
+          style={{
+            borderRadius: 0,
+          }}
+        >
+          Send
+        </button>
+      </div>
+      <div className="border-l border-r">
+        <div
+          style={{
+            flexDirection: 'column',
+            // paddingBottom: headersStatus === 'down' ? '120px' : 0,
+          }}
+        >
+          <div className="d-flex align-items-center" style={{ minHeight: 30 }}>
+            {[
+              { label: 'Authorization', value: 'Authorization' },
+              {
+                label: 'Headers',
+                value: (
+                  <div className="tab-with-number">
+                    Headers <span>{Object.keys(request.headers || {}).length} </span>
+                  </div>
+                ),
+              },
+              { label: 'Body', value: 'Body' },
+            ].map(({ label, value }, i) => {
+              return (
+                <button
+                  onClick={() => {
+                    setHeadersStatus('down');
+                    setSelectedTab(label);
+                  }}
+                  className="p-2 px-3"
+                  style={{
+                    padding: 0,
+                    border: 'none',
+                    borderRight: i === 1 || i === 2 ? '1px solid var(--bg-color_level3)' : 0,
+                    borderLeft: i === 1 ? '1px solid var(--bg-color_level3)' : 0,
+                    boxShadow:
+                      headersStatus === 'up'
+                        ? 'none'
+                        : selectedTab === label
+                          ? '0 1px 0 0 var(--bg-color_level1)'
+                          : 'none',
+                    background: 'none',
+                  }}
+                >
+                  {value}
+                </button>
+              );
+            })}
+            <i
+              className={`ms-auto px-3 tab fas fa-chevron-${headersStatus === 'up' ? 'down' : 'up'}`}
+              style={{
+                cursor: 'pointer',
+              }}
+              onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')}
+            />
+          </div>
+          {isAuthorizationTabVisible && (
+            <div className="border-t">
+              <Row title="Apikey" containerClassName="py-2 m-0">
+                {/* <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
                       <BooleanInput
                         flex={true}
                         label="Use an apikey"
@@ -310,78 +321,77 @@ export default function ({ route }) {
                         }
                       />
                     </div> */}
-            {/* {request.useApikey && ( */}
-            <NgSelectRenderer
-              value={request.apikey}
-              isClearable
-              onChange={(k) => {
-                setRequest({
-                  ...request,
-                  apikey: k,
-                  headers: apikeyToHeader(
-                    request.apikeyFormat,
-                    apikeys.find((a) => a.clientId === k)
-                  ),
-                });
-              }}
-              ngOptions={{
-                spread: true,
-              }}
-              options={apikeys}
-              optionsTransformer={(arr) =>
-                arr.map((item) => ({
-                  value: item.clientId,
-                  label: item.clientName,
-                }))
-              }
-            />
-          </Row>
-          {request.apikey &&
-            <Row title="Apikey format" containerClassName='py-2 m-0'>
-              <NgSelectRenderer
-                options={[
-                  { value: 'basic', label: 'Basic header' },
-                  {
-                    value: 'credentials',
-                    label: 'Client ID/Secret headers',
-                  },
-                ]}
-                ngOptions={{
-                  spread: true,
-                }}
-                value={request.apikeyFormat}
-                onChange={(k) =>
-                  setRequest({
-                    ...request,
-                    apikeyFormat: k,
-                    headers: apikeyToHeader(k),
-                  })
-                }
-              />
-            </Row>}
-          {request.apikey &&
-            request.apikeyFormat === 'basic' &&
-            <Row title="Header name" containerClassName='py-2 m-0'>
-              <input
-                type="text"
-                className="form-control flex"
-                onChange={(e) => {
-                  setRequest({
-                    ...request,
-                    apikeyHeader: e.target.value,
-                    headers: apikeyToHeader(
-                      request.apikeyFormat,
-                      undefined,
-                      e.target.value
-                    ),
-                  });
-                }}
-                value={request.apikeyHeader}
-              />
-            </Row>}
-        </div>}
-        {isAuthorizationTabVisible && <Row title="Certificate client" containerClassName='py-2 border-b m-0'>
-          {/* <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
+                {/* {request.useApikey && ( */}
+                <NgSelectRenderer
+                  value={request.apikey}
+                  isClearable
+                  onChange={(k) => {
+                    setRequest({
+                      ...request,
+                      apikey: k,
+                      headers: apikeyToHeader(
+                        request.apikeyFormat,
+                        apikeys.find((a) => a.clientId === k)
+                      ),
+                    });
+                  }}
+                  ngOptions={{
+                    spread: true,
+                  }}
+                  options={apikeys}
+                  optionsTransformer={(arr) =>
+                    arr.map((item) => ({
+                      value: item.clientId,
+                      label: item.clientName,
+                    }))
+                  }
+                />
+              </Row>
+              {request.apikey && (
+                <Row title="Apikey format" containerClassName="py-2 m-0">
+                  <NgSelectRenderer
+                    options={[
+                      { value: 'basic', label: 'Basic header' },
+                      {
+                        value: 'credentials',
+                        label: 'Client ID/Secret headers',
+                      },
+                    ]}
+                    ngOptions={{
+                      spread: true,
+                    }}
+                    value={request.apikeyFormat}
+                    onChange={(k) =>
+                      setRequest({
+                        ...request,
+                        apikeyFormat: k,
+                        headers: apikeyToHeader(k),
+                      })
+                    }
+                  />
+                </Row>
+              )}
+              {request.apikey && request.apikeyFormat === 'basic' && (
+                <Row title="Header name" containerClassName="py-2 m-0">
+                  <input
+                    type="text"
+                    className="form-control flex"
+                    onChange={(e) => {
+                      setRequest({
+                        ...request,
+                        apikeyHeader: e.target.value,
+                        headers: apikeyToHeader(request.apikeyFormat, undefined, e.target.value),
+                      });
+                    }}
+                    value={request.apikeyHeader}
+                  />
+                </Row>
+              )}
+            </div>
+          )}
+          {isAuthorizationTabVisible && (
+            <Row title="Certificate client" containerClassName="py-2 border-b m-0">
+              {/* <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
                   <BooleanInput
                     flex={true}
                     label="Use a certificate client"
@@ -394,139 +404,159 @@ export default function ({ route }) {
                     }
                   />
                 </div> */}
-          <NgSelectRenderer
-            isClearable
-            ngOptions={{
-              spread: true,
-            }}
-            options={certificates}
-            value={request.client_cert}
-            onChange={(client_cert) =>
-              setRequest({
-                ...request,
-                client_cert,
-              })
-            }
-            optionsTransformer={(arr) =>
-              arr.map((item) => ({
-                value: item.id,
-                label: item.name,
-              }))
-            }
-          />
-        </Row>}
-        {selectedTab === 'Headers' && headersStatus === 'down' && <div className='border-b'>
-          <Headers
-            className="border-b-0"
-            headers={request.headers}
-            deleteHeader={key => {
-              const { [key]: value, ...newHeaders } = request.headers;
-
-              setRequest({
-                ...request,
-                headers: newHeaders,
-              })
-            }}
-            addNewHeader={() => {
-              setRequest({
-                ...request,
-                headers: { ...request.headers, [Date.now()]: { key: '', value: '', checked: true } },
-              })
-            }}
-            deleteAllHeaders={() => {
-              setRequest({
-                ...request,
-                headers: {},
-              })
-            }}
-            onKeyChange={(id, v) => {
-              const updatedRequest = {
-                ...request,
-                headers: {
-                  ...request.headers,
-                  [id]: { key: v, value: request.headers[id].value, checked: request.headers[id].checked },
-                },
-              };
-
-              setRequest({
-                ...updatedRequest,
-                headers: { ...updatedRequest.headers },
-              });
-            }}
-            onValueChange={(id, v) => {
-              const updatedRequest = {
-                ...request,
-                headers: {
-                  ...request.headers,
-                  [id]: { key: request.headers[id].key, value: v, checked: request.headers[id].checked },
-                },
-              };
-
-              setRequest({
-                ...updatedRequest,
-                headers: { ...updatedRequest.headers },
-              });
-            }}
-            onCheckedChange={(id) => {
-              const updatedRequest = {
-                ...request,
-                headers: {
-                  ...request.headers,
-                  [id]: { ...request.headers[id], checked: !request.headers[id].checked },
-                },
-              };
-
-              setRequest({
-                ...updatedRequest,
-                headers: { ...updatedRequest.headers },
-              });
-            }}
-          />
-        </div>}
-        {selectedTab === 'Body' && headersStatus === 'down' && <div className='border-t'>
-          <Row title="Format" containerClassName='py-2 m-0'>
-            <NgSelectRenderer
-              ngOptions={{
-                spread: true,
-              }}
-              options={['No Body', 'Plain Text', 'JSON', 'GRAPHQL', 'HTML', 'XML', 'YAML']}
-              value={request.contentType}
-              onChange={(contentType) => {
-                setRequest({ ...request, contentType })
-              }}
-              optionsTransformer={(arr) =>
-                arr.map((item) => ({ value: item, label: item }))
-              }
-            />
-          </Row>
-          {request.contentType !== 'No Body' && <Suspense fallback={<div>Loading ...</div>}>
-            <Row title={request.contentType === 'GRAPHQL' ? 'Query' : "Content"} containerClassName='m-0 pb-3'>
-              <CodeInput
-                editorOnly
-                className="try-it-body"
-                value={request.bodyContent}
-                // mode={request.contentType === 'GRAPHQL' ? 'graphqlschema' : request.contentType?.toLowerCase()}
-                mode="graphqlschema"
-                onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+              <NgSelectRenderer
+                isClearable
+                ngOptions={{
+                  spread: true,
+                }}
+                options={certificates}
+                value={request.client_cert}
+                onChange={(client_cert) =>
+                  setRequest({
+                    ...request,
+                    client_cert,
+                  })
+                }
+                optionsTransformer={(arr) =>
+                  arr.map((item) => ({
+                    value: item.id,
+                    label: item.name,
+                  }))
+                }
               />
             </Row>
-          </Suspense>}
-        </div>}
+          )}
+          {selectedTab === 'Headers' && headersStatus === 'down' && (
+            <div className="border-b">
+              <Headers
+                className="border-b-0"
+                headers={request.headers}
+                deleteHeader={(key) => {
+                  const { [key]: value, ...newHeaders } = request.headers;
+
+                  setRequest({
+                    ...request,
+                    headers: newHeaders,
+                  });
+                }}
+                addNewHeader={() => {
+                  setRequest({
+                    ...request,
+                    headers: {
+                      ...request.headers,
+                      [Date.now()]: { key: '', value: '', checked: true },
+                    },
+                  });
+                }}
+                deleteAllHeaders={() => {
+                  setRequest({
+                    ...request,
+                    headers: {},
+                  });
+                }}
+                onKeyChange={(id, v) => {
+                  const updatedRequest = {
+                    ...request,
+                    headers: {
+                      ...request.headers,
+                      [id]: {
+                        key: v,
+                        value: request.headers[id].value,
+                        checked: request.headers[id].checked,
+                      },
+                    },
+                  };
+
+                  setRequest({
+                    ...updatedRequest,
+                    headers: { ...updatedRequest.headers },
+                  });
+                }}
+                onValueChange={(id, v) => {
+                  const updatedRequest = {
+                    ...request,
+                    headers: {
+                      ...request.headers,
+                      [id]: {
+                        key: request.headers[id].key,
+                        value: v,
+                        checked: request.headers[id].checked,
+                      },
+                    },
+                  };
+
+                  setRequest({
+                    ...updatedRequest,
+                    headers: { ...updatedRequest.headers },
+                  });
+                }}
+                onCheckedChange={(id) => {
+                  const updatedRequest = {
+                    ...request,
+                    headers: {
+                      ...request.headers,
+                      [id]: { ...request.headers[id], checked: !request.headers[id].checked },
+                    },
+                  };
+
+                  setRequest({
+                    ...updatedRequest,
+                    headers: { ...updatedRequest.headers },
+                  });
+                }}
+              />
+            </div>
+          )}
+          {selectedTab === 'Body' && headersStatus === 'down' && (
+            <div className="border-t">
+              <Row title="Format" containerClassName="py-2 m-0">
+                <NgSelectRenderer
+                  ngOptions={{
+                    spread: true,
+                  }}
+                  options={['No Body', 'Plain Text', 'JSON', 'GRAPHQL', 'HTML', 'XML', 'YAML']}
+                  value={request.contentType}
+                  onChange={(contentType) => {
+                    setRequest({ ...request, contentType });
+                  }}
+                  optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
+                />
+              </Row>
+              {request.contentType !== 'No Body' && (
+                <Suspense fallback={<div>Loading ...</div>}>
+                  <Row
+                    title={request.contentType === 'GRAPHQL' ? 'Query' : 'Content'}
+                    containerClassName="m-0 pb-3"
+                  >
+                    <CodeInput
+                      editorOnly
+                      className="try-it-body"
+                      value={request.bodyContent}
+                      // mode={request.contentType === 'GRAPHQL' ? 'graphqlschema' : request.contentType?.toLowerCase()}
+                      mode="graphqlschema"
+                      onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+                    />
+                  </Row>
+                </Suspense>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-    {
-      receivedResponse && (
+      {receivedResponse && (
         <div className="d-flex flex-row-center border border-b-0">
           <div className="d-flex justify-content-between align-items-flex-end" style={{ flex: 1 }}>
-            <div className='d-flex flex-row-center'>
+            <div className="d-flex flex-row-center">
               {[
                 { label: 'Report', value: 'Report' },
                 { label: 'Preview', value: 'Preview' },
                 {
                   label: 'Headers',
-                  value: <div className='tab-with-number'>
-                    Headers <span>{Object.keys(response.headers).length} </span>
-                  </div>,
+                  value: (
+                    <div className="tab-with-number">
+                      Headers <span>{Object.keys(response.headers).length} </span>
+                    </div>
+                  ),
                 },
               ].map(({ label, value }, i) => (
                 <button
@@ -535,9 +565,12 @@ export default function ({ route }) {
                   style={{
                     padding: 0,
                     border: 'none',
-                    borderRight: (i === 1 || i === 2) ? '1px solid var(--bg-color_level3)' : 0,
+                    borderRight: i === 1 || i === 2 ? '1px solid var(--bg-color_level3)' : 0,
                     borderLeft: i === 1 ? '1px solid var(--bg-color_level3)' : 0,
-                    boxShadow: (selectedResponseTab === label && i !== 1) ? '0 1px 0 0 var(--bg-color_level1)' : 'none',
+                    boxShadow:
+                      selectedResponseTab === label && i !== 1
+                        ? '0 1px 0 0 var(--bg-color_level1)'
+                        : 'none',
                     background: 'none',
                   }}
                 >
@@ -546,36 +579,34 @@ export default function ({ route }) {
               ))}
             </div>
             <div className="d-flex flex-row-center align-items-center">
-              <span className='report-information'>{response.status}</span>
-              <span className='report-information'>{roundNsTo(response.report?.duration_ns)} ms</span>
-              <span className='report-information'>{bytesToSize(response.headers['content-length'])}</span>
+              <span className="report-information">{response.status}</span>
+              <span className="report-information">
+                {roundNsTo(response.report?.duration_ns)} ms
+              </span>
+              <span className="report-information">
+                {bytesToSize(response.headers['content-length'])}
+              </span>
             </div>
           </div>
         </div>
-      )
-    }
-    {
-      receivedResponse && selectedResponseTab === 'Headers' && (
+      )}
+      {receivedResponse && selectedResponseTab === 'Headers' && (
         <Headers
           className="pt-3"
-          headers={Object
-            .entries(response.headers)
-            .reduce((acc, [key, value], index) => ({
+          headers={Object.entries(response.headers).reduce(
+            (acc, [key, value], index) => ({
               ...acc,
               [`${Date.now()}-${index}`]: { key, value },
-            }), {})}
+            }),
+            {}
+          )}
         />
-      )
-    }
+      )}
 
-    {
-      receivedResponse && responseBody && selectedResponseTab === 'Preview' && (
+      {receivedResponse && responseBody && selectedResponseTab === 'Preview' && (
         <div className="border" style={{ flex: 1 }}>
           {responseBody.startsWith('<!') ? (
-            <iframe
-              srcDoc={responseBody}
-              style={{ flex: 1, minHeight: '750px', width: '100%' }}
-            />
+            <iframe srcDoc={responseBody} style={{ flex: 1, minHeight: '750px', width: '100%' }} />
           ) : (
             <NgCodeRenderer
               ngOptions={{
@@ -593,42 +624,50 @@ export default function ({ route }) {
                 },
               }}
               value={responseBody}
-              onChange={() => { }}
+              onChange={() => {}}
             />
           )}
         </div>
-      )
-    }
-    {!receivedResponse && !loading && (
-      <div className="py-3 text-center border border-t-0">
-        <span>Enter the URL and click <button className="btn btn-primaryColor" onClick={send} style={{
-          borderRadius: 0
-        }}>
-          Send
-        </button> to receive a response</span>
-      </div>
-    )}
+      )}
+      {!receivedResponse && !loading && (
+        <div className="py-3 text-center border border-t-0">
+          <span>
+            Enter the URL and click{' '}
+            <button
+              className="btn btn-primaryColor"
+              onClick={send}
+              style={{
+                borderRadius: 0,
+              }}
+            >
+              Send
+            </button>{' '}
+            to receive a response
+          </span>
+        </div>
+      )}
 
-    <Loader loading={loading}>
-      {receivedResponse && selectedResponseTab === 'Report' ? (
-        response.report ? (
-          <ReportView
-            report={response.report}
-            search={search}
-            setSearch={setSearch}
-            unit={unit}
-            setUnit={setUnit}
-            sort={sort}
-            setSort={setSort}
-            flow={flow}
-            setFlow={setFlow}
-          />
-        ) : (
-          <span className="mt-3">No report is available</span>
-        )
-      ) : null}
-    </Loader>
-  </div>
+      <Loader loading={loading}>
+        {receivedResponse && selectedResponseTab === 'Report' ? (
+          response.report ? (
+            <ReportView
+              report={response.report}
+              search={search}
+              setSearch={setSearch}
+              unit={unit}
+              setUnit={setUnit}
+              sort={sort}
+              setSort={setSort}
+              flow={flow}
+              setFlow={setFlow}
+            />
+          ) : (
+            <span className="mt-3">No report is available</span>
+          )
+        ) : null}
+      </Loader>
+    </div>
+  );
 }
 
 const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, flow, setFlow }) => {
@@ -655,9 +694,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-      [...(step?.ctx?.plugins || [])].find((plugin) =>
-        search.length <= 0 ? true : plugin.name.includes(search)
-      );
+        [...(step?.ctx?.plugins || [])].find((plugin) =>
+          search.length <= 0 ? true : plugin.name.includes(search)
+        );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
@@ -682,8 +721,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                .filter(isPluginNameMatchingSearch)
-                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                  .filter(isPluginNameMatchingSearch)
+                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -705,21 +744,27 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           value={unit}
           label="Unit"
           onChange={setUnit}
-          options={['ns', 'ms', '%'].map((item) => ({ label: item, value: item }))} />
+          options={['ns', 'ms', '%'].map((item) => ({ label: item, value: item }))}
+        />
 
         <NgSelectRenderer
           margin="mb-1"
           value={flow}
           label="Flow"
           onChange={setFlow}
-          options={['internal', 'user', 'all'].map((item) => ({ label: firstLetterUppercase(item), value: item }))} />
+          options={['internal', 'user', 'all'].map((item) => ({
+            label: firstLetterUppercase(item),
+            value: item,
+          }))}
+        />
 
         <NgSelectRenderer
           margin="mb-1"
           value={sort}
           label="Sort"
           onChange={setSort}
-          options={['flow', 'duration'].map((item) => ({ label: `by ${item}`, value: item }))} />
+          options={['flow', 'duration'].map((item) => ({ label: `by ${item}`, value: item }))}
+        />
 
         <input
           name="step"
@@ -729,7 +774,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           placeholder="Search a step"
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className='d-flex flex-column'>
+        <div className="d-flex flex-column">
           <div
             onClick={() => {
               setSelectedStep(-1);
@@ -758,12 +803,14 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                       setSelectedPlugin(-1);
                       setSelectedStep(step.task);
                     }}
-                    className={`d-flex-between report-step ${step.task === selectedStep && selectedPlugin === -1 ? 'btn-primaryColor' : 'btn-quiet'}`}>
+                    className={`d-flex-between report-step ${step.task === selectedStep && selectedPlugin === -1 ? 'btn-primaryColor' : 'btn-quiet'}`}
+                  >
                     <div className="d-flex align-items-center">
                       {displaySubList && (
                         <i
-                          className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
-                            } me-1`}
+                          className={`fas fa-chevron-${
+                            step.open || flow === 'user' ? 'down' : 'right'
+                          } me-1`}
                           onClick={() =>
                             setSteps(
                               steps.map((s) =>
@@ -809,7 +856,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                               setSelectedStep(step.task);
                               setSelectedPlugin(plugin.name);
                             }}
-                            className={`d-flex-between report-step ${step.task === selectedStep && plugin.name === selectedPlugin ? 'btn-primary' : 'btn-quiet'}`}>
+                            className={`d-flex-between report-step ${step.task === selectedStep && plugin.name === selectedPlugin ? 'btn-primary' : 'btn-quiet'}`}
+                          >
                             <span>{firstLetterUppercase(pluginName)}</span>
                             <span style={{ maxWidth: '100px', textAlign: 'right' }}>
                               {unit === 'ms'
@@ -840,34 +888,47 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
             mode: 'json',
           },
         }}
-        onChange={() => { }}
-        value={
-          JSON.stringify(
-            selectedPlugin === -1
-              ? selectedStep === -1
-                ? informations
-                : steps.find((t) => t.task === selectedStep)
-              : steps
+        onChange={() => {}}
+        value={JSON.stringify(
+          selectedPlugin === -1
+            ? selectedStep === -1
+              ? informations
+              : steps.find((t) => t.task === selectedStep)
+            : steps
                 .find((t) => t.task === selectedStep)
                 ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
-            null,
-            4
-          )
-        }
+          null,
+          4
+        )}
       />
     </div>
   );
 };
 
-const Headers = ({ headers, onKeyChange, onValueChange, onCheckedChange, addNewHeader, deleteAllHeaders, deleteHeader, className }) => (
+const Headers = ({
+  headers,
+  onKeyChange,
+  onValueChange,
+  onCheckedChange,
+  addNewHeader,
+  deleteAllHeaders,
+  deleteHeader,
+  className,
+}) => (
   <div
     className={`w-100 div-overflowy border pb-3 ${className}`}
     style={{ height: onKeyChange ? '100%' : 'initial' }}
   >
-    {addNewHeader && <div className='d-flex align-items-center border-b mb-3'>
-      <div className='p-2 border-r' style={{ cursor: 'pointer' }} onClick={addNewHeader}>+ Add</div>
-      <div className='p-2 border-r' style={{ cursor: 'pointer' }} onClick={deleteAllHeaders}>Delete all</div>
-    </div>}
+    {addNewHeader && (
+      <div className="d-flex align-items-center border-b mb-3">
+        <div className="p-2 border-r" style={{ cursor: 'pointer' }} onClick={addNewHeader}>
+          + Add
+        </div>
+        <div className="p-2 border-r" style={{ cursor: 'pointer' }} onClick={deleteAllHeaders}>
+          Delete all
+        </div>
+      </div>
+    )}
     {Object.entries(headers || {})
       .reduce((acc, curr) => (curr[1].key?.length === 0 ? [...acc, curr] : [curr, ...acc]), [])
       .map(([id, { key, value, checked }]) => (
@@ -878,7 +939,7 @@ const Headers = ({ headers, onKeyChange, onValueChange, onCheckedChange, addNewH
             className="form-control flex"
             style={{
               borderRadius: 0,
-              color: 'var(--text)'
+              color: 'var(--text)',
             }}
             value={key}
             placeholder="Key"
@@ -893,8 +954,15 @@ const Headers = ({ headers, onKeyChange, onValueChange, onCheckedChange, addNewH
             placeholder="Value"
             onChange={(e) => onValueChange(id, e.target.value)}
           />
-          {deleteHeader && <input type='checkbox' className='mx-1' checked={checked} onChange={() => onCheckedChange(id)} />}
-          {deleteHeader && <i className='fa fa-trash mx-1' onClick={() => deleteHeader(id)} />}
+          {deleteHeader && (
+            <input
+              type="checkbox"
+              className="mx-1"
+              checked={checked}
+              onChange={() => onCheckedChange(id)}
+            />
+          )}
+          {deleteHeader && <i className="fa fa-trash mx-1" onClick={() => deleteHeader(id)} />}
         </div>
       ))}
   </div>

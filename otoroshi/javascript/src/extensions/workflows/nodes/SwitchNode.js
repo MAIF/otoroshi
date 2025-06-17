@@ -6,7 +6,8 @@ export const SwitchNode = (_workflow) => ({
     description: 'Route items depending on defined expressions or rules',
     workflow: _workflow,
     kind: 'switch',
-    sources: ['path-1'],
+    sourcesIsArray: true,
+    sources: ['path-1', 'output'],
     targets: []
     //     {
     //   "kind": "switch",

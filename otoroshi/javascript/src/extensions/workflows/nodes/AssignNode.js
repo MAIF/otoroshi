@@ -12,7 +12,8 @@ export const AssignNode = _workflow => ({
             type: 'object',
             label: 'Values'
         }
-    }
+    },
+    sources: ['output'],
     // {
     //   "kind": "assign",
     //   "values": [

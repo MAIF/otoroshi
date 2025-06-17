@@ -380,6 +380,7 @@ object DataExporterConfig {
             case "tcp"           => TCPExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case "udp"           => UDPExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case "syslog"        => SyslogExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "jms"           => JMSExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case v               => throw new RuntimeException(s"Bad config type: '${v}'")
           }
         )

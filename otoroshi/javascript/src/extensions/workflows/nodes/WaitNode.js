@@ -12,7 +12,8 @@ export const WaitNode = (_workflow) => ({
             type: 'number',
             label:' Duration'
         }
-    }
+    },
+    sources: ['output']
     //     {
     //   "kind": "wait",
     //   "duration": 1000

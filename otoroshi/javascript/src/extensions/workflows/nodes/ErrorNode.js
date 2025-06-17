@@ -19,7 +19,8 @@ export const ErrorNode = (_workflow) => ({
                 editorOnly: true
             }
         }
-    }
+    },
+    sources: ['output'],
     //     {
     //   "kind": "error",
     //   "message": "<error_message>",

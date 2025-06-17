@@ -378,8 +378,9 @@ class BackOfficeAppContainer extends Component {
                 id="sidebar"
               >
                 <i
-                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'
-                    } sidebar-toggle`}
+                  className={`fas fa-chevron-${
+                    this.state.openedSidebar ? 'left' : 'right'
+                  } sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(

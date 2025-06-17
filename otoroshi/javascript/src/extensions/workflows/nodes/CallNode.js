@@ -23,6 +23,7 @@ export function CallNode(_workflow) {
             args: {
                 renderer: ArgsInput
             }
-        }
+        },
+        sources: ['output'],
     }
 }

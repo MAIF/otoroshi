@@ -13,6 +13,8 @@
     min-height: 100px;
     // z-index: 1;
     position: relative;
+    height: 100%;
+    width: 100%;
   }
 
   .react-flow__node-group:hover,
@@ -314,20 +316,24 @@
     align-items: flex-end;
   }
 
-  // .handles.sources div[data-handleid="output"] {
-  //   content: ' ';
-  //   background: var(--color_level1);
-  //   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23f9b000" viewBox="0 0 24 24" stroke-width="1.5" stroke="%23e5e5e5"><path fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round" d="M20.625 13.949c1.5-.866 1.5-3.032 0-3.898L7.874 2.697c-1.5-.866-3.374.217-3.374 1.948v14.71c0 1.73 1.874 2.813 3.374 1.948l12.751-7.354Z" /></svg>');
-  //   // mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23f9b000" viewBox="0 0 24 24"><path fill-rule="evenodd" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>');
-  //   // %23e5e5e5
-  //   mask-size: contain;
-  //   mask-repeat: no-repeat;
-  //   mask-position: center;
-  //   width: 16px;
-  //   height: 16px;
-  //   display: inline-block;
-  //   z-index: 10000;
-  // }
+  .handles.targets div[data-handleid^="input"],
+  .handles.sources div[data-handleid^="output"] {
+    content: ' ';
+    background: var(--color_level1);
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="%23e5e5e5"><path fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round" d="M20.625 13.949c1.5-.866 1.5-3.032 0-3.898L7.874 2.697c-1.5-.866-3.374.217-3.374 1.948v14.71c0 1.73 1.874 2.813 3.374 1.948l12.751-7.354Z" /></svg>');
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    z-index: 10000;
+  }
+
+  .handles.targets div[data-handleid^="input"].connected,
+  .handles.sources div[data-handleid^="output"].connected {
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23e5e5e5" viewBox="0 0 24 24" stroke-width="1.5" stroke="%23e5e5e5"><path fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round" d="M20.625 13.949c1.5-.866 1.5-3.032 0-3.898L7.874 2.697c-1.5-.866-3.374.217-3.374 1.948v14.71c0 1.73 1.874 2.813 3.374 1.948l12.751-7.354Z" /></svg>');
+  }
 
   .handles.targets {
     left: 0;

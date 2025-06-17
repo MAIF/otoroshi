@@ -27,13 +27,37 @@ object NodesInitializer {
 }
 
 case class ValueNode(json: JsObject) extends Node {
-  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  override def documentationName: String = "value"
+  override def documentationDescription: String = "This node executes a sequence of nodes sequentially"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "value" -> Json.obj("description" -> "the returned value")
+  ))).some
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "value",
+    "description" -> "This node returns 'foo'",
+    "value" -> "foo"
+  ))
+  override def run(
+      wfr: WorkflowRun
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val value = WorkflowOperator.processOperators(json.select("value").asValue, wfr, env)
     value.rightf
   }
 }
 
 case class ErrorNode(json: JsObject) extends Node {
+  override def documentationName: String = "error"
+  override def documentationDescription: String = "This node returns an error"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "message" -> Json.obj("type" -> "string", "description" -> "the error message"),
+    "details" -> Json.obj("type" -> "object", "description" -> "the optional details of the error"),
+  ))).some
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "error",
+    "description" -> "This node fails the workflow with an error",
+    "message" -> "an error occurred",
+    "details" -> Json.obj("foo" -> "bar")
+  ))
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
@@ -48,6 +72,16 @@ case class ErrorNode(json: JsObject) extends Node {
 }
 
 case class WaitNode(json: JsObject) extends Node {
+  override def documentationName: String = "wait"
+  override def documentationDescription: String = "This node waits a certain amount of time"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "duration" -> Json.obj("type" -> "number", "description" -> "the number of milliseconds to wait")
+  ))).some
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "wait",
+    "description" -> "This node waits 20 seconds",
+    "duration" -> 20000,
+  ))
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
@@ -61,6 +95,9 @@ case class WaitNode(json: JsObject) extends Node {
 }
 
 case class NoopNode(json: JsObject) extends Node {
+  override def documentationName: String = "noop"
+  override def documentationDescription: String = "This node does nothing"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.some
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
@@ -70,6 +107,31 @@ case class NoopNode(json: JsObject) extends Node {
 }
 
 case class WorkflowNode(json: JsObject) extends Node {
+
+  override def documentationName: String = "workflow"
+  override def documentationDescription: String = "This node executes a sequence of nodes sequentially"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "steps" -> Json.obj("type" -> "array", "description" -> "the nodes to be executed")
+  ))).some
+
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "workflow",
+    "description" -> "This node executes says hello, waits and says hello again",
+    "steps" -> Json.arr(
+      Json.obj(
+        "kind" -> "call",
+        "function" -> "core.hello"
+      ),
+      Json.obj(
+        "kind" -> "wait",
+        "duration" -> 10000
+      ),
+      Json.obj(
+        "kind" -> "call",
+        "function" -> "core.hello"
+      )
+    )
+  ))
 
   lazy val steps: Seq[Node] = json.select("steps").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => Node.from(o))
 
@@ -102,8 +164,24 @@ case class WorkflowNode(json: JsObject) extends Node {
 
 case class CallNode(json: JsObject) extends Node {
 
-  lazy val functionName: String = json.selectAsString("function")
-  lazy val args: JsObject       = json.selectAsObject("args")
+  override def documentationName: String = "call"
+  override def documentationDescription: String = "This node calls a function an returns its result"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "function" -> Json.obj("type" -> "string", "description" -> "the function name"),
+    "args" -> Json.obj("type" -> "object", "description" -> "the arguments of the call")
+  ))).some
+
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "call",
+    "description" -> "This node call the core.hello function",
+    "function" -> "core.hello",
+    "args" -> Json.obj(
+      "name" -> "Otoroshi"
+    )
+  ))
+
+  lazy val functionName: String = json.select("function").asString
+  lazy val args: JsObject       = json.select("args").asObject
 
   override def run(
       wfr: WorkflowRun
@@ -125,6 +203,41 @@ case class AssignOperation(json: JsObject) {
 }
 
 case class AssignNode(json: JsObject) extends Node {
+  override def documentationName: String = "assign"
+  override def documentationDescription: String = "This node with executes a sequence of memory assignation operations sequentially"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "values" -> Json.obj("type" -> "array", "description" -> "the assignation operations sequence", "items" -> Json.obj(
+      "type" -> "object",
+      "required" -> Seq("name", "value"),
+      "properties" -> Json.obj(
+        "name" -> Json.obj("type" -> "string", "description" -> "the name of the assignment in memory"),
+        "value" -> Json.obj("description" -> "the value of the assignment"),
+      )
+    ))
+  ))).some
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "assign",
+    "description" -> "set a counter, increment it of 2 and initialize an array in memory",
+    "values" -> Json.arr(
+      Json.obj(
+        "name" -> "count",
+        "value" -> 0
+      ),
+      Json.obj(
+        "name" -> "count",
+        "value" -> Json.obj(
+          "$incr" -> Json.obj(
+            "value" -> "count",
+            "increment" -> 2
+          )
+        )
+      ),
+      Json.obj(
+        "name" -> "items",
+        "value" -> Json.arr(1, 2, 3)
+      )
+    )
+  ))
   lazy val values: Seq[AssignOperation] =
     json.select("values").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => AssignOperation(o))
   override def run(
@@ -136,6 +249,43 @@ case class AssignNode(json: JsObject) extends Node {
 }
 
 case class ParallelFlowsNode(json: JsObject) extends Node {
+  override def documentationName: String = "parallel"
+  override def documentationDescription: String = "This node executes multiple nodes in parallel"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "paths" -> Json.obj("type" -> "array", "description" -> "the nodes to be executed", "items" -> Json.obj(
+      "type" -> "object",
+      "properties" -> Json.obj(
+        "predicate" -> Json.obj("type" -> "boolean", "description" -> "The predicate defining if the path is run or not"),
+      )
+    ))
+  ))).some
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "parallel",
+    "description" -> "This node call 3 core.hello function in parallel",
+    "paths" -> Json.arr(
+      Json.obj(
+        "kind" -> "call",
+        "function" -> "core.hello",
+        "args" -> Json.obj(
+          "name" -> "Otoroshi 1"
+        )
+      ),
+      Json.obj(
+        "kind" -> "call",
+        "function" -> "core.hello",
+        "args" -> Json.obj(
+          "name" -> "Otoroshi 2"
+        )
+      ),
+      Json.obj(
+        "kind" -> "call",
+        "function" -> "core.hello",
+        "args" -> Json.obj(
+          "name" -> "Otoroshi 3"
+        )
+      )
+    )
+  ))
   lazy val paths: Seq[JsObject] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
   override def run(
       wfr: WorkflowRun
@@ -181,6 +331,39 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
 }
 
 case class SwitchNode(json: JsObject) extends Node {
+  override def documentationName: String = "switch"
+  override def documentationDescription: String = "This node executes the first path matching a predicate"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "paths" -> Json.obj("type" -> "array", "description" -> "the nodes to be executed", "items" -> Json.obj(
+      "type" -> "object",
+      "properties" -> Json.obj(
+        "predicate" -> Json.obj("type" -> "boolean", "description" -> "The predicate defining if the path is run or not"),
+      )
+    ))
+  ))).some
+
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "switch",
+    "description" -> "This node will say 'Hello Otoroshi 1'",
+    "paths" -> Json.arr(
+      Json.obj(
+        "predicate" -> true,
+        "kind" -> "call",
+        "function" -> "core.hello",
+        "args" -> Json.obj(
+          "name" -> "Otoroshi 1"
+        )
+      ),
+      Json.obj(
+        "predicate" -> false,
+        "kind" -> "call",
+        "function" -> "core.hello",
+        "args" -> Json.obj(
+          "name" -> "Otoroshi 2"
+        )
+      )
+    )
+  ))
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
@@ -200,6 +383,34 @@ case class SwitchNode(json: JsObject) extends Node {
 }
 
 case class IfThenElseNode(json: JsObject) extends Node {
+  override def documentationName: String = "if"
+  override def documentationDescription: String = "This executes a node if the predicate matches or another one if not"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "properties" -> Json.obj(
+      "predicate" -> Json.obj("type" -> "boolean", "description" -> "The predicate defining if the path is run or not"),
+      "then" -> Json.obj("type" -> "object", "description" -> "The node run if the predicate matches"),
+      "else" -> Json.obj("type" -> "object", "description" -> "The node run if the predicate does not matches"),
+    )
+  ))).some
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "if",
+    "description" -> "This node will say 'Hello Otoroshi 1'",
+    "predicate" -> "${truthyValueInMemory}",
+    "then" -> Json.obj(
+      "kind" -> "call",
+      "function" -> "core.hello",
+      "args" -> Json.obj(
+        "name" -> "Otoroshi 1"
+      )
+    ),
+    "else" -> Json.obj(
+      "kind" -> "call",
+      "function" -> "core.hello",
+      "args" -> Json.obj(
+        "name" -> "Otoroshi 2"
+      )
+    )
+  ))
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
@@ -225,6 +436,24 @@ case class IfThenElseNode(json: JsObject) extends Node {
 }
 
 case class ForEachNode(json: JsObject) extends Node {
+  override def documentationName: String = "foreach"
+  override def documentationDescription: String = "This node executes a node for each element in an array"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "values" -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
+    "node" -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array"),
+  ))).some
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "foreach",
+    "description" -> "This node execute the core.hello function for each user",
+    "values" -> "${users}",
+    "node" -> Json.obj(
+      "kind" -> "call",
+      "function" -> "core.hello",
+      "args" -> Json.obj(
+        "name" -> "${foreach_value.name}"
+      )
+    )
+  ))
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
@@ -292,6 +521,23 @@ case class ForEachNode(json: JsObject) extends Node {
 }
 
 case class MapNode(json: JsObject) extends Node {
+  override def documentationName: String = "map"
+  override def documentationDescription: String = "This node transforms an array by applying a node on each value"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "values" -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
+    "node" -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array"),
+  ))).some
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "map",
+    "description" -> "This node will transform user names",
+    "values" -> "${users}",
+    "node" -> Json.obj(
+      "kind" -> "value",
+      "value" -> Json.obj(
+        "$str_upper_case" -> "${foreach_value.name}"
+      )
+    )
+  ))
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
@@ -334,6 +580,21 @@ case class MapNode(json: JsObject) extends Node {
 }
 
 case class FlatMapNode(json: JsObject) extends Node {
+  override def documentationName: String = "flatmap"
+  override def documentationDescription: String = "This node transforms an array by applying a node on each value"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "values" -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
+    "node" -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array, should return an array to flatten it"),
+  ))).some
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "map",
+    "description" -> "This node extract all emails from users",
+    "values" -> "${users}",
+    "node" -> Json.obj(
+      "kind" -> "value",
+      "value" -> "${foreach_value.emails}"
+    )
+  ))
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
@@ -376,6 +637,21 @@ case class FlatMapNode(json: JsObject) extends Node {
 }
 
 case class FilterNode(json: JsObject) extends Node {
+  override def documentationName: String = "filter"
+  override def documentationDescription: String = "This node transforms an array by filtering values based on a node execution"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
+    "values" -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
+    "predicate" -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array"),
+  ))).some
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "kind" -> "filter",
+    "description" -> "This node will filter out users that are not admins",
+    "values" -> "${users}",
+    "predicate" -> Json.obj(
+      "kind" -> "value",
+      "value" -> "${foreach_value.admin}"
+    )
+  ))
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {

@@ -23,7 +23,7 @@ export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onCo
             fitViewOptions={{
                 padding: .5
             }}
-            connectionLineType='smoothstep'
+            connectionLineType='simplebezier'
             nodeTypes={{
                 simple: Node,
                 group: GroupNode,

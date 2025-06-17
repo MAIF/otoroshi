@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.3.2] - 2025-06-05
+
+
+https://github.com/MAIF/otoroshi/milestone/118?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.3.1...v17.3.2
+https://github.com/MAIF/otoroshi/releases/tag/v17.3.2
+
+
+
+
+### Fixed 
+
+- Bad JMS data exporter parsing (#2197 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
+## [17.3.1] - 2025-06-04
+
+
+https://github.com/MAIF/otoroshi/milestone/117?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.3.0...v17.3.1
+https://github.com/MAIF/otoroshi/releases/tag/v17.3.1
+
+
+### Added 
+
+- add a `value` node in workflow (#2195 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- Map, FlatMap and Filter workflow nodes does not work as expected (#2193 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Documentation 
+
+- Add documentation for workflows (#2194 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Contributors
+
+* @mathieuancelin
+
 ## [17.3.0] - 2025-06-03
 
 

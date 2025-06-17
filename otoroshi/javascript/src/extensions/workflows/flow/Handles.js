@@ -6,9 +6,9 @@ function RightHandle({ handle, className, selected }) {
         id={handle.id}
         type="source"
         position={Position.Right}
-        className={className}
+        className={`${className} ${(selected ? 'connected' : '')}`}
     >
-        {handle.id}
+        {handle.id.split('-')[0]}
         <div className={`handle-dot ms-1 ${selected ? 'handle-dot--selected' : ''}`} />
     </Handle>
 }
@@ -17,7 +17,13 @@ export default function Handles(props) {
 
     const connections = useNodeConnections()
 
-    console.log(connections)
+    const sources = props.data.sourceHandles
+        .reduce((acc, handle) => {
+            if (handle.id.startsWith('output')) {
+                return { ...acc, output: handle }
+            }
+            return { ...acc, handles: [...acc.handles, handle] }
+        }, { handles: [] })
 
     return <>
         <div className="handles targets">
@@ -28,15 +34,16 @@ export default function Handles(props) {
                     id={handle.id}
                     type="target"
                     position={Position.Left}
+                    className={selected ? 'connected' : ''}
+                    
                 >
                     <div className={`handle-dot me-1 ${selected ? 'handle-dot--selected' : ''}`} />
-                    {handle.id}
+                    {handle.id.split('-')[0]}
                 </Handle>
             })}
         </div>
         <div className="handles sources">
-            {props.data.sourceHandles
-                .filter(handle => handle.id !== 'output')
+            {sources.handles
                 .map(handle => {
                     const selected = connections.find(connection => connection.sourceHandle === handle.id)
 
@@ -51,11 +58,10 @@ export default function Handles(props) {
                 }}>
                 Add pin <i className='fas fa-plus' />
             </button>}
-            {props.data.sourceHandles
-                .find(handle => handle.id === 'output') && <RightHandle
-                    handle={{ id: 'output' }}
-                    className="my-2"
-                    selected={connections.find(connection => connection.sourceHandle === 'output')} />}
+            {sources.output && <RightHandle
+                handle={{ id: sources.output.id }}
+                className="my-2"
+                selected={connections.find(connection => connection.sourceHandle.startsWith('output'))} />}
         </div>
     </>
 }

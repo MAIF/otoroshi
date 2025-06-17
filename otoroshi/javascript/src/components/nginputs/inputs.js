@@ -1263,7 +1263,7 @@ export class NgSelectRenderer extends Component {
                 ...provided,
                 color: 'var(--text)',
               }),
-              ...(this.props.styles || {})
+              ...(this.props.styles || {}),
             }}
           />
         )}

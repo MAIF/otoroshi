@@ -86,70 +86,84 @@ export function defaultNode(nodes, node, firstStep) {
     }
 }
 
+function createNode(id, existingNodes, child, isFirst, addInformationsToNode) {
+    const newNode = addInformationsToNode(defaultNode(existingNodes, child, isFirst))
+    return {
+        ...newNode,
+        id,
+        data: {
+            ...newNode.data,
+            targetHandles: [],
+            sourceHandles: []
+        }
+    }
+}
+
 function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
     if (!workflow)
         return { edges: [], nodes: [] }
 
+    const edges = []
+
     if (workflow.kind === 'workflow') {
         let nodes = workflow.steps.reduce((acc, child, idx) => {
-            const newNode = addInformationsToNode(
-                defaultNode(acc.map(r => r.position),
-                    child,
-                    idx === 0
-                ))
             return [
                 ...acc,
-                {
-                    ...newNode,
-                    id: `${idx}`,
-                    data: {
-                        ...newNode.data,
-                        targetHandles: [],
-                        sourceHandles: []
-                    }
-                }
+                createNode(uuid(), acc.map(r => r.position), child, idx === 0, addInformationsToNode)
             ]
         }, [])
 
         for (let i = 0; i < nodes.length; i++) {
-            const me = nodes[i].id
-            // const optSource = nodes[i + 1]?.id
-            // const optTarget = nodes[i - 1]?.id
-
-            // const sourceHandles = !optSource ? [] : [{ id: `${me}-s-${optSource}` }]
-            // const targetHandles = !optTarget ? [] : [{ id: `${optTarget}-t-${me}` }]
-
             const { targets = [], sources = [] } = nodes[i].data
+
+            const { workflow } = nodes[i].data
+
+            if (workflow.node) {
+                const childNode = createNode(uuid(), nodes.map(r => r.position), workflow.node, false, addInformationsToNode)
+                childNode.data.isInternal = true
+                nodes.push(childNode)
+
+                edges.push({
+                    id: uuid(),
+                    source: nodes[i].id,
+                    sourceHandle: `node-${nodes[i].id}`,
+                    target: childNode.id,
+                    targetHandle: `input-${childNode.id}`,
+                    type: 'customEdge',
+                    animated: true,
+                })
+            }
+
             nodes[i] = {
                 ...nodes[i],
                 data: {
                     ...nodes[i].data,
-                    targetHandles: i === 0 ? [] : ['input', ...targets].map((target, i) => {
-                        return { id: target }
+                    targetHandles: i === 0 ? [] : ['input', ...targets].map(target => {
+                        return { id: `${target}-${nodes[i].id}` }
                     }),
-                    sourceHandles: [...sources, 'output'].map((source, i) => {
-                        return { id: source }
+                    sourceHandles: [...sources].map(source => {
+                        return { id: `${source}-${nodes[i].id}` }
                     })
                 }
             }
         }
 
-        const edges = []
-        for (let i = 0; i < nodes.length - 1; i++) {
-            // const me = nodes[i].id
-            // const optSource = nodes[i + 1]?.id
-            // const optTarget = nodes[i + 1]?.id
 
-            // if (optTarget)
-            //     edges.push({
-            //         id: uuid(),
-            //         source: me,
-            //         sourceHandle: `output`,
-            //         target: optTarget,
-            //         targetHandle: `input`,
-            //         type: 'customEdge',
-            //         animated: true,
-            //     })
+        const parentNodes = nodes.filter(node => !node.data.isInternal)
+        for (let i = 0; i < parentNodes.length - 1; i++) {
+            const me = parentNodes[i].id
+            const optTarget = parentNodes[i + 1]?.id
+
+            if (optTarget)
+                edges.push({
+                    id: uuid(),
+                    source: me,
+                    sourceHandle: `output-${me}`,
+                    target: optTarget,
+                    targetHandle: `input-${optTarget}`,
+                    type: 'customEdge',
+                    animated: true,
+                })
         }
 
         return { edges, nodes }
@@ -242,7 +256,7 @@ function WorkflowsDesigner(props) {
         (event, connectionState) => {
             if (!connectionState.isValid) {
                 event.stopPropagation()
-                console.log({ connectionState })
+
                 setTimeout(() => {
                     setOnCreationMode({
                         ...connectionState.fromNode,
@@ -260,9 +274,9 @@ function WorkflowsDesigner(props) {
                 ...connection, type: 'customEdge',
                 animated: true,
             }
-            console.log(edge)
+
             setEdges((eds) => {
-                if (!eds.find(e => e.source === edge.source))
+                if (!eds.find(e => e.sourceHandle === edge.sourceHandle))
                     return addEdge(edge, eds)
                 else
                     return eds
@@ -309,12 +323,11 @@ function WorkflowsDesigner(props) {
                 source: isOnCreation.id,
                 sourceHandle,
                 target: newNode.id,
-                targetHandle: 'input',
+                targetHandle: `input-${newNode.id}`,
                 type: 'customEdge',
                 animated: true,
             })
 
-            console.log(newEdges)
         }
 
         const { targets = [], sources = [] } = newNode.data
@@ -322,11 +335,11 @@ function WorkflowsDesigner(props) {
             ...newNode,
             data: {
                 ...newNode.data,
-                targetHandles: ['input', ...targets].map((target, i) => {
-                    return { id: target }
+                targetHandles: ['input', ...targets].map(target => {
+                    return { id: `${target}-${newNode.id}` }
                 }),
-                sourceHandles: [...sources, 'output'].map((source, i) => {
-                    return { id: source }
+                sourceHandles: [...sources].map(source => {
+                    return { id: `${source}-${newNode.id}` }
                 })
             }
         }
@@ -379,7 +392,7 @@ function WorkflowsDesigner(props) {
         }
     });
 
-    console.log(nodes)
+    console.log(edges)
 
     return <div className='workflow'>
         <DesignerActions run={run} />

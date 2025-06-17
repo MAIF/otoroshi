@@ -21,7 +21,7 @@ export const FlatMapNode = (_workflow) => ({
             label: 'Destination'
         }
     },
-    sources: ['node'],
+    sources: ['node', 'output'],
     targets: []
     //     {
     //   "kind": "foreach",

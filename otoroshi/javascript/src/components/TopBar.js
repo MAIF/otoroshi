@@ -1785,157 +1785,162 @@ export class TopBar extends Component {
                         </span>
                       </div>
                     )}
-                    {window.location.pathname !== '/bo/dashboard/tester' && <div className="mx-2">
-                      <Async
-                        ref={(r) => (this.selector = r)}
-                        name="service-search"
-                        value="one"
-                        placeholder="Search service, line, etc ..."
-                        loadOptions={this.searchServicesOptions}
-                        openMenuOnFocus={true}
-                        onFocus={() => {
-                          this.selector.onInputChange(' ');
-                        }}
-                        onChange={(i) => i.action()}
-                        filterOptions={(opts, value, excluded, conf) => {
-                          const [env, searched] = extractEnv(value);
-                          const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
-                          const matched = fuzzy.filter(searched, filteredOpts, {
-                            extract: (i) => i.label,
-                            pre: '<',
-                            post: '>',
-                          });
-                          return matched.map((i) => i.original);
-                        }}
-                        styles={{
-                          control: (baseStyles, state) => ({
-                            ...baseStyles,
-                            border: '1px solid rgba(var(--raw-text), .25)',
-                            width: 400,
-                            color: 'var(--text)',
-                            // backgroundColor: 'var(--bg-color_level3)',
-                            background: 'transparent',
-                            boxShadow: 'none',
-                          }),
-                          placeholder: (provided) => ({
-                            ...provided,
-                            color: 'var(--text)',
-                            opacity: 0.5,
-                          }),
-                          menu: (baseStyles) => ({
-                            ...baseStyles,
-                            margin: 0,
-                            borderTopLeftRadius: 0,
-                            borderTopRightRadius: 0,
-                            backgroundColor: 'var(--bg-color_level2)',
-                            color: 'var(--text)',
-                          }),
-                          input: (provided) => ({
-                            ...provided,
-                            color: 'var(--text)',
-                          }),
-                        }}
-                        components={{
-                          ValueContainer: ({ children }) => {
-                            return (
-                              <div className="flex align-items-center" style={{ display: 'flex' }}>
-                                <div style={{ maxHeight: 22, display: 'flex' }}>
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={1.5}
-                                    className="mx-2"
-                                    stroke="currentColor"
-                                    style={{
-                                      opacity: 0.5,
-                                      height: 18,
-                                    }}
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                                    />
-                                  </svg>
-                                </div>
+                    {window.location.pathname !== '/bo/dashboard/tester' && (
+                      <div className="mx-2">
+                        <Async
+                          ref={(r) => (this.selector = r)}
+                          name="service-search"
+                          value="one"
+                          placeholder="Search service, line, etc ..."
+                          loadOptions={this.searchServicesOptions}
+                          openMenuOnFocus={true}
+                          onFocus={() => {
+                            this.selector.onInputChange(' ');
+                          }}
+                          onChange={(i) => i.action()}
+                          filterOptions={(opts, value, excluded, conf) => {
+                            const [env, searched] = extractEnv(value);
+                            const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
+                            const matched = fuzzy.filter(searched, filteredOpts, {
+                              extract: (i) => i.label,
+                              pre: '<',
+                              post: '>',
+                            });
+                            return matched.map((i) => i.original);
+                          }}
+                          styles={{
+                            control: (baseStyles, state) => ({
+                              ...baseStyles,
+                              border: '1px solid rgba(var(--raw-text), .25)',
+                              width: 400,
+                              color: 'var(--text)',
+                              // backgroundColor: 'var(--bg-color_level3)',
+                              background: 'transparent',
+                              boxShadow: 'none',
+                            }),
+                            placeholder: (provided) => ({
+                              ...provided,
+                              color: 'var(--text)',
+                              opacity: 0.5,
+                            }),
+                            menu: (baseStyles) => ({
+                              ...baseStyles,
+                              margin: 0,
+                              borderTopLeftRadius: 0,
+                              borderTopRightRadius: 0,
+                              backgroundColor: 'var(--bg-color_level2)',
+                              color: 'var(--text)',
+                            }),
+                            input: (provided) => ({
+                              ...provided,
+                              color: 'var(--text)',
+                            }),
+                          }}
+                          components={{
+                            ValueContainer: ({ children }) => {
+                              return (
+                                <div
+                                  className="flex align-items-center"
+                                  style={{ display: 'flex' }}
+                                >
+                                  <div style={{ maxHeight: 22, display: 'flex' }}>
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      strokeWidth={1.5}
+                                      className="mx-2"
+                                      stroke="currentColor"
+                                      style={{
+                                        opacity: 0.5,
+                                        height: 18,
+                                      }}
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                                      />
+                                    </svg>
+                                  </div>
 
-                                {children}
-                              </div>
-                            );
-                          },
-                          NoOptionsMessage: () => null,
-                          Option: (props) => {
-                            const p = props.data;
-                            const env =
-                              p.env && isString(p.env)
-                                ? p.env.length > 4
-                                  ? p.env.substring(0, 4) + '.'
-                                  : p.env
-                                : null;
-                            return (
-                              <div
-                                style={{
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  padding: '.5rem',
-                                  background: props.isFocused
-                                    ? 'var(--bg-color_level2)'
-                                    : 'var(--bg-color_level3)',
-                                }}
-                                ref={props.innerRef}
-                                {...props.innerProps}
-                              >
+                                  {children}
+                                </div>
+                              );
+                            },
+                            NoOptionsMessage: () => null,
+                            Option: (props) => {
+                              const p = props.data;
+                              const env =
+                                p.env && isString(p.env)
+                                  ? p.env.length > 4
+                                    ? p.env.substring(0, 4) + '.'
+                                    : p.env
+                                  : null;
+                              return (
                                 <div
                                   style={{
-                                    width: 60,
+                                    cursor: 'pointer',
                                     display: 'flex',
-                                    justifyContent: 'center',
                                     alignItems: 'center',
+                                    padding: '.5rem',
+                                    background: props.isFocused
+                                      ? 'var(--bg-color_level2)'
+                                      : 'var(--bg-color_level3)',
                                   }}
+                                  ref={props.innerRef}
+                                  {...props.innerProps}
                                 >
-                                  {p.env && isString(p.env) && (
-                                    <span className={`badge ${this.color(p.env)}`}>{env}</span>
-                                  )}
-                                  {p.env && !isString(p.env) && p.env}
+                                  <div
+                                    style={{
+                                      width: 60,
+                                      display: 'flex',
+                                      justifyContent: 'center',
+                                      alignItems: 'center',
+                                    }}
+                                  >
+                                    {p.env && isString(p.env) && (
+                                      <span className={`badge ${this.color(p.env)}`}>{env}</span>
+                                    )}
+                                    {p.env && !isString(p.env) && p.env}
+                                  </div>
+                                  <span>{p.label}</span>
                                 </div>
-                                <span>{p.label}</span>
-                              </div>
-                            );
-                          },
-                          IndicatorSeparator: () => null,
-                          DropdownIndicator: () => {
-                            return (
-                              <span
-                                style={{ display: 'flex', height: 20, paddingRight: 5 }}
-                                title="You can jump directly into the search bar from anywhere just by typing '/'"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
-                                  <defs>
-                                    <rect id="a" width="19" height="20" rx="3" />
-                                  </defs>
-                                  <g fill="none" fillRule="evenodd">
-                                    <rect
-                                      stroke="#5F6165"
-                                      x=".5"
-                                      y=".5"
-                                      width="18"
-                                      height="19"
-                                      rx="3"
-                                    />
-                                    <path
-                                      fill="#979A9C"
-                                      d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z"
-                                    />
-                                  </g>
-                                </svg>
-                              </span>
-                            );
-                          },
-                        }}
-                      />
-                    </div>}
+                              );
+                            },
+                            IndicatorSeparator: () => null,
+                            DropdownIndicator: () => {
+                              return (
+                                <span
+                                  style={{ display: 'flex', height: 20, paddingRight: 5 }}
+                                  title="You can jump directly into the search bar from anywhere just by typing '/'"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
+                                    <defs>
+                                      <rect id="a" width="19" height="20" rx="3" />
+                                    </defs>
+                                    <g fill="none" fillRule="evenodd">
+                                      <rect
+                                        stroke="#5F6165"
+                                        x=".5"
+                                        y=".5"
+                                        width="18"
+                                        height="19"
+                                        rx="3"
+                                      />
+                                      <path
+                                        fill="#979A9C"
+                                        d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z"
+                                      />
+                                    </g>
+                                  </svg>
+                                </span>
+                              );
+                            },
+                          }}
+                        />
+                      </div>
+                    )}
                     <div className="dropdown">
                       <Button
                         type="quiet"

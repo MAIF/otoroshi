@@ -242,17 +242,21 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
 
         val notFoundMessage = Json.obj("error" -> "route not found")
 
-        env.datastores.apiDataStore.findById(apiId)
+        env.datastores.apiDataStore
+          .findById(apiId)
           .flatMap {
-            case Some(api) => api.routes
-              .find(_.id == routeId)
-              .map(route => api.routeToNgRoute(route).map {
-                case Some(route) => route.json
-                case None => notFoundMessage
-              })
-              .getOrElse(notFoundMessage.vfuture)
-              .map(data => Ok(data))
-            case None => Results.NotFound(notFoundMessage).vfuture
+            case Some(api) =>
+              api.routes
+                .find(_.id == routeId)
+                .map(route =>
+                  api.routeToNgRoute(route).map {
+                    case Some(route) => route.json
+                    case None        => notFoundMessage
+                  }
+                )
+                .getOrElse(notFoundMessage.vfuture)
+                .map(data => Ok(data))
+            case None      => Results.NotFound(notFoundMessage).vfuture
           }
       }
     }

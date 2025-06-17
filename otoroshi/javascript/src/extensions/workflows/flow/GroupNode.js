@@ -10,8 +10,8 @@ export const GroupNode = forwardRef((props, ref) => {
         <NodeResizer
             color="#ff0071"
             isVisible={selected}
-            minWidth={100}
-            minHeight={30}
+            minWidth={200}
+            minHeight={100}
         />
 
         <Handles {...props} />
