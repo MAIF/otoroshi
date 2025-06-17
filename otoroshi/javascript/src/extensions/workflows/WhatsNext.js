@@ -9,8 +9,9 @@ function Search({ query, onChange }) {
             value={query}
             schema={{
                 props: {
-                    placeholder: "Search nodes..."
-                }
+                    placeholder: "Search nodes...",
+                    autoFocus: true
+                },
             }}
             label={' '}
             ngOptions={{ spread: true }}

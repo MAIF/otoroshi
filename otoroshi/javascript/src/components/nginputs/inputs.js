@@ -368,6 +368,7 @@ export class NgStringRenderer extends Component {
               className="form-control"
               placeholder={props.placeholder}
               title={props.help}
+              autoFocus={props.autoFocus}
               value={
                 this.state.touched ? this.props.value || '' : this.props.value || defaultValue || ''
               }

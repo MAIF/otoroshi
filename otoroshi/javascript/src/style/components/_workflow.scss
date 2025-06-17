@@ -1,9 +1,9 @@
 .workflow {
   position: relative;
 
-  p {
-    margin: 0;
-  }
+  // p {
+  //   margin: 0;
+  // }
 
   .node {
     background: var(--bg-color_level3);
@@ -219,8 +219,8 @@
 
   .whats-new-category {
     cursor: pointer;
-
     border-left: 2px solid transparent;
+    gap: .5rem;
   }
 
   .whats-new-category:hover {

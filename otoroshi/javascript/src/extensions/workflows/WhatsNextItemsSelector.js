@@ -14,6 +14,47 @@ import { WaitNode } from "./nodes/WaitNode"
 import { ErrorNode } from "./nodes/ErrorNode"
 import { ValueNode } from "./nodes/ValueNode"
 
+import { BasicAuthOperator } from './operators/BasicAuthOperator'
+import { EqOperator } from './operators/EqOperator'
+import { NowOperator } from './operators/NowOperator'
+import { IsFalsyOperator } from './operators/IsFalsyOperator'
+import { AddOperator } from './operators/AddOperator'
+import { ArrayAppendOperator } from './operators/ArrayAppendOperator'
+import { NeqOperator } from './operators/NeqOperator'
+import { ArrayAtOperator } from './operators/ArrayAtOperator'
+import { ParseDateOperator } from './operators/ParseDateOperator'
+import { ParseDateTimeOperator } from './operators/ParseDateTimeOperator'
+import { ArrayPageOperator } from './operators/ArrayPageOperator'
+import { MapGetOperator } from './operators/MapGetOperator'
+import { ParseTimeOperator } from './operators/ParseTimeOperator'
+import { MemRefOperator } from './operators/MemRefOperator'
+import { StrLowerCaseOperator } from './operators/StrLowerCaseOperator'
+import { EncodeBase64Operator } from './operators/EncodeBase64Operator'
+import { ExpressionLanguageOperator } from './operators/ExpressionLanguageOperator'
+import { NotOperator } from './operators/NotOperator'
+import { ProjectionOperator } from './operators/ProjectionOperator'
+import { LteOperator } from './operators/LteOperator'
+import { StrSplitOperator } from './operators/StrSplitOperator'
+import { ArrayPrependOperator } from './operators/ArrayPrependOperator'
+import { DecodeBase64Operator } from './operators/DecodeBase64Operator'
+import { SubtractOperator } from './operators/SubtractOperator'
+import { JsonParseOperator } from './operators/JsonParseOperator'
+import { ContainsOperator } from './operators/ContainsOperator'
+import { GteOperator } from './operators/GteOperator'
+import { LtOperator } from './operators/LtOperator'
+import { DivideOperator } from './operators/DivideOperator'
+import { MapPutOperator } from './operators/MapPutOperator'
+import { MultiplyOperator } from './operators/MultiplyOperator'
+import { StrConcatOperator } from './operators/StrConcatOperator'
+import { GtOperator } from './operators/GtOperator'
+import { StrUpperCaseOperator } from './operators/StrUpperCaseOperator'
+import { IsTruthyOperator } from './operators/IsTruthyOperator'
+import { MapDelOperator } from './operators/MapDelOperator'
+import { ArrayDelOperator } from './operators/ArrayDelOperator'
+import { DecrOperator } from './operators/DecrOperator'
+import { IncrOperator } from './operators/IncrOperator'
+
+
 const ITEMS_BY_CATEGORY = [
     {
         name: "Flow",
@@ -42,7 +83,7 @@ const ITEMS_BY_CATEGORY = [
     },
     {
         name: 'Predicate',
-        description: 'Operators are one-key JSON objects (e.g. { "$eq": { ... } }) used to manipulate data',
+        description: 'Operators are one-key JSON objects used to manipulate data',
         nodes: {
             "$mem_ref": MemRefOperator(),
             "$array_append": ArrayAppendOperator(),
@@ -70,13 +111,18 @@ const ITEMS_BY_CATEGORY = [
             "$basic_auth": BasicAuthOperator(),
             "$now": NowOperator(),
             "$not": NotOperator(),
-            "$parse_datetime": ParseDatetimeOperator(),
+            "$parse_datetime": ParseDateTimeOperator(),
             "$parse_date": ParseDateOperator(),
             "$parse_time": ParseTimeOperator(),
             "$add": AddOperator(),
             "$subtract": SubtractOperator(),
             "$multiply": MultiplyOperator(),
             "$divide": DivideOperator(),
+            "$incr": IncrOperator(),
+            "$decr": DecrOperator(),
+            "$str_upper_case": StrUpperCaseOperator(),
+            "$str_lower_case": StrLowerCaseOperator(),
+            "$str_split": StrSplitOperator(),
             "$expression_language": ExpressionLanguageOperator(),
         }
     }
@@ -87,8 +133,8 @@ function Category(item) {
 
     return <div className='whats-new-category d-flex-center justify-content-between px-3 py-2' onClick={() => onClick(item)}>
         <div className='whats-next-category-informations'>
-            <p>{name}</p>
-            <p>{description}</p>
+            <p className='m-0'>{name}</p>
+            <p className='m-0'>{description}</p>
         </div>
         <i className='fas fa-arrow-right' />
     </div>
@@ -102,7 +148,7 @@ function UnFoldedCategory({ nodes, onClick, query }) {
             node.description.toLowerCase().includes(query))
 
     if (filteredNodes.length === 0)
-        return <p className='text-center'>No results found</p>
+        return <p className='text-center m-0'>No results found</p>
 
     return filteredNodes
         .map(([_, node]) => <div
@@ -116,10 +162,10 @@ function UnFoldedCategory({ nodes, onClick, query }) {
                 {node.label}
             </div>
             <div className=' d-flex flex-column px-2'>
-                <p style={{
+                <p className='m-0' style={{
                     fontWeight: 'bold'
                 }}>{node.name}</p>
-                <p>{node.description}</p>
+                <p className='m-0'>{node.description}</p>
             </div>
         </div>
         )
@@ -146,7 +192,7 @@ export function Items({ setTitle, handleSelectNode, isOpen, query }) {
                 node.description.toLowerCase().includes(query)))
 
     if (categories.length === 0)
-        return <p className='text-center'>No results found</p>
+        return <p className='text-center m-0'>No results found</p>
 
     return categories.map(category => <Category {...category}
         id={category.name}

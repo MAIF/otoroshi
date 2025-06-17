@@ -2,7 +2,6 @@ import React from 'react';
 
 import { Node } from './flow/Node'
 import { GroupNode } from './flow/GroupNode'
-import { IfThenElseNode } from './flow/IfThenElseNode'
 import { CustomEdge } from './flow/CustomEdge'
 import { AddNode } from './nodes/AddNode'
 import { ReactFlow, Background, Controls } from '@xyflow/react';
@@ -27,7 +26,6 @@ export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onCo
             nodeTypes={{
                 simple: Node,
                 group: GroupNode,
-                IfThenElse: IfThenElseNode,
                 AddNode: AddNode
             }}
             edgeTypes={{

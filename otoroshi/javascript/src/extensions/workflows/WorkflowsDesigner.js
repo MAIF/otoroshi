@@ -18,7 +18,7 @@ import {
 } from '@xyflow/react';
 import { NewTask } from './flow/NewTask';
 import { findNonOverlappingPosition } from './NewNodeSpawn';
-import { NODES } from './models/Functions';
+import { NODES, OPERATORS } from './models/Functions';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -73,7 +73,13 @@ function Container(props) {
 }
 
 export function defaultNode(nodes, node, firstStep) {
-    const data = NODES[(node.kind || node.data.kind).toLowerCase()](node)
+    let data = NODES[(node.kind || node.data.kind).toLowerCase()]
+
+    if (data)
+        data = data(node)
+
+    if (!data)
+        data = OPERATORS[(node.kind || node.data.kind).toLowerCase()](node)
 
     return {
         id: uuid(),
@@ -99,6 +105,35 @@ function createNode(id, existingNodes, child, isFirst, addInformationsToNode) {
     }
 }
 
+function createAndLinkChildNode(parentId, nodes, node, addInformationsToNode, handle) {
+    let config = node
+
+    // create child operator node
+    if (typeof node === "object" && node !== null && Object.keys(node).find(key => key.startsWith('$'))) {
+        config = {
+            kind: Object.keys(node).find(key => key.startsWith('$'))
+        }
+    }
+
+    // console.log(config)
+
+    const childNode = createNode(uuid(), nodes.map(r => r.position), config, false, addInformationsToNode)
+    childNode.data.isInternal = true
+
+    return {
+        node: childNode,
+        edge: {
+            id: uuid(),
+            source: parentId,
+            sourceHandle: `${handle}-${parentId}`,
+            target: childNode.id,
+            targetHandle: `input-${childNode.id}`,
+            type: 'customEdge',
+            animated: true,
+        }
+    }
+}
+
 function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
     if (!workflow)
         return { edges: [], nodes: [] }
@@ -118,21 +153,27 @@ function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
 
             const { workflow } = nodes[i].data
 
-            if (workflow.node) {
-                const childNode = createNode(uuid(), nodes.map(r => r.position), workflow.node, false, addInformationsToNode)
-                childNode.data.isInternal = true
-                nodes.push(childNode)
+            // console.log(workflow)
+            const parentId = nodes[i].id
 
-                edges.push({
-                    id: uuid(),
-                    source: nodes[i].id,
-                    sourceHandle: `node-${nodes[i].id}`,
-                    target: childNode.id,
-                    targetHandle: `input-${childNode.id}`,
-                    type: 'customEdge',
-                    animated: true,
-                })
+            if (workflow.node) {
+                const { node, edge } = createAndLinkChildNode(parentId, nodes, workflow.node, addInformationsToNode, 'node')
+                nodes.push(node)
+                edges.push(edge)
+            } else if (workflow.kind === "if") {
+                const ifOperator = createAndLinkChildNode(parentId, nodes, workflow.predicate, addInformationsToNode, 'predicate')
+                nodes.push(ifOperator.node)
+                edges.push(ifOperator.edge)
+
+                const elseOperator = createAndLinkChildNode(parentId, nodes, workflow.else, addInformationsToNode, 'else')
+                nodes.push(elseOperator.node)
+                edges.push(elseOperator.edge)
+
+                const thenOperator = createAndLinkChildNode(parentId, nodes, workflow.then, addInformationsToNode, 'then')
+                nodes.push(thenOperator.node)
+                edges.push(thenOperator.edge)
             }
+
 
             nodes[i] = {
                 ...nodes[i],
@@ -392,7 +433,7 @@ function WorkflowsDesigner(props) {
         }
     });
 
-    console.log(edges)
+    // console.log(edges)
 
     return <div className='workflow'>
         <DesignerActions run={run} />

@@ -48,7 +48,7 @@ export function ModalEditor({ node }) {
     console.log(node)
 
     return <div className='modal-editor'>
-        <p className='p-3 whats-next-title'>{node.name}</p>
+        <p className='p-3 m-0 whats-next-title'>{node.name}</p>
         <div className='p-3'>
             <NgForm
                 schema={schema}

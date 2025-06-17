@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 
 import Handles from './Handles';
 import NodeTrashButton from './NodeTrashButton';
-import { Handle, NodeResizer, Position } from '@xyflow/react';
+import { NodeResizer } from '@xyflow/react';
 
 export function Node(props) {
     const { data } = props

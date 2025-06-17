@@ -13,6 +13,46 @@ import { ValueNode } from "../nodes/ValueNode"
 import { WaitNode } from "../nodes/WaitNode"
 import { WorkflowNode } from "../nodes/WorkflowNode"
 
+import { BasicAuthOperator } from '../operators/BasicAuthOperator'
+import { EqOperator } from '../operators/EqOperator'
+import { NowOperator } from '../operators/NowOperator'
+import { IsFalsyOperator } from '../operators/IsFalsyOperator'
+import { AddOperator } from '../operators/AddOperator'
+import { ArrayAppendOperator } from '../operators/ArrayAppendOperator'
+import { NeqOperator } from '../operators/NeqOperator'
+import { ArrayAtOperator } from '../operators/ArrayAtOperator'
+import { ParseDateOperator } from '../operators/ParseDateOperator'
+import { ParseDateTimeOperator } from '../operators/ParseDateTimeOperator'
+import { ArrayPageOperator } from '../operators/ArrayPageOperator'
+import { MapGetOperator } from '../operators/MapGetOperator'
+import { ParseTimeOperator } from '../operators/ParseTimeOperator'
+import { MemRefOperator } from '../operators/MemRefOperator'
+import { StrLowerCaseOperator } from '../operators/StrLowerCaseOperator'
+import { EncodeBase64Operator } from '../operators/EncodeBase64Operator'
+import { ExpressionLanguageOperator } from '../operators/ExpressionLanguageOperator'
+import { NotOperator } from '../operators/NotOperator'
+import { ProjectionOperator } from '../operators/ProjectionOperator'
+import { LteOperator } from '../operators/LteOperator'
+import { StrSplitOperator } from '../operators/StrSplitOperator'
+import { ArrayPrependOperator } from '../operators/ArrayPrependOperator'
+import { DecodeBase64Operator } from '../operators/DecodeBase64Operator'
+import { SubtractOperator } from '../operators/SubtractOperator'
+import { JsonParseOperator } from '../operators/JsonParseOperator'
+import { ContainsOperator } from '../operators/ContainsOperator'
+import { GteOperator } from '../operators/GteOperator'
+import { LtOperator } from '../operators/LtOperator'
+import { DivideOperator } from '../operators/DivideOperator'
+import { MapPutOperator } from '../operators/MapPutOperator'
+import { MultiplyOperator } from '../operators/MultiplyOperator'
+import { StrConcatOperator } from '../operators/StrConcatOperator'
+import { GtOperator } from '../operators/GtOperator'
+import { StrUpperCaseOperator } from '../operators/StrUpperCaseOperator'
+import { IsTruthyOperator } from '../operators/IsTruthyOperator'
+import { MapDelOperator } from '../operators/MapDelOperator'
+import { ArrayDelOperator } from '../operators/ArrayDelOperator'
+import { DecrOperator } from '../operators/DecrOperator'
+import { IncrOperator } from '../operators/IncrOperator'
+
 export const NODES = {
     "assign": AssignNode,
     "parallel": ParallelFlowsNode,
@@ -28,6 +68,48 @@ export const NODES = {
     "error": ErrorNode,
     "value": ValueNode,
     "addnode": AddNode
+}
+
+export const OPERATORS = {
+    "$mem_ref": MemRefOperator,
+    "$array_append": ArrayAppendOperator,
+    "$array_prepend": ArrayPrependOperator,
+    "$array_at": ArrayAtOperator,
+    "$array_del": ArrayDelOperator,
+    "$array_page": ArrayPageOperator,
+    "$projection": ProjectionOperator,
+    "$map_put": MapPutOperator,
+    "$map_get": MapGetOperator,
+    "$map_del": MapDelOperator,
+    "$json_parse": JsonParseOperator,
+    "$str_concat": StrConcatOperator,
+    "$is_truthy": IsTruthyOperator,
+    "$is_falsy": IsFalsyOperator,
+    "$contains": ContainsOperator,
+    "$eq": EqOperator,
+    "$neq": NeqOperator,
+    "$gt": GtOperator,
+    "$lt": LtOperator,
+    "$gte": GteOperator,
+    "$lte": LteOperator,
+    "$encode_base64": EncodeBase64Operator,
+    "$decode_base64": DecodeBase64Operator,
+    "$basic_auth": BasicAuthOperator,
+    "$now": NowOperator,
+    "$not": NotOperator,
+    "$parse_datetime": ParseDateTimeOperator,
+    "$parse_date": ParseDateOperator,
+    "$parse_time": ParseTimeOperator,
+    "$add": AddOperator,
+    "$subtract": SubtractOperator,
+    "$multiply": MultiplyOperator,
+    "$divide": DivideOperator,
+    "$incr": IncrOperator,
+    "$decr": DecrOperator,
+    "$str_upper_case": StrUpperCaseOperator,
+    "$str_lower_case": StrLowerCaseOperator,
+    "$str_split": StrSplitOperator,
+    "$expression_language": ExpressionLanguageOperator,
 }
 
 export const CORE_FUNCTIONS = {
