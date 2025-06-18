@@ -116,7 +116,7 @@ function createAndLinkChildNode(parentId, nodes, node, addInformationsToNode, ha
 
     // console.log(config)
 
-    const childNode = createNode(uuid(), nodes.map(r => r.position), config, false, addInformationsToNode)
+    const childNode = createNode(`${parentId}-${uuid()}`, nodes.map(r => r.position), config, false, addInformationsToNode)
     childNode.data.isInternal = true
 
     return {
@@ -147,12 +147,11 @@ function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
             ]
         }, [])
 
+
         for (let i = 0; i < nodes.length; i++) {
             const { targets = [], sources = [] } = nodes[i].data
 
             const { workflow } = nodes[i].data
-
-            // console.log(workflow)
             const parentId = nodes[i].id
 
             if (workflow.node) {
@@ -206,6 +205,12 @@ function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
                 })
         }
 
+        const returnedNode = createNode(uuid(), nodes.map(r => r.position), {
+            ...workflow,
+            kind: 'returned'
+        }, false, addInformationsToNode)
+        nodes.push(returnedNode)
+
         return { edges, nodes }
 
     } else {
@@ -225,9 +230,81 @@ function WorkflowsDesigner(props) {
     const [nodes, internalSetNodes] = useState(initialState.nodes);
     const [edges, setEdges] = useState(initialState.edges);
 
-    // console.log(nodes.map(node => {
-    //     return `${node.id} - ${node.data.sourceHandles.map(i => i.id).join(" | ")} - ${node.data.targetHandles.map(i => i.id).join(" | ")}`
-    // }), edges)
+    useEffect(() => {
+        // FIX ??
+        window.addEventListener('error', e => {
+            if (e.message === 'ResizeObserver loop completed with undelivered notifications.') {
+                const resizeObserverErrDiv = document.getElementById('webpack-dev-server-client-overlay-div');
+                const resizeObserverErr = document.getElementById('webpack-dev-server-client-overlay');
+                if (resizeObserverErr) {
+                    resizeObserverErr.setAttribute('style', 'display: none');
+                }
+                if (resizeObserverErrDiv) {
+                    resizeObserverErrDiv.setAttribute('style', 'display: none');
+                }
+            }
+        });
+    }, [])
+
+    const graphToJson = () => {
+        const nodesWithConnections = nodes.reduce((acc, node) => {
+            const connections = edges
+                .filter(edge => edge.source === node.id && !edge.sourceHandle.startsWith('output'))
+            return [
+                ...acc,
+                {
+                    node,
+                    connections: connections.map(connection => ({
+                        node: nodes.find(n => n.id === connection.target),
+                        handle: connection.sourceHandle.replace(`-${connection.source}`, '')
+                    }))
+                }
+            ]
+        }, [])
+
+        const nodesWithChildren = nodesWithConnections.reduce((acc, item) => {
+            const { node } = item
+            if (!nodesWithConnections.find(n => n.connections.find(conn => conn.node.id === node.id))) {
+                return [...acc, item]
+            }
+            return acc
+        }, [])
+
+        return nodesWithChildren.reduce((outputWorkflow, { node, connections }) => {
+            let { kind, workflow } = node.data
+
+            if (kind === 'workflow') {
+                workflow.steps = connections.map(connection => connection.node.data.workflow)
+            } else if (workflow.node) {
+                workflow.node = connections.find(connection => connection.handle === 'node')?.node.data.workflow
+            }
+            return {
+                ...outputWorkflow,
+                steps: [
+                    ...outputWorkflow.steps,
+                    workflow
+                ]
+            }
+        }, {
+            kind: "workflow",
+            steps: [],
+            returned: {}
+        })
+
+    }
+
+    const handleSave = () => {
+        const config = graphToJson()
+
+        const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
+
+        client.update({
+            ...props.workflow,
+            config
+        })
+
+        return Promise.resolve()
+    }
 
     function updateData(props, changes) {
         setNodes(nodes.map(node => {
@@ -262,16 +339,8 @@ function WorkflowsDesigner(props) {
     }
 
     function handleWorkflowChange(nodeId, workflow) {
-        console.log('handle data change', nodeId, workflow)
         setNodes(eds => eds.map(node => {
             if (node.id === nodeId) {
-                console.log('changes', {
-                    ...node,
-                    data: {
-                        ...node.data,
-                        workflow
-                    }
-                })
                 return {
                     ...node,
                     data: {
@@ -421,39 +490,22 @@ function WorkflowsDesigner(props) {
             },
             body: JSON.stringify({
                 input: JSON.stringify({}, null, 4),
-                workflow: props.workflow.config,
+                workflow: graphToJson()
             }),
         })
             .then((r) => r.json())
             .then((r) => {
-                console.log({
-                    result: r.returned,
-                    run: r.run,
-                    error: r.error,
-                    running: false,
-                })
+                console.log(r)
             })
     }
 
-    // FIX ??
-    window.addEventListener('error', e => {
-        if (e.message === 'ResizeObserver loop completed with undelivered notifications.') {
-            const resizeObserverErrDiv = document.getElementById('webpack-dev-server-client-overlay-div');
-            const resizeObserverErr = document.getElementById('webpack-dev-server-client-overlay');
-            if (resizeObserverErr) {
-                resizeObserverErr.setAttribute('style', 'display: none');
-            }
-            if (resizeObserverErrDiv) {
-                resizeObserverErrDiv.setAttribute('style', 'display: none');
-            }
-        }
-    });
+
 
     // console.log(edges)
 
     return <div className='workflow'>
         <DesignerActions run={run} />
-        <Navbar workflow={props.workflow} save={() => Promise.resolve('saved')} />
+        <Navbar workflow={props.workflow} save={handleSave} />
 
         <NewTask onClick={() => setOnCreationMode(true)} />
 

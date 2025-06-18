@@ -26,11 +26,6 @@ export function ModalEditor({ node }) {
             help: 'Name of memory variable to store output'
 
         },
-        returned: {
-            label: 'Returned value',
-            type: 'string',
-            help: 'Immediate result to return from the workflow'
-        },
         ...node.data.schema
     }
     const flow = [
@@ -43,7 +38,7 @@ export function ModalEditor({ node }) {
         {
             type: 'group',
             name: 'Configuration',
-            fields: [...(node.data.flow || []), 'result', 'returned']
+            fields: [...(node.data.flow || []), 'result']
         }
     ]
 

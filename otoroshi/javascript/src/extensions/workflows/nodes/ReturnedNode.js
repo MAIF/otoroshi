@@ -1,0 +1,57 @@
+import React from 'react'
+import { NgCodeRenderer } from '../../../components/nginputs'
+
+export function ReturnedNode(_workflow) {
+    return {
+        label: <i className='fas fa-box' />,
+        name: 'Returned',
+        kind: 'returned',
+        description: ' Overrides the output of the node with the result of an operator',
+        workflow: _workflow,
+        flow: ['returned'],
+        schema: {
+            returned: {
+                type: 'code',
+                label: 'Returned value',
+                props: {
+                    mode: 'json',
+                    editorOnly: true,
+                },
+            }
+        },
+        nodeRenderer: props => {
+            return <div style={{
+                position: 'absolute',
+                top: 30,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                borderBottomLeftRadius: '.75rem',
+                borderBottomRightRadius: '.75rem',
+                overflow: 'hidden'
+            }}>
+                <NgCodeRenderer
+                    ngOptions={{ spread: true }}
+                    rawSchema={{
+                        props: {
+                            showGutter: false,
+                            ace_config: {
+                                fontSize: 8,
+                            },
+                            editorOnly: true,
+                            height: '100%',
+                            mode: 'json',
+                        },
+                    }}
+                    value={props.data.workflow?.returned}
+                    onChange={(e) => {
+                        props.data.functions.handleWorkflowChange(props.id, {
+                            ...props.workflow,
+                            returned: e
+                        })
+                    }}
+                />
+            </div>
+        }
+    }
+}

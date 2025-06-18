@@ -4,6 +4,7 @@ import React, { useEffect } from 'react'
 import Handles from './Handles';
 import NodeTrashButton from './NodeTrashButton';
 import { NodeResizer } from '@xyflow/react';
+import { ReturnedNode } from '../nodes/ReturnedNode';
 
 export function Node(props) {
     const { data } = props
@@ -35,7 +36,9 @@ export function Node(props) {
                     {data.label || data.item?.label} {data.name}
                 </div>
 
-                <NodeTrashButton {...props} />
+                {data.kind === 'returned' && ReturnedNode().nodeRenderer(props)}
+
+                {data.kind !== 'returned' && <NodeTrashButton {...props} />}
             </button>
         </>
     );

@@ -53,6 +53,7 @@ import { MapDelOperator } from './operators/MapDelOperator'
 import { ArrayDelOperator } from './operators/ArrayDelOperator'
 import { DecrOperator } from './operators/DecrOperator'
 import { IncrOperator } from './operators/IncrOperator'
+import { ReturnedNode } from './nodes/ReturnedNode'
 
 
 const ITEMS_BY_CATEGORY = [
@@ -79,6 +80,7 @@ const ITEMS_BY_CATEGORY = [
             "wait": WaitNode(),
             "error": ErrorNode(),
             "value": ValueNode(),
+            "returned": ReturnedNode()
         }
     },
     {
