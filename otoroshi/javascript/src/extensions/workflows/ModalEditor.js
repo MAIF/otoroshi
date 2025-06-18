@@ -6,8 +6,6 @@ export function ModalEditor({ node }) {
     if (!node)
         return null
 
-    const [state, setState] = useState()
-
     const schema = {
         description: {
             type: 'string',
@@ -45,16 +43,14 @@ export function ModalEditor({ node }) {
         }
     ]
 
-    console.log(node)
-
     return <div className='modal-editor'>
         <p className='p-3 m-0 whats-next-title'>{node.name}</p>
         <div className='p-3'>
             <NgForm
                 schema={schema}
                 flow={flow}
-                value={state}
-                onChange={setState} />
+                value={node.data.workflow}
+                onChange={newData => node.data.functions.handleDataChange(node.id, newData)} />
         </div>
     </div>
 }

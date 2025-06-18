@@ -7,7 +7,7 @@ export const SwitchNode = (_workflow) => ({
     workflow: _workflow,
     kind: 'switch',
     sourcesIsArray: true,
-    sources: ['path-1', 'output'],
+    sources: ['predicate', 'output'],
     targets: []
     //     {
     //   "kind": "switch",

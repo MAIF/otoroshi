@@ -255,10 +255,15 @@ function WorkflowsDesigner(props) {
                     openNodesExplorer: setOnCreationMode,
                     handleDeleteNode: handleDeleteNode,
                     updateData: updateData,
-                    addHandleSource: addHandleSource
+                    addHandleSource: addHandleSource,
+                    handleDataChange: handleDataChange
                 }
             },
         }
+    }
+
+    function handleDataChange(nodeId, newData) {
+        console.log(nodeId, data)
     }
 
     function addHandleSource(nodeId) {
