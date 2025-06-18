@@ -61,7 +61,7 @@ export default function Handles(props) {
             {sources.output && <RightHandle
                 handle={{ id: sources.output.id }}
                 className="my-2"
-                selected={connections.find(connection => connection.sourceHandle.startsWith('output'))} />}
+                selected={connections.find(connection => connection.sourceHandle === `output-${props.id}`)} />}
         </div>
     </>
 }

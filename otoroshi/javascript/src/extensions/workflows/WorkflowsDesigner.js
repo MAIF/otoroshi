@@ -13,7 +13,6 @@ import {
     applyNodeChanges,
     applyEdgeChanges,
     addEdge,
-    useReactFlow,
     ReactFlowProvider,
 } from '@xyflow/react';
 import { NewTask } from './flow/NewTask';
@@ -83,7 +82,7 @@ export function defaultNode(nodes, node, firstStep) {
 
     return {
         id: uuid(),
-        position: findNonOverlappingPosition(nodes),
+        position: findNonOverlappingPosition([nodes[nodes.length - 1]].filter(f => f)),
         type: node.type || data.type || 'simple',
         data: {
             isFirst: firstStep,
@@ -256,14 +255,33 @@ function WorkflowsDesigner(props) {
                     handleDeleteNode: handleDeleteNode,
                     updateData: updateData,
                     addHandleSource: addHandleSource,
-                    handleDataChange: handleDataChange
+                    handleWorkflowChange: handleWorkflowChange
                 }
             },
         }
     }
 
-    function handleDataChange(nodeId, newData) {
-        console.log(nodeId, data)
+    function handleWorkflowChange(nodeId, workflow) {
+        console.log('handle data change', nodeId, workflow)
+        setNodes(eds => eds.map(node => {
+            if (node.id === nodeId) {
+                console.log('changes', {
+                    ...node,
+                    data: {
+                        ...node.data,
+                        workflow
+                    }
+                })
+                return {
+                    ...node,
+                    data: {
+                        ...node.data,
+                        workflow
+                    }
+                }
+            }
+            return node
+        }))
     }
 
     function addHandleSource(nodeId) {
@@ -285,7 +303,6 @@ function WorkflowsDesigner(props) {
     }
 
     function handleDeleteNode(nodeId) {
-        console.log('handle delete note')
         setNodes((nds) => nds.filter((node) => node.id !== nodeId));
         setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
     }
@@ -334,7 +351,7 @@ function WorkflowsDesigner(props) {
     const handleSelectNode = item => {
         const targetId = uuid()
 
-        console.log("handleSelectNode", "isOnCreation", isOnCreation, item)
+        // console.log("handleSelectNode", "isOnCreation", isOnCreation, item)
 
         let newNode = addInformationsToNode({
             ...defaultNode([], item, false),
@@ -356,12 +373,6 @@ function WorkflowsDesigner(props) {
         let newEdges = []
 
         if (isOnCreation && isOnCreation.handle) {
-            // id: 'a-b',
-            // source: 'a',
-            // sourceHandle: 'a-s-a',
-            // target: 'b',
-            // targetHandle: 'b-t-a',
-
             const sourceHandle = isOnCreation.handle.id
 
             newEdges.push({

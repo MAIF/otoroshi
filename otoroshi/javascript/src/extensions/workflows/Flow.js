@@ -31,10 +31,10 @@ export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onCo
             edgeTypes={{
                 customEdge: CustomEdge,
             }}
-            onNodeDoubleClick={(_, group) => onGroupNodeClick(group.data)}
-        >
+            onNodeDoubleClick={(_, group) => onGroupNodeClick(group)}
+                >
             <Background />
             <Controls orientation='horizontal' showInteractive={false} />
         </ReactFlow>
-    </div>
+    </div >
 }

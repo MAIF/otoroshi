@@ -28,7 +28,7 @@ export function Node(props) {
                 `}
                 onDoubleClick={e => {
                     e.stopPropagation()
-                    data.functions.onDoubleClick(data)
+                    data.functions.onDoubleClick(props)
                 }}
             >
                 <div className='node-one-output d-flex-center'>

@@ -1,21 +1,20 @@
 const NODE_SIZE = 200
-const PADDING = 100
-const TOTAL_SIZE = NODE_SIZE + PADDING
-const CANVAS_WIDTH = window.innerWidth
-const CANVAS_HEIGHT = window.innerHeight
+const NODE_HEIGHT = 100
+const PADDING = 20
 
 const DIRECTIONS = [
-    { dy: 0, dx: TOTAL_SIZE },
-    { dy: 0, dx: -TOTAL_SIZE },
-    { dx: 0, dy: TOTAL_SIZE },
-    { dx: 0, dy: -TOTAL_SIZE }
+    { dy: 0, dx: NODE_SIZE + PADDING },
+    // { dy: 0, dx: -TOTAL_SIZE },
+    { dx: 0, dy: NODE_HEIGHT + PADDING },
+    { dx: 0, dy: -NODE_HEIGHT + PADDING }
 ];
 
 function isOverlapping(x, y, nodes) {
     return nodes.some(node => {
-        const dx = Math.abs(x - node.x);
-        const dy = Math.abs(y - node.y);
-        return dx < TOTAL_SIZE && dy < TOTAL_SIZE;
+        return x < node.x + NODE_SIZE &&
+            x + NODE_SIZE > node.x &&
+            y < node.y + NODE_HEIGHT &&
+            y + NODE_HEIGHT > node.y
     })
 }
 
@@ -29,10 +28,8 @@ function findNearbyPosition(existingNodes) {
             const x = node.x + dir.dx;
             const y = node.y + dir.dy;
 
-            if (x >= 0 && y >= 0 && x + NODE_SIZE <= CANVAS_WIDTH && y + NODE_SIZE <= CANVAS_HEIGHT) {
-                if (!isOverlapping(x, y, existingNodes)) {
-                    return { x, y };
-                }
+            if (!isOverlapping(x, y, existingNodes)) {
+                return { x, y };
             }
         }
     }
@@ -40,13 +37,14 @@ function findNearbyPosition(existingNodes) {
 }
 
 export function findNonOverlappingPosition(existingNodes) {
-    let position = findNearbyPosition(existingNodes);
+    const nodes = existingNodes.filter(f => f)
+    let position = findNearbyPosition(nodes);
     if (position) {
         return position
     }
 
-    return {
-        x: existingNodes[0].x,
-        y: existingNodes[0].y + PADDING
-    }
+    // return {
+    //     x: nodes[0].x,
+    //     y: nodes[0].y + PADDING
+    // }
 }

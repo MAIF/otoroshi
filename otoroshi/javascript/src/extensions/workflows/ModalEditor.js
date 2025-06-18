@@ -3,8 +3,12 @@ import { NgForm } from '../../components/nginputs';
 
 export function ModalEditor({ node }) {
 
+    console.log(node)
+
     if (!node)
         return null
+
+    const [state, setState] = useState(node.data.workflow)
 
     const schema = {
         description: {
@@ -27,7 +31,7 @@ export function ModalEditor({ node }) {
             type: 'string',
             help: 'Immediate result to return from the workflow'
         },
-        ...node.schema
+        ...node.data.schema
     }
     const flow = [
         {
@@ -39,18 +43,21 @@ export function ModalEditor({ node }) {
         {
             type: 'group',
             name: 'Configuration',
-            fields: [...(node.flow || []), 'result', 'returned']
+            fields: [...(node.data.flow || []), 'result', 'returned']
         }
     ]
 
     return <div className='modal-editor'>
-        <p className='p-3 m-0 whats-next-title'>{node.name}</p>
+        <p className='p-3 m-0 whats-next-title'>{node.data.name}</p>
         <div className='p-3'>
             <NgForm
                 schema={schema}
                 flow={flow}
-                value={node.data.workflow}
-                onChange={newData => node.data.functions.handleDataChange(node.id, newData)} />
+                value={state}
+                onChange={newData => {
+                    node.data.functions.handleWorkflowChange(node.id, newData)
+                    setState(newData)
+                }} />
         </div>
     </div>
 }
