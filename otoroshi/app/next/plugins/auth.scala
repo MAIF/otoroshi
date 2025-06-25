@@ -3,11 +3,19 @@ package otoroshi.next.plugins
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.util.ByteString
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import com.google.common.base.Charsets
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, LdapAuthModule, LdapAuthModuleConfig}
+import otoroshi.auth.implicits.ResultWithPrivateAppSession
+import otoroshi.controllers.routes
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models.PrivateAppsUserHelper
+import otoroshi.models.{PrivateAppsUser, PrivateAppsUserHelper}
+import otoroshi.next.plugins.BasicAuthWithAuthModule.alreadyLoggedIn
+import otoroshi.next.plugins.api.NgAccess.NgAllowed
 import otoroshi.next.plugins.api._
+import otoroshi.security.OtoroshiClaim
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -18,6 +26,7 @@ import play.api.mvc.{Result, Results}
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.Base64
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -742,6 +751,190 @@ class SimpleBasicAuth extends NgAccessValidator {
             .withHeaders("WWW-Authenticate" -> s"""Basic realm="${config.realm}"""")
         )
         .vfuture
+    }
+  }
+}
+
+class NgExpectedConsumer extends NgAccessValidator {
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def isAccessAsync: Boolean                                      = true
+  override def multiInstance: Boolean                                      = true
+  override def core: Boolean                                               = true
+  override def name: String                                                = "Expected consumer"
+  override def description: Option[String]                                 = "This plugin expect that a user or an apikey made the call".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def noJsForm: Boolean = true
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+
+    def error(status: Results.Status, msg: String, code: String): Future[NgAccess] = {
+      Errors
+        .craftResponseResult(
+          msg,
+          status,
+          ctx.request,
+          None,
+          code.some,
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some
+        )
+        .map(NgAccess.NgDenied.apply)
+    }
+
+    ctx.attrs.get(otoroshi.plugins.Keys.UserKey) match {
+      case None    => ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
+        case None    =>  error(Results.Unauthorized, "You're not authorized here !", "errors.auth.unauthorized")
+        case Some(_) => NgAccess.NgAllowed.vfuture
+      }
+      case Some(_) => NgAccess.NgAllowed.vfuture
+    }
+  }
+}
+
+case class BasicAuthWithAuthModuleConfig(ref: String = "", addAuthenticateHeader: Boolean = true) extends NgPluginConfig {
+  def json: JsValue = BasicAuthWithAuthModuleConfig.format.writes(this)
+}
+
+object BasicAuthWithAuthModuleConfig {
+  val format = new Format[BasicAuthWithAuthModuleConfig] {
+
+    override def reads(json: JsValue): JsResult[BasicAuthWithAuthModuleConfig] = Try {
+      BasicAuthWithAuthModuleConfig(
+        ref = json.select("ref").asString,
+        addAuthenticateHeader = json.select("add_authenticate_header").asOptBoolean.getOrElse(true)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+
+    override def writes(o: BasicAuthWithAuthModuleConfig): JsValue = Json.obj(
+      "ref" -> o.ref,
+      "add_authenticate_header" -> o.addAuthenticateHeader,
+    )
+  }
+  val configFlow: Seq[String]        = Seq("ref", "add_authenticate_header")
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "add_authenticate_header" -> Json.obj(
+        "type"  -> "boolean",
+        "label" -> "Add WWW-Authenticate header"
+      ),
+      "ref" -> Json.obj(
+        "type"  -> "select",
+        "label" -> "Auth. module",
+        "props" -> Json.obj(
+          "optionsFrom" -> "/bo/api/proxy/api/auths",
+          "optionsTransformer" -> Json.obj(
+            "label" -> "name",
+            "value" -> "id",
+          )
+        )
+      )
+    )
+  )
+}
+
+object BasicAuthWithAuthModule {
+
+  val cache: Cache[String, PrivateAppsUser] = Scaffeine().expireAfterWrite(1.minutes).build()
+
+  def alreadyLoggedIn(username: String, config: AuthModuleConfig): Option[PrivateAppsUser] = {
+    cache.getIfPresent(s"${config.id}:${username.sha256}")
+  }
+
+  def addLoggedIn(username: String, user: PrivateAppsUser, config: AuthModuleConfig): Unit = {
+    cache.put(s"${config.id}:${username.sha256}", user)
+  }
+}
+
+class BasicAuthWithAuthModule extends NgAccessValidator {
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def isAccessAsync: Boolean                                      = true
+  override def multiInstance: Boolean                                      = true
+  override def core: Boolean                                               = true
+  override def name: String                                                = "Basic auth. from auth. module"
+  override def description: Option[String]                                 = "This plugin enforces basic auth. authentication with users coming from LDAP and In-memory auth. modules".some
+  override def defaultConfigObject: Option[NgPluginConfig] = BasicAuthWithAuthModuleConfig().some
+  override def noJsForm: Boolean = true
+  override def configFlow: Seq[String] = BasicAuthWithAuthModuleConfig.configFlow
+  override def configSchema: Option[JsObject] = BasicAuthWithAuthModuleConfig.configSchema
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+
+    val config = ctx.cachedConfig(internalName)(BasicAuthWithAuthModuleConfig.format).getOrElse(BasicAuthWithAuthModuleConfig())
+    val descriptor = ctx.route.legacy
+
+    def unauthorized(opt: Option[AuthModuleConfig]): Result = {
+      Results
+        .Unauthorized(Json.obj("error" -> "forbidden"))
+        .applyOnWithOpt(opt) {
+          case (r, authConfig) if config.addAuthenticateHeader => r.withHeaders("WWW-Authenticate" -> s"""Basic realm="bawam-${authConfig.cookieSuffix(descriptor)}"""")
+          case (r, _) => r
+        }
+    }
+
+    def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+
+    def extractUsernamePassword(header: String): Option[(String, String)] = {
+      val base64 = header.replace("Basic ", "").replace("basic ", "")
+      Option(base64)
+        .map(decodeBase64)
+        .map(_.split(":").toSeq)
+        .filter(v => v.nonEmpty && v.length > 1)
+        .flatMap(a => a.headOption.map(head => (head, a.tail.mkString(":"))))
+
+    }
+
+    val authModuleOpt = env.proxyState.authModule(config.ref)
+
+    ctx.request.headers.get("Authorization") match {
+      case Some(auth) if auth.startsWith("Basic ") =>
+        extractUsernamePassword(auth) match {
+          case None                       => NgAccess.NgDenied(unauthorized(authModuleOpt)).vfuture
+          case Some((username, password)) => {
+            authModuleOpt match {
+              case None => NgAccess.NgDenied(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "auth. module not found"))).vfuture
+              case Some(authModule: BasicAuthModuleConfig) => {
+                BasicAuthModule(authModule).bindUser(username, password, descriptor).map {
+                  case Left(_) => NgAccess.NgDenied(unauthorized(authModuleOpt))
+                  case Right(user) => {
+                    ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+                    NgAllowed
+                  }
+                }
+              }
+              case Some(authModule: LdapAuthModuleConfig) => {
+                BasicAuthWithAuthModule.alreadyLoggedIn(username, authModule) match {
+                  case Some(user) => {
+                    ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+                    NgAllowed.vfuture
+                  }
+                  case None => {
+                    LdapAuthModule(authModule).bindUser(username, password, descriptor).map {
+                      case Left(_) => NgAccess.NgDenied(unauthorized(authModuleOpt))
+                      case Right(user) => {
+                        BasicAuthWithAuthModule.addLoggedIn(username, user, authModule)
+                        ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+                        NgAllowed
+                      }
+                    }
+                  }
+                }
+              }
+              case _ => NgAccess.NgDenied(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "unsupported auth. module kind"))).vfuture
+            }
+          }
+        }
+      case _  => NgAccess.NgDenied(unauthorized(authModuleOpt)).vfuture
     }
   }
 }
