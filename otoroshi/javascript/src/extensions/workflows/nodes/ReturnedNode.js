@@ -23,10 +23,10 @@ export function ReturnedNode(_workflow) {
             return <div style={{
                 position: 'absolute',
                 top: 30,
-                left: 0,
+                left: 24,
                 right: 0,
                 bottom: 0,
-                borderBottomLeftRadius: '.75rem',
+                // borderBottomLeftRadius: '.75rem',
                 borderBottomRightRadius: '.75rem',
                 overflow: 'hidden'
             }}>
@@ -37,6 +37,7 @@ export function ReturnedNode(_workflow) {
                             showGutter: false,
                             ace_config: {
                                 fontSize: 8,
+                                readOnly: true
                             },
                             editorOnly: true,
                             height: '100%',

@@ -29,13 +29,19 @@ export default function Handles(props) {
         <div className="handles targets">
             {props.data.targetHandles.map((handle) => {
                 const selected = connections.find(connection => connection.targetHandle === handle.id)
+
+                const classNames = [
+                    selected ? 'connected' : '',
+                    props.data.kind === 'returned' ? 'returned' : ''
+                ]
+
                 return <Handle
                     key={handle.id}
                     id={handle.id}
                     type="target"
                     position={Position.Left}
-                    className={selected ? 'connected' : ''}
-                    
+                    className={classNames.join(' ')}
+
                 >
                     <div className={`handle-dot me-1 ${selected ? 'handle-dot--selected' : ''}`} />
                     {handle.id.split('-')[0]}

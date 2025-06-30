@@ -18,6 +18,7 @@ import {
 import { NewTask } from './flow/NewTask';
 import { findNonOverlappingPosition } from './NewNodeSpawn';
 import { NODES, OPERATORS } from './models/Functions';
+import ReportExplorer from './ReportExplorer';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -147,7 +148,6 @@ function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
             ]
         }, [])
 
-
         for (let i = 0; i < nodes.length; i++) {
             const { targets = [], sources = [] } = nodes[i].data
 
@@ -171,7 +171,6 @@ function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
                 nodes.push(thenOperator.node)
                 edges.push(thenOperator.edge)
             }
-
 
             nodes[i] = {
                 ...nodes[i],
@@ -205,11 +204,37 @@ function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
                 })
         }
 
-        const returnedNode = createNode(uuid(), nodes.map(r => r.position), {
-            ...workflow,
+        let returnedNode = createNode(uuid(), nodes.map(r => r.position), {
+            returned: {
+                ...(workflow.returned || {}),
+            },
             kind: 'returned'
         }, false, addInformationsToNode)
+
+        returnedNode = {
+            ...returnedNode,
+            data: {
+                ...returnedNode.data,
+                targetHandles: [{ id: `input-${returnedNode.id}` }],
+                sourceHandles: []
+            }
+        }
+
         nodes.push(returnedNode)
+
+        const lastNode = parentNodes[parentNodes.length - 1]
+        if (lastNode)
+            edges.push({
+                id: 'returned-edge',
+                source: lastNode.id,
+                sourceHandle: `output-${lastNode.id}`,
+                target: returnedNode.id,
+                targetHandle: `input-${returnedNode.id}`,
+                type: 'customEdge',
+                animated: true,
+            })
+
+        console.log(returnedNode.data)
 
         return { edges, nodes }
 
@@ -225,10 +250,13 @@ function WorkflowsDesigner(props) {
 
     const [rfInstance, setRfInstance] = useState(null);
 
-    const initialState = getInitialNodesFromWorkflow(props.workflow?.config, addInformationsToNode);
+    const initialState = getInitialNodesFromWorkflow(props.workflow?.config, addInformationsToNode)
 
-    const [nodes, internalSetNodes] = useState(initialState.nodes);
-    const [edges, setEdges] = useState(initialState.edges);
+    const [nodes, internalSetNodes] = useState(initialState.nodes)
+    const [edges, setEdges] = useState(initialState.edges)
+
+    const [report, setReport] = useState()
+    const [reportIsOpen, setReportStatus] = useState(false)
 
     useEffect(() => {
         // FIX ??
@@ -494,20 +522,19 @@ function WorkflowsDesigner(props) {
             }),
         })
             .then((r) => r.json())
-            .then((r) => {
-                console.log(r)
+            .then(report => {
+                setReport(report)
+                setReportStatus(true)
             })
     }
-
-
-
-    // console.log(edges)
 
     return <div className='workflow'>
         <DesignerActions run={run} />
         <Navbar workflow={props.workflow} save={handleSave} />
 
         <NewTask onClick={() => setOnCreationMode(true)} />
+
+        <ReportExplorer report={report} isOpen={reportIsOpen} handleClose={() => setReportStatus(false)} />
 
         <NodesExplorer
             isOpen={isOnCreation}

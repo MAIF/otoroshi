@@ -132,7 +132,7 @@ object WorkflowFunction {
 
 trait Node {
   def json: JsObject
-  def id: String                = json.select("id").asOptString.getOrElse(ULID.random().toLowerCase)
+  val id: String                = json.select("id").asOptString.getOrElse(ULID.random().toLowerCase)
   def description: String       = json.select("description").asOptString.getOrElse("")
   def kind: String              = json.select("kind").asString
   def enabled: Boolean          = json.select("enabled").asOptBoolean.getOrElse(true)

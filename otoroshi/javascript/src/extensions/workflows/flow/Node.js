@@ -23,8 +23,7 @@ export function Node(props) {
 
             <button
                 className={`
-                    d-flex-center m-0 node 
-                    ${props.selected ? 'node--selected' : ''}
+                    d-flex-center m-0 node
                     ${isFirst ? 'node--first' : ''}
                 `}
                 onDoubleClick={e => {

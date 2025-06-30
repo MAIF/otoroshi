@@ -6,7 +6,7 @@ import { nextClient, searchNextServices } from '../services/BackOfficeServices';
 import { Row } from '../components/Row';
 import { useLocation, useParams } from 'react-router-dom';
 
-const TryIt = React.lazy(() => import('./RouteDesigner/TryIt'));
+const TryIt = React.lazy(() => import('../components/TryIt'));
 
 export const queryClient = new QueryClient({
   defaultOptions: {
