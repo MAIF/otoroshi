@@ -2,9 +2,9 @@ import React, { useState } from 'react'
 import { ReportView } from '../../components/ReportView'
 import { Button } from '../../components/Button'
 
-export default function ReportExplorer({ report, handleClose, reportIsOpen }) {
+export default function ReportExplorer({ report, handleClose, isOpen }) {
 
-    if (!report || !reportIsOpen)
+    if (!report || !isOpen)
         return null
 
     const steps = report.run.log.reduce((acc, log) => {
@@ -60,14 +60,13 @@ export default function ReportExplorer({ report, handleClose, reportIsOpen }) {
             }
         }
     }, {})
-
-    console.log(stepsByCategory)
     const [unit, setUnit] = useState('ns');
 
     const start = report.run.log[0]?.timestamp
     const end = report.run.log[report.run.log.length - 1]?.timestamp
 
     return <div className="report-explorer">
+        <h3 className='pt-3 ps-2'>Report</h3>
         <div style={{ position: 'relative', flex: 1 }} className='d-flex flex-column mt-1'>
             <div className='tryIt'>
                 <ReportView

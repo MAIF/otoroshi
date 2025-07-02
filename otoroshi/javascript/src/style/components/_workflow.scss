@@ -85,7 +85,7 @@
     top: 56px;
     width: 0;
     height: 100%;
-    z-index: 1;
+    z-index: 10;
     background: var(--bg-color_level3);
     transition: width 0.15s;
     padding-bottom: 4rem;
@@ -401,7 +401,7 @@
     right: 0;
     bottom: 0;
     left: 0;
-    padding-left: 120px;
+    margin-left: 120px;
     top: 56px;
     width: 100%;
     height: 100%;

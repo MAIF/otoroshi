@@ -153,10 +153,11 @@ function UnFoldedCategory({ nodes, onClick, query }) {
         return <p className='text-center m-0'>No results found</p>
 
     return filteredNodes
-        .map(([_, node]) => <div
+        .map(([_, node], i) => <div
             className='whats-news-category d-flex align-items-center px-3 py-2'
             style={{ cursor: 'pointer' }}
-            onClick={() => onClick(node)}>
+            onClick={() => onClick(node)}
+            key={`${node.label}-${i}`}>
             <div className='d-flex-center' style={{
                 minWidth: 32,
                 fontSize: '1.15rem'
@@ -198,6 +199,7 @@ export function Items({ setTitle, handleSelectNode, isOpen, query }) {
 
     return categories.map(category => <Category {...category}
         id={category.name}
+        key={category.name}
         onClick={item => {
             setSelectedCategory(item)
             setTitle(item.name)
