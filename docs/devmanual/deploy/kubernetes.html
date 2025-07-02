@@ -66,7 +66,6 @@ latest
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
@@ -192,7 +191,6 @@ latest
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
@@ -3519,7 +3517,7 @@ api2.another.domain                IN A 10.2.2.50
 *.api.the.api.domain               IN A 10.2.2.50</code></pre></dd>
 </dl>
 <h2><a href="#using-otoroshi-as-an-ingress-controller" name="using-otoroshi-as-an-ingress-controller" class="anchor"><span class="anchor-link"></span></a>Using Otoroshi as an Ingress Controller</h2>
-<p>If you want to use Otoroshi as an <a href="https://kubernetes.io/fr/docs/concepts/services-networking/ingress/">Ingress Controller</a>, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Ingress Controller</code>.</p>
+<p>If you want to use Otoroshi as an <a href="https://kubernetes.io/fr/docs/concepts/services-networking/ingress/">Ingress Controller</a>, just go to the danger zone, and in <code>Global plugins</code> add the job named <code>Kubernetes Ingress Controller</code>.</p>
 <p>Then add the following configuration for the job (with your own tweaks of course)</p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;KubernetesConfig&quot;: {
@@ -3849,7 +3847,6 @@ spec:
   <li><code>tenants</code></li>
   <li><code>teams</code></li>
   <li><code>data-exporters</code></li>
-  <li><code>scripts</code></li>
   <li><code>wasm-plugins</code></li>
   <li><code>global-configs</code></li>
   <li><code>green-scores</code></li>
@@ -4068,7 +4065,7 @@ spec:
   metadata: {}</code></pre></dd>
 </dl>
 <h3><a href="#configuration" name="configuration" class="anchor"><span class="anchor-link"></span></a>Configuration</h3>
-<p>To configure it, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Otoroshi CRDs Controller</code>. Then add the following configuration for the job (with your own tweak of course)</p>
+<p>To configure it, just go to the danger zone, and in <code>Global plugins</code> add the job named <code>Kubernetes Otoroshi CRDs Controller</code>. Then add the following configuration for the job (with your own tweak of course)</p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;KubernetesConfig&quot;: {
     &quot;enabled&quot;: true,

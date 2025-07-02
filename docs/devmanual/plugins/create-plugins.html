@@ -66,7 +66,6 @@ latest
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
@@ -192,7 +191,6 @@ latest
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
@@ -317,13 +315,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>there are many plugin types explained <a href="plugins.html">here</a> </p>
 <h2><a href="#code-and-signatures" name="code-and-signatures" class="anchor"><span class="anchor-link"></span></a>Code and signatures</h2>
 <ul>
-  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/requestsink.scala#L14-L19">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/requestsink.scala#L14-L19</a></li>
-  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/routing.scala#L75-L78">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/routing.scala#L75-L78</a></li>
-  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L65-L85">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L65-L85</a></li>
-  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/script.scala#269-L540">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/script.scala#269-L540</a></li>
-  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/eventlistener.scala#L27-L48">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/eventlistener.scala#L27-L48</a></li>
-  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L69-L164">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L69-L164</a></li>
-  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L108-L110">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L108-L110</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/next/plugins/api.scala">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/next/plugins/api.scala</a></li>
 </ul>
 <p>for more information about APIs you can use</p>
 <ul>
@@ -335,33 +327,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="https://doc.akka.io/api/akka/current/akka/stream/scaladsl/Source.html">https://doc.akka.io/api/akka/current/akka/stream/scaladsl/Source.html</a></li>
 </ul>
 <h2><a href="#plugin-examples" name="plugin-examples" class="anchor"><span class="anchor-link"></span></a>Plugin examples</h2>
-<p><a href="built-in-plugins.html">A lot of plugins</a> comes with otoroshi, you can find them on <a href="https://github.com/MAIF/otoroshi/tree/master/otoroshi/app/plugins">github</a></p>
-<h2><a href="#writing-a-plugin-from-otoroshi-ui" name="writing-a-plugin-from-otoroshi-ui" class="anchor"><span class="anchor-link"></span></a>Writing a plugin from Otoroshi UI</h2>
-<p>Log into Otoroshi and go to <code>Settings (cog icon) / Plugins</code>. Here you can create multiple request transformer scripts and associate it with service descriptor later.</p><div class="centered-img">
-<img src="../imgs/scripts-1.png" /></div>
-<p>when you write for instance a transformer in the Otoroshi UI, do the following</p>
-<pre class="prettyprint"><code class="language-scala">import akka.stream.Materializer
-import env.Env
-import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-import otoroshi.script._
-import play.api.Logger
-import play.api.mvc.{Result, Results}
-import scala.util._
-import scala.concurrent.{ExecutionContext, Future}
-
-class MyTransformer extends RequestTransformer {
-
-  val logger = Logger(&quot;my-transformer&quot;)
-
-  // implements the methods you want
-}
-
-// WARN: do not forget this line to provide a working instance of your transformer to Otoroshi
-new MyTransformer()
-</code></pre>
-<p>You can use the compile button to check if the script compiles, or code the transformer in your IDE (see next point).</p>
-<p>Then go to a service descriptor, scroll to the bottom of the page, and select your transformer in the list</p><div class="centered-img">
-<img src="../imgs/scripts-2.png" /></div>
+<p><a href="built-in-plugins.html">A lot of plugins</a> comes with otoroshi, you can find them on <a href="https://github.com/MAIF/otoroshi/tree/master/otoroshi/app/next/plugins">github</a></p>
 <h2><a href="#providing-a-transformer-from-java-classpath" name="providing-a-transformer-from-java-classpath" class="anchor"><span class="anchor-link"></span></a>Providing a transformer from Java classpath</h2>
 <p>You can write your own transformer using your favorite IDE. Just create an SBT project with the following dependencies. It can be quite handy to manage the source code like any other piece of code, and it avoid the compilation time for the script at Otoroshi startup.</p>
 <pre class="prettyprint"><code class="language-scala">lazy val root = (project in file(&quot;.&quot;)).
@@ -372,7 +338,7 @@ new MyTransformer()
       version      := &quot;0.1.0-SNAPSHOT&quot;
     )),
     name := &quot;request-transformer-example&quot;,
-    libraryDependencies += &quot;fr.maif&quot; %% &quot;otoroshi&quot; % &quot;1.x.x&quot;
+    libraryDependencies += &quot;fr.maif&quot; %% &quot;otoroshi&quot; % &quot;17.x.x&quot;
   )
 </code></pre><div class="callout warning "><div class="callout-title">Warning</div>
 <p>you MUST provide plugins that lies in the <code>otoroshi_plugins</code> package or in a sub-package of <code>otoroshi_plugins</code>. If you do not, your plugin will not be found by otoroshi. for example</p>
@@ -385,20 +351,23 @@ new MyTransformer()
 <p>and add the jar file to the Otoroshi classpath</p>
 <pre class="prettyprint"><code class="language-sh">java -cp &quot;/path/to/transformer.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
 </code></pre>
-<p>then, in your service descriptor, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using <code>cp:</code> prefix like </p>
+<p>then, in the route designer, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using <code>cp:</code> prefix like </p>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;transformerRef&quot;: &quot;cp:otoroshi_plugins.my.class.package.MyTransformer&quot;
+  &quot;plugin&quot;: &quot;cp:otoroshi_plugins.mycompany.demo.BodyLengthLimiter&quot;,
+  &quot;enabled&quot;: true,
+  &quot;debug&quot;: false,
+  &quot;include&quot;: [],
+  &quot;exclude&quot;: [],
+  &quot;bound_listeners&quot;: [],
+  &quot;config&quot;: {
+    &quot;max_request_body_size&quot;: null,
+    &quot;max_response_body_size&quot;: null
+  }
 }
 </code></pre>
 <h2><a href="#getting-custom-configuration-from-the-otoroshi-config-file" name="getting-custom-configuration-from-the-otoroshi-config-file" class="anchor"><span class="anchor-link"></span></a>Getting custom configuration from the Otoroshi config. file</h2>
 <p>Let say you need to provide custom configuration values for a script, then you can customize a configuration file of Otoroshi</p>
 <pre class="prettyprint"><code class="language-hocon">include &quot;application.conf&quot;
-
-otoroshi {
-  scripts {
-    enabled = true
-  }
-}
 
 my-transformer {
   env = &quot;prod&quot;
@@ -410,29 +379,90 @@ my-transformer {
 <pre class="prettyprint"><code class="language-sh">java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
 </code></pre>
 <p>then, in your transformer, you can write something like </p>
-<pre class="prettyprint"><code class="language-scala">package otoroshi_plugins.com.example.otoroshi
+<pre class="prettyprint"><code class="language-scala">package otoroshi_plugins.mycompany.demo
 
 import akka.stream.Materializer
-import akka.stream.scaladsl._
-import akka.util.ByteString
-import env.Env
-import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-import otoroshi.script._
-import play.api.Logger
-import play.api.mvc.{Result, Results}
-import scala.util._
+import otoroshi.env.Env
+import otoroshi.next.plugins.api._
+import otoroshi.utils.syntax.implicits._
+import play.api.libs.json._
+import play.api.mvc.Result
+
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util._
 
-class BodyLengthLimiter extends RequestTransformer {
+case class BodyLengthLimiterConfig(maxRequestBodySize: Option[Long] = None, maxResponseBodySize: Option[Long] = None) extends NgPluginConfig {
+  def json: JsValue = BodyLengthLimiterConfig.format.writes(this)
+}
 
-  override def def transformResponseWithCtx(ctx: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    val max = env.configuration.getOptional[Long](&quot;my-transformer.maxResponseBodySize&quot;).getOrElse(Long.MaxValue)
-    ctx.body.limitWeighted(max)(_.size)
+object BodyLengthLimiterConfig {
+  val configFlow: Seq[String]        = Seq(&quot;max_request_body_size&quot;, &quot;max_response_body_size&quot;)
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      &quot;max_response_body_size&quot; -&gt; Json.obj(
+        &quot;type&quot;  -&gt; &quot;number&quot;,
+        &quot;label&quot; -&gt; &quot;Max response length&quot;,
+        &quot;props&quot; -&gt; Json.obj(
+          &quot;label&quot;  -&gt; &quot;Max response Length&quot;,
+          &quot;suffix&quot; -&gt; &quot;bytes&quot;
+        )
+      ),
+      &quot;max_request_body_size&quot; -&gt; Json.obj(
+        &quot;type&quot;  -&gt; &quot;number&quot;,
+        &quot;label&quot; -&gt; &quot;Max request length&quot;,
+        &quot;props&quot; -&gt; Json.obj(
+          &quot;label&quot;  -&gt; &quot;Max request Length&quot;,
+          &quot;suffix&quot; -&gt; &quot;bytes&quot;
+        )
+      )
+    )
+  )
+  val format = new Format[BodyLengthLimiterConfig] {
+    override def reads(json: JsValue): JsResult[BodyLengthLimiterConfig] = Try {
+      BodyLengthLimiterConfig(
+        maxRequestBodySize = json.select(&quot;max_request_body_size&quot;).asOpt[Long],
+        maxResponseBodySize = json.select(&quot;max_response_body_size&quot;).asOpt[Long],
+      )
+    } match {
+      case Failure(e) =&gt; JsError(e.getMessage)
+      case Success(e) =&gt; JsSuccess(e)
+    }
+    override def writes(o: BodyLengthLimiterConfig): JsValue = Json.obj(
+      &quot;max_request_body_size&quot; -&gt; o.maxRequestBodySize,
+      &quot;max_response_body_size&quot; -&gt; o.maxResponseBodySize
+    )
+  }
+}
+
+class BodyLengthLimiter extends NgRequestTransformer {
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = true
+  override def name: String                                = &quot;Body length limiter&quot;
+  override def description: Option[String]                 = &quot;This plugin will limit request and response body length&quot;.some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(BodyLengthLimiterConfig())
+  override def noJsForm: Boolean = true
+  override def configFlow: Seq[String] = BodyLengthLimiterConfig.configFlow
+  override def configSchema: Option[JsObject] = BodyLengthLimiterConfig.configSchema
+
+  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    val config = ctx.cachedConfig(internalName)(BodyLengthLimiterConfig.format).getOrElse(BodyLengthLimiterConfig())
+    val maxFromConfigFile = env.configuration.getOptional[Long](&quot;my-transformer.maxRequestBodySize&quot;)
+    val max: Long = config.maxRequestBodySize.orElse(maxFromConfigFile).getOrElse(4 * 1024 * 1024)
+    Right(ctx.otoroshiRequest.copy(body = ctx.otoroshiRequest.body.limitWeighted(max)(_.size))).vfuture
   }
 
-  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    val max = env.configuration.getOptional[Long](&quot;my-transformer.maxRequestBodySize&quot;).getOrElse(Long.MaxValue)
-    ctx.body.limitWeighted(max)(_.size)
+  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+    val config = ctx.cachedConfig(internalName)(BodyLengthLimiterConfig.format).getOrElse(BodyLengthLimiterConfig())
+    val maxFromConfigFile = env.configuration.getOptional[Long](&quot;my-transformer.maxResponseBodySize&quot;)
+    val max: Long = config.maxResponseBodySize.orElse(maxFromConfigFile).getOrElse(4 * 1024 * 1024)
+    Right(ctx.otoroshiResponse.copy(body = ctx.otoroshiResponse.body.limitWeighted(max)(_.size))).vfuture
   }
 }
 </code></pre>
@@ -442,9 +472,9 @@ class BodyLengthLimiter extends RequestTransformer {
 </code></pre>
 <p>Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability</p>
 <h2><a href="#enabling-plugins" name="enabling-plugins" class="anchor"><span class="anchor-link"></span></a>Enabling plugins</h2>
-<p>plugins can be enabled per service from the service settings page or globally from the danger zone in the plugins section.</p>
+<p>plugins can be enabled per route from the route designer page or globally from the danger zone in the plugins section.</p>
 <h2><a href="#full-example" name="full-example" class="anchor"><span class="anchor-link"></span></a>Full example</h2>
-<p>a full external plugin example can be found <a href="https://github.com/mathieuancelin/otoroshi-wasmer-plugin" title="here">here</a></p>
+<p>a full external plugin example can be found <a href="https://github.com/cloud-apim/otoroshi-llm-extension" title="here">here</a></p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../plugins/built-in-plugins.html">Built-in plugins</a></p>
 </div>
@@ -462,7 +492,6 @@ class BodyLengthLimiter extends RequestTransformer {
     <li><a href="../plugins/create-plugins.html#plugin-types" class="header">Plugin types</a></li>
     <li><a href="../plugins/create-plugins.html#code-and-signatures" class="header">Code and signatures</a></li>
     <li><a href="../plugins/create-plugins.html#plugin-examples" class="header">Plugin examples</a></li>
-    <li><a href="../plugins/create-plugins.html#writing-a-plugin-from-otoroshi-ui" class="header">Writing a plugin from Otoroshi UI</a></li>
     <li><a href="../plugins/create-plugins.html#providing-a-transformer-from-java-classpath" class="header">Providing a transformer from Java classpath</a></li>
     <li><a href="../plugins/create-plugins.html#getting-custom-configuration-from-the-otoroshi-config-file" class="header">Getting custom configuration from the Otoroshi config. file</a></li>
     <li><a href="../plugins/create-plugins.html#using-a-library-that-is-not-embedded-in-otoroshi" class="header">Using a library that is not embedded in Otoroshi</a></li>
