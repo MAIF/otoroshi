@@ -209,6 +209,12 @@ Be carefull as your library can conflict with other libraries used by Otoroshi a
 
 plugins can be enabled per route from the route designer page or globally from the danger zone in the plugins section.
 
-## Full example
+## Full examples
 
-a full external plugin example can be found @link:[here](https://github.com/cloud-apim/otoroshi-llm-extension)
+you can find some example projects on the [Cloud APIM]() github account: 
+
+- basic plugin example: [Cloud APIM Mailer plugin](https://github.com/cloud-apim/otoroshi-plugin-mailer)
+- Custom datastore and custom data exporter exporter: [Cloud APIM Couchbase plugin](https://github.com/cloud-apim/otoroshi-plugin-couchbase)
+- extensions with multiple plugins, entities, admin APIs/UIs
+  - [Cloud APIM LLM Extension](https://github.com/cloud-apim/otoroshi-llm-extension)
+  - [Cloud APIM Biscuit Studio](https://github.com/cloud-apim/otoroshi-biscuit-studio)
