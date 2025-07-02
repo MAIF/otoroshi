@@ -340,45 +340,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     name := &quot;request-transformer-example&quot;,
     libraryDependencies += &quot;fr.maif&quot; %% &quot;otoroshi&quot; % &quot;17.x.x&quot;
   )
-</code></pre><div class="callout warning "><div class="callout-title">Warning</div>
-<p>you MUST provide plugins that lies in the <code>otoroshi_plugins</code> package or in a sub-package of <code>otoroshi_plugins</code>. If you do not, your plugin will not be found by otoroshi. for example</p>
-<pre class="prettyprint"><code class="language-scala">package otoroshi_plugins.com.my.company.myplugin
 </code></pre>
-<p>also you don&rsquo;t have to instantiate your plugin at the end of the file like in the Otoroshi UI</p></div>
-<p>When your code is ready, create a jar file </p>
-<pre><code>sbt package
-</code></pre>
-<p>and add the jar file to the Otoroshi classpath</p>
-<pre class="prettyprint"><code class="language-sh">java -cp &quot;/path/to/transformer.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
-</code></pre>
-<p>then, in the route designer, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using <code>cp:</code> prefix like </p>
-<pre class="prettyprint"><code class="language-json">{
-  &quot;plugin&quot;: &quot;cp:otoroshi_plugins.mycompany.demo.BodyLengthLimiter&quot;,
-  &quot;enabled&quot;: true,
-  &quot;debug&quot;: false,
-  &quot;include&quot;: [],
-  &quot;exclude&quot;: [],
-  &quot;bound_listeners&quot;: [],
-  &quot;config&quot;: {
-    &quot;max_request_body_size&quot;: null,
-    &quot;max_response_body_size&quot;: null
-  }
-}
-</code></pre>
-<h2><a href="#getting-custom-configuration-from-the-otoroshi-config-file" name="getting-custom-configuration-from-the-otoroshi-config-file" class="anchor"><span class="anchor-link"></span></a>Getting custom configuration from the Otoroshi config. file</h2>
-<p>Let say you need to provide custom configuration values for a script, then you can customize a configuration file of Otoroshi</p>
-<pre class="prettyprint"><code class="language-hocon">include &quot;application.conf&quot;
-
-my-transformer {
-  env = &quot;prod&quot;
-  maxRequestBodySize = 2048
-  maxResponseBodySize = 2048
-}
-</code></pre>
-<p>then start Otoroshi like</p>
-<pre class="prettyprint"><code class="language-sh">java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
-</code></pre>
-<p>then, in your transformer, you can write something like </p>
+<p>then, you can write something like </p>
 <pre class="prettyprint"><code class="language-scala">package otoroshi_plugins.mycompany.demo
 
 import akka.stream.Materializer
@@ -465,14 +428,48 @@ class BodyLengthLimiter extends NgRequestTransformer {
     Right(ctx.otoroshiResponse.copy(body = ctx.otoroshiResponse.body.limitWeighted(max)(_.size))).vfuture
   }
 }
+</code></pre><div class="callout warning "><div class="callout-title">Warning</div>
+<p>you MUST provide plugins that lies in the <code>otoroshi_plugins</code> package or in a sub-package of <code>otoroshi_plugins</code>. If you do not, your plugin will not be found by otoroshi. for example</p>
+<pre class="prettyprint"><code class="language-scala">package otoroshi_plugins.mycompany.demo
+</code></pre></div>
+<p>When your code is ready, create a jar file </p>
+<pre><code>sbt package
+</code></pre>
+<p>and add the jar file to the Otoroshi classpath</p>
+<pre class="prettyprint"><code class="language-sh">java -cp &quot;/path/to/transformer.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
+</code></pre>
+<p>then, in the route designer, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using <code>cp:</code> prefix like </p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;plugin&quot;: &quot;cp:otoroshi_plugins.mycompany.demo.BodyLengthLimiter&quot;,
+  &quot;enabled&quot;: true,
+  &quot;debug&quot;: false,
+  &quot;include&quot;: [],
+  &quot;exclude&quot;: [],
+  &quot;bound_listeners&quot;: [],
+  &quot;config&quot;: {
+    &quot;max_request_body_size&quot;: null,
+    &quot;max_response_body_size&quot;: null
+  }
+}
+</code></pre>
+<h2><a href="#getting-custom-configuration-from-the-otoroshi-config-file" name="getting-custom-configuration-from-the-otoroshi-config-file" class="anchor"><span class="anchor-link"></span></a>Getting custom configuration from the Otoroshi config. file</h2>
+<p>Let say you need to provide custom configuration values for a script, then you can customize a configuration file of Otoroshi</p>
+<pre class="prettyprint"><code class="language-hocon">include &quot;application.conf&quot;
+
+my-transformer {
+  env = &quot;prod&quot;
+  maxRequestBodySize = 2048
+  maxResponseBodySize = 2048
+}
+</code></pre>
+<p>then start Otoroshi like</p>
+<pre class="prettyprint"><code class="language-sh">java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
 </code></pre>
 <h2><a href="#using-a-library-that-is-not-embedded-in-otoroshi" name="using-a-library-that-is-not-embedded-in-otoroshi" class="anchor"><span class="anchor-link"></span></a>Using a library that is not embedded in Otoroshi</h2>
 <p>Just use the <code>classpath</code> option when running Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">java -cp &quot;/path/to/library.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
+<pre class="prettyprint"><code class="language-sh">java -cp &quot;/path/to/library.jar:/path/to/transformer.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
 </code></pre>
 <p>Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability</p>
-<h2><a href="#enabling-plugins" name="enabling-plugins" class="anchor"><span class="anchor-link"></span></a>Enabling plugins</h2>
-<p>plugins can be enabled per route from the route designer page or globally from the danger zone in the plugins section.</p>
 <h2><a href="#full-examples" name="full-examples" class="anchor"><span class="anchor-link"></span></a>Full examples</h2>
 <p>you can find some example projects on the <a href="">Cloud APIM</a> github account: </p>
 <ul>
@@ -505,7 +502,6 @@ class BodyLengthLimiter extends NgRequestTransformer {
     <li><a href="../plugins/create-plugins.html#providing-a-transformer-from-java-classpath" class="header">Providing a transformer from Java classpath</a></li>
     <li><a href="../plugins/create-plugins.html#getting-custom-configuration-from-the-otoroshi-config-file" class="header">Getting custom configuration from the Otoroshi config. file</a></li>
     <li><a href="../plugins/create-plugins.html#using-a-library-that-is-not-embedded-in-otoroshi" class="header">Using a library that is not embedded in Otoroshi</a></li>
-    <li><a href="../plugins/create-plugins.html#enabling-plugins" class="header">Enabling plugins</a></li>
     <li><a href="../plugins/create-plugins.html#full-examples" class="header">Full examples</a></li>
   </ul></li>
 </ul>
