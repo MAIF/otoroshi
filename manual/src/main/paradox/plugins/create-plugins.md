@@ -214,7 +214,7 @@ plugins can be enabled per route from the route designer page or globally from t
 you can find some example projects on the [Cloud APIM]() github account: 
 
 - basic plugin example: [Cloud APIM Mailer plugin](https://github.com/cloud-apim/otoroshi-plugin-mailer)
-- Custom datastore and custom data exporter exporter: [Cloud APIM Couchbase plugin](https://github.com/cloud-apim/otoroshi-plugin-couchbase)
+- custom datastore and custom data exporter exporter: [Cloud APIM Couchbase plugin](https://github.com/cloud-apim/otoroshi-plugin-couchbase)
 - extensions with multiple plugins, entities, admin APIs/UIs
-  - [Cloud APIM LLM Extension](https://github.com/cloud-apim/otoroshi-llm-extension)
-  - [Cloud APIM Biscuit Studio](https://github.com/cloud-apim/otoroshi-biscuit-studio)
+    - [Cloud APIM LLM Extension](https://github.com/cloud-apim/otoroshi-llm-extension)
+    - [Cloud APIM Biscuit Studio](https://github.com/cloud-apim/otoroshi-biscuit-studio)
