@@ -53,7 +53,6 @@ possible levels are `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`. Default on
 - [`otoroshi-auth-modules-api`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-auth-modules-api%22%29)
 - [`otoroshi-certificates-api`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-certificates-api%22%29)
 - [`otoroshi-pki`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-pki%22%29)
-- [`otoroshi-scripts-api`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-scripts-api%22%29)
 - [`otoroshi-analytics-api`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-analytics-api%22%29)
 - [`otoroshi-import-export-api`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-import-export-api%22%29)
 - [`otoroshi-templates-api`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-templates-api%22%29)
