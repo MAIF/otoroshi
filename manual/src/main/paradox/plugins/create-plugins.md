@@ -45,66 +45,8 @@ lazy val root = (project in file(".")).
   )
 ```
 
-@@@ warning
-you MUST provide plugins that lies in the `otoroshi_plugins` package or in a sub-package of `otoroshi_plugins`. If you do not, your plugin will not be found by otoroshi. for example
 
-```scala
-package otoroshi_plugins.com.my.company.myplugin
-```
-
-also you don't have to instantiate your plugin at the end of the file like in the Otoroshi UI
-@@@
-
-When your code is ready, create a jar file 
-
-```
-sbt package
-```
-
-and add the jar file to the Otoroshi classpath
-
-```sh
-java -cp "/path/to/transformer.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
-```
-
-then, in the route designer, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using `cp:` prefix like 
-
-```json
-{
-  "plugin": "cp:otoroshi_plugins.mycompany.demo.BodyLengthLimiter",
-  "enabled": true,
-  "debug": false,
-  "include": [],
-  "exclude": [],
-  "bound_listeners": [],
-  "config": {
-    "max_request_body_size": null,
-    "max_response_body_size": null
-  }
-}
-```
-
-## Getting custom configuration from the Otoroshi config. file
-
-Let say you need to provide custom configuration values for a script, then you can customize a configuration file of Otoroshi
-
-```hocon
-include "application.conf"
-
-my-transformer {
-  env = "prod"
-  maxRequestBodySize = 2048
-  maxResponseBodySize = 2048
-}
-```
-
-then start Otoroshi like
-
-```sh
-java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
-```
-
-then, in your transformer, you can write something like 
+then, you can write something like 
 
 ```scala
 package otoroshi_plugins.mycompany.demo
@@ -195,19 +137,72 @@ class BodyLengthLimiter extends NgRequestTransformer {
 }
 ```
 
+@@@ warning
+you MUST provide plugins that lies in the `otoroshi_plugins` package or in a sub-package of `otoroshi_plugins`. If you do not, your plugin will not be found by otoroshi. for example
+
+```scala
+package otoroshi_plugins.mycompany.demo
+```
+@@@
+
+When your code is ready, create a jar file 
+
+```
+sbt package
+```
+
+and add the jar file to the Otoroshi classpath
+
+```sh
+java -cp "/path/to/transformer.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
+```
+
+then, in the route designer, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using `cp:` prefix like 
+
+```json
+{
+  "plugin": "cp:otoroshi_plugins.mycompany.demo.BodyLengthLimiter",
+  "enabled": true,
+  "debug": false,
+  "include": [],
+  "exclude": [],
+  "bound_listeners": [],
+  "config": {
+    "max_request_body_size": null,
+    "max_response_body_size": null
+  }
+}
+```
+
+## Getting custom configuration from the Otoroshi config. file
+
+Let say you need to provide custom configuration values for a script, then you can customize a configuration file of Otoroshi
+
+```hocon
+include "application.conf"
+
+my-transformer {
+  env = "prod"
+  maxRequestBodySize = 2048
+  maxResponseBodySize = 2048
+}
+```
+
+then start Otoroshi like
+
+```sh
+java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
+```
+
 ## Using a library that is not embedded in Otoroshi
 
 Just use the `classpath` option when running Otoroshi
 
 ```sh
-java -cp "/path/to/library.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
+java -cp "/path/to/library.jar:/path/to/transformer.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
 ```
 
 Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability
-
-## Enabling plugins
-
-plugins can be enabled per route from the route designer page or globally from the danger zone in the plugins section.
 
 ## Full examples
 
