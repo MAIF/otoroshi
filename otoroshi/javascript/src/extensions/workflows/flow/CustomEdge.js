@@ -4,6 +4,8 @@ import {
     BaseEdge,
     EdgeLabelRenderer,
     getBezierPath,
+    getSimpleBezierPath,
+    getSmoothStepPath,
     useReactFlow,
 } from '@xyflow/react';
 
@@ -63,7 +65,7 @@ const listeners = id => {
 
 export function CustomEdge({ id, sourceX, sourceY, targetX, targetY }) {
     const { setEdges } = useReactFlow();
-    const [edgePath, labelX, labelY] = getBezierPath({
+    const [edgePath, labelX, labelY] = getSimpleBezierPath({
         sourceX,
         sourceY,
         targetX,

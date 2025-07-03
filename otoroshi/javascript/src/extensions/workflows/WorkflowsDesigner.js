@@ -623,7 +623,8 @@ function WorkflowsDesigner(props) {
                     handleDeleteNode: handleDeleteNode,
                     updateData: updateData,
                     addHandleSource: addHandleSource,
-                    handleWorkflowChange: handleWorkflowChange
+                    handleWorkflowChange: handleWorkflowChange,
+                    deleteHandle: deleteHandle
                 }
             },
         }
@@ -663,6 +664,25 @@ function WorkflowsDesigner(props) {
 
         const sourceEl = document.querySelector(`[data-id="${nodeId}"]`);
         sourceEl.style.height = `${Number(sourceEl.style.height.split('px')[0]) + 20}px`
+
+        updateNodeInternals(nodeId)
+    }
+
+    function deleteHandle(nodeId, handleId) {
+        setNodes(eds => eds.map(node => {
+            if (node.id === nodeId) {
+                return {
+                    ...node,
+                    data: {
+                        ...node.data,
+                        sourceHandles: node.data.sourceHandles.filter(ha => ha.id !== handleId)
+                    }
+                }
+            }
+            return node
+        }))
+
+        setEdges(eds => eds.filter(edge => edge.sourceHandle !== handleId))
 
         updateNodeInternals(nodeId)
     }

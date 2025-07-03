@@ -1,13 +1,14 @@
 import React from 'react'
 import { Handle, Position, useNodeConnections } from '@xyflow/react'
 
-function RightHandle({ handle, className, selected }) {
+function RightHandle({ handle, className, selected, deleteHandle }) {
     return <Handle
         id={handle.id}
         type="source"
         position={Position.Right}
         className={`${className} ${(selected ? 'connected' : '')}`}
     >
+        <i className='fas fa-trash me-1' onClick={deleteHandle} />
         {handle.id.split('-')[0]}
         <div className={`handle-dot ms-1 ${selected ? 'handle-dot--selected' : ''}`} />
     </Handle>
@@ -52,7 +53,11 @@ export default function Handles(props) {
                 .map(handle => {
                     const selected = connections.find(connection => connection.sourceHandle === handle.id)
 
-                    return <RightHandle handle={handle} key={handle.id} selected={selected} />
+                    return <RightHandle
+                        handle={handle}
+                        key={handle.id}
+                        selected={selected}
+                        deleteHandle={() => props.data.functions.deleteHandle(props.id, handle.id)} />
                 })}
             {props.data.sourcesIsArray && <button
                 type="button"
@@ -66,7 +71,8 @@ export default function Handles(props) {
             {sources.output && <RightHandle
                 handle={{ id: sources.output.id }}
                 className="my-2"
-                selected={connections.find(connection => connection.sourceHandle === `output-${props.id}`)} />}
+                selected={connections.find(connection => connection.sourceHandle === `output-${props.id}`)}
+                deleteHandle={() => props.data.functions.deleteHandle(props.id, handle.id)} />}
         </div>
     </>
 }
