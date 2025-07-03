@@ -9,7 +9,19 @@ export const WorkflowNode = (_workflow) => {
         workflow: _workflow,
         kind: 'workflow',
         sourcesIsArray: true,
-        sources: ['output', 'returned'],
-        targets: []
+        sources: ['output'],
+        flow: ['returned'],
+        schema: {
+            returned: {
+                type: 'code',
+                label: 'Returned value',
+                props: {
+                    mode: 'json',
+                    editorOnly: true,
+                },
+            }
+        },
+        targets: [],
+        handlePrefix: 'step'
     }
 }

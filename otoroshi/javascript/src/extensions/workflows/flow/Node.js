@@ -35,7 +35,9 @@ export function Node(props) {
                     {data.label || data.item?.label} {data.name}
                 </div>
 
-                {data.kind === 'returned' && ReturnedNode().nodeRenderer(props)}
+                {/* {data.nodeRenderer === 'returned' && ReturnedNode().nodeRenderer(props)} */}
+
+                {data.nodeRenderer && data.nodeRenderer(props)}
 
                 {data.kind !== 'returned' && <NodeTrashButton {...props} />}
             </button>

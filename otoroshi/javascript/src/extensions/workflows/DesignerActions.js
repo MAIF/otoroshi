@@ -7,8 +7,8 @@ export function DesignerActions({ run }) {
         <Button type="primaryColor" className='p-2 px-4' onClick={run}>
             <i className='fas fa-flask me-1' />Test Workflow
         </Button>
-        <Button type="primaryColor">
+        {/* <Button type="primaryColor">
             <i className='fas fa-trash' />
-        </Button>
+        </Button> */}
     </div>
 }

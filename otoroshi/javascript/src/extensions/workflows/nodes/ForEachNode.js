@@ -18,5 +18,5 @@ export const ForEachNode = (_workflow) => ({
         }
     },
     sources: ['node', 'output'],
-    targets: []
+    targets: [],
 })

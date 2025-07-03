@@ -41,7 +41,6 @@ export default function Handles(props) {
                     type="target"
                     position={Position.Left}
                     className={classNames.join(' ')}
-
                 >
                     <div className={`handle-dot me-1 ${selected ? 'handle-dot--selected' : ''}`} />
                     {handle.id.split('-')[0]}
@@ -60,7 +59,7 @@ export default function Handles(props) {
                 className="btn btn-primaryColor add-handle"
                 onClick={e => {
                     e.stopPropagation()
-                    props.data.functions.addHandleSource(props.id)
+                    props.data.functions.addHandleSource(props.id, props.data.handlePrefix)
                 }}>
                 Add pin <i className='fas fa-plus' />
             </button>}

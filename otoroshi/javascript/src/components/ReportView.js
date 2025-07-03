@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { firstLetterUppercase } from '../util';
 import { NgCodeRenderer, NgSelectRenderer } from './nginputs';
 
-const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(3);
+const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(0);
 const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
 
 export const ReportView = ({

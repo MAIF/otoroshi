@@ -17,10 +17,10 @@ export default function ReportExplorer({ report, handleClose, isOpen }) {
 
         const stop = report.run.log.find(l => re.test(l.message))?.timestamp
         return [...acc, {
-            task: log.node?.kind || log.message,
+            task: id, //log.node?.kind || log.message,
             start: log.timestamp,
             stop,
-            duration_ns: stop ? stop - log.timestamp : 0,
+            duration_ns: (stop ? stop - log.timestamp : 0) * 1_000_000,
             ctx: {
                 error: log.error,
                 node: log.node,
@@ -33,20 +33,20 @@ export default function ReportExplorer({ report, handleClose, isOpen }) {
         const existingStep = acc[step.task]
 
         if (existingStep) {
-            return acc
-            // return {
-            //     ...acc,
-            //     [step.task]: {
-            //         ...existingStep,
-            //         ctx: {
-            //             ...step.ctx,
-            //             plugins: [...existingStep.ctx.plugins, {
-            //                 ...step,
-            //                 name: `[${existingStep.ctx.plugins.length}]`
-            //             }]
-            //         }
-            //     }
-            // }
+            // return acc
+            return {
+                ...acc,
+                [step.task]: {
+                    ...existingStep,
+                    ctx: {
+                        ...step.ctx,
+                        plugins: [...existingStep.ctx.plugins, {
+                            ...step,
+                            name: `[${existingStep.ctx.plugins.length}]`
+                        }]
+                    }
+                }
+            }
         } else {
             return {
                 ...acc,
@@ -60,7 +60,7 @@ export default function ReportExplorer({ report, handleClose, isOpen }) {
             }
         }
     }, {})
-    const [unit, setUnit] = useState('ns');
+    const [unit, setUnit] = useState('ms');
 
     const start = report.run.log[0]?.timestamp
     const end = report.run.log[report.run.log.length - 1]?.timestamp
@@ -72,7 +72,8 @@ export default function ReportExplorer({ report, handleClose, isOpen }) {
                 <ReportView
                     report={{
                         steps: Object.values(stepsByCategory),
-                        duration_ns: end - start
+                        duration_ns: (end - start) * 1_000_000,
+                        returned: report.returned
                     }}
                     isWorkflowView
                     unit={unit}

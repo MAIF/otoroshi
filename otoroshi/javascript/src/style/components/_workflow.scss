@@ -116,6 +116,9 @@
     mask-position: center;
     position: absolute;
     left: 0;
+    top: 0;
+    bottom: 0;
+    margin: auto;
     transform: translate(-100%, 0);
     width: 36px;
     height: 36px;
@@ -135,8 +138,8 @@
     justify-content: flex-start;
     gap: .5rem;
     background-color: var(--bg-color_level2);
-    border-top-left-radius: .75rem;
-    border-top-right-radius: .75rem;
+    border-top-left-radius: .5rem;
+    border-top-right-radius: .5rem;
   }
 
   // .source::before {
@@ -423,5 +426,14 @@
     margin: auto;
     width: fit-content;
     z-index: 10001;
+  }
+
+  .assign-node {
+    display: flex;
+    flex-direction: column;
+    text-align: start;
+    justify-content: center;
+    margin-top: 30px;
+    height: calc(100% - 30px);
   }
 }

@@ -5,6 +5,7 @@ import Handles from "./Handles";
 
 export const GroupNode = forwardRef((props, ref) => {
     const { selected, position, data } = props
+    const isFirst = data.isFirst
 
     return <>
         <NodeResizer
@@ -14,7 +15,11 @@ export const GroupNode = forwardRef((props, ref) => {
             minHeight={100}
         />
 
+        <div className={`${isFirst ? 'node--first' : ''}`} />
+
         <Handles {...props} />
+
+        {data.nodeRenderer && data.nodeRenderer(props)}
 
         <Panel className="m-0 node-one-output" position={position}>
             {data.label} {data.name}

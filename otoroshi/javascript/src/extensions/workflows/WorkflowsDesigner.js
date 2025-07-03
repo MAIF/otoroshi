@@ -16,11 +16,13 @@ import {
     addEdge,
     ReactFlowProvider,
     useReactFlow,
+    useUpdateNodeInternals,
 } from '@xyflow/react';
 import { NewTask } from './flow/NewTask';
 import { findNonOverlappingPosition } from './NewNodeSpawn';
 import { NODES, OPERATORS } from './models/Functions';
 import ReportExplorer from './ReportExplorer';
+import { conforms } from 'lodash';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -30,6 +32,14 @@ const queryClient = new QueryClient({
         },
     },
 });
+
+const elk = new ELK();
+
+const elkOptions = {
+    'elk.algorithm': 'layered',
+    'elk.layered.spacing.nodeNodeBetweenLayers': '100',
+    'elk.spacing.nodeNode': '80',
+};
 
 const applyStyles = () => {
     const pageContainer = document.getElementById('content-scroll-container');
@@ -74,14 +84,15 @@ function Container(props) {
     </Loader>
 }
 
-export function defaultNode(nodes, node, firstStep) {
+export function createSimpleNode(nodes, node, firstStep) {
     let data = NODES[(node.kind || node.data.kind).toLowerCase()]
 
     if (data)
         data = data(node)
 
-    if (!data)
+    if (!data) {
         data = OPERATORS[(node.kind || node.data.kind).toLowerCase()](node)
+    }
 
     return {
         id: uuid(),
@@ -95,7 +106,7 @@ export function defaultNode(nodes, node, firstStep) {
 }
 
 function createNode(id, existingNodes, child, isFirst, addInformationsToNode) {
-    const newNode = addInformationsToNode(defaultNode(existingNodes, child, isFirst))
+    const newNode = addInformationsToNode(createSimpleNode(existingNodes, child, isFirst))
     return {
         ...newNode,
         id,
@@ -112,12 +123,12 @@ function createAndLinkChildNode(parentId, nodes, node, addInformationsToNode, ha
 
     // create child operator node
     if (typeof node === "object" && node !== null && Object.keys(node).find(key => key.startsWith('$'))) {
+        const kind = Object.keys(node).find(key => key.startsWith('$'))
         config = {
-            kind: Object.keys(node).find(key => key.startsWith('$'))
+            kind,
+            ...node[kind]
         }
     }
-
-    // console.log(config)
 
     const childNode = createNode(`${parentId}-${handle}`, nodes.map(r => r.position), config, false, addInformationsToNode)
     childNode.data.isInternal = true
@@ -172,6 +183,23 @@ function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
                 const thenOperator = createAndLinkChildNode(parentId, nodes, workflow.then, addInformationsToNode, 'then')
                 nodes.push(thenOperator.node)
                 edges.push(thenOperator.edge)
+            } else if (workflow.steps) {
+                nodes[i] = {
+                    ...nodes[i],
+                    data: {
+                        ...nodes[i].data,
+                        sourceHandles: [...Array(workflow.steps.length)].map((_, i) => {
+                            return { id: `path-${i}` }
+                        })
+                    }
+                }
+
+                workflow.steps.forEach(step => {
+                    console.log(step)
+                    const subFlow = getInitialNodesFromWorkflow(step, addInformationsToNode)
+
+                    console.log(subFlow)
+                })
             }
 
             nodes[i] = {
@@ -181,9 +209,10 @@ function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
                     targetHandles: i === 0 ? [] : ['input', ...targets].map(target => {
                         return { id: `${target}-${nodes[i].id}` }
                     }),
-                    sourceHandles: [...sources].map(source => {
-                        return { id: `${source}-${nodes[i].id}` }
-                    })
+                    sourceHandles: [
+                        ...nodes[i].data.sourceHandles,
+                        ...[...sources].map(source => ({ id: `${source}-${nodes[i].id}` }))
+                    ]
                 }
             }
         }
@@ -290,13 +319,147 @@ function linkTheLastNodeToReturnedNode(nodes, edges) {
     return newEdges
 }
 
+const buildingGraph = (workflow, addInformationsToNode, parentId) => {
+
+    const me = uuid()
+
+    let edges = []
+    let nodes = []
+
+    console.log('kind', workflow.kind)
+
+    if (workflow.kind === 'workflow') {
+        let childrenNodes = []
+
+        for (let i = 0; i < workflow.steps.length; i++) {
+            const subflow = workflow.steps[i]
+            const child = buildingGraph(subflow, addInformationsToNode, me)
+
+            childrenNodes = childrenNodes.concat(child.nodes)
+            edges = edges.concat(child.edges)
+        }
+
+        let current = createNode(me, [], workflow, !parentId, addInformationsToNode)
+        current.customSourceHandles = [...Array(workflow.steps.length)].map((_, i) => ({ id: `path-${i}` }))
+        nodes.push(current)
+
+        childrenNodes.forEach((child, i) => {
+            edges.push({
+                id: `${me}-${child.id}`,
+                source: me,
+                sourceHandle: `path-${i}`,
+                target: child.id,
+                targetHandle: `input-${child.id}`,
+                type: 'customEdge',
+                animated: true,
+            })
+            nodes.push(child)
+        })
+
+        let returnedNode = createNode(parentId ? `${me}-returned-node` : 'returned-node', [], {
+            returned: {
+                ...(workflow.returned || {}),
+            },
+            kind: 'returned'
+        }, false, addInformationsToNode)
+
+        returnedNode = {
+            ...returnedNode,
+            data: {
+                ...returnedNode.data,
+                targetHandles: [{ id: `input-${returnedNode.id}` }],
+                sourceHandles: []
+            }
+        }
+
+        edges.push({
+            id: `${me}-returned-node`,
+            source: me,
+            sourceHandle: `output-${me}`,
+            target: returnedNode.id,
+            targetHandle: `input-${returnedNode.id}`,
+            type: 'customEdge',
+            animated: true,
+        })
+
+        nodes.push(returnedNode)
+
+        // edges = linkTheLastNodeToReturnedNode(nodes, edges)
+    } else if (workflow.kind === "if") {
+        // const ifOperator = createAndLinkChildNode(parentId, nodes, workflow.predicate, addInformationsToNode, 'predicate')
+        // nodes.push(ifOperator.node)
+        // edges.push(ifOperator.edge)
+
+        // const elseOperator = createAndLinkChildNode(parentId, nodes, workflow.else, addInformationsToNode, 'else')
+        // nodes.push(elseOperator.node)
+        // edges.push(elseOperator.edge)
+
+        // const thenOperator = createAndLinkChildNode(parentId, nodes, workflow.then, addInformationsToNode, 'then')
+        // nodes.push(thenOperator.node)
+        // edges.push(thenOperator.edge)
+    } else if (workflow.kind === 'flatmap') {
+
+    } else if (workflow.kind === 'foreach') {
+        const { node, edge } = createAndLinkChildNode(me, [], workflow.node, addInformationsToNode, 'node')
+
+        const current = createNode(me, [], workflow, !parentId, addInformationsToNode)
+        nodes.push(current)
+
+        nodes.push(node)
+        edges.push(edge)
+    } else if (workflow.kind === 'map') {
+
+    } else if (workflow.kind === 'switch') {
+
+    } else {
+        const simpleNode = createNode(me, [], workflow, false, addInformationsToNode)
+        nodes.push(simpleNode)
+
+        // edges.push({
+        //     id: `${parentId}-${me}`,
+        //     source: parentId,
+        //     sourceHandle: `output-${parentId}`,
+        //     target: me,
+        //     targetHandle: `input-${me}`,
+        //     type: 'customEdge',
+        //     animated: true,
+        // })
+    }
+
+    console.log('nodes', nodes)
+
+    for (let i = 0; i < nodes.length; i++) {
+        const { targets = [], sources = [] } = nodes[i].data
+
+        nodes[i] = {
+            ...nodes[i],
+            data: {
+                ...nodes[i].data,
+                targetHandles: i === 0 ? [] : ['input', ...targets].map(target => {
+                    return { id: `${target}-${nodes[i].id}` }
+                }),
+                sourceHandles: [
+                    ...(nodes[i].customSourceHandles || []),
+                    ...[...sources].map(source => ({ id: `${source}-${nodes[i].id}` }))
+                ]
+            }
+        }
+
+        delete nodes[i].customSourceHandles
+    }
+
+    return { edges, nodes }
+}
+
 function WorkflowsDesigner(props) {
     const [selectedNode, setSelectedNode] = useState()
     const [isOnCreation, setOnCreationMode] = useState(false)
 
     const [rfInstance, setRfInstance] = useState(null);
 
-    const initialState = getInitialNodesFromWorkflow(props.workflow?.config, addInformationsToNode)
+    // const initialState = getInitialNodesFromWorkflow(props.workflow?.config, addInformationsToNode)
+
+    const initialState = buildingGraph(props.workflow?.config, addInformationsToNode)
 
     const [nodes, internalSetNodes] = useState(initialState.nodes)
     const [edges, setEdges] = useState(initialState.edges)
@@ -321,14 +484,7 @@ function WorkflowsDesigner(props) {
     }, [])
 
     const { fitView } = useReactFlow();
-
-    const elk = new ELK();
-
-    const elkOptions = {
-        'elk.algorithm': 'layered',
-        'elk.layered.spacing.nodeNodeBetweenLayers': '100',
-        'elk.spacing.nodeNode': '80',
-    };
+    const updateNodeInternals = useUpdateNodeInternals()
 
     const getLayoutedElements = (nodes, edges, options = {}) => {
         const isHorizontal = options?.['elk.direction'] === 'RIGHT';
@@ -364,21 +520,16 @@ function WorkflowsDesigner(props) {
             .catch(console.error);
     };
 
-    const onLayout = useCallback(({ direction, nodes, edges, from }) => {
+    const onLayout = ({ direction, nodes, edges, from }) => {
         const opts = { 'elk.direction': direction, ...elkOptions };
-
-        console.log(from)
-        console.log(nodes)
-        console.log('received edges', edges)
 
         getLayoutedElements(nodes, edges, opts)
             .then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-                console.log('out nodes', layoutedNodes)
                 setNodes(layoutedNodes)
                 setEdges(layoutedEdges)
-                // fitView();
+                fitView();
             });
-    }, [nodes, edges]);
+    };
 
     useLayoutEffect(() => {
         onLayout({ direction: 'RIGHT', nodes, edges, from: 'useLayoutEffect' });
@@ -428,7 +579,7 @@ function WorkflowsDesigner(props) {
         }, {
             kind: "workflow",
             steps: [],
-            returned: nodes.find(node => node.id !== 'returned-node').data.workflow || {}
+            returned: nodes.find(node => node.id === 'returned-node').data.workflow.returned || {}
         })
 
     }
@@ -493,7 +644,7 @@ function WorkflowsDesigner(props) {
         }))
     }
 
-    function addHandleSource(nodeId) {
+    function addHandleSource(nodeId, handlePrefix) {
         setNodes(eds => eds.map(node => {
             if (node.id === nodeId) {
                 return {
@@ -502,13 +653,18 @@ function WorkflowsDesigner(props) {
                         ...node.data,
                         sourceHandles: [
                             ...node.data.sourceHandles,
-                            { id: `path-${node.data.sourceHandles.length}` }
+                            { id: `${handlePrefix ? handlePrefix : path}-${node.data.sourceHandles.length}` }
                         ]
                     }
                 }
             }
             return node
         }))
+
+        const sourceEl = document.querySelector(`[data-id="${nodeId}"]`);
+        sourceEl.style.height = `${Number(sourceEl.style.height.split('px')[0]) + 20}px`
+
+        updateNodeInternals(nodeId)
     }
 
     function handleDeleteNode(nodeId) {
@@ -518,7 +674,10 @@ function WorkflowsDesigner(props) {
 
     const setNodes = nodes => internalSetNodes(nodes)
 
-    const onNodesChange = changes => setNodes(applyNodeChanges(changes, nodes))
+    const onNodesChange = useCallback(
+        (changes) => {
+            return setNodes(eds => applyNodeChanges(changes, eds))
+        }, [])
     const onEdgesChange = useCallback(
         (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
         [],
@@ -558,10 +717,8 @@ function WorkflowsDesigner(props) {
     const handleSelectNode = item => {
         const targetId = uuid()
 
-        // console.log("handleSelectNode", "isOnCreation", isOnCreation, item)
-
         let newNode = addInformationsToNode({
-            ...defaultNode([], item, false),
+            ...createSimpleNode([], item, false),
             id: targetId,
             position: isOnCreation.fromOrigin ? isOnCreation.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position)),
             type: item.type || 'simple',
@@ -581,8 +738,6 @@ function WorkflowsDesigner(props) {
 
         if (isOnCreation && isOnCreation.handle) {
             const sourceHandle = isOnCreation.handle.id
-
-            console.log(isOnCreation.handle)
 
             newEdges.push({
                 id: uuid(),
@@ -624,7 +779,6 @@ function WorkflowsDesigner(props) {
     }
 
     function run() {
-        console.log(graphToJson())
         fetch('/extensions/workflows/_test', {
             method: 'POST',
             credentials: 'include',
@@ -665,6 +819,7 @@ function WorkflowsDesigner(props) {
             onClick={() => {
                 setOnCreationMode(false)
                 setSelectedNode(false)
+                setReportStatus(false)
             }}
             onGroupNodeClick={groupNode => {
                 setOnCreationMode(groupNode)

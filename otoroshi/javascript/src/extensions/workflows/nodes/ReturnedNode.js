@@ -48,7 +48,7 @@ export function ReturnedNode(_workflow) {
                     onChange={(e) => {
                         props.data.functions.handleWorkflowChange(props.id, {
                             ...props.workflow,
-                            returned: e
+                            returned: JSON.parse(e)
                         })
                     }}
                 />

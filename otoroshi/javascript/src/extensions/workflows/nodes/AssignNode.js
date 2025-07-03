@@ -22,6 +22,11 @@ export const AssignNode = _workflow => ({
                     label: 'Name'
                 },
                 value: {
+                    // type: 'code',
+                    // label: 'Value',
+                    // props: {
+                    //     editorOnly: true,
+                    // },
                     renderer: props => <NgCodeRenderer
                         ngOptions={{ spread: true }}
                         rawSchema={{
@@ -38,7 +43,7 @@ export const AssignNode = _workflow => ({
                         }}
                         value={props.value}
                         onChange={(e) => {
-                            props.onChange(e);
+                            props.onChange(JSON.parse(e));
                         }}
                     />
                 }
@@ -46,4 +51,11 @@ export const AssignNode = _workflow => ({
         }
     },
     sources: ['output'],
+    nodeRenderer: props => {
+        return <div className='assign-node'>
+            {props.data.workflow.values?.map(value => {
+                return <span key={value.name}>{value.name}</span>
+            })}
+        </div>
+    }
 })
