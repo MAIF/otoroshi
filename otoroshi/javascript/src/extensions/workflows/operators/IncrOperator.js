@@ -17,7 +17,7 @@ export const IncrOperator = _workflow => ({
             label: 'Increment Amount'
         }
     },
-    sources: ['output'],
+    sources: [],
     operator: true
 });
 

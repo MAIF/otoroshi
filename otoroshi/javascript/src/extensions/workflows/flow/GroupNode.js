@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef } from "react"
+import React, { forwardRef, useLayoutEffect, useRef } from "react"
 import { NodeResizer, Panel } from "@xyflow/react";
 import NodeTrashButton from './NodeTrashButton';
 import Handles from "./Handles";
@@ -6,6 +6,16 @@ import Handles from "./Handles";
 export const GroupNode = forwardRef((props, ref) => {
     const { selected, position, data } = props
     const isFirst = data.isFirst
+
+    useLayoutEffect(() => {
+        const height = props.data.height
+        if (height) {
+            const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
+            setTimeout(() => {
+                sourceEl.style.height = height()
+            }, 150)
+        }
+    }, [])
 
     return <>
         <NodeResizer

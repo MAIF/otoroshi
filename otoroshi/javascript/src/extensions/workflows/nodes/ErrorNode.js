@@ -20,7 +20,7 @@ export const ErrorNode = (_workflow) => ({
             }
         }
     },
-    sources: ['output'],
+    sources: [],
     //     {
     //   "kind": "error",
     //   "message": "<error_message>",

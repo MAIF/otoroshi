@@ -13,6 +13,6 @@ export const LowercaseOperator = _workflow => ({
             label: 'String Value'
         }
     },
-    sources: ['output'],
+    sources: [],
     operator: true
 });

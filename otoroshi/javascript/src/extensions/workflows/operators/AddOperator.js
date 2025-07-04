@@ -15,7 +15,6 @@ export const AddOperator = _workflow => ({
             format: null
         }
     },
-    sources: ['output'],
     operator: true
 });
 

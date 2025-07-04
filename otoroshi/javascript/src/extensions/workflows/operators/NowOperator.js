@@ -8,7 +8,7 @@ export const NowOperator = _workflow => ({
     workflow: _workflow,
     flow: [],
     schema: {},
-    sources: ['output'],
+    sources: [],
     operator: true
 });
 

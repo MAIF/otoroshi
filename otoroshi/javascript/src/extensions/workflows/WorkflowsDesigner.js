@@ -147,139 +147,139 @@ function createAndLinkChildNode(parentId, nodes, node, addInformationsToNode, ha
     }
 }
 
-function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
-    if (!workflow)
-        return { edges: [], nodes: [] }
+// function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
+//     if (!workflow)
+//         return { edges: [], nodes: [] }
 
-    let edges = []
+//     let edges = []
 
-    if (workflow.kind === 'workflow') {
-        let nodes = workflow.steps.reduce((acc, child, idx) => {
-            return [
-                ...acc,
-                createNode(uuid(), acc.map(r => r.position), child, idx === 0, addInformationsToNode)
-            ]
-        }, [])
+//     if (workflow.kind === 'workflow') {
+//         let nodes = workflow.steps.reduce((acc, child, idx) => {
+//             return [
+//                 ...acc,
+//                 createNode(uuid(), acc.map(r => r.position), child, idx === 0, addInformationsToNode)
+//             ]
+//         }, [])
 
-        for (let i = 0; i < nodes.length; i++) {
-            const { targets = [], sources = [] } = nodes[i].data
+//         for (let i = 0; i < nodes.length; i++) {
+//             const { targets = [], sources = [] } = nodes[i].data
 
-            const { workflow } = nodes[i].data
-            const parentId = nodes[i].id
+//             const { workflow } = nodes[i].data
+//             const parentId = nodes[i].id
 
-            if (workflow.node) {
-                const { node, edge } = createAndLinkChildNode(parentId, nodes, workflow.node, addInformationsToNode, 'node')
-                nodes.push(node)
-                edges.push(edge)
-            } else if (workflow.kind === "if") {
-                const ifOperator = createAndLinkChildNode(parentId, nodes, workflow.predicate, addInformationsToNode, 'predicate')
-                nodes.push(ifOperator.node)
-                edges.push(ifOperator.edge)
+//             if (workflow.node) {
+//                 const { node, edge } = createAndLinkChildNode(parentId, nodes, workflow.node, addInformationsToNode, 'node')
+//                 nodes.push(node)
+//                 edges.push(edge)
+//             } else if (workflow.kind === "if") {
+//                 const ifOperator = createAndLinkChildNode(parentId, nodes, workflow.predicate, addInformationsToNode, 'predicate')
+//                 nodes.push(ifOperator.node)
+//                 edges.push(ifOperator.edge)
 
-                const elseOperator = createAndLinkChildNode(parentId, nodes, workflow.else, addInformationsToNode, 'else')
-                nodes.push(elseOperator.node)
-                edges.push(elseOperator.edge)
+//                 const elseOperator = createAndLinkChildNode(parentId, nodes, workflow.else, addInformationsToNode, 'else')
+//                 nodes.push(elseOperator.node)
+//                 edges.push(elseOperator.edge)
 
-                const thenOperator = createAndLinkChildNode(parentId, nodes, workflow.then, addInformationsToNode, 'then')
-                nodes.push(thenOperator.node)
-                edges.push(thenOperator.edge)
-            } else if (workflow.steps) {
-                nodes[i] = {
-                    ...nodes[i],
-                    data: {
-                        ...nodes[i].data,
-                        sourceHandles: [...Array(workflow.steps.length)].map((_, i) => {
-                            return { id: `path-${i}` }
-                        })
-                    }
-                }
+//                 const thenOperator = createAndLinkChildNode(parentId, nodes, workflow.then, addInformationsToNode, 'then')
+//                 nodes.push(thenOperator.node)
+//                 edges.push(thenOperator.edge)
+//             } else if (workflow.steps) {
+//                 nodes[i] = {
+//                     ...nodes[i],
+//                     data: {
+//                         ...nodes[i].data,
+//                         sourceHandles: [...Array(workflow.steps.length)].map((_, i) => {
+//                             return { id: `path-${i}` }
+//                         })
+//                     }
+//                 }
 
-                workflow.steps.forEach(step => {
-                    console.log(step)
-                    const subFlow = getInitialNodesFromWorkflow(step, addInformationsToNode)
+//                 workflow.steps.forEach(step => {
+//                     console.log(step)
+//                     const subFlow = getInitialNodesFromWorkflow(step, addInformationsToNode)
 
-                    console.log(subFlow)
-                })
-            }
+//                     console.log(subFlow)
+//                 })
+//             }
 
-            nodes[i] = {
-                ...nodes[i],
-                data: {
-                    ...nodes[i].data,
-                    targetHandles: i === 0 ? [] : ['input', ...targets].map(target => {
-                        return { id: `${target}-${nodes[i].id}` }
-                    }),
-                    sourceHandles: [
-                        ...nodes[i].data.sourceHandles,
-                        ...[...sources].map(source => ({ id: `${source}-${nodes[i].id}` }))
-                    ]
-                }
-            }
-        }
+//             nodes[i] = {
+//                 ...nodes[i],
+//                 data: {
+//                     ...nodes[i].data,
+//                     targetHandles: i === 0 ? [] : ['input', ...targets].map(target => {
+//                         return { id: `${target}-${nodes[i].id}` }
+//                     }),
+//                     sourceHandles: [
+//                         ...nodes[i].data.sourceHandles,
+//                         ...[...sources].map(source => ({ id: `${source}-${nodes[i].id}` }))
+//                     ]
+//                 }
+//             }
+//         }
 
-        const parentNodes = nodes.filter(node => !node.data.isInternal && node.data.kind !== 'returned')
-        for (let i = 0; i < parentNodes.length - 1; i++) {
-            const parent = parentNodes[i]
-            const me = parent.id
-            const optTarget = parentNodes[i + 1]?.id
+//         const parentNodes = nodes.filter(node => !node.data.isInternal && node.data.kind !== 'returned')
+//         for (let i = 0; i < parentNodes.length - 1; i++) {
+//             const parent = parentNodes[i]
+//             const me = parent.id
+//             const optTarget = parentNodes[i + 1]?.id
 
-            if (optTarget) {
-                if (parent.data.kind === 'if') {
-                    ['predicate', 'else', 'then'].map(handle => {
-                        const childId = `${me}-${handle}`
-                        edges.push({
-                            id: `${me}-${handle}-edge`,
-                            source: childId,
-                            sourceHandle: `output-${childId}`,
-                            target: optTarget,
-                            targetHandle: `input-${optTarget}`,
-                            type: 'customEdge',
-                            animated: true,
-                        })
-                    })
-                } else {
-                    edges.push({
-                        id: uuid(),
-                        source: me,
-                        sourceHandle: `output-${me}`,
-                        target: optTarget,
-                        targetHandle: `input-${optTarget}`,
-                        type: 'customEdge',
-                        animated: true,
-                    })
-                }
-            }
-        }
+//             if (optTarget) {
+//                 if (parent.data.kind === 'if') {
+//                     ['predicate', 'else', 'then'].map(handle => {
+//                         const childId = `${me}-${handle}`
+//                         edges.push({
+//                             id: `${me}-${handle}-edge`,
+//                             source: childId,
+//                             sourceHandle: `output-${childId}`,
+//                             target: optTarget,
+//                             targetHandle: `input-${optTarget}`,
+//                             type: 'customEdge',
+//                             animated: true,
+//                         })
+//                     })
+//                 } else {
+//                     edges.push({
+//                         id: uuid(),
+//                         source: me,
+//                         sourceHandle: `output-${me}`,
+//                         target: optTarget,
+//                         targetHandle: `input-${optTarget}`,
+//                         type: 'customEdge',
+//                         animated: true,
+//                     })
+//                 }
+//             }
+//         }
 
-        let returnedNode = createNode(uuid(), nodes.map(r => r.position), {
-            returned: {
-                ...(workflow.returned || {}),
-            },
-            kind: 'returned'
-        }, false, addInformationsToNode)
+//         let returnedNode = createNode(uuid(), nodes.map(r => r.position), {
+//             returned: {
+//                 ...(workflow.returned || {}),
+//             },
+//             kind: 'returned'
+//         }, false, addInformationsToNode)
 
-        returnedNode.id = 'returned-node'
+//         returnedNode.id = 'returned-node'
 
-        returnedNode = {
-            ...returnedNode,
-            data: {
-                ...returnedNode.data,
-                targetHandles: [{ id: `input-${returnedNode.id}` }],
-                sourceHandles: []
-            }
-        }
+//         returnedNode = {
+//             ...returnedNode,
+//             data: {
+//                 ...returnedNode.data,
+//                 targetHandles: [{ id: `input-${returnedNode.id}` }],
+//                 sourceHandles: []
+//             }
+//         }
 
-        nodes.push(returnedNode)
+//         nodes.push(returnedNode)
 
-        edges = linkTheLastNodeToReturnedNode(nodes, edges)
+//         edges = linkTheLastNodeToReturnedNode(nodes, edges)
 
-        return { edges, nodes }
+//         return { edges, nodes }
 
-    } else {
-        // TODO - manage other kind
-        return { edges: [], nodes: [] }
-    }
-}
+//     } else {
+//         // TODO - manage other kind
+//         return { edges: [], nodes: [] }
+//     }
+// }
 
 function linkTheLastNodeToReturnedNode(nodes, edges) {
     const newEdges = edges
@@ -319,35 +319,39 @@ function linkTheLastNodeToReturnedNode(nodes, edges) {
     return newEdges
 }
 
-const buildingGraph = (workflow, addInformationsToNode, parentId) => {
+const buildGraph = (workflow, addInformationsToNode, parentId) => {
 
     const me = uuid()
 
     let edges = []
     let nodes = []
+    let current = createNode(me, [], workflow, !parentId, addInformationsToNode)
+    let nestedNodes = []
 
-    console.log('kind', workflow.kind)
+    // console.log('kind', workflow.kind)
 
     if (workflow.kind === 'workflow') {
         let childrenNodes = []
 
         for (let i = 0; i < workflow.steps.length; i++) {
             const subflow = workflow.steps[i]
-            const child = buildingGraph(subflow, addInformationsToNode, me)
+            const child = buildGraph(subflow, addInformationsToNode, me)
 
-            childrenNodes = childrenNodes.concat(child.nodes)
+
+            childrenNodes.push(child.current)
+
+            nestedNodes = nestedNodes.concat(child.nodes)
             edges = edges.concat(child.edges)
         }
 
-        let current = createNode(me, [], workflow, !parentId, addInformationsToNode)
-        current.customSourceHandles = [...Array(workflow.steps.length)].map((_, i) => ({ id: `path-${i}` }))
-        nodes.push(current)
+        current.customSourceHandles = [...Array(workflow.steps.length)].map((_, i) => ({ id: `step-${i}` }))
+        // nodes.push(current)
 
         childrenNodes.forEach((child, i) => {
             edges.push({
                 id: `${me}-${child.id}`,
                 source: me,
-                sourceHandle: `path-${i}`,
+                sourceHandle: `step-${i}`,
                 target: child.id,
                 targetHandle: `input-${child.id}`,
                 type: 'customEdge',
@@ -401,54 +405,52 @@ const buildingGraph = (workflow, addInformationsToNode, parentId) => {
 
     } else if (workflow.kind === 'foreach') {
         const { node, edge } = createAndLinkChildNode(me, [], workflow.node, addInformationsToNode, 'node')
-
-        const current = createNode(me, [], workflow, !parentId, addInformationsToNode)
-        nodes.push(current)
-
         nodes.push(node)
         edges.push(edge)
+
     } else if (workflow.kind === 'map') {
 
     } else if (workflow.kind === 'switch') {
 
     } else {
-        const simpleNode = createNode(me, [], workflow, false, addInformationsToNode)
-        nodes.push(simpleNode)
 
-        // edges.push({
-        //     id: `${parentId}-${me}`,
-        //     source: parentId,
-        //     sourceHandle: `output-${parentId}`,
-        //     target: me,
-        //     targetHandle: `input-${me}`,
-        //     type: 'customEdge',
-        //     animated: true,
-        // })
     }
 
-    console.log('nodes', nodes)
+    // console.log('nodes', nodes)
 
     for (let i = 0; i < nodes.length; i++) {
-        const { targets = [], sources = [] } = nodes[i].data
-
-        nodes[i] = {
-            ...nodes[i],
-            data: {
-                ...nodes[i].data,
-                targetHandles: i === 0 ? [] : ['input', ...targets].map(target => {
-                    return { id: `${target}-${nodes[i].id}` }
-                }),
-                sourceHandles: [
-                    ...(nodes[i].customSourceHandles || []),
-                    ...[...sources].map(source => ({ id: `${source}-${nodes[i].id}` }))
-                ]
-            }
-        }
-
-        delete nodes[i].customSourceHandles
+        nodes[i] = setupTargetsAndSources(nodes[i])
     }
 
-    return { edges, nodes }
+    current = setupTargetsAndSources(current, !parentId)
+
+    return {
+        edges,
+        nodes: [...nestedNodes, ...nodes,],
+        current
+    }
+}
+
+const setupTargetsAndSources = (node, isFirst) => {
+    const { targets = [], sources = [] } = node.data
+
+    node = {
+        ...node,
+        data: {
+            ...node.data,
+            targetHandles: isFirst ? [] : ['input', ...targets].map(target => {
+                return { id: `${target}-${node.id}` }
+            }),
+            sourceHandles: [
+                ...(node.customSourceHandles || []),
+                ...sources.map(source => ({ id: `${source}-${node.id}` }))
+            ]
+        }
+    }
+
+    delete node.customSourceHandles
+
+    return node
 }
 
 function WorkflowsDesigner(props) {
@@ -457,11 +459,9 @@ function WorkflowsDesigner(props) {
 
     const [rfInstance, setRfInstance] = useState(null);
 
-    // const initialState = getInitialNodesFromWorkflow(props.workflow?.config, addInformationsToNode)
+    const initialState = buildGraph(props.workflow?.config, addInformationsToNode)
 
-    const initialState = buildingGraph(props.workflow?.config, addInformationsToNode)
-
-    const [nodes, internalSetNodes] = useState(initialState.nodes)
+    const [nodes, internalSetNodes] = useState([initialState.current, ...initialState.nodes])
     const [edges, setEdges] = useState(initialState.edges)
 
     const [report, setReport] = useState()
@@ -540,7 +540,7 @@ function WorkflowsDesigner(props) {
             .filter(node => node.id !== 'returned-node')
             .reduce((acc, node) => {
                 const connections = edges
-                    .filter(edge => edge.source === node.id && !edge.sourceHandle.startsWith('output'))
+                    .filter(edge => edge.source === node.id)
                 return [
                     ...acc,
                     {
@@ -553,48 +553,92 @@ function WorkflowsDesigner(props) {
                 ]
             }, [])
 
-        const nodesWithChildren = nodesWithConnections.reduce((acc, item) => {
-            const { node } = item
-            if (!nodesWithConnections.find(n => n.connections.find(conn => conn.node.id === node.id))) {
-                return [...acc, item]
-            }
-            return acc
-        }, [])
+        // const nodesWithChildren = nodesWithConnections.reduce((acc, item) => {
+        //     const { node } = item
+        //     if (!nodesWithConnections.find(n => n.connections.find(conn => conn.node.id === node.id))) {
+        //         return [...acc, item]
+        //     }
+        //     return acc
+        // }, [])
 
-        return nodesWithChildren.reduce((outputWorkflow, { node, connections }) => {
-            let { kind, workflow } = node.data
+        console.log(nodesWithConnections)
 
-            if (kind === 'workflow') {
-                workflow.steps = connections.map(connection => connection.node.data.workflow)
-            } else if (workflow.node) {
-                workflow.node = connections.find(connection => connection.handle === 'node')?.node.data.workflow
-            }
+        const [first, ...rest] = nodesWithConnections
+        return nodeToJson(first, rest, nodesWithConnections)
+
+        // return nodesWithChildren.reduce((outputWorkflow, { node, connections }) => {
+        //     let { kind, workflow } = node.data
+
+        //     if (kind === 'workflow') {
+        //         workflow.steps = connections.map(connection => connection.node.data.workflow)
+        //     } else if (workflow.node) {
+        //         workflow.node = connections.find(connection => connection.handle === 'node')?.node.data.workflow
+        //     }
+        //     return {
+        //         ...outputWorkflow,
+        //         steps: [
+        //             ...outputWorkflow.steps,
+        //             workflow
+        //         ]
+        //     }
+        // }, {
+        //     kind: "workflow",
+        //     steps: [],
+        //     returned: nodes.find(node => node.id === 'returned-node').data.workflow.returned || {}
+        // })
+    }
+
+    const nodeToJson = (current, rest, all) => {
+        const { node, connections } = current
+
+        const { kind } = node.data
+
+        if (kind === 'workflow') {
+            const steps = connections.filter(conn => conn.handle !== 'output').map(conn => all.find(n => n.node.id === conn.node.id))
+
             return {
-                ...outputWorkflow,
-                steps: [
-                    ...outputWorkflow.steps,
-                    workflow
-                ]
+                kind: 'workflow',
+                steps: steps.map(step => nodeToJson(step, rest, all)),
+                returned: connections.find(conn => conn.handle === 'output')?.node.data.workflow.returned
             }
-        }, {
-            kind: "workflow",
-            steps: [],
-            returned: nodes.find(node => node.id === 'returned-node').data.workflow.returned || {}
-        })
+        } else if (kind === "if") {
+            return {
+                kind: 'if',
+                predicate: connections.find(conn => conn.handle === 'predicate')?.node.data.workflow,
+                then: connections.find(conn => conn.handle === 'then')?.node.data.workflow,
+                else: connections.find(conn => conn.handle === 'else')?.node.data.workflow
+            }
+        } else if (kind === 'flatmap') {
 
+        } else if (kind === 'foreach') {
+            return {
+                ...node.data.workflow,
+                node: connections.length > 0 ? nodeToJson(connections[0], rest, all) : undefined
+            }
+        } else if (kind === 'map') {
+
+        } else if (kind === 'switch') {
+
+        } else {
+            return node.data.workflow
+        }
     }
 
     const handleSave = () => {
         const config = graphToJson()
 
-        const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
-
-        client.update({
-            ...props.workflow,
-            config
-        })
+        console.log(config)
 
         return Promise.resolve()
+
+        // const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
+
+        // client.update({
+        //     ...props.workflow,
+        //     config
+        // })
+
+        // return Promise.resolve()
     }
 
     function updateData(props, changes) {
@@ -684,6 +728,9 @@ function WorkflowsDesigner(props) {
 
         setEdges(eds => eds.filter(edge => edge.sourceHandle !== handleId))
 
+        const sourceEl = document.querySelector(`[data-id="${nodeId}"]`);
+        sourceEl.style.height = `${Number(sourceEl.style.height.split('px')[0]) - 20}px`
+
         updateNodeInternals(nodeId)
     }
 
@@ -726,10 +773,18 @@ function WorkflowsDesigner(props) {
                 animated: true,
             }
 
-            const newEdges = !edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges
+            console.log('on connect')
 
-            setEdges(newEdges)
-            onLayout({ direction: 'RIGHT', nodes, edges: newEdges, from: 'onConnect' })
+
+
+            setEdges(edges => {
+                const newEdges = !edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges
+
+                onLayout({ direction: 'RIGHT', nodes, edges: newEdges, from: 'onConnect' })
+
+                return newEdges
+            })
+
         },
         [setEdges, nodes],
     );
@@ -788,7 +843,7 @@ function WorkflowsDesigner(props) {
         const newNodes = [...nodes, newNode]
         newEdges = [...edges, ...newEdges]
 
-        newEdges = linkTheLastNodeToReturnedNode(newNodes, newEdges)
+        // newEdges = linkTheLastNodeToReturnedNode(newNodes, newEdges)
 
         setNodes(newNodes)
         setEdges(newEdges)

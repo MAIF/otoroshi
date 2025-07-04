@@ -13,7 +13,7 @@ export const ExpressionLanguageOperator = _workflow => ({
             label: 'Expression'
         }
     },
-    sources: ['output'],
+    sources: [],
     operator: true
 });
 

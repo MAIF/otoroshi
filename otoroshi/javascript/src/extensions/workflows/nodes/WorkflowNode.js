@@ -9,6 +9,7 @@ export const WorkflowNode = (_workflow) => {
         workflow: _workflow,
         kind: 'workflow',
         sourcesIsArray: true,
+        height: () => `${110 + 20 * _workflow?.steps.length}px`,
         sources: ['output'],
         flow: ['returned'],
         schema: {

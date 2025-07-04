@@ -45,6 +45,6 @@ export function CallNode(_workflow) {
                 </Row>
             }
         },
-        sources: ['output'],
+        sources: [],
     }
 }

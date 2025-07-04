@@ -12,7 +12,7 @@ export const NeqOperator = _workflow => ({
         a: ValueToCheck('First value'),
         b: ValueToCheck('Second value')
     },
-    sources: ['output'],
+    sources: [],
     operator: true
 });
 

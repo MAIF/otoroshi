@@ -17,7 +17,7 @@ export const BasicAuthOperator = _workflow => ({
             label: 'Password'
         }
     },
-    sources: ['output'],
+    sources: [],
     operator: true
 });
 

@@ -25,7 +25,7 @@ export const MapPutOperator = _workflow => ({
             visible: props => !props.fromMemory
         }
     },
-    sources: ['output'],
+    sources: [],
     operator: true
 });
 

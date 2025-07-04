@@ -6,7 +6,7 @@ export const ValueNode = (_workflow) => ({
     description: 'Apply operators on value',
     workflow: _workflow,
     kind: 'value',
-    sources: ['output'],
+    sources: [],
     //     {
     //   "kind": "workflow",
     //   "steps": [ <Node> ],

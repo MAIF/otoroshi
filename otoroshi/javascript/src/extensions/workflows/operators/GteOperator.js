@@ -17,7 +17,7 @@ export const GteOperator = _workflow => ({
             label: 'Second Number'
         }
     },
-    sources: ['output'],
+    sources: [],
     operator: true
 });
 

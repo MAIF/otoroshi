@@ -87,13 +87,6 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY }) {
                     className="nodrag nopan d-flex-center gap-1 edge-label-renderer"
                     id={`react-flow__edgelabel-renderer-data-${id}`}
                 >
-                    {/* <div className='node-one-output-add'
-                        onClick={e => {
-                            e.stopPropagation()
-
-                        }}>
-                        <i className='fas fa-plus' />
-                    </div> */}
                     <div className='node-one-output-add' onClick={e => {
                         e.stopPropagation()
                         setEdges((es) => es.filter((e) => e.id !== id));

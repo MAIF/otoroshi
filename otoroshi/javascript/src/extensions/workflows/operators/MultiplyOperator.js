@@ -15,7 +15,7 @@ export const MultiplyOperator = _workflow => ({
             format: null
         }
     },
-    sources: ['output'],
+    sources: [],
     operator: true
 });
 
