@@ -1,5 +1,4 @@
 import React from 'react'
-import { AddNode } from './AddNode'
 
 export const IfThenElseNode = (_workflow) => ({
     label: <i className='fas fa-question' />,

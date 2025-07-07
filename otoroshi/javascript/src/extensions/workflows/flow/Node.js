@@ -33,7 +33,7 @@ export function Node(props) {
                 }}
             >
                 <div className='node-one-output d-flex-center'>
-                    {data.label || data.item?.label} {data.name}
+                    {data.operator ? <i className='fas fa-wrench' /> : (data.label || data.item?.label)} {data.name}
                 </div>
 
                 {data.nodeRenderer && data.nodeRenderer(props)}

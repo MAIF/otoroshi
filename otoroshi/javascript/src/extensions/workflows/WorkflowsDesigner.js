@@ -327,9 +327,25 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
             animated: true,
         })
     } else {
-        if(workflow.predicate) {
+        if (workflow.predicate !== undefined) {
             // sub path of switch group
-            console.log("HERE")
+
+            const predicate = buildGraph([{
+                kind: 'predicate'
+            }], addInformationsToNode, me, 'node')
+            const predicateNode = predicate.nodes[0]
+
+            nodes = [predicateNode, current]
+
+            edges.push({
+                id: `${me}-${predicateNode.id}`,
+                source: predicateNode.id,
+                sourceHandle: `output-${predicateNode.id}`,
+                target: me,
+                targetHandle: `input-${me}`,
+                type: 'customEdge',
+                animated: true,
+            })
         }
     }
 
@@ -481,7 +497,7 @@ function WorkflowsDesigner(props) {
         // });
     }, [])
 
-    const { fitView } = useReactFlow();
+    const { fitView, screenToFlowPosition } = useReactFlow();
     const updateNodeInternals = useUpdateNodeInternals()
 
     const getLayoutedElements = (nodes, edges, options = {}) => {
@@ -546,7 +562,9 @@ function WorkflowsDesigner(props) {
             .then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
                 setNodes(layoutedNodes)
                 setEdges(layoutedEdges)
-                fitView();
+                fitView({
+                    padding: 5
+                });
             });
     };
 
@@ -746,7 +764,8 @@ function WorkflowsDesigner(props) {
                 setTimeout(() => {
                     setOnCreationMode({
                         ...connectionState.fromNode,
-                        handle: connectionState.fromHandle
+                        handle: connectionState.fromHandle,
+                        event
                     })
                 }, 2)
             }
@@ -778,13 +797,22 @@ function WorkflowsDesigner(props) {
     );
 
     const handleSelectNode = item => {
-        const targetId = uuid()
+        let targetId = uuid()
+
+        const { clientX, clientY } = 'changedTouches' in isOnCreation.event ? isOnCreation.event.changedTouches[0] : isOnCreation.event;
+
+        if (item.operator)
+            targetId = `${targetId}-operator`
 
         let newNode = addInformationsToNode({
             ...createSimpleNode([], item),
             id: targetId,
-            position: isOnCreation.fromOrigin ? isOnCreation.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position)),
+            // position: isOnCreation.fromOrigin ? isOnCreation.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position)),
             type: item.type || 'simple',
+            position: screenToFlowPosition({
+                x: clientX,
+                y: clientY,
+            }),
         })
 
         let newEdges = []
@@ -825,8 +853,6 @@ function WorkflowsDesigner(props) {
         setEdges(newEdges)
 
         setOnCreationMode(false)
-
-        onLayout({ direction: 'RIGHT', nodes: newNodes, edges: newEdges, from: 'handleSelect' });
     }
 
     function run() {

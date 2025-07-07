@@ -3,10 +3,8 @@ import React from 'react';
 import { Node } from './flow/Node'
 import { GroupNode } from './flow/GroupNode'
 import { CustomEdge } from './flow/CustomEdge'
-import { AddNode } from './nodes/AddNode'
 import { ReactFlow, Background, Controls } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { StartNode } from './nodes/StartNode';
 
 export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onConnect, onConnectEnd, onGroupNodeClick, setRfInstance }) {
 
@@ -26,8 +24,7 @@ export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onCo
             connectionLineType='simplebezier'
             nodeTypes={{
                 simple: Node,
-                group: GroupNode,
-                AddNode: AddNode,
+                group: GroupNode
             }}
             edgeTypes={{
                 customEdge: CustomEdge,

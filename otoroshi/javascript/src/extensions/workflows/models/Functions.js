@@ -1,4 +1,3 @@
-import { AddNode } from "../nodes/AddNode"
 import { AssignNode } from "../nodes/AssignNode"
 import { CallNode } from "../nodes/CallNode"
 import { ErrorNode } from "../nodes/ErrorNode"
@@ -54,6 +53,7 @@ import { DecrOperator } from '../operators/DecrOperator'
 import { IncrOperator } from '../operators/IncrOperator'
 import { ReturnedNode } from "../nodes/ReturnedNode"
 import { StartNode } from "../nodes/StartNode"
+import { PredicateNode } from "../nodes/PredicateNode"
 
 export const NODES = {
     "assign": AssignNode,
@@ -69,9 +69,9 @@ export const NODES = {
     "wait": WaitNode,
     "error": ErrorNode,
     "value": ValueNode,
-    "addnode": AddNode,
     "returned": ReturnedNode,
-    "start": StartNode
+    "start": StartNode,
+    "predicate": PredicateNode
 }
 
 export const OPERATORS = {
