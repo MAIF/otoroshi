@@ -20,7 +20,7 @@ export const MapDelOperator = _workflow => ({
             visible: props => !props.fromMemory
         }
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

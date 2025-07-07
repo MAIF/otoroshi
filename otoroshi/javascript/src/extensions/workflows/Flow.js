@@ -6,6 +6,7 @@ import { CustomEdge } from './flow/CustomEdge'
 import { AddNode } from './nodes/AddNode'
 import { ReactFlow, Background, Controls } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { StartNode } from './nodes/StartNode';
 
 export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onConnect, onConnectEnd, onGroupNodeClick, setRfInstance }) {
 
@@ -26,13 +27,13 @@ export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onCo
             nodeTypes={{
                 simple: Node,
                 group: GroupNode,
-                AddNode: AddNode
+                AddNode: AddNode,
             }}
             edgeTypes={{
                 customEdge: CustomEdge,
             }}
             onNodeDoubleClick={(_, group) => onGroupNodeClick(group)}
-                >
+        >
             <Background />
             <Controls orientation='horizontal' showInteractive={false} />
         </ReactFlow>

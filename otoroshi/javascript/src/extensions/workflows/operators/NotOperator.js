@@ -11,7 +11,7 @@ export const NotOperator = _workflow => ({
     schema: {
         value: ValueToCheck('Boolean Value')
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

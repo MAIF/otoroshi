@@ -45,6 +45,11 @@ export function CallNode(_workflow) {
                 </Row>
             }
         },
-        sources: [],
+        sources: ['output'],
+        nodeRenderer: props => {
+            return <div className='assign-node'>
+                <span >{props.data.workflow.function}</span>
+            </div>
+        }
     }
 }

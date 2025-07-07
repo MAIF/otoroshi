@@ -26,7 +26,7 @@ export const ArrayAppendOperator = _workflow => ({
             visible: props => !props?.fromMemory
         }
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

@@ -22,7 +22,7 @@ export const ArrayAtOperator = _workflow => ({
             visible: (props) => !props?.fromMemory
         }
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

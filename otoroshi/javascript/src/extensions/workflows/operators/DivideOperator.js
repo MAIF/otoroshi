@@ -15,7 +15,7 @@ export const DivideOperator = _workflow => ({
             format: null
         }
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

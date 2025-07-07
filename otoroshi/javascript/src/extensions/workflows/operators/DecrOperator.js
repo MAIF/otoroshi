@@ -17,6 +17,6 @@ export const DecrOperator = _workflow => ({
             label: 'Decrement Amount'
         }
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });

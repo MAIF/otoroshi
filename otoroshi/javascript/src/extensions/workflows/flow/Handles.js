@@ -8,7 +8,7 @@ function RightHandle({ handle, className, selected, deleteHandle }) {
         position={Position.Right}
         className={`${className} ${(selected ? 'connected' : '')}`}
     >
-        {deleteHandle && <i className='fas fa-trash me-1' onClick={deleteHandle} />}
+        {/* {deleteHandle && <i className='fas fa-trash me-1' onClick={deleteHandle} />} */}
         {handle.id.split('-')[0]}
         <div className={`handle-dot ms-1 ${selected ? 'handle-dot--selected' : ''}`} />
     </Handle>

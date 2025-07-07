@@ -38,7 +38,7 @@ const elk = new ELK();
 const elkOptions = {
     'elk.algorithm': 'layered',
     'elk.layered.spacing.nodeNodeBetweenLayers': '100',
-    'elk.spacing.nodeNode': '80',
+    'elk.spacing.nodeNode': '80'
 };
 
 const applyStyles = () => {
@@ -84,7 +84,7 @@ function Container(props) {
     </Loader>
 }
 
-export function createSimpleNode(nodes, node, firstStep) {
+export function createSimpleNode(nodes, node) {
     let data = NODES[(node.kind || node.data.kind).toLowerCase()]
 
     if (data)
@@ -99,14 +99,13 @@ export function createSimpleNode(nodes, node, firstStep) {
         position: findNonOverlappingPosition([nodes[nodes.length - 1]].filter(f => f)),
         type: node.type || data.type || 'simple',
         data: {
-            isFirst: firstStep,
             ...data
         }
     }
 }
 
-function createNode(id, existingNodes, child, isFirst, addInformationsToNode) {
-    const newNode = addInformationsToNode(createSimpleNode(existingNodes, child, isFirst))
+function createNode(id, existingNodes, child, addInformationsToNode) {
+    const newNode = addInformationsToNode(createSimpleNode(existingNodes, child))
     return {
         ...newNode,
         id,
@@ -130,7 +129,7 @@ function createAndLinkChildNode(parentId, nodes, node, addInformationsToNode, ha
         }
     }
 
-    const childNode = createNode(`${parentId}-${handle}`, nodes.map(r => r.position), config, false, addInformationsToNode)
+    const childNode = createNode(`${parentId}-${handle}`, nodes.map(r => r.position), config, addInformationsToNode)
     childNode.data.isInternal = true
 
     return {
@@ -319,24 +318,29 @@ function linkTheLastNodeToReturnedNode(nodes, edges) {
     return newEdges
 }
 
-const buildGraph = (workflow, addInformationsToNode, parentId) => {
+const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
+
+    if (workflows.length === 0) {
+        return { edges: [], nodes: [] }
+    }
+
+    const [workflow, ...rest] = workflows
 
     const me = uuid()
 
     let edges = []
     let nodes = []
-    let current = createNode(me, [], workflow, !parentId, addInformationsToNode)
+    let current = createNode(me, [], workflow, addInformationsToNode)
     let nestedNodes = []
 
-    // console.log('kind', workflow.kind)
+    nodes.push(current)
 
     if (workflow.kind === 'workflow') {
         let childrenNodes = []
 
         for (let i = 0; i < workflow.steps.length; i++) {
             const subflow = workflow.steps[i]
-            const child = buildGraph(subflow, addInformationsToNode, me)
-
+            const child = buildGraph(subflow, addInformationsToNode, me, `step-${i}`)
 
             childrenNodes.push(child.current)
 
@@ -344,28 +348,12 @@ const buildGraph = (workflow, addInformationsToNode, parentId) => {
             edges = edges.concat(child.edges)
         }
 
-        current.customSourceHandles = [...Array(workflow.steps.length)].map((_, i) => ({ id: `step-${i}` }))
-        // nodes.push(current)
-
-        childrenNodes.forEach((child, i) => {
-            edges.push({
-                id: `${me}-${child.id}`,
-                source: me,
-                sourceHandle: `step-${i}`,
-                target: child.id,
-                targetHandle: `input-${child.id}`,
-                type: 'customEdge',
-                animated: true,
-            })
-            nodes.push(child)
-        })
-
         let returnedNode = createNode(parentId ? `${me}-returned-node` : 'returned-node', [], {
             returned: {
                 ...(workflow.returned || {}),
             },
             kind: 'returned'
-        }, false, addInformationsToNode)
+        }, addInformationsToNode)
 
         returnedNode = {
             ...returnedNode,
@@ -387,58 +375,116 @@ const buildGraph = (workflow, addInformationsToNode, parentId) => {
         })
 
         nodes.push(returnedNode)
-
         // edges = linkTheLastNodeToReturnedNode(nodes, edges)
     } else if (workflow.kind === "if") {
-        // const ifOperator = createAndLinkChildNode(parentId, nodes, workflow.predicate, addInformationsToNode, 'predicate')
-        // nodes.push(ifOperator.node)
-        // edges.push(ifOperator.edge)
+        const thensubGraph = buildGraph([workflow.then], addInformationsToNode, targetId, handleId)
+        const elseGraph = buildGraph([workflow.else], addInformationsToNode, targetId, handleId)
 
-        // const elseOperator = createAndLinkChildNode(parentId, nodes, workflow.else, addInformationsToNode, 'else')
-        // nodes.push(elseOperator.node)
-        // edges.push(elseOperator.edge)
+        let predicate = workflow.predicate
+        if (typeof workflow.predicate === "object" && workflow.predicate !== null && Object.keys(workflow.predicate).find(key => key.startsWith('$'))) {
+            const kind = Object.keys(workflow.predicate).find(key => key.startsWith('$'))
+            predicate = {
+                kind,
+                ...workflow.predicate[kind]
+            }
+        }
 
-        // const thenOperator = createAndLinkChildNode(parentId, nodes, workflow.then, addInformationsToNode, 'then')
-        // nodes.push(thenOperator.node)
-        // edges.push(thenOperator.edge)
+        predicate = buildGraph([predicate], addInformationsToNode)
+        console.log(predicate)
+
+        nodes = nodes.concat(thensubGraph.nodes)
+        edges = edges.concat(thensubGraph.edges)
+
+        nodes = nodes.concat(elseGraph.nodes)
+        edges = edges.concat(elseGraph.edges)
+
+        nodes = nodes.concat(predicate.nodes)
+        edges = edges.concat(predicate.edges)
+
+        edges.push({
+            id: `${me}-then`,
+            source: me,
+            sourceHandle: `then-${me}`,
+            target: thensubGraph.nodes[0].id,
+            targetHandle: `input-${thensubGraph.nodes[0].id}`,
+            type: 'customEdge',
+            animated: true,
+        })
+        edges.push({
+            id: `${me}-else`,
+            source: me,
+            sourceHandle: `else-${me}`,
+            target: elseGraph.nodes[0].id,
+            targetHandle: `input-${elseGraph.nodes[0].id}`,
+            type: 'customEdge',
+            animated: true,
+        })
+        edges.push({
+            id: `${me}-predicate`,
+            source: predicate.nodes[predicate.nodes.length - 1].id,
+            sourceHandle: `output-${predicate.nodes[predicate.nodes.length - 1].id}`,
+            target: me,
+            targetHandle: `predicate-${me}`,
+            type: 'customEdge',
+            animated: true,
+        })
+
+        console.log(edges)
     } else if (workflow.kind === 'flatmap') {
 
     } else if (workflow.kind === 'foreach') {
-        const { node, edge } = createAndLinkChildNode(me, [], workflow.node, addInformationsToNode, 'node')
-        nodes.push(node)
-        edges.push(edge)
+        const subGraph = buildGraph([workflow.node], addInformationsToNode)
 
+        nodes = nodes.concat(subGraph.nodes)
+        edges = edges.concat(subGraph.edges)
+
+        edges.push({
+            id: `${me}-ForEachLoop`,
+            source: me,
+            sourceHandle: `ForEachLoop-${me}`,
+            target: subGraph.nodes[0].id,
+            targetHandle: `input-${subGraph.nodes[0].id}`,
+            type: 'customEdge',
+            animated: true,
+        })
     } else if (workflow.kind === 'map') {
 
     } else if (workflow.kind === 'switch') {
 
-    } else {
+    } else { }
 
+    if (targetId) {
+        edges.push({
+            id: `${me}-${targetId}`,
+            source: me,
+            sourceHandle: `${handleId ? handleId : "output"}-${me}`,
+            target: targetId,
+            targetHandle: `input-${targetId}`,
+            type: 'customEdge',
+            animated: true,
+        })
     }
-
-    // console.log('nodes', nodes)
 
     for (let i = 0; i < nodes.length; i++) {
         nodes[i] = setupTargetsAndSources(nodes[i])
     }
 
-    current = setupTargetsAndSources(current, !parentId)
+    const subGraph = buildGraph(rest, addInformationsToNode, me)
 
     return {
-        edges,
-        nodes: [...nestedNodes, ...nodes,],
-        current
+        edges: [...subGraph.edges, ...edges],
+        nodes: [...subGraph.nodes, ...nodes]
     }
 }
 
-const setupTargetsAndSources = (node, isFirst) => {
+const setupTargetsAndSources = (node) => {
     const { targets = [], sources = [] } = node.data
 
     node = {
         ...node,
         data: {
             ...node.data,
-            targetHandles: isFirst ? [] : ['input', ...targets].map(target => {
+            targetHandles: [...targets, 'input'].map(target => {
                 return { id: `${target}-${node.id}` }
             }),
             sourceHandles: [
@@ -453,15 +499,69 @@ const setupTargetsAndSources = (node, isFirst) => {
     return node
 }
 
+const initializeGraph = (config, addInformationsToNode) => {
+
+    let startingNode = createNode('start', [], {
+        kind: 'start'
+    }, addInformationsToNode)
+
+    startingNode = {
+        ...startingNode,
+        data: {
+            ...startingNode.data,
+            targetHandles: [],
+            sourceHandles: [{ id: `output-${startingNode.id}` }]
+        }
+    }
+
+    let returnedNode = createNode('returned-node', [], {
+        returned: {
+            ...(config.returned || {}),
+        },
+        kind: 'returned'
+    }, addInformationsToNode)
+
+    returnedNode = {
+        ...returnedNode,
+        data: {
+            ...returnedNode.data,
+            targetHandles: [{ id: `input-returned-node` }],
+            sourceHandles: []
+        }
+    }
+
+    const subGraph = buildGraph(config.steps.reverse(), addInformationsToNode, returnedNode.id)
+
+    return {
+        nodes: [
+            startingNode,
+            ...subGraph.nodes,
+            returnedNode
+        ],
+        edges: [
+            ...subGraph.edges,
+            {
+                id: 'start-edge',
+                source: startingNode.id,
+                sourceHandle: `output-${startingNode.id}`,
+                target: subGraph.nodes[0].id,
+                targetHandle: `input-${subGraph.nodes[0].id}`,
+                type: 'customEdge',
+                animated: true,
+            }
+        ]
+    }
+}
+
 function WorkflowsDesigner(props) {
     const [selectedNode, setSelectedNode] = useState()
     const [isOnCreation, setOnCreationMode] = useState(false)
 
     const [rfInstance, setRfInstance] = useState(null);
 
-    const initialState = buildGraph(props.workflow?.config, addInformationsToNode)
+    const initialState = initializeGraph(props.workflow?.config, addInformationsToNode)
 
-    const [nodes, internalSetNodes] = useState([initialState.current, ...initialState.nodes])
+    const [nodes, internalSetNodes] = useState(initialState.nodes)
     const [edges, setEdges] = useState(initialState.edges)
 
     const [report, setReport] = useState()
@@ -521,7 +621,10 @@ function WorkflowsDesigner(props) {
     };
 
     const onLayout = ({ direction, nodes, edges, from }) => {
-        const opts = { 'elk.direction': direction, ...elkOptions };
+        const opts = {
+            'elk.direction': direction,
+            ...elkOptions
+        };
 
         getLayoutedElements(nodes, edges, opts)
             .then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
@@ -793,21 +896,11 @@ function WorkflowsDesigner(props) {
         const targetId = uuid()
 
         let newNode = addInformationsToNode({
-            ...createSimpleNode([], item, false),
+            ...createSimpleNode([], item),
             id: targetId,
             position: isOnCreation.fromOrigin ? isOnCreation.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position)),
             type: item.type || 'simple',
         })
-
-        // Is it the first node of the flow ?
-        if (nodes.filter(node => node.data?.kind !== 'returned').length === 0)
-            newNode = {
-                ...newNode,
-                data: {
-                    ...newNode.data,
-                    isFirst: true
-                }
-            }
 
         let newEdges = []
 

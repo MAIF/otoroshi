@@ -16,7 +16,7 @@ export const JsonParseOperator = _workflow => ({
             visible: props => !props.fromMemory
         },
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

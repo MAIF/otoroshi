@@ -25,7 +25,7 @@ export const ContainsOperator = _workflow => ({
             visible: (props) => !props?.fromMemory
         }
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

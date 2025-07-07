@@ -17,7 +17,7 @@ export const LteOperator = _workflow => ({
             label: 'Second Number'
         }
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

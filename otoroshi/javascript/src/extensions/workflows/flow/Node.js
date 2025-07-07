@@ -1,31 +1,32 @@
+import React, { useLayoutEffect } from 'react'
 
-import React, { useEffect } from 'react'
-
-import Handles from './Handles';
-import NodeTrashButton from './NodeTrashButton';
-import { NodeResizer } from '@xyflow/react';
-import { ReturnedNode } from '../nodes/ReturnedNode';
+import Handles from './Handles'
+import NodeTrashButton from './NodeTrashButton'
+import { NodeResizer, useEdges } from '@xyflow/react'
 
 export function Node(props) {
     const { data } = props
-    const isFirst = data.isFirst
+
+    useLayoutEffect(() => {
+        const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
+
+        if (data.operator && !sourceEl.classList.contains("operator"))
+            sourceEl?.classList.add('operator')
+    }, [])
 
     return (
         <>
             <Handles {...props} />
 
-            <NodeResizer
+            {data.kind !== 'start' && <NodeResizer
                 color="#ff0071"
                 isVisible={props.selected}
                 minWidth={200}
                 minHeight={100}
-            />
+            />}
 
             <button
-                className={`
-                    d-flex-center m-0 node
-                    ${isFirst ? 'node--first' : ''}
-                `}
+                className="d-flex-center m-0 node"
                 onDoubleClick={e => {
                     e.stopPropagation()
                     data.functions.onDoubleClick(props)
@@ -34,8 +35,6 @@ export function Node(props) {
                 <div className='node-one-output d-flex-center'>
                     {data.label || data.item?.label} {data.name}
                 </div>
-
-                {/* {data.nodeRenderer === 'returned' && ReturnedNode().nodeRenderer(props)} */}
 
                 {data.nodeRenderer && data.nodeRenderer(props)}
 

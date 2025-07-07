@@ -48,7 +48,7 @@ export const IsTruthyOperator = _workflow => ({
             help: 'Only useful if the variable is an object'
         },
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

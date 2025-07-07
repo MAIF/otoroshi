@@ -12,7 +12,7 @@ export const EqOperator = _workflow => ({
         a: ValueToCheck('First value', false),
         b: ValueToCheck('Second value', false)
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

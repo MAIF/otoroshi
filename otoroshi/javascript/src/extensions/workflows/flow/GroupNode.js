@@ -5,7 +5,6 @@ import Handles from "./Handles";
 
 export const GroupNode = forwardRef((props, ref) => {
     const { selected, position, data } = props
-    const isFirst = data.isFirst
 
     useLayoutEffect(() => {
         const height = props.data.height
@@ -24,8 +23,6 @@ export const GroupNode = forwardRef((props, ref) => {
             minWidth={200}
             minHeight={100}
         />
-
-        <div className={`${isFirst ? 'node--first' : ''}`} />
 
         <Handles {...props} />
 

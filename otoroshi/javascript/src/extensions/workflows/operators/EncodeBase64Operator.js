@@ -11,7 +11,7 @@ export const EncodeBase64Operator = _workflow => ({
     schema: {
         value: ValueToCheck('Value to encode')
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

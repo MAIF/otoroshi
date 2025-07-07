@@ -18,7 +18,7 @@ export const MemRefOperator = _workflow => ({
             help: 'Only useful if the variable is an object'
         }
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

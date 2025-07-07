@@ -53,6 +53,7 @@ import { ArrayDelOperator } from '../operators/ArrayDelOperator'
 import { DecrOperator } from '../operators/DecrOperator'
 import { IncrOperator } from '../operators/IncrOperator'
 import { ReturnedNode } from "../nodes/ReturnedNode"
+import { StartNode } from "../nodes/StartNode"
 
 export const NODES = {
     "assign": AssignNode,
@@ -69,7 +70,8 @@ export const NODES = {
     "error": ErrorNode,
     "value": ValueNode,
     "addnode": AddNode,
-    "returned": ReturnedNode
+    "returned": ReturnedNode,
+    "start": StartNode
 }
 
 export const OPERATORS = {

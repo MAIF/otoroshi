@@ -11,7 +11,7 @@ export const DecodeBase64Operator = _workflow => ({
     schema: {
         value: ValueToCheck('Base64 String')
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 

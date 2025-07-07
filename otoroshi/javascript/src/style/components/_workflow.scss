@@ -37,6 +37,10 @@
     padding-bottom: 1rem;
   }
 
+  .react-flow__edges svg {
+    z-index: 1000000 !important;
+  }
+
   .designer-actions {
     position: fixed;
     bottom: 1rem;
@@ -103,27 +107,23 @@
     width: 600px;
   }
 
-  .node--first {
-    min-width: 140px !important;
+  .start-node {
+    height: 100%;
+    margin-top: 30px;
+    width: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    fill: var(--color-primary);
   }
 
-  .node--first::before {
-    content: "";
-    background: var(--color-primary);
-    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23f9b000" viewBox="0 0 24 24"><path fill-rule="evenodd" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>');
-    mask-size: contain;
-    mask-repeat: no-repeat;
-    mask-position: center;
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    margin: auto;
-    transform: translate(-100%, 0);
-    width: 36px;
-    height: 36px;
-    display: inline-block;
-    z-index: 10000;
+  div[data-id^="start"],
+  div[data-id^="start"] .node {
+    width: 100px !important;
+    max-width: 100px !important;
+    min-width: initial;
+    border-bottom-left-radius: 2rem;
+    border-bottom-right-radius: 2rem;
   }
 
   .node-one-output {
@@ -138,8 +138,8 @@
     justify-content: flex-start;
     gap: .5rem;
     background-color: var(--bg-color_level2);
-    border-top-left-radius: .5rem;
-    border-top-right-radius: .5rem;
+    border-top-left-radius: .75rem;
+    border-top-right-radius: .75rem;
   }
 
   // .source::before {
@@ -435,5 +435,15 @@
     justify-content: center;
     margin-top: 30px;
     height: calc(100% - 30px);
+
+    font-size: .75rem;
+    text-align: center;
+  }
+
+  .operator,
+  .operator .node {
+    // height: 30px !important;
+    // max-height: 30px !important;
+    min-height: 45px;
   }
 }

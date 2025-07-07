@@ -17,7 +17,7 @@ export const ParseDateOperator = _workflow => ({
             label: 'Date Pattern'
         }
     },
-    sources: [],
+    sources: ['output'],
     operator: true
 });
 
