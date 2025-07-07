@@ -8,10 +8,8 @@ export const ParallelFlowsNode = (_workflow) => ({
     workflow: _workflow,
     kind: 'parallel',
     sourcesIsArray: true,
-    sources: ['path-1', 'output'],
+    handlePrefix: 'path',
+    sources: [],
+    height: () => `${110 + 20 * _workflow?.paths.length}px`,
     targets: []
-    // {
-    //   "kind": "parallel",
-    //   "paths": [ <workflow>, ... ]
-    // }
 })

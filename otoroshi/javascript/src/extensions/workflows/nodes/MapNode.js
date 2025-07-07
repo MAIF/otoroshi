@@ -21,6 +21,6 @@ export const MapNode = (_workflow) => ({
             label: 'Destination'
         }
     },
-    sources: ['node', 'output'],
+    sources: ['Item', 'output'],
     targets: []
 })

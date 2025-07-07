@@ -1,13 +1,13 @@
-import React, { useLayoutEffect } from 'react'
+import React, { useEffect, useLayoutEffect } from 'react'
 
 import Handles from './Handles'
 import NodeTrashButton from './NodeTrashButton'
-import { NodeResizer, useEdges } from '@xyflow/react'
+import { NodeResizer } from '@xyflow/react'
 
 export function Node(props) {
     const { data } = props
 
-    useLayoutEffect(() => {
+    useEffect(() => {
         const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
 
         if (data.operator && !sourceEl.classList.contains("operator"))
@@ -18,7 +18,7 @@ export function Node(props) {
         <>
             <Handles {...props} />
 
-            {data.kind !== 'start' && <NodeResizer
+            {data.kind !== 'start' && !data.operator && <NodeResizer
                 color="#ff0071"
                 isVisible={props.selected}
                 minWidth={200}

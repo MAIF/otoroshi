@@ -25,6 +25,6 @@ export const FilterNode = (_workflow) => ({
             label: 'Destination'
         }
     },
-    sources: ['predicate', 'output'],
-    targets: []
+    sources: ['output'],
+    targets: ['predicate']
 })

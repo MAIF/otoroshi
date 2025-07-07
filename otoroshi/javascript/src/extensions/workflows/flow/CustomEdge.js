@@ -81,7 +81,7 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY }) {
                 <div
                     style={{
                         position: 'absolute',
-                        transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+                        transform: `translate(-50%, -120%) translate(${labelX}px,${labelY}px)`,
                         pointerEvents: 'all',
                     }}
                     className="nodrag nopan d-flex-center gap-1 edge-label-renderer"

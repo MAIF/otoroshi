@@ -440,10 +440,15 @@
     text-align: center;
   }
 
-  .operator,
+  .operator {
+    height: 75px !important;
+  }
+
   .operator .node {
-    // height: 30px !important;
-    // max-height: 30px !important;
-    min-height: 45px;
+    min-height: initial;
+  }
+
+  .operator .node-one-output {
+    background-color: var(--bg-color_level1);
   }
 }

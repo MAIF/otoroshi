@@ -9,6 +9,7 @@ export function ReturnedNode(_workflow) {
         description: ' Overrides the output of the node with the result of an operator',
         workflow: _workflow,
         flow: ['returned'],
+        sources: ['output'],
         schema: {
             returned: {
                 type: 'code',

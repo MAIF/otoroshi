@@ -22,7 +22,6 @@ import { NewTask } from './flow/NewTask';
 import { findNonOverlappingPosition } from './NewNodeSpawn';
 import { NODES, OPERATORS } from './models/Functions';
 import ReportExplorer from './ReportExplorer';
-import { conforms } from 'lodash';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -37,8 +36,46 @@ const elk = new ELK();
 
 const elkOptions = {
     'elk.algorithm': 'layered',
-    'elk.layered.spacing.nodeNodeBetweenLayers': '100',
-    'elk.spacing.nodeNode': '80'
+    'elk.layered.spacing.nodeNodeBetweenLayers': '120',
+    'elk.spacing.nodeNode': '150',
+
+    'elk.layered.edgeRouting.selfLoopDistribution': 'EQUALLY',
+    'elk.layered.edgeRouting.selfLoopOrdering': 'SEQUENCED',
+    'elk.layered.edgeRouting.splines.mode': 'ORTHOGONAL',
+    'elk.layered.edgeRouting.polyline.slanted': 'false',
+    'elk.layered.edgeRouting.orthogonal.nodesOnEdge': 'true',
+
+    'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+    'elk.layered.crossingMinimization.greedySwitch.type': 'TWO_SIDED',
+
+    'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+    'elk.layered.nodePlacement.favorStraightEdges': 'true',
+    'elk.layered.nodePlacement.linearSegments.deflectionDampening': '0.3',
+
+    'elk.spacing.edgeNode': '80',
+    'elk.spacing.edgeEdge': '40',
+    'elk.layered.spacing.edgeNodeBetweenLayers': '50',
+    'elk.layered.spacing.edgeEdgeBetweenLayers': '35',
+
+
+    'elk.portConstraints': 'FIXED_ORDER',
+    'elk.layered.unnecessaryBendpoints': 'false',
+    'elk.layered.mergeEdges': 'false',
+
+    'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+    'elk.layered.considerModelOrder.longEdgeStrategy': 'DUMMY_NODE_OVER',
+    'elk.layered.considerModelOrder.crossingCounterNodeInfluence': '0.05',
+
+    'elk.layered.cycleBreaking.strategy': 'GREEDY',
+    'elk.layered.layering.strategy': 'LONGEST_PATH',
+
+    'elk.spacing.componentComponent': '60',
+    'elk.spacing.portPort': '25',
+    'elk.spacing.portsSurrounding': '[top=25,left=25,bottom=25,right=25]',
+
+    'elk.layered.edgeRouting.orthogonal.searchHeuristic': 'MANHATTAN',
+    'elk.layered.thoroughness': '10',
+    'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH'
 };
 
 const applyStyles = () => {
@@ -117,208 +154,8 @@ function createNode(id, existingNodes, child, addInformationsToNode) {
     }
 }
 
-function createAndLinkChildNode(parentId, nodes, node, addInformationsToNode, handle) {
-    let config = node
-
-    // create child operator node
-    if (typeof node === "object" && node !== null && Object.keys(node).find(key => key.startsWith('$'))) {
-        const kind = Object.keys(node).find(key => key.startsWith('$'))
-        config = {
-            kind,
-            ...node[kind]
-        }
-    }
-
-    const childNode = createNode(`${parentId}-${handle}`, nodes.map(r => r.position), config, addInformationsToNode)
-    childNode.data.isInternal = true
-
-    return {
-        node: childNode,
-        edge: {
-            id: uuid(),
-            source: parentId,
-            sourceHandle: `${handle}-${parentId}`,
-            target: childNode.id,
-            targetHandle: `input-${childNode.id}`,
-            type: 'customEdge',
-            animated: true,
-        }
-    }
-}
-
-// function getInitialNodesFromWorkflow(workflow, addInformationsToNode) {
-//     if (!workflow)
-//         return { edges: [], nodes: [] }
-
-//     let edges = []
-
-//     if (workflow.kind === 'workflow') {
-//         let nodes = workflow.steps.reduce((acc, child, idx) => {
-//             return [
-//                 ...acc,
-//                 createNode(uuid(), acc.map(r => r.position), child, idx === 0, addInformationsToNode)
-//             ]
-//         }, [])
-
-//         for (let i = 0; i < nodes.length; i++) {
-//             const { targets = [], sources = [] } = nodes[i].data
-
-//             const { workflow } = nodes[i].data
-//             const parentId = nodes[i].id
-
-//             if (workflow.node) {
-//                 const { node, edge } = createAndLinkChildNode(parentId, nodes, workflow.node, addInformationsToNode, 'node')
-//                 nodes.push(node)
-//                 edges.push(edge)
-//             } else if (workflow.kind === "if") {
-//                 const ifOperator = createAndLinkChildNode(parentId, nodes, workflow.predicate, addInformationsToNode, 'predicate')
-//                 nodes.push(ifOperator.node)
-//                 edges.push(ifOperator.edge)
-
-//                 const elseOperator = createAndLinkChildNode(parentId, nodes, workflow.else, addInformationsToNode, 'else')
-//                 nodes.push(elseOperator.node)
-//                 edges.push(elseOperator.edge)
-
-//                 const thenOperator = createAndLinkChildNode(parentId, nodes, workflow.then, addInformationsToNode, 'then')
-//                 nodes.push(thenOperator.node)
-//                 edges.push(thenOperator.edge)
-//             } else if (workflow.steps) {
-//                 nodes[i] = {
-//                     ...nodes[i],
-//                     data: {
-//                         ...nodes[i].data,
-//                         sourceHandles: [...Array(workflow.steps.length)].map((_, i) => {
-//                             return { id: `path-${i}` }
-//                         })
-//                     }
-//                 }
-
-//                 workflow.steps.forEach(step => {
-//                     console.log(step)
-//                     const subFlow = getInitialNodesFromWorkflow(step, addInformationsToNode)
-
-//                     console.log(subFlow)
-//                 })
-//             }
-
-//             nodes[i] = {
-//                 ...nodes[i],
-//                 data: {
-//                     ...nodes[i].data,
-//                     targetHandles: i === 0 ? [] : ['input', ...targets].map(target => {
-//                         return { id: `${target}-${nodes[i].id}` }
-//                     }),
-//                     sourceHandles: [
-//                         ...nodes[i].data.sourceHandles,
-//                         ...[...sources].map(source => ({ id: `${source}-${nodes[i].id}` }))
-//                     ]
-//                 }
-//             }
-//         }
-
-//         const parentNodes = nodes.filter(node => !node.data.isInternal && node.data.kind !== 'returned')
-//         for (let i = 0; i < parentNodes.length - 1; i++) {
-//             const parent = parentNodes[i]
-//             const me = parent.id
-//             const optTarget = parentNodes[i + 1]?.id
-
-//             if (optTarget) {
-//                 if (parent.data.kind === 'if') {
-//                     ['predicate', 'else', 'then'].map(handle => {
-//                         const childId = `${me}-${handle}`
-//                         edges.push({
-//                             id: `${me}-${handle}-edge`,
-//                             source: childId,
-//                             sourceHandle: `output-${childId}`,
-//                             target: optTarget,
-//                             targetHandle: `input-${optTarget}`,
-//                             type: 'customEdge',
-//                             animated: true,
-//                         })
-//                     })
-//                 } else {
-//                     edges.push({
-//                         id: uuid(),
-//                         source: me,
-//                         sourceHandle: `output-${me}`,
-//                         target: optTarget,
-//                         targetHandle: `input-${optTarget}`,
-//                         type: 'customEdge',
-//                         animated: true,
-//                     })
-//                 }
-//             }
-//         }
-
-//         let returnedNode = createNode(uuid(), nodes.map(r => r.position), {
-//             returned: {
-//                 ...(workflow.returned || {}),
-//             },
-//             kind: 'returned'
-//         }, false, addInformationsToNode)
-
-//         returnedNode.id = 'returned-node'
-
-//         returnedNode = {
-//             ...returnedNode,
-//             data: {
-//                 ...returnedNode.data,
-//                 targetHandles: [{ id: `input-${returnedNode.id}` }],
-//                 sourceHandles: []
-//             }
-//         }
-
-//         nodes.push(returnedNode)
-
-//         edges = linkTheLastNodeToReturnedNode(nodes, edges)
-
-//         return { edges, nodes }
-
-//     } else {
-//         // TODO - manage other kind
-//         return { edges: [], nodes: [] }
-//     }
-// }
-
-function linkTheLastNodeToReturnedNode(nodes, edges) {
-    const newEdges = edges
-
-    if (!edges.find(edge => edge.id === 'returned-edge')) {
-        const parentNodes = nodes.filter(node => !node.data.isInternal && node.data.kind !== 'returned')
-
-        const lastNode = parentNodes[parentNodes.length - 1]
-        if (lastNode) {
-
-            if (lastNode.kind === 'if') {
-                // newEdges.push({
-                //     id: 'predicate-edge',
-                //     source: `${lastNode.id}-${handle}`,
-                //     sourceHandle: `${lastNode.id}-${handle}`,
-                //     target: returnedNode.id,
-                //     targetHandle: `input-${returnedNode.id}`,
-                //     type: 'customEdge',
-                //     animated: true,
-                // })
-                // console.log(edges)
-            }
-            else {
-                newEdges.push({
-                    id: 'returned-edge',
-                    source: lastNode.id,
-                    sourceHandle: `output-${lastNode.id}`,
-                    target: 'returned-node',
-                    targetHandle: `input-returned-node`,
-                    type: 'customEdge',
-                    animated: true,
-                })
-            }
-        }
-    }
-
-    return newEdges
-}
-
 const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
+
 
     if (workflows.length === 0) {
         return { edges: [], nodes: [] }
@@ -331,24 +168,14 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
     let edges = []
     let nodes = []
     let current = createNode(me, [], workflow, addInformationsToNode)
-    let nestedNodes = []
 
-    nodes.push(current)
+    const useCurrent = workflow.kind !== 'workflow'
+
+    if (useCurrent)
+        nodes.push(current)
 
     if (workflow.kind === 'workflow') {
-        let childrenNodes = []
-
-        for (let i = 0; i < workflow.steps.length; i++) {
-            const subflow = workflow.steps[i]
-            const child = buildGraph(subflow, addInformationsToNode, me, `step-${i}`)
-
-            childrenNodes.push(child.current)
-
-            nestedNodes = nestedNodes.concat(child.nodes)
-            edges = edges.concat(child.edges)
-        }
-
-        let returnedNode = createNode(parentId ? `${me}-returned-node` : 'returned-node', [], {
+        let returnedNode = createNode(`${me}-returned-node`, [], {
             returned: {
                 ...(workflow.returned || {}),
             },
@@ -364,18 +191,20 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
             }
         }
 
+        const child = buildGraph(workflow.steps.reverse(), addInformationsToNode, returnedNode.id)
+        nodes = [...child.nodes, returnedNode]
+
+        edges = edges.concat(child.edges)
         edges.push({
-            id: `${me}-returned-node`,
-            source: me,
-            sourceHandle: `output-${me}`,
-            target: returnedNode.id,
-            targetHandle: `input-${returnedNode.id}`,
+            id: `${targetId}-returned-node`,
+            source: returnedNode.id,
+            sourceHandle: `output-${returnedNode.id}`,
+            target: targetId,
+            targetHandle: handleId,
             type: 'customEdge',
             animated: true,
         })
 
-        nodes.push(returnedNode)
-        // edges = linkTheLastNodeToReturnedNode(nodes, edges)
     } else if (workflow.kind === "if") {
         const thensubGraph = buildGraph([workflow.then], addInformationsToNode, targetId, handleId)
         const elseGraph = buildGraph([workflow.else], addInformationsToNode, targetId, handleId)
@@ -390,7 +219,6 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
         }
 
         predicate = buildGraph([predicate], addInformationsToNode)
-        console.log(predicate)
 
         nodes = nodes.concat(thensubGraph.nodes)
         edges = edges.concat(thensubGraph.edges)
@@ -429,31 +257,87 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
             animated: true,
         })
 
-        console.log(edges)
-    } else if (workflow.kind === 'flatmap') {
-
-    } else if (workflow.kind === 'foreach') {
+    } else if (
+        workflow.kind === 'foreach' ||
+        workflow.kind === 'flatmap' ||
+        workflow.kind === 'map') {
         const subGraph = buildGraph([workflow.node], addInformationsToNode)
 
         nodes = nodes.concat(subGraph.nodes)
         edges = edges.concat(subGraph.edges)
 
+        const handle = current.data.sources[0]
+
         edges.push({
-            id: `${me}-ForEachLoop`,
+            id: `${me}-${handle}`,
             source: me,
-            sourceHandle: `ForEachLoop-${me}`,
+            sourceHandle: `${handle}-${me}`,
             target: subGraph.nodes[0].id,
             targetHandle: `input-${subGraph.nodes[0].id}`,
             type: 'customEdge',
             animated: true,
         })
-    } else if (workflow.kind === 'map') {
+    } else if (workflow.kind === 'switch' || workflow.kind === 'parallel') {
+        let paths = []
 
-    } else if (workflow.kind === 'switch') {
+        for (let i = 0; i < workflow.paths.length; i++) {
+            const subflow = workflow.paths[i]
+            const nestedPath = buildGraph([subflow], addInformationsToNode, targetId, handleId)
+            paths.push(nestedPath)
+        }
 
-    } else { }
+        current.customSourceHandles = [...Array(workflow.paths.length)].map((_, i) => ({ id: `path-${i}` }))
 
-    if (targetId) {
+        paths.forEach((path, idx) => {
+            edges.push({
+                id: `${me}-path-${idx}`,
+                source: me,
+                sourceHandle: `path-${idx}`,
+                target: path.nodes[0].id,
+                targetHandle: `input-${path.nodes[0].id}`,
+                type: 'customEdge',
+                animated: true,
+            })
+
+            nodes = nodes.concat(path.nodes)
+            edges = edges.concat(path.edges)
+        })
+    } else if (workflow.kind === 'filter') {
+        let predicate = workflow.predicate
+        if (typeof workflow.predicate === "object" && workflow.predicate !== null && Object.keys(workflow.predicate).find(key => key.startsWith('$'))) {
+            const kind = Object.keys(workflow.predicate).find(key => key.startsWith('$'))
+            predicate = {
+                kind,
+                ...workflow.predicate[kind]
+            }
+        }
+
+        predicate = buildGraph([predicate], addInformationsToNode)
+
+        nodes = nodes.concat(predicate.nodes)
+        edges = edges.concat(predicate.edges)
+
+        edges.push({
+            id: `${me}-predicate`,
+            source: predicate.nodes[predicate.nodes.length - 1].id,
+            sourceHandle: `output-${predicate.nodes[predicate.nodes.length - 1].id}`,
+            target: me,
+            targetHandle: `predicate-${me}`,
+            type: 'customEdge',
+            animated: true,
+        })
+    } else {
+        if(workflow.predicate) {
+            // sub path of switch group
+            console.log("HERE")
+        }
+    }
+
+    for (let i = 0; i < nodes.length; i++) {
+        nodes[i] = setupTargetsAndSources(nodes[i])
+    }
+
+    if (targetId && current.data.sources.includes('output') && useCurrent) {
         edges.push({
             id: `${me}-${targetId}`,
             source: me,
@@ -465,16 +349,16 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
         })
     }
 
-    for (let i = 0; i < nodes.length; i++) {
-        nodes[i] = setupTargetsAndSources(nodes[i])
+    if (useCurrent) {
+        const subGraph = buildGraph(rest, addInformationsToNode, me)
+
+        return {
+            edges: [...subGraph.edges, ...edges],
+            nodes: [...subGraph.nodes, ...nodes]
+        }
     }
 
-    const subGraph = buildGraph(rest, addInformationsToNode, me)
-
-    return {
-        edges: [...subGraph.edges, ...edges],
-        nodes: [...subGraph.nodes, ...nodes]
-    }
+    return { nodes, edges }
 }
 
 const setupTargetsAndSources = (node) => {
@@ -494,7 +378,7 @@ const setupTargetsAndSources = (node) => {
         }
     }
 
-    delete node.customSourceHandles
+    // delete node.customSourceHandles
 
     return node
 }
@@ -532,6 +416,28 @@ const initializeGraph = (config, addInformationsToNode) => {
 
     const subGraph = buildGraph(config.steps.reverse(), addInformationsToNode, returnedNode.id)
 
+    let startingEdge = {
+        id: 'start-edge',
+        source: startingNode.id,
+        sourceHandle: `output-${startingNode.id}`,
+        target: returnedNode.id,
+        targetHandle: `input-${returnedNode.id}`,
+        type: 'customEdge',
+        animated: true,
+    }
+
+    if (subGraph.nodes.length > 0) {
+        startingEdge = {
+            id: 'start-edge',
+            source: startingNode.id,
+            sourceHandle: `output-${startingNode.id}`,
+            target: subGraph.nodes[0].id,
+            targetHandle: `input-${subGraph.nodes[0].id}`,
+            type: 'customEdge',
+            animated: true,
+        }
+    }
+
     return {
         nodes: [
             startingNode,
@@ -540,15 +446,7 @@ const initializeGraph = (config, addInformationsToNode) => {
         ],
         edges: [
             ...subGraph.edges,
-            {
-                id: 'start-edge',
-                source: startingNode.id,
-                sourceHandle: `output-${startingNode.id}`,
-                target: subGraph.nodes[0].id,
-                targetHandle: `input-${subGraph.nodes[0].id}`,
-                type: 'customEdge',
-                animated: true,
-            }
+            startingEdge
         ]
     }
 }
@@ -569,18 +467,18 @@ function WorkflowsDesigner(props) {
 
     useEffect(() => {
         // FIX ??
-        window.addEventListener('error', e => {
-            if (e.message === 'ResizeObserver loop completed with undelivered notifications.') {
-                const resizeObserverErrDiv = document.getElementById('webpack-dev-server-client-overlay-div');
-                const resizeObserverErr = document.getElementById('webpack-dev-server-client-overlay');
-                if (resizeObserverErr) {
-                    resizeObserverErr.setAttribute('style', 'display: none');
-                }
-                if (resizeObserverErrDiv) {
-                    resizeObserverErrDiv.setAttribute('style', 'display: none');
-                }
-            }
-        });
+        // window.addEventListener('error', e => {
+        //     if (e.message === 'ResizeObserver loop completed with undelivered notifications.') {
+        //         const resizeObserverErrDiv = document.getElementById('webpack-dev-server-client-overlay-div');
+        //         const resizeObserverErr = document.getElementById('webpack-dev-server-client-overlay');
+        //         if (resizeObserverErr) {
+        //             resizeObserverErr.setAttribute('style', 'display: none');
+        //         }
+        //         if (resizeObserverErrDiv) {
+        //             resizeObserverErrDiv.setAttribute('style', 'display: none');
+        //         }
+        //     }
+        // });
     }, [])
 
     const { fitView } = useReactFlow();
@@ -591,17 +489,35 @@ function WorkflowsDesigner(props) {
         const graph = {
             id: 'root',
             layoutOptions: options,
-            children: nodes.map((node) => ({
-                ...node,
-                // Adjust the target and source handle positions based on the layout
-                // direction.
-                targetPosition: isHorizontal ? 'left' : 'top',
-                sourcePosition: isHorizontal ? 'right' : 'bottom',
+            children: nodes.map((n) => {
+                const targetPorts = n.data.targetHandles.map((t) => ({
+                    id: t.id,
+                    properties: {
+                        side: 'WEST',
+                    },
+                }));
 
-                // Hardcode a width and height for elk to use when layouting.
-                width: 200,
-                height: 100,
-            })),
+                const sourcePorts = n.data.sourceHandles.map((s) => ({
+                    id: s.id,
+                    properties: {
+                        side: 'EAST',
+                    },
+                }));
+
+                return {
+                    ...n,
+                    properties: {
+                        'org.eclipse.elk.portConstraints': 'FREE',
+                    },
+                    ports: [{ id: n.id }, ...targetPorts, ...sourcePorts],
+
+                    targetPosition: isHorizontal ? 'left' : 'top',
+                    sourcePosition: isHorizontal ? 'right' : 'bottom',
+
+                    width: 200,
+                    height: 100,
+                }
+            }),
             edges: edges,
         };
 
@@ -656,39 +572,8 @@ function WorkflowsDesigner(props) {
                 ]
             }, [])
 
-        // const nodesWithChildren = nodesWithConnections.reduce((acc, item) => {
-        //     const { node } = item
-        //     if (!nodesWithConnections.find(n => n.connections.find(conn => conn.node.id === node.id))) {
-        //         return [...acc, item]
-        //     }
-        //     return acc
-        // }, [])
-
-        console.log(nodesWithConnections)
-
         const [first, ...rest] = nodesWithConnections
         return nodeToJson(first, rest, nodesWithConnections)
-
-        // return nodesWithChildren.reduce((outputWorkflow, { node, connections }) => {
-        //     let { kind, workflow } = node.data
-
-        //     if (kind === 'workflow') {
-        //         workflow.steps = connections.map(connection => connection.node.data.workflow)
-        //     } else if (workflow.node) {
-        //         workflow.node = connections.find(connection => connection.handle === 'node')?.node.data.workflow
-        //     }
-        //     return {
-        //         ...outputWorkflow,
-        //         steps: [
-        //             ...outputWorkflow.steps,
-        //             workflow
-        //         ]
-        //     }
-        // }, {
-        //     kind: "workflow",
-        //     steps: [],
-        //     returned: nodes.find(node => node.id === 'returned-node').data.workflow.returned || {}
-        // })
     }
 
     const nodeToJson = (current, rest, all) => {
@@ -936,8 +821,6 @@ function WorkflowsDesigner(props) {
         const newNodes = [...nodes, newNode]
         newEdges = [...edges, ...newEdges]
 
-        // newEdges = linkTheLastNodeToReturnedNode(newNodes, newEdges)
-
         setNodes(newNodes)
         setEdges(newEdges)
 
@@ -964,6 +847,8 @@ function WorkflowsDesigner(props) {
                 setReportStatus(true)
             })
     }
+
+    // console.log(nodes, edges)
 
     return <div className='workflow'>
         <DesignerActions run={run} />
