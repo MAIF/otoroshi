@@ -138,8 +138,8 @@
     justify-content: flex-start;
     gap: .5rem;
     background-color: var(--bg-color_level2);
-    border-top-left-radius: .75rem;
-    border-top-right-radius: .75rem;
+    border-top-left-radius: .5rem;
+    border-top-right-radius: .5rem;
   }
 
   // .source::before {
@@ -265,6 +265,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .react-flow__node-group .node-one-output {
+    background-color: var(--bg-color_level1);
   }
 
   .node-group-label {

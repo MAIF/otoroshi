@@ -156,7 +156,6 @@ function createNode(id, existingNodes, child, addInformationsToNode) {
 
 const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
 
-
     if (workflows.length === 0) {
         return { edges: [], nodes: [] }
     }
@@ -331,7 +330,7 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
             // sub path of switch group
 
             const predicate = buildGraph([{
-                kind: 'predicate'
+                kind: 'predicate',
             }], addInformationsToNode, me, 'node')
             const predicateNode = predicate.nodes[0]
 
@@ -573,61 +572,119 @@ function WorkflowsDesigner(props) {
     }, []);
 
     const graphToJson = () => {
-        const nodesWithConnections = nodes
-            .filter(node => node.id !== 'returned-node')
-            .reduce((acc, node) => {
-                const connections = edges
-                    .filter(edge => edge.source === node.id)
-                return [
-                    ...acc,
-                    {
-                        node,
-                        connections: connections.map(connection => ({
-                            node: nodes.find(n => n.id === connection.target),
-                            handle: connection.sourceHandle.replace(`-${connection.source}`, '')
-                        }))
-                    }
-                ]
-            }, [])
+        const start = {
+            kind: 'workflow',
+            steps: [],
+            returned: nodes.find(node => node.id === 'returned-node').data.workflow.returned
+        }
 
-        const [first, ...rest] = nodesWithConnections
-        return nodeToJson(first, rest, nodesWithConnections)
+        const startOutput = edges.find(edge => edge.source === 'start')
+        const firstNode = nodes.find(node => node.id === startOutput.target)
+
+        const graph = nodeToJson(firstNode, start)
+
+        return graph
     }
 
-    const nodeToJson = (current, rest, all) => {
-        const { node, connections } = current
+    const emptyWorkflow = ({
+        kind: 'workflow',
+        steps: [],
+    })
+
+    const nodeToJson = (node, currentWorkflow, disableRecursion) => {
+        const connections = edges.filter(edge => edge.source === node.id)
 
         const { kind } = node.data
 
-        if (kind === 'workflow') {
-            const steps = connections.filter(conn => conn.handle !== 'output').map(conn => all.find(n => n.node.id === conn.node.id))
+        let subflow = undefined
 
+        if (node.id.endsWith('returned-node')) {
             return {
-                kind: 'workflow',
-                steps: steps.map(step => nodeToJson(step, rest, all)),
-                returned: connections.find(conn => conn.handle === 'output')?.node.data.workflow.returned
+                ...currentWorkflow,
+                returned: node.data.workflow
             }
-        } else if (kind === "if") {
-            return {
+        }
+
+        if (kind === "if") {
+            // CHECK THIS
+            subflow = {
                 kind: 'if',
                 predicate: connections.find(conn => conn.handle === 'predicate')?.node.data.workflow,
                 then: connections.find(conn => conn.handle === 'then')?.node.data.workflow,
                 else: connections.find(conn => conn.handle === 'else')?.node.data.workflow
             }
-        } else if (kind === 'flatmap') {
-
         } else if (kind === 'foreach') {
-            return {
-                ...node.data.workflow,
-                node: connections.length > 0 ? nodeToJson(connections[0], rest, all) : undefined
-            }
-        } else if (kind === 'map') {
+            const foreachFlow = node.data.workflow
+            const foreachLoop = connections.find(conn => conn.sourceHandle.startsWith('ForEachLoop'))
 
-        } else if (kind === 'switch') {
+            if (foreachLoop) {
+                const node = nodeToJson(nodes.find(n => n.id === foreachLoop.target), emptyWorkflow)
+                subflow = {
+                    ...foreachFlow,
+                    node
+                }
+            } else {
+                subflow = foreachFlow
+            }
+        } else if (kind === 'map' || kind === 'flatmap' || kind === 'foreach') {
+            const flow = node.data.workflow
+            const nodeLoop = connections.find(conn => conn.sourceHandle.startsWith('Item'))
+
+            if (nodeLoop) {
+                const node = nodeToJson(nodes.find(n => n.id === nodeLoop.target), emptyWorkflow)
+                subflow = {
+                    ...flow,
+                    node
+                }
+            } else {
+                subflow = flow
+            }
+        } else if (kind === 'filter') {
+            const targets = edges.filter(edge => edge.target === node.id)
+            const predicateFlow = node.data.workflow
+            const predicate = targets.find(conn => conn.targetHandle.startsWith('predicate'))
+
+            if (predicate) {
+                subflow = {
+                    ...predicateFlow,
+                    predicate: nodeToJson(nodes.find(n => n.id === predicate.source), undefined, true)
+                }
+            } else {
+                subflow = predicateFlow
+            }
+        } else if (kind === 'parallel' || kind === 'switch') {
+            const paths = connections.map(conn => nodes.find(n => n.id === conn.target))
+
+            subflow = paths.reduce((acc, path) => {
+                return {
+                    ...acc,
+                    paths: [...acc.paths, nodeToJson(path, emptyWorkflow)]
+                }
+            }, {
+                ...node.data.workflow,
+                paths: []
+            })
 
         } else {
-            return node.data.workflow
+            subflow = node.data.workflow
         }
+
+        let outputWorkflow = subflow
+
+        if (currentWorkflow && currentWorkflow.kind === 'workflow') {
+            outputWorkflow = {
+                ...currentWorkflow,
+                steps: [...currentWorkflow.steps, subflow]
+            }
+        }
+
+        const output = connections.find(conn => conn.sourceHandle.startsWith('output'))
+
+        if (output && !disableRecursion)
+            return nodeToJson(nodes.find(n => n.id === output.target), outputWorkflow)
+
+        console.log(outputWorkflow, currentWorkflow)
+        return outputWorkflow
     }
 
     const handleSave = () => {
