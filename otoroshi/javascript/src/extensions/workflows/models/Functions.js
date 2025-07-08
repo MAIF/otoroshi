@@ -10,7 +10,6 @@ import { ParallelFlowsNode } from "../nodes/ParallelFlowsNode"
 import { SwitchNode } from "../nodes/SwitchNode"
 import { ValueNode } from "../nodes/ValueNode"
 import { WaitNode } from "../nodes/WaitNode"
-import { WorkflowNode } from "../nodes/WorkflowNode"
 
 import { BasicAuthOperator } from '../operators/BasicAuthOperator'
 import { EqOperator } from '../operators/EqOperator'
@@ -64,7 +63,6 @@ export const NODES = {
     "map": MapNode,
     "filter": FilterNode,
     "flatmap": FlatMapNode,
-    "workflow": WorkflowNode,
     "call": CallNode,
     "wait": WaitNode,
     "error": ErrorNode,

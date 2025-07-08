@@ -174,35 +174,42 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
         nodes.push(current)
 
     if (workflow.kind === 'workflow') {
-        let returnedNode = createNode(`${me}-returned-node`, [], {
-            returned: {
-                ...(workflow.returned || {}),
-            },
-            kind: 'returned'
-        }, addInformationsToNode)
+        if (workflow.returned) {
+            let returnedNode = createNode(`${me}-returned-node`, [], {
+                returned: {
+                    ...(workflow.returned || {}),
+                },
+                kind: 'returned'
+            }, addInformationsToNode)
 
-        returnedNode = {
-            ...returnedNode,
-            data: {
-                ...returnedNode.data,
-                targetHandles: [{ id: `input-${returnedNode.id}` }],
-                sourceHandles: []
+            returnedNode = {
+                ...returnedNode,
+                data: {
+                    ...returnedNode.data,
+                    targetHandles: [{ id: `input-${returnedNode.id}` }],
+                    sourceHandles: []
+                }
             }
+
+            const child = buildGraph(workflow.steps.reverse(), addInformationsToNode, returnedNode.id)
+            nodes = [...child.nodes, returnedNode]
+
+            edges = edges.concat(child.edges)
+            edges.push({
+                id: `${targetId}-returned-node`,
+                source: returnedNode.id,
+                sourceHandle: `output-${returnedNode.id}`,
+                target: targetId,
+                targetHandle: handleId,
+                type: 'customEdge',
+                animated: true,
+            })
+        } else {
+            const child = buildGraph(workflow.steps.reverse(), addInformationsToNode, targetId, handleId)
+            nodes = [...child.nodes]
+
+            edges = edges.concat(child.edges)
         }
-
-        const child = buildGraph(workflow.steps.reverse(), addInformationsToNode, returnedNode.id)
-        nodes = [...child.nodes, returnedNode]
-
-        edges = edges.concat(child.edges)
-        edges.push({
-            id: `${targetId}-returned-node`,
-            source: returnedNode.id,
-            sourceHandle: `output-${returnedNode.id}`,
-            target: targetId,
-            targetHandle: handleId,
-            type: 'customEdge',
-            animated: true,
-        })
 
     } else if (workflow.kind === "if") {
         const thensubGraph = buildGraph([workflow.then], addInformationsToNode, targetId, handleId)
@@ -398,7 +405,7 @@ const setupTargetsAndSources = (node) => {
     return node
 }
 
-const initializeGraph = (config, addInformationsToNode) => {
+const initializeGraph = (config, orphans, addInformationsToNode) => {
 
     let startingNode = createNode('start', [], {
         kind: 'start'
@@ -453,14 +460,26 @@ const initializeGraph = (config, addInformationsToNode) => {
         }
     }
 
+    const orphansNodes = orphans.nodes
+        .map(orphan => {
+            const node = createNode(orphan.id, [], orphan.data, addInformationsToNode)
+            return {
+                ...setupTargetsAndSources(node),
+                position: orphan.position
+            }
+        })
+
+
     return {
         nodes: [
             startingNode,
             ...subGraph.nodes,
+            ...orphansNodes,
             returnedNode
         ],
         edges: [
             ...subGraph.edges,
+            ...orphans.edges,
             startingEdge
         ]
     }
@@ -472,7 +491,7 @@ function WorkflowsDesigner(props) {
 
     const [rfInstance, setRfInstance] = useState(null);
 
-    const initialState = initializeGraph(props.workflow?.config, addInformationsToNode)
+    const initialState = initializeGraph(props.workflow?.config, props.workflow.orphans, addInformationsToNode)
 
     const [nodes, internalSetNodes] = useState(initialState.nodes)
     const [edges, setEdges] = useState(initialState.edges)
@@ -581,7 +600,7 @@ function WorkflowsDesigner(props) {
         const startOutput = edges.find(edge => edge.source === 'start')
         const firstNode = nodes.find(node => node.id === startOutput.target)
 
-        const graph = nodeToJson(firstNode, start)
+        const graph = nodeToJson(firstNode, start, false, [])
 
         return graph
     }
@@ -591,18 +610,20 @@ function WorkflowsDesigner(props) {
         steps: [],
     })
 
-    const nodeToJson = (node, currentWorkflow, disableRecursion) => {
+    const nodeToJson = (node, currentWorkflow, disableRecursion, alreadySeen) => {
         const connections = edges.filter(edge => edge.source === node.id)
 
         const { kind } = node.data
 
         let subflow = undefined
 
+        alreadySeen = alreadySeen.concat([node.id])
+
         if (node.id.endsWith('returned-node')) {
-            return {
+            return [{
                 ...currentWorkflow,
-                returned: node.data.workflow
-            }
+                returned: node.data.workflow.returned
+            }, alreadySeen]
         }
 
         if (kind === "if") {
@@ -618,7 +639,9 @@ function WorkflowsDesigner(props) {
             const foreachLoop = connections.find(conn => conn.sourceHandle.startsWith('ForEachLoop'))
 
             if (foreachLoop) {
-                const node = nodeToJson(nodes.find(n => n.id === foreachLoop.target), emptyWorkflow)
+                const [node, seen] = nodeToJson(nodes.find(n => n.id === foreachLoop.target), emptyWorkflow, false, alreadySeen)
+                alreadySeen = alreadySeen.concat([seen])
+
                 subflow = {
                     ...foreachFlow,
                     node
@@ -631,7 +654,8 @@ function WorkflowsDesigner(props) {
             const nodeLoop = connections.find(conn => conn.sourceHandle.startsWith('Item'))
 
             if (nodeLoop) {
-                const node = nodeToJson(nodes.find(n => n.id === nodeLoop.target), emptyWorkflow)
+                const [node, seen] = nodeToJson(nodes.find(n => n.id === nodeLoop.target), emptyWorkflow, false, alreadySeen)
+                alreadySeen = alreadySeen.concat([seen])
                 subflow = {
                     ...flow,
                     node
@@ -645,9 +669,11 @@ function WorkflowsDesigner(props) {
             const predicate = targets.find(conn => conn.targetHandle.startsWith('predicate'))
 
             if (predicate) {
+                const [predicateNode, seen] = nodeToJson(nodes.find(n => n.id === predicate.source), undefined, true, alreadySeen)
+                alreadySeen = alreadySeen.concat([seen])
                 subflow = {
                     ...predicateFlow,
-                    predicate: nodeToJson(nodes.find(n => n.id === predicate.source), undefined, true)
+                    predicate: predicateNode
                 }
             } else {
                 subflow = predicateFlow
@@ -656,9 +682,11 @@ function WorkflowsDesigner(props) {
             const paths = connections.map(conn => nodes.find(n => n.id === conn.target))
 
             subflow = paths.reduce((acc, path) => {
+                const [pathNode, seen] = nodeToJson(path, emptyWorkflow, false, alreadySeen)
+                alreadySeen = alreadySeen.concat([seen])
                 return {
                     ...acc,
-                    paths: [...acc.paths, nodeToJson(path, emptyWorkflow)]
+                    paths: [...acc.paths, pathNode]
                 }
             }, {
                 ...node.data.workflow,
@@ -681,27 +709,50 @@ function WorkflowsDesigner(props) {
         const output = connections.find(conn => conn.sourceHandle.startsWith('output'))
 
         if (output && !disableRecursion)
-            return nodeToJson(nodes.find(n => n.id === output.target), outputWorkflow)
+            return nodeToJson(nodes.find(n => n.id === output.target), outputWorkflow, false, alreadySeen)
 
-        console.log(outputWorkflow, currentWorkflow)
-        return outputWorkflow
+        if (outputWorkflow && outputWorkflow.kind === 'workflow' && outputWorkflow.steps.length === 1) {
+            return [outputWorkflow.steps[0], alreadySeen]
+        }
+
+        return [outputWorkflow, alreadySeen]
     }
 
     const handleSave = () => {
-        const config = graphToJson()
+        const graph = graphToJson()
 
-        console.log(config)
+        console.log(graph[0])
+
+        const [config, seen] = graph
+        const alreadySeen = seen.flatMap(f => f)
+
+        const orphans = nodes.filter(node => node.id !== 'start' && !alreadySeen.includes(node.id))
+        const orphansEdges = orphans.flatMap(orphan => edges.filter(edge => edge.target === orphan.id || edge.source === orphan.id))
+            .reduce((edges, edge) => {
+                if (!edges.find(e => e.id === edge.id) && edge.id !== 'start-edge') {
+                    return [...edges, edge]
+                }
+                return edges
+            }, [])
+
+        console.log(orphansEdges)
+
+        const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
+
+        client.update({
+            ...props.workflow,
+            config,
+            orphans: {
+                nodes: orphans.map(r => ({
+                    id: r.id,
+                    position: r.position,
+                    data: r.data.workflow
+                })),
+                edges: orphansEdges
+            }
+        })
 
         return Promise.resolve()
-
-        // const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
-
-        // client.update({
-        //     ...props.workflow,
-        //     config
-        // })
-
-        // return Promise.resolve()
     }
 
     function updateData(props, changes) {
@@ -837,10 +888,6 @@ function WorkflowsDesigner(props) {
                 animated: true,
             }
 
-            console.log('on connect')
-
-
-
             setEdges(edges => {
                 const newEdges = !edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges
 
@@ -856,7 +903,11 @@ function WorkflowsDesigner(props) {
     const handleSelectNode = item => {
         let targetId = uuid()
 
-        const { clientX, clientY } = 'changedTouches' in isOnCreation.event ? isOnCreation.event.changedTouches[0] : isOnCreation.event;
+        let position = isOnCreation.fromOrigin ? isOnCreation.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position))
+        if (isOnCreation.event) {
+            const { clientX, clientY } = 'changedTouches' in isOnCreation.event ? isOnCreation.event.changedTouches[0] : isOnCreation.event
+            position = { x: clientX, y: clientY }
+        }
 
         if (item.operator)
             targetId = `${targetId}-operator`
@@ -864,12 +915,8 @@ function WorkflowsDesigner(props) {
         let newNode = addInformationsToNode({
             ...createSimpleNode([], item),
             id: targetId,
-            // position: isOnCreation.fromOrigin ? isOnCreation.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position)),
             type: item.type || 'simple',
-            position: screenToFlowPosition({
-                x: clientX,
-                y: clientY,
-            }),
+            position: screenToFlowPosition(position),
         })
 
         let newEdges = []

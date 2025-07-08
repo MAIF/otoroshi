@@ -19,6 +19,26 @@ import java.nio.file.Files
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
+case class Orphans(nodes: Seq[JsObject] = Seq.empty, edges: Seq[JsObject] = Seq.empty)
+
+object Orphans {
+  val format               = new Format[Orphans] {
+    override def writes(o: Orphans): JsValue             = Json.obj(
+      "nodes"         -> o.nodes,
+      "edges"         -> o.edges
+    )
+    override def reads(json: JsValue): JsResult[Orphans] = Try {
+      Orphans(
+        nodes = (json \ "nodes").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
+        edges = (json \ "edges").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
 case class Workflow(
     location: EntityLocation,
     id: String,
@@ -27,7 +47,8 @@ case class Workflow(
     tags: Seq[String],
     metadata: Map[String, String],
     config: JsObject,
-    testPayload: JsObject
+    testPayload: JsObject,
+    orphans: Orphans
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = Workflow.format.writes(this)
@@ -46,7 +67,8 @@ object Workflow {
     metadata = Map.empty,
     tags = Seq.empty,
     config = Node.default,
-    testPayload = Json.obj("name" -> "foo")
+    testPayload = Json.obj("name" -> "foo"),
+    orphans = Orphans()
   )
   val format               = new Format[Workflow] {
     override def writes(o: Workflow): JsValue             = o.location.jsonWithKey ++ Json.obj(
@@ -56,7 +78,8 @@ object Workflow {
       "metadata"     -> o.metadata,
       "tags"         -> JsArray(o.tags.map(JsString.apply)),
       "config"       -> o.config,
-      "test_payload" -> o.testPayload
+      "test_payload" -> o.testPayload,
+      "orphans"      -> Orphans.format.writes(o.orphans)
     )
     override def reads(json: JsValue): JsResult[Workflow] = Try {
       Workflow(
@@ -67,7 +90,8 @@ object Workflow {
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
-        testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo"))
+        testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo")),
+        orphans = (json \ "orphans").asOpt[Orphans](Orphans.format.reads).getOrElse(Orphans())
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

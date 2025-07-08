@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 
-import { WorkflowNode } from "./nodes/WorkflowNode"
 import { CallNode } from "./nodes/CallNode"
 import { AssignNode } from "./nodes/AssignNode"
 import { ParallelFlowsNode } from "./nodes/ParallelFlowsNode"
@@ -75,7 +74,6 @@ const ITEMS_BY_CATEGORY = [
         name: 'Core',
         description: 'Run code, make HTTP requests, etc',
         nodes: {
-            "workflow": WorkflowNode(),
             "call": CallNode(),
             "wait": WaitNode(),
             "error": ErrorNode(),
