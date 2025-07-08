@@ -41,7 +41,7 @@ object GlobalExpressionLanguage {
       route = None,
       apiKey = None,
       user = None,
-      context = context,
+      context = Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -574,12 +574,12 @@ object HeadersExpressionLanguage {
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
-      req = req,
-      service = service,
-      route = route,
-      apiKey = apiKey,
-      user = user,
-      context = context,
+      req = req.orElse(attrs.get(otoroshi.plugins.Keys.RequestKey)),
+      service = service.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy)),
+      route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
+      apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
+      user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+      context = Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -601,12 +601,12 @@ object RedirectionExpressionLanguage {
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
-      req = req,
-      service = service,
-      route = route,
-      apiKey = apiKey,
-      user = user,
-      context = context,
+      req = req.orElse(attrs.get(otoroshi.plugins.Keys.RequestKey)),
+      service = service.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy)),
+      route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
+      apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
+      user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+      context = Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -628,12 +628,12 @@ object TargetExpressionLanguage {
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
-      req = req,
-      service = service,
-      route = route,
-      apiKey = apiKey,
-      user = user,
-      context = context,
+      req = req.orElse(attrs.get(otoroshi.plugins.Keys.RequestKey)),
+      service = service.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy)),
+      route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
+      apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
+      user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+      context = Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -655,12 +655,12 @@ object JwtExpressionLanguage {
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
-      req = req,
-      service = service,
-      route = route,
-      apiKey = apiKey,
-      user = user,
-      context = context,
+      req = req.orElse(attrs.get(otoroshi.plugins.Keys.RequestKey)),
+      service = service.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy)),
+      route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
+      apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
+      user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+      context = Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )

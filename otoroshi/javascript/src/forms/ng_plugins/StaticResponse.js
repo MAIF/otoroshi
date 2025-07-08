@@ -17,6 +17,10 @@ export default {
       label: 'status',
       type: 'number',
     },
+    apply_el: {
+      label: "Apply EL.",
+      type: "boolean",
+    }
   },
-  config_flow: ['body', 'headers', 'status'],
+  config_flow: ['body', 'headers', 'status', 'apply_el'],
 };

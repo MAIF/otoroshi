@@ -23,7 +23,7 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Either, Failure, Success, Try}
 
-case class StaticResponseConfig(status: Int = 200, headers: Map[String, String] = Map.empty, body: String = "")
+case class StaticResponseConfig(status: Int = 200, headers: Map[String, String] = Map.empty, body: String = "", applyEl: Boolean = false)
     extends NgPluginConfig {
   def json: JsValue = StaticResponseConfig.format.writes(this)
 }
@@ -33,13 +33,15 @@ object StaticResponseConfig {
     override def writes(o: StaticResponseConfig): JsValue             = Json.obj(
       "status"  -> o.status,
       "headers" -> o.headers,
-      "body"    -> o.body
+      "body"    -> o.body,
+      "apply_el" -> o.applyEl,
     )
     override def reads(json: JsValue): JsResult[StaticResponseConfig] = Try {
       StaticResponseConfig(
         status = json.select("status").asOpt[Int].getOrElse(200),
         headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
-        body = json.select("body").asOpt[String].getOrElse("")
+        body = json.select("body").asOpt[String].getOrElse(""),
+        applyEl = json.select("apply_el").asOpt[Boolean].getOrElse(false),
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage())
@@ -72,6 +74,17 @@ class StaticResponse extends NgBackendCall {
     val config           = ctx.cachedConfig(internalName)(StaticResponseConfig.format).getOrElse(StaticResponseConfig())
     val body: ByteString = config.body match {
       case str if str.startsWith("Base64(") => str.substring(7).init.byteString.decodeBase64
+      case str if config.applyEl            => GlobalExpressionLanguage.apply(
+        value = str,
+        req = ctx.rawRequest.some,
+        service = None,
+        route = ctx.route.some,
+        apiKey = ctx.apikey,
+        user = ctx.user,
+        context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+        attrs = ctx.attrs,
+        env = env
+      ).byteString
       case str                              => str.byteString
     }
     inMemoryBodyResponse(config.status, config.headers, body).future
@@ -326,7 +339,7 @@ class MockResponses extends NgBackendCall {
             route = ctx.route.some,
             apiKey = ctx.apikey,
             user = ctx.user,
-            context = Map.empty,
+            context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
             attrs = ctx.attrs,
             env = env
           )
