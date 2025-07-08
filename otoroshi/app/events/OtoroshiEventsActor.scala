@@ -1290,7 +1290,7 @@ object Exporters {
             val id   = (jsonEvt \ "@id").as[String]
             s"""<li><a href="#$id">""" + (jsonEvt \ "alert")
               .asOpt[String]
-              .getOrElse("Unkown alert") + s" - ${date.toString()}</a></li>"
+              .getOrElse("Unknown alert") + s" - ${date.toString()}</a></li>"
           }
           .mkString("<ul>", "\n", "</ul>")
 
@@ -1304,7 +1304,7 @@ object Exporters {
           .mkString("\n")
 
         val emailBody =
-          s"""<p>${events.size} new events occured on Otoroshi, you can visualize it on the <a href="${env.rootScheme}${env.backOfficeHost}/">Otoroshi Dashboard</a></p>
+          s"""<p>${events.size} new events occurred on Otoroshi, you can visualize it on the <a href="${env.rootScheme}${env.backOfficeHost}/">Otoroshi Dashboard</a></p>
              |$titles
              |$email
                  """
