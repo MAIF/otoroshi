@@ -1296,7 +1296,7 @@ object Exporters {
 
         val email = events
           .map { jsonEvt =>
-            val alert = (jsonEvt \ "alert").asOpt[String].getOrElse("Unkown alert")
+            val alert = (jsonEvt \ "alert").asOpt[String].getOrElse("Unknown alert")
             val date  = new DateTime((jsonEvt \ "@timestamp").as[Long])
             val id    = (jsonEvt \ "@id").as[String]
             s"""<h3 id="$id">$alert - ${date.toString()}</h3><pre>${Json.prettyPrint(jsonEvt)}</pre><br/>"""
