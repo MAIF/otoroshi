@@ -140,57 +140,74 @@ function Category(item) {
     </div>
 }
 
-function UnFoldedCategory({ nodes, onClick, query }) {
+function Node({ node, onClick }) {
+    return <div
+        className='whats-news-category d-flex align-items-center px-3 py-2'
+        style={{ cursor: 'pointer' }}
+        onClick={() => onClick(node)}>
+        <div className='d-flex-center' style={{
+            minWidth: 32,
+            fontSize: '1.15rem'
+        }}>
+            {node.label}
+        </div>
+        <div className=' d-flex flex-column px-2'>
+            <p className='m-0' style={{
+                fontWeight: 'bold'
+            }}>{node.name}</p>
+            <p className='m-0'>{node.description}</p>
+        </div>
+    </div>
+}
+
+function UnFoldedCategory({ nodes, onClick }) {
 
     const filteredNodes = Object.entries(nodes)
-        .filter(([_, node]) => query.length === 0 ||
-            node.name.toLowerCase().includes(query) ||
-            node.description.toLowerCase().includes(query))
 
     if (filteredNodes.length === 0)
         return <p className='text-center m-0'>No results found</p>
 
     return filteredNodes
-        .map(([_, node], i) => <div
-            className='whats-news-category d-flex align-items-center px-3 py-2'
-            style={{ cursor: 'pointer' }}
+        .map(([_, node], i) => <Node
+            node={node}
             onClick={() => onClick(node)}
-            key={`${node.label}-${i}`}>
-            <div className='d-flex-center' style={{
-                minWidth: 32,
-                fontSize: '1.15rem'
-            }}>
-                {node.label}
-            </div>
-            <div className=' d-flex flex-column px-2'>
-                <p className='m-0' style={{
-                    fontWeight: 'bold'
-                }}>{node.name}</p>
-                <p className='m-0'>{node.description}</p>
-            </div>
-        </div>
-        )
+            key={`${node.label}-${i}`} />)
 }
 
-export function Items({ setTitle, handleSelectNode, isOpen, query }) {
-    const [selectedCategory, setSelectedCategory] = useState()
+export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCategory, setSelectedCategory }) {
+
+    const onClick = item => {
+        setSelectedCategory(item)
+        setTitle(item.name)
+    }
 
     useEffect(() => {
         setSelectedCategory(undefined)
     }, [isOpen])
 
+    useEffect(() => {
+        if (query.length === 0)
+            setSelectedCategory(undefined)
+    }, [query])
+
+
+    if (query.length > 0) {
+        return ITEMS_BY_CATEGORY.flatMap(category => Object.entries(category.nodes))
+            .filter(([_key, value]) => value.name.toLowerCase().includes(query.toLowerCase()) ||
+                value.description.toLowerCase().includes(query.toLowerCase()))
+            .map(([_, node], i) => <Node
+                node={node}
+                onClick={() => onClick(node)}
+                key={`${node.label}-${i}`} />)
+    }
+
     if (selectedCategory)
-        return <UnFoldedCategory
-            query={query}
-            {...selectedCategory}
-            onClick={item => {
-                handleSelectNode(item)
-            }} />
+        return <UnFoldedCategory {...selectedCategory} onClick={item => {
+            handleSelectNode(item)
+        }} />
 
     const categories = ITEMS_BY_CATEGORY
-        .filter(category => query.length === 0 || Object.entries(category.nodes)
-            .find(([_, node]) => node.name.toLowerCase().includes(query) ||
-                node.description.toLowerCase().includes(query)))
+        .filter(category => Object.entries(category.nodes))
 
     if (categories.length === 0)
         return <p className='text-center m-0'>No results found</p>
@@ -198,8 +215,5 @@ export function Items({ setTitle, handleSelectNode, isOpen, query }) {
     return categories.map(category => <Category {...category}
         id={category.name}
         key={category.name}
-        onClick={item => {
-            setSelectedCategory(item)
-            setTitle(item.name)
-        }} />)
+        onClick={onClick} />)
 }

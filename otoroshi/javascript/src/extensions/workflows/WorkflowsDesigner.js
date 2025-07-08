@@ -580,9 +580,9 @@ function WorkflowsDesigner(props) {
             .then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
                 setNodes(layoutedNodes)
                 setEdges(layoutedEdges)
-                fitView({
-                    padding: 5
-                });
+                // fitView({
+                //     padding: 2
+                // });
             });
     };
 
