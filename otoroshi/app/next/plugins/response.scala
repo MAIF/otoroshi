@@ -87,7 +87,17 @@ class StaticResponse extends NgBackendCall {
       ).byteString
       case str                              => str.byteString
     }
-    inMemoryBodyResponse(config.status, config.headers, body).future
+    inMemoryBodyResponse(config.status, config.headers.applyOnIf(config.applyEl)(_.mapValues(str => GlobalExpressionLanguage.apply(
+      value = str.debugPrintln,
+      req = ctx.rawRequest.some,
+      service = None,
+      route = ctx.route.some,
+      apiKey = ctx.apikey,
+      user = ctx.user,
+      context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+      attrs = ctx.attrs,
+      env = env
+    ))), body).future
   }
 }
 
