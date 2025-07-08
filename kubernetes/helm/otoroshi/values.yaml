@@ -89,15 +89,57 @@ autoscaling:
       name: memory
       targetAverageUtilization: 80
 
-# redis
+# This block overrides values for the bitnami/redis chart dependency
+# For the full set of configurable options, see:
+# https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
+
 redis:
+  ## @param cluster.enabled Deploy Redis in cluster mode (master + slaves)
   cluster:
     enabled: false
-  usePassword: false
+  ## @param sentinel.enabled Enable Redis Sentinel support
   sentinel:
+    enabled: false
+    ## @param sentinel.usePassword Require password authentication on Sentinel instances
     usePassword: false
+  ## @param usePassword Enable Redis AUTH for master and slaves
+  usePassword: false
+  ## @param auth.enabled Enable password authentication for Redis® (newer chart versions)
   auth:
     enabled: false
+  master:
+    persistence:
+      ## @param master.persistence.enabled Enable persistence on Redis(R) master nodes using Persistent Volume Claims
+      enabled: true
+      ## @param master.persistence.storageClass Persistent Volume storage class
+      ## If defined, storageClassName: <storageClass>
+      ## If set to "-", storageClassName: "", which disables dynamic provisioning
+      ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
+      storageClass: ""
+      ## @param master.persistence.accessModes Persistent Volume access modes
+      accessModes:
+        - ReadWriteOnce
+      ## @param master.persistence.size Persistent Volume size
+      size: 8Gi
+      ## @param master.persistence.existingClaim Use an existing PVC which must be created manually before being bound
+      ## NOTE: Requires master.persistence.enabled: true
+      existingClaim: ""
+  replica:
+    persistence:
+      ## @param replica.persistence.enabled Enable persistence on Redis(R) replica nodes using Persistent Volume Claims
+      enabled: true
+      ## @param replica.persistence.storageClass Persistent Volume storage class
+      ## If defined, storageClassName: <storageClass>
+      ## If set to "-", storageClassName: "", which disables dynamic provisioning
+      ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
+      storageClass: ""
+      ## @param replica.persistence.accessModes Persistent Volume access modes
+      accessModes:
+        - ReadWriteOnce
+      ## @param replica.persistence.size Persistent Volume size
+      size: 8Gi
+      ## @param replica.persistence.existingClaim Use an existing PVC which must be created manually before being bound
+      ## NOTE: Requires replica.persistence.enabled: true
 
 webhooks:
   validation: true
