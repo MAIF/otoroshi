@@ -1142,6 +1142,51 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
+  http: {
+    flow: [
+      'url',
+      'method',
+      'headers',
+      'cookies',
+      'timeout',
+      'body',
+      // 'tls_config.enabled',
+      // 'tls_config.loose',
+      // 'tls_config.trustAll',
+      // 'tls_config.certs',
+      // 'tls_config.trustedCerts',
+    ],
+    schema: {
+      url: {
+        type: 'string',
+        props: { label: 'URL', placeholder: 'The URL to call' },
+      },
+      body: {
+        type: 'code',
+        props: { label: 'Body', placeholder: 'The Http body' },
+      },
+      method: {
+        type: 'string',
+        props: { label: 'HTTP Method', placeholder: 'POST' },
+      },
+      headers: {
+        type: 'object',
+        props: {
+          label: 'Http Headers',
+          placeholderKey: 'Name of the header',
+          placeholderValue: 'Value of the header',
+        },
+      },
+      cookies: {
+        type: 'jsonobjectcode',
+        props: { label: 'HTTP Cookies', }
+      },
+      timeout: {
+        type: 'number',
+        props: { label: 'HTTP Timeout', }
+      },
+    },
+  },
   pulsar: {
     flow: [
       'uri',

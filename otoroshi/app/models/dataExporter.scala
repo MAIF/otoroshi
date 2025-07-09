@@ -153,7 +153,19 @@ case class HttpCallSettings(
   }
 
   def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[ExportResult] = {
-    val finalBody = body // TODO: apply templating
+    val finalBody = body
+      .applyOnIf(body.contains("${events}")) { str =>
+        str.replace("${events}", JsArray(events).stringify)
+      }
+      .applyOnIf(body.contains("${events.stringify}")) { str =>
+        str.replace("${events.stringify}", JsArray(events).stringify)
+      }
+      .applyOnIf(body.contains("${events.prettify}")) { str =>
+        str.replace("${events.prettify}", JsArray(events).prettify)
+      }
+      .applyOnIf(body.contains("${events.length}")) { str =>
+        str.replace("${events.length}", events.length.toString)
+      }
     env.MtlsWs
       .url(url, tlsConfig.legacy)
       .withRequestTimeout(timeout)
