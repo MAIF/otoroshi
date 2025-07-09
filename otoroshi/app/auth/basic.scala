@@ -254,7 +254,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   }
 
-
   def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
       env: Env,
       ec: ExecutionContext

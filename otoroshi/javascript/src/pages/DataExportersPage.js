@@ -1179,18 +1179,16 @@ const possibleExporterConfigFormValues = {
       },
       cookies: {
         type: 'jsonobjectcode',
-        props: { label: 'HTTP Cookies', }
+        props: { label: 'HTTP Cookies' },
       },
       timeout: {
         type: 'number',
-        props: { label: 'HTTP Timeout', }
+        props: { label: 'HTTP Timeout' },
       },
     },
   },
   workflow: {
-    flow: [
-      'ref',
-    ],
+    flow: ['ref'],
     schema: {
       ref: {
         type: 'select',

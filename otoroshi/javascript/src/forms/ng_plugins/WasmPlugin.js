@@ -85,7 +85,6 @@ const schema = {
     label: 'Is JS?',
     props: {
       description: 'Is the WASM module written in JavaScript?',
-
     },
   },
   instances: {

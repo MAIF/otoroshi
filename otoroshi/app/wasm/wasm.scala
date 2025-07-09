@@ -111,7 +111,7 @@ case class WasmConfig(
     instances: Int = 1,
     killOptions: WasmVmKillOptions = WasmVmKillOptions.default,
     authorizations: WasmAuthorizations = WasmAuthorizations(),
-    isJS: Boolean = false,
+    isJS: Boolean = false
 ) extends NgPluginConfig
     with WasmConfiguration {
   // still here for compat reason
@@ -196,7 +196,7 @@ object WasmConfig {
           .asOpt[JsValue]
           .flatMap(v => WasmVmKillOptions.format.reads(v).asOpt)
           .getOrElse(WasmVmKillOptions.default),
-        isJS = (json \ "isJS").asOpt[Boolean].getOrElse(false),
+        isJS = (json \ "isJS").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

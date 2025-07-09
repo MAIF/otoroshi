@@ -24,7 +24,7 @@ case class AdditionalCookieOutConfig(
     httpOnly: Boolean = false,
     sameSite: Option[play.api.mvc.Cookie.SameSite] = None
 ) extends NgPluginConfig {
-  override def json: JsValue                            = AdditionalCookieOutConfig.format.writes(this)
+  override def json: JsValue                                             = AdditionalCookieOutConfig.format.writes(this)
   def toCookie(attrs: TypedMap)(implicit env: Env): WSCookieWithSameSite = WSCookieWithSameSite(
     name = GlobalExpressionLanguage.apply(name, attrs, env),
     value = GlobalExpressionLanguage.apply(value, attrs, env),
@@ -107,7 +107,7 @@ case class AdditionalCookieInConfig(
     name: String,
     value: String
 ) extends NgPluginConfig {
-  override def json: JsValue                            = AdditionalCookieInConfig.format.writes(this)
+  override def json: JsValue                                             = AdditionalCookieInConfig.format.writes(this)
   def toCookie(attrs: TypedMap)(implicit env: Env): WSCookieWithSameSite = WSCookieWithSameSite(
     name = GlobalExpressionLanguage.apply(name, attrs, env),
     value = GlobalExpressionLanguage.apply(value, attrs, env)

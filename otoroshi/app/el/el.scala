@@ -41,7 +41,8 @@ object GlobalExpressionLanguage {
       route = None,
       apiKey = None,
       user = None,
-      context = Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
+      context =
+        Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -579,7 +580,8 @@ object HeadersExpressionLanguage {
       route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
       apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
       user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
-      context = Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
+      context =
+        Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -606,7 +608,8 @@ object RedirectionExpressionLanguage {
       route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
       apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
       user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
-      context = Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
+      context =
+        Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -633,7 +636,8 @@ object TargetExpressionLanguage {
       route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
       apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
       user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
-      context = Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
+      context =
+        Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -660,7 +664,8 @@ object JwtExpressionLanguage {
       route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
       apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
       user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
-      context = Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
+      context =
+        Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )

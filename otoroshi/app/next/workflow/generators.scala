@@ -7,34 +7,31 @@ object WorkflowGenerators {
 
   def generateJsonDescriptor(): JsValue = {
     Json.obj(
-      "nodes" -> JsArray(Node.nodes.map {
-        case (key, value) =>
-          val node = value.apply(Json.obj())
-          Json.obj(
-            "name" -> node.documentationName,
-            "description" -> node.documentationDescription,
-            "schema" -> node.documentationInputSchema,
-            "example" -> node.documentationExample
-          )
+      "nodes"     -> JsArray(Node.nodes.map { case (key, value) =>
+        val node = value.apply(Json.obj())
+        Json.obj(
+          "name"        -> node.documentationName,
+          "description" -> node.documentationDescription,
+          "schema"      -> node.documentationInputSchema,
+          "example"     -> node.documentationExample
+        )
       }.toSeq),
-      "functions" -> JsArray(WorkflowFunction.functions.map {
-        case (key, value) =>
-          Json.obj(
-            "name" -> key,
-            "description" -> value.documentationDescription,
-            "schema" -> value.documentationInputSchema,
-            "example" -> value.documentationExample
-          )
+      "functions" -> JsArray(WorkflowFunction.functions.map { case (key, value) =>
+        Json.obj(
+          "name"        -> key,
+          "description" -> value.documentationDescription,
+          "schema"      -> value.documentationInputSchema,
+          "example"     -> value.documentationExample
+        )
       }.toSeq),
-      "operators" -> JsArray(WorkflowOperator.operators.map {
-        case (key, value) =>
-          Json.obj(
-            "name" -> key,
-            "description" -> value.documentationDescription,
-            "schema" -> value.documentationInputSchema,
-            "example" -> value.documentationExample
-          )
-      }.toSeq),
+      "operators" -> JsArray(WorkflowOperator.operators.map { case (key, value) =>
+        Json.obj(
+          "name"        -> key,
+          "description" -> value.documentationDescription,
+          "schema"      -> value.documentationInputSchema,
+          "example"     -> value.documentationExample
+        )
+      }.toSeq)
     )
   }
 
@@ -42,28 +39,44 @@ object WorkflowGenerators {
     if (schema.fields.isEmpty) {
       ""
     } else {
-      s"""${schema.select("properties").asOpt[Map[String, JsObject]].map { properties =>
-            properties.map {
+      s"""${schema
+        .select("properties")
+        .asOpt[Map[String, JsObject]]
+        .map { properties =>
+          properties
+            .map {
               case (k, v) if v.select("items").isDefined =>
-                s"${(0 to leftPad).map(_ => " ").mkString("")}- `${k}` (`${v.select("type").asOpt[String].getOrElse("any")}`) - ${v.select("description").asOpt[String].getOrElse("")}\n" +
+                s"${(0 to leftPad).map(_ => " ").mkString("")}- `${k}` (`${v
+                   .select("type")
+                   .asOpt[String]
+                   .getOrElse("any")}`) - ${v.select("description").asOpt[String].getOrElse("")}\n" +
                   schemaToMarkdown(v.select("items").asObject, leftPad + 4)
-              case (k, v) =>
-                s"${(0 to leftPad).map(_ => " ").mkString("")}- `${k}` (`${v.select("type").asOpt[String].getOrElse("any")}`) - ${v.select("description").asOpt[String].getOrElse("")}"
-            }.mkString("\n")
-          }.getOrElse("")}
-         |${(0 to leftPad).map(_ => " ").mkString("")}- required fields are: ${schema.select("required").asOpt[Seq[String]].getOrElse(Seq.empty).map(v => s"**$v**").mkString(", ")}""".stripMargin
+              case (k, v)                                =>
+                s"${(0 to leftPad).map(_ => " ").mkString("")}- `${k}` (`${v
+                   .select("type")
+                   .asOpt[String]
+                   .getOrElse("any")}`) - ${v.select("description").asOpt[String].getOrElse("")}"
+            }
+            .mkString("\n")
+        }
+        .getOrElse("")}
+         |${(0 to leftPad).map(_ => " ").mkString("")}- required fields are: ${schema
+        .select("required")
+        .asOpt[Seq[String]]
+        .getOrElse(Seq.empty)
+        .map(v => s"**$v**")
+        .mkString(", ")}""".stripMargin
     }
   }
 
   def generateMarkdownDescriptor(): String = {
 
-    val nodes = Node.nodes.map {
-      case (key, value) =>
-        val node = value.apply(Json.obj())
-        val example = node.documentationExample match {
-          case None => ""
-          case Some(example) =>
-            s"""
+    val nodes = Node.nodes.map { case (key, value) =>
+      val node    = value.apply(Json.obj())
+      val example = node.documentationExample match {
+        case None          => ""
+        case Some(example) =>
+          s"""
                |
                |Usage example
                |
@@ -71,8 +84,8 @@ object WorkflowGenerators {
                |${example.prettify}
                |```
                |""".stripMargin
-        }
-        s"""
+      }
+      s"""
            |#### `${node.documentationName}`
            |
            |${node.documentationDescription}
@@ -82,12 +95,11 @@ object WorkflowGenerators {
            |${schemaToMarkdown(node.documentationInputSchema.getOrElse(Json.obj()))}${example}""".stripMargin
     }.toSeq
 
-    val functions = WorkflowFunction.functions.map {
-      case (key, function) =>
-        val example = function.documentationExample match {
-          case None => ""
-          case Some(example) =>
-            s"""
+    val functions = WorkflowFunction.functions.map { case (key, function) =>
+      val example = function.documentationExample match {
+        case None          => ""
+        case Some(example) =>
+          s"""
                |
                |Usage example
                |
@@ -95,8 +107,8 @@ object WorkflowGenerators {
                |${example.prettify}
                |```
                |""".stripMargin
-        }
-        s"""
+      }
+      s"""
            |#### `${key}`
            |
            |${function.documentationDescription}
@@ -106,12 +118,11 @@ object WorkflowGenerators {
            |${schemaToMarkdown(function.documentationInputSchema.getOrElse(Json.obj()))}${example}""".stripMargin
     }.toSeq
 
-    val operators = WorkflowOperator.operators.map {
-      case (key, operator) =>
-        val example = operator.documentationExample match {
-          case None => ""
-          case Some(example) =>
-            s"""
+    val operators = WorkflowOperator.operators.map { case (key, operator) =>
+      val example = operator.documentationExample match {
+        case None          => ""
+        case Some(example) =>
+          s"""
                |
                |Usage example
                |
@@ -119,8 +130,8 @@ object WorkflowGenerators {
                |${example.prettify}
                |```
                |""".stripMargin
-        }
-        s"""
+      }
+      s"""
            |####`${key}`
            |
            |${operator.documentationDescription}

@@ -18,9 +18,9 @@ export default {
       type: 'number',
     },
     apply_el: {
-      label: "Apply EL.",
-      type: "boolean",
-    }
+      label: 'Apply EL.',
+      type: 'boolean',
+    },
   },
   config_flow: ['body', 'headers', 'status', 'apply_el'],
 };

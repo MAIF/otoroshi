@@ -64,7 +64,12 @@ trait AwaitCapable {
 
 object HFunction {
 
-  def defineEmptyFunction(config: WasmConfig, fname: String, returnType: LibExtism.ExtismValType, params: LibExtism.ExtismValType*)(
+  def defineEmptyFunction(
+      config: WasmConfig,
+      fname: String,
+      returnType: LibExtism.ExtismValType,
+      params: LibExtism.ExtismValType*
+  )(
       f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal]) => Unit
   ): HostFunction[EmptyUserData] = {
     defineFunction[EmptyUserData](config, fname, None, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3))
@@ -1201,7 +1206,10 @@ object State {
         proxyGlobalMapGet(config),
         _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.read
       ),
-      HostFunctionWithAuthorization(proxyGlobalMap(config), _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.read),
+      HostFunctionWithAuthorization(
+        proxyGlobalMap(config),
+        _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.read
+      ),
       HostFunctionWithAuthorization(
         proxyGlobalMapDel(config, pluginRestricted = true, pluginId.some),
         _.asInstanceOf[WasmConfig].authorizations.pluginMapAccess.write
