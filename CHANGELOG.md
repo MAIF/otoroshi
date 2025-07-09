@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.4.0] - 2025-07-09
+
+
+https://github.com/MAIF/otoroshi/milestone/119?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.3.2...v17.4.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.4.0
+
+
+### Added 
+
+- Add JSON documentation generator for workflows (#2199 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add Markdown documentation generator for workflows (#2200 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add more operators (#2202 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Plugin to assert that a consumer is present on a route (#2203 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Plugin to validate basic auth. using an auth. module without the otoroshi proxy sso mode (#2204 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Cookie manipulation plugins can now use expression language (#2207 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Http Call data exporter (#2211 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Workflow data exporter (#2212 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Add documentation details in workflow APIs (#2198 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support host functions in WebAssembly written in JavaScript. (#2209 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- update bitnami/redis version for otoroshi helm chart (#2210 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Documentation 
+
+- Add documentation data for all core nodes/functions/operators (#2201 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Remove Scripts from documentation (#2206 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [17.3.2] - 2025-06-05
 
 
