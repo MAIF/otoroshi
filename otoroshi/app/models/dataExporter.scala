@@ -8,8 +8,10 @@ import otoroshi.events._
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.next.utils.JsonHelpers
+import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
 import otoroshi.script._
 import otoroshi.storage.drivers.inmemory.S3Configuration
+import otoroshi.utils.TypedMap
 import otoroshi.utils.mailer._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -184,6 +186,46 @@ case class HttpCallSettings(
       .recover { case t: Throwable =>
         ExportResult.ExportResultFailure(s"caught exception on http call: ${t.getMessage}")
       }
+  }
+}
+
+object WorkflowCallSettings {
+  val format = new Format[WorkflowCallSettings] {
+    override def reads(json: JsValue): JsResult[WorkflowCallSettings] = Try {
+      WorkflowCallSettings(
+        ref = json.select("ref").asOptString.getOrElse("")
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: WorkflowCallSettings): JsValue = o.toJson
+  }
+}
+
+
+case class WorkflowCallSettings(ref: String) extends Exporter {
+
+  override def toJson: JsValue = {
+    Json.obj(
+      "ref"   -> ref,
+    )
+  }
+
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[ExportResult] = {
+    val extension = env.adminExtensions.extension[WorkflowAdminExtension].get
+    extension.workflow(ref) match {
+      case None => ExportResult.ExportResultFailure(s"workflow '${ref}' not found").vfuture
+      case Some(workflow) => {
+        extension.engine.run(Node.from(workflow.config), Json.obj("events" -> events, "config" -> config.json), TypedMap.empty).map { result =>
+          if (result.hasError) {
+            ExportResult.ExportResultFailure(result.error.get.json.stringify)
+          } else {
+            ExportResult.ExportResultSuccess
+          }
+        }
+      }
+    }
   }
 }
 
@@ -419,6 +461,7 @@ object DataExporterConfig {
             case "elastic"       => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
             case "webhook"       => Webhook.format.reads((json \ "config").as[JsObject]).get
             case "http"          => HttpCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "workflow"      => WorkflowCallSettings.format.reads((json \ "config").as[JsObject]).get
             case "kafka"         => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
             case "pulsar"        => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
             case "file"          =>
@@ -513,6 +556,10 @@ case object DataExporterConfigTypeHttp extends DataExporterConfigType {
   def name: String = "http"
 }
 
+case object DataExporterConfigTypeWorkflow extends DataExporterConfigType {
+  def name: String = "workflow"
+}
+
 case object DataExporterConfigTypeFile extends DataExporterConfigType {
   def name: String = "file"
 }
@@ -572,6 +619,7 @@ object DataExporterConfigType {
   val Elastic       = DataExporterConfigTypeElastic
   val Webhook       = DataExporterConfigTypeWebhook
   val Http          = DataExporterConfigTypeHttp
+  val Workflow      = DataExporterConfigTypeWorkflow
   val File          = DataExporterConfigTypeFile
   val GoReplayFile  = DataExporterConfigTypeGoReplayFile
   val GoReplayS3    = DataExporterConfigTypeGoReplayS3
@@ -597,6 +645,7 @@ object DataExporterConfigType {
       case "elastic"       => Elastic
       case "webhook"       => Webhook
       case "http"          => Http
+      case "workflow"      => Workflow
       case "file"          => File
       case "goreplayfile"  => GoReplayFile
       case "goreplays3"    => GoReplayS3
@@ -657,6 +706,7 @@ case class DataExporterConfig(
       case c: ElasticAnalyticsConfig      => new ElasticExporter(this)
       case c: Webhook                     => new WebhookExporter(this)
       case c: HttpCallSettings            => new HttpCallExporter(this)
+      case c: WorkflowCallSettings        => new WorkflowCallExporter(this)
       case c: FileSettings                => new FileAppenderExporter(this)
       case c: S3ExporterSettings          => new S3Exporter(this)
       case c: GoReplayFileSettings        => new GoReplayFileAppenderExporter(this)

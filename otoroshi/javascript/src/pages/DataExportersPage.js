@@ -1187,6 +1187,26 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
+  workflow: {
+    flow: [
+      'ref',
+    ],
+    schema: {
+      ref: {
+        type: 'select',
+        label: 'Workflow',
+        props: {
+          label: 'Workflow',
+          placeholder: 'Choose a workflow',
+          valuesFrom: '/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows',
+          transformer: (a) => ({
+            value: a.id,
+            label: a.name,
+          }),
+        },
+      },
+    },
+  },
   pulsar: {
     flow: [
       'uri',

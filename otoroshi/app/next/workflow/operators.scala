@@ -48,6 +48,104 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$str_lower_case", new LowercaseOperator())
     WorkflowOperator.registerOperator("$str_split", new StringSplitOperator())
     WorkflowOperator.registerOperator("$expression_language", new ExpressionLanguageOperator())
+    WorkflowOperator.registerOperator("$stringify", new StringifyOperator())
+    WorkflowOperator.registerOperator("$prettify", new PrettifyOperator())
+    WorkflowOperator.registerOperator("$str_replace", new StringReplaceOperator())
+    WorkflowOperator.registerOperator("$str_replace_all", new StringReplaceAllOperator())
+  }
+}
+
+class StringifyOperator extends WorkflowOperator {
+  override def documentationName: String = "$stringify"
+  override def documentationDescription: String = "This operator stringify a json value"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("value"),
+    "properties" -> Json.obj(
+      "value" -> Json.obj("type" -> "any", "description" -> "The json to convert to string"),
+    ))
+  )
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$stringify" -> Json.obj(
+      "value" -> Json.obj("foo" -> "bar")
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.stringify.json
+  }
+}
+
+class PrettifyOperator extends WorkflowOperator {
+  override def documentationName: String = "$prettify"
+  override def documentationDescription: String = "This operator prettify a json value"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("value"),
+    "properties" -> Json.obj(
+      "value" -> Json.obj("type" -> "any", "description" -> "The json to convert to string"),
+    ))
+  )
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$prettify" -> Json.obj(
+      "value" -> Json.obj("foo" -> "bar")
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.prettify.json
+  }
+}
+
+class StringReplaceOperator extends WorkflowOperator {
+  override def documentationName: String = "$str_replace"
+  override def documentationDescription: String = "This operator replace values inside a string"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("value", "target", "replacement"),
+    "properties" -> Json.obj(
+      "value" -> Json.obj("type" -> "string", "description" -> "The string with parts to replace"),
+      "target" -> Json.obj("type" -> "string", "description" -> "The value replaced"),
+      "replacement" -> Json.obj("type" -> "string", "description" -> "The value to replace with"),
+    ))
+  )
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$str_replace" -> Json.obj(
+      "value" -> "Hello World!",
+      "target" -> "Hello",
+      "replacement" -> "Goodbye"
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value = opts.select("value").asString
+    val target = opts.select("target").asString
+    val replacement = opts.select("replacement").asString
+    value.replace(target, replacement).json
+  }
+}
+
+class StringReplaceAllOperator extends WorkflowOperator {
+  override def documentationName: String = "$str_replace_all"
+  override def documentationDescription: String = "This operator replace all values matching a regex inside a string"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("value", "target", "replacement"),
+    "properties" -> Json.obj(
+      "value" -> Json.obj("type" -> "string", "description" -> "The string with parts to replace"),
+      "target" -> Json.obj("type" -> "string", "description" -> "The regex replaced"),
+      "replacement" -> Json.obj("type" -> "string", "description" -> "The value to replace with"),
+    ))
+  )
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$str_replace_all" -> Json.obj(
+      "value" -> "Hello World!",
+      "target" -> "Hello",
+      "replacement" -> "Goodbye"
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value = opts.select("value").asString
+    val target = opts.select("target").asString
+    val replacement = opts.select("replacement").asString
+    value.replaceAll(target, replacement).json
   }
 }
 
