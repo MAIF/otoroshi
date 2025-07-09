@@ -16,6 +16,6 @@ maintainers:
 icon: https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png
 dependencies:
   - name: redis
-    version: "15.0.0"
+    version: "21.2.9"
     repository: "https://charts.bitnami.com/bitnami"
     condition: global.prod
