@@ -397,8 +397,8 @@ export class WasmPluginsPage extends Component {
     },
     'config.isJS': {
       type: 'box-bool',
+      label: 'Is JS?',
       props: {
-        label: 'Is JS?',
         description: 'Is the WASM module written in JavaScript?',
 
       },
