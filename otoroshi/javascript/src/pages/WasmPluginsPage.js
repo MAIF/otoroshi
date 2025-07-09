@@ -221,24 +221,25 @@ export class WasmPluginsPage extends Component {
       value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.max_calls',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.killOptions.max_memory_usage',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.killOptions.max_avg_call_duration',
+      'config.killOptions.max_avg_call_duration',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.killOptions.max_unused_duration',
+      'config.killOptions.max_unused_duration',
       value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host function authorizations',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.isJS',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedPaths',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.httpAccess',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedHosts',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.authorizations.proxyHttpCallTimeout',
+      'config.authorizations.proxyHttpCallTimeout',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.authorizations.proxyStateAccess',
+      'config.authorizations.proxyStateAccess',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.authorizations.configurationAccess',
+      'config.authorizations.configurationAccess',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.authorizations.globalDataStoreAccess',
+      'config.authorizations.globalDataStoreAccess',
       value.config.source.kind.toLowerCase() !== 'local' &&
-        'config.authorizations.pluginDataStoreAccess',
+      'config.authorizations.pluginDataStoreAccess',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.globalMapAccess',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.pluginMapAccess',
     ].filter((v) => !!v);
@@ -392,6 +393,14 @@ export class WasmPluginsPage extends Component {
       display: (v) => v.config.wasi,
       props: {
         label: 'Allow file paths',
+      },
+    },
+    'config.isJS': {
+      type: 'box-bool',
+      props: {
+        label: 'Is JS?',
+        description: 'Is the WASM module written in JavaScript?',
+
       },
     },
     'config.lifetime': {
