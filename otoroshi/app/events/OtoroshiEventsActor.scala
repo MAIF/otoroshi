@@ -1031,6 +1031,19 @@ object Exporters {
     }
   }
 
+  class HttpCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(ec, env) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        exporter[HttpCallSettings].map { eec =>
+          eec.call(events, config, globalConfig)
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
   class KafkaExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
       extends DefaultDataExporter(config)(ec, env) {
 

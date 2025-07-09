@@ -7,12 +7,14 @@ import otoroshi.events.Exporters._
 import otoroshi.events._
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.NgPluginCategory
+import otoroshi.next.utils.JsonHelpers
 import otoroshi.script._
 import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.mailer._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
+import play.api.libs.ws.WSCookie
 
 import java.nio.charset.StandardCharsets
 import scala.concurrent.duration._
@@ -106,6 +108,71 @@ case class GoReplayS3Settings(
       "preferBackendResponse" -> preferBackendResponse,
       "methods"               -> JsArray(methods.map(JsString.apply))
     )
+}
+
+object HttpCallSettings {
+  val format = new Format[HttpCallSettings] {
+    override def reads(json: JsValue): JsResult[HttpCallSettings] = Try {
+      HttpCallSettings(
+        url = json.select("url").asString,
+        method = json.select("method").asOpt[String].getOrElse("GET"),
+        headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        cookies = json.select("cookies").asOpt[Seq[JsObject]].map(_.map(o => JsonHelpers.cookieFromJson(o))).getOrElse(Seq.empty),
+        body = json.select("body").asOptString.getOrElse(""),
+        timeout = json.select("timeout").asOptLong.map(_.millis).getOrElse(60.seconds),
+        tlsConfig = json.select("tls_config").asOpt[JsObject].flatMap(v => NgTlsConfig.format.reads(v).asOpt).getOrElse(NgTlsConfig()),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: HttpCallSettings): JsValue = o.toJson
+  }
+}
+
+case class HttpCallSettings(
+  url: String,
+  method: String,
+  headers: Map[String, String],
+  cookies: Seq[WSCookie],
+  body: String,
+  timeout: FiniteDuration,
+  tlsConfig: NgTlsConfig,
+) extends Exporter {
+
+  override def toJson: JsValue = {
+    Json.obj(
+      "url"   -> url,
+      "method"   -> method,
+      "headers"  -> headers,
+      "cookies" -> JsArray(cookies.map(c => JsonHelpers.wsCookieToJson(c))),
+      "body"     -> body,
+      "timeout"  -> timeout.toMillis,
+      "tls_config" -> tlsConfig.json,
+    )
+  }
+
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[ExportResult] = {
+    val finalBody = body // TODO: apply templating
+    env.MtlsWs
+      .url(url, tlsConfig.legacy)
+      .withRequestTimeout(timeout)
+      .withMethod(method)
+      .withHttpHeaders(headers.toSeq: _*)
+      .withBody(finalBody)
+      .execute()
+      .map { resp =>
+        val status = resp.status
+        if (resp.status > 199 && resp.status < 299) {
+          ExportResult.ExportResultSuccess
+        } else {
+          ExportResult.ExportResultFailure(s"bad status code: ${status} - ${resp.body}")
+        }
+      }
+      .recover { case t: Throwable =>
+        ExportResult.ExportResultFailure(s"caught exception on http call: ${t.getMessage}")
+      }
+  }
 }
 
 case class ExporterRef(ref: String, config: JsValue) extends Exporter {
@@ -339,6 +406,7 @@ object DataExporterConfig {
           config = (json \ "type").as[String] match {
             case "elastic"       => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
             case "webhook"       => Webhook.format.reads((json \ "config").as[JsObject]).get
+            case "http"          => HttpCallSettings.format.reads((json \ "config").as[JsObject]).get
             case "kafka"         => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
             case "pulsar"        => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
             case "file"          =>
@@ -429,6 +497,10 @@ case object DataExporterConfigTypeWebhook extends DataExporterConfigType {
   def name: String = "webhook"
 }
 
+case object DataExporterConfigTypeHttp extends DataExporterConfigType {
+  def name: String = "http"
+}
+
 case object DataExporterConfigTypeFile extends DataExporterConfigType {
   def name: String = "file"
 }
@@ -487,6 +559,7 @@ object DataExporterConfigType {
   val Pulsar        = DataExporterConfigTypePulsar
   val Elastic       = DataExporterConfigTypeElastic
   val Webhook       = DataExporterConfigTypeWebhook
+  val Http          = DataExporterConfigTypeHttp
   val File          = DataExporterConfigTypeFile
   val GoReplayFile  = DataExporterConfigTypeGoReplayFile
   val GoReplayS3    = DataExporterConfigTypeGoReplayS3
@@ -511,6 +584,7 @@ object DataExporterConfigType {
       case "pulsar"        => Pulsar
       case "elastic"       => Elastic
       case "webhook"       => Webhook
+      case "http"          => Http
       case "file"          => File
       case "goreplayfile"  => GoReplayFile
       case "goreplays3"    => GoReplayS3
@@ -570,6 +644,7 @@ case class DataExporterConfig(
       case c: PulsarConfig                => new PulsarExporter(this)
       case c: ElasticAnalyticsConfig      => new ElasticExporter(this)
       case c: Webhook                     => new WebhookExporter(this)
+      case c: HttpCallSettings            => new HttpCallExporter(this)
       case c: FileSettings                => new FileAppenderExporter(this)
       case c: S3ExporterSettings          => new S3Exporter(this)
       case c: GoReplayFileSettings        => new GoReplayFileAppenderExporter(this)
