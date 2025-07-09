@@ -122,6 +122,7 @@ function Container(props) {
 }
 
 export function createSimpleNode(nodes, node) {
+
     let data = NODES[(node.kind || node.data.kind).toLowerCase()]
 
     if (data)
@@ -594,7 +595,7 @@ function WorkflowsDesigner(props) {
         const start = {
             kind: 'workflow',
             steps: [],
-            returned: nodes.find(node => node.id === 'returned-node').data.workflow.returned
+            returned: nodes.find(node => node.id === 'returned-node').data.workflow?.returned
         }
 
         const startOutput = edges.find(edge => edge.source === 'start')
@@ -622,7 +623,7 @@ function WorkflowsDesigner(props) {
         if (node.id.endsWith('returned-node')) {
             return [{
                 ...currentWorkflow,
-                returned: node.data.workflow.returned
+                returned: node.data.workflow?.returned
             }, alreadySeen]
         }
 
@@ -978,7 +979,7 @@ function WorkflowsDesigner(props) {
             })
     }
 
-    // console.log(nodes, edges)
+    console.log(nodes)
 
     return <div className='workflow'>
         <DesignerActions run={run} />

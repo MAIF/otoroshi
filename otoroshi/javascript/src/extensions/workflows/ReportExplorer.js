@@ -7,6 +7,9 @@ export default function ReportExplorer({ report, handleClose, isOpen }) {
     if (!report || !isOpen)
         return null
 
+    if (!report.done)
+        return report.error
+
     const steps = report.run.log.reduce((acc, log) => {
 
         if (log.message.includes('ending'))

@@ -197,14 +197,12 @@ export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCateg
                 value.description.toLowerCase().includes(query.toLowerCase()))
             .map(([_, node], i) => <Node
                 node={node}
-                onClick={() => onClick(node)}
+                onClick={() => handleSelectNode(node)}
                 key={`${node.label}-${i}`} />)
     }
 
     if (selectedCategory)
-        return <UnFoldedCategory {...selectedCategory} onClick={item => {
-            handleSelectNode(item)
-        }} />
+        return <UnFoldedCategory {...selectedCategory} onClick={item => handleSelectNode(item)} />
 
     const categories = ITEMS_BY_CATEGORY
         .filter(category => Object.entries(category.nodes))
