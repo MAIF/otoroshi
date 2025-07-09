@@ -1,3 +1,6 @@
+import React from 'react'
+import { NgBoxBooleanRenderer } from "../../../components/nginputs"
+
 export const FromMemoryFlow = {
     type: 'group',
     name: 'Memory location',
@@ -15,10 +18,27 @@ export const FromMemory = ({
     isArray
 } = {}) => ({
     fromMemory: {
-        type: 'box-bool',
-        label: 'Read memory',
-        props: {
-            description: fromMemoryDescription || (isArray ? 'Is the array from memory?' : 'Is the value from memory?')
+        renderer: props => {
+            return <NgBoxBooleanRenderer
+                {...props}
+                value={props.value}
+                label='Read memory'
+                description={fromMemoryDescription || (isArray ? 'Is the array from memory?' : 'Is the value from memory?')}
+                onChange={e => {
+                    if (e)
+                        props.rootOnChange({
+                            ...props.rootValue,
+                            fromMemory: e,
+                            value: undefined
+                        })
+                    else {
+                        props.rootOnChange({
+                            ...props.rootValue,
+                            fromMemory: e
+                        })
+                    }
+                }}
+            />
         }
     },
     name: {

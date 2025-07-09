@@ -20,10 +20,6 @@ export function setupWorkflowsExtension(registerExtension) {
         error: null,
       };
 
-      componentDidMount() {
-        console.log('tester', this.props);
-      }
-
       run = () => {
         this.setState(
           {

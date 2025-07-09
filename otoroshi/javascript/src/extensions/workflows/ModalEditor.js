@@ -2,9 +2,7 @@ import React, { useState } from 'react'
 import { NgForm } from '../../components/nginputs';
 
 export function ModalEditor({ node }) {
-
-    console.log(node)
-
+    
     if (!node)
         return null
 

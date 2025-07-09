@@ -18,12 +18,12 @@ export function Node(props) {
         <>
             <Handles {...props} />
 
-            {data.kind !== 'start' && !data.operator && <NodeResizer
+            {/* {data.kind !== 'start' && !data.operator && <NodeResizer
                 color="#ff0071"
                 isVisible={props.selected}
                 minWidth={200}
                 minHeight={100}
-            />}
+            />} */}
 
             <button
                 className="d-flex-center m-0 node"

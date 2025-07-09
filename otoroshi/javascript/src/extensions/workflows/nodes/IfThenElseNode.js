@@ -5,6 +5,7 @@ export const IfThenElseNode = (_workflow) => ({
     name: 'IfThenElse',
     description: 'Route items to different branches (true/false)',
     workflow: _workflow,
+    type: 'group',
     kind: 'if',
     sources: ['then', 'else'],
     targets: ['predicate']
