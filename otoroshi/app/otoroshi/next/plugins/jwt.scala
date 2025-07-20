@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import com.nimbusds.jose.crypto.{RSADecrypter, RSAEncrypter}
 import com.nimbusds.jose.jwk.RSAKey
@@ -539,31 +539,10 @@ class JweSigner extends NgAccessValidator with NgRequestTransformer {
             val enc = config.contentEncryptionAlgorithm
             val kid = jsonKeypair.select("kid").asOpt[String].orNull
 
-            val header = new JWEHeader(
-              alg,
-              enc,
-              null,
-              "JWT",
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              kid,
-              null,
-              null,
-              null,
-              null,
-              null,
-              0,
-              null,
-              null,
-              null,
-              null,
-              null
-            )
+            val header = new JWEHeader.Builder(alg, enc)
+                .contentType("JWT")
+                .keyID(kid)
+                .build()
 
             val claimsSet = new JWTClaimsSet.Builder()
             claimsSet.issuer(env.Headers.OtoroshiIssuer)

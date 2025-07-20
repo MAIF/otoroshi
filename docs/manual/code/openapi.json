@@ -24782,7 +24782,7 @@
           "logAnalyticsOnServer" : {
             "type" : "boolean"
           },
-          "useAkkaHttpClient" : {
+          "usePekkoHttpClient" : {
             "type" : "boolean"
           },
           "useNewWSClient" : {
@@ -25037,7 +25037,7 @@
           }
         },
         "title" : "Service descriptor",
-        "required" : [ "id", "groups", "name", "description", "env", "domain", "subdomain", "targetsLoadBalancing", "targets", "root", "stripPath", "localHost", "localScheme", "redirectToLocal", "enabled", "userFacing", "privateApp", "forceHttps", "maintenanceMode", "buildMode", "strictlyPrivate", "sendOtoroshiHeadersBack", "readOnly", "xForwardedHeaders", "overrideHost", "allowHttp10", "logAnalyticsOnServer", "useAkkaHttpClient", "useNewWSClient", "tcpUdpTunneling", "detectApiKeySooner", "letsEncrypt", "enforceSecureCommunication", "sendInfoToken", "sendStateChallenge", "secComHeaders", "secComTtl", "secComVersion", "secComInfoTokenVersion", "secComExcludedPatterns", "secComSettings", "secComUseSameAlgo", "secComAlgoChallengeOtoToBack", "secComAlgoChallengeBackToOto", "secComAlgoInfoToken", "securityExcludedPatterns", "publicPatterns", "privatePatterns", "additionalHeaders", "additionalHeadersOut", "missingOnlyHeadersIn", "missingOnlyHeadersOut", "removeHeadersIn", "removeHeadersOut", "headersVerification", "matchingHeaders", "ipFiltering", "api", "healthCheck", "clientConfig", "canary", "metadata", "tags", "chaosConfig", "jwtVerifier", "cors", "redirection", "transformerRefs", "transformerConfig", "accessValidator", "preRouting", "plugins", "gzip", "apiKeyConstraints", "restrictions", "hosts", "paths", "handleLegacyDomain", "issueCert", "location" ]
+        "required" : [ "id", "groups", "name", "description", "env", "domain", "subdomain", "targetsLoadBalancing", "targets", "root", "stripPath", "localHost", "localScheme", "redirectToLocal", "enabled", "userFacing", "privateApp", "forceHttps", "maintenanceMode", "buildMode", "strictlyPrivate", "sendOtoroshiHeadersBack", "readOnly", "xForwardedHeaders", "overrideHost", "allowHttp10", "logAnalyticsOnServer", "usePekkoHttpClient", "useNewWSClient", "tcpUdpTunneling", "detectApiKeySooner", "letsEncrypt", "enforceSecureCommunication", "sendInfoToken", "sendStateChallenge", "secComHeaders", "secComTtl", "secComVersion", "secComInfoTokenVersion", "secComExcludedPatterns", "secComSettings", "secComUseSameAlgo", "secComAlgoChallengeOtoToBack", "secComAlgoChallengeBackToOto", "secComAlgoInfoToken", "securityExcludedPatterns", "publicPatterns", "privatePatterns", "additionalHeaders", "additionalHeadersOut", "missingOnlyHeadersIn", "missingOnlyHeadersOut", "removeHeadersIn", "removeHeadersOut", "headersVerification", "matchingHeaders", "ipFiltering", "api", "healthCheck", "clientConfig", "canary", "metadata", "tags", "chaosConfig", "jwtVerifier", "cors", "redirection", "transformerRefs", "transformerConfig", "accessValidator", "preRouting", "plugins", "gzip", "apiKeyConstraints", "restrictions", "hosts", "paths", "handleLegacyDomain", "issueCert", "location" ]
       },
       "snisettings" : {
         "type" : "object",

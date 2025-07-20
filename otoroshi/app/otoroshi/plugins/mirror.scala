@@ -1,10 +1,10 @@
 package otoroshi.plugins.mirror
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events.AuditEvent
 import otoroshi.models.{ServiceDescriptor, Target}

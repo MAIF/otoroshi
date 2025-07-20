@@ -1,8 +1,8 @@
 package otoroshi.script
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.{Flow, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.{Flow, Source}
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import org.joda.time.DateTime
@@ -155,7 +155,7 @@ class ForwardTrafficHandler extends RequestHandler {
                 resp.headers.get("Transfer-Encoding").orElse(resp.headers.get("transfer-encoding")).map(_.last)
               val hasChunkedHeader             = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
               val isContentLengthZero: Boolean = resp.headers.getIgnoreCase("Content-Length").contains("0")
-              val isChunked: Boolean           = resp.isChunked() match { // don't know if actualy legit ...
+              val isChunked: Boolean           = resp.isChunked match { // don't know if actualy legit ...
                 case _ if isContentLengthZero                                                        => false
                 case Some(chunked)                                                                   => chunked
                 case None if !env.emptyContentLengthIsChunked                                        =>
@@ -253,34 +253,32 @@ class ForwardTrafficHandler extends RequestHandler {
                 extraAnalyticsData = None,
                 matchedJwtVerifier = None
               ).toAnalytics()
-              isChunked match {
-                case true  =>
-                    // stream out
-                  val res = Status(resp.status)
-                    .chunked(resp.bodyAsSource)
-                    .withHeaders(headersOut: _*)
-                    .withCookies(cookiesOut: _*)
+                if (isChunked) {
+                    val res = Status(resp.status)
+                        .chunked(resp.bodyAsSource)
+                        .withHeaders(headersOut: _*)
+                        .withCookies(cookiesOut: _*)
                     ctypeOut match {
-                    case None      => res
-                    case Some(ctp) => res.as(ctp)
-                  }
-                case false =>
+                        case None => res
+                        case Some(ctp) => res.as(ctp)
+                    }
+                } else {
                     val res = Results
-                    .Status(resp.status)
-                    .sendEntity(
-                      HttpEntity.Streamed(
-                        resp.bodyAsSource,
-                        clenOut,
-                        ctypeOut
-                      )
-                    )
-                    .withHeaders(headersOut: _*)
-                    .withCookies(cookiesOut: _*)
+                        .Status(resp.status)
+                        .sendEntity(
+                            HttpEntity.Streamed(
+                                resp.bodyAsSource,
+                                clenOut,
+                                ctypeOut
+                            )
+                        )
+                        .withHeaders(headersOut: _*)
+                        .withCookies(cookiesOut: _*)
                     ctypeOut match {
-                    case None      => res
-                    case Some(ctp) => res.as(ctp)
-                  }
-              }
+                        case None => res
+                        case Some(ctp) => res.as(ctp)
+                    }
+                }
             }
             .recoverWith { case e =>
               defaultRouting(request)

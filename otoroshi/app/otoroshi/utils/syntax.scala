@@ -1,9 +1,9 @@
 package otoroshi.utils.syntax
 
-import akka.NotUsed
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}

@@ -1,6 +1,6 @@
 package otoroshi.next.workflow
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.BodyHelper

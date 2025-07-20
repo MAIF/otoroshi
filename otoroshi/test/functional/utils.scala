@@ -1,15 +1,15 @@
 package functional
 
-import akka.NotUsed
-import akka.actor.{ActorSystem, Scheduler}
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import akka.http.scaladsl.model.AttributeKeys
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Framing, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{ActorSystem, Scheduler}
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage}
+import org.apache.pekko.http.scaladsl.model.AttributeKeys
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Framing, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.wordspec.AnyWordSpec

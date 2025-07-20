@@ -1,9 +1,9 @@
 package otoroshi.actions
 
 import java.util.concurrent.TimeUnit
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.GenericOauth2Module
 import otoroshi.cluster._
 import otoroshi.env.Env

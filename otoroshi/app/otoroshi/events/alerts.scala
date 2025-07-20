@@ -1,13 +1,13 @@
 package otoroshi.events
 
 import java.util.concurrent.{Executors, TimeUnit}
-import akka.actor.{Actor, Cancellable, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated}
-import akka.actor.SupervisorStrategy._
-import akka.http.scaladsl.util.FastFuture._
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{OverflowStrategy, QueueOfferResult, ThrottleMode}
-import akka.util.ByteString
+import org.apache.pekko.actor.{Actor, Cancellable, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated}
+import org.apache.pekko.actor.SupervisorStrategy._
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.stream.{OverflowStrategy, QueueOfferResult, ThrottleMode}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.{QuotasAlmostExceededSettings, _}
 import org.joda.time.DateTime

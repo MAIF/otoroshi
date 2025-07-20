@@ -1,8 +1,8 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
 import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
 import io.kubernetes.client.openapi.ApiClient

@@ -1,11 +1,11 @@
 package otoroshi.gateway
 
-import akka.actor.{ActorRef, ActorSystem, Scheduler}
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.{ActorRef, ActorSystem, Scheduler}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{BestResponseTime, ClientConfig, RemainingQuotas, SecComVersion, WeightedBestResponseTime}
@@ -681,7 +681,7 @@ class HttpHandler()(implicit env: Env) {
                             .exists(h => h.toLowerCase().contains("chunked"))
                             val isContentLengthZero: Boolean   =
                             resp.header("Content-Length").orElse(httpResponse.headers.get("Content-Length")).contains("0")
-                            val isChunked: Boolean             = resp.isChunked() match {
+                            val isChunked: Boolean             = resp.isChunked match {
                             case _ if isContentLengthZero                                                              => false
                             case Some(chunked)                                                                         => chunked
                             case None if !env.emptyContentLengthIsChunked                                              =>

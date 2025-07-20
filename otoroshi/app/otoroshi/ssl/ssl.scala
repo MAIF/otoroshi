@@ -1,9 +1,9 @@
 package otoroshi.ssl
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.stream.{Materializer, TLSClientAuth}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.stream.{Materializer, TLSClientAuth}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings

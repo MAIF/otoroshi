@@ -3,9 +3,9 @@ package otoroshi.controllers.adminapi
 import java.lang.management.ManagementFactory
 import java.util.concurrent.TimeUnit
 import otoroshi.actions.ApiAction
-import akka.NotUsed
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
 import otoroshi.cluster.StatsView
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Audit}

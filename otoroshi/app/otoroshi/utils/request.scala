@@ -1,6 +1,6 @@
 package otoroshi.utils.http
 
-import akka.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.Uri
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import play.api.mvc.RequestHeader

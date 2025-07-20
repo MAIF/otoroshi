@@ -1,9 +1,9 @@
 package otoroshi.next.controllers
 
-import akka.kafka.ConsumerSettings
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.kafka.ConsumerSettings
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.actions.BackOfficeActionAuth
 import otoroshi.env.Env
 import otoroshi.events.{KafkaConfig, KafkaSettings}
@@ -46,7 +46,7 @@ class TryItController(
                 val seconds = (jsonBody \ "timeout").asOpt[Int].getOrElse(15)
 
                 val race =
-                  akka.pattern.after(new DurationInt(seconds).seconds, using = env.otoroshiActorSystem.scheduler)(
+                  org.apache.pekko.pattern.after(new DurationInt(seconds).seconds, using = env.otoroshiActorSystem.scheduler)(
                     Future.successful(BadRequest(Json.obj("error" -> "Failed to connect to kafka")))
                   )
                 Future.firstCompletedOf(

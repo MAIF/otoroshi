@@ -1,32 +1,26 @@
 package otoroshi.events
 
-import akka.Done
-import akka.actor.{Actor, Props}
-import akka.http.scaladsl.model.{ContentType, ContentTypes}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
-import akka.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
 import com.spotify.metrics.core.MetricId
 import io.netty.channel.ChannelOption
 import io.netty.channel.unix.DomainSocketAddress
-import io.netty.handler.ssl.SslContextBuilder
 import io.opentelemetry.api.logs.Severity
 import io.otoroshi.wasm4s.scaladsl._
+import jakarta.jms.{Destination, JMSContext, JMSProducer}
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
-import jakarta.jms.ConnectionFactory
-import jakarta.jms.Destination
-import jakarta.jms.JMSContext
-import jakarta.jms.JMSProducer
-import jakarta.jms.Message
-import jakarta.jms.Session
-import jakarta.jms.TextMessage
+import org.apache.pekko.Done
+import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.http.scaladsl.model.{ContentType, ContentTypes}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3.{ApiVersion, ListBucketResultContents, MemoryBufferType, MetaHeaders, S3Attributes, S3Settings}
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
+import org.apache.pekko.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
+import otoroshi.events.pulsar.{PulsarConfig, PulsarSetting}
 import otoroshi.metrics.opentelemetry.{OpenTelemetryMeter, OtlpSettings}
 import otoroshi.models._
 import otoroshi.next.events.TrafficCaptureEvent
@@ -45,7 +39,6 @@ import play.api.Logger
 import play.api.libs.json._
 import reactor.core.publisher.Mono
 import reactor.netty.{Connection, ConnectionObserver}
-import reactor.netty.tcp.{SslProvider, TcpClient}
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
@@ -53,15 +46,15 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider
 import java.io.{File, FilenameFilter}
 import java.net.InetAddress
 import java.nio.file.{Files, Paths, StandardOpenOption}
-import java.time.{Instant, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneOffset}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.function.Consumer
-import scala.jdk.CollectionConverters._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 object OtoroshiEventsActorSupervizer {

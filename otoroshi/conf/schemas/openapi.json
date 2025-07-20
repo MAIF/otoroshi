@@ -19918,7 +19918,7 @@
             },
             "description" : "???"
           },
-          "useAkkaHttpClient" : {
+          "usePekkoHttpClient" : {
             "type" : "boolean",
             "description" : "???"
           },
@@ -20574,9 +20574,9 @@
             "type" : "boolean",
             "description" : "If enabled, Otoroshi will reject new request if too much at the same time"
           },
-          "useAkkaHttpClient" : {
+          "usePekkoHttpClient" : {
             "type" : "boolean",
-            "description" : "Globally use akka http client for everything"
+            "description" : "Globally use pekko http client for everything"
           },
           "elasticWritesConfigs" : {
             "type" : "array",

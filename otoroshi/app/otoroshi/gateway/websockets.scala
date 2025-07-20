@@ -1,16 +1,16 @@
 package otoroshi.gateway
 
-import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props, Scheduler}
-import akka.http.scaladsl.ClientTransport
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
-import akka.http.scaladsl.settings.ClientConnectionSettings
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, Tcp}
-import akka.stream.{FlowShape, Materializer, OverflowStrategy}
-import akka.util.ByteString
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props, Scheduler}
+import org.apache.pekko.http.scaladsl.ClientTransport
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.settings.ClientConnectionSettings
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, Tcp}
+import org.apache.pekko.stream.{FlowShape, Materializer, OverflowStrategy}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
@@ -485,7 +485,7 @@ class WebSocketHandler()(implicit env: Env) {
               FastFuture.successful(Right(flow))
             case "udp"     =>
 
-              import akka.stream.scaladsl.{Flow, GraphDSL, UnzipWith, ZipWith}
+              import org.apache.pekko.stream.scaladsl.{Flow, GraphDSL, UnzipWith, ZipWith}
               import GraphDSL.Implicits._
 
               val base64decoder = java.util.Base64.getDecoder
@@ -645,16 +645,16 @@ object WebSocketProxyActor {
       //     val parts       = cookie.split("=")
       //     val name        = parts(0)
       //     val cookieValue = parts.tail.mkString("=")
-      //     akka.http.scaladsl.model.headers.Cookie(name, cookieValue)
+      //     org.apache.pekko.http.scaladsl.model.headers.Cookie(name, cookieValue)
       //   }) match {
       //     case Success(seq) => seq
       //     case Failure(e)   => List.empty
       //   }
       case (key, value) if key.toLowerCase == "host"       =>
         val part = value.split(":")
-        Seq(akka.http.scaladsl.model.headers.Host(part.head))
+        Seq(org.apache.pekko.http.scaladsl.model.headers.Host(part.head))
       case (key, value) if key.toLowerCase == "user-agent" =>
-        Seq(akka.http.scaladsl.model.headers.`User-Agent`(value))
+        Seq(org.apache.pekko.http.scaladsl.model.headers.`User-Agent`(value))
       case (key, value)                                    =>
         Seq(RawHeader(key, value))
     }
@@ -663,8 +663,8 @@ object WebSocketProxyActor {
     )
     // WARN: DOES NOT MAKE USE OF WS PLUGINS BECAUSE OF THE LIMITS OF THE AKKA STREAM SINK API
     val flow                                 = Flow.fromSinkAndSourceMat(
-      Sink.asPublisher[akka.http.scaladsl.model.ws.Message](fanout = false),
-      Source.asSubscriber[akka.http.scaladsl.model.ws.Message]
+      Sink.asPublisher[org.apache.pekko.http.scaladsl.model.ws.Message](fanout = false),
+      Source.asSubscriber[org.apache.pekko.http.scaladsl.model.ws.Message]
     )(Keep.both)
     val (connected, (publisher, subscriber)) = env.gatewayClient.ws(
       request = request,
@@ -682,7 +682,7 @@ object WebSocketProxyActor {
             val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
             val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
               case (Some(principal), Some(password)) =>
-                val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+                val auth = org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
                 ClientTransport.httpsProxy(proxyAddress, auth)
               case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
@@ -714,26 +714,26 @@ object WebSocketProxyActor {
           case ValidUpgrade(response, chosenSubprotocol) =>
             val f: Flow[PlayWSMessage, PlayWSMessage, NotUsed] = Flow.fromSinkAndSource(
               Sink.fromSubscriber(subscriber).contramap {
-                case PlayWSTextMessage(text)      => akka.http.scaladsl.model.ws.TextMessage(text)
-                case PlayWSBinaryMessage(data)    => akka.http.scaladsl.model.ws.BinaryMessage(data)
-                case PingMessage(data)            => akka.http.scaladsl.model.ws.BinaryMessage(data)
-                case PongMessage(data)            => akka.http.scaladsl.model.ws.BinaryMessage(data)
+                case PlayWSTextMessage(text)      => org.apache.pekko.http.scaladsl.model.ws.TextMessage(text)
+                case PlayWSBinaryMessage(data)    => org.apache.pekko.http.scaladsl.model.ws.BinaryMessage(data)
+                case PingMessage(data)            => org.apache.pekko.http.scaladsl.model.ws.BinaryMessage(data)
+                case PongMessage(data)            => org.apache.pekko.http.scaladsl.model.ws.BinaryMessage(data)
                 case CloseMessage(status, reason) =>
                   logger.error(s"close message $status: $reason")
-                  akka.http.scaladsl.model.ws.BinaryMessage(ByteString.empty)
+                  org.apache.pekko.http.scaladsl.model.ws.BinaryMessage(ByteString.empty)
                 // throw new RuntimeException(reason)
                 case m                            =>
                   logger.error(s"Unknown message $m")
                   throw new RuntimeException(s"Unknown message $m")
               },
               Source.fromPublisher(publisher).mapAsync(1) {
-                case akka.http.scaladsl.model.ws.TextMessage.Strict(text)       =>
+                case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       =>
                   FastFuture.successful(PlayWSTextMessage(text))
-                case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
+                case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
                   source.runFold("")((concat, str) => concat + str).map(str => PlayWSTextMessage(str))
-                case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
+                case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
                   FastFuture.successful(PlayWSBinaryMessage(data))
-                case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+                case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
                   source
                     .runFold(ByteString.empty)((concat, str) => concat ++ str)
                     .map(data => PlayWSBinaryMessage(data))
@@ -768,10 +768,10 @@ class WebSocketProxyActor(
   implicit val mat: Materializer = env.otoroshiMaterializer
   implicit val e: Env = env
 
-  lazy val source = Source.queue[akka.http.scaladsl.model.ws.Message](50000, OverflowStrategy.dropTail)
+  lazy val source = Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](50000, OverflowStrategy.dropTail)
   lazy val logger = Logger("otoroshi-websocket-handler-actor")
 
-  val queueRef = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]
+  val queueRef = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]
 
   val avoid = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
   // Seq("Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Host")
@@ -791,15 +791,15 @@ class WebSocketProxyActor(
         //    val parts       = cookie.split("=")
         //    val name        = parts(0)
         //    val cookieValue = parts.tail.mkString("=")
-        //    akka.http.scaladsl.model.headers.Cookie(name, cookieValue)
+        //    org.apache.pekko.http.scaladsl.model.headers.Cookie(name, cookieValue)
         //  }) match {
         //    case Success(seq) => seq
         //    case Failure(e)   => List.empty
         //  }
         case (key, value) if key.toLowerCase == "host"       =>
-          Seq(akka.http.scaladsl.model.headers.Host(value.split(":").head))
+          Seq(org.apache.pekko.http.scaladsl.model.headers.Host(value.split(":").head))
         case (key, value) if key.toLowerCase == "user-agent" =>
-          Seq(akka.http.scaladsl.model.headers.`User-Agent`(value))
+          Seq(org.apache.pekko.http.scaladsl.model.headers.`User-Agent`(value))
         case (key, value)                                    =>
           Seq(RawHeader(key, value))
       }
@@ -812,7 +812,7 @@ class WebSocketProxyActor(
         mtlsConfigOpt = Some(target.mtlsConfig).filter(_.mtls),
         clientFlow = Flow
           .fromSinkAndSourceMat(
-            Sink.foreach[akka.http.scaladsl.model.ws.Message] { data =>
+            Sink.foreach[org.apache.pekko.http.scaladsl.model.ws.Message] { data =>
               {
                 wsEngine
                   .handleResponse(data)(closeFunction)
@@ -845,7 +845,7 @@ class WebSocketProxyActor(
             val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
             val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
               case (Some(principal), Some(password)) =>
-                val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+                val auth = org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
                 ClientTransport.httpsProxy(proxyAddress, auth)
               case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
@@ -998,7 +998,7 @@ class WebsocketEngine(
     }
   }
 
-  def handleResponse(data: akka.http.scaladsl.model.ws.Message)(
+  def handleResponse(data: org.apache.pekko.http.scaladsl.model.ws.Message)(
       closeConnection: NgWebsocketResponse => Unit
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     if (ctxPlugins.hasNoWebsocketPlugins) {

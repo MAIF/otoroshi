@@ -1,6 +1,6 @@
 package otoroshi.events
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime

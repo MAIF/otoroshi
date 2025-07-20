@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._

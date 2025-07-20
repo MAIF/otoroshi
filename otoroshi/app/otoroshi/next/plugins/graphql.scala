@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.github.blemale.scaffeine.Scaffeine
 import com.jayway.jsonpath.PathNotFoundException
@@ -18,7 +18,8 @@ import otoroshi.utils.{JsonPathUtils, JsonPathValidator, TypedMap}
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
 import otoroshi.utils.JsonMarshaller._
-import otoroshi.wasm._
+import otoroshi.wasm.{WasmAuthorizations, WasmConfig, WasmDataRights}
+import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 import sangria.ast
 import sangria.ast._
 import sangria.execution.deferred.DeferredResolver
@@ -497,7 +498,7 @@ class GraphQLBackend extends NgBackendCall {
     ),
     DirectiveResolver(authorizeDirective, resolve = c => authorizeDirectiveResolver(c, ctx)),
     DirectiveResolver(httpRestDirective, resolve = httpRestDirectiveResolver),
-    DirectiveResolver(wasmDirective, resolve = c => wasmDirectiveResolver(c, ctx)),
+//    DirectiveResolver(wasmDirective, resolve = c => wasmDirectiveResolver(c, ctx)), // fixme with pekko update
     DirectiveResolver(
       graphQLDirective,
       resolve = c => graphQLDirectiveResolver(c, c.arg(queryArg).getOrElse("{}"), ctx, delegates)
@@ -713,8 +714,6 @@ class GraphQLBackend extends NgBackendCall {
       env: Env,
       ec: ExecutionContext
   ): Action[Unit, Any] = {
-
-    import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 
     val wasmSourceKind   = c.arg(wasmSourceKindArg)
     val wasmSourcePath   = c.arg(wasmSourcePathArg)

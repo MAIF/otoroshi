@@ -1,13 +1,13 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
-import akka.{Done, NotUsed}
-import akka.actor.ActorSystem
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.http.scaladsl.model.headers.Host
-import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.stream.{ActorMaterializer, Materializer}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.http.scaladsl.model.headers.Host
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
+import org.apache.pekko.stream.{ActorMaterializer, Materializer}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ServiceDescriptor, Target}
 import org.scalatest.concurrent.IntegrationPatience

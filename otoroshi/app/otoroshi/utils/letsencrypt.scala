@@ -1,11 +1,13 @@
 package otoroshi.utils.letsencrypt
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.pattern.after
 import org.shredzone.acme4j._
 import org.shredzone.acme4j.challenge._
+import org.apache.pekko.actor.Scheduler
 import org.shredzone.acme4j.util._
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, CertRenewalAlert}
@@ -15,6 +17,8 @@ import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits.BetterFiniteDuration
 import play.api.Logger
 import play.api.libs.json._
+import java.time.{Duration, Instant}
+import scala.annotation.tailrec
 
 import java.io.StringWriter
 import java.security.cert.X509Certificate
@@ -319,69 +323,124 @@ object LetsEncryptHelper {
       }
   }
 
+  // Core polling logic that respects retry-after headers
+  private def pollUntil[T](
+                      fetchAndCheck: () => Future[(Option[Instant], T)], // Returns (retryAfter, currentState)
+                      isComplete: T => Boolean,
+                      attemptsLeft: Int,
+                      defaultDelay: FiniteDuration = 3.seconds,
+                      maxDelay: FiniteDuration = 30.seconds
+                  )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
+
+    def calculateDelay(retryAfterOpt: Option[Instant], attemptNumber: Int): FiniteDuration = {
+      retryAfterOpt match {
+        case Some(retryAfterInstant) =>
+          val suggestedDelay = Duration.between(Instant.now(), retryAfterInstant)
+          val delayMillis = Math.max(100, suggestedDelay.toMillis) // min 100ms
+          Math.min(delayMillis, maxDelay.toMillis).millis
+
+        case None =>
+          // Exponential backoff with jitter
+          val backoff = Math.min(
+            defaultDelay.toMillis * Math.pow(1.5, attemptNumber).toLong,
+            maxDelay.toMillis
+          )
+          (backoff + (Math.random() * 0.2 * backoff).toLong).millis
+      }
+    }
+
+    def pollOnce(remainingAttempts: Int, attemptNumber: Int): Future[T] = {
+      if (remainingAttempts <= 0) {
+        Future.failed(new Exception(s"Max attempts exceeded"))
+      } else {
+        fetchAndCheck().flatMap { case (retryAfterOpt, currentState) =>
+          if (isComplete(currentState)) {
+            Future.successful(currentState)
+          } else {
+            val delay = calculateDelay(retryAfterOpt, attemptNumber)
+            after(delay, scheduler)(
+              pollOnce(remainingAttempts - 1, attemptNumber + 1)
+            )
+          }
+        }
+      }
+    }
+
+    pollOnce(attemptsLeft, 0)
+  }
+
+
+
+  private def pollAcmeResource[T](
+                             resource: T,
+                             fetch: T => Option[Instant],  // fetch method that returns retry-after
+                             getStatus: T => Status,
+                             maxAttempts: Int = 10,
+                             defaultDelay: FiniteDuration = 3.seconds
+                         )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
+
+    val fetchAndCheck = () => Future {
+      val retryAfter = fetch(resource)
+      (retryAfter, resource)
+    }
+
+    pollUntil(
+      fetchAndCheck,
+      (r: T) => getStatus(r) == Status.VALID,
+      maxAttempts,
+      defaultDelay
+    )
+  }
+
+  // Now your methods become:
   private def authorizeOrder(
-      domain: String,
-      status: Status,
-      challenge: Http01Challenge
-  )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Status]] = {
+                                domain: String,
+                                status: Status,
+                                challenge: Http01Challenge
+                            )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Status]] = {
+
     logger.info(s"authorizing order $domain")
-    if (status == Status.VALID) {
+
+    if (status == Status.VALID || challenge.getStatus == Status.VALID) {
       FastFuture.successful(Right(Status.VALID))
     } else {
-      if (challenge.getStatus == Status.VALID) {
-        FastFuture.successful(Right(Status.VALID))
-      } else {
+      Future {
         challenge.trigger()
-        Source
-          .tick(3.seconds, 3.seconds, ())
-          .mapAsync(1) { _ =>
-            Future {
-              challenge.update()
-              challenge.getStatus
-            }(blockingEc)
-          }
-          .take(10)
-          .filter(_ == Status.VALID)
-          .take(1)
-          .map(o => Right(o))
-          .recover { case e => Left(s"Failed to authorize certificate for domain, ${e.getMessage}") }
-          .toMat(Sink.headOption)(Keep.right)
-          .run()
-          .map {
-            case None    => Left(s"Failed to authorize certificate for domain, empty")
-            case Some(e) => e
-          }
+      }(blockingEc).flatMap { _ =>
+        pollAcmeResource(
+              challenge,
+              fetch = (c: Http01Challenge) => Option(c.fetch().orElse(null)),
+              getStatus = (c: Http01Challenge) => c.getStatus,
+              maxAttempts = 10,
+              defaultDelay = 3.seconds
+            )(ec, mat.system.scheduler)
+            .map(_ => Right(Status.VALID))
+            .recover { case e =>
+              Left(s"Failed to authorize certificate for domain, ${e.getMessage}")
+            }
       }
     }
   }
 
-  private def orderCertificate(order: Order, csr: Array[Byte])(implicit
-      ec: ExecutionContext,
-      env: Env,
-      mat: Materializer
-  ): Future[Either[String, Order]] = {
+  private def orderCertificate(
+                                  order: Order,
+                                  csr: Array[Byte]
+                              )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Order]] = {
+
     Future {
       order.execute(csr)
     }(blockingEc).flatMap { _ =>
-      Source
-        .tick(3.seconds, 5.seconds, ())
-        .mapAsync(1) { _ =>
-          Future {
-            order.update()
-            order
-          }(blockingEc)
-        }
-        .take(10)
-        .filter(_.getStatus == Status.VALID)
-        .take(1)
-        .map(o => Right(o))
-        .recover { case e => Left(s"Failed to order certificate for domain, ${e.getMessage}") }
-        .toMat(Sink.headOption)(Keep.right)
-        .run()
-        .map {
-          case None    => Left(s"Failed to order certificate for domain, empty")
-          case Some(e) => e
-        }
+      pollAcmeResource(
+            order,
+            fetch = (o: Order) => Option(o.fetch().orElse(null)),
+            getStatus = (o: Order) => o.getStatus,
+            maxAttempts = 10,
+            defaultDelay = 5.seconds
+          )(ec, mat.system.scheduler)
+          .map(Right(_))
+          .recover { case e =>
+            Left(s"Failed to order certificate for domain, ${e.getMessage}")
+          }
     }
   }
 

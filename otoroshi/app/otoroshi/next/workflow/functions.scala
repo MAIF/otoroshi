@@ -1,6 +1,6 @@
 package otoroshi.next.workflow
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 import org.joda.time.DateTime
 import otoroshi.env.Env

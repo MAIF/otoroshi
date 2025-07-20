@@ -5,8 +5,8 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.TimeUnit
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth}
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module

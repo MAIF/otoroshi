@@ -1,16 +1,16 @@
 package otoroshi.api
 
-import akka.actor.{ActorSystem, Scheduler}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Framing, Sink, Source}
-import akka.util.ByteString
 import ch.qos.logback.classic.LoggerContext
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers.{Assets, AssetsComponents}
 import next.models.{Api, ApiConsumerSubscription}
 import org.apache.commons.lang3.math.NumberUtils
+import org.apache.pekko.actor.{ActorSystem, Scheduler}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Framing, Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import otoroshi.actions._
@@ -53,7 +53,7 @@ import play.api.mvc._
 import play.api.routing.Router
 import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator}
 import play.core.parsers.FormUrlEncodedParser
-import play.core.server.{AkkaHttpServerComponents, ServerConfig}
+import play.core.server.{PekkoHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
 import utils.EntityFiltering
@@ -411,8 +411,8 @@ object OtoroshiEnvHolder {
   def get(): Env  = ref.get()
 }
 
-class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
-    extends AkkaHttpServerComponents
+class ProgrammaticOtoroshiComponents(_serverConfig: ServerConfig, _configuration: Config)
+    extends PekkoHttpServerComponents
         with BuiltInComponents
         with AssetsComponents
         with AhcWSComponents
@@ -561,7 +561,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
   private lazy val server = components.server
 
   def start(): Otoroshi = {
-    otoroshi.utils.CustomizeAkkaMediaTypesParser.hook(components.env)
+    otoroshi.utils.CustomizePekkoMediaTypesParser.hook(components.env)
     components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
@@ -573,7 +573,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
 
   def startAndStopOnShutdown(): Otoroshi = {
     components.handlerRef.set(components.httpRequestHandler)
-    otoroshi.utils.CustomizeAkkaMediaTypesParser.hook(components.env)
+    otoroshi.utils.CustomizePekkoMediaTypesParser.hook(components.env)
     components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)

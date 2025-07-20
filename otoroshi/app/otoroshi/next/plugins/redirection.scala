@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.Done
+import org.apache.pekko.Done
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.models.RedirectionSettings

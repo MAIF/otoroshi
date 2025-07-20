@@ -1,6 +1,6 @@
 package functional
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
 import otoroshi.events._

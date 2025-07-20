@@ -1,8 +1,8 @@
 package otoroshi.wasm
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import io.otoroshi.wasm4s.scaladsl._
 import org.extism.sdk._
 import org.joda.time.DateTime

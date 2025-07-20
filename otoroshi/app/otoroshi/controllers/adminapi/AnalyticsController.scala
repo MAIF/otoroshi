@@ -1,8 +1,8 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions._
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.ServiceDescriptor

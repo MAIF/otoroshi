@@ -1,7 +1,7 @@
 package otoroshi.greenscore
 
-import akka.actor.{Actor, ActorRef, Props}
-import akka.util.ByteString
+import org.apache.pekko.actor.{Actor, ActorRef, Props}
+import org.apache.pekko.util.ByteString
 import org.joda.time.{DateTime, Days}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr

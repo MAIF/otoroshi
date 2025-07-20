@@ -17,7 +17,7 @@ Otoroshi dependencies and licences
 * de.svenkubiak.jBCrypt - ISC : https://github.com/jeremyh/jBCrypt         
 * org.scalatestplus.play.scalatestplus-play - Apache2 : https://github.com/playframework/scalatestplus-play
 * com.datastax.cassandra.cassandra-driver-core - Apache2 : https://github.com/datastax/java-driver
-* com.typesafe.play.sbt-plugin - Apache2 : https://github.com/playframework/playframework
+* org.playframework.play.sbt-plugin - Apache2 : https://github.com/playframework/playframework
 * io.get-coursier.sbt-coursier - Apache2 : https://github.com/coursier/coursier
 * com.lucidchart.sbt-scalafmt - Apache2 : https://github.com/scalameta/scalafmt
 * com.eed3si9n.sbt-assembly - MIT : https://github.com/softprops/assembly-sbt

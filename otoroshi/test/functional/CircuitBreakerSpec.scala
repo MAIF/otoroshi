@@ -1,7 +1,7 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ClientConfig, ServiceDescriptor, Target}
 import org.scalatest.concurrent.IntegrationPatience

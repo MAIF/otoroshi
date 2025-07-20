@@ -1,7 +1,7 @@
 package otoroshi.plugins.authcallers
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor

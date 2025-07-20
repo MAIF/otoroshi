@@ -1,7 +1,7 @@
 package otoroshi.netty
 
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpRequest
@@ -102,7 +102,7 @@ class ReactorNettyRemoteConnection(req: HttpServerRequest, val secure: Boolean, 
 }
 
 class ReactorNettyRequestTarget(req: HttpServerRequest) extends RequestTarget {
-  lazy val kUri                               = akka.http.scaladsl.model.Uri(uriString)
+  lazy val kUri                               = org.apache.pekko.http.scaladsl.model.Uri(uriString)
   lazy val uri: URI                           = new URI(uriString)
   lazy val uriString: String                  = req.uri()
   lazy val path: String                       = req.fullPath()
@@ -287,7 +287,7 @@ class NettyRemoteConnection(
 }
 
 class NettyRequestTarget(req: HttpRequest) extends RequestTarget {
-  lazy val kUri                               = akka.http.scaladsl.model.Uri(uriString)
+  lazy val kUri                               = org.apache.pekko.http.scaladsl.model.Uri(uriString)
   lazy val uri: URI                           = new URI(uriString)
   lazy val uriString: String                  = req.uri()
   lazy val path: String                       = kUri.path.toString()

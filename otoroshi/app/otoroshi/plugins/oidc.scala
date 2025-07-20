@@ -2,9 +2,9 @@ package otoroshi.plugins.oidc
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.GenericOauth2ModuleConfig
 import otoroshi.cluster.ClusterAgent
 import com.auth0.jwt.JWT

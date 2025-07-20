@@ -2,12 +2,12 @@ package otoroshi.utils.udp
 
 import java.net.InetSocketAddress
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.io.{IO, Udp}
-import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
-import akka.stream.scaladsl.Flow
-import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler}
-import akka.util.ByteString
+import org.apache.pekko.actor.{ActorRef, ActorSystem}
+import org.apache.pekko.io.{IO, Udp}
+import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Outlet}
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler}
+import org.apache.pekko.util.ByteString
 
 import scala.concurrent.{Future, Promise}
 

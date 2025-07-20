@@ -1,7 +1,7 @@
 package otoroshi.plugins.hmac
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._

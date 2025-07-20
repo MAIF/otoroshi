@@ -17,7 +17,7 @@ inThisBuild(
     startYear := Some(2017),
     organization := "fr.maif",
     homepage := Some(url("https://github.com/MAIF/otoroshi")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    licenses := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
     sonatypeProfileName := "fr.maif",
     scmInfo := Some(
       ScmInfo(
@@ -59,25 +59,26 @@ inThisBuild(
 //  .enablePlugins(PlayScala, PlayAkkaHttp2Support)
 //  .disablePlugins(PlayFilters)
 
-enablePlugins(PlayScala, PlayAkkaHttp2Support)
+enablePlugins(PlayScala)
 disablePlugins(PlayFilters)
 
 lazy val scalaLangVersion    = "2.13.16"
-lazy val metricsVersion          = "4.2.12"
-lazy val acme4jVersion           = "3.2.1" // "2.14"
+val playVersion = "3.0.8"
+lazy val metricsVersion          = "4.2.33"
+lazy val acme4jVersion           = "3.5.1" // "2.14"
 lazy val prometheusVersion       = "0.16.0"
-lazy val playJsonVersion         = "2.9.3"
-lazy val webAuthnVersion         = "2.1.0" //"1.7.0" //"2.1.0"
+lazy val playJsonVersion         = "3.0.5"
+lazy val webAuthnVersion         = "2.7.0" //"1.7.0" //"2.1.0"
 lazy val kubernetesVersion       = "16.0.1"
-lazy val bouncyCastleVersion     = "1.77"
-lazy val pulsarVersion           = "2.8.1"
-lazy val openTelemetryVersion    = "1.28.0"
-lazy val jacksonVersion          = "2.15.2"
-lazy val akkaVersion             = "2.6.21"
-lazy val akkaHttpVersion         = "10.2.9"
-lazy val akkaHttp2Version        = akkaHttpVersion
-lazy val reactorNettyVersion     = "1.1.18"
-lazy val nettyVersion            = "4.1.119.Final"
+lazy val bouncyCastleVersion     = "1.78.1"
+lazy val pulsarVersion           = "2.12.0.1"
+lazy val openTelemetryVersion    = "1.52.0"
+lazy val jacksonVersion          = "2.19.2"
+lazy val pekkoVersion            = "1.1.5"
+lazy val pekkoHttpVersion        = "1.2.0"
+lazy val pekkoConnectorsVersion  = "1.1.0"
+lazy val reactorNettyVersion     = "1.2.8"
+lazy val nettyVersion            = "4.2.3.Final"
 lazy val excludesJackson         = Seq(
   ExclusionRule(organization = "com.fasterxml.jackson.core"),
   ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -91,90 +92,87 @@ lazy val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
 )
 
 dependencyOverrides ++= Seq(
-  "com.typesafe.akka" %% "akka-http"          % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http-core"     % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http2-support" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http-xml"      % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-parsing"       % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
-  "org.scala-lang.modules" %% "scala-xml" % "2.2.0"
+  "org.apache.pekko" %% "pekko-actor"         % pekkoVersion,
+  "org.apache.pekko" %% "pekko-stream"        % pekkoVersion,
+  "org.apache.pekko" %% "pekko-slf4j"         % pekkoVersion,
+  "org.apache.pekko" %% "pekko-actor-typed"   % pekkoVersion,
+  "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
+  "org.apache.pekko" %% "pekko-http"          % pekkoHttpVersion,
+  "org.apache.pekko" %% "pekko-http-core"     % pekkoHttpVersion,
+  "org.apache.pekko" %% "pekko-http-xml"      % pekkoHttpVersion,
+  "org.apache.pekko" %% "pekko-parsing"       % pekkoHttpVersion,
+  "org.apache.pekko" %% "pekko-http-spray-json" % pekkoHttpVersion,
+  "org.scala-lang.modules" %% "scala-xml" % "2.4.0"
 )
 
-// BEWARE: akka-stream is a patched version bundled from the lib directory because of . see https://github.com/MAIF/akka/tree/fix-tls-1-3-hanshake-session-update
+// Migrated from Akka to Pekko
 
 libraryDependencies ++= Seq(
   ws,
   filters,
-  "com.softwaremill.macwire"        %% "macros"                                    % "2.5.8" % "provided",
-  "com.typesafe.play"               %% "play-json"                                 % playJsonVersion,
-  "com.typesafe.play"               %% "play-json-joda"                            % playJsonVersion,
+  "com.softwaremill.macwire"        %% "macros"                                    % "2.6.6" % "provided",
+  "org.playframework"               %% "play-json"                                 % playJsonVersion,
+  "org.playframework"               %% "play-json-joda"                            % playJsonVersion,
   "joda-time"                        % "joda-time"                                 % "2.14.0",
-  "com.github.etaty"                %% "rediscala"                                 % "1.9.0",
+  "io.github.rediscala" %% "rediscala" % "1.17.0",
   "com.github.gphat"                %% "censorinus"                                % "2.1.16",
-  "com.typesafe.akka"               %% "akka-stream-kafka"                         % "2.0.7",
-  "com.lightbend.akka"              %% "akka-stream-alpakka-s3"                    % "2.0.2",
-  "com.typesafe.akka" %% "akka-actor"       % akkaVersion,
-  "com.typesafe.akka" %% "akka-stream"      % akkaVersion,
-  "com.typesafe.akka" %% "akka-slf4j"       % akkaVersion,
-  "com.typesafe.akka" %% "akka-protobuf"    % akkaVersion,
-  "com.typesafe.akka" %% "akka-actor-typed"  % akkaVersion,
-  "com.typesafe.akka" %% "akka-stream"       % akkaVersion,
-  "com.typesafe.akka" %% "akka-http"         % akkaHttpVersion,
-  "com.typesafe.akka"               %% "akka-http2-support"                        % akkaHttp2Version,
-  "com.typesafe.akka"               %% "akka-http-xml"                             % akkaHttp2Version,
-  "com.spotify.metrics"              % "semantic-metrics-core"                     % "1.1.11",
-  "io.dropwizard.metrics"            % "metrics-jmx"                               % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
-  "io.dropwizard.metrics"            % "metrics-json"                              % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
-  "io.prometheus"                    % "simpleclient_common"                       % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
-  "io.prometheus"                    % "simpleclient_dropwizard"                   % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
-  "com.auth0"                        % "java-jwt"                                  % "4.2.0" excludeAll (excludesJackson: _*),
-  "com.auth0"                        % "jwks-rsa"                                  % "0.21.2" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
-  "com.nimbusds"                     % "nimbus-jose-jwt"                           % "9.39.1",
+  "org.apache.pekko"                %% "pekko-connectors-kafka"                    % pekkoConnectorsVersion,
+  "org.apache.pekko"                %% "pekko-connectors-s3"                       % pekkoConnectorsVersion,
+  "org.apache.pekko" %% "pekko-actor"       % pekkoVersion,
+  "org.apache.pekko" %% "pekko-stream"      % pekkoVersion,
+  "org.apache.pekko" %% "pekko-slf4j"       % pekkoVersion,
+  "org.apache.pekko" %% "pekko-actor-typed"  % pekkoVersion,
+  "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
+  "org.apache.pekko" %% "pekko-http"         % pekkoHttpVersion,
+  "org.apache.pekko"                %% "pekko-http-xml"                            % pekkoHttpVersion,
+  "com.spotify.metrics"              % "semantic-metrics-core"                     % "1.2.0",
+  "io.dropwizard.metrics"            % "metrics-jmx"                               % metricsVersion excludeAll (excludesJackson *), // Apache 2.0
+  "io.dropwizard.metrics"            % "metrics-json"                              % metricsVersion excludeAll (excludesJackson *), // Apache 2.0
+  "io.prometheus"                    % "simpleclient_common"                       % prometheusVersion excludeAll (excludesJackson *), // Apache 2.0
+  "io.prometheus"                    % "simpleclient_dropwizard"                   % prometheusVersion excludeAll (excludesJackson *), // Apache 2.0
+  "com.auth0"                        % "java-jwt"                                  % "4.5.0" excludeAll (excludesJackson *),
+  "com.auth0"                        % "jwks-rsa"                                  % "0.22.2" excludeAll (excludesJackson *), // https://github.com/auth0/jwks-rsa-java
+  "com.nimbusds"                     % "nimbus-jose-jwt"                           % "9.48",
   "de.svenkubiak"                    % "jBCrypt"                                   % "0.4.3",
   "com.propensive"                  %% "kaleidoscope-core"                         % "0.5.0",
-  "io.github.classgraph"             % "classgraph"                                % "4.8.149" excludeAll (excludesJackson: _*),
-  "com.comcast"                     %% "ip4s-core"                                 % "3.2.0",
-  "com.yubico"                       % "webauthn-server-core"                      % webAuthnVersion excludeAll (excludesJackson: _*),
-  "com.yubico"                       % "webauthn-server-attestation"               % webAuthnVersion excludeAll (excludesJackson: _*),
-  "com.yubico"                       % "yubico-util"                               % webAuthnVersion excludeAll (excludesJackson: _*),
-  "com.maxmind.geoip2"               % "geoip2"                                    % "3.0.1",
-  "com.blueconic"                    % "browscap-java"                             % "1.3.13",
+  "io.github.classgraph"             % "classgraph"                                % "4.8.181" excludeAll (excludesJackson *),
+  "com.comcast"                     %% "ip4s-core"                                 % "3.7.0",
+  "com.yubico"                       % "webauthn-server-core"                      % webAuthnVersion excludeAll (excludesJackson *),
+  "com.yubico"                       % "webauthn-server-attestation"               % webAuthnVersion excludeAll (excludesJackson *),
+  "com.yubico"                       % "yubico-util"                               % webAuthnVersion excludeAll (excludesJackson *),
+  "com.maxmind.geoip2"               % "geoip2"                                    % "3.0.2",
+  "com.blueconic"                    % "browscap-java"                             % "1.5.1",
   "javax.xml.bind"                   % "jaxb-api"                                  % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "com.sun.xml.bind"                 % "jaxb-core"                                 % "2.3.0.1",
-  if (scalaLangVersion.startsWith("2.12")) {
-    "com.github.blemale" %% "scaffeine" % "4.0.2"
-  } else {
-    "com.github.blemale" %% "scaffeine" % "5.2.1"
-  },
-  "org.shredzone.acme4j"             % "acme4j-client"                             % acme4jVersion excludeAll (excludeSlf4jAndJackson: _*),
-  "io.lettuce"                       % "lettuce-core"                              % "6.2.2.RELEASE" excludeAll (excludesJackson: _*),
-  "io.vertx"                         % "vertx-pg-client"                           % "4.3.4",
+  "com.github.blemale" %% "scaffeine" % "5.3.0",
+  "org.shredzone.acme4j"             % "acme4j-client"                             % acme4jVersion excludeAll (excludeSlf4jAndJackson *),
+  "io.lettuce"                       % "lettuce-core"                              % "6.7.1.RELEASE" excludeAll (excludesJackson *),
+  "io.vertx"                         % "vertx-pg-client"                           % "4.5.16",
   "com.ongres.scram"                 % "common"                                    % "2.1",
   "com.ongres.scram"                 % "client"                                    % "2.1",
-  "com.jayway.jsonpath"              % "json-path"                                 % "2.7.0",
-  "com.cronutils"                    % "cron-utils"                                % "9.2.0",
+  "com.jayway.jsonpath"              % "json-path"                                 % "2.9.0",
+  "com.cronutils"                    % "cron-utils"                                % "9.2.1",
   "commons-lang"                     % "commons-lang"                              % "2.6",
-  "com.datastax.oss"                 % "java-driver-core"                          % "4.15.0" excludeAll (excludesJackson: _*),
-  "org.gnieh"                       %% "diffson-play-json"                         % "4.3.0" excludeAll ExclusionRule(organization = "com.typesafe.akka"),
+  "com.datastax.oss"                 % "java-driver-core"                          % "4.17.0" excludeAll (excludesJackson *),
+  "org.gnieh"                       %% "diffson-play-json"                         % "4.6.0" excludeAll ExclusionRule(organization = "org.apache.pekko"),
   "org.scala-lang"                   % "scala-compiler"                            % scalaLangVersion,
   "org.scala-lang"                   % "scala-library"                             % scalaLangVersion,
   "org.scala-lang"                   % "scala-reflect"                             % scalaLangVersion,
-  "io.kubernetes"                    % "client-java"                               % kubernetesVersion excludeAll (excludesJackson: _*),
-  "io.kubernetes"                    % "client-java-extended"                      % kubernetesVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcpkix-jdk18on"                            % bouncyCastleVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcprov-ext-jdk18on"                        % bouncyCastleVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcprov-jdk18on"                            % bouncyCastleVersion excludeAll (excludesJackson: _*),
-  "com.clever-cloud.pulsar4s"       %% "pulsar4s-play-json"                        % pulsarVersion excludeAll (excludesJackson: _*),
-  "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                             % pulsarVersion excludeAll (excludesJackson: _*),
-  "com.clever-cloud.pulsar4s"       %% "pulsar4s-akka-streams"                     % pulsarVersion excludeAll (excludesJackson: _*),
-  "org.jsoup"                        % "jsoup"                                     % "1.15.3",
-  "org.biscuitsec"                   % "biscuit"                                   % "4.0.0",
+  "io.kubernetes"                    % "client-java"                               % kubernetesVersion excludeAll (excludesJackson *),
+  "io.kubernetes"                    % "client-java-extended"                      % kubernetesVersion excludeAll (excludesJackson *),
+  "org.bouncycastle"                 % "bcpkix-jdk18on"                            % bouncyCastleVersion excludeAll (excludesJackson *),
+  "org.bouncycastle"                 % "bcprov-ext-jdk18on"                        % bouncyCastleVersion excludeAll (excludesJackson *),
+  "org.bouncycastle"                 % "bcprov-jdk18on"                            % bouncyCastleVersion excludeAll (excludesJackson *),
+  "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                             % pulsarVersion excludeAll (excludesJackson *),
+  "com.clever-cloud.pulsar4s"       %% "pulsar4s-pekko-streams"                    % pulsarVersion excludeAll (excludesJackson *),
+  "org.jsoup"                        % "jsoup"                                     % "1.21.1",
+  "org.biscuitsec"                   % "biscuit"                                   % "4.0.1",
   "org.opensaml"                     % "opensaml-core"                             % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-api"                         % "4.0.1",
   //"org.opensaml"                     % "opensaml-xmlsec-impl"        % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-impl"                        % "4.0.1",
-  "org.openjdk.jol"                  % "jol-core"                                  % "0.16",
-  "org.typelevel"                   %% "squants"                                   % "1.8.3" excludeAll (excludesJackson: _*),
+  "org.openjdk.jol"                  % "jol-core"                                  % "0.17",
+  "org.typelevel"                   %% "squants"                                   % "1.8.3" excludeAll (excludesJackson *),
   // fix multiple CVEs
   "com.fasterxml.jackson.core"       % "jackson-core"                              % jacksonVersion,
   "com.fasterxml.jackson.core"       % "jackson-annotations"                       % jacksonVersion,
@@ -183,41 +181,41 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"                   % jacksonVersion,
   "com.fasterxml.jackson.datatype"   % "jackson-datatype-jsr310"                   % jacksonVersion,
   "com.fasterxml.jackson.module"    %% "jackson-module-scala"                      % jacksonVersion,
-  "org.yaml"                         % "snakeyaml"                                 % "1.33" excludeAll (excludesJackson: _*),
+  "org.yaml"                         % "snakeyaml"                                 % "1.33" excludeAll (excludesJackson *),
   // "com.arakelian"                    % "java-jq"                                   % "1.3.0" excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-api"                         % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-bom"                         % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-context"                     % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-sdk"                         % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-sdk-common"                  % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-sdk-logs"                    % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-sdk-metrics"                 % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-sdk-trace"                   % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-exporter-logging"            % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-exporter-otlp"               % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"             % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-exporter-sender-okhttp"      % openTelemetryVersion excludeAll (excludesJackson: _*),
+  "io.opentelemetry"                 % "opentelemetry-api"                         % openTelemetryVersion excludeAll (excludesJackson *),
+  "io.opentelemetry"                 % "opentelemetry-bom"                         % openTelemetryVersion excludeAll (excludesJackson *),
+  "io.opentelemetry"                 % "opentelemetry-context"                     % openTelemetryVersion excludeAll (excludesJackson *),
+  "io.opentelemetry"                 % "opentelemetry-sdk"                         % openTelemetryVersion excludeAll (excludesJackson *),
+  "io.opentelemetry"                 % "opentelemetry-sdk-common"                  % openTelemetryVersion excludeAll (excludesJackson *),
+  "io.opentelemetry"                 % "opentelemetry-sdk-logs"                    % openTelemetryVersion excludeAll (excludesJackson *),
+  "io.opentelemetry"                 % "opentelemetry-sdk-metrics"                 % openTelemetryVersion excludeAll (excludesJackson *),
+  "io.opentelemetry"                 % "opentelemetry-sdk-trace"                   % openTelemetryVersion excludeAll (excludesJackson *),
+  "io.opentelemetry"                 % "opentelemetry-exporter-logging"            % openTelemetryVersion excludeAll (excludesJackson *),
+  "io.opentelemetry"                 % "opentelemetry-exporter-otlp"               % openTelemetryVersion excludeAll (excludesJackson *),
+  "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"             % openTelemetryVersion excludeAll (excludesJackson *),
+  "io.opentelemetry"                 % "opentelemetry-exporter-sender-okhttp"      % openTelemetryVersion excludeAll (excludesJackson *),
   // "io.opentelemetry"                 % "opentelemetry-exporter-prometheus"         % "1.28.0-alpha" excludeAll (excludesJackson: _*),
-  "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"        % "1.28.0-alpha" excludeAll (excludesJackson: _*),
-  "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.326" excludeAll (excludesJackson: _*),
-  "org.apache.logging.log4j"         % "log4j-api"                                 % "2.19.0",
-  "org.sangria-graphql"             %% "sangria"                                   % "3.4.0",
+//  "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"        % "1.28.0-alpha" excludeAll (excludesJackson *),
+//  "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.326" excludeAll (excludesJackson *),
+//  "org.apache.logging.log4j"         % "log4j-api"                                 % "2.19.0",
+//  "org.sangria-graphql"             %% "sangria"                                   % "3.4.0",
+  "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"        % "1.28.0-alpha" excludeAll (excludesJackson *),
+  "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.788" excludeAll (excludesJackson *),
+  "org.apache.logging.log4j"         % "log4j-api"                                 % "2.25.1",
+  "org.sangria-graphql"             %% "sangria"                                   % "3.5.3",
   "org.bigtesting"                   % "routd"                                     % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
-  "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
-  "fr.maif"                         %% "wasm4s"                                    % "4.1.2" classifier "bundle",
-  "com.google.crypto.tink"           % "tink"                                      % "1.16.0",
+  "io.azam.ulidj"                    % "ulidj"                                     % "1.1.0",
+  // Updated to use Pekko-based wasm4s with Scala 3 support and comprehensive integration tests
+  "fr.maif"                         %% "wasm4s"                                    % "5.0.0-SNAPSHOT" classifier "bundle",
+  "com.google.crypto.tink"           % "tink"                                      % "1.18.0",
   "org.reflections"                  % "reflections"                               % "0.10.2",
   "org.json4s"                      %% "json4s-jackson"                            % "4.0.7",
   "org.json4s"                      %% "json4s-ast"                                % "4.0.7",
   "org.json4s"                      %% "json4s-ext"                                % "4.0.7",
   // using a custom one right now as current build is broken
   //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
-  if (scalaLangVersion.startsWith("2.12")) {
-    "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
-  } else {
-    "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
-  },
   /*"org.sangria-graphql"             %% "sangria-play-json"              % "2.0.1" excludeAll ExclusionRule(
     organization = "com.typesafe.play"
   )*/ // TODO - check if needed
@@ -228,11 +226,11 @@ libraryDependencies ++= Seq(
   "io.netty"                         % "netty-transport-native-kqueue"             % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
   "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion,
   "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final",
-  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.62.Final",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.62.Final" classifier "linux-x86_64" classifier "osx-x86_64",
-  "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.28.Final",
+  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.26.Final",
+  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.26.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.73.Final",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.73.Final" classifier "linux-x86_64" classifier "osx-x86_64",
+  "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.30.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test,
   "com.networknt"                    % "json-schema-validator"                     % "1.3.0" excludeAll (
@@ -285,69 +283,67 @@ assembly /mainClass := Some("play.core.server.ProdServerStart")
 assembly / test := {}
 assembly /assemblyJarName := "otoroshi.jar"
 assembly / fullClasspath += Attributed.blank(PlayKeys.playPackageAssets.value)
-assembly / assemblyMergeStrategy := { e =>
-  e match {
-    case path if path.contains("com/upokecenter/util")                  => MergeStrategy.first
-    case path if path.contains("org/slf4j/impl")                        => MergeStrategy.first
-    case path if path.contains("edu/umd/cs/findbugs/annotations")       => MergeStrategy.first
-    case PathList("scala", xs @ _*)                                     => MergeStrategy.first
-    case PathList("org", "apache", "commons", "logging", xs @ _*)       => MergeStrategy.first
-    case PathList("org", "apache", "commons", "lang", xs @ _*)          => MergeStrategy.first
-    case PathList("org", "apache", "commons", "collections", xs @ _*)   => MergeStrategy.first
-    case PathList(
-          "org",
-          "apache",
-          "maven",
-          "surefire",
-          "shade",
-          "org",
-          "apache",
-          "maven",
-          "shared",
-          "utils",
-          "StringUtils.class"
-        ) =>
-      MergeStrategy.first
-    case PathList("io", "sundr", xs @ _*)                               => MergeStrategy.first
-    case PathList("com", "sun", "xml", xs @ _*)                         => MergeStrategy.first
-    case PathList("com", "sun", "istack", xs @ _*)                      => MergeStrategy.first
-    case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("reference-overrides.conf")   => MergeStrategy.concat
-    case PathList(ps @ _*) if ps.contains("field_mask.proto")           => MergeStrategy.first // ???
-    case PathList(ps @ _*) if ps.contains("plugin.proto")               =>
-      MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
-    case PathList(ps @ _*) if ps.contains("descriptor.proto")           =>
-      MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
-    case PathList(ps @ _*) if ps.contains("module-info.class")          => MergeStrategy.first // ???
-    case PathList(ps @ _*) if ps.contains("ModuleUtil.class")           => MergeStrategy.first // ???
-    case PathList(ps @ _*) if ps.contains("GuardedBy.class")            => MergeStrategy.first // ???
-    case PathList(ps @ _*) if ps.contains("nowarn$.class")              => MergeStrategy.first // ???
-    case PathList(ps @ _*) if ps.contains("nowarn.class")               => MergeStrategy.first // ???
-    case PathList(ps @ _*) if ps.contains("reflection-config.json")     => MergeStrategy.first // ???
-    case PathList(ps @ _*) if ps.contains("metadata.json")              => MergeStrategy.first // ??? hope webauthn comes first
-    case PathList(ps @ _*) if ps.contains("version.conf")               => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("any.proto")                  => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("api.proto")                  => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("duration.proto")             => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("empty.proto")                => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("struct.proto")               => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("type.proto")                 => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("timestamp.proto")            => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("wrappers.proto")             => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("source_context.proto")       => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("native-image.properties")    => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("library.properties")         => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("public-suffix-list.txt")     => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("jna")                        => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
-    case PathList(ps @ _*) if ps.contains("okio.kotlin_module")         => MergeStrategy.first
-    case path if path.contains("akka/stream")                           => MergeStrategy.first
-    case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
-    case PathList("javax", xs @ _*)                                     => MergeStrategy.first
-    case x                                                              =>
-      val oldStrategy = (assembly / assemblyMergeStrategy).value
-      oldStrategy(x)
-  }
+assembly / assemblyMergeStrategy := {
+  case path if path.contains("com/upokecenter/util") => MergeStrategy.first
+  case path if path.contains("org/slf4j/impl") => MergeStrategy.first
+  case path if path.contains("edu/umd/cs/findbugs/annotations") => MergeStrategy.first
+  case PathList("scala", xs@_*) => MergeStrategy.first
+  case PathList("org", "apache", "commons", "logging", xs@_*) => MergeStrategy.first
+  case PathList("org", "apache", "commons", "lang", xs@_*) => MergeStrategy.first
+  case PathList("org", "apache", "commons", "collections", xs@_*) => MergeStrategy.first
+  case PathList(
+  "org",
+  "apache",
+  "maven",
+  "surefire",
+  "shade",
+  "org",
+  "apache",
+  "maven",
+  "shared",
+  "utils",
+  "StringUtils.class"
+  ) =>
+    MergeStrategy.first
+  case PathList("io", "sundr", xs@_*) => MergeStrategy.first
+  case PathList("com", "sun", "xml", xs@_*) => MergeStrategy.first
+  case PathList("com", "sun", "istack", xs@_*) => MergeStrategy.first
+  case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("reference-overrides.conf") => MergeStrategy.concat
+  case PathList(ps@_*) if ps.contains("field_mask.proto") => MergeStrategy.first // ???
+  case PathList(ps@_*) if ps.contains("plugin.proto") =>
+    MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
+  case PathList(ps@_*) if ps.contains("descriptor.proto") =>
+    MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
+  case PathList(ps@_*) if ps.contains("module-info.class") => MergeStrategy.first // ???
+  case PathList(ps@_*) if ps.contains("ModuleUtil.class") => MergeStrategy.first // ???
+  case PathList(ps@_*) if ps.contains("GuardedBy.class") => MergeStrategy.first // ???
+  case PathList(ps@_*) if ps.contains("nowarn$.class") => MergeStrategy.first // ???
+  case PathList(ps@_*) if ps.contains("nowarn.class") => MergeStrategy.first // ???
+  case PathList(ps@_*) if ps.contains("reflection-config.json") => MergeStrategy.first // ???
+  case PathList(ps@_*) if ps.contains("metadata.json") => MergeStrategy.first // ??? hope webauthn comes first
+  case PathList(ps@_*) if ps.contains("version.conf") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("any.proto") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("api.proto") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("duration.proto") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("empty.proto") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("struct.proto") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("type.proto") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("timestamp.proto") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("wrappers.proto") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("source_context.proto") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("native-image.properties") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("library.properties") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("public-suffix-list.txt") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("jna") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("findbugsExclude.xml") => MergeStrategy.first
+  case PathList(ps@_*) if ps.contains("okio.kotlin_module") => MergeStrategy.first
+  case path if path.contains("pekko/stream") => MergeStrategy.first
+  case path if path.contains("org/bouncycastle") => MergeStrategy.first
+  case PathList("javax", xs@_*) => MergeStrategy.first
+  case x =>
+    val oldStrategy = (assembly / assemblyMergeStrategy).value
+    oldStrategy(x)
 }
 
 lazy val packageAll = taskKey[Unit]("PackageAll")

@@ -1,7 +1,7 @@
 package otoroshi.next.models
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.OverflowStrategy
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.OverflowStrategy
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
 import otoroshi.models._

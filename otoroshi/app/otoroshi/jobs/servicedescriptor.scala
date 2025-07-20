@@ -1,6 +1,6 @@
 package otoroshi.jobs
 
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.NgPluginCategory

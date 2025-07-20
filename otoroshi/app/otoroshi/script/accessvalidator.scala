@@ -1,6 +1,6 @@
 package otoroshi.script
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, GwError}
 import otoroshi.models._

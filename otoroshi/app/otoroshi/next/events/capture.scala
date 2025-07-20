@@ -1,6 +1,6 @@
 package otoroshi.next.events
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent

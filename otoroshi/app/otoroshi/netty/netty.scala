@@ -1,8 +1,8 @@
 package otoroshi.netty
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.util.ByteString
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.{Channel, ChannelHandler, ChannelHandlerContext, EventLoopGroup}
 import io.netty.handler.codec.http._
@@ -31,6 +31,7 @@ import reactor.netty.{DisposableServer, NettyOutbound}
 
 import java.net.{InetSocketAddress, SocketAddress}
 import java.security.{Provider, SecureRandom}
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.BiFunction
 import javax.net.ssl._
@@ -463,14 +464,22 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
         case _                          => "-"
       }
       val defaultLogFormat                           = "{} - {} [{}] \"{} {} {}\" {} {} {} {}"
-      val logCustom                                  = new AccessLogFactory {
+      val logCustom = new AccessLogFactory {
+        // Define the date format pattern to match the expected format
+        private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z")
+
         override def apply(args: AccessLogArgProvider): AccessLog = {
           val tlsVersion = args.requestHeader("Otoroshi-Tls-Version")
+          // Format the ZonedDateTime to match the expected string format
+          val formattedDateTime = Option(args.accessDateTime())
+              .map(_.format(dateTimeFormatter))
+              .orNull
+
           AccessLog.create(
             defaultLogFormat,
             applyAddress(args.connectionInformation().remoteAddress()),
             args.user(),
-            args.zonedDateTime(),
+            formattedDateTime,
             args.method(),
             args.uri(),
             args.protocol(),

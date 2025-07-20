@@ -1,6 +1,6 @@
 package otoroshi.greenscore
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.typesafe.config.ConfigFactory
 import functional.OtoroshiSpec
 import org.joda.time.DateTime

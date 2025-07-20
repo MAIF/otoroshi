@@ -1,10 +1,10 @@
 package otoroshi.next.proxy
 
-import akka.Done
-import akka.actor.Scheduler
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.Scheduler
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.cluster.{ClusterMode, MemberView, RelayRouting}
 import otoroshi.env.Env

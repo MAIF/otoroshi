@@ -1,17 +1,12 @@
 package otoroshi.netty
 
-import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
-import akka.http.scaladsl.model.{ContentType, HttpHeader, StatusCode, Uri}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
 import com.google.common.base.Charsets
 import io.netty
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.{ByteBufAllocator, Unpooled}
-import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.nio.NioIoHandler
 import io.netty.channel.socket.nio.NioDatagramChannel
-import io.netty.channel.{Channel, ChannelHandler, ChannelHandlerContext}
+import io.netty.channel.{Channel, ChannelHandler, ChannelHandlerContext, MultiThreadIoEventLoopGroup}
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder
 import io.netty.handler.ssl.ApplicationProtocolNegotiator
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
@@ -20,6 +15,11 @@ import io.netty.incubator.codec.quic._
 import io.netty.util.concurrent.GenericFutureListener
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 import org.apache.commons.codec.binary.Base64
+import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
+import org.apache.pekko.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
+import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, StatusCode, Uri}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
@@ -36,9 +36,7 @@ import reactor.core.publisher.{Flux, Sinks}
 import java.io.File
 import java.net.{InetSocketAddress, URI}
 import java.util
-import java.util.concurrent.{Executors, TimeUnit}
-import javax.net.ssl.SSLSessionContext
-import scala.collection.concurrent.TrieMap
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
@@ -57,7 +55,8 @@ class NettySniSslContext(sslContext: QuicSslContext, host: String, port: Int) ex
   override def newEngine(alloc: ByteBufAllocator, peerHost: String, peerPort: Int): QuicSslEngine =
     sslContext.newEngine(alloc, peerHost, peerPort)
   override def isClient: Boolean                                                                  = sslContext.isClient
-  override def cipherSuites(): util.List[String]                                                  = sslContext.cipherSuites()
+  override def cipherSuites(): util.List[String] = sslContext.cipherSuites()
+  @SuppressWarnings(Array("deprecation")) // todo needs to be removed when the underlying method is also removed
   override def applicationProtocolNegotiator(): ApplicationProtocolNegotiator                     =
     sslContext.applicationProtocolNegotiator()
   override def sessionContext(): QuicSslSessionContext                                            = sslContext.sessionContext()
@@ -70,7 +69,10 @@ class NettyHttp3Client(val env: Env) {
   // TODO: support proxy ????
 
   private[netty] val logger = NettyHttp3Client.logger
-  private val group         = new NioEventLoopGroup(Runtime.getRuntime.availableProcessors() + 1)
+  private val group = new MultiThreadIoEventLoopGroup(
+    Runtime.getRuntime.availableProcessors() + 1,
+    NioIoHandler.newFactory()
+  )
   private val bs            = new Bootstrap().group(group).channel(classOf[NioDatagramChannel])
 
   private val codecs   = Caches.bounded[String, ChannelHandler](999)

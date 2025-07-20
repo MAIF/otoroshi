@@ -889,7 +889,7 @@ export function discardAdmin(username, id, type) {
     }).then((r) => r.json());
   } else {
     // nothing
-    return;
+
   }
 }
 

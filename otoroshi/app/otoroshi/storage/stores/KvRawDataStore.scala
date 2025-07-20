@@ -1,7 +1,7 @@
 package otoroshi.storage.stores
 
-import akka.http.scaladsl.util.FastFuture
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.storage.{RawDataStore, RedisLike}
 

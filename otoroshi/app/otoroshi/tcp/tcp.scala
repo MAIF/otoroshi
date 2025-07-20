@@ -1,12 +1,12 @@
 package otoroshi.tcp
 
-import akka.Done
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.settings.ServerSettings
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source, Tcp}
-import akka.stream.{IgnoreComplete, Materializer}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.settings.ServerSettings
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source, Tcp}
+import org.apache.pekko.stream.{IgnoreComplete, Materializer}
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env

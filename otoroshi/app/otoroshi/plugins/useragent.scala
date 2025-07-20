@@ -2,7 +2,7 @@ package otoroshi.plugins.useragent
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.blueconic.browscap.{UserAgentParser, UserAgentService}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}

@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import kaleidoscope._
 import otoroshi.env.Env

@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.Done
+import org.apache.pekko.Done
 import org.biscuitsec.biscuit.crypto.PublicKey
 import org.biscuitsec.biscuit.token.builder.Term.Str
 import org.biscuitsec.biscuit.token.{Authorizer, Biscuit}

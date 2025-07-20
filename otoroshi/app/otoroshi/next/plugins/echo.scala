@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.MediaTypes
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.MediaTypes
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError

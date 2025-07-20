@@ -1,9 +1,9 @@
 package otoroshi.models
 
-import akka.actor.Scheduler
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.actor.Scheduler
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Flow
 import com.auth0.jwt.{JWT, RegisteredClaims}
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.InvalidClaimException

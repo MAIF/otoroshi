@@ -1,10 +1,10 @@
 package otoroshi.utils.gzip
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream._
-import akka.stream.scaladsl._
-import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl._
+import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import org.apache.pekko.util.ByteString
 import otoroshi.utils.RegexPool
 import play.api.Logger
 import play.api.http._

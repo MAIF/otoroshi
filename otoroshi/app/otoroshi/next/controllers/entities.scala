@@ -1,6 +1,6 @@
 package otoroshi.next.controllers.adminapi
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._

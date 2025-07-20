@@ -1,13 +1,13 @@
 package otoroshi.next.tunnel
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import akka.http.scaladsl.ClientTransport
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
-import akka.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
-import akka.stream.{Materializer, OverflowStrategy}
-import akka.util.ByteString
+import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, Props}
+import org.apache.pekko.http.scaladsl.ClientTransport
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
+import org.apache.pekko.stream.{Materializer, OverflowStrategy}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
@@ -224,14 +224,14 @@ class TunnelAgent(env: Env) {
     logger.info(s"connecting tunnel '$tunnelId' ...")
 
     val promise                                                                                                     = Promise[Unit]()
-    val metadataSource: Source[akka.http.scaladsl.model.ws.Message, _]                                              = Source
+    val metadataSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                              = Source
       .tick(1.seconds, 10.seconds, ())
       .map { _ =>
         Try {
           if (exportMeta) {
             val allRoutes = env.proxyState.allRoutes()
             val routes    = exportTag.map(t => allRoutes.filter(_.tags.contains(t))).getOrElse(allRoutes)
-            akka.http.scaladsl.model.ws.BinaryMessage.Strict(
+            org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(
               Json
                 .obj(
                   "tunnel_id" -> tunnelId,
@@ -246,7 +246,7 @@ class TunnelAgent(env: Env) {
             )
 
           } else {
-            akka.http.scaladsl.model.ws.BinaryMessage
+            org.apache.pekko.http.scaladsl.model.ws.BinaryMessage
               .Strict(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)
           }
         }
@@ -254,20 +254,20 @@ class TunnelAgent(env: Env) {
       .collect { case Success(value) =>
         value
       }
-    val pingSource: Source[akka.http.scaladsl.model.ws.Message, _]                                                  = Source
+    val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                                  = Source
       .tick(10.seconds, 10.seconds, ())
       .map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString))
       .map { pm =>
-        akka.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
+        org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
       }
-    val queueRef                                                                                                    = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
+    val queueRef                                                                                                    = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
     val pushSource
-        : Source[akka.http.scaladsl.model.ws.Message, SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]] =
-      Source.queue[akka.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
+        : Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]] =
+      Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
         queueRef.set(q)
         q
       }
-    val source: Source[akka.http.scaladsl.model.ws.Message, _]                                                      = pushSource.merge(pingSource.merge(metadataSource))
+    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                                      = pushSource.merge(pingSource.merge(metadataSource))
 
     def handleRequest(rawRequest: ByteString): Unit = Try {
       val obj = Json.parse(rawRequest.toArray)
@@ -327,7 +327,7 @@ class TunnelAgent(env: Env) {
               logger.debug(s"sending response back to server on tunnel '$tunnelId' - $requestId")
             Option(queueRef.get()).foreach(queue =>
               queue
-                .offer(akka.http.scaladsl.model.ws.BinaryMessage.Streamed(res.stringify.byteString.chunks(16 * 1024)))
+                .offer(org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(res.stringify.byteString.chunks(16 * 1024)))
             )
           }
         }
@@ -365,15 +365,15 @@ class TunnelAgent(env: Env) {
       mtlsConfigOpt = tls,
       clientFlow = Flow
         .fromSinkAndSource(
-          Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-            case akka.http.scaladsl.model.ws.TextMessage.Strict(data)       =>
+          Sink.foreach[org.apache.pekko.http.scaladsl.model.ws.Message] {
+            case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(data)       =>
               if (logger.isDebugEnabled) logger.debug(s"invalid text message: '$data'")
-            case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
+            case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
               source
                 .runFold("")(_ + _)
                 .map(b => if (logger.isDebugEnabled) logger.debug(s"invalid text message: '$b'"))
-            case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleRequest(data)
-            case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+            case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleRequest(data)
+            case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
               source.runFold(ByteString.empty)(_ ++ _).map(b => handleRequest(b))
           },
           source
@@ -437,7 +437,7 @@ class TunnelAgent(env: Env) {
               case (Some(principal), Some(password)) =>
                 ClientTransport.httpsProxy(
                   proxyAddress,
-                  akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+                  org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
                 )
               case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
@@ -675,20 +675,20 @@ class LeaderConnection(
   def location: String = member.location
 
   private val ref                                                                                                 = new AtomicLong(0L)
-  private val pingSource: Source[akka.http.scaladsl.model.ws.Message, _]                                          = Source
+  private val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                          = Source
     .tick(10.seconds, 10.seconds, ())
     .map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString))
     .map { pm =>
-      akka.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
+      org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
     }
-  private val queueRef                                                                                            = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
+  private val queueRef                                                                                            = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
   private val pushSource
-      : Source[akka.http.scaladsl.model.ws.Message, SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]] =
-    Source.queue[akka.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
+      : Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]] =
+    Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
       queueRef.set(q)
       q
     }
-  private val source: Source[akka.http.scaladsl.model.ws.Message, _]                                              = pushSource.merge(pingSource)
+  private val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                              = pushSource.merge(pingSource)
   private val awaitingResponse                                                                                    = new UnboundedTrieMap[String, Promise[Result]]()
 
   def close(): Unit = {
@@ -705,7 +705,7 @@ class LeaderConnection(
       )
     val promise = Promise.apply[Result]()
     awaitingResponse.put(requestId, promise)
-    Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage.Strict(req)))
+    Option(queueRef.get()).foreach(_.offer(org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(req)))
     promise.future
   }
 
@@ -749,9 +749,9 @@ class LeaderConnection(
         mtlsConfigOpt = env.clusterConfig.mtlsConfig.some.filter(_.mtls),
         clientFlow = Flow
           .fromSinkAndSource(
-            Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-              case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleResponse(data)
-              case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+            Sink.foreach[org.apache.pekko.http.scaladsl.model.ws.Message] {
+              case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleResponse(data)
+              case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
                 source.runFold(ByteString.empty)(_ ++ _).map(b => handleResponse(b))
               case _                                                          =>
             },
@@ -816,9 +816,9 @@ class LeaderConnection(
         mtlsConfigOpt = env.clusterConfig.mtlsConfig.some.filter(_.mtls),
         clientFlow = Flow
           .fromSinkAndSource(
-            Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-              case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleResponse(data)
-              case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+            Sink.foreach[org.apache.pekko.http.scaladsl.model.ws.Message] {
+              case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleResponse(data)
+              case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
                 source.runFold(ByteString.empty)(_ ++ _).map(b => handleResponse(b))
               case _                                                          =>
             },

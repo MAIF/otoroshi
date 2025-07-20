@@ -1,6 +1,6 @@
 package otoroshi.storage.stores
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AlertEvent}
 import play.api.libs.json.{JsValue, Json}

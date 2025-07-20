@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import io.netty.incubator.codec.http3.Http3
 import otoroshi.env.Env
 import otoroshi.netty.ReactorNettyServerConfig

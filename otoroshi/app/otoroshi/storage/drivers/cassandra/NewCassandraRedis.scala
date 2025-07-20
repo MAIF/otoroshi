@@ -3,11 +3,11 @@ package otoroshi.storage.drivers.cassandra
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{TimeUnit, _}
 import java.util.regex.Pattern
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.codahale.metrics._
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, Row}

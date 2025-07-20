@@ -1,11 +1,12 @@
 package otoroshi.models
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
 import otoroshi.events.Exporters._
 import otoroshi.events._
+import otoroshi.events.pulsar.PulsarConfig
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.next.utils.JsonHelpers

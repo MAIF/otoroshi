@@ -1,6 +1,6 @@
 package otoroshi.auth
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.nimbusds.jose.util.X509CertUtils
@@ -444,8 +444,11 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
     val parser = new BasicParserPool()
     parser.initialize()
 
-    val metadataDocument = parser.parse(new BOMInputStream(IOUtils.toInputStream(metadata, StandardCharsets.UTF_8)))
-
+    val metadataDocument = parser.parse(
+      BOMInputStream.builder()
+          .setInputStream(IOUtils.toInputStream(metadata, StandardCharsets.UTF_8))
+          .get()
+    )
     val resolver = new DOMMetadataResolver(metadataDocument.getDocumentElement)
     resolver.setId("componentId")
     resolver.initialize()

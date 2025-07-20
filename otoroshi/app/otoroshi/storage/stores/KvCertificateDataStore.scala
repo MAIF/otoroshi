@@ -1,7 +1,7 @@
 package otoroshi.storage.stores
 
-import akka.actor.Cancellable
-import akka.stream.Materializer
+import org.apache.pekko.actor.Cancellable
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.ssl.{Cert, CertificateDataStore, DynamicSSLEngineProvider}
 import otoroshi.storage.{RedisLike, RedisLikeStore}

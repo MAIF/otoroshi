@@ -3,9 +3,9 @@ package otoroshi.utils.workflow
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicReference
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.utils.JsonPathUtils
 import otoroshi.utils.ReplaceAllWith

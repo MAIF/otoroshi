@@ -1,6 +1,6 @@
 package otoroshi.next.models
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiActionContext
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
@@ -217,7 +217,7 @@ case class NgRoute(
 
   lazy val userFacing: Boolean                  = metadata.get("otoroshi-core-user-facing").contains("true")
   lazy val useAhcClient: Boolean                = !useAkkaHttpClient && !useNettyClient
-  lazy val useAkkaHttpClient: Boolean           = metadata.get("otoroshi-core-use-akka-http-client").contains("true")
+  lazy val useAkkaHttpClient: Boolean           = metadata.get("otoroshi-core-use-pekko-http-client").contains("true")
   lazy val useNettyClient: Boolean              = metadata.get("otoroshi-core-use-netty-http-client").contains("true")
   lazy val useAkkaHttpWsClient: Boolean         = metadata.get("otoroshi-core-use-akka-http-ws-client").contains("true")
   lazy val issueLetsEncryptCertificate: Boolean =
@@ -894,7 +894,7 @@ object NgRoute {
           meta ++ Map("otoroshi-core-env" -> service.env)
         }
         .applyOnIf(service.useAkkaHttpClient) { meta =>
-          meta ++ Map("otoroshi-core-use-akka-http-client" -> "true")
+          meta ++ Map("otoroshi-core-use-pekko-http-client" -> "true")
         }
         .applyOnIf(service.useNewWSClient) { meta =>
           meta ++ Map("otoroshi-core-use-akka-http-ws-client" -> "true")

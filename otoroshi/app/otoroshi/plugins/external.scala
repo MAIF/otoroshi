@@ -4,8 +4,8 @@ import java.security.MessageDigest
 import java.security.cert.X509Certificate
 import java.util.Base64
 import java.util.concurrent.TimeUnit
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor, WSProxyServerJson}
 import org.apache.commons.codec.binary.Hex

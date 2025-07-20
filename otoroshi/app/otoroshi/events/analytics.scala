@@ -2,11 +2,11 @@ package otoroshi.events
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import akka.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{OverflowStrategy, QueueOfferResult}
+import org.apache.pekko.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.stream.{OverflowStrategy, QueueOfferResult}
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
 import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
@@ -86,7 +86,7 @@ class AnalyticsActor(exporter: DataExporterConfig)(implicit env: Env) extends Ac
         case Success(QueueOfferResult.Failure(t)) =>
           logger.error("SEND_TO_ANALYTICS_ERROR: Enqueue Failure AnalyticEvent :(", t)
           context.stop(myself)
-        case Failure(e: akka.stream.StreamDetachedException) if env.liveJs =>
+        case Failure(e: org.apache.pekko.stream.StreamDetachedException) if env.liveJs =>
           // silently ignore in dev
         case e =>
           logger.error(s"SEND_TO_ANALYTICS_ERROR: analytics actor error : ${e}")

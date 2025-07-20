@@ -22736,7 +22736,7 @@
             "type" : "boolean",
             "default" : false
           },
-          "useAkkaHttpClient" : {
+          "usePekkoHttpClient" : {
             "type" : "boolean",
             "default" : false
           },
@@ -25889,7 +25889,7 @@
             "type" : "boolean",
             "default" : false
           },
-          "useAkkaHttpClient" : {
+          "usePekkoHttpClient" : {
             "type" : "boolean",
             "default" : false
           },

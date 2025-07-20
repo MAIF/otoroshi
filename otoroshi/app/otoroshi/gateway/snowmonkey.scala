@@ -1,8 +1,8 @@
 package otoroshi.gateway
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models._

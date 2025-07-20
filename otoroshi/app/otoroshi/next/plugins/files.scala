@@ -1,11 +1,11 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.headers.`Last-Modified`
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.{Attributes, Materializer}
-import akka.stream.alpakka.s3.{ApiVersion, MemoryBufferType, ObjectMetadata, S3Attributes, S3Settings}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.headers.`Last-Modified`
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.{Attributes, Materializer}
+import org.apache.pekko.stream.connectors.s3.{ApiVersion, MemoryBufferType, ObjectMetadata, S3Attributes, S3Exception, S3Settings}
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
@@ -191,23 +191,22 @@ class S3Backend extends NgBackendCall {
   }
 
   private def fileContent(key: String, config: S3Configuration)(implicit
-      ec: ExecutionContext,
-      mat: Materializer
+                                                                ec: ExecutionContext,
+                                                                mat: Materializer
   ): Future[Option[(ObjectMetadata, ByteString)]] = {
-    S3.download(config.bucket, key)
-      .withAttributes(s3ClientSettingsAttrs(config))
-      .runWith(Sink.headOption)
-      .map(_.flatten)
-      .flatMap { opt =>
-        opt
-          .map {
-            case (source, om) =>
-              source.runFold(ByteString.empty)(_ ++ _).map { content =>
-                (om, content).some
-              }
-          }
-          .getOrElse(None.vfuture)
-      }
+    val (metadataFuture, contentFuture) = S3.getObject(config.bucket, key)
+        .withAttributes(s3ClientSettingsAttrs(config))
+        .toMat(Sink.fold(ByteString.empty)(_ ++ _))(Keep.both)
+        .run()
+
+    for {
+      metadata <- metadataFuture
+      content <- contentFuture
+    } yield {
+      Some((metadata, content))
+    }
+  }.recover {
+    case _: S3Exception => None
   }
 
   private def normalizeKey(key: String, config: S3Configuration)(implicit

@@ -1,16 +1,16 @@
 package otoroshi.netty
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel.nio.NioEventLoopGroup
-import io.netty.channel.{ChannelFutureListener, ChannelHandlerContext, ChannelInboundHandlerAdapter}
+import io.netty.channel.nio.NioIoHandler
+import io.netty.channel.{ChannelFutureListener, ChannelHandlerContext, ChannelInboundHandlerAdapter, MultiThreadIoEventLoopGroup}
 import io.netty.handler.codec.http._
 import io.netty.handler.ssl.util.SelfSignedCertificate
 import io.netty.incubator.codec.quic.{QuicConnectionPathStats, QuicSslContext, QuicSslContextBuilder}
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.netty.ImplicitUtils._
@@ -689,7 +689,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
           }
         })
         .build()
-      val group            = new NioEventLoopGroup(config.nThread)
+      val group = new MultiThreadIoEventLoopGroup(config.nThread, NioIoHandler.newFactory())
       val bs               = new Bootstrap()
       val channel          = bs
         .group(group)
@@ -710,7 +710,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
   }
 }
 
-case class DisposableNettyHttp3Server(group: Option[NioEventLoopGroup]) {
+case class DisposableNettyHttp3Server(group: Option[MultiThreadIoEventLoopGroup]) {
   def stop(): Unit = {
     group.foreach(_.shutdownGracefully())
   }

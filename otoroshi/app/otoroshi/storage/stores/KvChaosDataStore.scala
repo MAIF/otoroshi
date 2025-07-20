@@ -1,6 +1,6 @@
 package otoroshi.storage.stores
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.models.{ChaosDataStore, Outage, ServiceDescriptor, SnowMonkeyConfig}
 import org.joda.time.DateTime

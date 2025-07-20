@@ -2,11 +2,11 @@ package otoroshi.script
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import akka.actor.{ActorSystem, Cancellable, Scheduler}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl._
-import akka.util.ByteString
+import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl._
+import org.apache.pekko.util.ByteString
 import otoroshi.cluster.ClusterMode
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder

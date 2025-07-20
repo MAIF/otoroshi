@@ -1,4 +1,4 @@
-import akka.stream.Materializer
+import org.appache.pekko.stream.Materializer
 import com.auth0.jwt._
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces._

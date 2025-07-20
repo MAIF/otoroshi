@@ -1,8 +1,8 @@
 package otoroshi.utils.controllers
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Framing, Source}
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Framing, Source}
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env

@@ -1,18 +1,18 @@
 package otoroshi.storage.drivers.reactivepg
 
-import akka.NotUsed
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.{JsonArray, JsonObject}
 import io.vertx.core.net.{PemKeyCertOptions, PemTrustOptions}
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
-import io.vertx.sqlclient.{PoolOptions, Row}
+import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+import io.vertx.sqlclient.{Pool, PoolOptions, Row}
 import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
@@ -20,7 +20,7 @@ import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
 import otoroshi.next.models._
-import otoroshi.script.{JobContext, JobId, KvScriptDataStore, OneTimeJob, ScriptDataStore}
+import otoroshi.script._
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
 import otoroshi.storage._
 import otoroshi.storage.stores._
@@ -223,7 +223,7 @@ class ReactivePgDataStores(
   private lazy val schema         = configuration.getOptionalWithFileSupport[String]("app.pg.schema").getOrElse("otoroshi")
   private lazy val table          = configuration.getOptionalWithFileSupport[String]("app.pg.table").getOrElse("entities")
   private lazy val schemaDotTable = s"$schema.$table"
-  private lazy val client         = PgPool.pool(connectOptions, poolOptions)
+  private lazy val client = PgBuilder.pool().connectingTo(connectOptions).`with`(poolOptions).build()
 
   lazy val redis = new ReactivePgRedis(
     client,
@@ -586,7 +586,7 @@ class ReactivePgDataStores(
 }
 
 class ReactivePgRedis(
-    pool: PgPool,
+    pool: Pool,
     system: ActorSystem,
     env: Env,
     schemaDotTable: String,

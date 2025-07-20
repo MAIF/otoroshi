@@ -1,7 +1,7 @@
 package otoroshi.plugins.oauth1
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
 import com.google.common.base.Charsets
 import otoroshi.auth.Oauth1AuthModule.encodeURI
 import otoroshi.env.Env

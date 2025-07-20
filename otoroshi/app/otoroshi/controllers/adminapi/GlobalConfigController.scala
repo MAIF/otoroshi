@@ -1,8 +1,8 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit, GlobalConfigModification}
 import otoroshi.models.GlobalConfig

@@ -3,8 +3,8 @@ package otoroshi.storage.drivers.lettuce
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-import akka.actor.ActorSystem
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.codec.RedisCodec

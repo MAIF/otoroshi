@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent

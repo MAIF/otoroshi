@@ -1,14 +1,14 @@
 package otoroshi.gateway
 
-import akka.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture._
 
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-import akka.Done
-import akka.actor.Scheduler
-import akka.http.scaladsl.util.FastFuture
-import akka.pattern.{CircuitBreaker => AkkaCircuitBreaker}
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.Done
+import org.apache.pekko.actor.Scheduler
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.pattern.{CircuitBreaker => AkkaCircuitBreaker}
+import org.apache.pekko.stream.scaladsl.Flow
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.health.HealthCheck

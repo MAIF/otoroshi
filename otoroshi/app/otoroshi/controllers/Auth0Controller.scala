@@ -1,7 +1,7 @@
 package otoroshi.controllers
 
-import akka.http.scaladsl.util.FastFuture
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}

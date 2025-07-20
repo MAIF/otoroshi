@@ -1,10 +1,10 @@
 package otoroshi.storage
 
-import akka.NotUsed
-import akka.http.scaladsl.util.FastFuture
-import akka.stream._
-import akka.stream.scaladsl._
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl._
+import org.apache.pekko.util.ByteString
 import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{ClusterMode, ClusterStateDataStore}

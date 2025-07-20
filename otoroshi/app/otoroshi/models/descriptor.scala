@@ -2,10 +2,10 @@ package otoroshi.models
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.{Materializer, OverflowStrategy}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.stream.{Materializer, OverflowStrategy}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
 import otoroshi.auth._
 import com.auth0.jwt.JWT
 import com.comcast.ip4s.{Cidr, IpAddress}
@@ -625,12 +625,12 @@ case class HttpProtocol(value: String) {
   def isHttp3: Boolean                              = value.toLowerCase().startsWith("http/3")
   def isHttp2OrHttp3: Boolean                       = isHttp2 || isHttp3
   def json: JsValue                                 = JsString(value)
-  def asAkka: akka.http.scaladsl.model.HttpProtocol = value.toLowerCase().trim() match {
-    case "http/1.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.0`
-    case "http/1.1" => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
-    case "http/2.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/2.0`
-    case "http/3.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/2.0`
-    case _          => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
+  def asAkka: org.apache.pekko.http.scaladsl.model.HttpProtocol = value.toLowerCase().trim() match {
+    case "http/1.0" => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/1.0`
+    case "http/1.1" => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
+    case "http/2.0" => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/2.0`
+    case "http/3.0" => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/2.0`
+    case _          => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
   }
 }
 

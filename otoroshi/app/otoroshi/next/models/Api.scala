@@ -1,8 +1,8 @@
 package next.models
 
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
 import next.models.ApiConsumerKind.Keyless
 import org.joda.time.DateTime
 import otoroshi.api.{DeleteAction, WriteAction}

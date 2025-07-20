@@ -1,13 +1,11 @@
 package otoroshi.netty
 
-import akka.util.ByteString
-import io.netty.buffer.{ByteBuf, ByteBufHolder}
-import io.netty.channel.epoll.EpollDomainSocketChannel
-import io.netty.channel.nio.NioEventLoopGroup
-import io.netty.channel.socket.nio.NioServerSocketChannel
-import io.netty.channel.{ChannelDuplexHandler, ChannelHandlerContext, ChannelPromise, EventLoopGroup}
-import io.netty.handler.codec.http._
-import org.joda.time.DateTime
+import io.netty.buffer.ByteBuf
+import io.netty.channel.epoll.EpollIoHandler
+import io.netty.channel.kqueue.KQueueIoHandler
+import io.netty.channel.nio.NioIoHandler
+import io.netty.channel.{EventLoopGroup, MultiThreadIoEventLoopGroup}
+import org.apache.pekko.util.ByteString
 import otoroshi.utils.syntax.implicits._
 import play.core.NamedThreadFactory
 
@@ -42,49 +40,39 @@ object EventLoopUtils {
   private val threadFactory = NamedThreadFactory("otoroshi-netty-event-loop")
 
   def createWithoutNative(nThread: Int): EventLoopGroupCreation = {
-    val channelHttp  = new NioServerSocketChannel()
-    val evlGroupHttp = new NioEventLoopGroup(nThread, threadFactory)
-    evlGroupHttp.register(channelHttp)
+    val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, NioIoHandler.newFactory())
+    // Note: removed the channel creation and registration - not needed with new API
     EventLoopGroupCreation(evlGroupHttp, None)
   }
 
   def createEpoll(nThread: Int): EventLoopGroupCreation = {
-    val channelHttp  = new io.netty.channel.epoll.EpollServerSocketChannel()
-    val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread, threadFactory)
-    evlGroupHttp.register(channelHttp).sync().await()
+    val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, EpollIoHandler.newFactory())
+    // Note: removed the channel creation and registration - not needed with new API
     EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
   }
 
   def createEpollDomainSocket(nThread: Int): EventLoopGroupCreation = {
     println(s"available: ${io.netty.channel.epoll.Epoll.isAvailable}")
-    val channelHttp  = new EpollDomainSocketChannel()
-    val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread, threadFactory)
-    evlGroupHttp.register(channelHttp).sync().await()
+    val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, EpollIoHandler.newFactory())
+    // Note: removed the channel creation and registration - not needed with new API
     EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
   }
 
   def create(config: NativeSettings, nThread: Int): EventLoopGroupCreation = {
-    // LoopResources.create("epoll-loop", 1, nThread, true)
     if (config.isEpoll && io.netty.channel.epoll.Epoll.isAvailable) {
-      // java.lang.IllegalStateException: channel not registered to an event loop on linux !!!
-      val channelHttp  = new io.netty.channel.epoll.EpollServerSocketChannel()
-      val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread, threadFactory)
-      evlGroupHttp.register(channelHttp).sync().await()
+      val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, EpollIoHandler.newFactory())
       EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
     } else if (config.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
+      // Note: IOUringEventLoopGroup might also be deprecated, check if there's an IOUringIoHandler
       val channelHttp  = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
       val evlGroupHttp = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(nThread, threadFactory)
       evlGroupHttp.register(channelHttp).sync().await()
       EventLoopGroupCreation(evlGroupHttp, Some("IO-Uring"))
     } else if (config.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
-      val channelHttp  = new io.netty.channel.kqueue.KQueueServerSocketChannel()
-      val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(nThread, threadFactory)
-      evlGroupHttp.register(channelHttp).sync().await()
+      val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, KQueueIoHandler.newFactory())
       EventLoopGroupCreation(evlGroupHttp, Some("KQueue"))
     } else {
-      val channelHttp  = new NioServerSocketChannel()
-      val evlGroupHttp = new NioEventLoopGroup(nThread, threadFactory)
-      evlGroupHttp.register(channelHttp)
+      val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, NioIoHandler.newFactory())
       EventLoopGroupCreation(evlGroupHttp, None)
     }
   }

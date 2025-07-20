@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.Done
+import org.apache.pekko.Done
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api._

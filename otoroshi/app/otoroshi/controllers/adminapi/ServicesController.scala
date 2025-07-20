@@ -1,8 +1,8 @@
 package otoroshi.controllers.adminapi
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.actions.{ApiAction, ApiActionContext}
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}

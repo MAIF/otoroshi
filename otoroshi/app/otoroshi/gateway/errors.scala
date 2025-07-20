@@ -1,6 +1,6 @@
 package otoroshi.gateway
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.github.blemale.scaffeine.Scaffeine
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage

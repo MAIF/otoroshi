@@ -1,6 +1,6 @@
 package otoroshi.auth
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.google.common.base.Charsets
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes

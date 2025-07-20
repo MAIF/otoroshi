@@ -1,6 +1,6 @@
 package otoroshi.openapi
 
-import akka.http.scaladsl.model.HttpProtocols
+import org.apache.pekko.http.scaladsl.model.HttpProtocols
 import io.github.classgraph._
 import otoroshi.models.Entity
 import otoroshi.utils.RegexPool
@@ -397,7 +397,7 @@ class OpenApiGenerator(
           case "play.api.libs.json.JsValue"                       => Json.obj("type" -> "object").some
           case "play.api.libs.json.JsObject"                      => Json.obj("type" -> "object").some
           case "play.api.libs.json.JsArray"                       => Json.obj("type" -> "array").some
-          case "akka.http.scaladsl.model.HttpProtocol"            =>
+          case "org.apache.pekko.http.scaladsl.model.HttpProtocol"            =>
             Json
               .obj(
                 "type" -> "string",

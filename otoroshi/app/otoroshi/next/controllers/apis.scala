@@ -1,8 +1,8 @@
 package otoroshi.next.controllers.adminapi
 
-import akka.NotUsed
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
 import next.models.{Api, ApiConsumerStatus, ApiDeployment, ApiPublished, ApiStaging}
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction

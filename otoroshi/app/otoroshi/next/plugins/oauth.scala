@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import com.google.common.base.Charsets
 import org.joda.time.DateTime
 import otoroshi.auth.Oauth1AuthModule.encodeURI

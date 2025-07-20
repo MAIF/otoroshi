@@ -1,8 +1,8 @@
 package otoroshi.controllers.adminapi
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.actions.ApiAction
 import otoroshi.auth._

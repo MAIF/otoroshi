@@ -1,6 +1,6 @@
 package functional
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.typesafe.config.ConfigFactory
 import org.joda.time.LocalTime
 import otoroshi.models._

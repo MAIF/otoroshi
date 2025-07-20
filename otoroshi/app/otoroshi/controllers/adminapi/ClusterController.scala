@@ -1,11 +1,11 @@
 package otoroshi.controllers.adminapi
 
-import akka.NotUsed
-import akka.actor.{Actor, ActorRef, Cancellable, PoisonPill, Props}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Framing, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{Actor, ActorRef, Cancellable, PoisonPill, Props}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Framing, Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
 import otoroshi.cluster._

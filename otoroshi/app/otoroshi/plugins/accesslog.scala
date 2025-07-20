@@ -1,7 +1,7 @@
 package otoroshi.plugins.accesslog
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
 import otoroshi.events._

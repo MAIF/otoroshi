@@ -1,6 +1,6 @@
 package otoroshi.plugins.biscuit
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.biscuitsec.biscuit.crypto._
 import org.biscuitsec.biscuit.datalog.SymbolTable
 import org.biscuitsec.biscuit.error.Error

@@ -1,6 +1,6 @@
 package otoroshi.next.workflow
 
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._

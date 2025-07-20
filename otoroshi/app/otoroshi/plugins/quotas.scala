@@ -1,7 +1,7 @@
 package otoroshi.plugins.quotas
 
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
 import otoroshi.env.Env
 import otoroshi.models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime

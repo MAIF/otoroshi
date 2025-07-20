@@ -1,8 +1,8 @@
 package otoroshi.env
 
-import akka.actor.{ActorSystem, Cancellable, PoisonPill, Scheduler}
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.Materializer
+import org.apache.pekko.actor.{ActorSystem, Cancellable, PoisonPill, Scheduler}
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.stream.Materializer
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -669,7 +669,7 @@ class Env(
       //setHttpClientCodecMaxChunkSize(1024 * 100)
     )
     val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
-      userAgent = Some("Otoroshi-akka"),
+      userAgent = Some("Otoroshi-pekko"),
       compressionEnabled =
         configuration.getOptionalWithFileSupport[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
       requestTimeout = configuration
@@ -725,7 +725,7 @@ class Env(
       //setHttpClientCodecMaxChunkSize(1024 * 100)
     )
     val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
-      userAgent = Some("Otoroshi-akka"),
+      userAgent = Some("Otoroshi-pekko"),
       compressionEnabled =
         configuration.getOptionalWithFileSupport[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
       requestTimeout = configuration

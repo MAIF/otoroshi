@@ -1,8 +1,8 @@
 package otoroshi.controllers.adminapi
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.actions.{ApiAction, UnAuthApiAction}
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.RightsChecker
 import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAlert}

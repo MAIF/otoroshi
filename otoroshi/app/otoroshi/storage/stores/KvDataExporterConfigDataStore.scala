@@ -10,7 +10,8 @@ import otoroshi.events.Exporters.{
   OtlpMetricsExporterSettings,
   WasmExporterSettings
 }
-import otoroshi.events.{KafkaConfig, PulsarConfig}
+import otoroshi.events.KafkaConfig
+import otoroshi.events.pulsar.PulsarConfig
 import otoroshi.metrics.opentelemetry.OtlpSettings
 import otoroshi.models._
 import otoroshi.security.IdGenerator

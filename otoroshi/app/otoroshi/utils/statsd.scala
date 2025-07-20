@@ -26,7 +26,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
 import java.util.Random
 import org.slf4j.LoggerFactory
-import akka.actor._
+import org.apache.pekko.actor._
 
 /**
  * Client for sending stats to StatsD uses Akka to manage concurrency

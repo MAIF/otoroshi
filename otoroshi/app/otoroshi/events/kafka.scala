@@ -6,12 +6,12 @@ import scala.util.control.NonFatal
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringDeserializer, StringSerializer}
-import akka.Done
-import akka.actor.{Actor, ActorSystem, Props}
-import akka.http.scaladsl.util.FastFuture._
-import akka.http.scaladsl.util.FastFuture
-import akka.kafka.{ConsumerSettings, ProducerSettings}
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.{Actor, ActorSystem, Props}
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.kafka.{ConsumerSettings, ProducerSettings}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.common.config.{SaslConfigs, SslConfigs}
 import play.api.libs.json._

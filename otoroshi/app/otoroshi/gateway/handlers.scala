@@ -2,11 +2,11 @@ package otoroshi.gateway
 
 import java.net.URLEncoder
 import java.util.concurrent.atomic.AtomicInteger
-import akka.actor.{Actor, Props, Scheduler}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Flow, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.{Actor, Props, Scheduler}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{FileIO, Flow, Source}
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
