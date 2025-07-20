@@ -1,30 +1,14 @@
 package otoroshi.greenscore
 
+import akka.stream.Materializer
 import com.typesafe.config.ConfigFactory
 import functional.OtoroshiSpec
 import org.joda.time.DateTime
+import otoroshi.env.Env
 import otoroshi.greenscore.EcoMetrics.MAX_GREEN_SCORE_NOTE
-import otoroshi.greenscore.{
-  GreenScoreEntity,
-  GreenScoreExtension,
-  RouteRules,
-  RouteScoreAtDate,
-  RuleState,
-  RuleStateRecord,
-  RulesManager,
-  RulesRouteConfiguration
-}
+import otoroshi.greenscore.{GreenScoreEntity, GreenScoreExtension, RouteRules, RouteScoreAtDate, RuleState, RuleStateRecord, RulesManager, RulesRouteConfiguration}
 import otoroshi.models.{EntityLocation, RoundRobin}
-import otoroshi.next.models.{
-  NgBackend,
-  NgClientConfig,
-  NgDomainAndPath,
-  NgFrontend,
-  NgPluginInstance,
-  NgPlugins,
-  NgRoute,
-  NgTarget
-}
+import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPlugins, NgRoute, NgTarget}
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsNull, JsObject, JsValue}
@@ -35,8 +19,8 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit lazy val mat = otoroshiComponents.materializer
-  implicit lazy val env = otoroshiComponents.env
+  implicit lazy val mat: Materializer = otoroshiComponents.materializer
+  implicit lazy val env: Env = otoroshiComponents.env
 
   val initialRoute = NgRoute(
     location = EntityLocation.default,

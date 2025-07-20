@@ -1,12 +1,10 @@
 package functional
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ServiceDescriptor, Target}
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
+
+import java.util.concurrent.atomic.AtomicInteger
 
 class CanarySpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
@@ -35,7 +33,6 @@ class CanarySpec(name: String, configurationSpec: => Configuration) extends Otor
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
       val basicTestServer1       = TargetService(
         Some(serviceHost),
-        "/api",
         "application/json",
         { _ =>
           callCounter1.incrementAndGet()
@@ -47,7 +44,6 @@ class CanarySpec(name: String, configurationSpec: => Configuration) extends Otor
       val basicTestExpectedBody2 = """{"message":"hello world 2"}"""
       val basicTestServer2       = TargetService(
         Some(serviceHost),
-        "/api",
         "application/json",
         { _ =>
           callCounter2.incrementAndGet()
@@ -118,8 +114,6 @@ class CanarySpec(name: String, configurationSpec: => Configuration) extends Otor
       val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
       val basicTestServer1       = new SimpleTargetService(
-        Some(serviceHost),
-        "/api",
         "application/json",
         { _ =>
           callCounter1.incrementAndGet()
@@ -130,8 +124,6 @@ class CanarySpec(name: String, configurationSpec: => Configuration) extends Otor
       val callCounter2           = new AtomicInteger(0)
       val basicTestExpectedBody2 = """{"message":"hello world 2"}"""
       val basicTestServer2       = new SimpleTargetService(
-        Some(serviceHost),
-        "/api",
         "application/json",
         { _ =>
           callCounter2.incrementAndGet()

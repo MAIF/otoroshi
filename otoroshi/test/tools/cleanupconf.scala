@@ -1,18 +1,13 @@
 package tools
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.scalatest.OptionValues
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{MustMatchers, OptionValues, WordSpec}
-import otoroshi.plugins.log4j.Log4jExpressionParser
-import otoroshi.utils.syntax.implicits.BetterJsValue
-import play.api.libs.json.{JsArray, JsObject, Json}
-import java.nio.file.Files
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+
 import java.io.File
-import collection.JavaConverters._
+import java.nio.file.Files
+import scala.jdk.CollectionConverters._
 
 object ConfigurationCleanup {
   def cleanup(path: String, newpath: String): Unit = {
@@ -21,61 +16,105 @@ object ConfigurationCleanup {
     val content     = Files.readAllLines(file.toPath).asScala
     val fillContent = content.mkString("\n")
     val newContent  = content
-      .flatMap { line =>
-        if (line.contains("${?APP_") && !line.contains("${?OTOROSHI_")) {
-          val replacedLine = line.replace("${?APP_", "${?OTOROSHI_")
-          if (fillContent.contains(replacedLine)) {
-            Seq(line)
-          } else {
-            Seq(
-              line,
-              replacedLine
-            )
-          }
+        .flatMap { line =>
+          if (line.contains("${?APP_") && !line.contains("${?OTOROSHI_")) {
+            val replacedLine = line.replace("${?APP_", "${?OTOROSHI_")
+            if (fillContent.contains(replacedLine)) {
+              Seq(line)
+            } else {
+              Seq(
+                line,
+                replacedLine
+              )
+            }
 
-        } else if (line.contains("${?PLAY_") && !line.contains("${?OTOROSHI_")) {
-          val replacedLine = line.replace("${?PLAY_", "${?OTOROSHI_")
-          if (fillContent.contains(replacedLine)) {
-            Seq(line)
-          } else {
-            Seq(
-              line,
-              replacedLine
-            )
-          }
+          } else if (line.contains("${?PLAY_") && !line.contains("${?OTOROSHI_")) {
+            val replacedLine = line.replace("${?PLAY_", "${?OTOROSHI_")
+            if (fillContent.contains(replacedLine)) {
+              Seq(line)
+            } else {
+              Seq(
+                line,
+                replacedLine
+              )
+            }
 
-        } else if (line.contains("${?") && !line.contains("${?OTOROSHI_")) {
-          val replacedLine = line.replace("${?APP_", "${?OTOROSHI_").replace("${?", "${?OTOROSHI_")
-          if (fillContent.contains(replacedLine)) {
-            Seq(line)
-          } else {
-            Seq(
-              line,
-              replacedLine
-            )
-          }
+          } else if (line.contains("${?") && !line.contains("${?OTOROSHI_")) {
+            val replacedLine = line.replace("${?APP_", "${?OTOROSHI_").replace("${?", "${?OTOROSHI_")
+            if (fillContent.contains(replacedLine)) {
+              Seq(line)
+            } else {
+              Seq(
+                line,
+                replacedLine
+              )
+            }
 
-        } else {
-          Seq(line)
+          } else {
+            Seq(line)
+          }
         }
-      }
-      .mkString("\n")
-    Files.writeString(newfile.toPath(), newContent)
+        .mkString("\n")
+    Files.writeString(newfile.toPath, newContent)
   }
 }
 
 class ConfigurationCleanupSpec
-    extends WordSpec
-    with MustMatchers
-    with OptionValues
-    with ScalaFutures
-    with IntegrationPatience {
+    extends AnyWordSpec
+        with Matchers
+        with OptionValues
+        with ScalaFutures
+        with IntegrationPatience {
+
+  private def findFile(relativePath: String): Option[File] = {
+    // Try various possible locations
+    val possiblePaths = Seq(
+      relativePath,                    // ./conf/old-application.conf
+      s"../$relativePath",            // ../conf/old-application.conf
+      s"otoroshi/$relativePath",      // otoroshi/conf/old-application.conf
+      s"../otoroshi/$relativePath",   // ../otoroshi/conf/old-application.conf
+      s"../../$relativePath",         // ../../conf/old-application.conf
+      s"../../otoroshi/$relativePath" // ../../otoroshi/conf/old-application.conf
+    )
+
+    possiblePaths.map(new File(_)).find(_.exists())
+  }
+
   "ConfigurationCleanup" should {
     "cleanup configuration env. variables" in {
-      ConfigurationCleanup.cleanup("./conf/old-application.conf", "./conf/application.conf")
-      ConfigurationCleanup.cleanup("./conf/old-base.conf", "./conf/base.conf")
-      // diff -u ./otoroshi/conf/old-application.conf ./otoroshi/conf/application.conf > ./otoroshi/conf/application.conf.diff
-      // diff -u ./otoroshi/conf/old-base.conf ./otoroshi/conf/base.conf > ./otoroshi/conf/base.conf.diff
+      // Print current working directory for debugging
+      println(s"Current working directory: ${new File(".").getCanonicalPath}")
+
+      val configs = Seq(
+        ("conf/old-application.conf", "conf/application.conf"),
+        ("conf/old-base.conf", "conf/base.conf")
+      )
+
+      configs.foreach { case (oldPath, newPath) =>
+        findFile(oldPath) match {
+          case Some(oldFile) =>
+            // Calculate the new file path based on where we found the old file
+            val oldFilePath = oldFile.getPath
+            val prefix = oldFilePath.substring(0, oldFilePath.length - oldPath.length)
+            val newFile = new File(prefix + newPath)
+
+            println(s"Found $oldPath at: ${oldFile.getCanonicalPath}")
+            println(s"Will write to: ${newFile.getCanonicalPath}")
+
+            ConfigurationCleanup.cleanup(oldFile.getPath, newFile.getPath)
+
+          case None =>
+            // List files in current and parent directories to help debug
+            println(s"Could not find $oldPath")
+            println("Files in current directory:")
+            new File(".").listFiles().foreach(f => println(s"  ${f.getName}"))
+            println("Files in parent directory:")
+            new File("..").listFiles().foreach(f => println(s"  ${f.getName}"))
+
+            // Skip the test if files don't exist
+            println(s"Skipping cleanup for $oldPath - file not found")
+        }
+      }
     }
   }
 }

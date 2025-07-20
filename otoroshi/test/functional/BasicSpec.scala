@@ -14,6 +14,7 @@ import play.api.Configuration
 import play.api.libs.json.Json
 import otoroshi.security.IdGenerator
 
+import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Try}
 
@@ -38,7 +39,6 @@ class BasicSpec() extends OtoroshiSpec {
     val basicTestExpectedBody = """{"message":"hello world"}"""
     val basicTestServer       = TargetService(
       Some(serviceHost),
-      "/api",
       "application/json",
       { _ =>
         callCounter.incrementAndGet()
@@ -258,7 +258,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { r =>
           r.headers.find(_.name() == "X-Foo").map(_.value()) mustBe Some("Bar")
@@ -305,7 +304,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter.incrementAndGet()
@@ -851,7 +849,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body2    = """{"message":"hello world2"}"""
       val server1  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter1.incrementAndGet()
@@ -860,7 +857,6 @@ class BasicSpec() extends OtoroshiSpec {
       ).await()
       val server2  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter2.incrementAndGet()
@@ -916,24 +912,23 @@ class BasicSpec() extends OtoroshiSpec {
       resp1.status mustBe 200
       resp1.body mustBe body2
 
-      allBotUserAgents.par.foreach { userAgent =>
-        val resp = ws
-          .url(s"http://127.0.0.1:$port/api")
-          .withHttpHeaders(
-            "Host"       -> "bot.oto.tools",
-            "User-Agent" -> userAgent
-          )
-          .get()
+      Future
+          .traverse(allBotUserAgents.toList) { ua =>
+            ws.url(s"http://127.0.0.1:$port/api")
+                .withHttpHeaders(
+                  "Host"       -> "bot.oto.tools",
+                  "User-Agent" -> ua
+                )
+                .get()
+                .map { resp =>
+                  if (resp.status != 200) println(s"Not supported: $ua")
+                  resp.status mustBe 200
+
+                  if (resp.body != body1) println(s"Failed for $ua")
+                  resp.body mustBe body1
+                }
+          }
           .futureValue
-        if (resp.status != 200) {
-          println(s"Not supported: $userAgent")
-        }
-        resp.status mustBe 200
-        if (!resp.body.equals(body1)) {
-          println("Failed for " + userAgent)
-        }
-        resp.body mustBe body1
-      }
 
       deleteOtoroshiService(service1).futureValue
       deleteOtoroshiService(service2).futureValue
@@ -946,7 +941,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter.incrementAndGet()
@@ -1010,7 +1004,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter.incrementAndGet()
@@ -1056,7 +1049,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter.incrementAndGet()
@@ -1102,7 +1094,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter.incrementAndGet()
@@ -1188,7 +1179,6 @@ class BasicSpec() extends OtoroshiSpec {
           )
         ),
         forceHttps = false,
-        enforceSecureCommunication = true,
         publicPatterns = Seq("/.*")
       )
       createOtoroshiService(service).futureValue
@@ -1249,7 +1239,6 @@ class BasicSpec() extends OtoroshiSpec {
           )
         ),
         forceHttps = false,
-        enforceSecureCommunication = true,
         secComVersion = SecComVersion.V2,
         publicPatterns = Seq("/.*")
       )
@@ -1298,7 +1287,6 @@ class BasicSpec() extends OtoroshiSpec {
           )
         ),
         forceHttps = false,
-        enforceSecureCommunication = true,
         secComVersion = SecComVersion.V2,
         publicPatterns = Seq("/.*")
       )

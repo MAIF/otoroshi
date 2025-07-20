@@ -1,14 +1,16 @@
 package functional
 
+import akka.stream.Materializer
 import com.typesafe.config.ConfigFactory
+import otoroshi.env.Env
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
 import play.api.Configuration
 import play.api.libs.json.Json
 
 class WorkFlowTestSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit lazy val mat = otoroshiComponents.materializer
-  implicit lazy val env = otoroshiComponents.env
+  implicit lazy val mat: Materializer = otoroshiComponents.materializer
+  implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(

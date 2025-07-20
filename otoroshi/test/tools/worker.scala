@@ -16,7 +16,7 @@ object OtoWsWorker {
           address = "0.0.0.0",
           port = Some(9079 + i),
           sslPort = Some(9442 + i),
-          rootDir = Files.createTempDirectory(s"otoroshi-worker-test-${i}").toFile,
+          rootDir = Files.createTempDirectory(s"otoroshi-worker-test-$i").toFile,
           properties = System.getProperties
             .seffectOn(_.setProperty("otoroshi.env", "dev"))
             .seffectOn(_.setProperty("otoroshi.cluster.mode", "worker"))

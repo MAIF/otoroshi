@@ -1,9 +1,15 @@
-import xerial.sbt.Sonatype._
+import xerial.sbt.Sonatype.*
 
 name := """otoroshi"""
 organization := "fr.maif"
 version := "17.5.0-dev"
 scalaVersion := scalaLangVersion
+
+ThisBuild / evictionErrorLevel := Level.Warn
+
+//dependencyOverrides ++= Seq(
+//  "joda-time" % "joda-time" % "2.14.0"
+//)
 
 inThisBuild(
   List(
@@ -49,12 +55,14 @@ inThisBuild(
   )
 )
 
-lazy val root = (project in file("."))
-  .enablePlugins(PlayScala, PlayAkkaHttp2Support)
-  .disablePlugins(PlayFilters)
+//lazy val root = (project in file("."))
+//  .enablePlugins(PlayScala, PlayAkkaHttp2Support)
+//  .disablePlugins(PlayFilters)
 
-// lazy val scalaLangVersion    = "2.13.10"
-lazy val scalaLangVersion        = "2.12.16"
+enablePlugins(PlayScala, PlayAkkaHttp2Support)
+disablePlugins(PlayFilters)
+
+lazy val scalaLangVersion    = "2.13.16"
 lazy val metricsVersion          = "4.2.12"
 lazy val acme4jVersion           = "3.2.1" // "2.14"
 lazy val prometheusVersion       = "0.16.0"
@@ -64,9 +72,10 @@ lazy val kubernetesVersion       = "16.0.1"
 lazy val bouncyCastleVersion     = "1.77"
 lazy val pulsarVersion           = "2.8.1"
 lazy val openTelemetryVersion    = "1.28.0"
-lazy val jacksonVersion          = "2.13.4"
-lazy val akkaHttpVersion         = "10.2.10"
-lazy val akkaHttp2Version        = "10.2.10"
+lazy val jacksonVersion          = "2.15.2"
+lazy val akkaVersion             = "2.6.21"
+lazy val akkaHttpVersion         = "10.2.9"
+lazy val akkaHttp2Version        = akkaHttpVersion
 lazy val reactorNettyVersion     = "1.1.18"
 lazy val nettyVersion            = "4.1.119.Final"
 lazy val excludesJackson         = Seq(
@@ -81,6 +90,16 @@ lazy val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
   ExclusionRule(organization = "org.slf4j")
 )
 
+dependencyOverrides ++= Seq(
+  "com.typesafe.akka" %% "akka-http"          % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http-core"     % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http2-support" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http-xml"      % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-parsing"       % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
+  "org.scala-lang.modules" %% "scala-xml" % "2.2.0"
+)
+
 // BEWARE: akka-stream is a patched version bundled from the lib directory because of . see https://github.com/MAIF/akka/tree/fix-tls-1-3-hanshake-session-update
 
 libraryDependencies ++= Seq(
@@ -89,10 +108,18 @@ libraryDependencies ++= Seq(
   "com.softwaremill.macwire"        %% "macros"                                    % "2.5.8" % "provided",
   "com.typesafe.play"               %% "play-json"                                 % playJsonVersion,
   "com.typesafe.play"               %% "play-json-joda"                            % playJsonVersion,
+  "joda-time"                        % "joda-time"                                 % "2.14.0",
   "com.github.etaty"                %% "rediscala"                                 % "1.9.0",
   "com.github.gphat"                %% "censorinus"                                % "2.1.16",
   "com.typesafe.akka"               %% "akka-stream-kafka"                         % "2.0.7",
   "com.lightbend.akka"              %% "akka-stream-alpakka-s3"                    % "2.0.2",
+  "com.typesafe.akka" %% "akka-actor"       % akkaVersion,
+  "com.typesafe.akka" %% "akka-stream"      % akkaVersion,
+  "com.typesafe.akka" %% "akka-slf4j"       % akkaVersion,
+  "com.typesafe.akka" %% "akka-protobuf"    % akkaVersion,
+  "com.typesafe.akka" %% "akka-actor-typed"  % akkaVersion,
+  "com.typesafe.akka" %% "akka-stream"       % akkaVersion,
+  "com.typesafe.akka" %% "akka-http"         % akkaHttpVersion,
   "com.typesafe.akka"               %% "akka-http2-support"                        % akkaHttp2Version,
   "com.typesafe.akka"               %% "akka-http-xml"                             % akkaHttp2Version,
   "com.spotify.metrics"              % "semantic-metrics-core"                     % "1.1.11",
@@ -151,10 +178,10 @@ libraryDependencies ++= Seq(
   // fix multiple CVEs
   "com.fasterxml.jackson.core"       % "jackson-core"                              % jacksonVersion,
   "com.fasterxml.jackson.core"       % "jackson-annotations"                       % jacksonVersion,
-  "com.fasterxml.jackson.core"       % "jackson-databind"                          % s"${jacksonVersion}.2",
+  "com.fasterxml.jackson.core"       % "jackson-databind"                          % jacksonVersion,
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml"                   % jacksonVersion,
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"                   % jacksonVersion,
-  "com.fasterxml.jackson.datatype"   % "jackson-datatype-jdk8"                     % jacksonVersion,
+  "com.fasterxml.jackson.datatype"   % "jackson-datatype-jsr310"                   % jacksonVersion,
   "com.fasterxml.jackson.module"    %% "jackson-module-scala"                      % jacksonVersion,
   "org.yaml"                         % "snakeyaml"                                 % "1.33" excludeAll (excludesJackson: _*),
   // "com.arakelian"                    % "java-jq"                                   % "1.3.0" excludeAll (excludesJackson: _*),
@@ -180,16 +207,10 @@ libraryDependencies ++= Seq(
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
   "fr.maif"                         %% "wasm4s"                                    % "4.1.2" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                      % "1.16.0",
-  // included in libs as jitpack is not stable at all
-  // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
-  //   ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
-  //   ExclusionRule("ch.qos.logback"),
-  //   ExclusionRule("org.slf4j"),
-  // ),
   "org.reflections"                  % "reflections"                               % "0.10.2",
-  "org.json4s"                       % "json4s-jackson_2.12"                       % "4.0.7",
-  "org.json4s"                       % "json4s-ast_2.12"                           % "4.0.7",
-  "org.json4s"                       % "json4s-ext_2.12"                           % "4.0.7",
+  "org.json4s"                      %% "json4s-jackson"                            % "4.0.7",
+  "org.json4s"                      %% "json4s-ast"                                % "4.0.7",
+  "org.json4s"                      %% "json4s-ext"                                % "4.0.7",
   // using a custom one right now as current build is broken
   //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
   if (scalaLangVersion.startsWith("2.12")) {
@@ -260,10 +281,10 @@ licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 // githubTokenSource := TokenSource.Environment("GITHUB_PACKAGES_TOKEN")
 
 // assembly
-mainClass in assembly := Some("play.core.server.ProdServerStart")
-test in assembly := {}
-assemblyJarName in assembly := "otoroshi.jar"
-fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
+assembly /mainClass := Some("play.core.server.ProdServerStart")
+assembly / test := {}
+assembly /assemblyJarName := "otoroshi.jar"
+assembly / fullClasspath += Attributed.blank(PlayKeys.playPackageAssets.value)
 assembly / assemblyMergeStrategy := { e =>
   e match {
     case path if path.contains("com/upokecenter/util")                  => MergeStrategy.first
@@ -331,15 +352,15 @@ assembly / assemblyMergeStrategy := { e =>
 
 lazy val packageAll = taskKey[Unit]("PackageAll")
 packageAll := {
-  (dist in Compile).value
-  (assembly in Compile).value
+  (Compile / dist).value
+  (Compile / assembly).value
 }
 
 import play.sbt.PlayImport.PlayKeys._
 
-packagedArtifacts in publish := {
-  val artifacts: Map[sbt.Artifact, java.io.File] = (packagedArtifacts in publishLocal).value
-  val assets: java.io.File                       = (playPackageAssets in Compile).value
+publish / packagedArtifacts := {
+  val artifacts: Map[sbt.Artifact, java.io.File] = (publishLocal / packagedArtifacts).value
+  val assets: java.io.File                       = (Compile / playPackageAssets).value
   artifacts + (Artifact(moduleName.value, "jar", "jar", "assets") -> assets)
 }
 

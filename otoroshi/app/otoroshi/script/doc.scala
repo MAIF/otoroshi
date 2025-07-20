@@ -1,0 +1,368 @@
+package otoroshi.script
+
+import com.google.common.base.Charsets
+import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
+import otoroshi.events.CustomDataExporter
+import otoroshi.utils.syntax.implicits._
+import play.api.Logger
+
+import java.io.File
+import java.nio.file.Files
+import scala.jdk.CollectionConverters._
+import scala.util.Try
+
+class PluginDocumentationGenerator(docPath: String) {
+
+  val logger = Logger("PluginDocumentationGenerator")
+
+  lazy val (
+    transformersNames,
+    validatorsNames,
+    preRouteNames,
+    reqSinkNames,
+    listenerNames,
+    jobNames,
+    exporterNames,
+    handlerNames
+  ) =
+    Try {
+      val start                  = System.currentTimeMillis()
+      val allPackages            = Seq("otoroshi", "otoroshi_plugins")
+      val scanResult: ScanResult = new ClassGraph()
+        .addClassLoader(this.getClass.getClassLoader)
+        .enableClassInfo()
+        .acceptPackages(allPackages: _*)
+        .scan
+
+      if (logger.isDebugEnabled) logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
+      try {
+
+        def predicate(c: ClassInfo): Boolean = {
+          c.isInterface || (
+            c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
+            c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
+            c.getName == "otoroshi.script.CompilingValidator$" ||
+            c.getName == "otoroshi.script.CompilingPreRouting$" ||
+            c.getName == "otoroshi.script.CompilingRequestSink$" ||
+            c.getName == "otoroshi.script.CompilingOtoroshiEventListener$" ||
+            c.getName == "otoroshi.script.DefaultValidator$" ||
+            c.getName == "otoroshi.script.DefaultPreRouting$" ||
+            c.getName == "otoroshi.script.DefaultRequestSink$" ||
+            c.getName == "otoroshi.script.FailingPreRoute" ||
+            c.getName == "otoroshi.script.FailingPreRoute$" ||
+            c.getName == "otoroshi.script.DefaultOtoroshiEventListener$" ||
+            c.getName == "otoroshi.script.DefaultJob$" ||
+            c.getName == "otoroshi.script.CompilingJob$" ||
+            c.getName == "otoroshi.script.NanoApp" ||
+            c.getName == "otoroshi.script.NanoApp$"
+          )
+        }
+
+        val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName).toSeq
+
+        val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName).toSeq
+
+        val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName).toSeq
+
+        val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName).toSeq
+
+        val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName).toSeq
+
+        val jobNames: Seq[String] = (scanResult.getSubclasses(classOf[Job].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[Job].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName).toSeq
+
+        val customExporters: Seq[String] = (scanResult.getSubclasses(classOf[CustomDataExporter].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[CustomDataExporter].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName).toSeq
+
+        val handlers: Seq[String] = (scanResult.getSubclasses(classOf[RequestHandler].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[RequestHandler].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName).toSeq
+
+        (requestTransformers, validators, preRoutes, reqSinks, listenerNames, jobNames, customExporters, handlers)
+      } catch {
+        case e: Throwable =>
+          e.printStackTrace()
+          (
+            Seq.empty[String],
+            Seq.empty[String],
+            Seq.empty[String],
+            Seq.empty[String],
+            Seq.empty[String],
+            Seq.empty[String],
+            Seq.empty[String],
+            Seq.empty[String]
+          )
+      } finally if (scanResult != null) scanResult.close()
+    } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
+      .empty[String], Seq.empty[String], Seq.empty[String])
+
+  def ensureRootDir(): File = {
+    val root = new File(docPath + "/src/main/paradox/plugins")
+    if (!root.exists()) {
+      root.mkdirs()
+    }
+    root
+  }
+
+  def makePluginContent(plugin: NamedPlugin): String = {
+
+    val desc = {
+      val dc = plugin.description.getOrElse("").trim
+      if (dc.contains("```") && !dc.contains("//")) {
+        dc
+          .split("```")(0)
+          .replace("This plugin can accept the following configuration", "")
+          .replace("The plugin accepts the following configuration", "")
+          .trim
+      } else {
+        dc
+      }
+    }
+    val description = plugin.description
+      .map { _ =>
+        s"""## Description
+         |
+         |$desc
+         |
+         |""".stripMargin
+      }
+      .getOrElse("")
+
+    val defaultConfig = plugin.defaultConfig
+      .map { dc =>
+        s"""## Default configuration
+         |
+         |```json
+         |${dc.prettify}
+         |```
+         |
+         |""".stripMargin
+      }
+      .getOrElse("")
+
+    val documentation = plugin.documentation
+      .map { dc =>
+        s"""## Documentation
+         |
+         |$dc
+         |
+         |""".stripMargin
+      }
+      .getOrElse("")
+
+    val pluginClazz = "plugin-kind-" + (plugin.pluginType match {
+      case PluginType.AppType => PluginType.TransformerType.name
+      case _                  => plugin.pluginType.name
+      // case PluginType.TransformerType => pl.pluginType.name
+      // case PluginType.AccessValidatorType => pl.pluginType.name
+      // case PluginType.PreRoutingType => pl.pluginType.name
+      // case PluginType.RequestSinkType => pl.pluginType.name
+      // case PluginType.EventListenerType => pl.pluginType.name
+      // case PluginType.JobType => pl.pluginType.name
+      // case PluginType.DataExporterType => pl.pluginType.name
+      // case PluginType.RequestHandlerType => pl.pluginType.name
+      // case PluginType.CompositeType => pl.pluginType.name
+    })
+    val pluginLogo  = plugin.pluginType match {
+      case PluginType.AppType             => ""
+      case PluginType.TransformerType     => ""
+      case PluginType.AccessValidatorType => ""
+      case PluginType.PreRoutingType      => ""
+      case PluginType.RequestSinkType     => ""
+      case PluginType.EventListenerType   => ""
+      case PluginType.JobType             => ""
+      case PluginType.DataExporterType    => ""
+      case PluginType.RequestHandlerType  => ""
+      case PluginType.CompositeType       => ""
+      case PluginType.TunnelHandlerType   => ""
+    }
+
+    s"""
+         |@@@ div { .plugin .plugin-hidden .$pluginClazz #${plugin.getClass.getName} }
+         |
+         |# ${plugin.name}
+         |
+         |<img class="plugin-logo plugin-hidden" src="$pluginLogo"></img>
+         |
+         |## Infos
+         |
+         |* plugin type: `${plugin.pluginType.name}`
+         |* configuration root: `${plugin.configRoot.getOrElse("`none`")}`
+         |
+         |$description
+         |
+         |$defaultConfig
+         |
+         |$documentation
+         |
+         |@@@
+         |""".stripMargin
+  }
+
+  private def makePluginPage(plugin: NamedPlugin, root: File): (String, String) = {
+    // logger.info(plugin.name)
+    val file = new File(root, plugin.getClass.getName.toLowerCase().replace(".", "-") + ".md")
+    if (file.exists()) {
+      file.delete()
+    }
+    file.createNewFile()
+
+    //val description = plugin.description
+    //  .map { dc =>
+    //    var desc = dc.trim
+    //    if (desc.contains("```") && !desc.contains("//")) {
+    //      desc = desc
+    //        .split("```")(0)
+    //        .replace("This plugin can accept the following configuration", "")
+    //        .replace("The plugin accepts the following configuration", "")
+    //        .trim
+    //    }
+    //    s"""## Description
+    //     |
+    //     |${desc}
+    //     |
+    //     |""".stripMargin
+    //  }
+    //  .getOrElse("")
+
+    //val defaultConfig = plugin.defaultConfig
+    //  .map { dc =>
+    //    s"""## Default configuration
+    //     |
+    //     |```json
+    //     |${dc.prettify}
+    //     |```
+    //     |
+    //     |""".stripMargin
+    //  }
+    //  .getOrElse("")
+
+    //val documentation = plugin.documentation
+    //  .map { dc =>
+    //    s"""## Documentation
+    //     |
+    //     |${dc}
+    //     |
+    //     |""".stripMargin
+    //  }
+    //  .getOrElse("")
+//
+    Files.write(
+      file.toPath,
+      Seq(makePluginContent(plugin)).asJava,
+      //Seq(s"""
+      //   |# ${plugin.name}
+      //   |
+      //   |## Infos
+      //   |
+      //   |* plugin type: `${plugin.pluginType.name}`
+      //   |* configuration root: `${plugin.configRoot.getOrElse("`none`")}`
+      //   |
+      //   |$description
+      //   |
+      //   |$defaultConfig
+      //   |
+      //   |$documentation
+      //   |""".stripMargin).asJava,
+      Charsets.UTF_8
+    )
+
+    (plugin.name, file.getName)
+  }
+
+  def run(): Unit = {
+    val root                         = ensureRootDir()
+    val plugins                      =
+      (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames).distinct
+    val names: Seq[(String, String)] = plugins
+      .map { pl =>
+        this.getClass.getClassLoader.loadClass(pl).getDeclaredConstructor().newInstance()
+      }
+      .map(_.asInstanceOf[NamedPlugin])
+      .filterNot(_.core)
+      .filterNot(_.deprecated)
+      .filterNot(p => p.isInstanceOf[Job] && p.asInstanceOf[Job].jobVisibility == JobVisibility.Internal)
+      .map { pl =>
+        makePluginPage(pl, root)
+      }
+    val index                        = new File(root, "index.md")
+    if (index.exists()) {
+      index.delete()
+    }
+    index.createNewFile()
+    Files.write(
+      index.toPath,
+      Seq(s"""# Otoroshi plugins
+        |
+        |Otoroshi provides some plugins out of the box
+        |
+        |${names.sortWith((a, b) => a._1.compareTo(b._1) < 0).map(t => s"* @ref:[${t._1}](./${t._2})").mkString("\n")}
+        |
+        |@@@ index
+        |
+        |${names.sortWith((a, b) => a._1.compareTo(b._1) < 0).map(t => s"* [${t._1}](./${t._2})").mkString("\n")}
+        |
+        |@@@
+        |
+        |""".stripMargin).asJava,
+      Charsets.UTF_8
+    )
+  }
+
+  def runOnePage(): Unit = {
+    val root                  = ensureRootDir()
+    val plugins               =
+      (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames ++ handlerNames).distinct
+        .filterNot(_ == "otoroshi.next.plugins.WasmJob")
+    val contents: Seq[String] = plugins
+      .map { pl =>
+        this.getClass.getClassLoader.loadClass(pl).getDeclaredConstructor().newInstance()
+      }
+      .map(_.asInstanceOf[NamedPlugin])
+      .filterNot(_.core)
+      .filterNot(_.deprecated)
+      .filterNot(p => p.isInstanceOf[Job] && p.asInstanceOf[Job].jobVisibility == JobVisibility.Internal)
+      .map { pl =>
+        makePluginContent(pl).replace("\n## ", "\n### ").replace("\n# ", "\n## ")
+      }
+    val index                 = new File(root, "built-in-legacy-plugins.md")
+    if (index.exists()) {
+      index.delete()
+    }
+    index.createNewFile()
+    Files.write(
+      index.toPath,
+      Seq(s"""# Built-in legacy plugins
+        |
+        |Otoroshi provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration
+        |
+        |${contents.mkString("\n")}
+        |
+        |
+        |""".stripMargin).asJava,
+      Charsets.UTF_8
+    )
+  }
+}
+
+class PluginDocumentationGeneratorApp extends App {
+
+  val generator = new PluginDocumentationGenerator("../manual")
+  generator.run()
+}

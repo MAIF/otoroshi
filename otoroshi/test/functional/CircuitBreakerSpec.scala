@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   //lazy val serviceHost = "cb.oto.tools"
-  implicit val system = ActorSystem("otoroshi-test")
+  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -39,7 +39,6 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       val basicTestExpectedBody = """{"message":"hello world"}"""
       val basicTestServer1      = TargetService(
         "cbr.oto.tools".option,
-        "/api",
         "application/json",
         { _ =>
           callCounter1.incrementAndGet()
@@ -50,7 +49,6 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       val callCounter2     = new AtomicInteger(0)
       val basicTestServer2 = TargetService(
         "cbr.oto.tools".option,
-        "/api",
         "application/json",
         { _ =>
           callCounter2.incrementAndGet()
@@ -225,7 +223,6 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       val callCounter3          = new AtomicInteger(0)
       val basicTestServer3      = TargetService(
         "cbt.oto.tools".option,
-        "/api",
         "application/json",
         { _ =>
           awaitF(2.seconds).futureValue
@@ -279,7 +276,6 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       val callCounter3          = new AtomicInteger(0)
       val basicTestServer3      = TargetService(
         "cbtr.oto.tools".option,
-        "/api",
         "application/json",
         { _ =>
           awaitF(2.seconds).futureValue

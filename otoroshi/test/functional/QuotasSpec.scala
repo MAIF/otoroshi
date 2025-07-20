@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 class QuotasSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "quotas.oto.tools"
-  implicit val system  = ActorSystem("otoroshi-test")
+  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -34,7 +34,6 @@ class QuotasSpec(name: String, configurationSpec: => Configuration) extends Otor
     val body                     = """{"message":"hello world"}"""
     val server                   = TargetService(
       None,
-      "/api",
       "application/json",
       { _ =>
         counter.incrementAndGet()

@@ -22,8 +22,8 @@ import scala.concurrent.ExecutionContext
 
 class Version1413Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system   = ActorSystem("otoroshi-test")
-  implicit lazy val env = otoroshiComponents.env
+  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -70,7 +70,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -133,7 +133,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -196,7 +196,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -421,7 +421,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
       resp1.status mustBe 200
 
       val resp2 = ws
-        .url(s"http://127.0.0.1:${port}/hello")
+        .url(s"http://127.0.0.1:$port/hello")
         .withHttpHeaders("Host" -> serviceHost)
         .get()
         .futureValue
@@ -445,11 +445,10 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         id = "jwtVerifier",
         name = "jwtVerifier",
         desc = "jwtVerifier",
-        strict = true,
         source = InHeader(name = "X-JWT-Token"),
         algoSettings = HSAlgoSettings(512, "secret"),
         strategy = DefaultToken(
-          true,
+          strict = true,
           Json.obj(
             "user"   -> "bobby",
             "rights" -> Json.arr(
@@ -463,11 +462,10 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         id = "jwtVerifier2",
         name = "jwtVerifier2",
         desc = "jwtVerifier2",
-        strict = true,
         source = InHeader(name = "X-JWT-Token"),
         algoSettings = HSAlgoSettings(512, "secret"),
         strategy = DefaultToken(
-          false,
+          strict = false,
           Json.obj(
             "user"   -> "bobby",
             "rights" -> Json.arr(
@@ -512,7 +510,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -533,7 +531,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           )
         ),

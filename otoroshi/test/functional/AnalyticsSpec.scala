@@ -19,7 +19,7 @@ import scala.concurrent.duration._
 
 class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system = ActorSystem("otoroshi-test")
+  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
 
   lazy val serviceHost = "api.oto.tools"
   lazy val elasticUrl  = "http://127.0.0.1:9200"
@@ -47,7 +47,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
 
   s"Analytics API" should {
 
-    def runTest(serviceId: Option[String] = None, count: Int) = {
+    def runTest(serviceId: Option[String] = None, count: Int): Unit = {
       setUp {
         // Inject events
         val now = DateTime.now()

@@ -29,3 +29,5 @@ otoroshi/javascript/stats.json
 /otoroshi/hs_err_*.log
 .scala-build
 *.iml
+
+logs/

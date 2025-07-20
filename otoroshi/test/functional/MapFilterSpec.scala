@@ -1,12 +1,16 @@
 package functional
 
-import org.scalatest.{MustMatchers, OptionValues, WordSpec}
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.OptionValues
+import org.scalatest.matchers.must.Matchers
 import otoroshi.events.DataExporter
 import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType, Exporter, NoneExporter}
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsObject, Json}
 
-class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
+import scala.annotation.unused
+
+class MapFilterSpec extends AnyWordSpec with Matchers with OptionValues {
 
   val source = Json.parse("""
       |{
@@ -610,6 +614,7 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
           |}
           |""".stripMargin)
 
+      @unused
       val projection = Json.obj(
         "@type"              -> Json.obj("$value" -> "HttpAccessEvent"),
         "@id"                -> true,
@@ -681,7 +686,7 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
       )
 
       otoroshi.utils.Match.matches(source, predicate) mustBe true
-      val result = otoroshi.utils.Projection.project(source, projection, identity)
+      // val result = otoroshi.utils.Projection.project(source, projection, identity)
       // println(Json.prettyPrint(result))
     }
     "filter one or the other" in {
@@ -875,7 +880,7 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
   }
 }
 
-class JsonPathSpec extends WordSpec with MustMatchers with OptionValues {
+class JsonPathSpec extends AnyWordSpec with Matchers with OptionValues {
 
   "json-path" should {
     "work in projection" in {

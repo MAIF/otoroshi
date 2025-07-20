@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "auth.oto.tools"
-  implicit val system  = ActorSystem("otoroshi-test")
+  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -31,7 +31,6 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
     val basicTestExpectedBody     = """{"message":"hello world"}"""
     val basicTestServer1          = TargetService(
       Some(serviceHost),
-      "/api",
       "application/json",
       { _ =>
         callCounter1.incrementAndGet()

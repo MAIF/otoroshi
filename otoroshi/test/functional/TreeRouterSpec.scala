@@ -1,15 +1,18 @@
 package functional
 
 import com.typesafe.config.ConfigFactory
+import org.scalatest.OptionValues
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{MustMatchers, OptionValues, WordSpec}
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import otoroshi.env.Env
 import otoroshi.next.models._
+import otoroshi.utils.TypedMap
 import play.api.Configuration
 
 import scala.util.Failure
-import otoroshi.utils.TypedMap
 
-class NgTreeRouterSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+class NgTreeRouterSpec extends AnyWordSpec with Matchers with OptionValues with ScalaFutures with IntegrationPatience {
   "NgTreeRouter" should {
     "find routes fast" in {
       NgTreeRouter_Test.testFindRoutes()
@@ -18,8 +21,8 @@ class NgTreeRouterSpec extends WordSpec with MustMatchers with OptionValues with
 }
 
 class NgTreeRouterPathParamsSpec
-    extends WordSpec
-    with MustMatchers
+    extends AnyWordSpec
+    with Matchers
     with OptionValues
     with ScalaFutures
     with IntegrationPatience {
@@ -31,8 +34,8 @@ class NgTreeRouterPathParamsSpec
 }
 
 //class NgTreeRouterRealLifeSpec
-//    extends WordSpec
-//    with MustMatchers
+//    extends AnyWordSpec
+//    with Matchers
 //    with OptionValues
 //    with ScalaFutures
 //    with IntegrationPatience {
@@ -44,8 +47,8 @@ class NgTreeRouterPathParamsSpec
 //}
 
 class NgTreeRouterWildcardSpec
-    extends WordSpec
-    with MustMatchers
+    extends AnyWordSpec
+    with Matchers
     with OptionValues
     with ScalaFutures
     with IntegrationPatience {
@@ -112,37 +115,46 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
           "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
         )(otoroshiComponents.env.otoroshiExecutionContext, otoroshiComponents.env)
         .map { route =>
-          val router       = NgTreeRouter.build(route.toRoutes.debug(r => println(r.size)))
+          val routes = route.toRoutes
+          val router       = NgTreeRouter.build(routes)
           val attrs        = TypedMap.empty.put(otoroshi.plugins.Keys.SnowFlakeKey -> "1")
-          implicit val env = otoroshiComponents.env
+          implicit val env: Env = otoroshiComponents.env
 
+          // Test with a GET endpoint
           router
-            .find("api.oto.tools", "/api/services")
+            .find("api.oto.tools", "/apis/proxy.otoroshi.io/v1/routes/_count")
             .map(_.routes.map(_.name))
             .debugPrintln
             .exists(_.size == 1)
             .mustBe(true)
+          
+          // Test with a parameterized GET endpoint
           router
-            .find("api.oto.tools", "/api/apikeys/123/foo")
+            .find("api.oto.tools", "/api/cluster/sessions/123")
             .map(_.routes.map(_.name))
             .debugPrintln
             .exists(_.size == 1)
             .mustBe(true)
 
+          // Test findRoute with GET endpoints
           router
-            .findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/services"), attrs)
+            .findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/apis/proxy.otoroshi.io/v1/routes/_count"), attrs)
             .map(_.route.name)
             .debugPrintln
             .isDefined
             .mustBe(true)
+          
+          // Test non-existent path
           router
-            .findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/apikeys/123/foo"), attrs)
+            .findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/cluster/sessions/123/foo"), attrs)
             .map(_.route.name)
             .debugPrintln
             .isDefined
             .mustBe(false)
+          
+          // Test parameterized path
           router
-            .findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/apikeys/123"), attrs)
+            .findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/cluster/sessions/123"), attrs)
             .map(_.route.name)
             .debugPrintln
             .isDefined

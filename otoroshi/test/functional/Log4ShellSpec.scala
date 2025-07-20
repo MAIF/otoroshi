@@ -5,13 +5,17 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import akka.stream.Materializer
 import akka.util.ByteString
+import org.scalatest.OptionValues
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{MustMatchers, OptionValues, WordSpec}
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import otoroshi.plugins.log4j.Log4jExpressionParser
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.libs.json.{JsArray, JsObject, Json}
 
-class Log4ShellSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+import scala.concurrent.ExecutionContextExecutor
+
+class Log4ShellSpec extends AnyWordSpec with Matchers with OptionValues with ScalaFutures with IntegrationPatience {
   "Log4ShellFilter" should {
     "find bad headers" in {
       Log4jExpressionParser.parseAsExp("'${jndi:ldap://foo.bar/a}").hasJndi.mustBe(true)
@@ -29,9 +33,9 @@ class Log4ShellSpec extends WordSpec with MustMatchers with OptionValues with Sc
         .mustBe(true)
     }
     "find lot of bad headers" in {
-      implicit val system = ActorSystem()
-      implicit val ec     = system.dispatcher
-      implicit val mat    = Materializer(system)
+      implicit val system: ActorSystem = ActorSystem()
+      implicit val ec: ExecutionContextExecutor = system.dispatcher
+      implicit val mat: Materializer = Materializer(system)
       val http            = Http()
       http
         .singleRequest(

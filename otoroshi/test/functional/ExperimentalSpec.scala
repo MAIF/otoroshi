@@ -1,7 +1,6 @@
 import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{Http, HttpExt}
 import akka.http.scaladsl.model.headers.Host
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.stream.Materializer
@@ -32,9 +31,9 @@ class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) e
 
   s"[$name] Otoroshi" should {
 
-    implicit val system = ActorSystem("otoroshi-test")
-    implicit val mat    = Materializer(system)
-    implicit val http   = Http()(system)
+    implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+    implicit val mat: Materializer = Materializer(system)
+    implicit val http: HttpExt = Http()(system)
 
     "warm up" in {
       startOtoroshi()
@@ -51,9 +50,7 @@ class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) e
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"echo.websocket.org",
-            scheme = "https"
-          )
+            host = s"echo.websocket.org")
         ),
         forceHttps = false,
         enforceSecureCommunication = false,

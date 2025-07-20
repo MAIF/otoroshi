@@ -1,10 +1,9 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
-
 import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{Http, HttpExt}
 import akka.http.scaladsl.model.headers.Host
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.stream.{ActorMaterializer, Materializer}
@@ -41,9 +40,9 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration) extends O
 
     "support websockets" in {
 
-      implicit val system = ActorSystem("otoroshi-test")
-      implicit val mat    = Materializer(system)
-      implicit val http   = Http()(system)
+      implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+      implicit val mat: Materializer = Materializer(system)
+      implicit val http: HttpExt = Http()(system)
 
       val service = ServiceDescriptor(
         id = "ws-test",
@@ -53,9 +52,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration) extends O
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"echo.websocket.org",
-            scheme = "https"
-          )
+            host = s"echo.websocket.org")
         ),
         forceHttps = false,
         enforceSecureCommunication = false,
