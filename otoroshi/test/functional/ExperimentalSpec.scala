@@ -19,7 +19,7 @@ class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) e
 
   lazy val serviceHost = "websocket.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -113,7 +113,7 @@ class ExperimentalSpec2(name: String, configurationSpec: => Configuration) exten
 
   lazy val serviceHost = "api.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""

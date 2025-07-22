@@ -18,7 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 object WasmAuthModuleConfig {
-  val defaultConfig = WasmAuthModuleConfig(
+  val defaultConfig: WasmAuthModuleConfig = WasmAuthModuleConfig(
     location = EntityLocation.default,
     id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
     name = "New wasm auth. module",
@@ -31,7 +31,7 @@ object WasmAuthModuleConfig {
     userValidators = Seq.empty,
     wasmRef = None
   )
-  val format        = new Format[WasmAuthModuleConfig] {
+  val format: Format[WasmAuthModuleConfig]        = new Format[WasmAuthModuleConfig] {
     override def writes(o: WasmAuthModuleConfig): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "type"                     -> "wasm",
       "id"                       -> o.id,
@@ -117,7 +117,7 @@ case class WasmAuthModuleConfig(
 case class WasmAuthModuleContext(config: JsValue, route: NgRoute, idx: Int = 0) extends NgCachedConfigContext
 
 object WasmAuthModule {
-  val logger = Logger("otoroshi-wasm-auth-module")
+  val logger: Logger = Logger("otoroshi-wasm-auth-module")
 }
 
 class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {

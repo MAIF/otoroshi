@@ -215,7 +215,7 @@ object NgChaosConfig {
 }
 
 object SnowMonkeyChaos {
-  val ContextKey = TypedKey[SnowMonkeyContext]("otoroshi.next.plugins.SnowMonkeyContext")
+  val ContextKey: TypedKey[SnowMonkeyContext] = TypedKey[SnowMonkeyContext]("otoroshi.next.plugins.SnowMonkeyContext")
 }
 
 class SnowMonkeyChaos extends NgRequestTransformer {

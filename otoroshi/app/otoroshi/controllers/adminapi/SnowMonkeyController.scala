@@ -13,6 +13,9 @@ import play.api.mvc.{AbstractController, ControllerComponents}
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
 
 import scala.concurrent.ExecutionContext
+import play.api.mvc
+import play.api.libs.json.JsValue
+import play.api.mvc.AnyContent
 
 class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
@@ -20,9 +23,9 @@ class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-snow-monkey-api")
+  lazy val logger: Logger = Logger("otoroshi-snow-monkey-api")
 
-  def startSnowMonkey() =
+  def startSnowMonkey(): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.datastores.chaosDataStore.startSnowMonkey().map { _ =>
@@ -53,7 +56,7 @@ class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       }
     }
 
-  def stopSnowMonkey() =
+  def stopSnowMonkey(): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.datastores.chaosDataStore.stopSnowMonkey().map { _ =>
@@ -84,7 +87,7 @@ class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       }
     }
 
-  def getSnowMonkeyOutages() =
+  def getSnowMonkeyOutages(): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.datastores.chaosDataStore.getOutages().map { outages =>
@@ -93,7 +96,7 @@ class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       }
     }
 
-  def getSnowMonkeyConfig() =
+  def getSnowMonkeyConfig(): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.datastores.globalConfigDataStore.singleton().map { c =>
@@ -102,7 +105,7 @@ class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       }
     }
 
-  def updateSnowMonkey() =
+  def updateSnowMonkey(): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         SnowMonkeyConfig.fromJsonSafe(ctx.request.body) match {
@@ -137,7 +140,7 @@ class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       }
     }
 
-  def patchSnowMonkey() =
+  def patchSnowMonkey(): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { globalConfig =>
@@ -174,7 +177,7 @@ class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       }
     }
 
-  def resetSnowMonkey() =
+  def resetSnowMonkey(): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.datastores.chaosDataStore.resetOutages().map { _ =>

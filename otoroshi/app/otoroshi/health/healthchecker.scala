@@ -179,7 +179,7 @@ object HealthCheck {
 }
 
 object HealthCheckerActor {
-  def props(implicit env: Env) = Props(new HealthCheckerActor())
+  def props(implicit env: Env): Props = Props(new HealthCheckerActor())
 }
 
 class HealthCheckerActor()(implicit env: Env) extends Actor {
@@ -187,7 +187,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
   implicit lazy val ec: ExecutionContextExecutor = context.dispatcher
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-health-checker")
+  lazy val logger: Logger = Logger("otoroshi-health-checker")
 
   def checkService(desc: ServiceDescriptor): Future[Unit] = {
     desc.exists().flatMap {

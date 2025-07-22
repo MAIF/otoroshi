@@ -13,6 +13,8 @@ import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 object HealthController {
 
@@ -170,7 +172,7 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-health-api")
+  lazy val logger: Logger = Logger("otoroshi-health-api")
 
   def withSecurity(req: RequestHeader, _key: Option[String])(f: => Future[Result]): Future[Result] = {
     ((req.getQueryString("access_key"), req.getQueryString("X-Access-Key"), _key) match {
@@ -187,14 +189,14 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
     }
   }
 
-  def fetchHealth() = {
+  def fetchHealth(): Future[Result] = {
     HealthController.fetchHealth().map {
       case Left(payload)  => ServiceUnavailable(payload)
       case Right(payload) => Ok(payload)
     }
   }
 
-  def processMetrics() = Action.async { req =>
+  def processMetrics(): mvc.Action[AnyContent] = Action.async { req =>
     val format      = req.getQueryString("format")
     val filter      = req.getQueryString("filter")
     val acceptsJson = req.accepts("application/json")
@@ -208,23 +210,23 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
     }
   }
 
-  def backofficeMetrics() = BackOfficeActionAuth { ctx =>
+  def backofficeMetrics(): mvc.Action[AnyContent] = BackOfficeActionAuth { ctx =>
     HealthController.fetchMetrics("json".some, acceptsJson = true, acceptsProm = false, None)
   }
 
-  def health() =
+  def health(): mvc.Action[AnyContent] =
     Action.async { req =>
       withSecurity(req, env.healthAccessKey)(fetchHealth())
     }
 
-  def live() =
+  def live(): mvc.Action[AnyContent] =
     Action.async { req =>
       withSecurity(req, env.healthAccessKey) {
         Ok(Json.obj("live" -> true)).future
       }
     }
 
-  def ready() =
+  def ready(): mvc.Action[AnyContent] =
     Action.async { req =>
       withSecurity(req, env.healthAccessKey)(fetchHealth().map {
         case r if r.header.status == 200 => Ok(Json.obj("ready" -> true))
@@ -232,7 +234,7 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
       })
     }
 
-  def startup() =
+  def startup(): mvc.Action[AnyContent] =
     Action.async { req =>
       withSecurity(req, env.healthAccessKey)(fetchHealth().map {
         case r if r.header.status == 200 => Ok(Json.obj("started" -> true))

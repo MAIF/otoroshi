@@ -19,6 +19,9 @@ import play.api.libs.streams.Accumulator
 import play.api.mvc.Results.Status
 
 import scala.concurrent.{ExecutionContext, Future}
+import org.apache.pekko.stream.scaladsl.Source
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc)
@@ -29,11 +32,11 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val sourceBodyParser = BodyParser("ServicesController BodyParser") { _ =>
+  lazy val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("ServicesController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  lazy val logger = Logger("otoroshi-services-api")
+  lazy val logger: Logger = Logger("otoroshi-services-api")
 
   override def singularName: String = "service-descriptor"
 
@@ -158,7 +161,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  def allLines() =
+  def allLines(): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       val options = SendAuditAndAlert("ACCESS_ALL_LINES", s"User accessed all lines", None, Json.obj(), ctx)
       fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: String) => JsString(e), options) {
@@ -166,7 +169,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def servicesForALine(line: String) =
+  def servicesForALine(line: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       val options = SendAuditAndAlert(
         "ACCESS_SERVICES_FOR_LINES",
@@ -180,7 +183,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def serviceTargets(serviceId: String) =
+  def serviceTargets(serviceId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.canReadService(serviceId) {
         val options = SendAuditAndAlert(
@@ -199,7 +202,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def updateServiceTargets(serviceId: String) =
+  def updateServiceTargets(serviceId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       val body = ctx.request.body
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
@@ -245,7 +248,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def serviceAddTarget(serviceId: String) =
+  def serviceAddTarget(serviceId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       val body = ctx.request.body
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
@@ -294,7 +297,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def serviceDeleteTarget(serviceId: String) =
+  def serviceDeleteTarget(serviceId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       val body = ctx.request.body
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
@@ -343,7 +346,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def serviceLiveStats(serviceId: String) =
+  def serviceLiveStats(serviceId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.canReadService(serviceId) {
         Audit.send(
@@ -383,7 +386,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def serviceHealth(serviceId: String) =
+  def serviceHealth(serviceId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.canReadService(serviceId) {
         val options = SendAuditAndAlert(
@@ -408,7 +411,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def serviceTemplate(serviceId: String) =
+  def serviceTemplate(serviceId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None                                 => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
@@ -421,7 +424,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def updateServiceTemplate(serviceId: String) =
+  def updateServiceTemplate(serviceId: String): mvc.Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
         val requestBody    = Json.parse(bodyRaw.utf8String)
@@ -464,7 +467,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def createServiceTemplate(serviceId: String) =
+  def createServiceTemplate(serviceId: String): mvc.Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
         val requestBody    = Json.parse(bodyRaw.utf8String)
@@ -505,7 +508,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def deleteServiceTemplate(serviceId: String) =
+  def deleteServiceTemplate(serviceId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
@@ -533,7 +536,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def convertAsRoute(serviceId: String) = ApiAction.async { ctx =>
+  def convertAsRoute(serviceId: String): mvc.Action[AnyContent] = ApiAction.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).vfuture
       case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
@@ -542,7 +545,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  def importAsRoute(serviceId: String) = ApiAction.async { ctx =>
+  def importAsRoute(serviceId: String): mvc.Action[AnyContent] = ApiAction.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).vfuture
       case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden

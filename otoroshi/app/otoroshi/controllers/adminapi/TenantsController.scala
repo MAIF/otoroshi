@@ -19,7 +19,7 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-tenants-api")
+  lazy val logger: Logger = Logger("otoroshi-tenants-api")
 
   override def singularName: String = "organization"
 

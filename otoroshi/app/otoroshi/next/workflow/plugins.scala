@@ -37,7 +37,7 @@ object WorkflowBackendConfig {
       )
     )
   )
-  val format                         = new Format[WorkflowBackendConfig] {
+  val format: Format[WorkflowBackendConfig]                         = new Format[WorkflowBackendConfig] {
     override def reads(json: JsValue): JsResult[WorkflowBackendConfig] = JsSuccess(WorkflowBackendConfig(json))
     override def writes(o: WorkflowBackendConfig): JsValue             = o.json
   }

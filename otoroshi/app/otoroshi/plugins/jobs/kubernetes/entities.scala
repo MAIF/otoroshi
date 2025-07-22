@@ -12,6 +12,7 @@ import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.collection.MapView
 
 trait KubernetesEntity {
   def raw: JsValue
@@ -39,7 +40,7 @@ case class KubernetesService(raw: JsValue)   extends KubernetesEntity {
   lazy val clusterIP: String = (raw \ "spec" \ "clusterIP").as[String]
 }
 case class KubernetesConfigMap(raw: JsValue) extends KubernetesEntity {
-  lazy val rawObj                      = raw.as[JsObject]
+  lazy val rawObj: JsObject                      = raw.as[JsObject]
   //lazy val corefile: String      = (raw \ "data" \ "Corefile").as[String]
   def corefile(azure: Boolean): String =
     (if (azure) (raw \ "data" \ "otoroshi.server").asOpt[String] else (raw \ "data" \ "Corefile").asOpt[String])
@@ -78,7 +79,7 @@ case class KubernetesOpenshiftDnsOperatorServer(raw: JsValue) {
 }
 
 case class KubernetesOpenshiftDnsOperator(raw: JsValue) extends KubernetesEntity {
-  lazy val servers = (raw \ "spec" \ "servers")
+  lazy val servers: scala.collection.Seq[KubernetesOpenshiftDnsOperatorServer] = (raw \ "spec" \ "servers")
     .asOpt[JsArray]
     .map(_.value.map(KubernetesOpenshiftDnsOperatorServer.apply))
     .getOrElse(Seq.empty)
@@ -168,7 +169,7 @@ case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
 case class KubernetesSecret(raw: JsValue) extends KubernetesEntity {
   lazy val theType: String                         = (raw \ "type").as[String]
   lazy val base64Data: Map[String, String]         = (raw \ "data").asOpt[Map[String, String]].getOrElse(Map.empty)
-  lazy val data                                    = base64Data.view.mapValues(v => new String(OtoroshiClaim.decoder.decode(v)))
+  lazy val data: MapView[String,String]                                    = base64Data.view.mapValues(v => new String(OtoroshiClaim.decoder.decode(v)))
   lazy val stringData: Option[Map[String, String]] = (raw \ "stringData").asOpt[Map[String, String]]
   lazy val hasStringData: Boolean                  = stringData.isDefined
   def cert: KubernetesCertSecret                   = KubernetesCertSecret(raw)

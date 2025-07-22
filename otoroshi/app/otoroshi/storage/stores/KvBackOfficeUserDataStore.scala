@@ -42,7 +42,7 @@ class KvBackOfficeUserDataStore(redisCli: RedisLike, _env: Env)
       }
 
   override def tsessions()(implicit ec: ExecutionContext, env: Env): Future[Seq[BackOfficeUser]] = {
-    sessions().map(ses => ses.map(BackOfficeUser.fmt.reads).collect { case JsSuccess(value, _) => value })
+    sessions().map(ses => ses.map(BackOfficeUser.fmt.reads(_)).collect { case JsSuccess(value, _) => value })
   }
 
   override def discardSession(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =

@@ -670,10 +670,10 @@ trait BulkControllerHelper[Entity <: EntityLocationSupport, Error] extends BulkH
   }
 
   def ApiAction: ApiAction
-  def bulkUpdateAction() = ApiAction.async(sourceBodyParser) { ctx => bulkUpdate(ctx) }
-  def bulkCreateAction() = ApiAction.async(sourceBodyParser) { ctx => bulkCreate(ctx) }
-  def bulkPatchAction()  = ApiAction.async(sourceBodyParser) { ctx => bulkPatch(ctx) }
-  def bulkDeleteAction() = ApiAction.async(sourceBodyParser) { ctx => bulkDelete(ctx) }
+  def bulkUpdateAction(): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) { ctx => bulkUpdate(ctx) }
+  def bulkCreateAction(): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) { ctx => bulkCreate(ctx) }
+  def bulkPatchAction(): Action[Source[ByteString, _]]  = ApiAction.async(sourceBodyParser) { ctx => bulkPatch(ctx) }
+  def bulkDeleteAction(): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) { ctx => bulkDelete(ctx) }
 }
 
 trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[Entity, Error] {
@@ -1186,37 +1186,37 @@ trait CrudControllerHelper[Entity <: EntityLocationSupport, Error] extends CrudH
   def cc: ControllerComponents
   def ApiAction: ApiAction
 
-  def createAction() =
+  def createAction(): Action[JsValue] =
     ApiAction.async(cc.parsers.json) { ctx =>
       create(ctx)
     }
 
-  def findAllEntitiesAction() =
+  def findAllEntitiesAction(): Action[AnyContent] =
     ApiAction.async { ctx =>
       findAllEntities(ctx)
     }
 
-  def findEntityByIdAction(id: String) =
+  def findEntityByIdAction(id: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       findEntityById(id, ctx)
     }
 
-  def updateEntityAction(id: String) =
+  def updateEntityAction(id: String): Action[JsValue] =
     ApiAction.async(cc.parsers.json) { ctx =>
       updateEntity(id, ctx)
     }
 
-  def patchEntityAction(id: String) =
+  def patchEntityAction(id: String): Action[JsValue] =
     ApiAction.async(cc.parsers.json) { ctx =>
       patchEntity(id, ctx)
     }
 
-  def deleteEntityAction(id: String) =
+  def deleteEntityAction(id: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       deleteEntities(Seq(id), ctx)
     }
 
-  def deleteEntitiesAction() =
+  def deleteEntitiesAction(): Action[JsValue] =
     ApiAction.async(cc.parsers.json) { ctx =>
       val ids = (ctx.request.body \ "ids").as[JsArray].value.map(_.as[String]).toSeq
       deleteEntities(ids, ctx)

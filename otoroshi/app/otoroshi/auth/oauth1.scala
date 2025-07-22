@@ -24,7 +24,7 @@ import scala.util.Try
 
 object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
 
-  lazy val logger = Logger("otoroshi-ldap-auth-config")
+  lazy val logger: Logger = Logger("otoroshi-ldap-auth-config")
 
   def fromJsons(value: JsValue): Oauth1ModuleConfig =
     try {
@@ -189,7 +189,7 @@ case class Oauth1ModuleConfig(
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
 
-  override def asJson =
+  override def asJson: JsValue =
     location.jsonWithKey ++ Json.obj(
       "type"                          -> "oauth1",
       "id"                            -> id,
@@ -221,12 +221,12 @@ case class Oauth1ModuleConfig(
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
 
-  override def cookieSuffix(desc: ServiceDescriptor) = s"ldap-auth-$id"
+  override def cookieSuffix(desc: ServiceDescriptor): String = s"ldap-auth-$id"
 }
 
 object Oauth1AuthModule {
 
-  def defaultConfig = Oauth1ModuleConfig(
+  def defaultConfig: Oauth1ModuleConfig = Oauth1ModuleConfig(
     id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
     name = "New OAuth 1.0 module",
     desc = "New OAuth 1.0 module",
@@ -378,7 +378,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
   )(implicit
       ec: ExecutionContext,
       env: Env
-  ) = FastFuture.successful(Right(None))
+  ): Future[Either[Result,Option[String]]] = FastFuture.successful(Right(None))
 
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
@@ -436,7 +436,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
   override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ) =
+  ): Future[Either[Result,Option[String]]] =
     FastFuture.successful(Right(None))
 
   override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit

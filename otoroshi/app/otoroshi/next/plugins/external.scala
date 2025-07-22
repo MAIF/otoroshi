@@ -28,7 +28,7 @@ case class NgExternalValidatorConfig(
 }
 
 object NgExternalValidatorConfig {
-  val format = new Format[NgExternalValidatorConfig] {
+  val format: Format[NgExternalValidatorConfig] = new Format[NgExternalValidatorConfig] {
     override def writes(o: NgExternalValidatorConfig): JsValue             = Json.obj(
       "cache_expression" -> o.cacheExpression.map(_.json).getOrElse(JsNull).asValue,
       "url"              -> o.url.map(_.json).getOrElse(JsNull).asValue,

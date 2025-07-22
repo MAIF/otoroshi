@@ -43,7 +43,7 @@ case class NgTrafficMirroringConfig(
 }
 
 object NgTrafficMirroringConfig {
-  val format = new Format[NgTrafficMirroringConfig] {
+  val format: Format[NgTrafficMirroringConfig] = new Format[NgTrafficMirroringConfig] {
     override def writes(o: NgTrafficMirroringConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgTrafficMirroringConfig] = Try {
       NgTrafficMirroringConfig(

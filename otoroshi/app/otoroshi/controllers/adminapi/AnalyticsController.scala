@@ -52,7 +52,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-analytics-api")
+  lazy val logger: Logger = Logger("otoroshi-analytics-api")
 
   def withEventStore(f: ApiActionContext[AnyContent] => Future[Result]): Action[AnyContent] = {
     withEventStoreAndParser[AnyContent](BodyParsers.utils.ignore(AnyContentAsEmpty: AnyContent))(f)
@@ -100,7 +100,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     }
   }
 
-  def serviceStats(serviceId: String, from: Option[String], to: Option[String]) =
+  def serviceStats(serviceId: String, from: Option[String], to: Option[String]): Action[AnyContent] =
     withEventStore { ctx =>
       Audit.send(
         AdminApiEvent(
@@ -206,7 +206,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def globalStats(from: Option[String] = None, to: Option[String] = None) =
+  def globalStats(from: Option[String] = None, to: Option[String] = None): Action[AnyContent] =
     withEventStore { ctx =>
       Audit.send(
         AdminApiEvent(
@@ -302,7 +302,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def globalStatus(from: Option[String] = None, to: Option[String] = None) =
+  def globalStatus(from: Option[String] = None, to: Option[String] = None): Action[AnyContent] =
     withEventStore { ctx =>
       Audit.send(
         AdminApiEvent(
@@ -390,7 +390,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def serviceEvents(serviceId: String, from: Option[String] = None, to: Option[String] = None) =
+  def serviceEvents(serviceId: String, from: Option[String] = None, to: Option[String] = None): Action[AnyContent] =
     withEventStore { ctx =>
       Audit.send(
         AdminApiEvent(
@@ -446,7 +446,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def filterableEvents(from: Option[String] = None, to: Option[String] = None) =
+  def filterableEvents(from: Option[String] = None, to: Option[String] = None): Action[AnyContent] =
     withEventStore { ctx =>
       val order: String           = ctx.request.queryString
         .get("order")
@@ -510,7 +510,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def filterableStats(from: Option[String], to: Option[String]) =
+  def filterableStats(from: Option[String], to: Option[String]): Action[AnyContent] =
     withEventStore { ctx =>
       val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int =
@@ -614,7 +614,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def servicesStatus(from: Option[String], to: Option[String]) =
+  def servicesStatus(from: Option[String], to: Option[String]): Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
@@ -645,7 +645,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def serviceStatus(serviceId: String, from: Option[String], to: Option[String]) =
+  def serviceStatus(serviceId: String, from: Option[String], to: Option[String]): Action[AnyContent] =
     withEventStore { ctx =>
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
@@ -667,7 +667,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def groupStatus(groupId: String, from: Option[String], to: Option[String]) =
+  def groupStatus(groupId: String, from: Option[String], to: Option[String]): Action[AnyContent] =
     withEventStore { ctx =>
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
@@ -698,7 +698,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def serviceResponseTime(serviceId: String, from: Option[String], to: Option[String]) =
+  def serviceResponseTime(serviceId: String, from: Option[String], to: Option[String]): Action[AnyContent] =
     withEventStore { ctx =>
       val fromDate =
         from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)

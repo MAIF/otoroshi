@@ -17,8 +17,8 @@ case class StaticAssetEndpointConfiguration(url: Option[String] = None) extends 
 }
 
 object StaticAssetEndpointConfiguration {
-  val default                        = StaticAssetEndpointConfiguration()
-  val format                         = new Format[StaticAssetEndpointConfiguration] {
+  val default: StaticAssetEndpointConfiguration                        = StaticAssetEndpointConfiguration()
+  val format: Format[StaticAssetEndpointConfiguration]                         = new Format[StaticAssetEndpointConfiguration] {
     override def reads(json: JsValue): JsResult[StaticAssetEndpointConfiguration] = Try {
       StaticAssetEndpointConfiguration(
         url = json.select("url").asOpt[String].filter(_.nonEmpty)

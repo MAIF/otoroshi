@@ -20,6 +20,7 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
+import play.api.mvc
 
 class TryItController(
     BackOfficeActionAuth: BackOfficeActionAuth,
@@ -31,11 +32,11 @@ class TryItController(
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit val mat: Materializer = env.otoroshiMaterializer
 
-  val sourceBodyParser = BodyParser("TryItController BodyParser") { _ =>
+  val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("TryItController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def kafkaDataExporterTryIt() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+  def kafkaDataExporterTryIt(): mvc.Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val jsonBody = bodyRaw.utf8String.parseJson
       jsonBody \ "config" match {
@@ -79,7 +80,7 @@ class TryItController(
     }
   }
 
-  def call(entity: Option[String] = None) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+  def call(entity: Option[String] = None): mvc.Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val requestId                = UUID.randomUUID().toString
       env.proxyState.enableReportFor(requestId)

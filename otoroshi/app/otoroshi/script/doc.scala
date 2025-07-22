@@ -14,7 +14,7 @@ import scala.util.Try
 
 class PluginDocumentationGenerator(docPath: String) {
 
-  val logger = Logger("PluginDocumentationGenerator")
+  val logger: Logger = Logger("PluginDocumentationGenerator")
 
   lazy val (
     transformersNames,

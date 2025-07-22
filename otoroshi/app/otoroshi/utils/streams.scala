@@ -12,10 +12,10 @@ object MaxLengthLimiter {
 class MaxLengthLimiter(maxLength: Int, log: (String) => Unit = str => ())
     extends GraphStage[FlowShape[ByteString, ByteString]] {
 
-  val in  = Inlet[ByteString]("MaxLengthLimiter.in")
-  val out = Outlet[ByteString]("MaxLengthLimiter.out")
+  val in: Inlet[ByteString]  = Inlet[ByteString]("MaxLengthLimiter.in")
+  val out: Outlet[ByteString] = Outlet[ByteString]("MaxLengthLimiter.out")
 
-  override val shape = FlowShape.of(in, out)
+  override val shape: FlowShape[ByteString,ByteString] = FlowShape.of(in, out)
 
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
     new GraphStageLogic(shape) {

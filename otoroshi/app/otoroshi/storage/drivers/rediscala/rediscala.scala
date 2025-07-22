@@ -30,7 +30,7 @@ import redis.util.CRC16
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 case class RedisMember(host: String, port: Int, password: Option[String]) {
-  def toRedisServer =
+  def toRedisServer: RedisServer =
     RedisServer(
       host = host,
       port = port,
@@ -368,10 +368,10 @@ abstract class AbstractRedisDataStores(
   def info(): Future[String]
   def typeOfKey(key: String): Future[String]
 
-  lazy val logger = Logger(loggerName)
+  lazy val logger: Logger = Logger(loggerName)
 
   lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.redis.windowSize").getOrElse(99)
-  lazy val redisActorSystem     =
+  lazy val redisActorSystem: ActorSystem     =
     ActorSystem(
       "otoroshi-redis-system",
       configuration

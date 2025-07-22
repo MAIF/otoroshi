@@ -15,7 +15,7 @@ case class Regex(originalPattern: String, compiledPattern: Pattern) {
 
 object RegexPool {
 
-  lazy val logger = Logger("otoroshi-regex-pool")
+  lazy val logger: Logger = Logger("otoroshi-regex-pool")
 
   private val pool = new UnboundedConcurrentHashMap[String, Regex]() // TODO: check growth over time
 

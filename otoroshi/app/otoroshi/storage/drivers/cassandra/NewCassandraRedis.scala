@@ -72,7 +72,7 @@ object CassImplicits {
 }
 
 object NewCassandraRedis {
-  val logger = Logger("otoroshi-cassandra-datastores")
+  val logger: Logger = Logger("otoroshi-cassandra-datastores")
 }
 
 class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(implicit

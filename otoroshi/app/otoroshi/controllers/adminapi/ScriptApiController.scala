@@ -16,6 +16,7 @@ import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import org.apache.pekko.stream.scaladsl.Source
 
 class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc)
@@ -25,9 +26,9 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  val logger = Logger("otoroshi-scripts-api")
+  val logger: Logger = Logger("otoroshi-scripts-api")
 
-  val sourceBodyParser = BodyParser("scripts-parsers") { _ =>
+  val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("scripts-parsers") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
@@ -44,7 +45,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
     }
   }
 
-  def findAllScriptsList() =
+  def findAllScriptsList(): Action[AnyContent] =
     ApiAction.async { ctx =>
       val transformersNames  = env.scriptManager.transformersNames
       val validatorsNames    = env.scriptManager.validatorsNames
@@ -210,7 +211,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       }
     }
 
-  def compileScript() =
+  def compileScript(): Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(Anyone) {
         OnlyIfScriptingEnabled {

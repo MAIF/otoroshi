@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class WebAuthnRegistrationsDataStore {
 
-  lazy val logger = Logger("otoroshi-webauthn-admin-datastore")
+  lazy val logger: Logger = Logger("otoroshi-webauthn-admin-datastore")
 
   def setRegistrationRequest(requestId: String, request: JsValue)(implicit
       ec: ExecutionContext,
@@ -43,7 +43,7 @@ class WebAuthnRegistrationsDataStore {
 
 class KvWebAuthnAdminDataStore extends WebAuthnAdminDataStore {
 
-  lazy val logger = Logger("otoroshi-webauthn-admin-datastore")
+  lazy val logger: Logger = Logger("otoroshi-webauthn-admin-datastore")
 
   def key(id: String)(implicit env: Env): String = s"${env.storageRoot}:webauthn:admins:$id"
 

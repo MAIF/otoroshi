@@ -552,7 +552,7 @@ case class ActualCallContext(
 
 class ReverseProxyAction(env: Env) {
 
-  val headersInFiltered = Seq(
+  val headersInFiltered: Seq[String] = Seq(
     env.Headers.OtoroshiState,
     env.Headers.OtoroshiClaim,
     env.Headers.OtoroshiRequestId,
@@ -569,7 +569,7 @@ class ReverseProxyAction(env: Env) {
     "Tls-Session-Info"
   ).map(_.toLowerCase)
 
-  val headersOutFiltered = Seq(
+  val headersOutFiltered: Seq[String] = Seq(
     env.Headers.OtoroshiStateResp,
     "Transfer-Encoding",
     "Content-Length",

@@ -34,7 +34,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
     otoroshiComponents.env
   )
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -334,7 +334,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
     description = "A test group"
   )
 
-  def serviceDescriptor(serviceId: String) = {
+  def serviceDescriptor(serviceId: String): ServiceDescriptor = {
     new ServiceDescriptor(
       id = serviceId,
       groups = Seq(testGroup.id),

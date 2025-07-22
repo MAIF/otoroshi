@@ -154,25 +154,25 @@ class BackOfficeController(
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val lat: Materializer = env.otoroshiMaterializer
 
-  lazy val handler       = handlerRef.get()
-  lazy val logger        = Logger("otoroshi-backoffice-api")
-  lazy val commitVersion = Option(System.getenv("COMMIT_ID")).getOrElse(env.otoroshiVersion)
+  lazy val handler: HttpRequestHandler       = handlerRef.get()
+  lazy val logger: Logger        = Logger("otoroshi-backoffice-api")
+  lazy val commitVersion: String = Option(System.getenv("COMMIT_ID")).getOrElse(env.otoroshiVersion)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Proxy
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  val sourceBodyParser = BodyParser("BackOfficeApi BodyParser") { _ =>
+  val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("BackOfficeApi BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def getFlags() = BackOfficeActionAuth.async { ctx =>
+  def getFlags(): Action[AnyContent] = BackOfficeActionAuth.async { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
       Ok(BackofficeFlags.latest.rawJson).future
     }
   }
 
-  def writeFlags() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def writeFlags(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
       val body  = ctx.request.body
       val flags = BackofficeFlags.writeJson(body)
@@ -180,7 +180,7 @@ class BackOfficeController(
     }
   }
 
-  def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+  def proxyAdminApi(path: String): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     env.datastores.apiKeyDataStore.findById(env.backOfficeApiKey.clientId).flatMap {
       case None                                  =>
         FastFuture.successful(
@@ -419,14 +419,14 @@ class BackOfficeController(
   // Pure routing
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  def robotTxt =
+  def robotTxt: Action[AnyContent] =
     Action { req =>
       if (logger.isDebugEnabled) logger.debug(s"Rendering robot.txt on ${req.theProtocol}://${req.theHost}/robot.txt")
       Ok("""User-agent: *
          |Disallow: /""".stripMargin)
     }
 
-  def version =
+  def version: Action[AnyContent] =
     BackOfficeActionAuth {
       Ok(
         Json.obj(
@@ -437,7 +437,7 @@ class BackOfficeController(
       )
     }
 
-  def getEnv() =
+  def getEnv(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       val hash = BCrypt.hashpw("password", BCrypt.gensalt())
       for {
@@ -517,7 +517,7 @@ class BackOfficeController(
       }
     }
 
-  def index =
+  def index: Action[AnyContent] =
     BackOfficeAction.async { ctx =>
       env.datastores.globalConfigDataStore.singleton().map { config =>
         val thridPartyLoginEnabled = config.backOfficeAuthRef.nonEmpty
@@ -531,7 +531,7 @@ class BackOfficeController(
       }
     }
 
-  def dashboard =
+  def dashboard: Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       env.datastores.globalConfigDataStore.singleton().flatMap { config =>
         env.datastores.tenantDataStore.findAll().map { tenants =>
@@ -553,7 +553,7 @@ class BackOfficeController(
       }
     }
 
-  def dashboardRoutes(ui: String) =
+  def dashboardRoutes(ui: String): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       env.datastores.globalConfigDataStore.singleton().flatMap { config =>
         env.datastores.tenantDataStore.findAll().map { tenants =>
@@ -575,12 +575,12 @@ class BackOfficeController(
       }
     }
 
-  def error(message: Option[String]) =
+  def error(message: Option[String]): Action[AnyContent] =
     BackOfficeAction { ctx =>
       Ok(otoroshi.views.html.oto.error(message.getOrElse("Error message"), env))
     }
 
-  def documentationFrame(lineId: String, serviceId: String) =
+  def documentationFrame(lineId: String, serviceId: String): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
         case Some(descriptor) if !ctx.canUserRead(descriptor) => ApiActionContext.forbidden
@@ -589,7 +589,7 @@ class BackOfficeController(
       }
     }
 
-  def documentationFrameDescriptor(lineId: String, serviceId: String) =
+  def documentationFrameDescriptor(lineId: String, serviceId: String): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       import scala.concurrent.duration._
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
@@ -638,7 +638,7 @@ class BackOfficeController(
   // APIs that are only relevant here
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  def cleverApps() =
+  def cleverApps(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int =
@@ -679,7 +679,7 @@ class BackOfficeController(
       }
     }
 
-  def eurekaServers() =
+  def eurekaServers(): Action[AnyContent] =
     BackOfficeActionAuth.async { _ =>
       env.datastores.routeDataStore.findAll().map { routes =>
         Ok(
@@ -692,7 +692,7 @@ class BackOfficeController(
       }
     }
 
-  def externalEurekaServers() =
+  def externalEurekaServers(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       ctx.request.getQueryString("url") match {
         case Some(url) =>
@@ -713,7 +713,7 @@ class BackOfficeController(
       }
     }
 
-  def eurekaServerApps(id: String) =
+  def eurekaServerApps(id: String): Action[AnyContent] =
     BackOfficeActionAuth.async { _ =>
       env.datastores.rawDataStore
         .allMatching(s"${env.storageRoot}:plugins:eureka-server-$id:apps*")
@@ -726,7 +726,7 @@ class BackOfficeController(
         }
     }
 
-  def panicMode() =
+  def panicMode(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       ctx.checkRights(SuperAdminOnly) {
         env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { c =>
@@ -769,7 +769,7 @@ class BackOfficeController(
     def theTags: Seq[String]             = Seq.empty
   }
 
-  def searchNextServicesApi() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def searchNextServicesApi(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     val query                            = (ctx.request.body \ "query").asOpt[String].getOrElse("--").toLowerCase()
     Audit.send(
       BackOfficeEvent(
@@ -814,7 +814,7 @@ class BackOfficeController(
     }
   }
 
-  def searchServicesApi() =
+  def searchServicesApi(): Action[JsValue] =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       val query                            = (ctx.request.body \ "query").asOpt[String].getOrElse("--").toLowerCase()
       Audit.send(
@@ -865,7 +865,7 @@ class BackOfficeController(
       }
     }
 
-  def changeLogLevel(name: String, newLevel: Option[String]) =
+  def changeLogLevel(name: String, newLevel: Option[String]): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       ctx.checkRights(SuperAdminOnly) {
         val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
@@ -876,7 +876,7 @@ class BackOfficeController(
       }
     }
 
-  def getLogLevel(name: String) =
+  def getLogLevel(name: String): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       ctx.checkRights(SuperAdminOnly) {
         val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
@@ -885,7 +885,7 @@ class BackOfficeController(
       }
     }
 
-  def getAllLoggers() =
+  def getAllLoggers(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       ctx.checkRights(SuperAdminOnly) {
         import scala.jdk.CollectionConverters._
@@ -907,7 +907,7 @@ class BackOfficeController(
 
   case class ServiceRate(rate: Double, name: String, id: String)
 
-  def mostCalledServices() =
+  def mostCalledServices(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int =
@@ -936,7 +936,7 @@ class BackOfficeController(
       }
     }
 
-  def servicesMap() =
+  def servicesMap(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       env.datastores.serviceGroupDataStore.findAll().flatMap { groups =>
         Future.sequence(
@@ -970,7 +970,7 @@ class BackOfficeController(
       }
     }
 
-  def fetchOpenIdConfiguration() =
+  def fetchOpenIdConfiguration(): Action[JsValue] =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       import otoroshi.utils.http.Implicits._
 
@@ -1115,7 +1115,7 @@ class BackOfficeController(
       }
     }
 
-  def fetchSAMLConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def fetchSAMLConfiguration(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     import scala.xml.Elem
     import scala.xml.XML._
     Try {
@@ -1152,7 +1152,7 @@ class BackOfficeController(
     } get
   }
 
-  def fetchBodiesFor(serviceId: String, requestId: String) =
+  def fetchBodiesFor(serviceId: String, requestId: String): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       for {
         req  <- env.datastores.rawDataStore.get(s"${env.storageRoot}:bodies:$serviceId:$requestId:request")
@@ -1171,7 +1171,7 @@ class BackOfficeController(
       }
     }
 
-  def resetCircuitBreakers(id: String) =
+  def resetCircuitBreakers(id: String): Action[AnyContent] =
     BackOfficeActionAuth { ctx =>
       env.circuitBeakersHolder.resetCircuitBreakersFor(id)
       Ok(Json.obj("done" -> true))
@@ -1317,7 +1317,7 @@ class BackOfficeController(
     }
   }*/
 
-  def auditEvents() =
+  def auditEvents(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       ctx.checkRights(SuperAdminOnly) {
         val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
@@ -1340,7 +1340,7 @@ class BackOfficeController(
       }
     }
 
-  def alertEvents() =
+  def alertEvents(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       ctx.checkRights(SuperAdminOnly) {
         val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
@@ -1563,7 +1563,7 @@ class BackOfficeController(
       }
     }
 
-  def renew(id: String) =
+  def renew(id: String): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
         case None                                  => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
@@ -1572,7 +1572,7 @@ class BackOfficeController(
       }
     }
 
-  def createLetsEncryptCertificate() =
+  def createLetsEncryptCertificate(): Action[JsValue] =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       (ctx.request.body \ "host").asOpt[String] match {
         case None         => FastFuture.successful(BadRequest(Json.obj("error" -> "no domain found in request")))
@@ -1584,7 +1584,7 @@ class BackOfficeController(
       }
     }
 
-  def createCsr =
+  def createCsr: Action[JsValue] =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       val issuerRef = (ctx.request.body \ "caRef").asOpt[String]
       GenCsrQuery.fromJson(ctx.request.body) match {
@@ -1603,7 +1603,7 @@ class BackOfficeController(
       }
     }
 
-  def createCertificate =
+  def createCertificate: Action[JsValue] =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       val issuerRef = (ctx.request.body \ "caRef").asOpt[String]
       val maybeHost = (ctx.request.body \ "host").asOpt[String]
@@ -1709,7 +1709,7 @@ class BackOfficeController(
       }
     }
 
-  def checkExistingLdapConnection(id: String) =
+  def checkExistingLdapConnection(id: String): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       // env.datastores.authConfigsDataStore.findById(id).flatMap {
       env.proxyState.authModuleAsync(id).flatMap {
@@ -1724,7 +1724,7 @@ class BackOfficeController(
       }
     }
 
-  def checkLdapConnection() =
+  def checkLdapConnection(): Action[JsValue] =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       if ((ctx.request.body \ "user").isDefined) {
         val username = (ctx.request.body \ "user" \ "username").as[String]
@@ -1750,7 +1750,7 @@ class BackOfficeController(
       }
     }
 
-  def fetchGroupsAndServices() =
+  def fetchGroupsAndServices(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       for {
         rgroups            <- env.proxyState.allServiceGroups().vfuture
@@ -1789,7 +1789,7 @@ class BackOfficeController(
     }
   }
 
-  def fetchApikeysForGroupAndService(serviceId: String) =
+  def fetchApikeysForGroupAndService(serviceId: String): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       findServiceLike(serviceId) flatMap {
         case None                                       => FastFuture.successful(NotFound(Json.obj("error" -> "service not found")))
@@ -1804,7 +1804,7 @@ class BackOfficeController(
       }
     }
 
-  def checkElasticsearchConnection() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def checkElasticsearchConnection(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("none" -> true)).future
       case Some(config) =>
@@ -1831,7 +1831,7 @@ class BackOfficeController(
     }
   }
 
-  def applyElasticsearchTemplate() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def applyElasticsearchTemplate(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) =>
@@ -1849,7 +1849,7 @@ class BackOfficeController(
     }
   }
 
-  def elasticTemplate() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def elasticTemplate(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) =>
@@ -1879,7 +1879,7 @@ class BackOfficeController(
     }
   }
 
-  def elasticVersion() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def elasticVersion(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
       case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) =>
@@ -1895,7 +1895,7 @@ class BackOfficeController(
     }
   }
 
-  def getOwnEntityLocation() = BackOfficeActionAuth.async { ctx =>
+  def getOwnEntityLocation(): Action[AnyContent] = BackOfficeActionAuth.async { ctx =>
     Ok(
       EntityLocation(
         tenant = ctx.currentTenant,
@@ -1909,13 +1909,13 @@ class BackOfficeController(
     ).future
   }
 
-  def updateUiMode() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def updateUiMode(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     implicit val reqh: Request[JsValue] = ctx.request
     val mode          = ctx.request.body.select("mode").asOpt[String].getOrElse("dark")
     NoContent.addingToSession("ui-mode" -> mode).future
   }
 
-  def graphqlProxy() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+  def graphqlProxy(): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     val url     = ctx.request.queryString.get("url").map(_.last).get
     val host    = Uri(url).authority.host.toString()
     val headers = (ctx.request.headers.toSimpleMap ++ Map("Host" -> host)).toSeq
@@ -1944,7 +1944,7 @@ class BackOfficeController(
       }
   }
 
-  def routeEntries(routeId: String) = BackOfficeActionAuth.async { ctx =>
+  def routeEntries(routeId: String): Action[AnyContent] = BackOfficeActionAuth.async { ctx =>
     env.datastores.routeDataStore.findById(routeId) flatMap {
       case None        => NotFound(Json.obj("error" -> "route not found")).future
       case Some(route) =>
@@ -1959,7 +1959,7 @@ class BackOfficeController(
     }
   }
 
-  def ports() = BackOfficeActionAuth.async { _ =>
+  def ports(): Action[AnyContent] = BackOfficeActionAuth.async { _ =>
     Ok(
       Json.obj(
         "https" -> env.exposedHttpsPortInt,
@@ -1968,7 +1968,7 @@ class BackOfficeController(
     ).future
   }
 
-  def graphQLToJson() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def graphQLToJson(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     val schema = ctx.request.body.select("schema").asOpt[String].getOrElse("{}")
 
     sangria.parser.QueryParser.parse(schema) match {
@@ -1980,14 +1980,14 @@ class BackOfficeController(
     }
   }
 
-  def jsonToGraphqlSchema() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def jsonToGraphqlSchema(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     import sangria.schema.Schema
 
     val types = ctx.request.body
       .select("types")
       .as[JsArray]
       .value
-      .map(GraphQLFormats.objectTypeDefinitionFmt.reads)
+      .map(GraphQLFormats.objectTypeDefinitionFmt.reads(_))
       .flatMap {
         case JsSuccess(v, _) => Some(v)
         case JsError(_)      => None
@@ -2024,11 +2024,11 @@ class BackOfficeController(
     } get
   }
 
-  def toYaml = BackOfficeActionAuth(parse.json) { ctx =>
+  def toYaml: Action[JsValue] = BackOfficeActionAuth(parse.json) { ctx =>
     Ok(Yaml.write(ctx.request.body)).as("application/yaml")
   }
 
-  def wasmFiles() = BackOfficeActionAuth.async { ctx =>
+  def wasmFiles(): Action[AnyContent] = BackOfficeActionAuth.async { ctx =>
     env.datastores.globalConfigDataStore
       .singleton()
       .flatMap { globalConfig =>
@@ -2069,7 +2069,7 @@ class BackOfficeController(
       }
   }
 
-  def getWasmFilesFromBodyConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def getWasmFilesFromBodyConfiguration(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     val jsonBody = ctx.request.body
 
     val wasmoConfiguration = TlsWasmoSettings.format.reads(jsonBody).get
@@ -2101,7 +2101,7 @@ class BackOfficeController(
     }
   }
 
-  def anonymousReporting() = BackOfficeActionAuth.async(parse.json) { ctx =>
+  def anonymousReporting(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     val enabled = ctx.request.body.select("enabled").asOpt[Boolean].getOrElse(false)
     if (enabled) {
       env.datastores.globalConfigDataStore
@@ -2122,7 +2122,7 @@ class BackOfficeController(
     }
   }
 
-  def testFilteringAndProjection() = BackOfficeActionAuth(parse.json) { ctx =>
+  def testFilteringAndProjection(): Action[JsValue] = BackOfficeActionAuth(parse.json) { ctx =>
     val body                                   = ctx.request.body
     val input                                  = body.select("input").asOpt[JsValue].getOrElse(Json.obj())
     val matchExpressions: JsObject             = body.select("match").asOpt[JsObject].getOrElse(Json.obj())
@@ -2146,7 +2146,7 @@ class BackOfficeController(
     Ok(Json.obj("matches" -> matches, "projection" -> projected))
   }
 
-  def testFilteringAndProjectionInputDoc() = BackOfficeActionAuth { ctx =>
+  def testFilteringAndProjectionInputDoc(): Action[AnyContent] = BackOfficeActionAuth { ctx =>
     val rawRequest = ctx.request
     val route      = NgRoute.empty
     val target     = NgTarget.default
@@ -2214,20 +2214,20 @@ class BackOfficeController(
     )
   }
 
-  def getUserPreferences() = BackOfficeActionAuth.async { ctx =>
+  def getUserPreferences(): Action[AnyContent] = BackOfficeActionAuth.async { ctx =>
     env.datastores.adminPreferencesDatastore.getPreferencesOrSetDefault(ctx.user.email).map { prefs =>
       Ok(prefs.json)
     }
   }
 
-  def getUserPreference(id: String) = BackOfficeActionAuth.async { ctx =>
+  def getUserPreference(id: String): Action[AnyContent] = BackOfficeActionAuth.async { ctx =>
     env.datastores.adminPreferencesDatastore.getPreference(ctx.user.email, id) map {
       case None       => NotFound(Json.obj("error" -> "preference not found"))
       case Some(pref) => Ok(pref)
     }
   }
 
-  def setUserPreferences() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+  def setUserPreferences(): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       AdminPreferences.format.reads(bodyRaw.utf8String.parseJson) match {
         case JsError(err)        => BadRequest(Json.obj("error" -> "bad_request")).vfuture
@@ -2239,7 +2239,7 @@ class BackOfficeController(
     }
   }
 
-  def setUserPreference(id: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+  def setUserPreference(id: String): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       env.datastores.adminPreferencesDatastore.setPreference(ctx.user.email, id, bodyRaw.utf8String.parseJson).map {
         value =>
@@ -2248,13 +2248,13 @@ class BackOfficeController(
     }
   }
 
-  def clearUserPreferences() = BackOfficeActionAuth.async { ctx =>
+  def clearUserPreferences(): Action[AnyContent] = BackOfficeActionAuth.async { ctx =>
     env.datastores.adminPreferencesDatastore.deletePreferences(ctx.user.email).map { _ =>
       Ok(Json.obj("done" -> true))
     }
   }
 
-  def clearUserPreference(id: String) = BackOfficeActionAuth.async { ctx =>
+  def clearUserPreference(id: String): Action[AnyContent] = BackOfficeActionAuth.async { ctx =>
     env.datastores.adminPreferencesDatastore.deletePreference(ctx.user.email, id).map { _ =>
       Ok(Json.obj("done" -> true))
     }

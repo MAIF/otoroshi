@@ -25,7 +25,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -612,7 +612,7 @@ object TransformersCounters {
 case class FakeUser(username: String)
 
 object Attrs {
-  val CurrentUserKey = TypedKey[FakeUser]("current-user")
+  val CurrentUserKey: TypedKey[FakeUser] = TypedKey[FakeUser]("current-user")
 }
 
 class Transformer1 extends NgRequestTransformer {

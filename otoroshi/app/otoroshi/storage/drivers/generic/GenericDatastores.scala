@@ -56,9 +56,9 @@ class GenericDataStores(
     env: Env
 ) extends DataStores {
 
-  lazy val logger = Logger("otoroshi-generic-datastores")
+  lazy val logger: Logger = Logger("otoroshi-generic-datastores")
 
-  lazy val actorSystem =
+  lazy val actorSystem: ActorSystem =
     ActorSystem(
       "otoroshi-generic-system",
       configuration
@@ -67,7 +67,7 @@ class GenericDataStores(
         .getOrElse(ConfigFactory.empty)
     )
 
-  lazy val mat = Materializer(actorSystem)
+  lazy val mat: Materializer = Materializer(actorSystem)
 
   lazy val redis: GenericRedisLike =
     builder.build(configuration, environment, lifecycle, clusterMode, redisStatsItems, actorSystem, mat, logger, env)

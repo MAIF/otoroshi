@@ -16,13 +16,14 @@ import play.api.libs.ws.WSAuthScheme
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import play.api.libs.ws.WSResponse
 
 class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   implicit lazy val mat: Materializer = otoroshiComponents.materializer
   implicit lazy val env: Env = otoroshiComponents.env
 
-  val initialRoute = NgRoute(
+  val initialRoute: NgRoute = NgRoute(
     location = EntityLocation.default,
     id = "basic-sm-test-route",
     name = "basic-sm-test-route",
@@ -59,7 +60,7 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
     plugins = NgPlugins.empty
   )
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -77,7 +78,7 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
       path: String = "",
       method: String = "get",
       body: Option[JsValue] = JsNull.some
-  ) = {
+  ): WSResponse = {
     val request = wsClient
       .url(
         if (isApiExtension)
@@ -103,11 +104,11 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
       sections + (rule._1 -> (rule._2 + value))
     }
 
-  def getScore() = fetch(isApiExtension = false).json.as[JsObject]
+  def getScore(): JsObject = fetch(isApiExtension = false).json.as[JsObject]
 
-  val OLD_DATE      = DateTime.now().minusWeeks(2).getMillis
-  val LESS_OLD_DATE = DateTime.now().minusWeeks(1).getMillis
-  val TODAY_DATE    = DateTime.now().getMillis
+  val OLD_DATE: Long      = DateTime.now().minusWeeks(2).getMillis
+  val LESS_OLD_DATE: Long = DateTime.now().minusWeeks(1).getMillis
+  val TODAY_DATE: Long    = DateTime.now().getMillis
 
   s"Green score" should {
     "warm up" in {

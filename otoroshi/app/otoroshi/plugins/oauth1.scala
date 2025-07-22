@@ -55,7 +55,7 @@ class OAuth1CallerPlugin extends RequestTransformer {
       Keys.tokenSecret
     )
 
-  override def configSchema =
+  override def configSchema: Option[JsObject] =
     Some(
       Json.obj(
         Keys.consumerKey    -> Json.obj(

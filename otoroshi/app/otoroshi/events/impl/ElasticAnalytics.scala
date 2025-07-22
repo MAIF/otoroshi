@@ -41,7 +41,7 @@ case class QueryResponse(resp: JsValue) {
 }
 // TODO: handle issue: "mapper [route.plugins.config.version] cannot be changed from type [text] to [long]
 object ElasticTemplates                 {
-  val indexTemplate_v6 =
+  val indexTemplate_v6: String =
     """{
       |  "template": "$$$INDEX$$$-*",
       |  "settings": {
@@ -119,7 +119,7 @@ object ElasticTemplates                 {
       |}
     """.stripMargin
 
-  val indexTemplate_v7 =
+  val indexTemplate_v7: String =
     """{
       |  "index_patterns" : ["$$$INDEX$$$-*"],
       |  "settings": {
@@ -207,7 +207,7 @@ object ElasticTemplates                 {
       |}
     """.stripMargin
 
-  val indexTemplate_v7_8 =
+  val indexTemplate_v7_8: String =
     """{
       |  "index_patterns" : ["$$$INDEX$$$-*"],
       |  "template": {
@@ -653,7 +653,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
 
   import otoroshi.utils.http.Implicits._
 
-  lazy val logger = Logger("otoroshi-analytics-writes-elastic")
+  lazy val logger: Logger = Logger("otoroshi-analytics-writes-elastic")
 
   private val environment: Environment           = env.environment
   private val executionContext: ExecutionContext = env.analyticsExecutionContext
@@ -824,7 +824,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_count") else urlFromPath(s"/$index/_count")
   private implicit val mat: Materializer = Materializer(system)
 
-  lazy val logger = Logger("otoroshi-analytics-reads-elastic")
+  lazy val logger: Logger = Logger("otoroshi-analytics-reads-elastic")
 
   private lazy val version = ElasticReadsAnalytics.getElasticVersion(config, logger)(env)
 

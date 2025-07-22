@@ -12,7 +12,7 @@ class KvHealthCheckDataStore(redisCli: RedisLike, _env: Env) extends HealthCheck
 
   val collectionSize = 30
 
-  def key(name: String) = s"${_env.storageRoot}:deschealthcheck:$name"
+  def key(name: String): String = s"${_env.storageRoot}:deschealthcheck:$name"
 
   override def push(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     for {

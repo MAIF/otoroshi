@@ -8,6 +8,7 @@ import io.netty.channel.{EventLoopGroup, MultiThreadIoEventLoopGroup}
 import org.apache.pekko.util.ByteString
 import otoroshi.utils.syntax.implicits._
 import play.core.NamedThreadFactory
+import reactor.util.Logger
 
 sealed trait TlsVersion {
   def name: String
@@ -79,7 +80,7 @@ object EventLoopUtils {
 }
 
 object AccessLogHandler {
-  val logger = reactor.util.Loggers.getLogger("reactor.netty.http.server.AccessLog")
+  val logger: Logger = reactor.util.Loggers.getLogger("reactor.netty.http.server.AccessLog")
 }
 
 object ImplicitUtils {

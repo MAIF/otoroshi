@@ -21,7 +21,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 
 object AccessLog {
-  val statusNames = Map(
+  val statusNames: Map[Int,String] = Map(
     100 -> "Continue",
     101 -> "Switching Protocols",
     102 -> "Processing",

@@ -25,7 +25,7 @@ case class NgMaxMindGeolocationInfoExtractorConfig(
 }
 
 object NgMaxMindGeolocationInfoExtractorConfig {
-  val format = new Format[NgMaxMindGeolocationInfoExtractorConfig] {
+  val format: Format[NgMaxMindGeolocationInfoExtractorConfig] = new Format[NgMaxMindGeolocationInfoExtractorConfig] {
     override def writes(o: NgMaxMindGeolocationInfoExtractorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgMaxMindGeolocationInfoExtractorConfig] = Try {
       NgMaxMindGeolocationInfoExtractorConfig(
@@ -98,7 +98,7 @@ case class NgIpStackGeolocationInfoExtractorConfig(
 }
 
 object NgIpStackGeolocationInfoExtractorConfig {
-  val format = new Format[NgIpStackGeolocationInfoExtractorConfig] {
+  val format: Format[NgIpStackGeolocationInfoExtractorConfig] = new Format[NgIpStackGeolocationInfoExtractorConfig] {
     override def writes(o: NgIpStackGeolocationInfoExtractorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgIpStackGeolocationInfoExtractorConfig] = Try {
       NgIpStackGeolocationInfoExtractorConfig(
@@ -156,7 +156,7 @@ case class NgGeolocationInfoHeaderConfig(
 }
 
 object NgGeolocationInfoHeaderConfig {
-  val format = new Format[NgGeolocationInfoHeaderConfig] {
+  val format: Format[NgGeolocationInfoHeaderConfig] = new Format[NgGeolocationInfoHeaderConfig] {
     override def writes(o: NgGeolocationInfoHeaderConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgGeolocationInfoHeaderConfig] = Try {
       NgGeolocationInfoHeaderConfig(

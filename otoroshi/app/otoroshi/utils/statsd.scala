@@ -55,7 +55,7 @@ class StatsD(
    * @param key name of the stat
    * @param value time in milliseconds
    */
-  def timing(key: String, value: Int, sampleRate: Double = 1.0) =
+  def timing(key: String, value: Int, sampleRate: Double = 1.0): Boolean =
     send(key, value.toString, StatsDProtocol.TIMING_METRIC, sampleRate)
 
   /**
@@ -64,7 +64,7 @@ class StatsD(
    * @param key name of the stat
    * @param magnitude how much to decrement
    */
-  def decrement(key: String, magnitude: Int = -1, sampleRate: Double = 1.0) =
+  def decrement(key: String, magnitude: Int = -1, sampleRate: Double = 1.0): Boolean =
     increment(key, magnitude, sampleRate)
 
   /**
@@ -73,7 +73,7 @@ class StatsD(
    * @param key name of the stat
    * @param magnitude how much to increment
    */
-  def increment(key: String, magnitude: Int = 1, sampleRate: Double = 1.0) =
+  def increment(key: String, magnitude: Int = 1, sampleRate: Double = 1.0): Boolean =
     send(key, magnitude.toString, StatsDProtocol.COUNTER_METRIC, sampleRate)
 
   /**
@@ -82,7 +82,7 @@ class StatsD(
    * @param key name of the stat
    * @param value Can be a fixed value or increase or decrease (Ex: "10" "-1" "+5")
    */
-  def gauge(key: String, value: String = "1", sampleRate: Double = 1.0) =
+  def gauge(key: String, value: String = "1", sampleRate: Double = 1.0): Boolean =
     send(key, value, StatsDProtocol.GAUGE_METRIC, sampleRate)
 
   /**
@@ -91,7 +91,7 @@ class StatsD(
    * @param key name of the stat
    * @param value value of the set
    */
-  def set(key: String, value: Int, sampleRate: Double = 1.0) =
+  def set(key: String, value: Int, sampleRate: Double = 1.0): Boolean =
     send(key, value.toString, StatsDProtocol.SET_METRIC, sampleRate)
 
   /**
@@ -116,7 +116,7 @@ object StatsDProtocol {
    * @return Returns a string that conforms to the StatsD protocol:
    *         KEY:VALUE|METRIC or KEY:VALUE|METRIC|@SAMPLE_RATE
    */
-  def stat(key: String, value: String, metric: String, sampleRate: Double) = {
+  def stat(key: String, value: String, metric: String, sampleRate: Double): String = {
     val sampleRateString = if (sampleRate < 1) "|@" + sampleRate else ""
     key + ":" + value + "|" + metric + sampleRateString
   }
@@ -142,7 +142,7 @@ private class StatsDActor(host: String, port: Int, multiMetrics: Boolean, packet
   private val address = new InetSocketAddress(InetAddress.getByName(host), port)
   private val channel = DatagramChannel.open()
 
-  def receive = {
+  def receive: Receive = {
     case msg: SendStat => doSend(msg.stat)
     case _             => log.error("Unknown message")
   }

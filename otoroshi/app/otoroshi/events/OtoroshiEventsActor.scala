@@ -58,7 +58,7 @@ import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 object OtoroshiEventsActorSupervizer {
-  def props(implicit env: Env) = Props(new OtoroshiEventsActorSupervizer(env))
+  def props(implicit env: Env): Props = Props(new OtoroshiEventsActorSupervizer(env))
 }
 
 case object StartExporters
@@ -67,7 +67,7 @@ case object UpdateExporters
 
 class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 
-  lazy val logger = Logger("otoroshi-events-actor-supervizer")
+  lazy val logger: Logger = Logger("otoroshi-events-actor-supervizer")
 
   implicit val e: Env = env
   implicit val ec: ExecutionContext = env.analyticsExecutionContext
@@ -221,7 +221,7 @@ object DataExporter {
 
     lazy val id = originalConfig.id
 
-    lazy val logger = Logger("otoroshi-data-exporter")
+    lazy val logger: Logger = Logger("otoroshi-data-exporter")
 
     private val internalQueue = new AtomicReference[
       (
@@ -1347,7 +1347,7 @@ object Exporters {
   }
 
   object FileWriting {
-    val blockingEc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+    val blockingEc: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
   }
 
   class GoReplayFileAppenderExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
@@ -1463,7 +1463,7 @@ object Exporters {
   }
 
   object S3Support {
-    val logger = Logger("otoroshi-s3-exporter")
+    val logger: Logger = Logger("otoroshi-s3-exporter")
   }
 
   trait S3Support {
@@ -1573,7 +1573,7 @@ object Exporters {
         }
     }
 
-    def shouldWriteToS3(conf: S3Configuration) =
+    def shouldWriteToS3(conf: S3Configuration): Boolean =
       (lastS3Write.get() + conf.writeEvery.toMillis) < System.currentTimeMillis()
 
     def ensureFileCreationAndRolling(conf: S3Configuration, maxFileSize: Long, maxNumberOfFile: Option[Int]): File = {
@@ -1732,7 +1732,7 @@ object Exporters {
   }
 
   object MetricSettings {
-    val format = new Format[MetricSettings] {
+    val format: Format[MetricSettings] = new Format[MetricSettings] {
       override def reads(json: JsValue): JsResult[MetricSettings] = Try {
         MetricSettings(
           id = (json \ "id").as[String],
@@ -1764,7 +1764,7 @@ object Exporters {
   }
 
   object CustomMetricsSettings {
-    val format = new Format[CustomMetricsSettings] {
+    val format: Format[CustomMetricsSettings] = new Format[CustomMetricsSettings] {
       override def reads(json: JsValue): JsResult[CustomMetricsSettings] = Try {
         CustomMetricsSettings(
           tags = (json \ "tags").asOpt[Map[String, String]].getOrElse(Map.empty),
@@ -1855,7 +1855,7 @@ object Exporters {
   }
 
   object WasmExporterSettings {
-    val format = new Format[WasmExporterSettings] {
+    val format: Format[WasmExporterSettings] = new Format[WasmExporterSettings] {
       override def reads(json: JsValue): JsResult[WasmExporterSettings] = Try {
         WasmExporterSettings(
           params = json.select("params").asOpt[JsObject].getOrElse(Json.obj()),
@@ -1928,7 +1928,7 @@ object Exporters {
   }
 
   object OtlpMetricsExporterSettings {
-    val format = new Format[OtlpMetricsExporterSettings] {
+    val format: Format[OtlpMetricsExporterSettings] = new Format[OtlpMetricsExporterSettings] {
       override def writes(o: OtlpMetricsExporterSettings): JsValue             = Json.obj(
         "type"    -> "otlp-metrics",
         "tags"    -> o.tags,
@@ -1937,7 +1937,7 @@ object Exporters {
       )
       override def reads(json: JsValue): JsResult[OtlpMetricsExporterSettings] = Try {
         OtlpMetricsExporterSettings(
-          otlp = json.select("otlp").asOpt[JsObject].map(OtlpSettings.format.reads).map(_.get).get,
+          otlp = json.select("otlp").asOpt[JsObject].map(OtlpSettings.format.reads(_)).map(_.get).get,
           tags = json.select("tags").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           metrics = json
             .select("metrics")
@@ -1957,14 +1957,14 @@ object Exporters {
   }
 
   object OtlpLogsExporterSettings {
-    val format = new Format[OtlpLogsExporterSettings] {
+    val format: Format[OtlpLogsExporterSettings] = new Format[OtlpLogsExporterSettings] {
       override def writes(o: OtlpLogsExporterSettings): JsValue             = Json.obj(
         "type" -> "otlp-logs",
         "otlp" -> o.otlp.json
       )
       override def reads(json: JsValue): JsResult[OtlpLogsExporterSettings] = Try {
         OtlpLogsExporterSettings(
-          otlp = json.select("otlp").asOpt[JsObject].map(OtlpSettings.format.reads).map(_.get).get
+          otlp = json.select("otlp").asOpt[JsObject].map(OtlpSettings.format.reads(_)).map(_.get).get
         )
       } match {
         case Failure(e) => JsError(e.getMessage)

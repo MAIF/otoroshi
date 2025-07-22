@@ -60,7 +60,7 @@ case class NgBiscuitConfig(
 }
 
 object NgBiscuitConfig {
-  val format = new Format[NgBiscuitConfig] {
+  val format: Format[NgBiscuitConfig] = new Format[NgBiscuitConfig] {
     override def writes(o: NgBiscuitConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgBiscuitConfig] = Try {
       NgBiscuitConfig(

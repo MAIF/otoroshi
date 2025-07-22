@@ -49,7 +49,7 @@ object Workflow {
     config = Node.default,
     testPayload = Json.obj("name" -> "foo")
   )
-  val format               = new Format[Workflow] {
+  val format: Format[Workflow]               = new Format[Workflow] {
     override def writes(o: Workflow): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"           -> o.id,
       "name"         -> o.name,

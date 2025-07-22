@@ -287,7 +287,7 @@ object MockResponsesConfig {
           .map(arr => arr.flatMap(v => MockResponse.format.reads(v).asOpt))
           .getOrElse(Seq.empty),
         passThrough = json.select("pass_through").asOpt[Boolean].getOrElse(true),
-        formData = json.select("form_data").asOpt[MockFormData](MockFormData.format.reads)
+        formData = json.select("form_data").asOpt[MockFormData](MockFormData.format.reads(_))
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -422,13 +422,13 @@ object NgErrorRewriterConfig {
         |</html>""".stripMargin
     ),
     log = true,
-    export = true
+    `export` = true
   )
   val fmt     = new Format[NgErrorRewriterConfig] {
     override def reads(json: JsValue): JsResult[NgErrorRewriterConfig] = Try {
       NgErrorRewriterConfig(
         log = json.select("log").asOpt[Boolean].getOrElse(false),
-        export = json.select("export").asOpt[Boolean].getOrElse(false),
+        `export` = json.select("export").asOpt[Boolean].getOrElse(false),
         templates = json.select("templates").asOpt[Map[String, String]].getOrElse(Map.empty),
         ranges = json
           .select("ranges")
@@ -444,7 +444,7 @@ object NgErrorRewriterConfig {
       "ranges"    -> JsArray(o.ranges.map(_.json)),
       "templates" -> o.templates,
       "log"       -> o.log,
-      "export"    -> o.export
+      "export"    -> o.`export`
     )
   }
 }
@@ -508,7 +508,7 @@ class NgErrorRewriter extends NgRequestTransformer {
         if (config.log) {
           logger.error(s"new error rewritten with id: $errorId, event: ${event.toJson(env).prettify}")
         }
-        if (config.export) {
+        if (config.`export`) {
           event.toAnalytics()
         }
         response.right

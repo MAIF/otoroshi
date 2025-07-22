@@ -39,7 +39,7 @@ case class Foo(
 }
 
 object Foo {
-  val format = new Format[Foo] {
+  val format: Format[Foo] = new Format[Foo] {
     override def writes(o: Foo): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,

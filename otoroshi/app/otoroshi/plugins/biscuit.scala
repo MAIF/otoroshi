@@ -21,6 +21,7 @@ import play.api.mvc.{RequestHeader, Results}
 import java.security.SecureRandom
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import org.biscuitsec.biscuit.token.builder.Rule
 
 object vavr_implicits {
   implicit class BetterVavrEither[L, R](val either: io.vavr.control.Either[L, R]) extends AnyVal {
@@ -224,7 +225,7 @@ class BiscuitExtractor extends PreRouting {
 
   // TODO: check if it's a bug, first letter is missing in parsed rule (lient_id instead of client_id)
   // val ruleTuple = Parser.rule("client_id($id) <- client_id(#authority, $id) @ []").get()
-  val client_id_rule = org.biscuitsec.biscuit.token.builder.Utils.rule(
+  val client_id_rule: Rule = org.biscuitsec.biscuit.token.builder.Utils.rule(
     "client_id_res",
     Seq(org.biscuitsec.biscuit.token.builder.Utils.`var`("id")).asJava,
     Seq(
@@ -238,7 +239,7 @@ class BiscuitExtractor extends PreRouting {
     ).asJava
   )
 
-  val client_sign_rule = org.biscuitsec.biscuit.token.builder.Utils.rule(
+  val client_sign_rule: Rule = org.biscuitsec.biscuit.token.builder.Utils.rule(
     "client_sign_res",
     Seq(org.biscuitsec.biscuit.token.builder.Utils.`var`("sign")).asJava,
     Seq(

@@ -34,7 +34,7 @@ case class PluginIndex(
 }
 
 object PluginIndex {
-  val format = new Format[PluginIndex] {
+  val format: Format[PluginIndex] = new Format[PluginIndex] {
     override def reads(json: JsValue): JsResult[PluginIndex] = Try {
       PluginIndex(
         sink = json.select("sink").asOpt[Int].map(_.toDouble).orElse(json.select("sink").asOpt[Double]),
@@ -84,7 +84,7 @@ object PluginIndex {
 }
 
 object NgPluginInstance {
-  def default = NgPluginInstance(
+  def default: NgPluginInstance = NgPluginInstance(
     plugin = s"cp:${classOf[OverrideHost].getName}",
     pluginIndex = Some(PluginIndex(transformRequest = Some(0)))
   )
@@ -355,18 +355,18 @@ case class NgContextualPlugins(
   implicit val env: Env             = _env
   implicit val ec: ExecutionContext = _ec
 
-  lazy val currentListener = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
+  lazy val currentListener: String = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
 
   lazy val (enabledPlugins, disabledPlugins) = (global_plugins.slots ++ plugins.slots).zipWithIndex
     .map { case (plugin, idx) => plugin.copy(instanceId = idx) }
     .partition(_.enabled)
 
-  lazy val whitelistedPlugins = enabledPlugins
+  lazy val whitelistedPlugins: Seq[NgPluginInstance] = enabledPlugins
     .applyOnIf(env.blacklistedPlugins.nonEmpty) { eps =>
       eps.filterNot(p => env.blacklistedPlugins.contains(p.plugin))
     }
 
-  lazy val currentListenerPLugin = whitelistedPlugins.filter {
+  lazy val currentListenerPLugin: Seq[NgPluginInstance] = whitelistedPlugins.filter {
     case plugin if plugin.boundListeners.isEmpty => true
     case plugin                                  => plugin.boundListeners.contains(currentListener)
   }
@@ -375,7 +375,7 @@ case class NgContextualPlugins(
     .filterNot(_.plugin.endsWith(classOf[WasmJob].getName))
     .partition(_.matches(request))
 
-  lazy val requestSinkPlugins = {
+  lazy val requestSinkPlugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestSink]] = {
     val pls                             = allPlugins
       .map(inst => (inst, inst.getPlugin[NgRequestSink]))
       .collect { case (inst, Some(plugin)) =>
@@ -387,7 +387,7 @@ case class NgContextualPlugins(
     ) ++ plsWithoutIndex
   }
 
-  lazy val transformerPlugins = {
+  lazy val transformerPlugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestTransformer]] = {
     val pls                                = allPlugins
       .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
       .collect { case (inst, Some(plugin)) =>
@@ -473,7 +473,7 @@ case class NgContextualPlugins(
   }
   lazy val (transformerPluginsThatTransformsError, tpwoErrors) = transformerPlugins.partition(_.plugin.transformsError)
 
-  lazy val preRoutePlugins = {
+  lazy val preRoutePlugins: Seq[NgPluginWrapper[NgPreRouting]] = {
     val plugs = {
       val pls                             = allPlugins
         .map(inst => (inst, inst.getPlugin[NgPreRouting]))
@@ -512,7 +512,7 @@ case class NgContextualPlugins(
     }
   }
 
-  lazy val accessValidatorPlugins = {
+  lazy val accessValidatorPlugins: Seq[NgPluginWrapper[NgAccessValidator]] = {
     val plugs = {
       val pls                             = allPlugins
         .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
@@ -551,7 +551,7 @@ case class NgContextualPlugins(
     }
   }
 
-  lazy val routeMatcherPlugins = {
+  lazy val routeMatcherPlugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRouteMatcher]] = {
     val pls                             = allPlugins
       .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
       .collect { case (inst, Some(plugin)) =>
@@ -563,7 +563,7 @@ case class NgContextualPlugins(
     ) ++ plsWithoutIndex
   }
 
-  lazy val tunnelHandlerPlugins = {
+  lazy val tunnelHandlerPlugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgTunnelHandler]] = {
     val pls                             = allPlugins
       .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
       .collect { case (inst, Some(plugin)) =>
@@ -575,7 +575,7 @@ case class NgContextualPlugins(
     ) ++ plsWithoutIndex
   }
 
-  lazy val websocketPlugins = {
+  lazy val websocketPlugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketPlugin]] = {
     val pls                             = allPlugins
       .map(inst => (inst, inst.getPlugin[NgWebsocketPlugin]))
       .collect { case (inst, Some(plugin)) =>
@@ -587,7 +587,7 @@ case class NgContextualPlugins(
     ) ++ plsWithoutIndex
   }
 
-  lazy val websocketBackendPlugins = {
+  lazy val websocketBackendPlugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgWebsocketBackendPlugin]] = {
     val pls                             = allPlugins
       .map(inst => (inst, inst.getPlugin[NgWebsocketBackendPlugin]))
       .collect { case (inst, Some(plugin)) =>
@@ -608,7 +608,7 @@ case class NgContextualPlugins(
   lazy val tunnelHandlerPlugin        = tunnelHandlerPlugins.head
   lazy val tunnelHandlerPluginOption  = tunnelHandlerPlugins.headOption
 
-  lazy val backendCallPlugins = {
+  lazy val backendCallPlugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgBackendCall]] = {
     val pls                             = allPlugins
       .map(inst => (inst, inst.getPlugin[NgBackendCall]))
       .collect { case (inst, Some(plugin)) =>

@@ -16,7 +16,7 @@ case class NgRestrictionPath(method: String, path: String) {
 
 object NgRestrictionPath {
   def fromLegacy(path: RestrictionPath): NgRestrictionPath = NgRestrictionPath(path.method, path.path)
-  val format                                               = new Format[NgRestrictionPath] {
+  val format: Format[NgRestrictionPath]                                               = new Format[NgRestrictionPath] {
     override def writes(o: NgRestrictionPath): JsValue = {
       Json.obj(
         "method" -> o.method,
@@ -60,7 +60,7 @@ object NgRestrictions {
     forbidden = settings.forbidden.map(NgRestrictionPath.fromLegacy),
     notFound = settings.notFound.map(NgRestrictionPath.fromLegacy)
   )
-  val format                                             = new Format[NgRestrictions] {
+  val format: Format[NgRestrictions]                                             = new Format[NgRestrictions] {
     override def writes(o: NgRestrictions): JsValue = {
       Json.obj(
         "allow_last" -> o.allowLast,

@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdminDataStore {
 
-  lazy val logger = Logger("otoroshi-simple-admin-datastore")
+  lazy val logger: Logger = Logger("otoroshi-simple-admin-datastore")
 
   def key(id: String): String = s"${_env.storageRoot}:admins:$id"
 

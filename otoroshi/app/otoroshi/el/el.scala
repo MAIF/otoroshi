@@ -24,9 +24,9 @@ import scala.concurrent.duration.DurationInt
 
 object GlobalExpressionLanguage {
 
-  lazy val logger = Logger("otoroshi-global-el")
+  lazy val logger: Logger = Logger("otoroshi-global-el")
 
-  val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
+  val expressionReplacer: ReplaceAllWith = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
   def applyOutsideContext(
       value: String,

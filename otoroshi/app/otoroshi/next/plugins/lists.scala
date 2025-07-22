@@ -17,7 +17,7 @@ case class NgGenericListConfig(expression: Option[String] = "${req.ip_address}".
 }
 
 object NgGenericListConfig {
-  val format = new Format[NgGenericListConfig] {
+  val format: Format[NgGenericListConfig] = new Format[NgGenericListConfig] {
     override def writes(o: NgGenericListConfig): JsValue             = Json.obj(
       "expression" -> o.expression.map(_.json).getOrElse(JsNull).asValue,
       "values"     -> o.values

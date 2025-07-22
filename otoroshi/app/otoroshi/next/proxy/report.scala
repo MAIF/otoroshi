@@ -356,7 +356,7 @@ case class RequestFlowReport(report: NgExecutionReport, route: NgRoute) extends 
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  val timestamp = DateTime.now()
+  val timestamp: DateTime = DateTime.now()
 
   override def toJson(implicit env: Env): JsValue =
     Json.obj(

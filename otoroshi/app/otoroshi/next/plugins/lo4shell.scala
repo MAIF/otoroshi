@@ -29,7 +29,7 @@ case class NgLog4ShellFilterConfig(
 }
 
 object NgLog4ShellFilterConfig {
-  val format = new Format[NgLog4ShellFilterConfig] {
+  val format: Format[NgLog4ShellFilterConfig] = new Format[NgLog4ShellFilterConfig] {
     override def writes(o: NgLog4ShellFilterConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgLog4ShellFilterConfig] = Try {
       NgLog4ShellFilterConfig(

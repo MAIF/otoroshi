@@ -24,7 +24,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-ng-service-api")
+  lazy val logger: Logger = Logger("otoroshi-ng-service-api")
 
   override def singularName: String = "route-composition"
 
@@ -163,7 +163,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
     }
   }
 
-  def initiateRouteComposition() = ApiAction {
+  def initiateRouteComposition(): Action[AnyContent] = ApiAction {
     val defaultService = NgRouteComposition(
       location = EntityLocation.default,
       id = s"route-composition_${IdGenerator.uuid}",
@@ -224,7 +224,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
       }
   }
 
-  def form() = ApiAction {
+  def form(): Action[AnyContent] = ApiAction {
     env.openApiSchema.asForms.get("otoroshi.next.models.NgRouteComposition") match {
       case Some(value) =>
         Ok(
@@ -237,7 +237,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
     }
   }
 
-  def fromOpenapi() = ApiAction.async(parse.json) { ctx =>
+  def fromOpenapi(): Action[JsValue] = ApiAction.async(parse.json) { ctx =>
     (ctx.request.body.select("domain").asOpt[String], ctx.request.body.select("openapi").asOpt[String]) match {
       case (Some(domain), Some(openapi)) =>
         NgRouteComposition

@@ -59,7 +59,7 @@ case class WasmAuthorizations(
 }
 
 object WasmAuthorizations {
-  val format = new Format[WasmAuthorizations] {
+  val format: Format[WasmAuthorizations] = new Format[WasmAuthorizations] {
     override def writes(o: WasmAuthorizations): JsValue             = Json.obj(
       "httpAccess"            -> o.httpAccess,
       "proxyHttpCallTimeout"  -> o.proxyHttpCallTimeout,
@@ -75,16 +75,16 @@ object WasmAuthorizations {
         httpAccess = (json \ "httpAccess").asOpt[Boolean].getOrElse(false),
         proxyHttpCallTimeout = (json \ "proxyHttpCallTimeout").asOpt[Int].getOrElse(5000),
         globalDataStoreAccess = (json \ "globalDataStoreAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads(_))
           .getOrElse(WasmDataRights()),
         pluginDataStoreAccess = (json \ "pluginDataStoreAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads(_))
           .getOrElse(WasmDataRights()),
         globalMapAccess = (json \ "globalMapAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads(_))
           .getOrElse(WasmDataRights()),
         pluginMapAccess = (json \ "pluginMapAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads(_))
           .getOrElse(WasmDataRights()),
         proxyStateAccess = (json \ "proxyStateAccess").asOpt[Boolean].getOrElse(false),
         configurationAccess = (json \ "configurationAccess").asOpt[Boolean].getOrElse(false)
@@ -136,7 +136,7 @@ case class WasmConfig(
 }
 
 object WasmConfig {
-  val format = new Format[WasmConfig] {
+  val format: Format[WasmConfig] = new Format[WasmConfig] {
     override def reads(json: JsValue): JsResult[WasmConfig] = Try {
       val compilerSource = json.select("compiler_source").asOpt[String]
       val rawSource      = json.select("raw_source").asOpt[String]
@@ -185,8 +185,8 @@ object WasmConfig {
         //   )
         //   .getOrElse(WasmVmLifetime.Forever),
         authorizations = (json \ "authorizations")
-          .asOpt[WasmAuthorizations](WasmAuthorizations.format.reads)
-          .orElse((json \ "accesses").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads))
+          .asOpt[WasmAuthorizations](WasmAuthorizations.format.reads(_))
+          .orElse((json \ "accesses").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads(_)))
           .getOrElse {
             WasmAuthorizations()
           },

@@ -76,7 +76,7 @@ object LdapAuthUser {
 
 object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
 
-  lazy val logger = Logger("otoroshi-ldap-auth-config")
+  lazy val logger: Logger = Logger("otoroshi-ldap-auth-config")
 
   def fromJsons(value: JsValue): LdapAuthModuleConfig =
     try {
@@ -149,7 +149,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
           groupRights = (json \ "groupRights")
             .asOpt[Map[String, JsObject]]
-            .map(_.view.mapValues(GroupRights.reads).collect { case (key, Some(v)) =>
+            .map(_.view.mapValues(GroupRights.reads(_)).collect { case (key, Some(v)) =>
               (key, v)
             }.toMap)
             .getOrElse(Map.empty),
@@ -288,7 +288,7 @@ case class LdapAuthModuleConfig(
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
 
-  override def asJson =
+  override def asJson: JsValue =
     location.jsonWithKey ++ Json.obj(
       "type"                          -> "ldap",
       "id"                            -> id,
@@ -330,7 +330,7 @@ case class LdapAuthModuleConfig(
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
 
-  override def cookieSuffix(desc: ServiceDescriptor) = s"ldap-auth-$id"
+  override def cookieSuffix(desc: ServiceDescriptor): String = s"ldap-auth-$id"
 
   private def getLdapContext(principal: String, password: String, url: String): util.Hashtable[String, AnyRef] = {
     val env = new util.Hashtable[String, AnyRef]
@@ -646,7 +646,7 @@ case class LdapAuthModuleConfig(
 }
 
 object LdapAuthModule {
-  def defaultConfig = LdapAuthModuleConfig(
+  def defaultConfig: LdapAuthModuleConfig = LdapAuthModuleConfig(
     id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
     name = "New auth. module",
     desc = "New auth. module",
@@ -850,7 +850,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   )(implicit
       ec: ExecutionContext,
       env: Env
-  ) = FastFuture.successful(Right(None))
+  ): Future[Either[Result,Option[String]]] = FastFuture.successful(Right(None))
 
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
@@ -942,7 +942,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ) =
+  ): Future[Either[Result,Option[String]]] =
     FastFuture.successful(Right(None))
 
   override def boCallback(

@@ -53,14 +53,14 @@ class WebSocketHandler()(implicit env: Env) {
   implicit lazy val currentSystem: ActorSystem = env.otoroshiActorSystem
   implicit lazy val currentMaterializer: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-websocket-handler")
+  lazy val logger: Logger = Logger("otoroshi-websocket-handler")
 
   def forwardCall(
       reverseProxyAction: ReverseProxyAction,
       snowMonkey: SnowMonkey,
       headersInFiltered: Seq[String],
       headersOutFiltered: Seq[String]
-  ) = {
+  ): WebSocket = {
     WebSocket.acceptOrResult[PlayWSMessage, PlayWSMessage] { req =>
       reverseProxyAction.async[WSFlow](
         ReverseProxyActionContext(req, Source.empty, snowMonkey, logger),
@@ -76,7 +76,7 @@ class WebSocketHandler()(implicit env: Env) {
       snowMonkey: SnowMonkey,
       headersInFiltered: Seq[String],
       headersOutFiltered: Seq[String]
-  ) = {
+  ): Future[Either[Result,WSFlow]] = {
     reverseProxyAction.async[WSFlow](
       ReverseProxyActionContext(req, Source.empty, snowMonkey, logger),
       ws = true,
@@ -610,7 +610,7 @@ class WebSocketHandler()(implicit env: Env) {
 
 object WebSocketProxyActor {
 
-  lazy val logger = Logger("otoroshi-websocket")
+  lazy val logger: Logger = Logger("otoroshi-websocket")
 
   def props(
       url: String,
@@ -623,7 +623,7 @@ object WebSocketProxyActor {
       target: Target,
       attrs: TypedMap,
       env: Env
-  ) =
+  ): Props =
     Props(new WebSocketProxyActor(url, out, headers, rawRequest, descriptor, route, ctxPlugins, target, attrs, env))
 
   def wsCall(
@@ -768,15 +768,15 @@ class WebSocketProxyActor(
   implicit val mat: Materializer = env.otoroshiMaterializer
   implicit val e: Env = env
 
-  lazy val source = Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](50000, OverflowStrategy.dropTail)
-  lazy val logger = Logger("otoroshi-websocket-handler-actor")
+  lazy val source: Source[Message,SourceQueueWithComplete[Message]] = Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](50000, OverflowStrategy.dropTail)
+  lazy val logger: Logger = Logger("otoroshi-websocket-handler-actor")
 
   val queueRef = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]
 
-  val avoid = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
+  val avoid: Seq[String] = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
   // Seq("Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Host")
 
-  val wsEngine = if (route.isDefined && ctxPlugins.isDefined && ctxPlugins.get.hasWebsocketPlugins) {
+  val wsEngine: WebsocketEngine = if (route.isDefined && ctxPlugins.isDefined && ctxPlugins.get.hasWebsocketPlugins) {
     new WebsocketEngine(route.get, ctxPlugins.get, rawRequest, target, attrs)
   } else {
     new WebsocketEngine(NgRoute.empty, NgContextualPlugins.empty(rawRequest), rawRequest, target, attrs)

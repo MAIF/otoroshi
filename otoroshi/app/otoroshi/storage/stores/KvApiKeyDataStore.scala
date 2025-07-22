@@ -15,7 +15,7 @@ import scala.util.Success
 
 class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore with RedisLikeStore[ApiKey] {
 
-  lazy val logger = Logger("otoroshi-apikey-datastore")
+  lazy val logger: Logger = Logger("otoroshi-apikey-datastore")
 
   override def redisLike(implicit env: Env): RedisLike = redisCli
 

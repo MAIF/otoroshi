@@ -43,8 +43,8 @@ case class TunnelPluginConfig(tunnelId: String) extends NgPluginConfig {
 }
 
 object TunnelPluginConfig {
-  val default = TunnelPluginConfig("default")
-  def format  = new Format[TunnelPluginConfig] {
+  val default: TunnelPluginConfig = TunnelPluginConfig("default")
+  def format: Format[TunnelPluginConfig]  = new Format[TunnelPluginConfig] {
     override def writes(o: TunnelPluginConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[TunnelPluginConfig] = Try {
       TunnelPluginConfig(
@@ -900,7 +900,7 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
     env.backOfficeApiKey.some // TODO: actual validation
   }
 
-  def infos = ApiAction {
+  def infos: Action[AnyContent] = ApiAction {
     Ok(
       Json.obj(
         "domain"             -> env.domain,
@@ -911,7 +911,7 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
     )
   }
 
-  def tunnelInfos = ApiAction.async { ctx =>
+  def tunnelInfos: Action[AnyContent] = ApiAction.async { ctx =>
     for {
       members <- env.datastores.clusterStateDataStore.getMembers()
       tunnels <- env.datastores.rawDataStore.allMatching(s"${env.storageRoot}:tunnels:*:meta")
@@ -952,7 +952,7 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
     }
   }
 
-  def tunnelRelay(tunnelId: String) = ApiAction.async(parse.json) { ctx =>
+  def tunnelRelay(tunnelId: String): Action[JsValue] = ApiAction.async(parse.json) { ctx =>
     if (tunnelsEnabled) {
       val requestId =
         ctx.request.body.select("request_id").asOpt[String].getOrElse(TunnelActor.genRequestId(env)) // legit
@@ -964,7 +964,7 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
     }
   }
 
-  def tunnelRelayWs(tunnelId: String) = WebSocket.acceptOrResult[Message, Message] { request =>
+  def tunnelRelayWs(tunnelId: String): WebSocket = WebSocket.acceptOrResult[Message, Message] { request =>
     if (tunnelsEnabled) {
       validateRequest(request) match {
         case None    => Left(Results.Unauthorized(Json.obj("error" -> "unauthorized"))).vfuture
@@ -983,7 +983,7 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
     }
   }
 
-  def tunnelEndpoint() = WebSocket.acceptOrResult[Message, Message] { request =>
+  def tunnelEndpoint(): WebSocket = WebSocket.acceptOrResult[Message, Message] { request =>
     if (tunnelsEnabled) {
       val tunnelId: String         = request.getQueryString("tunnel_id").get
       val reversePingPong: Boolean = request.getQueryString("pong_ping").getOrElse("false") == "true"
@@ -1046,7 +1046,7 @@ class TunnelRelayActor(out: ActorRef, tunnelId: String)(implicit env: Env) exten
     case Success(value)     => ()
   }
 
-  def receive = {
+  def receive: Receive = {
     case BinaryMessage(data) => handleRequest(data)
     case _                   =>
   }
@@ -1254,7 +1254,7 @@ class TunnelActor(
     }
   }
 
-  def receive = {
+  def receive: Receive = {
     case TextMessage(text)            =>
       if (logger.isDebugEnabled) logger.debug(s"invalid message, '$text'")
     case BinaryMessage(data)          =>

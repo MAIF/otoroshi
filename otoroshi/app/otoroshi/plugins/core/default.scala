@@ -3,7 +3,7 @@ package otoroshi.plugins.core
 import otoroshi.plugins.core.apikeys._
 
 object DefaultPlugins {
-  val all = Seq(
+  val all: Seq[String] = Seq(
     s"cp:${classOf[ClientIdApikeyExtractor].getName}",
     s"cp:${classOf[CustomHeadersApikeyExtractor].getName}",
     s"cp:${classOf[JwtApikeyExtractor].getName}",

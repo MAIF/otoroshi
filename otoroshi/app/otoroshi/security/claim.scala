@@ -63,9 +63,9 @@ object OtoroshiClaim {
 
   val encoder = Base64.getUrlEncoder
   val decoder = Base64.getUrlDecoder
-  val format  = Json.format[OtoroshiClaim]
+  val format: OFormat[OtoroshiClaim]  = Json.format[OtoroshiClaim]
 
-  lazy val logger = Logger("otoroshi-claim")
+  lazy val logger: Logger = Logger("otoroshi-claim")
 
   def serialize(claim: OtoroshiClaim, jwtSettings: AlgoSettings)(implicit env: Env): String = {
     val algorithm = jwtSettings.asAlgorithm(otoroshi.models.OutputMode).get

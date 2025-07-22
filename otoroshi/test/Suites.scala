@@ -9,7 +9,7 @@ import scala.util.Try
 
 object Configurations {
 
-  val InMemoryConfiguration = Configuration(
+  val InMemoryConfiguration: Configuration = Configuration(
     ConfigFactory
       .parseString("""
          |{
@@ -19,7 +19,7 @@ object Configurations {
       .resolve()
   )
 
-  val RedisConfiguration = Configuration(
+  val RedisConfiguration: Configuration = Configuration(
     ConfigFactory
       .parseString("""
          |{
@@ -29,7 +29,7 @@ object Configurations {
       .resolve()
   )
 
-  val CassandraNaiveConfiguration = Configuration(
+  val CassandraNaiveConfiguration: Configuration = Configuration(
     ConfigFactory
       .parseString("""
          |{
@@ -39,7 +39,7 @@ object Configurations {
       .resolve()
   )
 
-  val CassandraConfiguration = Configuration(
+  val CassandraConfiguration: Configuration = Configuration(
     ConfigFactory
       .parseString("""
                      |{
@@ -49,7 +49,7 @@ object Configurations {
       .resolve()
   )
 
-  val PgConfiguration = Configuration(
+  val PgConfiguration: Configuration = Configuration(
     ConfigFactory
       .parseString("""
                      |{

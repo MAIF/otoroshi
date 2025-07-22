@@ -27,6 +27,7 @@ import play.api.{Configuration, Environment, Logger}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
+import otoroshi.storage.{ OptimizedRedisLike, RedisLike }
 
 class InMemoryDataStores(
     configuration: Configuration,
@@ -36,11 +37,11 @@ class InMemoryDataStores(
     env: Env
 ) extends DataStores {
 
-  lazy val logger = Logger("otoroshi-datastores")
+  lazy val logger: Logger = Logger("otoroshi-datastores")
 
   lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.inmemory.windowSize").getOrElse(99)
 
-  lazy val actorSystem =
+  lazy val actorSystem: ActorSystem =
     ActorSystem(
       "otoroshi-inmemory-system",
       configuration
@@ -48,11 +49,11 @@ class InMemoryDataStores(
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  val materializer     = Materializer(actorSystem)
-  val _optimized       = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.optimized").getOrElse(false)
-  val _modern          = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.modern").getOrElse(true)
+  val materializer: Materializer     = Materializer(actorSystem)
+  val _optimized: Boolean       = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.optimized").getOrElse(false)
+  val _modern: Boolean          = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.modern").getOrElse(true)
   // lazy val redis       = new SwappableInMemoryRedis(_optimized, env, actorSystem)
-  lazy val swredis     = if (_modern) {
+  lazy val swredis: OptimizedRedisLike with RedisLike with SwappableRedis     = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {
     new SwappableInMemoryRedis(_optimized, env, actorSystem)
@@ -60,7 +61,7 @@ class InMemoryDataStores(
 
   def redis: otoroshi.storage.RedisLike = swredis
 
-  lazy val persistence = persistenceKind match {
+  lazy val persistence: Persistence = persistenceKind match {
     case PersistenceKind.HttpPersistenceKind => new HttpPersistence(this, env)
     case PersistenceKind.FilePersistenceKind => new FilePersistence(this, env)
     case PersistenceKind.S3PersistenceKind   => new S3Persistence(this, env)

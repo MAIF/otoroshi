@@ -81,7 +81,7 @@ case class TcpService(
 ) extends otoroshi.models.EntityLocationSupport {
   def internalId: String                              = id
   def json: JsValue                                   = TcpService.fmt.writes(this)
-  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.tcpServiceDataStore.set(this)
   def theDescription: String                          = description
   def theMetadata: Map[String, String]                = metadata
   def theName: String                                 = name

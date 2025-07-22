@@ -28,7 +28,7 @@ case class RobotConfig(
 }
 
 object RobotConfig {
-  val format = new Format[RobotConfig] {
+  val format: Format[RobotConfig] = new Format[RobotConfig] {
     override def reads(json: JsValue): JsResult[RobotConfig] = Try {
       RobotConfig(
         robotEnabled = json.select("robot_txt_enabled").asOpt[Boolean].getOrElse(true),

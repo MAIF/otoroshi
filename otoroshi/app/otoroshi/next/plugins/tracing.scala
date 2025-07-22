@@ -77,7 +77,7 @@ case class W3CTracingConfig(
 }
 
 object W3CTracingConfig {
-  val format = new Format[W3CTracingConfig] {
+  val format: Format[W3CTracingConfig] = new Format[W3CTracingConfig] {
     override def writes(o: W3CTracingConfig): JsValue             = Json.obj(
       "kind"     -> o.kind.name,
       "endpoint" -> o.endpoint,

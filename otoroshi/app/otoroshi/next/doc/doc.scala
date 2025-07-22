@@ -13,7 +13,7 @@ import scala.util.Try
 
 class NgPluginDocumentationGenerator(docPath: String) {
 
-  val logger = Logger("NgPluginDocumentationGenerator")
+  val logger: Logger = Logger("NgPluginDocumentationGenerator")
 
   private lazy val allPluginNames =
     Try {

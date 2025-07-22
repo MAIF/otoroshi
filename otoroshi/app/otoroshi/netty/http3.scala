@@ -683,7 +683,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
         }
       }
 
-      val sslContext       = QuicSslContextBuilder.buildForServerWithSni(mapDomain)
+      val sslContext       = QuicSslContextBuilder.buildForServerWithSni(mapDomain(_))
       val codec            = Http3.newQuicServerCodecBuilder
         .sslContext(sslContext)
         .maxIdleTimeout(config.idleTimeout.toMillis, TimeUnit.MILLISECONDS)

@@ -64,8 +64,8 @@ case class WebsocketTypeValidatorConfig(
 }
 
 object WebsocketTypeValidatorConfig {
-  val default = WebsocketTypeValidatorConfig()
-  val format  = new Format[WebsocketTypeValidatorConfig] {
+  val default: WebsocketTypeValidatorConfig = WebsocketTypeValidatorConfig()
+  val format: Format[WebsocketTypeValidatorConfig]  = new Format[WebsocketTypeValidatorConfig] {
     override def writes(o: WebsocketTypeValidatorConfig): JsValue = Json.obj(
       "allowed_format"  -> o.allowedFormat.json,
       "reject_strategy" -> o.rejectStrategy.json
@@ -96,8 +96,8 @@ case class FrameFormatValidatorConfig(
 }
 
 object FrameFormatValidatorConfig {
-  val default = FrameFormatValidatorConfig(validator = Some(JsonPathValidator("$.message", JsString("foo"), None)))
-  val format  = new Format[FrameFormatValidatorConfig] {
+  val default: FrameFormatValidatorConfig = FrameFormatValidatorConfig(validator = Some(JsonPathValidator("$.message", JsString("foo"), None)))
+  val format: Format[FrameFormatValidatorConfig]  = new Format[FrameFormatValidatorConfig] {
     override def writes(o: FrameFormatValidatorConfig): JsValue = Json.obj(
       "validator"       -> o.validator.map(_.json),
       "reject_strategy" -> o.rejectStrategy.json
@@ -238,8 +238,8 @@ case class WebsocketJsonFormatValidatorConfig(
 }
 
 object WebsocketJsonFormatValidatorConfig {
-  val default = WebsocketJsonFormatValidatorConfig(schema = "{ \"type\": \"object\", \"required\": [\"name\"] }".some)
-  val format  = new Format[WebsocketJsonFormatValidatorConfig] {
+  val default: WebsocketJsonFormatValidatorConfig = WebsocketJsonFormatValidatorConfig(schema = "{ \"type\": \"object\", \"required\": [\"name\"] }".some)
+  val format: Format[WebsocketJsonFormatValidatorConfig]  = new Format[WebsocketJsonFormatValidatorConfig] {
     override def writes(o: WebsocketJsonFormatValidatorConfig): JsValue = Json.obj(
       "schema"          -> o.schema,
       "specification"   -> o.specification,
@@ -327,8 +327,8 @@ case class WebsocketSizeValidatorConfig(
 }
 
 object WebsocketSizeValidatorConfig {
-  val default = WebsocketSizeValidatorConfig()
-  val format  = new Format[WebsocketSizeValidatorConfig] {
+  val default: WebsocketSizeValidatorConfig = WebsocketSizeValidatorConfig()
+  val format: Format[WebsocketSizeValidatorConfig]  = new Format[WebsocketSizeValidatorConfig] {
     override def writes(o: WebsocketSizeValidatorConfig): JsValue = Json.obj(
       "client_max_payload"   -> o.clientMaxPayload,
       "upstream_max_payload" -> o.upstreamMaxPayload,
@@ -411,7 +411,7 @@ case class JqWebsocketMessageTransformerConfig(requestFilter: String = ".", resp
   override def json: JsValue = JqWebsocketMessageTransformerConfig.format.writes(this)
 }
 object JqWebsocketMessageTransformerConfig {
-  val format = new Format[JqWebsocketMessageTransformerConfig] {
+  val format: Format[JqWebsocketMessageTransformerConfig] = new Format[JqWebsocketMessageTransformerConfig] {
     override def reads(json: JsValue): JsResult[JqWebsocketMessageTransformerConfig] = Try {
       JqWebsocketMessageTransformerConfig(
         requestFilter = json.select("request_filter").asOpt[String].getOrElse("."),

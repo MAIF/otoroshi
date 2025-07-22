@@ -16,7 +16,7 @@ import scala.util.Try
 
 object GzipConfig {
 
-  lazy val logger = Logger("otoroshi-gzip-config")
+  lazy val logger: Logger = Logger("otoroshi-gzip-config")
 
   val _fmt: Format[GzipConfig]                           = new Format[GzipConfig] {
     override def reads(json: JsValue): JsResult[GzipConfig] =

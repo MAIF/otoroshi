@@ -19,7 +19,7 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  val logger = Logger("otoroshi-tcp-service-api")
+  val logger: Logger = Logger("otoroshi-tcp-service-api")
 
   override def singularName: String = "tcp-service"
 

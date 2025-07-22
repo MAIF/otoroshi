@@ -29,7 +29,7 @@ import scala.concurrent.{ExecutionContext, Future}
 // MIGRATED: the new plugin system can handle that natively
 class CompositePlugin extends PreRouting with AccessValidator with RequestTransformer {
 
-  val logger = Logger("CompositePlugin")
+  val logger: Logger = Logger("CompositePlugin")
 
   override def deprecated: Boolean = true
 

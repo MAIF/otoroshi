@@ -14,6 +14,8 @@ import play.api.mvc.{AbstractController, ControllerComponents}
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
 
 import scala.concurrent.ExecutionContext
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
@@ -21,9 +23,9 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-global-config-api")
+  lazy val logger: Logger = Logger("otoroshi-global-config-api")
 
-  def globalConfig(fields: Option[String]) = {
+  def globalConfig(fields: Option[String]): mvc.Action[AnyContent] = {
     val expectedFields = fields.map(_.split(",").toSeq).getOrElse(Seq.empty[String])
     val hasFields      = expectedFields.nonEmpty
     ApiAction.async { ctx =>
@@ -54,7 +56,7 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
     }
   }
 
-  def updateGlobalConfig() =
+  def updateGlobalConfig(): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         val user = ctx.user.getOrElse(ctx.apiKey.toJson)
@@ -98,7 +100,7 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
       }
     }
 
-  def patchGlobalConfig() =
+  def patchGlobalConfig(): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         val user = ctx.user.getOrElse(ctx.apiKey.toJson)

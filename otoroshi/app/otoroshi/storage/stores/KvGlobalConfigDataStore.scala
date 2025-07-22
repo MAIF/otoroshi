@@ -22,7 +22,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     extends GlobalConfigDataStore
     with RedisLikeStore[GlobalConfig] {
 
-  lazy val logger = Logger("otoroshi-globalconfig-datastore")
+  lazy val logger: Logger = Logger("otoroshi-globalconfig-datastore")
 
   override def fmt: Format[GlobalConfig] = GlobalConfig._fmt
 

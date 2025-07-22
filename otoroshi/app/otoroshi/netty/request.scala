@@ -1,11 +1,12 @@
 package otoroshi.netty
 
-import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpRequest
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder
+import io.netty.handler.codec.http.cookie.{DefaultCookie, ServerCookieDecoder, Cookie => NettyCookie}
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.reactivestreams.Publisher
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
@@ -26,11 +27,11 @@ import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 object NettyRequestKeys {
-  val TlsSessionKey        = TypedKey[Option[SSLSession]]("Tls-Session")
-  val TlsVersionKey        = TypedKey[Option[TlsVersion]]("Tls-Version")
-  val TrailerHeadersIdKey  = TypedKey[String]("Trailer-Headers-Id")
-  val ListenerIdKey        = TypedKey[String]("Listener-Id")
-  val ListenerExclusiveKey = TypedKey[Boolean]("Listener-Exclusive")
+  val TlsSessionKey: TypedKey[Option[SSLSession]]        = TypedKey[Option[SSLSession]]("Tls-Session")
+  val TlsVersionKey: TypedKey[Option[TlsVersion]]        = TypedKey[Option[TlsVersion]]("Tls-Version")
+  val TrailerHeadersIdKey: TypedKey[String]  = TypedKey[String]("Trailer-Headers-Id")
+  val ListenerIdKey: TypedKey[String]        = TypedKey[String]("Listener-Id")
+  val ListenerExclusiveKey: TypedKey[Boolean] = TypedKey[Boolean]("Listener-Exclusive")
 }
 
 object NettyRequestAwaitingTrailers {
@@ -58,7 +59,7 @@ object NettyRequestAwaitingTrailers {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 object ReactorNettyRemoteConnection {
-  val logger = Logger("otoroshi-experimental-netty-server-remote-connection")
+  val logger: Logger = Logger("otoroshi-experimental-netty-server-remote-connection")
 }
 
 object ReactorNettyRequest {
@@ -102,7 +103,7 @@ class ReactorNettyRemoteConnection(req: HttpServerRequest, val secure: Boolean, 
 }
 
 class ReactorNettyRequestTarget(req: HttpServerRequest) extends RequestTarget {
-  lazy val kUri                               = org.apache.pekko.http.scaladsl.model.Uri(uriString)
+  lazy val kUri: Uri                               = org.apache.pekko.http.scaladsl.model.Uri(uriString)
   lazy val uri: URI                           = new URI(uriString)
   lazy val uriString: String                  = req.uri()
   lazy val path: String                       = req.fullPath()
@@ -166,8 +167,8 @@ class ReactorNettyRequestHeader(
       }
       .getOrElse(Flash())
   }
-  val count                             = ReactorNettyRequest.counter.incrementAndGet()
-  lazy val attrs                        = TypedMap
+  val count: Long                             = ReactorNettyRequest.counter.incrementAndGet()
+  lazy val attrs: TypedMap                        = TypedMap
     .apply(
       RequestAttrKey.Id                    -> count,
       RequestAttrKey.Session               -> Cell(zeSession),
@@ -238,7 +239,7 @@ class ReactorNettyRequestHeader(
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 object NettyRemoteConnection {
-  val logger = Logger("otoroshi-experimental-netty-server-remote-connection")
+  val logger: Logger = Logger("otoroshi-experimental-netty-server-remote-connection")
 }
 
 object NettyRequest {
@@ -287,7 +288,7 @@ class NettyRemoteConnection(
 }
 
 class NettyRequestTarget(req: HttpRequest) extends RequestTarget {
-  lazy val kUri                               = org.apache.pekko.http.scaladsl.model.Uri(uriString)
+  lazy val kUri: Uri                               = org.apache.pekko.http.scaladsl.model.Uri(uriString)
   lazy val uri: URI                           = new URI(uriString)
   lazy val uriString: String                  = req.uri()
   lazy val path: String                       = kUri.path.toString()
@@ -334,9 +335,10 @@ class NettyRequestHeader(
     addressGet: () => String
 ) extends RequestHeader {
 
-  lazy val _cookies                     = Option(req.headers().get("Cookie"))
+  lazy val _cookies: Map[String, Seq[NettyCookie]]                     = Option(req.headers().get("Cookie"))
     .map(c => ServerCookieDecoder.LAX.decode(c).asScala.groupBy(_.name()).view.mapValues(_.toSeq))
-    .getOrElse(Map.empty[String, Seq[io.netty.handler.codec.http.cookie.DefaultCookie]])
+    .getOrElse(Map.empty[String, Seq[DefaultCookie]])
+      .toMap
 
   lazy val zeSession: Session = {
     _cookies
@@ -356,8 +358,8 @@ class NettyRequestHeader(
       }
       .getOrElse(Flash())
   }
-  val count                             = NettyRequest.counter.incrementAndGet()
-  lazy val attrs                        = TypedMap.apply(
+  val count: Long                             = NettyRequest.counter.incrementAndGet()
+  lazy val attrs: TypedMap                        = TypedMap.apply(
     RequestAttrKey.Id                    -> count,
     RequestAttrKey.Session               -> Cell(zeSession),
     RequestAttrKey.Flash                 -> Cell(zeFlash),

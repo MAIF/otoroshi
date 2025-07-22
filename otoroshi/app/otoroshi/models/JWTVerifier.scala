@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
+import com.github.blemale.scaffeine.Cache
 
 trait AsJson {
   def asJson: JsValue
@@ -109,7 +110,7 @@ object InQueryParam                                    extends FromJson[InQueryP
 case class InQueryParam(name: String)                  extends JwtTokenLocation           {
   def token(request: RequestHeader): Option[String]                             = request.getQueryString(name)
   def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection = JwtInjection()
-  override def asJson                                                           = Json.obj("type" -> "InQueryParam", "name" -> this.name)
+  override def asJson: JsValue                                                           = Json.obj("type" -> "InQueryParam", "name" -> this.name)
 }
 object InHeader                                        extends FromJson[InHeader]         {
   override def fromJson(json: JsValue): Either[Throwable, InHeader] =
@@ -132,7 +133,7 @@ case class InHeader(name: String, remove: String = "") extends JwtTokenLocation 
   }
   def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection =
     JwtInjection(originalToken.some, additionalHeaders = Map(name -> (remove + newToken)))
-  override def asJson                                                           = Json.obj("type" -> "InHeader", "name" -> this.name, "remove" -> this.remove)
+  override def asJson: JsValue                                                           = Json.obj("type" -> "InHeader", "name" -> this.name, "remove" -> this.remove)
 }
 object InCookie                                        extends FromJson[InCookie]         {
   override def fromJson(json: JsValue): Either[Throwable, InCookie] =
@@ -150,7 +151,7 @@ case class InCookie(name: String)                      extends JwtTokenLocation 
   def token(request: RequestHeader): Option[String]                             = request.cookies.get(name).map(_.value)
   def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection =
     JwtInjection(originalToken.some, additionalCookies = Map(name -> newToken))
-  override def asJson                                                           = Json.obj("type" -> "InCookie", "name" -> this.name)
+  override def asJson: JsValue                                                           = Json.obj("type" -> "InCookie", "name" -> this.name)
 }
 
 sealed trait AlgoMode
@@ -259,7 +260,7 @@ case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) ex
 
   override def name: String = "HSAlgoSettings"
 
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "type"   -> "HSAlgoSettings",
       "size"   -> this.size,
@@ -340,7 +341,7 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
 
   override def name: String = "RSAlgoSettings"
 
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "type"       -> "RSAlgoSettings",
       "size"       -> this.size,
@@ -420,7 +421,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
   }
   override def name: String = "ESAlgoSettings"
 
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "type"       -> "ESAlgoSettings",
       "size"       -> this.size,
@@ -430,7 +431,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
 }
 object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
 
-  val cache = Caches.bounded[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK], Boolean)](1000)
+  val cache: Cache[String,(Long, Map[String,JWK], Boolean)] = Caches.bounded[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK], Boolean)](1000)
 
   override def fromJson(json: JsValue): Either[Throwable, JWKSAlgoSettings] = {
     Try {
@@ -471,7 +472,7 @@ case class JWKSAlgoSettings(
     tlsConfig: MtlsConfig
 ) extends AlgoSettings {
 
-  val logger = Logger("otoroshi-jwks")
+  val logger: Logger = Logger("otoroshi-jwks")
 
   def keyId: Option[String] = None
 
@@ -640,7 +641,7 @@ case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings    
 
   override def name: String = "RSAKPAlgoSettings"
 
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "type"   -> "RSAKPAlgoSettings",
       "size"   -> this.size,
@@ -692,7 +693,7 @@ case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings     
 
   override def name: String = "ESKPAlgoSettings"
 
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "type"   -> "ESKPAlgoSettings",
       "size"   -> this.size,
@@ -758,7 +759,7 @@ case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
 
   override def name: String = "KidAlgoSettings"
 
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "type"             -> "KidAlgoSettings",
       "onlyExposedCerts" -> this.onlyExposedCerts
@@ -784,7 +785,7 @@ case class MappingSettings(
     values: JsObject = Json.obj(),
     remove: Seq[String] = Seq.empty[String]
 )                                                                                          extends AsJson                      {
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "map"    -> new JsObject(map.view.mapValues(JsString.apply).toMap),
       "values" -> values,
@@ -804,7 +805,7 @@ object TransformSettings                                                        
     } get
 }
 case class TransformSettings(location: JwtTokenLocation, mappingSettings: MappingSettings) extends AsJson                      {
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "location"        -> location.asJson,
       "mappingSettings" -> mappingSettings.asJson
@@ -870,7 +871,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
     })
   }
 
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "fields"      -> new JsObject(this.fields.view.mapValues(JsString.apply).toMap),
       "arrayFields" -> new JsObject(this.arrayFields.view.mapValues(JsString.apply).toMap)
@@ -920,7 +921,7 @@ case class DefaultToken(
     verificationSettings: VerificationSettings = VerificationSettings()
 ) extends VerifierStrategy {
   def name: String    = "default_token"
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "type"                 -> "DefaultToken",
       "strict"               -> strict,
@@ -942,7 +943,7 @@ object PassThrough extends FromJson[VerifierStrategy] {
 
 case class PassThrough(verificationSettings: VerificationSettings) extends VerifierStrategy {
   def name: String    = "pass_through"
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "type"                 -> "PassThrough",
       "verificationSettings" -> verificationSettings.asJson
@@ -963,7 +964,7 @@ object Sign extends FromJson[VerifierStrategy] {
 
 case class Sign(verificationSettings: VerificationSettings, algoSettings: AlgoSettings) extends VerifierStrategy {
   def name: String    = "sign"
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "type"                 -> "Sign",
       "verificationSettings" -> verificationSettings.asJson,
@@ -990,7 +991,7 @@ case class Transform(
     algoSettings: AlgoSettings
 ) extends VerifierStrategy {
   def name: String    = "transform"
-  override def asJson =
+  override def asJson: JsValue =
     Json.obj(
       "type"                 -> "Transform",
       "verificationSettings" -> verificationSettings.asJson,
@@ -1001,7 +1002,7 @@ case class Transform(
 
 sealed trait JwtVerifier extends AsJson {
 
-  lazy val logger = Logger("otoroshi-jwt-verifier")
+  lazy val logger: Logger = Logger("otoroshi-jwt-verifier")
 
   def isRef: Boolean
   def enabled: Boolean
@@ -2188,7 +2189,7 @@ case class GlobalJwtVerifier(
 
 object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
 
-  lazy val logger = Logger("otoroshi-global-jwt-verifier")
+  lazy val logger: Logger = Logger("otoroshi-global-jwt-verifier")
 
   def fromJsons(value: JsValue): GlobalJwtVerifier =
     try {
@@ -2242,17 +2243,17 @@ object JwtVerificationResult {
 
 object JwtVerifier extends FromJson[JwtVerifier] {
 
-  val verificationCache = Scaffeine()
+  val verificationCache: Cache[String,JwtVerificationResult] = Scaffeine()
     .expireAfterWrite(5.seconds)
     .maximumSize(500)
     .build[String, JwtVerificationResult]()
 
-  val signatureCache = Scaffeine()
+  val signatureCache: Cache[String,Try[DecodedJWT]] = Scaffeine()
     .expireAfterWrite(5.seconds)
     .maximumSize(500)
     .build[String, Try[DecodedJWT]]()
 
-  val fmt = new Format[JwtVerifier] {
+  val fmt: Format[JwtVerifier] = new Format[JwtVerifier] {
     override def writes(o: JwtVerifier): JsValue             = o.asJson
     override def reads(json: JsValue): JsResult[JwtVerifier] =
       fromJson(json) match {

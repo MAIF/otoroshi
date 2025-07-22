@@ -14,6 +14,8 @@ import otoroshi.utils.json.JsonPatchHelpers.patchJson
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc)
@@ -22,9 +24,9 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-apikeys-fs-api")
+  lazy val logger: Logger = Logger("otoroshi-apikeys-fs-api")
 
-  def apiKeyQuotas(routeId: String, clientId: String) =
+  def apiKeyQuotas(routeId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.routeDataStore.findById(routeId).flatMap {
         case None                                 => NotFound(Json.obj("error" -> s"Service with id: '$routeId' not found")).asFuture
@@ -49,7 +51,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def resetApiKeyQuotas(routeId: String, clientId: String) =
+  def resetApiKeyQuotas(routeId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.routeDataStore.findById(routeId).flatMap {
         case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$routeId' not found")).asFuture
@@ -74,7 +76,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def createApiKey(routeId: String) =
+  def createApiKey(routeId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
         case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.lowerCaseToken(16))
@@ -130,7 +132,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def updateApiKey(routeId: String, clientId: String) =
+  def updateApiKey(routeId: String, clientId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       env.datastores.routeDataStore
         .findById(routeId)
@@ -179,7 +181,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
         }
     }
 
-  def patchApiKey(routeId: String, clientId: String) =
+  def patchApiKey(routeId: String, clientId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       env.datastores.routeDataStore.findById(routeId).flatMap {
         case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$routeId' not found")).asFuture
@@ -220,7 +222,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def deleteApiKey(routeId: String, clientId: String) =
+  def deleteApiKey(routeId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.routeDataStore.findById(routeId).flatMap {
         case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$routeId' not found")).asFuture
@@ -250,7 +252,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def apiKeys(routeId: String) =
+  def apiKeys(routeId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       val paginationPage: Int      = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int  =
@@ -293,7 +295,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def allApiKeys() =
+  def allApiKeys(): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       sendAudit(
         "ACCESS_ALL_APIKEYS",
@@ -332,7 +334,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def apiKey(routeId: String, clientId: String) =
+  def apiKey(routeId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.routeDataStore.findById(routeId).flatMap {
         case None                                 => NotFound(Json.obj("error" -> s"Service with id: '$routeId' not found")).asFuture

@@ -16,9 +16,9 @@ class EntitiesController(ApiAction: ApiAction, cc: ControllerComponents)(implici
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-entities-controller")
+  lazy val logger: Logger = Logger("otoroshi-entities-controller")
 
-  def getEntityGraph(entity: String, id: String) =
+  def getEntityGraph(entity: String, id: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       entity match {
         case "jwt-verifiers" =>

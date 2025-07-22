@@ -249,7 +249,7 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
 }
 
 object Job {
-  val funit = FastFuture.successful(())
+  val funit: Future[Unit] = FastFuture.successful(())
 }
 
 case class RegisteredJobContext(
@@ -570,7 +570,7 @@ case class RegisteredJobContext(
 }
 
 object JobManager {
-  val logger = Logger("otoroshi-job-manager")
+  val logger: Logger = Logger("otoroshi-job-manager")
 }
 
 class JobManager(env: Env) {

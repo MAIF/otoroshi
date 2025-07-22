@@ -757,7 +757,7 @@ case class OIDCThirdPartyApiKeyConfig(
 
 object OIDCThirdPartyApiKeyConfig {
 
-  lazy val logger = Logger("otoroshi-oidc-apikey-config")
+  lazy val logger: Logger = Logger("otoroshi-oidc-apikey-config")
 
   val cache: TrieMap[String, (Long, Boolean)] = new UnboundedTrieMap[String, (Long, Boolean)]()
 

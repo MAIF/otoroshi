@@ -100,7 +100,7 @@ case class ApiKeyRotationInfo(rotationAt: DateTime, remaining: Long) {
 }
 
 object ApiKeyRotation         {
-  val fmt = new Format[ApiKeyRotation] {
+  val fmt: Format[ApiKeyRotation] = new Format[ApiKeyRotation] {
     override def writes(o: ApiKeyRotation): JsValue             =
       Json.obj(
         "enabled"       -> o.enabled,
@@ -192,10 +192,10 @@ case class ApiKey(
   def theName: String                  = clientName
   def theTags: Seq[String]             = tags
 
-  def save()(implicit ec: ExecutionContext, env: Env)     = env.datastores.apiKeyDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.exists(this)
-  def toJson                                              = ApiKey.toJson(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]     = env.datastores.apiKeyDataStore.set(this)
+  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean]   = env.datastores.apiKeyDataStore.delete(this)
+  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean]   = env.datastores.apiKeyDataStore.exists(this)
+  def toJson: JsValue                                              = ApiKey.toJson(this)
   def isActive(): Boolean                                 = enabled && validUntil.forall(date => date.isBeforeNow)
   def isInactive(): Boolean                               = !isActive()
   def isValid(value: String): Boolean                     =
@@ -377,7 +377,7 @@ class GroupNotFoundException(groupId: String)
 
 object ApiKey {
 
-  lazy val logger = Logger("otoroshi-apkikey")
+  lazy val logger: Logger = Logger("otoroshi-apkikey")
 
   val _fmt: Format[ApiKey]                           = new Format[ApiKey] {
     override def writes(apk: ApiKey): JsValue = {

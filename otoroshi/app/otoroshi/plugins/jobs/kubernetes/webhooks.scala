@@ -21,7 +21,7 @@ import scala.util.{Failure, Success, Try}
 
 class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
 
-  val logger = Logger("otoroshi-crd-validator")
+  val logger: Logger = Logger("otoroshi-crd-validator")
 
   override def name: String = "Kubernetes admission validator webhook"
 
@@ -260,7 +260,7 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
 
 class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
 
-  val logger = Logger("otoroshi-sidecar-injector")
+  val logger: Logger = Logger("otoroshi-sidecar-injector")
 
   override def name: String = "Kubernetes sidecar injector webhook"
 

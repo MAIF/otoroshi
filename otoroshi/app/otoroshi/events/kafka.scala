@@ -23,6 +23,8 @@ import otoroshi.models.Exporter
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.syntax.implicits._
+import org.apache.pekko.actor.ActorRef
+import play.api.Logger
 
 case class KafkaConfig(
     servers: Seq[String],
@@ -205,7 +207,7 @@ case class KafkaWrapperEventClose()
 
 class KafkaWrapper(actorSystem: ActorSystem, env: Env, topicFunction: KafkaConfig => String) {
 
-  val kafkaWrapperActor = actorSystem.actorOf(KafkaWrapperActor.props(env, topicFunction))
+  val kafkaWrapperActor: ActorRef = actorSystem.actorOf(KafkaWrapperActor.props(env, topicFunction))
 
   def publish(event: JsValue, forcePush: Boolean = false)(env: Env, config: KafkaConfig): Future[Done] = {
     kafkaWrapperActor ! KafkaWrapperEvent(event, env, if (forcePush) config.copy(sendEvents = true) else config)
@@ -224,7 +226,7 @@ class KafkaWrapperActor(env: Env, topicFunction: KafkaConfig => String) extends 
   var config: Option[KafkaConfig]               = None
   var eventProducer: Option[KafkaEventProducer] = None
 
-  lazy val logger = play.api.Logger("otoroshi-kafka-wrapper")
+  lazy val logger: Logger = play.api.Logger("otoroshi-kafka-wrapper")
 
   override def receive: Receive = {
     case event: KafkaWrapperEvent if config.isEmpty && eventProducer.isEmpty                                   =>
@@ -260,16 +262,16 @@ class KafkaWrapperActor(env: Env, topicFunction: KafkaConfig => String) extends 
 }
 
 object KafkaWrapperActor {
-  def props(env: Env, topicFunction: KafkaConfig => String) = Props(new KafkaWrapperActor(env, topicFunction))
+  def props(env: Env, topicFunction: KafkaConfig => String): Props = Props(new KafkaWrapperActor(env, topicFunction))
 }
 
 class KafkaEventProducer(_env: otoroshi.env.Env, config: KafkaConfig, topicFunction: KafkaConfig => String) {
 
   implicit val ec: ExecutionContext = _env.analyticsExecutionContext
 
-  lazy val logger = play.api.Logger("otoroshi-kafka-connector")
+  lazy val logger: Logger = play.api.Logger("otoroshi-kafka-connector")
 
-  lazy val topic = topicFunction(config)
+  lazy val topic: String = topicFunction(config)
 
   if (logger.isDebugEnabled) logger.debug(s"Initializing kafka event store on topic $topic")
 

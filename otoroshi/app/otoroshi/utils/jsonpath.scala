@@ -262,7 +262,7 @@ case class JsonPathValidator(path: String, value: JsValue, error: Option[String]
 }
 
 object JsonPathValidator {
-  val format = new Format[JsonPathValidator] {
+  val format: Format[JsonPathValidator] = new Format[JsonPathValidator] {
     override def writes(o: JsonPathValidator): JsValue             = Json.obj(
       "kind"  -> "json-path-validator",
       "path"  -> o.path,

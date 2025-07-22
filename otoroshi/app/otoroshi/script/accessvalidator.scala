@@ -22,7 +22,7 @@ case class AccessValidatorRef(
 }
 
 object AccessValidatorRef {
-  val format = new Format[AccessValidatorRef] {
+  val format: Format[AccessValidatorRef] = new Format[AccessValidatorRef] {
     override def writes(o: AccessValidatorRef): JsValue             =
       Json.obj(
         "enabled"          -> o.enabled,

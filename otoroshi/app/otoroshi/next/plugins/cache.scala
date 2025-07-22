@@ -30,13 +30,13 @@ case class NgHttpClientCacheConfig(maxAgeSeconds: Long, methods: Seq[String], st
 }
 
 object NgHttpClientCacheConfig {
-  val default = NgHttpClientCacheConfig(
+  val default: NgHttpClientCacheConfig = NgHttpClientCacheConfig(
     maxAgeSeconds = 86400,
     methods = Seq("GET"),
     status = Seq(200),
     mimeTypes = Seq("text/html")
   )
-  val format  = new Format[NgHttpClientCacheConfig] {
+  val format: Format[NgHttpClientCacheConfig]  = new Format[NgHttpClientCacheConfig] {
     override def reads(json: JsValue): JsResult[NgHttpClientCacheConfig] = Try {
       NgHttpClientCacheConfig(
         maxAgeSeconds = json.select("max_age_seconds").asOpt[Long].getOrElse(default.maxAgeSeconds),
@@ -147,7 +147,7 @@ case class NgResponseCacheFilterConfig(
 )
 
 object NgResponseCacheFilterConfig {
-  val format = new Format[NgResponseCacheFilterConfig] {
+  val format: Format[NgResponseCacheFilterConfig] = new Format[NgResponseCacheFilterConfig] {
     override def reads(json: JsValue): JsResult[NgResponseCacheFilterConfig] = Try {
       NgResponseCacheFilterConfig(
         statuses = json
@@ -193,13 +193,13 @@ case class NgResponseCacheConfig(
 }
 
 object NgResponseCacheConfig {
-  val format = new Format[NgResponseCacheConfig] {
+  val format: Format[NgResponseCacheConfig] = new Format[NgResponseCacheConfig] {
     override def reads(json: JsValue): JsResult[NgResponseCacheConfig] = Try {
       NgResponseCacheConfig(
         ttl = json.select("ttl").asOpt[Long].getOrElse(60.minutes.toMillis),
         maxSize = json.select("maxSize").asOpt[Long].getOrElse(50L * 1024L * 1024L),
         autoClean = json.select("autoClean").asOpt[Boolean].getOrElse(true),
-        filter = json.select("filter").asOpt[NgResponseCacheFilterConfig](NgResponseCacheFilterConfig.format.reads)
+        filter = json.select("filter").asOpt[NgResponseCacheFilterConfig](NgResponseCacheFilterConfig.format.reads(_))
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -218,7 +218,7 @@ object NgResponseCacheConfig {
 object NgResponseCache {
   val base64Encoder = java.util.Base64.getEncoder
   val base64Decoder = java.util.Base64.getDecoder
-  val logger        = Logger("otoroshi-plugins-response-cache")
+  val logger: Logger        = Logger("otoroshi-plugins-response-cache")
 }
 
 class NgResponseCache extends NgRequestTransformer {

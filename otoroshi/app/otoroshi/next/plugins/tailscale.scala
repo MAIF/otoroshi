@@ -73,7 +73,7 @@ case class ReactorResponse(response: HttpClientResponse, body: String) {
 }
 
 object TailscaleLocalApiClient {
-  val logger = Logger("otoroshi-tailscale-local-api-client")
+  val logger: Logger = Logger("otoroshi-tailscale-local-api-client")
 }
 
 class TailscaleLocalApiClient(env: Env) {
@@ -257,7 +257,7 @@ case class TailscaleSelectTargetByNameConfig(machineName: String, useIpAddress: 
 
 object TailscaleSelectTargetByNameConfig {
 
-  val format = new Format[TailscaleSelectTargetByNameConfig] {
+  val format: Format[TailscaleSelectTargetByNameConfig] = new Format[TailscaleSelectTargetByNameConfig] {
 
     override def writes(o: TailscaleSelectTargetByNameConfig): JsValue = Json.obj(
       "machine_name"   -> o.machineName,

@@ -40,7 +40,7 @@ case class NgMinimalRoute(
 }
 
 object NgMinimalRoute {
-  val fmt = new Format[NgMinimalRoute] {
+  val fmt: Format[NgMinimalRoute] = new Format[NgMinimalRoute] {
     override def writes(o: NgMinimalRoute): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgMinimalRoute] = Try {
       val ref        = json.select("backend_ref").asOpt[String]
@@ -141,7 +141,7 @@ object NgRouteComposition {
     } catch {
       case e: Throwable => throw e
     }
-  val fmt                                           = new Format[NgRouteComposition] {
+  val fmt: Format[NgRouteComposition]                                           = new Format[NgRouteComposition] {
     override def writes(o: NgRouteComposition): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgRouteComposition] = Try {
       NgRouteComposition(
@@ -248,7 +248,7 @@ object NgRouteComposition {
     }
   }
 
-  def empty = NgRouteComposition(
+  def empty: NgRouteComposition = NgRouteComposition(
     location = EntityLocation.default,
     id = s"route_${IdGenerator.uuid}",
     name = "empty route-composition",

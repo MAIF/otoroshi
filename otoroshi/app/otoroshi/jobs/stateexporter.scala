@@ -92,8 +92,8 @@ class StateExporter extends Job {
           }
         }
       case _     =>
-        env.datastores.globalConfigDataStore.fullExport().map { export =>
-          FullStateExport(UUID.randomUUID().toString, DateTime.now(), "json", export).toAnalytics()
+        env.datastores.globalConfigDataStore.fullExport().map { (`export`: JsValue) =>
+          FullStateExport(UUID.randomUUID().toString, DateTime.now(), "json", `export`).toAnalytics()
         }
     }
   }
@@ -118,6 +118,6 @@ case class FullStateExport(id: String, timestamp: DateTime, format: String, `exp
     "@service"   -> `@service`,
     "@env"       -> "prod",
     "format"     -> format,
-    "export"     -> export
+    "export"     -> `export`
   )
 }

@@ -39,7 +39,7 @@ object OAuth1Caller {
     val tokenSecret     = "oauth_token_secret"
   }
 
-  val Algo = Map(
+  val Algo: Map[String,String] = Map(
     "HMAC-SHA1"   -> "HmacSHA1",
     "HMAC-SHA256" -> "HmacSHA256",
     "HMAC-SHA384" -> "HmacSHA384",
@@ -273,7 +273,7 @@ case class OAuth2CallerConfig(
 }
 
 object OAuth2CallerConfig {
-  val format = new Format[OAuth2CallerConfig] {
+  val format: Format[OAuth2CallerConfig] = new Format[OAuth2CallerConfig] {
     override def writes(o: OAuth2CallerConfig): JsValue = Json.obj(
       "kind"              -> o.kind.name,
       "url"               -> o.url,

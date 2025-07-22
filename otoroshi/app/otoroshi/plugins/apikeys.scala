@@ -939,12 +939,12 @@ class ClientCredentialService extends RequestSink {
   import otoroshi.utils.syntax.implicits._
 
   case class ClientCredentialServiceConfig(raw: JsValue) {
-    lazy val expiration     = (raw \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
-    lazy val defaultKeyPair =
+    lazy val expiration: FiniteDuration     = (raw \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
+    lazy val defaultKeyPair: String =
       (raw \ "defaultKeyPair").asOpt[String].filter(_.trim.nonEmpty).getOrElse(Cert.OtoroshiJwtSigning)
-    lazy val domain         = (raw \ "domain").asOpt[String].filter(_.trim.nonEmpty).getOrElse("*")
-    lazy val secure         = (raw \ "secure").asOpt[Boolean].getOrElse(true)
-    lazy val biscuit        = (raw \ "biscuit")
+    lazy val domain: String         = (raw \ "domain").asOpt[String].filter(_.trim.nonEmpty).getOrElse("*")
+    lazy val secure: Boolean         = (raw \ "secure").asOpt[Boolean].getOrElse(true)
+    lazy val biscuit: BiscuitConf        = (raw \ "biscuit")
       .asOpt[JsObject]
       .map { js =>
         BiscuitConf(

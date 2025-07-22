@@ -10,6 +10,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 
 class CrdsGenerator(spec: JsValue = Json.obj()) extends Logging {
 
@@ -17,7 +18,7 @@ class CrdsGenerator(spec: JsValue = Json.obj()) extends Logging {
   val nullType            = "#/components/schemas/Null"
   val otoroshiSchemaType  = "#/components/schemas/otoroshi."
 
-  val crdsEntities = Json.obj(
+  val crdsEntities: JsObject = Json.obj(
     "ServiceGroup"      -> Json
       .obj("plural" -> "service-groups", "singular" -> "service-group", "entity" -> "otoroshi.models.ServiceGroup"),
     "Organization"      -> Json
@@ -127,7 +128,7 @@ class CrdsGenerator(spec: JsValue = Json.obj()) extends Logging {
     values.exists(p => (p \ "$ref").as[String] == nullType) &&
     values.exists(p => (p \ "$ref").as[String] != nullType)
 
-  def contentToOpenAPIV3Schema(description: String, openAPIData: JsObject) = {
+  def contentToOpenAPIV3Schema(description: String, openAPIData: JsObject): JsObject = {
     Json.obj(
       "openAPIV3Schema" -> Json.obj(
         "type"        -> "object",
@@ -273,7 +274,7 @@ class CrdsGenerator(spec: JsValue = Json.obj()) extends Logging {
       plural: String,
       singular: String,
       versions: Map[String, (Boolean, Boolean, JsValue)]
-  ) =
+  ): JsObject =
     Json.obj(
       "apiVersion" -> "apiextensions.k8s.io/v1",
       "kind"       -> "CustomResourceDefinition",
@@ -308,7 +309,7 @@ class CrdsGenerator(spec: JsValue = Json.obj()) extends Logging {
     )
   )
 
-  def crds(out: TrieMap[String, JsValue], allData: TrieMap[String, JsValue], withoutSchema: Boolean = false) = out.map {
+  def crds(out: TrieMap[String, JsValue], allData: TrieMap[String, JsValue], withoutSchema: Boolean = false): mutable.Iterable[JsObject] = out.map {
     data =>
       val crdEntity = crdsEntities(data._1)
       crdTemplate(

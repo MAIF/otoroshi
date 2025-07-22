@@ -9,25 +9,25 @@ import scala.collection.concurrent.TrieMap
 
 class OpenapiToJson(spec: JsValue) {
 
-  val logger              = Logger("otoroshi-openapi-to-json")
+  val logger: Logger              = Logger("otoroshi-openapi-to-json")
   val openAPIV3SchemaPath = "openAPIV3Schema/properties/spec/properties"
   val nullType            = "#/components/schemas/Null"
   val otoroshiSchemaType  = "#/components/schemas/otoroshi."
 
-  def run() = {
+  def run(): TrieMap[String,JsValue] = {
     val data = extractSchemasFromOpenapi()
     process(data)
     data
   }
 
-  def extractSchemasFromOpenapi() = {
+  def extractSchemasFromOpenapi(): TrieMap[String,JsValue] = {
     val schemas = (spec \ "components" \ "schemas").as[JsObject]
     val data    = new UnboundedTrieMap[String, JsValue]()
     schemas.fields.foreach(curr => data.put(curr._1, curr._2))
     data
   }
 
-  def process(data: TrieMap[String, JsValue]) = {
+  def process(data: TrieMap[String, JsValue]): Unit = {
     var changed = true
     do {
       changed = replaceOneOf(data)
@@ -50,10 +50,10 @@ class OpenapiToJson(spec: JsValue) {
     values.exists(p => (p \ "$ref").as[String] == nullType) &&
     values.exists(p => (p \ "$ref").as[String] != nullType)
 
-  def pruneField(data: TrieMap[String, JsValue], key: String, path: String) =
+  def pruneField(data: TrieMap[String, JsValue], key: String, path: String): Option[JsValue] =
     data.put(key, data(key).transform(reads(path).json.prune).get)
 
-  def updateField(data: TrieMap[String, JsValue], key: String, path: String, additionalObj: JsValue) =
+  def updateField(data: TrieMap[String, JsValue], key: String, path: String, additionalObj: JsValue): Option[JsValue] =
     data.put(
       key,
       data(key).transform(reads(path).json.update(__.read[JsObject].map(o => o ++ additionalObj.as[JsObject]))).get
@@ -163,7 +163,7 @@ class OpenapiToJson(spec: JsValue) {
       Json.obj()*/
   }
 
-  def replaceRef(data: TrieMap[String, JsValue], key: String, path: String, ref: String) = {
+  def replaceRef(data: TrieMap[String, JsValue], key: String, path: String, ref: String): Any = {
     if (ref.startsWith(otoroshiSchemaType)) {
       val out = getRef(data, ref)
 

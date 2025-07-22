@@ -44,6 +44,7 @@ import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import scala.util.control.NoStackTrace
+import otoroshi.utils.Regex
 
 case class ProxyDone(
     status: Int,
@@ -58,7 +59,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
-  lazy val logger = Logger("otoroshi-error-handler")
+  lazy val logger: Logger = Logger("otoroshi-error-handler")
 
   def onClientError(request: RequestHeader, statusCode: Int, mess: String): Future[Result] = {
     val message       = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occurred")
@@ -145,7 +146,7 @@ case class AnalyticsQueueEvent(
 )
 
 object AnalyticsQueue {
-  def props(env: Env) = Props(new AnalyticsQueue(env))
+  def props(env: Env): Props = Props(new AnalyticsQueue(env))
 }
 
 class AnalyticsQueue(env: Env) extends Actor {
@@ -159,7 +160,7 @@ class AnalyticsQueue(env: Env) extends Actor {
 
 object GatewayRequestHandler {
 
-  lazy val logger = Logger("otoroshi-http-handler")
+  lazy val logger: Logger = Logger("otoroshi-http-handler")
 
   def removePrivateAppsCookies(route: NgRoute, req: RequestHeader, attrs: TypedMap)(implicit
       env: Env,
@@ -297,21 +298,21 @@ class GatewayRequestHandler(
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val scheduler: Scheduler = env.otoroshiScheduler
 
-  lazy val logger = Logger("otoroshi-http-handler")
+  lazy val logger: Logger = Logger("otoroshi-http-handler")
   // lazy val debugLogger = Logger("otoroshi-http-handler-debug")
 
-  lazy val ipRegex         = RegexPool.regex(
+  lazy val ipRegex: Regex         = RegexPool.regex(
     "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:\\d{2,5})?$"
   )
-  lazy val monitoringPaths = Seq("/health", "/metrics", "/live", "/ready", "/startup")
+  lazy val monitoringPaths: Seq[String] = Seq("/health", "/metrics", "/live", "/ready", "/startup")
 
-  val sourceBodyParser = BodyParser("Gateway BodyParser") { _ =>
+  val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("Gateway BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
   val reqCounter = new AtomicInteger(0)
 
-  val headersInFiltered = Seq(
+  val headersInFiltered: Seq[String] = Seq(
     env.Headers.OtoroshiState,
     env.Headers.OtoroshiClaim,
     env.Headers.OtoroshiRequestId,
@@ -328,7 +329,7 @@ class GatewayRequestHandler(
     "Tls-Session-Info"
   ).map(_.toLowerCase)
 
-  val headersOutFiltered = Seq(
+  val headersOutFiltered: Seq[String] = Seq(
     env.Headers.OtoroshiStateResp,
     "Keep-Alive",
     "Transfer-Encoding",
@@ -360,7 +361,7 @@ class GatewayRequestHandler(
   def matchRedirection(host: String): Boolean =
     env.redirections.nonEmpty && env.redirections.exists(it => host.contains(it))
 
-  def badCertReply(request: RequestHeader) =
+  def badCertReply(request: RequestHeader): Action[AnyContent] =
     actionBuilder.async { req =>
       Errors.craftResponseResult(
         "No SSL/TLS certificate found for the current domain name. Connection refused !",
@@ -663,7 +664,7 @@ class GatewayRequestHandler(
 
   private val devCache = Scaffeine().maximumSize(10000).build[String, (String, ByteString)]()
 
-  def serveDevAssets() = actionBuilder.async { req =>
+  def serveDevAssets(): Action[AnyContent] = actionBuilder.async { req =>
     val wholePath = req.relativeUri
     if (logger.isDebugEnabled) logger.debug(s"dev serving asset '$wholePath'")
     devCache.getIfPresent(wholePath) match {
@@ -701,7 +702,7 @@ class GatewayRequestHandler(
     }
   }
 
-  def jwks() =
+  def jwks(): Action[AnyContent] =
     actionBuilder.async { req =>
       env.adminExtensions.publicKeys().flatMap { extensionsPublicKeys =>
         JWKSHelper.jwks(req, Seq.empty).map {
@@ -713,17 +714,17 @@ class GatewayRequestHandler(
       }
     }
 
-  def ocsp() =
+  def ocsp(): Action[Source[ByteString, _]] =
     actionBuilder.async(sourceBodyParser) { req =>
       env.ocspResponder.respond(req, req.body, Seq.empty)
     }
 
-  def aia(id: String) =
+  def aia(id: String): Action[AnyContent] =
     actionBuilder.async { req =>
       env.ocspResponder.aia(id, req, Seq.empty)
     }
 
-  def letsEncrypt() =
+  def letsEncrypt(): Action[AnyContent] =
     actionBuilder.async { req =>
       if (!req.theSecured) {
         env.datastores.globalConfigDataStore.latestSafe match {
@@ -743,7 +744,7 @@ class GatewayRequestHandler(
       }
     }
 
-  def setPrivateAppsCookies() =
+  def setPrivateAppsCookies(): Action[AnyContent] =
     actionBuilder.async { req =>
       val redirectToOpt: Option[String]   = req.queryString
         .get("redirectTo")
@@ -843,7 +844,7 @@ class GatewayRequestHandler(
     }
   }
 
-  def consumer() = actionBuilder.async { req =>
+  def consumer(): Action[AnyContent] = actionBuilder.async { req =>
     val rnd = req.thePath.replaceFirst("/.well-known/otoroshi/consumers/", "")
     req.getQueryString("t") match {
       case None           => Results.Unauthorized(Json.obj("error" -> "unauthorized")).vfuture
@@ -875,7 +876,7 @@ class GatewayRequestHandler(
     }
   }
 
-  def myProfile() =
+  def myProfile(): Action[AnyContent] =
     actionBuilder.async { req =>
       val attrs = TypedMap.empty
 
@@ -938,7 +939,7 @@ class GatewayRequestHandler(
       }
     }
 
-  def removePrivateAppsCookies() =
+  def removePrivateAppsCookies(): Action[AnyContent] =
     actionBuilder.async { req =>
       val attrs = TypedMap.empty
 
@@ -959,7 +960,7 @@ class GatewayRequestHandler(
       }
     }
 
-  def clusterError(message: String) =
+  def clusterError(message: String): Action[AnyContent] =
     actionBuilder.async { req =>
       Errors.craftResponseResult(
         message,
@@ -971,12 +972,12 @@ class GatewayRequestHandler(
       )
     }
 
-  def tooBig(message: String, status: Status = BadRequest) =
+  def tooBig(message: String, status: Status = BadRequest): Action[AnyContent] =
     actionBuilder.async { req =>
       Errors.craftResponseResult(message, BadRequest, req, None, Some("errors.entity.too.big"), attrs = TypedMap.empty)
     }
 
-  def globalMaintenanceMode(attrs: TypedMap) =
+  def globalMaintenanceMode(attrs: TypedMap): Action[AnyContent] =
     actionBuilder.async { req =>
       Errors.craftResponseResult(
         "Service in maintenance mode",
@@ -988,17 +989,17 @@ class GatewayRequestHandler(
       )
     }
 
-  def forbidden() =
+  def forbidden(): Action[AnyContent] =
     actionBuilder { req =>
       Forbidden(Json.obj("error" -> "forbidden"))
     }
 
-  def adminApiNotExposed() =
+  def adminApiNotExposed(): Action[AnyContent] =
     actionBuilder { req =>
       NotFound(Json.obj("error" -> "resource not found"))
     }
 
-  def redirectToHttps() =
+  def redirectToHttps(): Action[AnyContent] =
     actionBuilder { req =>
       val domain   = req.theDomain
       val protocol = req.theProtocol
@@ -1009,7 +1010,7 @@ class GatewayRequestHandler(
       Redirect(s"${env.rootScheme}$domain${req.relativeUri}").withHeaders("otoroshi-redirect-to" -> "https")
     }
 
-  def redirectToMainDomain() =
+  def redirectToMainDomain(): Action[AnyContent] =
     actionBuilder { req =>
       val domain: String = env.redirections.foldLeft(req.theDomain)((domain, item) => domain.replace(item, env.domain))
       val protocol       = req.theProtocol

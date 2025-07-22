@@ -39,7 +39,7 @@ case class NgDiscoverySelfRegistrationConfig(
 }
 
 object NgDiscoverySelfRegistrationConfig {
-  val format = new Format[NgDiscoverySelfRegistrationConfig] {
+  val format: Format[NgDiscoverySelfRegistrationConfig] = new Format[NgDiscoverySelfRegistrationConfig] {
     override def writes(o: NgDiscoverySelfRegistrationConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgDiscoverySelfRegistrationConfig] = Try {
       NgDiscoverySelfRegistrationConfig(json)

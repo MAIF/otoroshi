@@ -29,7 +29,7 @@ class ServiceGroupApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -84,7 +84,7 @@ class TcpServiceApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -132,7 +132,7 @@ class ScriptApiSpec(name: String, configurationSpec: => Configuration) extends O
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -182,7 +182,7 @@ class AuthModuleConfigApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -233,7 +233,7 @@ class ClientValidatorApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -286,7 +286,7 @@ class JWTVerifierApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -335,7 +335,7 @@ class CertificateApiSpec(name: String, configurationSpec: => Configuration) exte
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -386,7 +386,7 @@ class ServicesApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -437,7 +437,7 @@ class ApikeyGroupApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -487,7 +487,7 @@ class ApikeyServiceApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -538,7 +538,7 @@ class ApikeyApiSpec(name: String, configurationSpec: => Configuration) extends O
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -583,7 +583,7 @@ class ApikeyApiSpec(name: String, configurationSpec: => Configuration) extends O
 
 class TeamsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -595,7 +595,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
         .resolve()
     ).withFallback(configurationSpec).withFallback(configuration)
 
-  val adminUser       = BackOfficeUser(
+  val adminUser: BackOfficeUser       = BackOfficeUser(
     randomId = "admin@otoroshi.io",
     name = "admin@otoroshi.io",
     email = "admin@otoroshi.io",
@@ -614,7 +614,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
     ),
     adminEntityValidators = Map()
   )
-  val tenantAdminUser = BackOfficeUser(
+  val tenantAdminUser: BackOfficeUser = BackOfficeUser(
     randomId = "tenantadmin@otoroshi.io",
     name = "tenantadmin@otoroshi.io",
     email = "tenantadmin@otoroshi.io",
@@ -634,7 +634,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
     adminEntityValidators = Map()
   )
 
-  val team1User     = BackOfficeUser(
+  val team1User: BackOfficeUser     = BackOfficeUser(
     randomId = "team1@otoroshi.io",
     name = "team1@otoroshi.io",
     email = "team1@otoroshi.io",
@@ -653,7 +653,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
     ),
     adminEntityValidators = Map()
   )
-  val team2User     = BackOfficeUser(
+  val team2User: BackOfficeUser     = BackOfficeUser(
     randomId = "team2@otoroshi.io",
     name = "team2@otoroshi.io",
     email = "team2@otoroshi.io",
@@ -672,7 +672,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
     ),
     adminEntityValidators = Map()
   )
-  val team1and2User = BackOfficeUser(
+  val team1and2User: BackOfficeUser = BackOfficeUser(
     randomId = "team1and2@otoroshi.io",
     name = "team1and2@otoroshi.io",
     email = "team1and2@otoroshi.io",

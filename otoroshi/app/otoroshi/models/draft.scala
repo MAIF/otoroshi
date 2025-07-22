@@ -23,7 +23,7 @@ case class Draft(
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
-  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.draftsDataStore.set(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.draftsDataStore.set(this)
   override def internalId: String                     = id
   override def json: JsValue                          = Draft.format.writes(this)
   override def theName: String                        = name
@@ -39,7 +39,7 @@ object Draft {
     } catch {
       case e: Throwable => throw e
     }
-  val format                           = new Format[Draft] {
+  val format: Format[Draft]                           = new Format[Draft] {
     override def writes(o: Draft): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,

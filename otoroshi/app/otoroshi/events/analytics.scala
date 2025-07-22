@@ -145,7 +145,7 @@ object AnalyticsActorSupervizer {
  */
 
 object AnalyticEvent {
-  lazy val logger = Logger("otoroshi-analytics-event")
+  lazy val logger: Logger = Logger("otoroshi-analytics-event")
   def generic(typ: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
       additionalPayload: JsObject
   )(implicit env: Env): GenericAnalytic = {
@@ -318,7 +318,7 @@ object DataInOut {
 }
 
 case class OtoroshiViz(fromTo: String, from: String, to: String, fromLbl: String, toLbl: String) {
-  def toJson = OtoroshiViz.format.writes(this)
+  def toJson: JsObject = OtoroshiViz.format.writes(this)
 }
 
 object OtoroshiViz {

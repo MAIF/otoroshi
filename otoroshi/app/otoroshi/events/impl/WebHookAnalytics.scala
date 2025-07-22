@@ -16,7 +16,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
 
   import otoroshi.utils.http.Implicits._
 
-  lazy val logger = Logger("otoroshi-analytics-webhook")
+  lazy val logger: Logger = Logger("otoroshi-analytics-webhook")
 
   private def defaultParams(
       service: Option[String],

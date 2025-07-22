@@ -48,7 +48,7 @@ object NgCorsSettings {
     maxAge = settings.maxAge,
     allowCredentials = settings.allowCredentials
   )
-  val format                                             = new Format[NgCorsSettings] {
+  val format: Format[NgCorsSettings]                                             = new Format[NgCorsSettings] {
     override def reads(json: JsValue): JsResult[NgCorsSettings] = Try {
       NgCorsSettings(
         allowOrigin = (json \ "allow_origin").asOpt[String].getOrElse("*"),

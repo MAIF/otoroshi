@@ -15,7 +15,7 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
 
   lazy val serviceHost = "api.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""

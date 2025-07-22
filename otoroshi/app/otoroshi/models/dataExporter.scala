@@ -58,7 +58,7 @@ case class S3ExporterSettings(
 }
 
 object S3ExporterSettings {
-  val format = new Format[S3ExporterSettings] {
+  val format: Format[S3ExporterSettings] = new Format[S3ExporterSettings] {
     override def reads(json: JsValue): JsResult[S3ExporterSettings] = Try {
       S3ExporterSettings(
         maxFileSize = json.select("maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
@@ -115,7 +115,7 @@ case class GoReplayS3Settings(
 }
 
 object HttpCallSettings {
-  val format = new Format[HttpCallSettings] {
+  val format: Format[HttpCallSettings] = new Format[HttpCallSettings] {
     override def reads(json: JsValue): JsResult[HttpCallSettings] = Try {
       HttpCallSettings(
         url = json.select("url").asString,
@@ -203,7 +203,7 @@ case class HttpCallSettings(
 }
 
 object WorkflowCallSettings {
-  val format = new Format[WorkflowCallSettings] {
+  val format: Format[WorkflowCallSettings] = new Format[WorkflowCallSettings] {
     override def reads(json: JsValue): JsResult[WorkflowCallSettings] = Try {
       WorkflowCallSettings(
         ref = json.select("ref").asOptString.getOrElse("")
@@ -275,7 +275,7 @@ case class TCPExporterSettings(
 }
 
 object TCPExporterSettings {
-  val format = new Format[TCPExporterSettings] {
+  val format: Format[TCPExporterSettings] = new Format[TCPExporterSettings] {
     override def reads(json: JsValue): JsResult[TCPExporterSettings] = Try {
       TCPExporterSettings(
         host = json.select("host").asOptString.getOrElse("127.0.0.1"),
@@ -311,7 +311,7 @@ case class UDPExporterSettings(host: String, port: Int, unixSocket: Boolean, con
 }
 
 object UDPExporterSettings {
-  val format = new Format[UDPExporterSettings] {
+  val format: Format[UDPExporterSettings] = new Format[UDPExporterSettings] {
     override def reads(json: JsValue): JsResult[UDPExporterSettings] = Try {
       UDPExporterSettings(
         host = json.select("host").asOptString.getOrElse("127.0.0.1"),
@@ -346,7 +346,7 @@ case class SyslogExporterSettings(
 }
 
 object SyslogExporterSettings {
-  val format = new Format[SyslogExporterSettings] {
+  val format: Format[SyslogExporterSettings] = new Format[SyslogExporterSettings] {
     override def reads(json: JsValue): JsResult[SyslogExporterSettings] = Try {
       SyslogExporterSettings(
         tcp = json.select("tcp").asOptBoolean.getOrElse(false),
@@ -389,7 +389,7 @@ case class JMSExporterSettings(
 }
 
 object JMSExporterSettings {
-  val format = new Format[JMSExporterSettings] {
+  val format: Format[JMSExporterSettings] = new Format[JMSExporterSettings] {
     override def reads(json: JsValue): JsResult[JMSExporterSettings] = Try {
       JMSExporterSettings(
         url = json.select("url").asOptString.getOrElse("tcp://localhost:61616"),
@@ -428,7 +428,7 @@ object DataExporterConfig {
         throw e
     }
 
-  val format = new Format[DataExporterConfig] {
+  val format: Format[DataExporterConfig] = new Format[DataExporterConfig] {
     override def writes(o: DataExporterConfig): JsValue = {
       o.location.jsonWithKey ++ Json.obj(
         "type"          -> o.typ.name,

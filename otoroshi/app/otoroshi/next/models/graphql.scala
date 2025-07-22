@@ -198,7 +198,7 @@ object GraphQLFormats {
                 .getOrElse(Json.arr())
                 .value
                 .map(_.as[JsObject])
-                .map(fieldDefinitionFmt.reads)
+                .map(fieldDefinitionFmt.reads(_))
                 .flatMap {
                   case JsSuccess(v, _) => Some(v)
                   case JsError(_)      => None
@@ -241,7 +241,7 @@ object GraphQLFormats {
                   .getOrElse(Json.arr())
                   .value
                   .map(_.as[JsObject])
-                  .map(fieldDefinitionFmt.reads)
+                  .map(fieldDefinitionFmt.reads(_))
                   .flatMap {
                     case JsSuccess(v, _) => Some(v)
                     case JsError(_)      => None
@@ -289,7 +289,7 @@ object GraphQLFormats {
         } get
     }  // Make sure this closing brace is present
 
-  def astDocumentToJson(document: Document) = document.definitions.map {
+  def astDocumentToJson(document: Document): Vector[JsValue] = document.definitions.map {
     case definition: TypeSystemDefinition =>
       definition match {
         case definition: TypeDefinition =>

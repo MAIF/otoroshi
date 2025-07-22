@@ -188,7 +188,7 @@ case class Version(
     suffixVersion: Option[Int],
     raw: String
 ) extends Comparable[Version] {
-  lazy val value = {
+  lazy val value: Double = {
     raw.toLowerCase() match {
       case v if v.contains("-snapshot") =>
         v.replace(".", "")

@@ -9,7 +9,7 @@ import java.nio.file.Files
 
 class GenericOpenApiSpec extends OtoroshiSpec {
 
-  val files = Seq(
+  val files: Seq[String] = Seq(
     "./public/openapi.json",
     "./app/openapi/openapi.json",
     "../manual/src/main/paradox/code/openapi.json"
@@ -48,7 +48,7 @@ class GenericOpenApiSpec extends OtoroshiSpec {
     }
   }
 
-  override def getTestConfiguration(configuration: Configuration) = {
+  override def getTestConfiguration(configuration: Configuration): Configuration = {
     Configuration(
       ConfigFactory.parseString(s"""app.env = dev""".stripMargin).resolve()
     ).withFallback(configuration)

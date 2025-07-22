@@ -67,7 +67,7 @@ case class StaticBackendConfig(rootPath: String) extends NgPluginConfig {
 }
 
 object StaticBackendConfig {
-  val format = new Format[StaticBackendConfig] {
+  val format: Format[StaticBackendConfig] = new Format[StaticBackendConfig] {
     override def reads(json: JsValue): JsResult[StaticBackendConfig] = Try {
       StaticBackendConfig(
         rootPath = json.select("root_path").asString

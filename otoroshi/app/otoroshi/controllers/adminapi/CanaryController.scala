@@ -8,6 +8,8 @@ import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 import scala.concurrent.ExecutionContext
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 class CanaryController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
@@ -15,9 +17,9 @@ class CanaryController(ApiAction: ApiAction, cc: ControllerComponents)(implicit 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-canary-api")
+  lazy val logger: Logger = Logger("otoroshi-canary-api")
 
-  def serviceCanaryMembers(serviceId: String) =
+  def serviceCanaryMembers(serviceId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.canReadService(serviceId) {
         env.datastores.canaryDataStore.canaryCampaign(serviceId).map { campaign =>
@@ -31,7 +33,7 @@ class CanaryController(ApiAction: ApiAction, cc: ControllerComponents)(implicit 
       }
     }
 
-  def resetServiceCanaryMembers(serviceId: String) =
+  def resetServiceCanaryMembers(serviceId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.canWriteService(serviceId) {
         env.datastores.canaryDataStore.destroyCanarySession(serviceId).map { done =>

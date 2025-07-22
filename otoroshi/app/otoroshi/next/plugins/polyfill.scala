@@ -18,8 +18,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
 object PolyfillIoResources {
-  lazy val cloudflareUri = Uri("https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js")
-  lazy val urls          = Seq(
+  lazy val cloudflareUri: Uri = Uri("https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js")
+  lazy val urls: Seq[String]          = Seq(
     "https://cdn.polyfill.io/v3/polyfill.js",
     "https://cdn.polyfill.io/v3/polyfill.min.js",
     "http://cdn.polyfill.io/v3/polyfill.js",

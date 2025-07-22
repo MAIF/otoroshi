@@ -33,8 +33,8 @@ case class NgLegacyAuthModuleCallConfig(
   override def json: JsValue = NgLegacyAuthModuleCallConfig.format.writes(this)
 }
 object NgLegacyAuthModuleCallConfig {
-  val default = NgLegacyAuthModuleCallConfig(Seq.empty, Seq.empty, NgAuthModuleConfig())
-  val format  = new Format[NgLegacyAuthModuleCallConfig] {
+  val default: NgLegacyAuthModuleCallConfig = NgLegacyAuthModuleCallConfig(Seq.empty, Seq.empty, NgAuthModuleConfig())
+  val format: Format[NgLegacyAuthModuleCallConfig]  = new Format[NgLegacyAuthModuleCallConfig] {
     override def writes(o: NgLegacyAuthModuleCallConfig): JsValue             = Json.obj(
       "public_patterns"  -> o.publicPatterns,
       "private_patterns" -> o.privatePatterns
@@ -108,7 +108,7 @@ case class NgAuthModuleConfig(module: Option[String] = None, passWithApikey: Boo
 }
 
 object NgAuthModuleConfig {
-  val format = new Format[NgAuthModuleConfig] {
+  val format: Format[NgAuthModuleConfig] = new Format[NgAuthModuleConfig] {
     override def reads(json: JsValue): JsResult[NgAuthModuleConfig] = Try {
       NgAuthModuleConfig(
         module =
@@ -136,7 +136,7 @@ case class NgMultiAuthModuleConfig(
 }
 
 object NgMultiAuthModuleConfig {
-  val format = new Format[NgMultiAuthModuleConfig] {
+  val format: Format[NgMultiAuthModuleConfig] = new Format[NgMultiAuthModuleConfig] {
     override def reads(json: JsValue): JsResult[NgMultiAuthModuleConfig] = Try {
       NgMultiAuthModuleConfig(
         modules = json
@@ -421,7 +421,7 @@ case class NgAuthModuleUserExtractorConfig(module: Option[String] = None) extend
 }
 
 object NgAuthModuleUserExtractorConfig {
-  val format = new Format[NgAuthModuleUserExtractorConfig] {
+  val format: Format[NgAuthModuleUserExtractorConfig] = new Format[NgAuthModuleUserExtractorConfig] {
     override def reads(json: JsValue): JsResult[NgAuthModuleUserExtractorConfig] = Try {
       NgAuthModuleUserExtractorConfig(
         module = json.select("auth_module").asOpt[String].orElse(json.select("module").asOpt[String]).filter(_.nonEmpty)
@@ -509,7 +509,7 @@ case class NgAuthModuleExpectedUserConfig(onlyFrom: Seq[String] = Seq.empty) ext
 }
 
 object NgAuthModuleExpectedUserConfig {
-  val format = new Format[NgAuthModuleExpectedUserConfig] {
+  val format: Format[NgAuthModuleExpectedUserConfig] = new Format[NgAuthModuleExpectedUserConfig] {
     override def reads(json: JsValue): JsResult[NgAuthModuleExpectedUserConfig] = Try {
       NgAuthModuleExpectedUserConfig(
         onlyFrom = json.select("only_from").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -624,7 +624,7 @@ class BasicAuthCaller extends NgRequestTransformer {
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val config = ctx.cachedConfig(internalName)(BasicAuthCallerConfig.format.reads).getOrElse(BasicAuthCallerConfig())
+    val config = ctx.cachedConfig(internalName)(BasicAuthCallerConfig.format.reads(_)).getOrElse(BasicAuthCallerConfig())
 
     (config.username, config.password) match {
       case (Some(username), Some(password)) if username.nonEmpty && password.nonEmpty =>
@@ -645,7 +645,7 @@ case class SimpleBasicAuthConfig(realm: String = "authentication", users: Map[St
   override def json: JsValue = SimpleBasicAuthConfig.format.writes(this)
 }
 object SimpleBasicAuthConfig {
-  val format                         = new Format[SimpleBasicAuthConfig] {
+  val format: Format[SimpleBasicAuthConfig]                         = new Format[SimpleBasicAuthConfig] {
     override def reads(json: JsValue): JsResult[SimpleBasicAuthConfig] = Try {
       SimpleBasicAuthConfig(
         realm = json.select("realm").asOptString.getOrElse("authentication"),
@@ -700,7 +700,7 @@ class SimpleBasicAuth extends NgAccessValidator {
   override def configSchema: Option[JsObject] = SimpleBasicAuthConfig.configSchema
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config                = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads).getOrElse(SimpleBasicAuthConfig())
+    val config                = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads(_)).getOrElse(SimpleBasicAuthConfig())
     val globalUsers           = env.datastores.globalConfigDataStore
       .latest()
       .plugins
@@ -789,7 +789,7 @@ case class BasicAuthWithAuthModuleConfig(ref: String = "", addAuthenticateHeader
 }
 
 object BasicAuthWithAuthModuleConfig {
-  val format = new Format[BasicAuthWithAuthModuleConfig] {
+  val format: Format[BasicAuthWithAuthModuleConfig] = new Format[BasicAuthWithAuthModuleConfig] {
 
     override def reads(json: JsValue): JsResult[BasicAuthWithAuthModuleConfig] = Try {
       BasicAuthWithAuthModuleConfig(

@@ -17,14 +17,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends CertificateDataStore with RedisLikeStore[Cert] {
 
-  val logger = Logger("otoroshi-certificate-datastore")
+  val logger: Logger = Logger("otoroshi-certificate-datastore")
 
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def fmt: Format[Cert]                       = Cert._fmt
   override def key(id: String): String                 = s"${_env.storageRoot}:certs:$id"
   override def extractId(value: Cert): String          = value.id
 
-  val lastUpdatedKey = s"${_env.storageRoot}:certs-last-updated"
+  val lastUpdatedKey: String = s"${_env.storageRoot}:certs-last-updated"
 
   val lastUpdatedRef        = new AtomicReference[String]("0")
   val includeJdkCaServerRef = new AtomicBoolean(true)

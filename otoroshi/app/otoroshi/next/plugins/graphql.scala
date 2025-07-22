@@ -56,6 +56,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util._
 import scala.util.control.NoStackTrace
+import sangria.marshalling.FromInput
+import sangria.util.tag
 
 case object TooComplexQueryError                          extends Exception("Query is too expensive.") with NoStackTrace
 case class ViolationsException(errors: Seq[String])       extends Exception with NoStackTrace
@@ -78,7 +80,7 @@ case class GraphQLQueryConfig(
 }
 
 object GraphQLQueryConfig {
-  val format = new Format[GraphQLQueryConfig] {
+  val format: Format[GraphQLQueryConfig] = new Format[GraphQLQueryConfig] {
     override def reads(json: JsValue): JsResult[GraphQLQueryConfig] = Try {
       GraphQLQueryConfig(
         url = json.select("url").asString,
@@ -217,7 +219,7 @@ case class GraphQLBackendConfig(
 }
 
 object GraphQLBackendConfig {
-  val format = new Format[GraphQLBackendConfig] {
+  val format: Format[GraphQLBackendConfig] = new Format[GraphQLBackendConfig] {
     override def reads(json: JsValue): JsResult[GraphQLBackendConfig] = Try {
       GraphQLBackendConfig(
         schema = json.select("schema").as[String],
@@ -269,7 +271,7 @@ class GraphQLBackend extends NgBackendCall {
 
   case object MapCoercionViolation extends ValueCoercionViolation("Exception : map value can't be parsed")
 
-  val exceptionHandler = ExceptionHandler(
+  val exceptionHandler: ExceptionHandler = ExceptionHandler(
     onException = { case (_, throwable) =>
       HandledException(throwable.getMessage)
     }
@@ -334,84 +336,84 @@ class GraphQLBackend extends NgBackendCall {
     }
   }
 
-  val directivesLocations = Set(
+  val directivesLocations: Set[sangria.schema.DirectiveLocation.Value] = Set(
     sangria.schema.DirectiveLocation.FieldDefinition,
     sangria.schema.DirectiveLocation.Query,
     sangria.schema.DirectiveLocation.Object
   )
 
-  val urlArg               = Argument("url", StringType)
-  val methodArg            = Argument("method", OptionInputType(StringType))
-  val headersArg           = Argument("headers", OptionInputType(StringType))
-  val timeoutArg           = Argument("timeout", IntType, defaultValue = 5000)
-  val jsonDataArg          = Argument("data", OptionInputType(StringType))
-  val jsonPathArg          = Argument("path", OptionInputType(StringType))
-  val queryArg             = Argument("query", OptionInputType(StringType))
-  val responsePathArg      = Argument("response_path", OptionInputType(StringType))
-  val responseFilterArg    = Argument("response_filter", OptionInputType(StringType))
-  val limitArg             = Argument("limit", OptionInputType(IntType))
-  val offsetArg            = Argument("offset", OptionInputType(IntType))
-  val paginateArg          = Argument("paginate", OptionInputType(BooleanType), defaultValue = false)
-  val valueArg             = Argument("value", StringType)
-  val valuesArg            = Argument("values", ListInputType(StringType))
-  val pathArg              = Argument("path", StringType)
-  val unauthorizedValueArg = Argument("unauthorized_value", OptionInputType(StringType))
+  val urlArg: Argument[String]               = Argument("url", StringType)
+  val methodArg: Argument[Option[String]]            = Argument("method", OptionInputType(StringType))
+  val headersArg: Argument[Option[String]]           = Argument("headers", OptionInputType(StringType))
+  val timeoutArg: Argument[Int]           = Argument("timeout", IntType, defaultValue = 5000)
+  val jsonDataArg: Argument[Option[String]]          = Argument("data", OptionInputType(StringType))
+  val jsonPathArg: Argument[Option[String]]          = Argument("path", OptionInputType(StringType))
+  val queryArg: Argument[Option[String]]             = Argument("query", OptionInputType(StringType))
+  val responsePathArg: Argument[Option[String]]      = Argument("response_path", OptionInputType(StringType))
+  val responseFilterArg: Argument[Option[String]]    = Argument("response_filter", OptionInputType(StringType))
+  val limitArg: Argument[Option[Int]]             = Argument("limit", OptionInputType(IntType))
+  val offsetArg: Argument[Option[Int]]            = Argument("offset", OptionInputType(IntType))
+  val paginateArg: Argument[Boolean]          = Argument("paginate", OptionInputType(BooleanType), defaultValue = false)
+  val valueArg: Argument[String]             = Argument("value", StringType)
+  val valuesArg: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]]            = Argument("values", ListInputType(StringType))
+  val pathArg: Argument[String]              = Argument("path", StringType)
+  val unauthorizedValueArg: Argument[Option[String]] = Argument("unauthorized_value", OptionInputType(StringType))
 
-  val soapEnvelopeArg                = Argument("envelope", StringType)
-  val soapUrlArg                     = Argument("url", OptionInputType(StringType))
-  val soapActionArg                  = Argument("action", OptionInputType(StringType))
-  val soapPreservereQueryArg         = Argument("preserve_query", BooleanType, defaultValue = true)
-  val soapCharsetArg                 = Argument("charset", OptionInputType(StringType))
-  val soapConvertRequestBodyToXmlArg = Argument("convert_request_body_to_xml", BooleanType, defaultValue = true)
-  val soapJqRequestFilterArg         = Argument("jq_request_filter", OptionInputType(StringType))
-  val soapJqResponseFilterArg        = Argument("jq_response_filter", OptionInputType(StringType))
+  val soapEnvelopeArg: Argument[String]                = Argument("envelope", StringType)
+  val soapUrlArg: Argument[Option[String]]                     = Argument("url", OptionInputType(StringType))
+  val soapActionArg: Argument[Option[String]]                  = Argument("action", OptionInputType(StringType))
+  val soapPreservereQueryArg: Argument[Boolean]         = Argument("preserve_query", BooleanType, defaultValue = true)
+  val soapCharsetArg: Argument[Option[String]]                 = Argument("charset", OptionInputType(StringType))
+  val soapConvertRequestBodyToXmlArg: Argument[Boolean] = Argument("convert_request_body_to_xml", BooleanType, defaultValue = true)
+  val soapJqRequestFilterArg: Argument[Option[String]]         = Argument("jq_request_filter", OptionInputType(StringType))
+  val soapJqResponseFilterArg: Argument[Option[String]]        = Argument("jq_response_filter", OptionInputType(StringType))
 
-  val wasmSourceKindArg                 = Argument("wasm_source_kind", OptionInputType(StringType))
-  val wasmSourcePathArg                 = Argument("wasm_source_path", OptionInputType(StringType))
-  val wasmFunctionNameArg               = Argument("wasm_function_name", StringType)
-  val wasmMemoryPagesArg                = Argument("wasm_memory_pages", OptionInputType(IntType))
+  val wasmSourceKindArg: Argument[Option[String]]                 = Argument("wasm_source_kind", OptionInputType(StringType))
+  val wasmSourcePathArg: Argument[Option[String]]                 = Argument("wasm_source_path", OptionInputType(StringType))
+  val wasmFunctionNameArg: Argument[String]               = Argument("wasm_function_name", StringType)
+  val wasmMemoryPagesArg: Argument[Option[Int]]                = Argument("wasm_memory_pages", OptionInputType(IntType))
   // val wasmConfigArg = Argument("wasm_config", StringType)
-  val wasmAllowedHostsArg               = Argument("wasm_allowed_hosts", OptionInputType(ListInputType(StringType)))
-  val wasmWasiArg                       = Argument("wasm_wasi", BooleanType, defaultValue = true)
-  val wasmProxyHttpCallTimeoutArg       = Argument("proxy_http_call_timeout", OptionInputType(IntType))
-  val wasmHttpAccessArg                 = Argument("http_access", BooleanType, defaultValue = false)
-  val wasmGlobalDataStoreAccessReadArg  = Argument("global_datastore_access_read", BooleanType, defaultValue = false)
-  val wasmGlobalDataStoreAccessWriteArg = Argument("global_datastore_access_write", BooleanType, defaultValue = false)
-  val wasmPluginDataStoreAccessReadArg  = Argument("plugin_datastore_access_read", BooleanType, defaultValue = false)
-  val wasmPluginDataStoreAccessWriteArg = Argument("plugin_datastore_access_write", BooleanType, defaultValue = false)
-  val wasmGlobalMapAccessReadArg        = Argument("global_map_access_read", BooleanType, defaultValue = false)
-  val wasmGlobalMapAccessWriteArg       = Argument("global_map_access_write", BooleanType, defaultValue = false)
-  val wasmPluginMapAccessReadArg        = Argument("plugin_map_access_read", BooleanType, defaultValue = false)
-  val wasmPluginMapAccessWriteArg       = Argument("plugin_map_access_write", BooleanType, defaultValue = false)
+  val wasmAllowedHostsArg: Argument[Option[Seq[String]]]               = Argument("wasm_allowed_hosts", OptionInputType(ListInputType(StringType)))
+  val wasmWasiArg: Argument[Boolean]                       = Argument("wasm_wasi", BooleanType, defaultValue = true)
+  val wasmProxyHttpCallTimeoutArg: Argument[Option[Int]]       = Argument("proxy_http_call_timeout", OptionInputType(IntType))
+  val wasmHttpAccessArg: Argument[Boolean]                 = Argument("http_access", BooleanType, defaultValue = false)
+  val wasmGlobalDataStoreAccessReadArg: Argument[Boolean]  = Argument("global_datastore_access_read", BooleanType, defaultValue = false)
+  val wasmGlobalDataStoreAccessWriteArg: Argument[Boolean] = Argument("global_datastore_access_write", BooleanType, defaultValue = false)
+  val wasmPluginDataStoreAccessReadArg: Argument[Boolean]  = Argument("plugin_datastore_access_read", BooleanType, defaultValue = false)
+  val wasmPluginDataStoreAccessWriteArg: Argument[Boolean] = Argument("plugin_datastore_access_write", BooleanType, defaultValue = false)
+  val wasmGlobalMapAccessReadArg: Argument[Boolean]        = Argument("global_map_access_read", BooleanType, defaultValue = false)
+  val wasmGlobalMapAccessWriteArg: Argument[Boolean]       = Argument("global_map_access_write", BooleanType, defaultValue = false)
+  val wasmPluginMapAccessReadArg: Argument[Boolean]        = Argument("plugin_map_access_read", BooleanType, defaultValue = false)
+  val wasmPluginMapAccessWriteArg: Argument[Boolean]       = Argument("plugin_map_access_write", BooleanType, defaultValue = false)
 
-  val wasmProxyStateAccessArg    = Argument("proxy_state_sccess", BooleanType, defaultValue = false)
-  val wasmConfigurationAccessArg = Argument("configuration_access", BooleanType, defaultValue = false)
+  val wasmProxyStateAccessArg: Argument[Boolean]    = Argument("proxy_state_sccess", BooleanType, defaultValue = false)
+  val wasmConfigurationAccessArg: Argument[Boolean] = Argument("configuration_access", BooleanType, defaultValue = false)
 
-  val arguments =
+  val arguments: List[Argument[_]] =
     urlArg :: methodArg :: timeoutArg :: headersArg :: queryArg :: responsePathArg :: responseFilterArg :: limitArg :: offsetArg :: paginateArg :: Nil
 
-  val permissionDirective      = Directive(
+  val permissionDirective: Directive      = Directive(
     "permission",
     arguments = valueArg :: unauthorizedValueArg :: Nil,
     locations = directivesLocations
   )
-  val permissionsDirective     = Directive(
+  val permissionsDirective: Directive     = Directive(
     "allpermissions",
     arguments = valuesArg :: unauthorizedValueArg :: Nil,
     locations = directivesLocations
   )
-  val onePermissionOfDirective = Directive(
+  val onePermissionOfDirective: Directive = Directive(
     "onePermissionsOf",
     arguments = valuesArg :: unauthorizedValueArg :: Nil,
     locations = directivesLocations
   )
-  val authorizeDirective       = Directive(
+  val authorizeDirective: Directive       = Directive(
     "authorize",
     arguments = pathArg :: valueArg :: unauthorizedValueArg :: Nil,
     locations = directivesLocations
   )
-  val httpRestDirective        = Directive("rest", arguments = arguments, locations = directivesLocations)
-  val wasmDirective            = Directive(
+  val httpRestDirective: Directive        = Directive("rest", arguments = arguments, locations = directivesLocations)
+  val wasmDirective: Directive            = Directive(
     "wasm",
     arguments = wasmSourceKindArg ::
       wasmSourcePathArg ::
@@ -433,9 +435,9 @@ class GraphQLBackend extends NgBackendCall {
       wasmConfigurationAccessArg :: Nil,
     locations = directivesLocations
   )
-  val graphQLDirective         = Directive("graphql", arguments = arguments, locations = directivesLocations)
+  val graphQLDirective: Directive         = Directive("graphql", arguments = arguments, locations = directivesLocations)
   // val OtoroshiRouteDirective = Directive("otoroshi", arguments = arguments, locations = directivesLocations)
-  val soapDirective            = Directive(
+  val soapDirective: Directive            = Directive(
     "soap",
     arguments = soapEnvelopeArg :: soapUrlArg :: soapActionArg ::
       soapPreservereQueryArg ::
@@ -445,12 +447,12 @@ class GraphQLBackend extends NgBackendCall {
       soapJqResponseFilterArg :: Nil,
     locations = directivesLocations
   )
-  val jsonDirective            = Directive(
+  val jsonDirective: Directive            = Directive(
     "json",
     arguments = jsonDataArg :: jsonPathArg :: paginateArg :: Nil,
     locations = directivesLocations
   )
-  val mockDirective            = Directive(
+  val mockDirective: Directive            = Directive(
     "mock",
     arguments = urlArg :: Nil,
     locations = directivesLocations
@@ -487,7 +489,7 @@ class GraphQLBackend extends NgBackendCall {
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
       body: JsObject
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer) = AstSchemaBuilder.resolverBased[Unit](
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): ResolverBasedAstSchemaBuilder[Unit] = AstSchemaBuilder.resolverBased[Unit](
     AdditionalTypes(JsonType),
     InstanceCheck.field[Unit, JsValue],
     DirectiveResolver(permissionDirective, resolve = c => permissionDirectiveResolver(c, config, ctx)),
@@ -513,7 +515,7 @@ class GraphQLBackend extends NgBackendCall {
     AnyFieldResolver.defaultInput[Unit, JsValue]
   )
 
-  def extractLimit(c: AstDirectiveContext[Unit], itemsLength: Option[Int]) = {
+  def extractLimit(c: AstDirectiveContext[Unit], itemsLength: Option[Int]): Int = {
     val queryParameter              = c.ctx.argOpt(limitArg)
     val limitParameterFromDirective = c.argOpt(limitArg)
     val autoPaginateParameter       = c.argOpt(paginateArg).getOrElse(false)
@@ -528,7 +530,7 @@ class GraphQLBackend extends NgBackendCall {
       .asInstanceOf[Int]
   }
 
-  def extractOffset(c: AstDirectiveContext[Unit]) = {
+  def extractOffset(c: AstDirectiveContext[Unit]): Int = {
     val offsetParameter              = c.ctx.argOpt(offsetArg)
     val offsetParameterFromDirective = c.argOpt(offsetArg)
     val autoPaginateParameter        = c.argOpt(paginateArg).getOrElse(false)
@@ -541,13 +543,13 @@ class GraphQLBackend extends NgBackendCall {
       .asInstanceOf[Int]
   }
 
-  def sliceArrayWithArgs(arr: IndexedSeq[JsValue], c: AstDirectiveContext[Unit]) = {
+  def sliceArrayWithArgs(arr: IndexedSeq[JsValue], c: AstDirectiveContext[Unit]): IndexedSeq[JsValue] = {
     val limit  = extractLimit(c, arr.length.some)
     val offset = extractOffset(c)
     arr.slice(offset, limit)
   }
 
-  def buildContext(ctx: NgbBackendCallContext) = {
+  def buildContext(ctx: NgbBackendCallContext): JsObject = {
     val token: JsValue = ctx.attrs
       .get(otoroshi.next.plugins.Keys.JwtInjectionKey)
       .flatMap(_.decodedToken)
@@ -564,7 +566,7 @@ class GraphQLBackend extends NgBackendCall {
     )
   }
 
-  def permissionResponse(authorized: Boolean, c: AstDirectiveContext[Unit]) = {
+  private def permissionResponse(authorized: Boolean, c: AstDirectiveContext[Unit]) = {
     if (!authorized)
       c.arg(unauthorizedValueArg)
         .map(value =>
@@ -852,7 +854,7 @@ class GraphQLBackend extends NgBackendCall {
     }
   }
 
-  def mockDirectiveResolver(c: AstDirectiveContext[Unit], rawConfig: Option[JsObject])(implicit env: Env) = {
+  private def mockDirectiveResolver(c: AstDirectiveContext[Unit], rawConfig: Option[JsObject])(implicit env: Env): Object = {
     rawConfig match {
       case None         => throw MissingMockResponsesException("Missing mock response plugin")
       case Some(config) =>
@@ -905,7 +907,7 @@ class GraphQLBackend extends NgBackendCall {
     }
   }
 
-  def replaceQueryParams(c: AstDirectiveContext[Unit]) = {
+  def replaceQueryParams(c: AstDirectiveContext[Unit]): String = {
     val queryArgs = c.ctx.args.raw.map {
       case (str, Some(v)) => (str, String.valueOf(v))
       case (k, v)         => (k, String.valueOf(v))
@@ -919,7 +921,7 @@ class GraphQLBackend extends NgBackendCall {
     )
   }
 
-  def replaceTermsInUrl(c: AstDirectiveContext[Unit])(implicit env: Env) = {
+  def replaceTermsInUrl(c: AstDirectiveContext[Unit])(implicit env: Env): String = {
     val queryArgs = c.ctx.args.raw.map {
       case (str, Some(v)) => (str, String.valueOf(v))
       case (k, v)         => (k, String.valueOf(v))
@@ -1008,7 +1010,7 @@ class GraphQLBackend extends NgBackendCall {
       }
   }
 
-  def bodyToJson(source: Source[ByteString, _])(implicit mat: Materializer, ec: ExecutionContext) = source
+  def bodyToJson(source: Source[ByteString, _])(implicit mat: Materializer, ec: ExecutionContext): Future[JsObject] = source
     .runFold(ByteString.empty)(_ ++ _)
     .map { rawBody =>
       {
@@ -1111,7 +1113,7 @@ class GraphQLBackend extends NgBackendCall {
     AstSchemaMaterializer.buildSchema(patchDoc, builder)
   }
 
-  def jsonResponse(status: Int, body: JsValue) =
+  def jsonResponse(status: Int, body: JsValue): Either[NgProxyEngineError,BackendCallResponse] =
     inMemoryBodyResponse(
       status,
       Map("Content-Type" -> "application/json"),
@@ -1120,7 +1122,7 @@ class GraphQLBackend extends NgBackendCall {
 
   def introspectionResponse(config: GraphQLBackendConfig, builder: ResolverBasedAstSchemaBuilder[Unit])(implicit
       ec: ExecutionContext
-  ) = {
+  ): Future[Either[NgProxyEngineError,BackendCallResponse]] = {
     QueryParser.parse(config.schema) match {
       case Failure(exception)   => jsonResponse(400, Json.obj("error" -> exception.getMessage)).future
       case Success(astDocument) =>
@@ -1202,7 +1204,7 @@ case class GraphQLProxyConfig(
 }
 
 object GraphQLProxyConfig {
-  val format  = new Format[GraphQLProxyConfig] {
+  val format: Format[GraphQLProxyConfig]  = new Format[GraphQLProxyConfig] {
     override def writes(o: GraphQLProxyConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[GraphQLProxyConfig] = Try {
       GraphQLProxyConfig(
@@ -1218,7 +1220,7 @@ object GraphQLProxyConfig {
       case Success(value) => JsSuccess(value)
     }
   }
-  val default = GraphQLProxyConfig(
+  val default: GraphQLProxyConfig = GraphQLProxyConfig(
     "https://countries.trevorblades.com/graphql",
     None,
     50,

@@ -47,7 +47,7 @@ case class OIDCHeadersConfig(
 }
 
 object OIDCHeadersConfig {
-  val format = new Format[OIDCHeadersConfig] {
+  val format: Format[OIDCHeadersConfig] = new Format[OIDCHeadersConfig] {
     override def writes(o: OIDCHeadersConfig): JsValue = Json.obj(
       "profile"     -> Json.obj(
         "send"       -> o.profile.send,
@@ -157,7 +157,7 @@ case class OIDCAccessTokenConfig(enabled: Boolean = true, atLeastOne: Boolean = 
 }
 
 object OIDCAccessTokenConfig {
-  val format = new Format[OIDCAccessTokenConfig] {
+  val format: Format[OIDCAccessTokenConfig] = new Format[OIDCAccessTokenConfig] {
     override def writes(o: OIDCAccessTokenConfig): JsValue = Json.obj(
       "enabled"    -> o.enabled,
       "atLeastOne" -> o.atLeastOne,
@@ -352,7 +352,7 @@ case class OIDCAuthTokenConfig(
 }
 
 object OIDCAuthTokenConfig {
-  val default                        = OIDCAuthTokenConfig("", opaque = true, fetchUserProfile = true, validateAudience = false, "Authorization")
+  val default: OIDCAuthTokenConfig                        = OIDCAuthTokenConfig("", opaque = true, fetchUserProfile = true, validateAudience = false, "Authorization")
   val configFlow: Seq[String]        = Seq("ref", "header_name", "opaque", "fetch_user_profile", "validate_audience")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
@@ -385,7 +385,7 @@ object OIDCAuthTokenConfig {
       )
     )
   )
-  val format                         = new Format[OIDCAuthTokenConfig] {
+  val format: Format[OIDCAuthTokenConfig]                         = new Format[OIDCAuthTokenConfig] {
     override def reads(json: JsValue): JsResult[OIDCAuthTokenConfig] = Try {
       OIDCAuthTokenConfig(
         ref = json.select("ref").asString,

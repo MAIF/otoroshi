@@ -384,7 +384,7 @@ class EmitEventFunction extends WorkflowFunction {
 }
 
 object LogFunction {
-  val logger = Logger("otoroshi-workflow-log")
+  val logger: Logger = Logger("otoroshi-workflow-log")
 }
 
 class LogFunction extends WorkflowFunction {

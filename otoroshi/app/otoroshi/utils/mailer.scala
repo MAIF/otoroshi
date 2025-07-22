@@ -97,7 +97,7 @@ trait MailerSettings extends Exporter {
 }
 
 object MailerSettings {
-  val format = new Format[MailerSettings] {
+  val format: Format[MailerSettings] = new Format[MailerSettings] {
     override def reads(json: JsValue): JsResult[MailerSettings] =
       (json \ "type").asOpt[String].getOrElse("none") match {
         case "none"     => NoneMailerSettings.format.reads(json)
@@ -260,7 +260,7 @@ case class EmailLocation(name: String, email: String) {
 }
 
 object EmailLocation {
-  val format = new Format[EmailLocation] {
+  val format: Format[EmailLocation] = new Format[EmailLocation] {
     override def writes(o: EmailLocation): JsValue             = Json.obj("name" -> o.name, "email" -> o.email)
     override def reads(json: JsValue): JsResult[EmailLocation] =
       Try {
@@ -296,7 +296,7 @@ class NoneMailer extends Mailer {
 
 class LogMailer extends Mailer {
 
-  lazy val logger = Logger("otoroshi-console-mailer")
+  lazy val logger: Logger = Logger("otoroshi-console-mailer")
 
   def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
       ec: ExecutionContext
@@ -317,7 +317,7 @@ class LogMailer extends Mailer {
 
 class MailgunMailer(env: Env, config: GlobalConfig, settings: MailgunSettings) extends Mailer {
 
-  lazy val logger = Logger("otoroshi-mailgun-mailer")
+  lazy val logger: Logger = Logger("otoroshi-mailgun-mailer")
 
   def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
       ec: ExecutionContext
@@ -349,7 +349,7 @@ class MailgunMailer(env: Env, config: GlobalConfig, settings: MailgunSettings) e
 
 class MailjetMailer(env: Env, config: GlobalConfig, settings: MailjetSettings) extends Mailer {
 
-  lazy val logger = Logger("otoroshi-mailjet-mailer")
+  lazy val logger: Logger = Logger("otoroshi-mailjet-mailer")
 
   def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
       ec: ExecutionContext
@@ -392,7 +392,7 @@ class MailjetMailer(env: Env, config: GlobalConfig, settings: MailjetSettings) e
 
 class SendgridMailer(env: Env, config: GlobalConfig, settings: SendgridSettings) extends Mailer {
 
-  lazy val logger = Logger("otoroshi-sendgrid-mailer")
+  lazy val logger: Logger = Logger("otoroshi-sendgrid-mailer")
 
   def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
       ec: ExecutionContext
@@ -439,7 +439,7 @@ class SendgridMailer(env: Env, config: GlobalConfig, settings: SendgridSettings)
 
 class GenericMailer(env: Env, config: GlobalConfig, settings: GenericMailerSettings) extends Mailer {
 
-  lazy val logger = Logger("otoroshi-generic-mailer")
+  lazy val logger: Logger = Logger("otoroshi-generic-mailer")
 
   def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
       ec: ExecutionContext

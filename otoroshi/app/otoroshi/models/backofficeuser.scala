@@ -91,7 +91,7 @@ case class BackOfficeUser(
 
 object BackOfficeUser {
 
-  val fmt = new Format[BackOfficeUser] {
+  val fmt: Format[BackOfficeUser] = new Format[BackOfficeUser] {
 
     override def reads(json: JsValue): JsResult[BackOfficeUser] =
       Try {

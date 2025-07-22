@@ -11,6 +11,8 @@ import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 import otoroshi.ssl.Cert
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 class CertificatesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc)
@@ -20,14 +22,14 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-certificates-api")
+  lazy val logger: Logger = Logger("otoroshi-certificates-api")
 
   override def singularName: String = "certificate"
 
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
-  def renewCert(id: String) =
+  def renewCert(id: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
         case None       => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))

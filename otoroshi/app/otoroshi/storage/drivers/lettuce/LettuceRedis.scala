@@ -13,6 +13,8 @@ import play.api.Logger
 import otoroshi.storage._
 
 import scala.concurrent.{ExecutionContext, Future}
+import io.lettuce.core.api.async.RedisAsyncCommands
+import io.lettuce.core.cluster.api.async.RedisAdvancedClusterAsyncCommands
 
 class ByteStringRedisCodec extends RedisCodec[String, ByteString] {
 
@@ -40,9 +42,9 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
   import scala.jdk.CollectionConverters._
   import scala.compat.java8.FutureConverters._
 
-  lazy val redis = client.connect(new ByteStringRedisCodec()).async()
+  lazy val redis: RedisAsyncCommands[String,ByteString] = client.connect(new ByteStringRedisCodec()).async()
 
-  lazy val logger = Logger("otoroshi-lettuce-redis")
+  lazy val logger: Logger = Logger("otoroshi-lettuce-redis")
 
   def typ(key: String): Future[String] = redis.`type`(key).toScala
 
@@ -182,9 +184,9 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
   import scala.jdk.CollectionConverters._
   import scala.compat.java8.FutureConverters._
 
-  lazy val redis = client.connect(new ByteStringRedisCodec()).async()
+  lazy val redis: RedisAdvancedClusterAsyncCommands[String,ByteString] = client.connect(new ByteStringRedisCodec()).async()
 
-  lazy val logger = Logger("otoroshi-lettuce-redis-cluster")
+  lazy val logger: Logger = Logger("otoroshi-lettuce-redis-cluster")
 
   def typ(key: String): Future[String] = redis.`type`(key).toScala
 

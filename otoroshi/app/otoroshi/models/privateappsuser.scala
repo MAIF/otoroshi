@@ -256,7 +256,7 @@ object PrivateAppsUserHelper {
   def isPrivateAppsSessionValidWithMultiAuth(req: RequestHeader, route: NgRoute)(implicit
       ec: ExecutionContext,
       env: Env
-  ) = {
+  ): Future[Option[JsObject]] = {
     route.plugins
       .getPluginByClass[MultiAuthModule]
       .map(multiAuth =>

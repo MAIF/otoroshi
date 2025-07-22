@@ -40,11 +40,11 @@ class LettuceDataStores(
     env: Env
 ) extends DataStores {
 
-  lazy val logger = Logger("otoroshi-redis-lettuce-datastores")
+  lazy val logger: Logger = Logger("otoroshi-redis-lettuce-datastores")
 
   lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.redis.windowSize").getOrElse(99)
 
-  lazy val redisActorSystem =
+  lazy val redisActorSystem: ActorSystem =
     ActorSystem(
       "otoroshi-redis-lettuce-system",
       configuration
@@ -58,11 +58,11 @@ class LettuceDataStores(
 
   lazy val redisDispatcher = redisActorSystem.dispatcher
 
-  lazy val redisConnection        =
+  lazy val redisConnection: String        =
     configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.connection").getOrElse("default")
-  lazy val redisReadFrom          =
+  lazy val redisReadFrom: String          =
     configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.readFrom").getOrElse("MASTER_PREFERRED")
-  lazy val readFrom               = ReadFrom.valueOf(redisReadFrom)
+  lazy val readFrom: ReadFrom               = ReadFrom.valueOf(redisReadFrom)
   lazy val redisUris: Seq[String] = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.redis.lettuce.uris")
     .filter(_.nonEmpty)
@@ -75,17 +75,17 @@ class LettuceDataStores(
       configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.uri").map(v => Seq(v.trim))
     )
     .getOrElse(Seq.empty[String])
-  lazy val startTLS               = configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.startTLS").getOrElse(false)
-  lazy val verifyPeers            =
+  lazy val startTLS: Boolean               = configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.startTLS").getOrElse(false)
+  lazy val verifyPeers: Boolean            =
     configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.verifyPeers").getOrElse(true)
-  lazy val nodesRaw               = redisUris.map { v =>
+  lazy val nodesRaw: Seq[RedisURI]               = redisUris.map { v =>
     val uri = RedisURI.create(v)
     uri.setStartTls(startTLS)
     uri.setVerifyPeer(verifyPeers)
     uri
   }
   lazy val nodes                  = nodesRaw.asJava
-  lazy val resources = {
+  lazy val resources: ClientResources = {
     val default                   = DefaultClientResources.builder().build()
     val computationThreadPoolSize = configuration
       .getOptionalWithFileSupport[Int]("app.redis.lettuce.computationThreadPoolSize")

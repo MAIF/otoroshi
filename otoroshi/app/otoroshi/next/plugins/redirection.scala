@@ -29,7 +29,7 @@ object NgRedirectionSettings {
       to = settings.to
     )
   }
-  val format = new Format[NgRedirectionSettings] {
+  val format: Format[NgRedirectionSettings] = new Format[NgRedirectionSettings] {
     override def reads(json: JsValue): JsResult[NgRedirectionSettings] = {
       Try {
         NgRedirectionSettings(

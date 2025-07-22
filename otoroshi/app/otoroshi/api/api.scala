@@ -491,60 +491,60 @@ class ProgrammaticOtoroshiComponents(_serverConfig: ServerConfig, _configuration
 
   lazy val handlerRef = new AtomicReference[HttpRequestHandler]()
 
-  lazy val metrics              = wire[Metrics]
-  lazy val snowMonkey           = wire[SnowMonkey]
-  lazy val unAuthApiAction      = wire[UnAuthApiAction]
-  lazy val apiAction            = wire[ApiAction]
-  lazy val backOfficeAction     = wire[BackOfficeAction]
-  lazy val backOfficeAuthAction = wire[BackOfficeActionAuth]
-  lazy val privateAppsAction    = wire[PrivateAppsAction]
+  lazy val metrics: Metrics              = wire[Metrics]
+  lazy val snowMonkey: SnowMonkey           = wire[SnowMonkey]
+  lazy val unAuthApiAction: UnAuthApiAction      = wire[UnAuthApiAction]
+  lazy val apiAction: ApiAction            = wire[ApiAction]
+  lazy val backOfficeAction: BackOfficeAction     = wire[BackOfficeAction]
+  lazy val backOfficeAuthAction: BackOfficeActionAuth = wire[BackOfficeActionAuth]
+  lazy val privateAppsAction: PrivateAppsAction    = wire[PrivateAppsAction]
 
-  lazy val swaggerController         = wire[SwaggerController]
-  lazy val apiController             = wire[ApiController]
-  lazy val analyticsController       = wire[AnalyticsController]
-  lazy val auth0Controller           = wire[AuthController]
-  lazy val backOfficeController      = wire[BackOfficeController]
-  lazy val privateAppsController     = wire[PrivateAppsController]
-  lazy val u2fController             = wire[U2FController]
-  lazy val clusterController         = wire[ClusterController]
-  lazy val clientValidatorController = wire[ClientValidatorsController]
-  lazy val scriptApiController       = wire[ScriptApiController]
-  lazy val tcpServiceApiController   = wire[TcpServiceApiController]
-  lazy val pkiController             = wire[PkiController]
-  lazy val usersController           = wire[UsersController]
-  lazy val templatesController       = wire[TemplatesController]
+  lazy val swaggerController: SwaggerController         = wire[SwaggerController]
+  lazy val apiController: ApiController             = wire[ApiController]
+  lazy val analyticsController: AnalyticsController       = wire[AnalyticsController]
+  lazy val auth0Controller: AuthController           = wire[AuthController]
+  lazy val backOfficeController: BackOfficeController      = wire[BackOfficeController]
+  lazy val privateAppsController: PrivateAppsController     = wire[PrivateAppsController]
+  lazy val u2fController: U2FController             = wire[U2FController]
+  lazy val clusterController: ClusterController         = wire[ClusterController]
+  lazy val clientValidatorController: ClientValidatorsController = wire[ClientValidatorsController]
+  lazy val scriptApiController: ScriptApiController       = wire[ScriptApiController]
+  lazy val tcpServiceApiController: TcpServiceApiController   = wire[TcpServiceApiController]
+  lazy val pkiController: PkiController             = wire[PkiController]
+  lazy val usersController: UsersController           = wire[UsersController]
+  lazy val templatesController: TemplatesController       = wire[TemplatesController]
 
-  lazy val healthController = wire[HealthController]
-  lazy val eventsController = wire[EventsController]
-  lazy val statsController  = wire[StatsController]
+  lazy val healthController: HealthController = wire[HealthController]
+  lazy val eventsController: EventsController = wire[EventsController]
+  lazy val statsController: StatsController  = wire[StatsController]
 
-  lazy val servicesController            = wire[ServicesController]
-  lazy val serviceGroupController        = wire[ServiceGroupController]
-  lazy val apiKeysController             = wire[ApiKeysController]
-  lazy val ApiKeysFromGroupController    = wire[ApiKeysFromGroupController]
-  lazy val ApiKeysFromServiceController  = wire[ApiKeysFromServiceController]
-  lazy val ApiKeysFromRouteController    = wire[ApiKeysFromRouteController]
-  lazy val jwtVerifierController         = wire[JwtVerifierController]
-  lazy val authModulesController         = wire[AuthModulesController]
-  lazy val importExportController        = wire[ImportExportController]
-  lazy val snowMonkeyController          = wire[SnowMonkeyController]
-  lazy val canaryController              = wire[CanaryController]
-  lazy val certificatesController        = wire[CertificatesController]
-  lazy val globalConfigController        = wire[GlobalConfigController]
-  lazy val teamsController               = wire[TeamsController]
-  lazy val tenantsController             = wire[TenantsController]
-  lazy val dataExporterConfigController  = wire[DataExporterConfigController]
-  lazy val routesController              = wire[NgRoutesController]
-  lazy val ngRouteCompositionsController = wire[NgRouteCompositionsController]
-  lazy val backendsController            = wire[NgBackendsController]
-  lazy val pluginsController             = wire[NgPluginsController]
-  lazy val tryItController               = wire[TryItController]
-  lazy val tunnelController              = wire[TunnelController]
-  lazy val entitiesController            = wire[EntitiesController]
-  lazy val errorTemplatesController      = wire[ErrorTemplatesController]
-  lazy val genericApiController          = wire[GenericApiController]
-  lazy val infosApiController            = wire[InfosApiController]
-  lazy val apisController                = wire[ApisController]
+  lazy val servicesController: ServicesController            = wire[ServicesController]
+  lazy val serviceGroupController: ServiceGroupController        = wire[ServiceGroupController]
+  lazy val apiKeysController: ApiKeysController             = wire[ApiKeysController]
+  lazy val ApiKeysFromGroupController: ApiKeysFromGroupController    = wire[ApiKeysFromGroupController]
+  lazy val ApiKeysFromServiceController: ApiKeysFromServiceController  = wire[ApiKeysFromServiceController]
+  lazy val ApiKeysFromRouteController: ApiKeysFromRouteController    = wire[ApiKeysFromRouteController]
+  lazy val jwtVerifierController: JwtVerifierController         = wire[JwtVerifierController]
+  lazy val authModulesController: AuthModulesController         = wire[AuthModulesController]
+  lazy val importExportController: ImportExportController        = wire[ImportExportController]
+  lazy val snowMonkeyController: SnowMonkeyController          = wire[SnowMonkeyController]
+  lazy val canaryController: CanaryController              = wire[CanaryController]
+  lazy val certificatesController: CertificatesController        = wire[CertificatesController]
+  lazy val globalConfigController: GlobalConfigController        = wire[GlobalConfigController]
+  lazy val teamsController: TeamsController               = wire[TeamsController]
+  lazy val tenantsController: TenantsController             = wire[TenantsController]
+  lazy val dataExporterConfigController: DataExporterConfigController  = wire[DataExporterConfigController]
+  lazy val routesController: NgRoutesController              = wire[NgRoutesController]
+  lazy val ngRouteCompositionsController: NgRouteCompositionsController = wire[NgRouteCompositionsController]
+  lazy val backendsController: NgBackendsController            = wire[NgBackendsController]
+  lazy val pluginsController: NgPluginsController             = wire[NgPluginsController]
+  lazy val tryItController: TryItController               = wire[TryItController]
+  lazy val tunnelController: TunnelController              = wire[TunnelController]
+  lazy val entitiesController: EntitiesController            = wire[EntitiesController]
+  lazy val errorTemplatesController: ErrorTemplatesController      = wire[ErrorTemplatesController]
+  lazy val genericApiController: GenericApiController          = wire[GenericApiController]
+  lazy val infosApiController: InfosApiController            = wire[InfosApiController]
+  lazy val apisController: ApisController                = wire[ApisController]
 
   override lazy val assets: Assets = wire[Assets]
 
@@ -631,7 +631,7 @@ case class TweakedGlobalConfig(config: GlobalConfig) extends EntityLocationSuppo
 }
 
 object TweakedGlobalConfig {
-  val fmt = new Format[TweakedGlobalConfig] {
+  val fmt: Format[TweakedGlobalConfig] = new Format[TweakedGlobalConfig] {
     override def writes(o: TweakedGlobalConfig): JsValue             = o.config.json
     override def reads(json: JsValue): JsResult[TweakedGlobalConfig] =
       GlobalConfig._fmt.reads(json).map(c => TweakedGlobalConfig(c))
@@ -680,7 +680,7 @@ case class ResourceVersion(
 }
 
 object Resource {
-  val unknown = Resource(
+  val unknown: Resource = Resource(
     kind = "Unknown",
     pluralName = "unknowns",
     singularName = "unknown",
@@ -698,7 +698,7 @@ case class Resource(
     version: ResourceVersion,
     access: ResourceAccessApi[_]
 ) {
-  lazy val groupKind = s"$group/$kind"
+  lazy val groupKind: String = s"$group/$kind"
   def json: JsValue  = Json.obj(
     "kind"          -> kind,
     "plural_name"   -> pluralName,
@@ -1096,7 +1096,7 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
 }
 
 class OtoroshiResources(env: Env) {
-  lazy val resources = Seq(
+  lazy val resources: Seq[Resource] = Seq(
     ///////
     Resource(
       "Route",
@@ -2242,7 +2242,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // GET /apis/health
-  def health() = ApiAction.async {
+  def health(): Action[AnyContent] = ApiAction.async {
     HealthController.fetchHealth().map {
       case Left(payload)  => ServiceUnavailable(payload)
       case Right(payload) => Ok(payload)
@@ -2250,7 +2250,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // GET /apis/metrics
-  def metrics() = ApiAction { ctx =>
+  def metrics(): Action[AnyContent] = ApiAction { ctx =>
     val format      = ctx.request.getQueryString("format")
     val filter      = ctx.request.getQueryString("filter")
     val acceptsJson = ctx.request.accepts("application/json")
@@ -2263,7 +2263,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // GET /apis/entities
-  def entities() = ApiAction { ctx =>
+  def entities(): Action[AnyContent] = ApiAction { ctx =>
     if (ctx.request.getQueryString("schema").contains("false")) {
       Ok(
         Json.obj(
@@ -2282,8 +2282,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // PATCH /apis/:group/:version/:entity/_bulk
-  def bulkPatch(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) {
-    ctx: ApiActionContext[Source[ByteString, _]] =>
+  def bulkPatch(group: String, version: String, entity: String): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) {
+    (ctx: ApiActionContext[Source[ByteString, _]]) =>
       import otoroshi.utils.json.JsonPatchHelpers.patchJson
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
@@ -2379,8 +2379,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // POST /apis/:group/:version/:entity/_bulk
-  def bulkCreate(group: String, version: String, entity: String) =
-    ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
+  def bulkCreate(group: String, version: String, entity: String): Action[Source[ByteString, _]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
@@ -2482,8 +2482,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
 
   // PUT /apis/:group/:version/:entity/_bulk
-  def bulkUpdate(group: String, version: String, entity: String) =
-    ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
+  def bulkUpdate(group: String, version: String, entity: String): Action[Source[ByteString, _]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
@@ -2603,8 +2603,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
 
   // DELETE /apis/:group/:version/:entity/_bulk
-  def bulkDelete(group: String, version: String, entity: String) =
-    ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
+  def bulkDelete(group: String, version: String, entity: String): Action[Source[ByteString, _]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
@@ -2682,7 +2682,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
 
   // GET /apis/:group/:version/:entity/_count
-  def countAll(group: String, version: String, entity: String) = ApiAction.async { ctx =>
+  def countAll(group: String, version: String, entity: String): Action[AnyContent] = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       val fuEntities = if (ctx.request.getQueryString("in_mem").contains("true")) {
         resource.access.allJson().vfuture
@@ -2703,7 +2703,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // GET /apis/:group/:version/:entity
-  def findAll(group: String, version: String, entity: String) = ApiAction.async { ctx =>
+  def findAll(group: String, version: String, entity: String): Action[AnyContent] = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       val fuEntities = if (ctx.request.getQueryString("in_mem").contains("true")) {
         resource.access.allJson().vfuture
@@ -2738,8 +2738,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // POST /apis/:group/:version/:entity
-  def create(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) {
-    ctx: ApiActionContext[Source[ByteString, _]] =>
+  def create(group: String, version: String, entity: String): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) {
+    (ctx: ApiActionContext[Source[ByteString, _]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -2797,7 +2797,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // DELETE /apis/:group/:version/:entity
-  def deleteAll(group: String, version: String, entity: String) = ApiAction.async { ctx =>
+  def deleteAll(group: String, version: String, entity: String): Action[AnyContent] = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.deleteAll(version, resource.singularName, e => ctx.canUserWriteJson(e)).flatMap {
         case Left(err) => result(getStatus(err), cleanError(err), ctx.request, resource.some)
@@ -2815,7 +2815,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // GET /apis/:group/:version/:entity/_template
-  def template(group: String, version: String, entity: String) = ApiAction.async { ctx =>
+  def template(group: String, version: String, entity: String): Action[AnyContent] = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       val templ = resource.access.template(version, ctx.request.queryString.view.mapValues(_.last).toMap, ctx.some)
       if (templ == Json.obj()) {
@@ -2827,7 +2827,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // GET /apis/:group/:version/:entity/:id/_template
-  def schema(group: String, version: String, entity: String) = ApiAction.async { ctx =>
+  def schema(group: String, version: String, entity: String): Action[AnyContent] = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       val schema = resource.version.finalSchema(resource.kind, resource.access.clazz)
       Ok(schema).vfuture
@@ -2835,7 +2835,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // GET /apis/:group/:version/:entity/:id
-  def findOne(group: String, version: String, entity: String, id: String) = ApiAction.async { ctx =>
+  def findOne(group: String, version: String, entity: String, id: String): Action[AnyContent] = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       val fuOptEntity = if (ctx.request.getQueryString("in_mem").contains("true")) {
         resource.access.oneJson(id).vfuture
@@ -2865,7 +2865,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // DELETE /apis/:group/:version/:entity/:id
-  def delete(group: String, version: String, entity: String, id: String) = ApiAction.async { ctx =>
+  def delete(group: String, version: String, entity: String, id: String): Action[AnyContent] = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.findOne(version, id).flatMap {
         case None                                          => result(Results.NotFound, notFoundBody, ctx.request, resource.some)
@@ -2893,8 +2893,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // POST /apis/:group/:version/:entity/:id
-  def upsert(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
-    ctx: ApiActionContext[Source[ByteString, _]] =>
+  def upsert(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) {
+    (ctx: ApiActionContext[Source[ByteString, _]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -2976,8 +2976,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // PUT /apis/:group/:version/:entity/:id
-  def update(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
-    ctx: ApiActionContext[Source[ByteString, _]] =>
+  def update(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) {
+    (ctx: ApiActionContext[Source[ByteString, _]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -3035,8 +3035,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // PATCH /apis/:group/:version/:entity/:id
-  def patch(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
-    ctx: ApiActionContext[Source[ByteString, _]] =>
+  def patch(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) {
+    (ctx: ApiActionContext[Source[ByteString, _]]) =>
       import otoroshi.utils.json.JsonPatchHelpers.patchJson
       withResource(group, version, entity, ctx.request) { resource =>
         resource.access.findOne(version, id).flatMap {
@@ -3090,17 +3090,17 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       }
   }
 
-  def openapiJson() = Action { req =>
+  def openapiJson(): Action[AnyContent] = Action { req =>
     val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def openapiYaml() = Action { req =>
+  def openapiYaml(): Action[AnyContent] = Action { req =>
     val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
     Ok(Yaml.write(Json.parse(body))).as("application/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def openapi() = Action { req =>
+  def openapi(): Action[AnyContent] = Action { req =>
     val body     = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
     val accepted = req.acceptedTypes
       .map(v => (s"${v.mediaType}/${v.mediaSubType}", v.qValue.getOrElse(BigDecimal(1.0))))
@@ -3122,17 +3122,17 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
   }
 
-  def workflowDescriptorJson() = Action {
+  def workflowDescriptorJson(): Action[AnyContent] = Action {
     val body = otoroshi.next.workflow.WorkflowGenerators.generateJsonDescriptor().prettify
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def workflowDescriptorMarkdown() = Action {
+  def workflowDescriptorMarkdown(): Action[AnyContent] = Action {
     val body = otoroshi.next.workflow.WorkflowGenerators.generateMarkdownDescriptor()
     Ok(body).as("text/plain").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def workflowDescriptorWeb() = Action {
+  def workflowDescriptorWeb(): Action[AnyContent] = Action {
     val body =
       s"""<html>
          |  <head>

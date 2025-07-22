@@ -19,7 +19,7 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  val logger = Logger("otoroshi-error-templates-api")
+  val logger: Logger = Logger("otoroshi-error-templates-api")
 
   override def singularName: String = "error-template"
 

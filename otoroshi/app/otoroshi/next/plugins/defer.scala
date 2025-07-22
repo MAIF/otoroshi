@@ -22,7 +22,7 @@ case class NgDeferPluginConfig(
 }
 
 object NgDeferPluginConfig {
-  val format = new Format[NgDeferPluginConfig] {
+  val format: Format[NgDeferPluginConfig] = new Format[NgDeferPluginConfig] {
     override def writes(o: NgDeferPluginConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgDeferPluginConfig] = Try {
       NgDeferPluginConfig(

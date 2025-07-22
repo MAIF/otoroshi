@@ -44,7 +44,7 @@ case class BiscuitConf(
 }
 
 object BiscuitConf {
-  val format = new Format[BiscuitConf] {
+  val format: Format[BiscuitConf] = new Format[BiscuitConf] {
     override def writes(o: BiscuitConf): JsValue             = o.json
     override def reads(json: JsValue): JsResult[BiscuitConf] = Try {
       BiscuitConf(
@@ -77,7 +77,7 @@ case class NgClientCredentialsConfig(
 }
 
 object NgClientCredentialsConfig {
-  val format = new Format[NgClientCredentialsConfig] {
+  val format: Format[NgClientCredentialsConfig] = new Format[NgClientCredentialsConfig] {
     override def writes(o: NgClientCredentialsConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgClientCredentialsConfig] = Try {
       NgClientCredentialsConfig(
@@ -482,8 +482,8 @@ case class NgClientCredentialTokenEndpointConfig(
   override def json: JsValue = NgClientCredentialTokenEndpointConfig.format.writes(this)
 }
 object NgClientCredentialTokenEndpointConfig {
-  val default = NgClientCredentialTokenEndpointConfig(1.hour, Cert.OtoroshiJwtSigning, Seq.empty, Seq.empty)
-  val format  = new Format[NgClientCredentialTokenEndpointConfig] {
+  val default: NgClientCredentialTokenEndpointConfig = NgClientCredentialTokenEndpointConfig(1.hour, Cert.OtoroshiJwtSigning, Seq.empty, Seq.empty)
+  val format: Format[NgClientCredentialTokenEndpointConfig]  = new Format[NgClientCredentialTokenEndpointConfig] {
     override def reads(json: JsValue): JsResult[NgClientCredentialTokenEndpointConfig] = Try {
       NgClientCredentialTokenEndpointConfig(
         expiration = json.select("expiration").asOpt[Long].map(_.millis).getOrElse(1.hour),

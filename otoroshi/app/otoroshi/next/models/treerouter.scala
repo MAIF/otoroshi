@@ -22,6 +22,7 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration._
+import com.github.blemale.scaffeine.Cache
 
 sealed trait RoutingStrategy {
   def json: JsValue
@@ -69,7 +70,7 @@ case class NgMatchedRoute(
 }
 
 object NgTreeRouter {
-  def empty = NgTreeRouter(new UnboundedTrieMap[String, NgTreeNodePath](), ListBuffer.empty)
+  def empty: NgTreeRouter = NgTreeRouter(new UnboundedTrieMap[String, NgTreeNodePath](), ListBuffer.empty)
   def build(routes: Seq[NgRoute]): NgTreeRouter = {
     val root = NgTreeRouter.empty
     routes.foreach { route =>
@@ -174,7 +175,7 @@ case class NgTreeRouter(
 
 object NgTreeNodePath {
 
-  val logger = Logger("otoroshi-next-tree-node-path")
+  val logger: Logger = Logger("otoroshi-next-tree-node-path")
 
   def addSubRoutes(current: NgTreeNodePath, segments: Seq[String], route: NgRoute): Unit = {
     if (segments.isEmpty) {
@@ -197,9 +198,9 @@ case class NgTreeNodePath(
     routes: ListBuffer[NgRoute],
     tree: TrieMap[String, NgTreeNodePath]
 ) {
-  lazy val wildcardCache                         =
+  lazy val wildcardCache: Cache[String,Option[NgTreeNodePath]]                         =
     Scaffeine().maximumSize(100).expireAfterWrite(10.seconds).build[String, Option[NgTreeNodePath]]()
-  lazy val segmentStartsWithCache                =
+  lazy val segmentStartsWithCache: Cache[String,Option[NgMatchedRoutes]]                =
     Scaffeine().maximumSize(100).expireAfterWrite(10.seconds).build[String, Option[NgMatchedRoutes]]()
   lazy val isLeaf: Boolean                       = tree.isEmpty
   lazy val wildcardEntry: Option[NgTreeNodePath] =
@@ -210,7 +211,7 @@ case class NgTreeNodePath(
   lazy val namedKeys: scala.collection.Set[String]                     = tree.keySet.filter(_.startsWith(":"))
   lazy val hasRegexKeys: Boolean                                       = regexKeys.nonEmpty
   lazy val regexKeys: scala.collection.Set[String]                     = tree.keySet.filter(v => v.startsWith("$") && v.endsWith(">"))
-  lazy val isEmpty                                                     = routes.isEmpty && isLeaf
+  lazy val isEmpty: Boolean                                                     = routes.isEmpty && isLeaf
   def wildcardEntriesMatching(segment: String): Option[NgTreeNodePath] = wildcardCache.get(
     segment,
     _ => wildcardKeys.find(str => RegexPool(str).matches(segment)).flatMap(key => tree.get(key))

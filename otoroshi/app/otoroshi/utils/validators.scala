@@ -16,7 +16,7 @@ trait JsonValidator {
 }
 
 object JsonValidator {
-  val format = new Format[JsonValidator] {
+  val format: Format[JsonValidator] = new Format[JsonValidator] {
     override def reads(json: JsValue): JsResult[JsonValidator] = try {
       val kind = json.select("kind").asOpt[String].getOrElse("json-path-validator").toLowerCase()
       kind match {
@@ -33,7 +33,7 @@ object JsonValidator {
 }
 
 object WasmPluginValidator {
-  val format = new Format[JsonValidator] {
+  val format: Format[JsonValidator] = new Format[JsonValidator] {
     override def reads(json: JsValue): JsResult[JsonValidator] = try {
       JsSuccess(
         WasmPluginValidator(
@@ -75,7 +75,7 @@ case class WasmPluginValidator(ref: String, error: Option[String] = None) extend
 }
 
 object OpaPluginValidator {
-  val format = new Format[JsonValidator] {
+  val format: Format[JsonValidator] = new Format[JsonValidator] {
     override def reads(json: JsValue): JsResult[JsonValidator] = try {
       JsSuccess(
         OpaPluginValidator(

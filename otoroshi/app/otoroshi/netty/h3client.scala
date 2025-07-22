@@ -679,5 +679,5 @@ case class NettyHttp3ClientWsRequest(
 }
 
 object NettyHttp3Client {
-  val logger = Logger("otoroshi-experimental-netty-http3-client")
+  val logger: Logger = Logger("otoroshi-experimental-netty-http3-client")
 }

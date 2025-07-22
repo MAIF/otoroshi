@@ -67,10 +67,10 @@ case class UserRights(rights: Seq[UserRight]) {
 }
 
 object UserRights {
-  val empty      = UserRights.apply(Seq.empty)
-  val default    = UserRights.varargs(UserRight.default)
-  val superAdmin = UserRights.varargs(UserRight.superAdmin)
-  val format     = new Format[UserRights] {
+  val empty: UserRights      = UserRights.apply(Seq.empty)
+  val default: UserRights    = UserRights.varargs(UserRight.default)
+  val superAdmin: UserRights = UserRights.varargs(UserRight.superAdmin)
+  val format: Format[UserRights]     = new Format[UserRights] {
     override def writes(o: UserRights): JsValue             = JsArray(o.rights.map(_.json))
     override def reads(json: JsValue): JsResult[UserRights] =
       Try {
@@ -107,9 +107,9 @@ case class UserRight(tenant: TenantAccess, teams: Seq[TeamAccess]) {
 }
 
 object UserRight {
-  val default    = UserRight(TenantAccess("default"), Seq(TeamAccess("default")))
-  val superAdmin = UserRight(TenantAccess("*"), Seq(TeamAccess("*")))
-  val format     = new Format[UserRight] {
+  val default: UserRight    = UserRight(TenantAccess("default"), Seq(TeamAccess("default")))
+  val superAdmin: UserRight = UserRight(TenantAccess("*"), Seq(TeamAccess("*")))
+  val format: Format[UserRight]     = new Format[UserRight] {
     override def writes(o: UserRight): JsValue             =
       Json.obj(
         "tenant" -> o.tenant.raw,
@@ -140,7 +140,7 @@ case class EntityLocation(tenant: TenantId = TenantId.default, teams: Seq[TeamId
 }
 
 object EntityLocation {
-  val default = EntityLocation()
+  val default: EntityLocation = EntityLocation()
   def ownEntityLocation(rawCtx: Option[ApiActionContext[_]])(implicit env: Env): EntityLocation = {
     rawCtx
       .map(ctx => getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead))
@@ -163,7 +163,7 @@ object EntityLocation {
     getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead)
   }
   val keyName = "_loc"
-  val format  = new Format[EntityLocation] {
+  val format: Format[EntityLocation]  = new Format[EntityLocation] {
     override def writes(o: EntityLocation): JsValue             =
       Json.obj(
         "tenant" -> o.tenant.value,
@@ -319,7 +319,7 @@ object RightsChecker {
 }
 
 object Tenant {
-  val format                            = new Format[Tenant] {
+  val format: Format[Tenant]                            = new Format[Tenant] {
     override def writes(o: Tenant): JsValue             =
       Json.obj(
         "id"          -> o.id.value,
@@ -366,7 +366,7 @@ case class Tenant(
   def theTags: Seq[String]                                             = tags
 }
 object Team   {
-  val format                          = new Format[Team] {
+  val format: Format[Team]                          = new Format[Team] {
     override def writes(o: Team): JsValue             =
       Json.obj(
         "id"          -> o.id.value,

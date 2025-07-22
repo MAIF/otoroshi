@@ -21,10 +21,10 @@ case class ServiceGroup(
 ) extends otoroshi.models.EntityLocationSupport {
   def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     env.datastores.serviceDescriptorDataStore.findByGroup(id)
-  def save()(implicit ec: ExecutionContext, env: Env)                                   = env.datastores.serviceGroupDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.serviceGroupDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.serviceGroupDataStore.exists(this)
-  def toJson                                                                            = ServiceGroup.toJson(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                   = env.datastores.serviceGroupDataStore.set(this)
+  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                 = env.datastores.serviceGroupDataStore.delete(this)
+  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                 = env.datastores.serviceGroupDataStore.exists(this)
+  def toJson: JsValue                                                                            = ServiceGroup.toJson(this)
 
   def json: JsValue                    = toJson
   def internalId: String               = id
@@ -36,9 +36,9 @@ case class ServiceGroup(
 
 object ServiceGroup {
 
-  lazy val logger = Logger("otoroshi-service-group")
+  lazy val logger: Logger = Logger("otoroshi-service-group")
 
-  val _fmt                                                 = new Format[ServiceGroup] {
+  val _fmt: Format[ServiceGroup]                                                 = new Format[ServiceGroup] {
     override def reads(json: JsValue): JsResult[ServiceGroup] =
       Try {
         ServiceGroup(

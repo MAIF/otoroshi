@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class KvCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryDataStore {
 
-  lazy val logger = Logger("otoroshi-datastore")
+  lazy val logger: Logger = Logger("otoroshi-datastore")
 
   def canaryCountKey(id: String): String   = s"${_env.storageRoot}:canary:$id:count:canary"
   def standardCountKey(id: String): String = s"${_env.storageRoot}:canary:$id:count:standard"

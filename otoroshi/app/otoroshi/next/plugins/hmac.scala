@@ -20,7 +20,7 @@ case class HMACValidatorConfig(secret: Option[String] = None) extends NgPluginCo
 }
 
 object HMACValidatorConfig {
-  val format = new Format[HMACValidatorConfig] {
+  val format: Format[HMACValidatorConfig] = new Format[HMACValidatorConfig] {
     override def reads(json: JsValue): JsResult[HMACValidatorConfig] = Try {
       HMACValidatorConfig(
         secret = json.select("secret").asOpt[String]
@@ -117,7 +117,7 @@ case class HMACCallerConfig(
 }
 
 object HMACCallerConfig {
-  val format = new Format[HMACCallerConfig] {
+  val format: Format[HMACCallerConfig] = new Format[HMACCallerConfig] {
     override def reads(json: JsValue): JsResult[HMACCallerConfig] = Try {
       HMACCallerConfig(
         secret = json.select("secret").asOpt[String],

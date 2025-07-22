@@ -36,6 +36,7 @@ import javax.script._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
+import otoroshi.auth.AuthModuleConfig
 
 sealed trait PluginType {
   def name: String
@@ -759,7 +760,7 @@ class ScriptManager(env: Env) {
   def firstPluginsSearchDone(): Boolean = _firstPluginsSearchDone.get()
   def firstCompilationDone(): Boolean   = _firstCompilationDone.get()
 
-  val starting = System.currentTimeMillis()
+  val starting: Long = System.currentTimeMillis()
 
   lazy val (
     transformersNames,
@@ -1032,7 +1033,7 @@ class ScriptManager(env: Env) {
       Seq.empty[String]
     )
 
-  lazy val authModules = authModuleNames.flatMap(ref => {
+  lazy val authModules: Seq[AuthModuleConfig] = authModuleNames.flatMap(ref => {
     Try(env.environment.classLoader.loadClass(ref))
       .map(clazz => clazz.getDeclaredConstructor().newInstance()) match {
       case Success(tr) => tr.asInstanceOf[AuthModule].authConfig.some
@@ -1526,10 +1527,10 @@ case class Script(
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
-  def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.scriptDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.exists(this)
-  def toJson                                            = Script.toJson(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]   = env.datastores.scriptDataStore.set(this)
+  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.scriptDataStore.delete(this)
+  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.scriptDataStore.exists(this)
+  def toJson: JsValue                                            = Script.toJson(this)
   def hash: String                                      = Hashing.sha256().hashString(code, StandardCharsets.UTF_8).toString
   def json: JsValue                                     = toJson
   def internalId: String                                = id
@@ -1541,7 +1542,7 @@ case class Script(
 
 object Script {
 
-  lazy val logger = Logger("otoroshi-script")
+  lazy val logger: Logger = Logger("otoroshi-script")
 
   val digest: MessageDigest = MessageDigest.getInstance("SHA-256")
 

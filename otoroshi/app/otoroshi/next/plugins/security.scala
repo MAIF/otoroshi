@@ -30,7 +30,7 @@ case class NgSecurityTxtConfig(
 }
 
 object NgSecurityTxtConfig {
-  val format = new Format[NgSecurityTxtConfig] {
+  val format: Format[NgSecurityTxtConfig] = new Format[NgSecurityTxtConfig] {
     override def writes(o: NgSecurityTxtConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgSecurityTxtConfig] = Try {
       NgSecurityTxtConfig(

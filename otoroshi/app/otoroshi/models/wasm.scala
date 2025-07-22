@@ -24,7 +24,7 @@ case class WasmPlugin(
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
-  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.wasmPluginsDataStore.set(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.wasmPluginsDataStore.set(this)
   override def internalId: String                     = id
   override def json: JsValue                          = WasmPlugin.format.writes(this)
   override def theName: String                        = name
@@ -40,7 +40,7 @@ object WasmPlugin {
     } catch {
       case e: Throwable => throw e
     }
-  val format                                = new Format[WasmPlugin] {
+  val format: Format[WasmPlugin]                                = new Format[WasmPlugin] {
     override def writes(o: WasmPlugin): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,

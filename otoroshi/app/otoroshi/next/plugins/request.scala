@@ -20,7 +20,7 @@ case class NgDefaultRequestBodyConfig(body: ByteString, contentType: String, con
 }
 
 object NgDefaultRequestBodyConfig {
-  val default = NgDefaultRequestBodyConfig(ByteString.empty, "text/plain", None)
+  val default: NgDefaultRequestBodyConfig = NgDefaultRequestBodyConfig(ByteString.empty, "text/plain", None)
   def from(ctx: NgTransformerRequestContext): NgDefaultRequestBodyConfig = {
     NgDefaultRequestBodyConfig(
       body = ctx.config

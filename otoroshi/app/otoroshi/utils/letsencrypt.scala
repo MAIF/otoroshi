@@ -72,7 +72,7 @@ case class LetsEncryptSettings(
 }
 
 object LetsEncryptSettings {
-  val format = new Format[LetsEncryptSettings] {
+  val format: Format[LetsEncryptSettings] = new Format[LetsEncryptSettings] {
     override def reads(json: JsValue): JsResult[LetsEncryptSettings] =
       Try {
         LetsEncryptSettings(

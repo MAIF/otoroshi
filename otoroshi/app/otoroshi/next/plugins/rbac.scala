@@ -35,7 +35,7 @@ case class RBACConfig(
 }
 
 object RBACConfig {
-  val format = new Format[RBACConfig] {
+  val format: Format[RBACConfig] = new Format[RBACConfig] {
     override def writes(o: RBACConfig): JsValue             = Json.obj(
       "allow"       -> o.allow,
       "deny"        -> o.deny,

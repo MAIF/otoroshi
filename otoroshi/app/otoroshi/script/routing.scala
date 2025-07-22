@@ -50,7 +50,7 @@ case class PreRoutingRef(
 }
 
 object PreRoutingRef {
-  val format = new Format[PreRoutingRef] {
+  val format: Format[PreRoutingRef] = new Format[PreRoutingRef] {
     override def writes(o: PreRoutingRef): JsValue             =
       Json.obj(
         "enabled"          -> o.enabled,

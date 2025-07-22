@@ -14,7 +14,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration) e
   lazy val serviceHost = "analytics.oto.tools"
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""

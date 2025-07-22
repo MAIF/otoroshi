@@ -46,7 +46,7 @@ trait TrailerSupport {
 }
 
 object NettyHttpClient {
-  val logger = Logger("otoroshi-netty-client")
+  val logger: Logger = Logger("otoroshi-netty-client")
 }
 
 class NettyHttpClient(env: Env) {

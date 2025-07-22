@@ -31,7 +31,7 @@ import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 
 object AuthController {
-  val logger = Logger("otoroshi-auth-controller")
+  val logger: Logger = Logger("otoroshi-auth-controller")
 }
 
 class AuthController(
@@ -188,7 +188,7 @@ class AuthController(
 
   def computeSec(user: PrivateAppsUser): String = env.aesEncrypt(user.json.stringify)
 
-  def confidentialAppLoginPageOptions() =
+  def confidentialAppLoginPageOptions(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
       val cors = CorsSettings(
         enabled = true,
@@ -211,14 +211,14 @@ class AuthController(
       }
     }
 
-  def confidentialAppSimpleLoginPage() =
+  def confidentialAppSimpleLoginPage(): Action[AnyContent] =
     multiLoginPage()((auths: JsObject, route: NgRoute, redirect: Option[String]) => {
       Results
         .Ok(otoroshi.views.html.privateapps.simplelogin(env, redirect, route.id))
         .vfuture
     })
 
-  def confidentialAppMultiLoginPage() =
+  def confidentialAppMultiLoginPage(): Action[AnyContent] =
     multiLoginPage()((auths: JsObject, route: NgRoute, redirect: Option[String]) => {
       Results
         .Ok(otoroshi.views.html.privateapps.multilogin(env, Json.stringify(auths), redirect, route.id))
@@ -271,7 +271,7 @@ class AuthController(
       }
   }
 
-  def confidentialAppLoginPage() =
+  def confidentialAppLoginPage(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
       import otoroshi.utils.http.RequestImplicits._
       implicit val req: Request[AnyContent] = ctx.request
@@ -508,7 +508,7 @@ class AuthController(
       }
     }
 
-  def confidentialAppLogout() =
+  def confidentialAppLogout(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
       implicit val req: Request[AnyContent] = ctx.request
       val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
@@ -531,7 +531,7 @@ class AuthController(
       }
     }
 
-  def confidentialAppCallback() =
+  def confidentialAppCallback(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
       import otoroshi.utils.http.RequestImplicits._
 
@@ -897,7 +897,7 @@ class AuthController(
         }
     }
 
-  def auth0error(error: Option[String], error_description: Option[String]) =
+  def auth0error(error: Option[String], error_description: Option[String]): Action[AnyContent] =
     BackOfficeAction { ctx =>
       val errorId = IdGenerator.token(16)
       logger.error(
@@ -906,7 +906,7 @@ class AuthController(
       Redirect(routes.BackOfficeController.error(Some(s"Auth0 error - logged with id: $errorId")))
     }
 
-  def backOfficeLogin() =
+  def backOfficeLogin(): Action[AnyContent] =
     BackOfficeAction.async { ctx =>
       implicit val request: Request[AnyContent] = ctx.request
       env.datastores.globalConfigDataStore.singleton().flatMap { (config: GlobalConfig) =>
@@ -928,7 +928,7 @@ class AuthController(
       }
     }
 
-  def backOfficeLogout() =
+  def backOfficeLogout(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       import otoroshi.utils.http.RequestImplicits._
       implicit val request: Request[AnyContent] = ctx.request
@@ -1006,7 +1006,7 @@ class AuthController(
       }
     }
 
-  def backOfficeCallback(error: Option[String] = None, error_description: Option[String] = None) = {
+  def backOfficeCallback(error: Option[String] = None, error_description: Option[String] = None): Action[AnyContent] = {
     BackOfficeAction.async { ctx =>
       implicit val request: Request[AnyContent] = ctx.request
 

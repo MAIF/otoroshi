@@ -43,8 +43,8 @@ case class BlockHttpTrafficConfig(revokeApikeys: Boolean, revokeUserSession: Boo
 }
 
 object BlockHttpTrafficConfig {
-  val default = BlockHttpTrafficConfig(revokeApikeys = true, revokeUserSession = false, None)
-  val format  = new Format[BlockHttpTrafficConfig] {
+  val default: BlockHttpTrafficConfig = BlockHttpTrafficConfig(revokeApikeys = true, revokeUserSession = false, None)
+  val format: Format[BlockHttpTrafficConfig]  = new Format[BlockHttpTrafficConfig] {
 
     override def reads(json: JsValue): JsResult[BlockHttpTrafficConfig] = Try {
       BlockHttpTrafficConfig(

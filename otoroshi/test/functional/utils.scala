@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.concurrent.duration._
 import scala.concurrent._
 import scala.util.{Random, Success, Try}
+import org.slf4j
 
 trait AddConfiguration {
   def getConfiguration(configuration: Configuration): Configuration
@@ -46,7 +47,7 @@ class OtoroshiTestComponentsInstances(
     getHttpPort: => Option[Int],
     getHttpsPort: => Option[Int]
 ) extends OtoroshiComponentsInstances(context, getHttpPort, getHttpsPort, true) {
-  override def configuration = conf(super.configuration)
+  override def configuration: Configuration = conf(super.configuration)
 }
 
 /*
@@ -1474,38 +1475,38 @@ object Implicits {
 
 object HttpResponses {
 
-  def NotFound(path: String) =
+  def NotFound(path: String): HttpResponse =
     HttpResponse(
       404,
       entity = HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> s"$path not found")))
     )
 
-  def GatewayTimeout() =
+  def GatewayTimeout(): HttpResponse =
     HttpResponse(
       504,
       entity =
         HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> s"Target servers timeout")))
     )
 
-  def BadGateway(message: String) =
+  def BadGateway(message: String): HttpResponse =
     HttpResponse(
       502,
       entity = HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> message)))
     )
 
-  def BadRequest(message: String) =
+  def BadRequest(message: String): HttpResponse =
     HttpResponse(
       400,
       entity = HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> message)))
     )
 
-  def Unauthorized(message: String) =
+  def Unauthorized(message: String): HttpResponse =
     HttpResponse(
       401,
       entity = HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> message)))
     )
 
-  def Ok(json: JsValue) =
+  def Ok(json: JsValue): HttpResponse =
     HttpResponse(
       200,
       entity = HttpEntity(ContentTypes.`application/json`, Json.stringify(json))
@@ -1524,7 +1525,7 @@ class TargetService(
   implicit val mat: Materializer = Materializer(system)
   implicit val http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
@@ -1589,7 +1590,7 @@ class TargetService(
     }
   }
 
-  val bound =  Http().newServerAt("0.0.0.0", port).bind(handler)
+  val bound: Future[Http.ServerBinding] =  Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): TargetService = {
     Await.result(bound, 60.seconds)
@@ -1618,7 +1619,7 @@ class SimpleTargetService(contentType: String, result: HttpRequest => String) {
   implicit val mat: Materializer = Materializer(system)
   implicit val http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
@@ -1635,7 +1636,7 @@ class SimpleTargetService(contentType: String, result: HttpRequest => String) {
     }
   }
 
-  val bound =  Http().newServerAt("0.0.0.0", port).bind(handler)
+  val bound: Future[Http.ServerBinding] =  Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): SimpleTargetService = {
     Await.result(bound, 60.seconds)
@@ -1658,7 +1659,7 @@ class AlertServer(counter: AtomicInteger) {
   implicit val mat: Materializer = Materializer(system)
   implicit val http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { _ =>
@@ -1670,7 +1671,7 @@ class AlertServer(counter: AtomicInteger) {
     }
   }
 
-  val bound =  Http().newServerAt("0.0.0.0", port).bind(handler)
+  val bound: Future[Http.ServerBinding] =  Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): AlertServer = {
     Await.result(bound, 60.seconds)
@@ -1693,7 +1694,7 @@ class AnalyticsServer(counter: AtomicInteger) {
   implicit val mat: Materializer = Materializer(system)
   implicit val http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
@@ -1708,7 +1709,7 @@ class AnalyticsServer(counter: AtomicInteger) {
     }
   }
 
-  val bound =  Http().newServerAt("0.0.0.0", port).bind(handler)
+  val bound: Future[Http.ServerBinding] =  Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): AnalyticsServer = {
     Await.result(bound, 60.seconds)
@@ -1731,9 +1732,9 @@ class WebsocketServer(counter: AtomicInteger) {
   implicit val mat: Materializer = Materializer(system)
   implicit val http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
-  val greeterWebSocketService =
+  val greeterWebSocketService: Flow[Message,TextMessage,NotUsed] =
     Flow[Message]
       .map { message =>
         println("server received message")
@@ -1748,7 +1749,7 @@ class WebsocketServer(counter: AtomicInteger) {
     }
   }
 
-  val bound = Http().newServerAt("0.0.0.0", port).bind(handler)
+  val bound: Future[Http.ServerBinding] = Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): WebsocketServer = {
     Await.result(bound, 60.seconds)
@@ -1835,7 +1836,7 @@ class BodySizeService {
   implicit val mat: Materializer = Materializer(system)
   implicit val http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     request.entity.withoutSizeLimit().dataBytes.runFold(ByteString.empty)(_ ++ _) map { body =>
@@ -1849,7 +1850,7 @@ class BodySizeService {
     }
   }
 
-  val bound = Http().newServerAt("0.0.0.0", port).bind(handler)
+  val bound: Future[Http.ServerBinding] = Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): BodySizeService = {
     Await.result(bound, 60.seconds)
@@ -1866,8 +1867,8 @@ class BodySizeService {
 object TestRegex {
 
   import java.util.regex.Pattern
-  val pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#$^+=!*()@%&]).{8,1000}$")
-  val matches = pattern.matcher("FifouFifou1!").matches()
+  val pattern: Pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#$^+=!*()@%&]).{8,1000}$")
+  val matches: Boolean = pattern.matcher("FifouFifou1!").matches()
   println(matches)
 }
 

@@ -30,7 +30,7 @@ case class AnonymousReportingJobConfig(
 )
 
 object AnonymousReportingJobConfig {
-  val default = AnonymousReportingJobConfig(
+  val default: AnonymousReportingJobConfig = AnonymousReportingJobConfig(
     enabled = true,
     redirect = false,
     url = "https://reporting.otoroshi.io/ingest",

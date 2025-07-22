@@ -12,7 +12,7 @@ class WorkFlowTestSpec(name: String, configurationSpec: => Configuration) extend
   implicit lazy val mat: Materializer = otoroshiComponents.materializer
   implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""

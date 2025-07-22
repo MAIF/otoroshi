@@ -10,6 +10,8 @@ import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 import scala.concurrent.ExecutionContext
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc) {
@@ -17,9 +19,9 @@ class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  val logger = Logger("otoroshi-infos-api")
+  val logger: Logger = Logger("otoroshi-infos-api")
 
-  def infos() = ApiAction.async { ctx =>
+  def infos(): mvc.Action[AnyContent] = ApiAction.async { ctx =>
     val full = ctx.request.getQueryString("full").contains("true")
     if (full) {
       AnonymousReportingJob.buildReport(env.datastores.globalConfigDataStore.latest()).map(report => Ok(report))
@@ -38,7 +40,7 @@ class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  def version() = ApiAction { ctx =>
+  def version(): mvc.Action[AnyContent] = ApiAction { ctx =>
     Ok(env.otoroshiVersionSem.json)
   }
 }

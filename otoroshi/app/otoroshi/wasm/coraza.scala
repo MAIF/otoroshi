@@ -32,10 +32,10 @@ import scala.concurrent.duration._
 import scala.util._
 
 object CorazaPluginKeys {
-  val CorazaWasmVmKey = TypedKey[WasmVm]("otoroshi.next.plugins.CorazaWasmVm")
+  val CorazaWasmVmKey: TypedKey[WasmVm] = TypedKey[WasmVm]("otoroshi.next.plugins.CorazaWasmVm")
 
-  val RequestBodyKey = TypedKey[Future[Source[ByteString, _]]]("otoroshi.next.plugins.RequestBodyKey")
-  val HasBodyKey     = TypedKey[Boolean]("otoroshi.next.plugins.HasBodyKey")
+  val RequestBodyKey: TypedKey[Future[Source[ByteString, _]]] = TypedKey[Future[Source[ByteString, _]]]("otoroshi.next.plugins.RequestBodyKey")
+  val HasBodyKey: TypedKey[Boolean]     = TypedKey[Boolean]("otoroshi.next.plugins.HasBodyKey")
 }
 
 trait CorazaImplementation {
@@ -66,7 +66,7 @@ case class NgCorazaWAFConfig(ref: String) extends NgPluginConfig {
 }
 
 object NgCorazaWAFConfig {
-  val format = new Format[NgCorazaWAFConfig] {
+  val format: Format[NgCorazaWAFConfig] = new Format[NgCorazaWAFConfig] {
     override def writes(o: NgCorazaWAFConfig): JsValue             = Json.obj("ref" -> o.ref)
     override def reads(json: JsValue): JsResult[NgCorazaWAFConfig] = Try {
       NgCorazaWAFConfig(
@@ -304,7 +304,7 @@ object CorazaWafConfig {
     directives = Seq.empty,
     poolCapacity = 2
   )
-  val format                      = new Format[CorazaWafConfig] {
+  val format: Format[CorazaWafConfig]                      = new Format[CorazaWafConfig] {
     override def writes(o: CorazaWafConfig): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"                -> o.id,
       "name"              -> o.name,
@@ -438,7 +438,7 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
 }
 
 case class CorazaRule(id: Int = 0, file: String = "", severity: Int = 0) {
-  def json = Json.obj(
+  def json: JsObject = Json.obj(
     "id"       -> id,
     "file"     -> file,
     "severity" -> severity
@@ -446,7 +446,7 @@ case class CorazaRule(id: Int = 0, file: String = "", severity: Int = 0) {
 }
 
 case class CorazaError(message: String, uri: String, rule: CorazaRule) {
-  def json = Json.obj(
+  def json: JsObject = Json.obj(
     "message" -> message,
     "uri"     -> uri,
     "rule"    -> rule.json
@@ -454,7 +454,7 @@ case class CorazaError(message: String, uri: String, rule: CorazaRule) {
 }
 
 object CorazaError {
-  val fmt = new Format[CorazaError] {
+  val fmt: Format[CorazaError] = new Format[CorazaError] {
     override def writes(o: CorazaError): JsValue             = o.json
     override def reads(json: JsValue): JsResult[CorazaError] = Try {
       CorazaError(
@@ -472,7 +472,7 @@ object CorazaError {
 }
 
 object CorazaRule {
-  val fmt = new Format[CorazaRule] {
+  val fmt: Format[CorazaRule] = new Format[CorazaRule] {
     override def writes(o: CorazaRule): JsValue             = o.json
     override def reads(json: JsValue): JsResult[CorazaRule] = Try {
       CorazaRule(
@@ -611,7 +611,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
       isResponse: Boolean = false,
       request: NgPluginHttpRequest,
       route: Option[NgRoute]
-  ) = {
+  ): Future[NgAccess] = {
     instance.callCorazaNext(if (isResponse) "evaluateResponse" else "evaluate", in.stringify).map {
       case Left(err)    => rejectCall(Json.stringify(Json.obj("error" -> err)), request, route)
       case Right(value) =>

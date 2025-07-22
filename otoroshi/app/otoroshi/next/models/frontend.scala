@@ -6,8 +6,8 @@ import play.api.libs.json._
 case class NgDomainAndPath(raw: String) {
   private lazy val parts   = raw.split("\\/")
   lazy val domain          = parts.head
-  lazy val domainLowerCase = parts.head.toLowerCase()
-  lazy val path            = if (parts.size == 1) "/" else parts.tail.mkString("/", "/", "")
+  lazy val domainLowerCase: String = parts.head.toLowerCase()
+  lazy val path: String            = if (parts.size == 1) "/" else parts.tail.mkString("/", "/", "")
   def json: JsValue        = JsString(raw)
 }
 

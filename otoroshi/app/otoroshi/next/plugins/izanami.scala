@@ -53,7 +53,7 @@ case class NgIzanamiV1ProxyConfig(
 }
 
 object NgIzanamiV1ProxyConfig {
-  val format = new Format[NgIzanamiV1ProxyConfig] {
+  val format: Format[NgIzanamiV1ProxyConfig] = new Format[NgIzanamiV1ProxyConfig] {
     override def writes(o: NgIzanamiV1ProxyConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgIzanamiV1ProxyConfig] = Try {
       NgIzanamiV1ProxyConfig(
@@ -248,7 +248,7 @@ case class NgIzanamiV1CanaryConfig(
 }
 
 object NgIzanamiV1CanaryConfig {
-  val format = new Format[NgIzanamiV1CanaryConfig] {
+  val format: Format[NgIzanamiV1CanaryConfig] = new Format[NgIzanamiV1CanaryConfig] {
     override def writes(o: NgIzanamiV1CanaryConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgIzanamiV1CanaryConfig] = Try {
       NgIzanamiV1CanaryConfig(
@@ -288,7 +288,7 @@ case class NgIzanamiV1CanaryRoutingConfigRoute(
 }
 
 object NgIzanamiV1CanaryRoutingConfigRoute {
-  val format = new Format[NgIzanamiV1CanaryRoutingConfigRoute] {
+  val format: Format[NgIzanamiV1CanaryRoutingConfigRoute] = new Format[NgIzanamiV1CanaryRoutingConfigRoute] {
     override def writes(o: NgIzanamiV1CanaryRoutingConfigRoute): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgIzanamiV1CanaryRoutingConfigRoute] = Try {
       NgIzanamiV1CanaryRoutingConfigRoute(
@@ -313,14 +313,14 @@ case class NgIzanamiV1CanaryRoutingConfig(routes: Seq[NgIzanamiV1CanaryRoutingCo
 }
 
 object NgIzanamiV1CanaryRoutingConfig {
-  val format = new Format[NgIzanamiV1CanaryRoutingConfig] {
+  val format: Format[NgIzanamiV1CanaryRoutingConfig] = new Format[NgIzanamiV1CanaryRoutingConfig] {
     override def writes(o: NgIzanamiV1CanaryRoutingConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgIzanamiV1CanaryRoutingConfig] = Try {
       NgIzanamiV1CanaryRoutingConfig(
         routes = json
           .select("routes")
           .asOpt[Seq[JsValue]]
-          .map(_.map(NgIzanamiV1CanaryRoutingConfigRoute.format.reads).collect { case JsSuccess(e, _) => e })
+          .map(_.map(NgIzanamiV1CanaryRoutingConfigRoute.format.reads(_)).collect { case JsSuccess(e, _) => e })
           .getOrElse(Seq.empty)
       )
     } match {

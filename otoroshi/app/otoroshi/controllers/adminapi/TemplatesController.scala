@@ -33,7 +33,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-templates-api")
+  lazy val logger: Logger = Logger("otoroshi-templates-api")
 
   def process(json: JsValue, req: RequestHeader): JsValue = {
     val over = req.queryString
@@ -43,17 +43,17 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     json.as[JsObject] ++ over
   }
 
-  def initiateTenant() =
+  def initiateTenant(): Action[AnyContent] =
     ApiAction.async { ctx =>
       Ok(env.datastores.tenantDataStore.template(env).json).future
     }
 
-  def initiateTeam() =
+  def initiateTeam(): Action[AnyContent] =
     ApiAction.async { ctx =>
       Ok(env.datastores.teamDataStore.template(ctx.currentTenant).json).future
     }
 
-  def initiateApiKey(groupId: Option[String]) =
+  def initiateApiKey(groupId: Option[String]): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         groupId match {
@@ -76,7 +76,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def initiateServiceGroup() =
+  def initiateServiceGroup(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val group = env.datastores.serviceGroupDataStore.initiateNewGroup(env, ctx.some)
@@ -86,7 +86,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def initiateService() =
+  def initiateService(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val desc = env.datastores.serviceDescriptorDataStore
@@ -98,7 +98,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def initiateTcpService() =
+  def initiateTcpService(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val service = env.datastores.tcpServiceDataStore.template(env, ctx.some)
@@ -113,7 +113,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def initiateCertificate() =
+  def initiateCertificate(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         env.datastores.certificatesDataStore.nakedTemplate(env, ctx.some).map { cert =>
@@ -124,14 +124,14 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def initiateGlobalConfig() =
+  def initiateGlobalConfig(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         Ok(process(env.datastores.globalConfigDataStore.template.toJson, ctx.request)).future
       }
     }
 
-  def initiateJwtVerifier() =
+  def initiateJwtVerifier(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val jwt = env.datastores.globalJwtVerifierDataStore.template(env, ctx.some)
@@ -143,7 +143,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def initiateAuthModule() =
+  def initiateAuthModule(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val module = env.datastores.authConfigsDataStore
@@ -155,7 +155,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def findAllTemplates() =
+  def findAllTemplates(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         Ok(
@@ -176,7 +176,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def initiateScript() =
+  def initiateScript(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val script      = env.datastores.scriptDataStore.template(env)
@@ -191,7 +191,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def initiateSimpleAdmin() =
+  def initiateSimpleAdmin(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val pswd: String = ctx.request
@@ -217,7 +217,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def initiateWebauthnAdmin() =
+  def initiateWebauthnAdmin(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val pswd: String = ctx.request
@@ -243,7 +243,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def initiateDataExporterConfig() =
+  def initiateDataExporterConfig(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val module =
@@ -270,7 +270,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     }
   }
 
-  def createFromTemplate(entity: String) =
+  def createFromTemplate(entity: String): Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         val patch = ctx.request.body
@@ -488,7 +488,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     }
 
-  def initiateResources() =
+  def initiateResources(): Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.request.body.select("content").asOpt[JsValue] match {
         case Some(JsArray(values))                              =>

@@ -98,7 +98,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
 
   private implicit val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-certificates-ocsp")
+  lazy val logger: Logger = Logger("otoroshi-certificates-ocsp")
 
   val rejectUnknown         = true
   val nextUpdateOffset: Int =

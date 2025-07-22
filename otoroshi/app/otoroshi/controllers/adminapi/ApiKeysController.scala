@@ -14,6 +14,8 @@ import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc)
@@ -22,9 +24,9 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-apikeys-fs-api")
+  lazy val logger: Logger = Logger("otoroshi-apikeys-fs-api")
 
-  def apiKeyQuotas(serviceId: String, clientId: String) =
+  def apiKeyQuotas(serviceId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None                                 => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
@@ -51,7 +53,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       }
     }
 
-  def resetApiKeyQuotas(serviceId: String, clientId: String) =
+  def resetApiKeyQuotas(serviceId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
@@ -78,7 +80,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       }
     }
 
-  def createApiKey(serviceId: String) =
+  def createApiKey(serviceId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
         case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.lowerCaseToken(16))
@@ -130,7 +132,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       }
     }
 
-  def updateApiKey(serviceId: String, clientId: String) =
+  def updateApiKey(serviceId: String, clientId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       env.datastores.serviceDescriptorDataStore
         .findById(serviceId)
@@ -175,7 +177,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
         }
     }
 
-  def patchApiKey(serviceId: String, clientId: String) =
+  def patchApiKey(serviceId: String, clientId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
@@ -212,7 +214,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       }
     }
 
-  def deleteApiKey(serviceId: String, clientId: String) =
+  def deleteApiKey(serviceId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
@@ -242,7 +244,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       }
     }
 
-  def apiKeys(serviceId: String) =
+  def apiKeys(serviceId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       val paginationPage: Int      = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int  =
@@ -283,7 +285,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       }
     }
 
-  def allApiKeys() =
+  def allApiKeys(): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       sendAudit(
         "ACCESS_ALL_APIKEYS",
@@ -321,7 +323,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       }
     }
 
-  def apiKey(serviceId: String, clientId: String) =
+  def apiKey(serviceId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None                                 => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
@@ -354,9 +356,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-apikeys-fg-api")
+  lazy val logger: Logger = Logger("otoroshi-apikeys-fg-api")
 
-  def apiKeyFromGroupQuotas(groupId: String, clientId: String) =
+  def apiKeyFromGroupQuotas(groupId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
         case None                                   => NotFound(Json.obj("error" -> s"Group with id: '$groupId' not found")).asFuture
@@ -381,7 +383,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def resetApiKeyFromGroupQuotas(groupId: String, clientId: String) =
+  def resetApiKeyFromGroupQuotas(groupId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
         case None                                    => NotFound(Json.obj("error" -> s"Group with id: '$groupId' not found")).asFuture
@@ -406,7 +408,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def apiKeysFromGroup(groupId: String) =
+  def apiKeysFromGroup(groupId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       val paginationPage: Int      = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int  =
@@ -447,7 +449,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def apiKeyFromGroup(groupId: String, clientId: String) =
+  def apiKeyFromGroup(groupId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
         case None                                   => NotFound(Json.obj("error" -> s"Group with id: '$groupId' not found")).asFuture
@@ -470,7 +472,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def createApiKeyFromGroup(groupId: String) =
+  def createApiKeyFromGroup(groupId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
         case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.lowerCaseToken(16))
@@ -521,7 +523,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def updateApiKeyFromGroup(groupId: String, clientId: String) =
+  def updateApiKeyFromGroup(groupId: String, clientId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
         case None                                    => NotFound(Json.obj("error" -> s"Service Group with id: '$groupId' not found")).asFuture
@@ -562,7 +564,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def patchApiKeyFromGroup(groupId: String, clientId: String) =
+  def patchApiKeyFromGroup(groupId: String, clientId: String): mvc.Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
         case None                                    => NotFound(Json.obj("error" -> s"Service Group with id: '$groupId' not found")).asFuture
@@ -599,7 +601,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       }
     }
 
-  def deleteApiKeyFromGroup(groupId: String, clientId: String) =
+  def deleteApiKeyFromGroup(groupId: String, clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
         case None                                    => NotFound(Json.obj("error" -> s"Group with id: '$groupId' not found")).asFuture
@@ -639,7 +641,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-apikeys-api")
+  lazy val logger: Logger = Logger("otoroshi-apikeys-api")
 
   override def isApikey: Boolean = true
 
@@ -763,7 +765,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
     }
   }
 
-  def getBearerValue(clientId: String) =
+  def getBearerValue(clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.apiKeyDataStore.findById(clientId).flatMap {
         case None                                     => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
@@ -790,7 +792,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
       }
     }
 
-  def apiKeyQuotas(clientId: String) =
+  def apiKeyQuotas(clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.apiKeyDataStore.findById(clientId).flatMap {
         case None                                     => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
@@ -806,7 +808,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
       }
     }
 
-  def resetApiKeyQuotas(clientId: String) =
+  def resetApiKeyQuotas(clientId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       env.datastores.apiKeyDataStore.findById(clientId).flatMap {
         case None                                      => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture

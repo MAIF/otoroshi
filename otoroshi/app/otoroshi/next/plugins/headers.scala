@@ -24,7 +24,7 @@ case class NgHeaderNamesConfig(names: Seq[String] = Seq.empty) extends NgPluginC
 }
 
 object NgHeaderNamesConfig {
-  val format = new Format[NgHeaderNamesConfig] {
+  val format: Format[NgHeaderNamesConfig] = new Format[NgHeaderNamesConfig] {
     override def reads(json: JsValue): JsResult[NgHeaderNamesConfig] = Try {
       NgHeaderNamesConfig(
         names = json
@@ -48,7 +48,7 @@ case class NgHeaderValuesConfig(headers: Map[String, String] = Map.empty) extend
 }
 
 object NgHeaderValuesConfig {
-  val format = new Format[NgHeaderValuesConfig] {
+  val format: Format[NgHeaderValuesConfig] = new Format[NgHeaderValuesConfig] {
     override def reads(json: JsValue): JsResult[NgHeaderValuesConfig] = Try {
       NgHeaderValuesConfig(
         headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -695,7 +695,7 @@ case class RejectHeaderConfig(value: Long = 8 * 1024) extends NgPluginConfig {
 }
 
 object RejectHeaderConfig {
-  val default                        = RejectHeaderConfig()
+  val default: RejectHeaderConfig                        = RejectHeaderConfig()
   val configFlow: Seq[String]        = Seq("value")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
@@ -709,7 +709,7 @@ object RejectHeaderConfig {
       )
     )
   )
-  val format                         = new Format[RejectHeaderConfig] {
+  val format: Format[RejectHeaderConfig]                         = new Format[RejectHeaderConfig] {
 
     override def reads(json: JsValue): JsResult[RejectHeaderConfig] = Try {
       RejectHeaderConfig(

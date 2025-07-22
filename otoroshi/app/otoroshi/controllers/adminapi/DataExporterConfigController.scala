@@ -20,7 +20,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-data-exporter-api")
+  lazy val logger: Logger = Logger("otoroshi-data-exporter-api")
 
   override def singularName: String = "data-exporter"
 

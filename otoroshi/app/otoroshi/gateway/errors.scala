@@ -30,7 +30,7 @@ case class GwError(message: String) {
 
 object Errors {
 
-  val messages = Map(
+  val messages: Map[Int,(String, String)] = Map(
     404 -> ("The page you're looking for does not exist", "notFound.gif")
   )
 

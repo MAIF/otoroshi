@@ -114,7 +114,7 @@ object BasicAuthUser {
 
 object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
 
-  lazy val logger = Logger("otoroshi-basic-auth-config")
+  lazy val logger: Logger = Logger("otoroshi-basic-auth-config")
 
   def fromJsons(value: JsValue): BasicAuthModuleConfig =
     try {
@@ -193,7 +193,7 @@ case class BasicAuthModuleConfig(
   override def form: Option[Form]                                       = None
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def authModule(config: GlobalConfig): AuthModule             = BasicAuthModule(this)
-  override def asJson                                                   =
+  override def asJson: JsValue                                                   =
     location.jsonWithKey ++ Json.obj(
       "type"                     -> "basic",
       "id"                       -> this.id,
@@ -213,7 +213,7 @@ case class BasicAuthModuleConfig(
       "remoteValidators"         -> JsArray(remoteValidators.map(_.json))
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
-  override def cookieSuffix(desc: ServiceDescriptor)                    = s"basic-auth-$id"
+  override def cookieSuffix(desc: ServiceDescriptor): String                    = s"basic-auth-$id"
   def theDescription: String                                            = desc
   def theMetadata: Map[String, String]                                  = metadata
   def theName: String                                                   = name
@@ -223,7 +223,7 @@ case class BasicAuthModuleConfig(
 }
 
 object BasicAuthModule {
-  def defaultConfig = BasicAuthModuleConfig(
+  def defaultConfig: BasicAuthModuleConfig = BasicAuthModuleConfig(
     id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
     name = "New auth. module",
     desc = "New auth. module",
@@ -396,7 +396,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   )(implicit
       ec: ExecutionContext,
       env: Env
-  ) = FastFuture.successful(Right(None))
+  ): Future[Either[Result,Option[String]]] = FastFuture.successful(Right(None))
 
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
@@ -518,7 +518,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ) =
+  ): Future[Either[Result,Option[String]]] =
     FastFuture.successful(Right(None))
 
   override def boCallback(

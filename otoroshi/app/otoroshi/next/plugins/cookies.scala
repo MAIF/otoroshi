@@ -38,8 +38,8 @@ case class AdditionalCookieOutConfig(
 }
 
 object AdditionalCookieOutConfig {
-  val default = AdditionalCookieOutConfig("cookie", "value")
-  val format  = new Format[AdditionalCookieOutConfig] {
+  val default: AdditionalCookieOutConfig = AdditionalCookieOutConfig("cookie", "value")
+  val format: Format[AdditionalCookieOutConfig]  = new Format[AdditionalCookieOutConfig] {
 
     override def reads(json: JsValue): JsResult[AdditionalCookieOutConfig] = Try {
       AdditionalCookieOutConfig(
@@ -115,8 +115,8 @@ case class AdditionalCookieInConfig(
 }
 
 object AdditionalCookieInConfig {
-  val default = AdditionalCookieInConfig("cookie", "value")
-  val format  = new Format[AdditionalCookieInConfig] {
+  val default: AdditionalCookieInConfig = AdditionalCookieInConfig("cookie", "value")
+  val format: Format[AdditionalCookieInConfig]  = new Format[AdditionalCookieInConfig] {
 
     override def reads(json: JsValue): JsResult[AdditionalCookieInConfig] = Try {
       AdditionalCookieInConfig(
@@ -168,7 +168,7 @@ class AdditionalCookieIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =
-      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format.reads).getOrElse(AdditionalCookieInConfig.default)
+      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format.reads(_)).getOrElse(AdditionalCookieInConfig.default)
     Right(
       ctx.otoroshiRequest.copy(
         cookies = ctx.otoroshiRequest.cookies :+ config.toCookie(ctx.attrs)
@@ -200,7 +200,7 @@ class AdditionalCookieOut extends NgRequestTransformer {
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx
-      .cachedConfig(internalName)(AdditionalCookieOutConfig.format.reads)
+      .cachedConfig(internalName)(AdditionalCookieOutConfig.format.reads(_))
       .getOrElse(AdditionalCookieOutConfig.default)
     Right(
       ctx.otoroshiResponse.copy(
@@ -215,8 +215,8 @@ case class RemoveCookiesInConfig(names: Seq[String]) extends NgPluginConfig {
 }
 
 object RemoveCookiesInConfig {
-  val default                        = RemoveCookiesInConfig(Seq.empty)
-  val format                         = new Format[RemoveCookiesInConfig] {
+  val default: RemoveCookiesInConfig                        = RemoveCookiesInConfig(Seq.empty)
+  val format: Format[RemoveCookiesInConfig]                         = new Format[RemoveCookiesInConfig] {
     override def reads(json: JsValue): JsResult[RemoveCookiesInConfig] = Try {
       RemoveCookiesInConfig(
         names = json.select("names").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -262,7 +262,7 @@ class RemoveCookiesIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config: RemoveCookiesInConfig =
-      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format.reads).getOrElse(RemoveCookiesInConfig.default)
+      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format.reads(_)).getOrElse(RemoveCookiesInConfig.default)
     Right(
       ctx.otoroshiRequest.copy(
         cookies = ctx.otoroshiRequest.cookies.filterNot(v => config.names.contains(v.name))
@@ -294,7 +294,7 @@ class RemoveCookiesOut extends NgRequestTransformer {
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config: RemoveCookiesInConfig =
-      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format.reads).getOrElse(RemoveCookiesInConfig.default)
+      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format.reads(_)).getOrElse(RemoveCookiesInConfig.default)
     Right(
       ctx.otoroshiResponse.copy(
         cookies = ctx.otoroshiResponse.cookies.filterNot(v => config.names.contains(v.name))
@@ -326,7 +326,7 @@ class MissingCookieIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =
-      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format.reads).getOrElse(AdditionalCookieInConfig.default)
+      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format.reads(_)).getOrElse(AdditionalCookieInConfig.default)
     if (!ctx.otoroshiRequest.cookies.exists(_.name == config.name)) {
       Right(
         ctx.otoroshiRequest.copy(
@@ -362,7 +362,7 @@ class MissingCookieOut extends NgRequestTransformer {
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx
-      .cachedConfig(internalName)(AdditionalCookieOutConfig.format.reads)
+      .cachedConfig(internalName)(AdditionalCookieOutConfig.format.reads(_))
       .getOrElse(AdditionalCookieOutConfig.default)
     if (!ctx.otoroshiResponse.cookies.exists(_.name == config.name)) {
       Right(
@@ -381,7 +381,7 @@ case class CookiesValidationConfig(cookies: Map[String, String] = Map.empty) ext
 }
 
 object CookiesValidationConfig {
-  val format                         = new Format[CookiesValidationConfig] {
+  val format: Format[CookiesValidationConfig]                         = new Format[CookiesValidationConfig] {
     override def reads(json: JsValue): JsResult[CookiesValidationConfig] = Try {
       CookiesValidationConfig(
         cookies = json.select("cookies").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -421,7 +421,7 @@ class CookiesValidation extends NgAccessValidator {
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config            =
-      ctx.cachedConfig(internalName)(CookiesValidationConfig.format.reads).getOrElse(CookiesValidationConfig())
+      ctx.cachedConfig(internalName)(CookiesValidationConfig.format.reads(_)).getOrElse(CookiesValidationConfig())
     val validationCookies = config.cookies
     val cookies           = ctx.request.cookies.map { cookie =>
       (cookie.name, cookie.name)

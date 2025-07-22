@@ -21,7 +21,7 @@ class ThresholdsRegistry {
 
   def route(routeId: String): Option[RouteReservoirs] = routesScore.get(routeId)
 
-  def json(routeId: String) = routesScore.get(routeId).map(_.json()).getOrElse(RouteReservoirs().json())
+  def json(routeId: String): JsValue = routesScore.get(routeId).map(_.json()).getOrElse(RouteReservoirs().json())
 }
 
 case class DynamicTripleBounds(
@@ -35,7 +35,7 @@ case class DynamicTripleBounds(
     headersIn: TripleBounds = TripleBounds()
 ) {
 
-  def json() = Json.obj(
+  def json(): JsObject = Json.obj(
     "overhead"        -> overhead.json(),
     "duration"        -> duration.json(),
     "backendDuration" -> backendDuration.json(),
@@ -57,7 +57,7 @@ case class DynamicTripleBounds(
     dataOut = dataOut + other.dataOut
   )
 
-  def from(reservoirs: RouteReservoirs, thresholds: Thresholds) = {
+  def from(reservoirs: RouteReservoirs, thresholds: Thresholds): DynamicTripleBounds = {
     DynamicTripleBounds(
       overhead.incr(reservoirs.overhead.getSnapshot.getMean.toInt, thresholds.overhead),
       duration.incr(reservoirs.duration.getSnapshot.getMean.toInt, thresholds.duration),
@@ -81,7 +81,7 @@ case class ScalingRouteReservoirs(
     headersOut: Float = 0,
     headersIn: Float = 0
 ) {
-  def json() = Json.obj(
+  def json(): JsObject = Json.obj(
     "overhead"        -> overhead,
     "duration"        -> duration,
     "backendDuration" -> backendDuration,
@@ -92,7 +92,7 @@ case class ScalingRouteReservoirs(
     "headersIn"       -> headersIn
   )
 
-  def merge(other: ScalingRouteReservoirs) = copy(
+  def merge(other: ScalingRouteReservoirs): ScalingRouteReservoirs = copy(
     overhead = overhead + other.overhead,
     duration = duration + other.duration,
     backendDuration = backendDuration + other.backendDuration,
@@ -103,7 +103,7 @@ case class ScalingRouteReservoirs(
     dataOut = dataOut + other.dataOut
   )
 
-  def mean(length: Int) = copy(
+  def mean(length: Int): ScalingRouteReservoirs = copy(
     overhead = overhead / length,
     duration = duration / length,
     backendDuration = backendDuration / length,
@@ -123,7 +123,7 @@ object ScalingRouteReservoirs {
       (value / limit).toFloat
   }
 
-  def from(reservoirs: RouteReservoirs) = {
+  def from(reservoirs: RouteReservoirs): ScalingRouteReservoirs = {
     ScalingRouteReservoirs(
       reservoirs.overhead.getSnapshot.getMean.toFloat,
       reservoirs.duration.getSnapshot.getMean.toFloat,
@@ -136,7 +136,7 @@ object ScalingRouteReservoirs {
     )
   }
 
-  def from(reservoirs: RouteReservoirs, thresholds: Thresholds) = {
+  def from(reservoirs: RouteReservoirs, thresholds: Thresholds): ScalingRouteReservoirs = {
     ScalingRouteReservoirs(
       overhead = 1 - this.scalingReservoir(reservoirs.overhead.getSnapshot.getMean, thresholds.overhead.poor),
       duration = 1 - this.scalingReservoir(reservoirs.duration.getSnapshot.getMean, thresholds.duration.poor),
@@ -191,7 +191,7 @@ sealed trait Score {
 }
 
 object SectionScore {
-  def from(o: JsValue) = SectionScore(
+  def from(o: JsValue): SectionScore = SectionScore(
     score = o.select("score").as[Double],
     scalingScore = o.select("scaling_score").as[Double]
   )
@@ -221,7 +221,7 @@ object Score {
 }
 
 case class SectionScore(score: Double = 0.0, scalingScore: Double = 0.0) {
-  def json = {
+  def json: JsObject = {
     Json.obj(
       "score"         -> score,
       "scaling_score" -> Score.avgDouble(scalingScore)
@@ -237,7 +237,7 @@ case class SectionScore(score: Double = 0.0, scalingScore: Double = 0.0) {
 }
 
 case class RouteDynamicValues(routeId: String, groupId: String, dynamicValues: Dynamicvalues) {
-  def json() = Json.obj(
+  def json(): JsObject = Json.obj(
     "id"             -> routeId,
     "group_id"       -> groupId,
     "dynamic_values" -> dynamicValues.json()
@@ -261,19 +261,19 @@ case class Dynamicvalues(
     raw: ScalingRouteReservoirs = ScalingRouteReservoirs(),
     counters: DynamicTripleBounds = DynamicTripleBounds()
 ) {
-  def json() = Json.obj(
+  def json(): JsObject = Json.obj(
     "scaling"  -> scaling.json(),
     "raw"      -> raw.json(),
     "counters" -> counters.json()
   )
 
-  def merge(other: Dynamicvalues) = copy(
+  def merge(other: Dynamicvalues): Dynamicvalues = copy(
     scaling = scaling.merge(other.scaling),
     raw = raw.merge(other.raw),
     counters = counters + other.counters
   )
 
-  def mean(length: Int) = copy(
+  def mean(length: Int): Dynamicvalues = copy(
     scaling = scaling.mean(length),
     raw = raw.mean(length)
   )
@@ -284,7 +284,7 @@ case class GroupScore(
     dynamicValues: Dynamicvalues,
     routeScoreByDate: Seq[RouteScoreAtDate]
 ) {
-  def json() = Json.obj(
+  def json(): JsObject = Json.obj(
     "dynamic_values_by_routes" -> dynamicValuesByRoutes.map(_.json()),
     "dynamic_values"           -> dynamicValues.json(),
     "score_by_route"           -> routeScoreByDate.map(_.json())
@@ -317,7 +317,7 @@ object EcoMetrics {
 }
 
 object RouteScoreByDateAndSection {
-  def from(o: JsValue) = RouteScoreByDateAndSection(
+  def from(o: JsValue): RouteScoreByDateAndSection = RouteScoreByDateAndSection(
     date = o.select("date").as[Long],
     section = o.select("section").as[String],
     sectionWeight = o.select("section_weight").as[Double],
@@ -335,7 +335,7 @@ case class RouteScoreByDateAndSection(
     letter: String = "",
     color: String = ""
 ) {
-  def json() = Json.obj(
+  def json(): JsObject = Json.obj(
     "date"           -> date,
     "section"        -> section,
     "section_weight" -> sectionWeight,
@@ -356,7 +356,7 @@ case class RouteScoreByDateAndSection(
 }
 
 case class RouteScoreAtDateItem(groupId: String, routeId: String, scores: Seq[RouteScoreByDateAndSection]) {
-  def json() = Json.obj(
+  def json(): JsObject = Json.obj(
     "group_id" -> groupId,
     "id"       -> routeId,
     "sections" -> scores.map(_.json())
@@ -364,7 +364,7 @@ case class RouteScoreAtDateItem(groupId: String, routeId: String, scores: Seq[Ro
 }
 
 object RouteScoreAtDateItem {
-  def from(json: JsValue) = RouteScoreAtDateItem(
+  def from(json: JsValue): RouteScoreAtDateItem = RouteScoreAtDateItem(
     groupId = json.select("group_id").as[String],
     routeId = json.select("id").as[String],
     scores = json.select("sections").as[JsArray].value.map(RouteScoreByDateAndSection.from).toSeq
@@ -372,14 +372,14 @@ object RouteScoreAtDateItem {
 }
 
 case class RouteScoreAtDate(date: Long, routes: Seq[RouteScoreAtDateItem]) {
-  def json() = Json.obj(
+  def json(): JsObject = Json.obj(
     "date"   -> date,
     "routes" -> routes.map(_.json())
   )
 }
 
 object RouteScoreAtDate {
-  def from(o: JsValue) = RouteScoreAtDate(
+  def from(o: JsValue): RouteScoreAtDate = RouteScoreAtDate(
     date = o.select("date").as[Long],
     routes = o.select("routes").as[JsArray].value.map(RouteScoreAtDateItem.from).toSeq
   )

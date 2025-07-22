@@ -137,7 +137,7 @@ case class NgHasClientCertMatchingValidatorConfig(
 }
 
 object NgHasClientCertMatchingValidatorConfig {
-  val format = new Format[NgHasClientCertMatchingValidatorConfig] {
+  val format: Format[NgHasClientCertMatchingValidatorConfig] = new Format[NgHasClientCertMatchingValidatorConfig] {
     override def writes(o: NgHasClientCertMatchingValidatorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgHasClientCertMatchingValidatorConfig] = Try {
       NgHasClientCertMatchingValidatorConfig(
@@ -228,7 +228,7 @@ case class NgClientCertChainHeaderConfig(
 }
 
 object NgClientCertChainHeaderConfig {
-  val format = new Format[NgClientCertChainHeaderConfig] {
+  val format: Format[NgClientCertChainHeaderConfig] = new Format[NgClientCertChainHeaderConfig] {
     override def writes(o: NgClientCertChainHeaderConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgClientCertChainHeaderConfig] = Try {
       NgClientCertChainHeaderConfig(
@@ -336,7 +336,7 @@ case class NgCertificateAsApikeyConfig(
 }
 
 object NgCertificateAsApikeyConfig {
-  val format = new Format[NgCertificateAsApikeyConfig] {
+  val format: Format[NgCertificateAsApikeyConfig] = new Format[NgCertificateAsApikeyConfig] {
     override def writes(o: NgCertificateAsApikeyConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgCertificateAsApikeyConfig] = Try {
       NgCertificateAsApikeyConfig(
@@ -430,7 +430,7 @@ case class NgHasClientCertMatchingHttpValidatorConfig(
 }
 
 object NgHasClientCertMatchingHttpValidatorConfig {
-  val format = new Format[NgHasClientCertMatchingHttpValidatorConfig] {
+  val format: Format[NgHasClientCertMatchingHttpValidatorConfig] = new Format[NgHasClientCertMatchingHttpValidatorConfig] {
     override def writes(o: NgHasClientCertMatchingHttpValidatorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgHasClientCertMatchingHttpValidatorConfig] = Try {
       NgHasClientCertMatchingHttpValidatorConfig(

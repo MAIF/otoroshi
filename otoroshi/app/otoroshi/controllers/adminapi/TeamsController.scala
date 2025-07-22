@@ -19,7 +19,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-teams-api")
+  lazy val logger: Logger = Logger("otoroshi-teams-api")
 
   override def singularName: String = "team"
 

@@ -24,7 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util._
 
 object OtoroshiEventListener {
-  def props(ext: GreenScoreExtension, env: Env) = Props(new OtoroshiEventListener(ext, env))
+  def props(ext: GreenScoreExtension, env: Env): Props = Props(new OtoroshiEventListener(ext, env))
 }
 
 class OtoroshiEventListener(ext: GreenScoreExtension, env: Env) extends Actor {
@@ -81,7 +81,7 @@ case class GreenScoreEntity(
 }
 
 object GreenScoreEntity {
-  val format = new Format[GreenScoreEntity] {
+  val format: Format[GreenScoreEntity] = new Format[GreenScoreEntity] {
     override def writes(o: GreenScoreEntity): JsValue = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,
@@ -106,7 +106,7 @@ object GreenScoreEntity {
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        thresholds = json.select("thresholds").as[Thresholds](Thresholds.reads),
+        thresholds = json.select("thresholds").as[Thresholds](Thresholds.reads(_)),
         routes = json
           .select("routes")
           .asOpt[JsArray]
@@ -117,7 +117,7 @@ object GreenScoreEntity {
                 .map(v => {
                   RouteRules(
                     v.select("routeId").as[String],
-                    v.select("rulesConfig").asOpt[JsObject].map(RulesRouteConfiguration.format.reads).get.get
+                    v.select("rulesConfig").asOpt[JsObject].map(RulesRouteConfiguration.format.reads(_)).get.get
                   )
                 })
                 .get
@@ -125,7 +125,7 @@ object GreenScoreEntity {
             .toSeq
           })
           .getOrElse(Seq.empty[RouteRules]),
-        efficiency = json.select("efficiency").asOpt(Efficiency.reads).getOrElse(Efficiency())
+        efficiency = json.select("efficiency").asOpt(Efficiency.reads(_)).getOrElse(Efficiency())
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

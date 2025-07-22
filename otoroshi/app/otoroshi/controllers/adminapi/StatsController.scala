@@ -20,6 +20,8 @@ import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
@@ -27,9 +29,9 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-stats-api")
+  lazy val logger: Logger = Logger("otoroshi-stats-api")
 
-  def globalLiveStats() =
+  def globalLiveStats(): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(Anyone) {
         Audit.send(
@@ -77,7 +79,7 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def hostMetrics() =
+  def hostMetrics(): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(Anyone) {
         Audit.send(
@@ -135,7 +137,7 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def serviceLiveStats(id: String, every: Option[Int]) =
+  def serviceLiveStats(id: String, every: Option[Int]): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.canReadService(id) {
         Audit.send(

@@ -16,7 +16,7 @@ import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 
 object HMACUtils {
-  val Algo = Map(
+  val Algo: Map[String,String] = Map(
     "HMAC-SHA1"   -> "HmacSHA1",
     "HMAC-SHA256" -> "HmacSHA256",
     "HMAC-SHA384" -> "HmacSHA384",
@@ -37,7 +37,7 @@ class HMACCallerPlugin extends RequestTransformer {
     "authorizationHeader"
   )
 
-  override def configSchema =
+  override def configSchema: Option[JsObject] =
     Some(
       Json.obj(
         "secret"              -> Json.obj(
@@ -148,7 +148,7 @@ class HMACValidator extends AccessValidator {
 
   override def configFlow: Seq[String] = Seq("secret")
 
-  override def configSchema =
+  override def configSchema: Option[JsObject] =
     Some(
       Json.obj(
         "secret" -> Json.obj(

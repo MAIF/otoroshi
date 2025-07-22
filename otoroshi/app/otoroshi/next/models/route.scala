@@ -81,7 +81,7 @@ case class NgRoute(
 
   lazy val notBoundToListener = boundListeners.isEmpty
 
-  def boundToListener(listener: String) = boundListeners.contains(listener.toLowerCase())
+  def boundToListener(listener: String): Boolean = boundListeners.contains(listener.toLowerCase())
 
   def matches(
       request: RequestHeader,
@@ -725,7 +725,7 @@ case class NgRoute(
 
 object NgRoute {
 
-  val fake  = NgRoute(
+  val fake: NgRoute  = NgRoute(
     location = EntityLocation.default,
     id = s"route_${IdGenerator.uuid}",
     name = "Fake route",
@@ -793,7 +793,7 @@ object NgRoute {
     )
   )
 
-  def default = {
+  def default: NgRoute = {
     val emp = empty
     emp.copy(
       backend = emp.backend.copy(
@@ -802,7 +802,7 @@ object NgRoute {
       plugins = NgPlugins.empty
     )
   }
-  def empty = NgRoute(
+  def empty: NgRoute = NgRoute(
     location = EntityLocation.default,
     id = s"route_${IdGenerator.uuid}",
     name = "empty route",
@@ -842,7 +842,7 @@ object NgRoute {
       case e: Throwable => throw e
     }
 
-  val fmt = new Format[NgRoute] {
+  val fmt: Format[NgRoute] = new Format[NgRoute] {
     override def writes(o: NgRoute): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgRoute] = Try {
       val ref        = json.select("backend_ref").asOpt[String]

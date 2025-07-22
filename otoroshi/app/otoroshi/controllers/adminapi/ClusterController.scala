@@ -34,11 +34,11 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  val sourceBodyParser = BodyParser("ClusterController BodyParser") { _ =>
+  val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("ClusterController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def liveCluster() =
+  def liveCluster(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
         def healthOf(member: MemberView): String = {
@@ -90,7 +90,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def getClusterMembers() =
+  def getClusterMembers(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -105,7 +105,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def clearClusterMembers() =
+  def clearClusterMembers(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -120,7 +120,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def isLoginTokenValid(token: String) =
+  def isLoginTokenValid(token: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -145,7 +145,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def getUserToken(token: String) =
+  def getUserToken(token: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -170,7 +170,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def createLoginToken(token: String) =
+  def createLoginToken(token: String): Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -190,7 +190,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def setUserToken() =
+  def setUserToken(): Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -214,7 +214,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def isSessionValid(sessionId: String) =
+  def isSessionValid(sessionId: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -239,7 +239,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def createSession() =
+  def createSession(): Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -272,7 +272,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def updateState() =
+  def updateState(): Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -343,7 +343,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
   val cachedCount  = new AtomicLong(0L)
   val cachedDigest = new AtomicReference[String]("--")
 
-  def readState() =
+  def readState(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -451,7 +451,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
 
   private val cookieEncoder = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
 
-  def relayRouting() = ApiAction.async(sourceBodyParser) { ctx =>
+  def relayRouting(): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
       env.clusterConfig.mode match {
         case Off => NotFound(Json.obj("error" -> "Cluster API not available")).future
@@ -493,7 +493,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
     }
   }
 
-  def stateWs() = WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { req =>
+  def stateWs(): WebSocket = WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { req =>
     val action = ApiAction(ctx => if (ctx.userIsSuperAdmin) NoContent else Unauthorized)
     action.apply(req).run().flatMap { result =>
       if (result.header.status == 204) {
@@ -508,7 +508,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
 }
 
 object ClusterStateActor {
-  def props(out: ActorRef, env: Env) = Props(new ClusterStateActor(out, env))
+  def props(out: ActorRef, env: Env): Props = Props(new ClusterStateActor(out, env))
 }
 
 class ClusterStateActor(out: ActorRef, env: Env) extends Actor {

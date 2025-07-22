@@ -213,7 +213,7 @@ object OtlpSettings {
 
   private val sdks = new UnboundedTrieMap[String, OpenTelemetrySdkWrapper]()
 
-  val defaultLogs = OtlpSettings(
+  val defaultLogs: OtlpSettings = OtlpSettings(
     grpc = false,
     endpoint = "http://localhost:10080/logs",
     timeout = 5000L.millis,
@@ -225,15 +225,15 @@ object OtlpSettings {
     maxDuration = 10.seconds
   )
 
-  val defaultServerLogs = defaultLogs.copy(
+  val defaultServerLogs: OtlpSettings = defaultLogs.copy(
     endpoint = "http://localhost:10080/server-logs"
   )
 
-  val defaultMetrics = defaultLogs.copy(
+  val defaultMetrics: OtlpSettings = defaultLogs.copy(
     endpoint = "http://localhost:10080/metrics"
   )
 
-  val format = new Format[OtlpSettings] {
+  val format: Format[OtlpSettings] = new Format[OtlpSettings] {
     override def writes(o: OtlpSettings): JsValue = Json.obj(
       "gzip"         -> o.gzip,
       "grpc"         -> o.grpc,

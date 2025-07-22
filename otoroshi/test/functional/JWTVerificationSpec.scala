@@ -94,7 +94,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
 
   lazy val serviceHost = "jwt.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -570,7 +570,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
 
   lazy val serviceHost = "jwtref.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""

@@ -77,7 +77,7 @@ import scala.util.{Failure, Success, Try}
  */
 object Cluster {
 
-  lazy val logger = Logger("otoroshi-cluster")
+  lazy val logger: Logger = Logger("otoroshi-cluster")
 
   def filteredKey(key: String, env: Env): Boolean = {
     key.startsWith(s"${env.storageRoot}:noclustersync:") ||
@@ -273,8 +273,8 @@ case class RelayRouting(
 }
 
 object RelayRouting {
-  val logger                                    = Logger("otoroshi-relay-routing")
-  val default                                   = RelayRouting(
+  val logger: Logger                                    = Logger("otoroshi-relay-routing")
+  val default: RelayRouting                                   = RelayRouting(
     enabled = false,
     leaderOnly = false,
     location = InstanceLocation(
@@ -354,7 +354,7 @@ case class ClusterConfig(
 }
 
 object ClusterConfig {
-  lazy val clusterNodeId = s"node_${IdGenerator.uuid}"
+  lazy val clusterNodeId: String = s"node_${IdGenerator.uuid}"
   def fromRoot(rootConfig: Configuration, env: Env): ClusterConfig = {
     apply(
       rootConfig.getOptionalWithFileSupport[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty),
@@ -1352,10 +1352,10 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     }
   }
 
-  def cachedState     = cachedRef.get()
-  def cachedTimestamp = cachedAt.get()
-  def cachedCount     = cacheCount.get()
-  def cachedDigest    = cacheDigest.get()
+  def cachedState: ByteString     = cachedRef.get()
+  def cachedTimestamp: Long = cachedAt.get()
+  def cachedCount: Long     = cacheCount.get()
+  def cachedDigest: String    = cacheDigest.get()
 
   private def cacheState(): Future[Unit] = {
     if (caching.compareAndSet(false, true)) {
@@ -2713,7 +2713,7 @@ class SwappableInMemoryDataStores(
   lazy val redisStatsItems: Int  = configuration.betterGet[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
   lazy val experimental: Boolean =
     configuration.betterGet[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
-  lazy val actorSystem           =
+  lazy val actorSystem: ActorSystem           =
     ActorSystem(
       "otoroshi-swapinmemory-system",
       configuration
@@ -2722,9 +2722,9 @@ class SwappableInMemoryDataStores(
         .getOrElse(ConfigFactory.empty)
     )
   private val materializer       = Materializer(actorSystem)
-  val _optimized                 = configuration.betterGetOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
-  val _modern                    = configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
-  lazy val swredis               = if (_modern) {
+  val _optimized: Boolean                 = configuration.betterGetOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
+  val _modern: Boolean                    = configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
+  lazy val swredis: OptimizedRedisLike with RedisLike with SwappableRedis               = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {
     new SwappableInMemoryRedis(_optimized, env, actorSystem)
@@ -3145,7 +3145,7 @@ class SwappableInMemoryDataStores(
 }
 
 object ClusterLeaderStateMessage {
-  val format = new Format[ClusterLeaderStateMessage] {
+  val format: Format[ClusterLeaderStateMessage] = new Format[ClusterLeaderStateMessage] {
     override def reads(json: JsValue): JsResult[ClusterLeaderStateMessage] = Try {
       ClusterLeaderStateMessage(
         state = json.select("state").asOpt[Array[Byte]].map(ByteString.apply).getOrElse(ByteString.empty),
@@ -3183,7 +3183,7 @@ case class ClusterLeaderStateMessage(
 }
 
 object ClusterMessageFromWorker                                           {
-  val format = new Format[ClusterMessageFromWorker] {
+  val format: Format[ClusterMessageFromWorker] = new Format[ClusterMessageFromWorker] {
 
     override def reads(json: JsValue): JsResult[ClusterMessageFromWorker] = Try {
       ClusterMessageFromWorker(
@@ -3255,7 +3255,7 @@ object ClusterLeaderUpdateMessage       {
 
   object GlobalStatusUpdate {
 
-    val format = new Format[GlobalStatusUpdate] {
+    val format: Format[GlobalStatusUpdate] = new Format[GlobalStatusUpdate] {
 
       override def reads(json: JsValue): JsResult[GlobalStatusUpdate] = Try {
         GlobalStatusUpdate(

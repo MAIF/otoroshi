@@ -341,7 +341,7 @@ case class S3Configuration(
 }
 
 object S3Configuration {
-  val default = S3Configuration(
+  val default: S3Configuration = S3Configuration(
     bucket = "",
     endpoint = "",
     region = "eu-west-1",
@@ -352,7 +352,7 @@ object S3Configuration {
     writeEvery = 1.minute,
     acl = CannedAcl.Private
   )
-  val format  = new Format[S3Configuration] {
+  val format: Format[S3Configuration]  = new Format[S3Configuration] {
     override def reads(json: JsValue): JsResult[S3Configuration] = Try {
       S3Configuration(
         bucket = json.select("bucket").asOpt[String].getOrElse(""),

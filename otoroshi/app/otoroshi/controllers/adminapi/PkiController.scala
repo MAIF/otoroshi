@@ -52,7 +52,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
     }
   }
 
-  def genKeyPair() =
+  def genKeyPair(): Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
@@ -85,7 +85,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
     }
 
-  def genSelfSignedCA() =
+  def genSelfSignedCA(): Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
@@ -97,7 +97,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
     }
 
-  def genSelfSignedCert() =
+  def genSelfSignedCert(): Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
@@ -109,7 +109,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
     }
 
-  def signCert(ca: String) =
+  def signCert(ca: String): Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         val duration = ctx.request.getQueryString("duration").map(_.toLong.millis).getOrElse(365.days)
@@ -126,7 +126,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
     }
 
-  def genCsr() =
+  def genCsr(): Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         val caOpt = ctx.request.getQueryString("ca")
@@ -151,7 +151,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
     }
 
-  def genCert(ca: String) =
+  def genCert(ca: String): Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
@@ -169,7 +169,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
     }
 
-  def genSubCA(ca: String) =
+  def genSubCA(ca: String): Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
@@ -187,7 +187,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
     }
 
-  def genLetsEncryptCert() =
+  def genLetsEncryptCert(): Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
@@ -204,7 +204,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
     }
 
-  def importCertFromP12() =
+  def importCertFromP12(): Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         val password = ctx.request.getQueryString("password").getOrElse("")
@@ -226,7 +226,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
     }
 
-  def importBundle() = ApiAction.async(sourceBodyParser) { ctx =>
+  def importBundle(): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
         val bodyStr = bodyRaw.utf8String

@@ -41,10 +41,10 @@ case class IndexSettingsIntervalYear(name: String = "Year")   extends IndexSetti
 
 object IndexSettingsInterval {
 
-  val Day   = IndexSettingsIntervalDay()
-  val Week  = IndexSettingsIntervalWeek()
-  val Month = IndexSettingsIntervalMonth()
-  val Year  = IndexSettingsIntervalYear()
+  val Day: IndexSettingsIntervalDay   = IndexSettingsIntervalDay()
+  val Week: IndexSettingsIntervalWeek  = IndexSettingsIntervalWeek()
+  val Month: IndexSettingsIntervalMonth = IndexSettingsIntervalMonth()
+  val Year: IndexSettingsIntervalYear  = IndexSettingsIntervalYear()
 
   def parse(str: String): Option[IndexSettingsInterval] = {
     str.trim.toLowerCase() match {
@@ -78,7 +78,7 @@ object IndexSettings {
       case Some(jsv) => format.reads(jsv).asOpt.getOrElse(IndexSettings())
     }
   }
-  val format = new Format[IndexSettings] {
+  val format: Format[IndexSettings] = new Format[IndexSettings] {
     override def reads(json: JsValue): JsResult[IndexSettings] = Try {
       IndexSettings(
         clientSide = json.select("clientSide").asOpt[Boolean].getOrElse(true),
@@ -171,7 +171,7 @@ object ElasticAnalyticsConfig {
 }
 
 object QuotasAlmostExceededSettings {
-  val format = new Format[QuotasAlmostExceededSettings] {
+  val format: Format[QuotasAlmostExceededSettings] = new Format[QuotasAlmostExceededSettings] {
     override def reads(json: JsValue): JsResult[QuotasAlmostExceededSettings] = Try {
       QuotasAlmostExceededSettings(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
@@ -306,7 +306,7 @@ case class GlobalScripts(
 }
 
 object GlobalScripts {
-  val format = new Format[GlobalScripts] {
+  val format: Format[GlobalScripts] = new Format[GlobalScripts] {
     override def writes(o: GlobalScripts): JsValue             =
       Json.obj(
         "enabled"            -> o.enabled,
@@ -345,7 +345,7 @@ object GlobalScripts {
 }
 
 object GeolocationSettings {
-  val format = new Format[GeolocationSettings] {
+  val format: Format[GeolocationSettings] = new Format[GeolocationSettings] {
     override def writes(o: GeolocationSettings): JsValue             = o.json
     override def reads(json: JsValue): JsResult[GeolocationSettings] =
       Try {
@@ -407,7 +407,7 @@ case class IpStackGeolocationSettings(enabled: Boolean, apikey: String, timeout:
 }
 
 object UserAgentSettings {
-  val format = new Format[UserAgentSettings] {
+  val format: Format[UserAgentSettings] = new Format[UserAgentSettings] {
     override def writes(o: UserAgentSettings): JsValue             = o.json
     override def reads(json: JsValue): JsResult[UserAgentSettings] =
       Try {
@@ -448,7 +448,7 @@ case class AutoCert(
 }
 
 object AutoCert {
-  val format = new Format[AutoCert] {
+  val format: Format[AutoCert] = new Format[AutoCert] {
     override def writes(o: AutoCert): JsValue =
       Json.obj(
         "enabled"     -> o.enabled,
@@ -485,7 +485,7 @@ case class TlsSettings(
   def json: JsValue = TlsSettings.format.writes(this)
 }
 object TlsSettings {
-  val format = new Format[TlsSettings] {
+  val format: Format[TlsSettings] = new Format[TlsSettings] {
     override def writes(o: TlsSettings): JsValue =
       Json.obj(
         "defaultDomain"       -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -538,7 +538,7 @@ case class DefaultTemplates(
 }
 
 object DefaultTemplates {
-  val format = new Format[DefaultTemplates] {
+  val format: Format[DefaultTemplates] = new Format[DefaultTemplates] {
     override def reads(json: JsValue): JsResult[DefaultTemplates] = {
       Try {
         DefaultTemplates(
@@ -614,7 +614,7 @@ case class TlsWasmoSettings(settings: WasmoSettings = WasmoSettings(), tlsConfig
 }
 
 object TlsWasmoSettings {
-  val format = new Format[TlsWasmoSettings] {
+  val format: Format[TlsWasmoSettings] = new Format[TlsWasmoSettings] {
     override def writes(o: TlsWasmoSettings): JsValue =
       Json.obj(
         "settings"  -> o.settings.json,
@@ -624,8 +624,8 @@ object TlsWasmoSettings {
     override def reads(json: JsValue): JsResult[TlsWasmoSettings] = {
       Try {
         TlsWasmoSettings(
-          settings = (json \ "settings").as[WasmoSettings](WasmoSettings.format.reads),
-          tlsConfig = (json \ "tlsConfig").as[MtlsConfig](MtlsConfig.format.reads)
+          settings = (json \ "settings").as[WasmoSettings](WasmoSettings.format.reads(_)),
+          tlsConfig = (json \ "tlsConfig").as[MtlsConfig](MtlsConfig.format.reads(_))
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -701,13 +701,13 @@ case class GlobalConfig(
 
   def theName: String = "otoroshi-global-config"
 
-  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.set(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalConfigDataStore.set(this)
 
-  def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
+  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalConfigDataStore.delete(this)
 
-  def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.exists(this)
+  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalConfigDataStore.exists(this)
 
-  def toJson = GlobalConfig.toJson(this)
+  def toJson: JsValue = GlobalConfig.toJson(this)
 
   def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalConfigDataStore.withinThrottlingQuota()
@@ -741,12 +741,12 @@ case class GlobalConfig(
     }
   }
 
-  lazy val incomingRequestValidators = NgPlugins.readFrom(plugins.config.select("incoming_request_validators"))
+  lazy val incomingRequestValidators: NgPlugins = NgPlugins.readFrom(plugins.config.select("incoming_request_validators"))
 }
 
 object GlobalConfig {
 
-  lazy val logger = Logger("otoroshi-global-config")
+  lazy val logger: Logger = Logger("otoroshi-global-config")
 
   val _fmt: Format[GlobalConfig] = new Format[GlobalConfig] {
 

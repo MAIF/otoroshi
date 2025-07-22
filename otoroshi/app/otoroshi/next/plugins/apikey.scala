@@ -28,8 +28,8 @@ case class NgLegacyApikeyCallConfig(
   override def json: JsValue = NgLegacyApikeyCallConfig.format.writes(this)
 }
 object NgLegacyApikeyCallConfig {
-  val default = NgLegacyApikeyCallConfig(Seq.empty, Seq.empty, NgApikeyCallsConfig())
-  val format  = new Format[NgLegacyApikeyCallConfig] {
+  val default: NgLegacyApikeyCallConfig = NgLegacyApikeyCallConfig(Seq.empty, Seq.empty, NgApikeyCallsConfig())
+  val format: Format[NgLegacyApikeyCallConfig]  = new Format[NgLegacyApikeyCallConfig] {
     override def writes(o: NgLegacyApikeyCallConfig): JsValue             = Json.obj(
       "public_patterns"  -> o.publicPatterns,
       "private_patterns" -> o.privatePatterns
@@ -318,7 +318,7 @@ case class NgApikeyExtractorBasic(
 }
 
 object NgApikeyExtractorBasic {
-  val format                                                      = new Format[NgApikeyExtractorBasic] {
+  val format: Format[NgApikeyExtractorBasic]                                                      = new Format[NgApikeyExtractorBasic] {
     override def writes(o: NgApikeyExtractorBasic): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorBasic] = JsonHelpers.reader {
       NgApikeyExtractorBasic(
@@ -363,7 +363,7 @@ case class NgApikeyExtractorClientId(
 }
 
 object NgApikeyExtractorClientId {
-  val format                                                            = new Format[NgApikeyExtractorClientId] {
+  val format: Format[NgApikeyExtractorClientId]                                                            = new Format[NgApikeyExtractorClientId] {
     override def writes(o: NgApikeyExtractorClientId): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorClientId] = JsonHelpers.reader {
       NgApikeyExtractorClientId(
@@ -402,7 +402,7 @@ case class NgApikeyExtractorCustomHeaders(
 }
 
 object NgApikeyExtractorCustomHeaders {
-  val format                                                                      = new Format[NgApikeyExtractorCustomHeaders] {
+  val format: Format[NgApikeyExtractorCustomHeaders]                                                                      = new Format[NgApikeyExtractorCustomHeaders] {
     override def writes(o: NgApikeyExtractorCustomHeaders): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorCustomHeaders] = JsonHelpers.reader {
       NgApikeyExtractorCustomHeaders(
@@ -452,7 +452,7 @@ object NgApikeyExtractorOtoBearer {
     cookieName = s.cookieName,
     pathName = s.pathName
   )
-  val format                                                          = new Format[NgApikeyExtractorOtoBearer] {
+  val format: Format[NgApikeyExtractorOtoBearer]                                                          = new Format[NgApikeyExtractorOtoBearer] {
     override def writes(o: NgApikeyExtractorOtoBearer): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorOtoBearer] =
       Try {
@@ -507,7 +507,7 @@ case class NgApikeyExtractorJwt(
 }
 
 object NgApikeyExtractorJwt {
-  val format                                                  = new Format[NgApikeyExtractorJwt] {
+  val format: Format[NgApikeyExtractorJwt]                                                  = new Format[NgApikeyExtractorJwt] {
     override def writes(o: NgApikeyExtractorJwt): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorJwt] = JsonHelpers.reader {
       NgApikeyExtractorJwt(
@@ -586,7 +586,7 @@ case class NgApikeyMatcher(
 }
 
 object NgApikeyMatcher {
-  val format                                             = new Format[NgApikeyMatcher] {
+  val format: Format[NgApikeyMatcher]                                             = new Format[NgApikeyMatcher] {
     override def writes(o: NgApikeyMatcher): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyMatcher] = JsonHelpers.reader {
       NgApikeyMatcher(
@@ -633,7 +633,7 @@ case class NgApikeyExtractors(
 }
 
 object NgApikeyExtractors {
-  val format = new Format[NgApikeyExtractors] {
+  val format: Format[NgApikeyExtractors] = new Format[NgApikeyExtractors] {
     override def writes(o: NgApikeyExtractors): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractors] = JsonHelpers.reader {
       NgApikeyExtractors(
@@ -679,7 +679,7 @@ case class NgApikeyCallsConfig(
 }
 
 object NgApikeyCallsConfig {
-  val format                                                = new Format[NgApikeyCallsConfig] {
+  val format: Format[NgApikeyCallsConfig]                                                = new Format[NgApikeyCallsConfig] {
     override def writes(o: NgApikeyCallsConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyCallsConfig] = Try {
       NgApikeyCallsConfig(
@@ -721,7 +721,7 @@ case class ApikeyAuthModuleConfig(
 }
 
 object ApikeyAuthModuleConfig {
-  val format = new Format[ApikeyAuthModuleConfig] {
+  val format: Format[ApikeyAuthModuleConfig] = new Format[ApikeyAuthModuleConfig] {
     override def writes(o: ApikeyAuthModuleConfig): JsValue = Json.obj(
       "realm"   -> o.realm,
       "matcher" -> o.matcher.map(ApiKeyRouteMatcher.format.writes)
@@ -764,7 +764,7 @@ class ApikeyAuthModule extends NgPreRouting {
       .flatMap(a => a.headOption.map(head => (head, a.tail.mkString(":"))))
   }
 
-  def unauthorized(config: ApikeyAuthModuleConfig) = {
+  def unauthorized(config: ApikeyAuthModuleConfig): Result = {
     val realm = config.realm.getOrElse("apikey-auth-module-realm")
     PreRoutingError(
       body = "<h3>not authorized</h3>".byteString,
@@ -774,7 +774,7 @@ class ApikeyAuthModule extends NgPreRouting {
     ).asResult
   }
 
-  def forbidden(config: ApikeyAuthModuleConfig) = {
+  def forbidden(config: ApikeyAuthModuleConfig): Result = {
     val realm = config.realm.getOrElse("apikey-auth-module-realm")
     PreRoutingError(
       body = "<h3>forbidden</h3>".byteString,
@@ -866,7 +866,7 @@ case class NgApikeyMandatoryTagsConfig(tags: Seq[String] = Seq.empty) extends Ng
 }
 
 object NgApikeyMandatoryTagsConfig {
-  val format = new Format[NgApikeyMandatoryTagsConfig] {
+  val format: Format[NgApikeyMandatoryTagsConfig] = new Format[NgApikeyMandatoryTagsConfig] {
     override def writes(o: NgApikeyMandatoryTagsConfig): JsValue             = Json.obj(
       "tags" -> o.tags
     )
@@ -925,7 +925,7 @@ case class NgApikeyMandatoryMetadataConfig(metadata: Map[String, String] = Map.e
 }
 
 object NgApikeyMandatoryMetadataConfig {
-  val format = new Format[NgApikeyMandatoryMetadataConfig] {
+  val format: Format[NgApikeyMandatoryMetadataConfig] = new Format[NgApikeyMandatoryMetadataConfig] {
     override def writes(o: NgApikeyMandatoryMetadataConfig): JsValue             = Json.obj(
       "metadata" -> o.metadata
     )

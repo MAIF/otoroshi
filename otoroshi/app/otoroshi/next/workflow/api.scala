@@ -175,7 +175,7 @@ trait Node {
 }
 
 object Node {
-  val default         = Json.obj(
+  val default: JsObject         = Json.obj(
     "id"       -> "main",
     "kind"     -> "workflow",
     "steps"    -> Json.arr(
@@ -189,7 +189,7 @@ object Node {
     ),
     "returned" -> Json.obj("$mem_ref" -> Json.obj("name" -> "call_res"))
   )
-  val baseInputSchema = Json.obj(
+  val baseInputSchema: JsObject = Json.obj(
     "type"       -> "object",
     "required"   -> Seq("kind"),
     "properties" -> Json.obj(

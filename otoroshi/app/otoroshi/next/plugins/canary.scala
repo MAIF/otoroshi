@@ -40,7 +40,7 @@ object NgCanarySettings {
     targets = settings.targets.map(t => NgTarget.fromLegacy(t)),
     root = settings.root
   )
-  val format                                         = new Format[NgCanarySettings] {
+  val format: Format[NgCanarySettings]                                         = new Format[NgCanarySettings] {
     override def reads(json: JsValue): JsResult[NgCanarySettings] =
       Try {
         NgCanarySettings(
@@ -166,7 +166,7 @@ case class TimeControlledCanaryModeConfig(
 }
 
 object TimeControlledCanaryModeConfig {
-  val format = new Format[TimeControlledCanaryModeConfig] {
+  val format: Format[TimeControlledCanaryModeConfig] = new Format[TimeControlledCanaryModeConfig] {
     override def reads(json: JsValue): JsResult[TimeControlledCanaryModeConfig] = {
       Try {
         TimeControlledCanaryModeConfig(

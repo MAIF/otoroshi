@@ -19,7 +19,7 @@ case class ImageReplacerConfig(
 
 object ImageReplacerConfig {
   val defaultUrl = "https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png"
-  val format     = new Format[ImageReplacerConfig] {
+  val format: Format[ImageReplacerConfig]     = new Format[ImageReplacerConfig] {
     override def writes(o: ImageReplacerConfig): JsValue             = Json.obj(
       "url" -> o.url
     )

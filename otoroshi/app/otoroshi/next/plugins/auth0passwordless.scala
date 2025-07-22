@@ -56,9 +56,9 @@ case class Auth0PasswordlessAuthConfig(
 }
 
 object Auth0PasswordlessAuthConfig {
-  val default                        =
+  val default: Auth0PasswordlessAuthConfig                        =
     Auth0PasswordlessAuthConfig("", Auth0PasswordlessConnectionKind.Email, Auth0PasswordlessSendKind.Code, None)
-  val format                         = new Format[Auth0PasswordlessAuthConfig] {
+  val format: Format[Auth0PasswordlessAuthConfig]                         = new Format[Auth0PasswordlessAuthConfig] {
     override def writes(o: Auth0PasswordlessAuthConfig): JsValue             = Json.obj(
       "ref"        -> o.ref,
       "connection" -> o.connection.name,

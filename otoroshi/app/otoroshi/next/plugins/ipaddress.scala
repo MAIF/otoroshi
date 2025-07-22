@@ -22,7 +22,7 @@ case class NgIpAddressesConfig(addresses: Seq[String] = Seq.empty) extends NgPlu
 }
 
 object NgIpAddressesConfig {
-  val format = new Format[NgIpAddressesConfig] {
+  val format: Format[NgIpAddressesConfig] = new Format[NgIpAddressesConfig] {
     override def reads(json: JsValue): JsResult[NgIpAddressesConfig] = Try {
       NgIpAddressesConfig(
         addresses = json.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -143,7 +143,7 @@ case class NgEndlessHttpResponseConfig(finger: Boolean = false, addresses: Seq[S
 }
 
 object NgEndlessHttpResponseConfig {
-  val format = new Format[NgEndlessHttpResponseConfig] {
+  val format: Format[NgEndlessHttpResponseConfig] = new Format[NgEndlessHttpResponseConfig] {
     override def reads(json: JsValue): JsResult[NgEndlessHttpResponseConfig] = Try {
       NgEndlessHttpResponseConfig(
         addresses = json.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty),

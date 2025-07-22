@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.ThreadLocalRandom
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success}
+import play.api.libs.ws.WSResponse
 
 object CleverCloudClient {
 
@@ -80,7 +81,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
 
   implicit val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-clevercloud-client")
+  lazy val logger: Logger = Logger("otoroshi-clevercloud-client")
 
   def getOauthParams(tokenSecret: Option[String] = None): Map[String, String] =
     Map(
@@ -96,7 +97,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       endpoint: String,
       queryParams: Seq[(String, String)] = Seq.empty[(String, String)],
       body: Map[String, List[String]] = Map.empty
-  ) = {
+  ): Future[WSResponse] = {
     val url = s"${settings.apiHost}$endpoint"
 
     val params: String = simpleAuthorization(method, url, queryParams, settings.apiAuthToken)

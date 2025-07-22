@@ -22,7 +22,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
     extends ServiceDescriptorDataStore
     with RedisLikeStore[ServiceDescriptor] {
 
-  lazy val logger = Logger("otoroshi-service-datatstore")
+  lazy val logger: Logger = Logger("otoroshi-service-datatstore")
 
   private val updateRef = new AtomicReference[Cancellable]()
 

@@ -37,7 +37,7 @@ case class NgHasAllowedUsersValidatorConfig(
 }
 
 object NgHasAllowedUsersValidatorConfig {
-  val format = new Format[NgHasAllowedUsersValidatorConfig] {
+  val format: Format[NgHasAllowedUsersValidatorConfig] = new Format[NgHasAllowedUsersValidatorConfig] {
     override def writes(o: NgHasAllowedUsersValidatorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgHasAllowedUsersValidatorConfig] = Try {
       NgHasAllowedUsersValidatorConfig(
@@ -133,7 +133,7 @@ case class NgJwtUserExtractorConfig(
 }
 
 object NgJwtUserExtractorConfig {
-  val format = new Format[NgJwtUserExtractorConfig] {
+  val format: Format[NgJwtUserExtractorConfig] = new Format[NgJwtUserExtractorConfig] {
     override def writes(o: NgJwtUserExtractorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgJwtUserExtractorConfig] = Try {
       NgJwtUserExtractorConfig(

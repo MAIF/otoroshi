@@ -43,7 +43,7 @@ object Timeout {
 
 object Retry {
 
-  lazy val logger = Logger("otoroshi-circuit-breaker")
+  lazy val logger: Logger = Logger("otoroshi-circuit-breaker")
 
   private[this] def retryPromise[T](
       totalCalls: Int,
@@ -127,7 +127,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   val reqCounter = new AtomicInteger(0)
   val breakers   = new UnboundedTrieMap[String, AkkaCircuitBreakerWrapper]()
 
-  lazy val logger = Logger("otoroshi-circuit-breaker")
+  lazy val logger: Logger = Logger("otoroshi-circuit-breaker")
 
   def clear(): Unit = breakers.clear()
 

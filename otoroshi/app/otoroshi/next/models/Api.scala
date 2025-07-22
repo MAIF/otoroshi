@@ -138,7 +138,7 @@ object ApiFlows {
     )
   )
 
-  val _fmt = new Format[ApiFlows] {
+  val _fmt: Format[ApiFlows] = new Format[ApiFlows] {
 
     override def reads(json: JsValue): JsResult[ApiFlows] = Try {
       ApiFlows(
@@ -771,7 +771,7 @@ case class ApiBackendClient(id: String, name: String, client: NgClientConfig)
 
 object ApiBackendClient {
 
-  val defaultClient = ApiBackendClient(
+  val defaultClient: ApiBackendClient = ApiBackendClient(
     id = "default_client",
     name = "default_client",
     client = NgClientConfig.default
@@ -808,7 +808,7 @@ case class ApiTesting(
 
 object ApiTesting {
 
-  val default = ApiTesting(
+  val default: ApiTesting = ApiTesting(
     headerValue = IdGenerator.uuid
   )
 
@@ -1293,7 +1293,7 @@ object Api {
           .map(_.flatMap(v => ApiBackendClient._fmt.reads(v).asOpt))
           .getOrElse(Seq(ApiBackendClient.defaultClient)),
         documentation = (json \ "documentation")
-          .asOpt[ApiDocumentation](ApiDocumentation._fmt.reads),
+          .asOpt[ApiDocumentation](ApiDocumentation._fmt.reads(_)),
         consumers = (json \ "consumers")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiConsumer._fmt.reads(v).asOpt))
@@ -1308,7 +1308,7 @@ object Api {
           .getOrElse(Seq.empty),
         testing = json
           .select("testing")
-          .asOpt(ApiTesting._fmt.reads)
+          .asOpt(ApiTesting._fmt.reads(_))
           .getOrElse(ApiTesting())
       )
     } match {

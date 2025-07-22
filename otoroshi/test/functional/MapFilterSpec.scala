@@ -9,10 +9,11 @@ import play.api.Logger
 import play.api.libs.json.{JsNumber, JsObject, Json}
 
 import scala.annotation.unused
+import play.api.libs.json.JsValue
 
 class MapFilterSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  val source = Json.parse("""
+  val source: JsValue = Json.parse("""
       |{
       |  "foo": "bar",
       |  "type": "AlertEvent",

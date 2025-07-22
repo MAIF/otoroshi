@@ -42,12 +42,12 @@ case class HttpListenerConfig(
 }
 
 object HttpListenerConfig {
-  val default = HttpListenerConfig(
+  val default: HttpListenerConfig = HttpListenerConfig(
     enabled = true,
     port = 7890,
     exposedPort = 7890
   )
-  val format  = new Format[HttpListenerConfig] {
+  val format: Format[HttpListenerConfig]  = new Format[HttpListenerConfig] {
     override def reads(json: JsValue): JsResult[HttpListenerConfig] = Try {
       HttpListenerConfig(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
@@ -150,8 +150,8 @@ case class HttpListener(
 }
 
 object HttpListener {
-  val logger                                                              = Logger("otoroshi-http-listeners")
-  def default(ctx: Option[ApiActionContext[_]] = None)(implicit env: Env) = HttpListener(
+  val logger: Logger                                                              = Logger("otoroshi-http-listeners")
+  def default(ctx: Option[ApiActionContext[_]] = None)(implicit env: Env): HttpListener = HttpListener(
     location = EntityLocation.ownEntityLocation(ctx)(env),
     id = "http-listener_" + UUID.randomUUID().toString,
     name = "http listener",
@@ -160,7 +160,7 @@ object HttpListener {
     config = HttpListenerConfig.default,
     metadata = Map.empty
   )
-  val format                                                              = new Format[HttpListener] {
+  val format: Format[HttpListener]                                                              = new Format[HttpListener] {
     override def writes(o: HttpListener): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,

@@ -26,14 +26,14 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
 
-  lazy val logger = Logger("otoroshi-swagger-controller")
+  lazy val logger: Logger = Logger("otoroshi-swagger-controller")
 
-  def swagger =
+  def swagger: Action[AnyContent] =
     Action { req =>
       Ok(Json.prettyPrint(swaggerDescriptor())).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
     }
 
-  def swaggerUi =
+  def swaggerUi: Action[AnyContent] =
     Action { req =>
       Ok(
         otoroshi.views.html.oto.documentationframe(
@@ -42,9 +42,9 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     }
 
-  def openapi = assetsBuilder.at("openapi.json")
+  def openapi: Action[AnyContent] = assetsBuilder.at("openapi.json")
 
-  def openapiUi =
+  def openapiUi: Action[AnyContent] =
     Action { req =>
       Ok(
         otoroshi.views.html.oto.documentationframe(
@@ -60,7 +60,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
 
   // Types definitions
 
-  def SimpleObjectType =
+  def SimpleObjectType: JsObject =
     Json.obj(
       "type"                 -> "object",
       //"required"             -> Json.arr(),
@@ -68,58 +68,58 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       "additionalProperties" -> Json.obj("type" -> "string")
     )
 
-  def SimpleArrayType  =
+  def SimpleArrayType: JsObject  =
     Json.obj("type" -> "array", "items" -> SimpleStringType, "example" -> Json.arr("a string value"))
 
-  def SimpleStringType = Json.obj("type" -> "string", "example" -> "a string value")
+  def SimpleStringType: JsObject = Json.obj("type" -> "string", "example" -> "a string value")
 
-  def SimpleDoubleType = Json.obj("type" -> "integer", "format" -> "double", "example" -> 42.2)
+  def SimpleDoubleType: JsObject = Json.obj("type" -> "integer", "format" -> "double", "example" -> 42.2)
 
-  def OptionalStringType = Json.obj("type" -> "string", "example" -> "a string value")
+  def OptionalStringType: JsObject = Json.obj("type" -> "string", "example" -> "a string value")
 
-  def SimpleBooleanType = Json.obj("type" -> "boolean", "example" -> true)
+  def SimpleBooleanType: JsObject = Json.obj("type" -> "boolean", "example" -> true)
 
-  def SimpleDateType = Json.obj("type" -> "string", "format" -> "date", "example" -> "2017-07-21")
+  def SimpleDateType: JsObject = Json.obj("type" -> "string", "format" -> "date", "example" -> "2017-07-21")
 
-  def SimpleDateTimeType = Json.obj("type" -> "string", "format" -> "date-time", "example" -> "2017-07-21T17:32:28Z")
+  def SimpleDateTimeType: JsObject = Json.obj("type" -> "string", "format" -> "date-time", "example" -> "2017-07-21T17:32:28Z")
 
-  def SimpleTimeType = Json.obj("type" -> "string", "format" -> "time", "example" -> "17:32:28.000")
+  def SimpleTimeType: JsObject = Json.obj("type" -> "string", "format" -> "time", "example" -> "17:32:28.000")
 
-  def SimpleLongType = Json.obj("type" -> "integer", "format" -> "int64", "example" -> 123)
+  def SimpleLongType: JsObject = Json.obj("type" -> "integer", "format" -> "int64", "example" -> 123)
 
-  def SimpleIntType = Json.obj("type" -> "integer", "format" -> "int32", "example" -> 123123)
+  def SimpleIntType: JsObject = Json.obj("type" -> "integer", "format" -> "int32", "example" -> 123123)
 
-  def SimpleHostType = Json.obj("type" -> "string", "format" -> "hostname", "example" -> "www.google.com")
+  def SimpleHostType: JsObject = Json.obj("type" -> "string", "format" -> "hostname", "example" -> "www.google.com")
 
-  def SimpleIpv4Type = Json.obj("type" -> "string", "format" -> "ipv4", "example" -> "192.192.192.192")
+  def SimpleIpv4Type: JsObject = Json.obj("type" -> "string", "format" -> "ipv4", "example" -> "192.192.192.192")
 
-  def SimpleUriType = Json.obj("type" -> "string", "format" -> "uri", "example" -> "http://www.google.com")
+  def SimpleUriType: JsObject = Json.obj("type" -> "string", "format" -> "uri", "example" -> "http://www.google.com")
 
-  def SimpleEmailType = Json.obj("type" -> "string", "format" -> "email", "example" -> "admin@otoroshi.io")
+  def SimpleEmailType: JsObject = Json.obj("type" -> "string", "format" -> "email", "example" -> "admin@otoroshi.io")
 
-  def SimpleUuidType              =
+  def SimpleUuidType: JsObject              =
     Json.obj("type" -> "string", "format" -> "uuid", "example" -> "110e8400-e29b-11d4-a716-446655440000")
 
   def Ref(name: String): JsObject = Json.obj("$ref" -> s"#/components/schemas/$name")
 
-  def Constant(str: String) =
+  def Constant(str: String): JsObject =
     Json.obj(
       "type" -> "string",
       "enum" -> Json.arr(str)
     )
 
-  def ArrayOf(ref: JsValue) =
+  def ArrayOf(ref: JsValue): JsObject =
     Json.obj(
       "type"  -> "array",
       "items" -> ref
     )
 
-  def OneOf(refs: JsValue*) =
+  def OneOf(refs: JsValue*): JsObject =
     Json.obj(
       "oneOf" -> JsArray(refs.toSeq)
     )
 
-  def RequestBody(typ: JsValue) =
+  def RequestBody(typ: JsValue): JsObject =
     Json.obj(
       "required" -> true,
       "content"  -> Json.obj(
@@ -129,7 +129,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def FormBody(typ: JsValue) =
+  def FormBody(typ: JsValue): JsObject =
     Json.obj(
       "required" -> true,
       "content"  -> Json.obj(
@@ -139,7 +139,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def QueryParam(name: String, desc: String) =
+  def QueryParam(name: String, desc: String): JsObject =
     Json.obj(
       "in"          -> "query",
       "name"        -> name,
@@ -148,7 +148,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       "schema"      -> Json.obj("type" -> "string")
     )
 
-  def PathParam(name: String, desc: String) =
+  def PathParam(name: String, desc: String): JsObject =
     Json.obj(
       "in"          -> "path",
       "name"        -> name,
@@ -157,14 +157,14 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       "schema"      -> Json.obj("type" -> "string")
     )
 
-  def BodyParam(desc: String, typ: JsValue) =
+  def BodyParam(desc: String, typ: JsValue): Some[JsObject] =
     Some(
       Json.obj(
         "schema" -> typ
       )
     )
 
-  def GoodResponse(ref: JsValue, contents: JsArray = Json.arr("application/json")) =
+  def GoodResponse(ref: JsValue, contents: JsArray = Json.arr("application/json")): JsObject =
     Json.obj(
       "description" -> "Successful operation",
       "content"     -> contents.value
@@ -178,7 +178,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
         })
     )
 
-  def BulkResponse(action: String, status: String, actionIdDescription: String) =
+  def BulkResponse(action: String, status: String, actionIdDescription: String): JsObject =
     GoodResponse(
       ArrayOf(
         Json.obj(
@@ -193,7 +193,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Tag(name: String, description: String) =
+  def Tag(name: String, description: String): JsObject =
     Json.obj(
       "name"        -> name,
       "description" -> description
@@ -279,7 +279,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
 
   // Models definition
 
-  def LargeRequestFaultConfig =
+  def LargeRequestFaultConfig: JsObject =
     Json.obj(
       "description" -> "Config for large request injection fault",
       "type"        -> "object",
@@ -290,7 +290,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def BadResponse =
+  def BadResponse: JsObject =
     Json.obj(
       "description" -> "An HTTP response that is not supposed to be returned by a service",
       "type"        -> "object",
@@ -302,7 +302,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def LargeResponseFaultConfig =
+  def LargeResponseFaultConfig: JsObject =
     Json.obj(
       "description" -> "Config for large response injection fault",
       "type"        -> "object",
@@ -313,7 +313,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def LatencyInjectionFaultConfig =
+  def LatencyInjectionFaultConfig: JsObject =
     Json.obj(
       "description" -> "Config for large latency injection fault",
       "type"        -> "object",
@@ -325,7 +325,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def BadResponsesFaultConfig =
+  def BadResponsesFaultConfig: JsObject =
     Json.obj(
       "description" -> "Config for bad requests injection fault",
       "type"        -> "object",
@@ -336,7 +336,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ChaosConfig =
+  def ChaosConfig: JsObject =
     Json.obj(
       "description" -> "Configuration for the faults that can be injected in requests",
       "type"        -> "object",
@@ -352,13 +352,13 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def OutageStrategy =
+  def OutageStrategy: JsObject =
     Json.obj(
       "type" -> "string",
       "enum" -> Json.arr("OneServicePerGroup", "AllServicesPerGroup")
     )
 
-  def SnowMonkeyConfig =
+  def SnowMonkeyConfig: JsObject =
     Json.obj(
       "description" -> """Configuration for the faults that can be injected in requests. The name Snow Monkey is an hommage to Netflix's Chaos Monkey 😉""",
       "type"        -> "object",
@@ -392,7 +392,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Outage =
+  def Outage: JsObject =
     Json.obj(
       "description" -> "An outage by the Snow Monkey on a service",
       "type"        -> "object",
@@ -405,7 +405,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Target =
+  def Target: JsObject =
     Json.obj(
       "description" -> "A Target is where an HTTP call will be forwarded in the end from a service domain",
       "type"        -> "object",
@@ -416,7 +416,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def IpFiltering =
+  def IpFiltering: JsObject =
     Json.obj(
       "description" -> "The filtering configuration block for a service of globally.",
       "type"        -> "object",
@@ -427,7 +427,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ExposedApi =
+  def ExposedApi: JsObject =
     Json.obj(
       "description" -> "The Open API configuration for your service (if one)",
       "type"        -> "object",
@@ -438,7 +438,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def HealthCheck =
+  def HealthCheck: JsObject =
     Json.obj(
       "description" -> "The configuration for checking health of a service. Otoroshi will perform GET call on the URL to check if the service is still alive",
       "type"        -> "object",
@@ -449,7 +449,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def StatsdConfig =
+  def StatsdConfig: JsObject =
     Json.obj(
       "description" -> "The configuration for statsd metrics push",
       "type"        -> "object",
@@ -461,7 +461,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def CorsSettings =
+  def CorsSettings: JsObject =
     Json.obj(
       "description" -> "The configuration for cors support",
       "type"        -> "object",
@@ -487,7 +487,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def RedirectionSettings =
+  def RedirectionSettings: JsObject =
     Json.obj(
       "description" -> "The configuration for redirection per service",
       "type"        -> "object",
@@ -503,7 +503,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ValidationAuthority =
+  def ValidationAuthority: JsObject =
     Json.obj(
       "description" -> "Settings to access a validation authority server",
       "type"        -> "object",
@@ -539,7 +539,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def DataExporterConfig =
+  def DataExporterConfig: JsObject =
     Json.obj(
       "description" -> "Settings to export Otorshi events",
       "type"        -> "object",
@@ -586,7 +586,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Filtering =
+  def Filtering: JsObject =
     Json.obj(
       "type"       -> "object",
       "required"   -> Json.arr("include, exclude"),
@@ -596,7 +596,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Location =
+  def Location: JsObject =
     Json.obj(
       "type"       -> "object",
       "required"   -> Json.arr("tenant", "teams"),
@@ -606,7 +606,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def KafkaConfig =
+  def KafkaConfig: JsObject =
     Json.obj(
       "description" -> "The configuration for kafka access",
       "type"        -> "object",
@@ -620,7 +620,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def WebhookConfig =
+  def WebhookConfig: JsObject =
     Json.obj(
       "description" -> "The configuration for webhook",
       "type"        -> "object",
@@ -631,7 +631,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def PulsarDataExporterConfig =
+  def PulsarDataExporterConfig: JsObject =
     Json.obj(
       "description" -> "The configuration for kafka access",
       "type"        -> "object",
@@ -644,7 +644,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def FileDataExporterConfig =
+  def FileDataExporterConfig: JsObject =
     Json.obj(
       "type"       -> "object",
       "required"   -> Json.arr("path"),
@@ -653,7 +653,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def MailerGenericExporterConfig =
+  def MailerGenericExporterConfig: JsObject =
     Json.obj(
       "type"       -> "object",
       "required"   -> Json.arr("type"),
@@ -665,7 +665,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def MailerConsoleExporterConfig =
+  def MailerConsoleExporterConfig: JsObject =
     Json.obj(
       "type"       -> "object",
       "properties" -> Json.obj(
@@ -673,7 +673,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def MailerMailgunExporterConfig =
+  def MailerMailgunExporterConfig: JsObject =
     Json.obj(
       "type"       -> "object",
       "required"   -> Json.arr("type"),
@@ -686,7 +686,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def MailerMailjetExporterConfig =
+  def MailerMailjetExporterConfig: JsObject =
     Json.obj(
       "type"       -> "object",
       "required"   -> Json.arr("type"),
@@ -698,7 +698,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def MailerSendgridExporterConfig =
+  def MailerSendgridExporterConfig: JsObject =
     Json.obj(
       "type"       -> "object",
       "required"   -> Json.arr("type"),
@@ -709,13 +709,13 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ConsoleDataExporterConfig =
+  def ConsoleDataExporterConfig: JsObject =
     Json.obj(
       "type"       -> "object",
       "properties" -> Json.obj()
     )
 
-  def CustomDataExporterConfig =
+  def CustomDataExporterConfig: JsObject =
     Json.obj(
       "type"       -> "object",
       "required"   -> Json.arr("ref", "config"),
@@ -725,7 +725,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ElasticConfig =
+  def ElasticConfig: JsObject =
     Json.obj(
       "description" -> "The configuration for elastic access",
       "type"        -> "object",
@@ -740,7 +740,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ClientConfig =
+  def ClientConfig: JsObject =
     Json.obj(
       "description" -> "The configuration of the circuit breaker for a service descriptor",
       "type"        -> "object",
@@ -766,7 +766,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Canary =
+  def Canary: JsObject =
     Json.obj(
       "description" -> "The configuration of the canary mode for a service descriptor",
       "type"        -> "object",
@@ -781,7 +781,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Service =
+  def Service: JsObject =
     Json.obj(
       "description" -> "An otoroshi service descriptor. Represent a forward HTTP call on a domain to another location with some optional api management mecanism",
       "type"        -> "object",
@@ -863,7 +863,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Gzip =
+  def Gzip: JsObject =
     Json.obj(
       "description" -> "Configuration for gzip of service responses",
       "type"        -> "object",
@@ -887,7 +887,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ApiKey =
+  def ApiKey: JsObject =
     Json.obj(
       "description" -> "An Otoroshi Api Key. An Api Key is defined for a group of services to allow usage of the same Api Key for multiple services.",
       "type"        -> "object",
@@ -905,7 +905,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Group =
+  def Group: JsObject =
     Json.obj(
       "description" -> "An Otoroshi service group is just a group of service descriptor. It is useful to be able to define Api Keys for the whole group",
       "type"        -> "object",
@@ -917,7 +917,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Auth0Config =
+  def Auth0Config: JsObject =
     Json.obj(
       "description" -> "Configuration for Auth0 domain",
       "type"        -> "object",
@@ -930,7 +930,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def MailerSettings =
+  def MailerSettings: JsObject =
     Json.obj(
       "description" -> "Configuration for mailgun api client",
       "type"        -> "object",
@@ -947,7 +947,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def CleverSettings =
+  def CleverSettings: JsObject =
     Json.obj(
       "description" -> "Configuration for CleverCloud client",
       "type"        -> "object",
@@ -961,7 +961,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def GlobalConfig =
+  def GlobalConfig: JsObject =
     Json.obj(
       "type"        -> "object",
       "required"    -> Json.arr(
@@ -1011,7 +1011,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Webhook =
+  def Webhook: JsObject =
     Json.obj(
       "description" -> "A callback URL where events are posted",
       "type"        -> "object",
@@ -1022,7 +1022,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ImportExportStats =
+  def ImportExportStats: JsObject =
     Json.obj(
       "description" -> "Global stats for the current Otoroshi instances",
       "type"        -> "object",
@@ -1034,7 +1034,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def U2FAdmin =
+  def U2FAdmin: JsObject =
     Json.obj(
       "description" -> "Administrator using FIDO U2F device to access Otoroshi",
       "type"        -> "object",
@@ -1048,7 +1048,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def SimpleAdmin =
+  def SimpleAdmin: JsObject =
     Json.obj(
       "description" -> "Administrator using just login/password tuple to access Otoroshi",
       "type"        -> "object",
@@ -1061,7 +1061,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ErrorTemplate =
+  def ErrorTemplate: JsObject =
     Json.obj(
       "description" -> "Error templates for a service descriptor",
       "type"        -> "object",
@@ -1077,7 +1077,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ImportExport =
+  def ImportExport: JsObject =
     Json.obj(
       "description" -> "The structure that can be imported to or exported from Otoroshi. It represent the memory state of Otoroshi",
       "type"        -> "object",
@@ -1110,7 +1110,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def OtoroshiHealth =
+  def OtoroshiHealth: JsObject =
     Json.obj(
       "description" -> "The structure that represent current Otoroshi health",
       "type"        -> "object",
@@ -1127,7 +1127,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Stats =
+  def Stats: JsObject =
     Json.obj(
       "description" -> "Live stats for a service or globally",
       "type"        -> "object",
@@ -1155,7 +1155,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Patch =
+  def Patch: JsObject =
     Json.obj(
       "description" -> "A set of changes described in JSON Patch format: http://jsonpatch.com/ (RFC 6902)",
       "type"        -> "array",
@@ -1173,7 +1173,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Quotas =
+  def Quotas: JsObject =
     Json.obj(
       "description" -> "Quotas state for an api key on a service group",
       "type"        -> "object",
@@ -1201,7 +1201,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Deleted =
+  def Deleted: JsObject =
     Json.obj(
       "type"       -> "object",
       "required"   -> Json.arr("deleted"),
@@ -1210,7 +1210,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Done =
+  def Done: JsObject =
     Json.obj(
       "type"       -> "object",
       "required"   -> Json.arr("done"),
@@ -1219,7 +1219,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def RefJwtVerifier =
+  def RefJwtVerifier: JsObject =
     Json.obj(
       "description" -> "Reference to a global JWT verifier",
       "type"        -> "object",
@@ -1235,7 +1235,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def LocalJwtVerifier =
+  def LocalJwtVerifier: JsObject =
     Json.obj(
       "description" -> "A JWT verifier used only for the current service descriptor",
       "type"        -> "object",
@@ -1262,7 +1262,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def GlobalJwtVerifier =
+  def GlobalJwtVerifier: JsObject =
     Json.obj(
       "description" -> "A JWT verifier used by multiple service descriptor",
       "type"        -> "object",
@@ -1294,7 +1294,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def GenericOauth2ModuleConfig =
+  def GenericOauth2ModuleConfig: JsObject =
     Json.obj(
       "description" -> "Settings to authenticate users using a generic OAuth2 provider",
       "type"        -> "object",
@@ -1350,7 +1350,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def InQueryParam =
+  def InQueryParam: JsObject =
     Json.obj(
       "description" -> "JWT location in a query param",
       "type"        -> "object",
@@ -1364,7 +1364,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def InHeader =
+  def InHeader: JsObject =
     Json.obj(
       "description" -> "JWT location in a header",
       "type"        -> "object",
@@ -1380,7 +1380,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def InCookie =
+  def InCookie: JsObject =
     Json.obj(
       "description" -> "JWT location in a cookie",
       "type"        -> "object",
@@ -1394,7 +1394,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def HSAlgoSettings =
+  def HSAlgoSettings: JsObject =
     Json.obj(
       "description" -> "Settings for an HMAC + SHA signing algorithm",
       "type"        -> "object",
@@ -1410,7 +1410,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def RSAlgoSettings =
+  def RSAlgoSettings: JsObject =
     Json.obj(
       "description" -> "Settings for an HMAC + SHA signing algorithm",
       "type"        -> "object",
@@ -1427,7 +1427,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ESAlgoSettings =
+  def ESAlgoSettings: JsObject =
     Json.obj(
       "description" -> "Settings for an EC + SHA signing algorithm",
       "type"        -> "object",
@@ -1444,7 +1444,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def JWKSAlgoSettings =
+  def JWKSAlgoSettings: JsObject =
     Json.obj(
       "description" -> "Settings for a JWK set",
       "type"        -> "object",
@@ -1463,7 +1463,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def MappingSettings =
+  def MappingSettings: JsObject =
     Json.obj(
       "description" -> "Settings to change fields of a JWT token",
       "type"        -> "object",
@@ -1479,7 +1479,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def TransformSettings =
+  def TransformSettings: JsObject =
     Json.obj(
       "description" -> "Settings to transform a JWT token and its location",
       "type"        -> "object",
@@ -1493,7 +1493,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def VerificationSettings =
+  def VerificationSettings: JsObject =
     Json.obj(
       "description" -> "Settings to verify the value of JWT token fields",
       "type"        -> "object",
@@ -1506,7 +1506,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def PassThrough =
+  def PassThrough: JsObject =
     Json.obj(
       "description" -> "Strategy where only signature and field values are verified",
       "type"        -> "object",
@@ -1520,7 +1520,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Sign =
+  def Sign: JsObject =
     Json.obj(
       "description" -> "Strategy where signature and field values are verified, and then token si re-signed",
       "type"        -> "object",
@@ -1541,7 +1541,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Transform =
+  def Transform: JsObject =
     Json.obj(
       "description" -> "Strategy where signature and field values are verified, trasnformed and then token si re-signed",
       "type"        -> "object",
@@ -1563,7 +1563,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def InMemoryAuthModuleConfig =
+  def InMemoryAuthModuleConfig: JsObject =
     Json.obj(
       "description" -> "Settings to authenticate users using the in memory user store",
       "type"        -> "object",
@@ -1585,7 +1585,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def InMemoryUser =
+  def InMemoryUser: JsObject =
     Json.obj(
       "description" -> "A user",
       "type"        -> "object",
@@ -1603,7 +1603,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def LdapUser =
+  def LdapUser: JsObject =
     Json.obj(
       "description" -> "A user",
       "type"        -> "object",
@@ -1619,7 +1619,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Certificate =
+  def Certificate: JsObject =
     Json.obj(
       "description" -> "A SSL/TLS X509 certificate",
       "type"        -> "object",
@@ -1653,7 +1653,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def LdapAuthModuleConfig =
+  def LdapAuthModuleConfig: JsObject =
     Json.obj(
       "description" -> "Settings to authenticate users using a generic OAuth2 provider",
       "type"        -> "object",
@@ -1693,7 +1693,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ScriptCompilationResult =
+  def ScriptCompilationResult: JsObject =
     Json.obj(
       "description" -> "The result of the compilation of a Script",
       "type"        -> "object",
@@ -1706,7 +1706,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ScriptCompilationError =
+  def ScriptCompilationError: JsObject =
     Json.obj(
       "description" -> "The error of the compilation of a Script",
       "type"        -> "object",
@@ -1726,7 +1726,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Script =
+  def Script: JsObject =
     Json.obj(
       "description" -> "A script to transformer otoroshi requests ",
       "type"        -> "object",
@@ -1808,7 +1808,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def QuotasOfTheApiKeyOfAService =
+  def QuotasOfTheApiKeyOfAService: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "apikeys",
@@ -1834,7 +1834,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def QuotasOfTheApiKeyOfAGroup =
+  def QuotasOfTheApiKeyOfAGroup: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "apikeys",
@@ -1860,7 +1860,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def GroupForApiKey =
+  def GroupForApiKey: JsObject =
     Json.obj(
       "get" -> Operation(
         tag = "apikeys",
@@ -1875,7 +1875,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ApiKeyManagementForService =
+  def ApiKeyManagementForService: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "apikeys",
@@ -1925,7 +1925,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ApiKeyManagementForGroup =
+  def ApiKeyManagementForGroup: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "apikeys",
@@ -1975,7 +1975,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ApiKeysManagementForService =
+  def ApiKeysManagementForService: JsObject =
     Json.obj(
       "get"  -> Operation(
         tag = "apikeys",
@@ -1999,7 +1999,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ApiKeysManagementForGroup =
+  def ApiKeysManagementForGroup: JsObject =
     Json.obj(
       "get"  -> Operation(
         tag = "apikeys",
@@ -2024,7 +2024,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def JWTVerifiers =
+  def JWTVerifiers: JsObject =
     Json.obj(
       "get"  -> Operation(
         tag = "jwt-verifiers",
@@ -2043,7 +2043,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def JWTVerifier =
+  def JWTVerifier: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "jwt-verifiers",
@@ -2089,7 +2089,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def AuthConfigs =
+  def AuthConfigs: JsObject =
     Json.obj(
       "get"  -> Operation(
         tag = "auth-config",
@@ -2115,7 +2115,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def AuthConfig =
+  def AuthConfig: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "auth-config",
@@ -2170,7 +2170,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Certificates =
+  def Certificates: JsObject =
     Json.obj(
       "get"  -> Operation(
         tag = "certificates",
@@ -2189,7 +2189,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def Certificate_ =
+  def Certificate_ : JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "certificates",
@@ -2235,7 +2235,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ValidationAuthoritiesApi =
+  def ValidationAuthoritiesApi: JsObject =
     Json.obj(
       "get"  -> Operation(
         tag = "validation-authorities",
@@ -2254,7 +2254,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ValidationAuthoritieApi =
+  def ValidationAuthoritieApi: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "validation-authorities",
@@ -2300,7 +2300,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ApiKeys =
+  def ApiKeys: JsObject =
     Json.obj(
       "get" -> Operation(
         tag = "apikeys",
@@ -2311,7 +2311,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def GroupManagement =
+  def GroupManagement: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "groups",
@@ -2357,7 +2357,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def GroupsManagement =
+  def GroupsManagement: JsObject =
     Json.obj(
       "get"  -> Operation(
         tag = "groups",
@@ -2376,7 +2376,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def SnowMonkeyConfigApi =
+  def SnowMonkeyConfigApi: JsObject =
     Json.obj(
       "get"   -> Operation(
         tag = "snowmonkey",
@@ -2403,7 +2403,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def SnowMonkeyOutageApi =
+  def SnowMonkeyOutageApi: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "snowmonkey",
@@ -2421,7 +2421,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def SnowMonkeyStartApi =
+  def SnowMonkeyStartApi: JsObject =
     Json.obj(
       "post" -> Operation(
         tag = "snowmonkey",
@@ -2432,7 +2432,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def SnowMonkeyStopApi =
+  def SnowMonkeyStopApi: JsObject =
     Json.obj(
       "post" -> Operation(
         tag = "snowmonkey",
@@ -2443,7 +2443,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ServicesManagement =
+  def ServicesManagement: JsObject =
     Json.obj(
       "get"  -> Operation(
         tag = "services",
@@ -2462,7 +2462,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ServicesForGroup =
+  def ServicesForGroup: JsObject =
     Json.obj(
       "get" -> Operation(
         tag = "services",
@@ -2476,7 +2476,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ServiceManagement =
+  def ServiceManagement: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "services",
@@ -2522,7 +2522,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ImportExportJson =
+  def ImportExportJson: JsObject =
     Json.obj(
       "get"  -> Operation(
         tag = "import",
@@ -2541,7 +2541,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def GlobalConfigManagement =
+  def GlobalConfigManagement: JsObject =
     Json.obj(
       "get"   -> Operation(
         tag = "configuration",
@@ -2568,7 +2568,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ImportFromFile =
+  def ImportFromFile: JsObject =
     Json.obj(
       "post" -> Operation(
         tag = "import",
@@ -2580,7 +2580,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def CheckOtoroshiHealth =
+  def CheckOtoroshiHealth: JsObject =
     Json.obj(
       "get" -> NoAuthOperation(
         tag = "health",
@@ -2591,7 +2591,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ServiceTargetsManagement =
+  def ServiceTargetsManagement: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "services",
@@ -2637,7 +2637,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ServiceTemplatesManagement =
+  def ServiceTemplatesManagement: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "services",
@@ -2683,7 +2683,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ScriptApi =
+  def ScriptApi: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "scripts",
@@ -2729,7 +2729,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ScriptsApi =
+  def ScriptsApi: JsObject =
     Json.obj(
       "get"  -> Operation(
         tag = "scripts",
@@ -2748,7 +2748,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def ScriptCompilationApi =
+  def ScriptCompilationApi: JsObject =
     Json.obj(
       "post" -> Operation(
         tag = "scripts",
@@ -2760,7 +2760,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def DataExporterConfigsTemplateApi =
+  def DataExporterConfigsTemplateApi: JsObject =
     Json.obj(
       "get" -> Operation(
         tag = "data-exporter-configs",
@@ -2774,7 +2774,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def DataExporterConfigsBulkApi =
+  def DataExporterConfigsBulkApi: JsObject =
     Json.obj(
       "post"   -> Operation(
         tag = "data-exporter-configs",
@@ -2814,7 +2814,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def DataExporterConfigsApi =
+  def DataExporterConfigsApi: JsObject =
     Json.obj(
       "get"  -> Operation(
         tag = "data-exporter-configs",
@@ -2833,7 +2833,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
       )
     )
 
-  def DataExporterConfigApi =
+  def DataExporterConfigApi: JsObject =
     Json.obj(
       "get"    -> Operation(
         tag = "data-exporter-configs",

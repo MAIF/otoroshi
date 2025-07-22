@@ -38,9 +38,9 @@ class HttpHandler()(implicit env: Env) {
   implicit lazy val currentSystem: ActorSystem = env.otoroshiActorSystem
   implicit lazy val currentMaterializer: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-http-handler")
+  lazy val logger: Logger = Logger("otoroshi-http-handler")
 
-  val sourceBodyParser = BodyParser("Http BodyParser") { _ =>
+  val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("Http BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
@@ -72,7 +72,7 @@ class HttpHandler()(implicit env: Env) {
       snowMonkey: SnowMonkey,
       headersInFiltered: Seq[String],
       headersOutFiltered: Seq[String]
-  ) =
+  ): Action[Source[ByteString, _]] =
     actionBuilder.async(sourceBodyParser) { req =>
       env.metrics.withTimerAsync("handle-request")(
         reverseProxyAction

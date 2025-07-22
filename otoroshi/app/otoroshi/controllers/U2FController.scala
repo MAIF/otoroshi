@@ -38,7 +38,7 @@ class U2FController(
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
 
-  lazy val logger = Logger("otoroshi-u2f-controller")
+  lazy val logger: Logger = Logger("otoroshi-u2f-controller")
 
   private val base64Encoder = java.util.Base64.getUrlEncoder
   private val base64Decoder = java.util.Base64.getUrlDecoder
@@ -48,14 +48,14 @@ class U2FController(
     .setSerializationInclusion(Include.NON_ABSENT)
     .registerModule(new Jdk8Module())
 
-  def loginPage() =
+  def loginPage(): Action[AnyContent] =
     BackOfficeAction { ctx =>
       Ok(otoroshi.views.html.backoffice.u2flogin(env))
     }
 
   /////////// Simple admins ////////////////////////////////////////////////////////////////////////////////////////////
 
-  def simpleLogin =
+  def simpleLogin: Action[JsValue] =
     BackOfficeAction.async(parse.json) { ctx =>
       implicit val req: Request[JsValue] = ctx.request
       val usernameOpt  = (ctx.request.body \ "username").asOpt[String]
@@ -222,7 +222,7 @@ class U2FController(
     }
   }
    */
-  def webAuthnRegistrationStart() =
+  def webAuthnRegistrationStart(): Action[JsValue] =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         import scala.jdk.CollectionConverters._
@@ -278,7 +278,7 @@ class U2FController(
       }
     }
 
-  def webAuthnRegistrationFinish() =
+  def webAuthnRegistrationFinish(): Action[JsValue] =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       ctx.checkRights(SuperAdminOnly) {
         import scala.jdk.CollectionConverters._
@@ -380,7 +380,7 @@ class U2FController(
       }
     }
 
-  def webAuthnLoginStart() =
+  def webAuthnLoginStart(): Action[JsValue] =
     BackOfficeAction.async(parse.json) { ctx =>
       import scala.jdk.CollectionConverters._
 
@@ -431,7 +431,7 @@ class U2FController(
       }
     }
 
-  def webAuthnLoginFinish() =
+  def webAuthnLoginFinish(): Action[JsValue] =
     BackOfficeAction.async(parse.json) { ctx =>
       import scala.jdk.CollectionConverters._
 

@@ -1250,7 +1250,7 @@ object KubernetesIngressToDescriptor {
 object IngressSupport {
 
   object IntOrString {
-    val reader = new Reads[IntOrString] {
+    val reader: Reads[IntOrString] = new Reads[IntOrString] {
       override def reads(json: JsValue): JsResult[IntOrString] =
         Try(
           json
@@ -1275,7 +1275,7 @@ object IngressSupport {
   }
 
   object NetworkingV1beta1Ingress {
-    val reader = new Reads[NetworkingV1beta1Ingress] {
+    val reader: Reads[NetworkingV1beta1Ingress] = new Reads[NetworkingV1beta1Ingress] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1Ingress] =
         Try(
           NetworkingV1beta1Ingress(
@@ -1301,7 +1301,7 @@ object IngressSupport {
   )
 
   object NetworkingV1beta1IngressItem {
-    val reader = new Reads[NetworkingV1beta1IngressItem] {
+    val reader: Reads[NetworkingV1beta1IngressItem] = new Reads[NetworkingV1beta1IngressItem] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressItem] =
         Try(
           NetworkingV1beta1IngressItem(
@@ -1319,7 +1319,7 @@ object IngressSupport {
   case class NetworkingV1beta1IngressItem(spec: NetworkingV1beta1IngressSpec, status: NetworkingV1beta1IngressStatus)
 
   object NetworkingV1beta1IngressBackend {
-    val reader = new Reads[NetworkingV1beta1IngressBackend] {
+    val reader: Reads[NetworkingV1beta1IngressBackend] = new Reads[NetworkingV1beta1IngressBackend] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressBackend] =
         Try(
           NetworkingV1beta1IngressBackend(
@@ -1405,7 +1405,7 @@ object IngressSupport {
   }
 
   object NetworkingV1beta1IngressRule {
-    val reader = new Reads[NetworkingV1beta1IngressRule] {
+    val reader: Reads[NetworkingV1beta1IngressRule] = new Reads[NetworkingV1beta1IngressRule] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressRule] =
         Try(
           NetworkingV1beta1IngressRule(
@@ -1422,7 +1422,7 @@ object IngressSupport {
   case class NetworkingV1beta1IngressRule(host: Option[String], http: NetworkingV1beta1HTTPIngressRuleValue)
 
   object NetworkingV1beta1IngressSpec {
-    val reader = new Reads[NetworkingV1beta1IngressSpec] {
+    val reader: Reads[NetworkingV1beta1IngressSpec] = new Reads[NetworkingV1beta1IngressSpec] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressSpec] =
         Try(
           NetworkingV1beta1IngressSpec(
@@ -1444,7 +1444,7 @@ object IngressSupport {
   )
 
   object NetworkingV1beta1IngressList {
-    val reader = new Reads[NetworkingV1beta1IngressList] {
+    val reader: Reads[NetworkingV1beta1IngressList] = new Reads[NetworkingV1beta1IngressList] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressList] =
         Try(
           NetworkingV1beta1IngressList(
@@ -1462,7 +1462,7 @@ object IngressSupport {
   case class NetworkingV1beta1IngressList(apiVersion: String, items: Seq[NetworkingV1beta1Ingress], kind: String)
 
   object NetworkingV1beta1IngressStatus {
-    val reader = new Reads[NetworkingV1beta1IngressStatus] {
+    val reader: Reads[NetworkingV1beta1IngressStatus] = new Reads[NetworkingV1beta1IngressStatus] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressStatus] =
         Try(
           NetworkingV1beta1IngressStatus(
@@ -1478,7 +1478,7 @@ object IngressSupport {
   case class NetworkingV1beta1IngressStatus(loadBalancer: V1LoadBalancerStatus)
 
   object NetworkingV1beta1IngressTLS {
-    val reader = new Reads[NetworkingV1beta1IngressTLS] {
+    val reader: Reads[NetworkingV1beta1IngressTLS] = new Reads[NetworkingV1beta1IngressTLS] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressTLS] =
         Try(
           NetworkingV1beta1IngressTLS(
@@ -1495,7 +1495,7 @@ object IngressSupport {
   case class NetworkingV1beta1IngressTLS(hosts: Seq[String], secretName: String)
 
   object NetworkingV1beta1HTTPIngressPath {
-    val reader = new Reads[NetworkingV1beta1HTTPIngressPath] {
+    val reader: Reads[NetworkingV1beta1HTTPIngressPath] = new Reads[NetworkingV1beta1HTTPIngressPath] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1HTTPIngressPath] =
         Try(
           NetworkingV1beta1HTTPIngressPath(
@@ -1512,7 +1512,7 @@ object IngressSupport {
   case class NetworkingV1beta1HTTPIngressPath(backend: NetworkingV1beta1IngressBackend, path: Option[String])
 
   object NetworkingV1beta1HTTPIngressRuleValue {
-    val reader = new Reads[NetworkingV1beta1HTTPIngressRuleValue] {
+    val reader: Reads[NetworkingV1beta1HTTPIngressRuleValue] = new Reads[NetworkingV1beta1HTTPIngressRuleValue] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1HTTPIngressRuleValue] =
         Try(
           NetworkingV1beta1HTTPIngressRuleValue(
@@ -1528,7 +1528,7 @@ object IngressSupport {
   case class NetworkingV1beta1HTTPIngressRuleValue(paths: Seq[NetworkingV1beta1HTTPIngressPath])
 
   object V1LoadBalancerStatus {
-    val reader = new Reads[V1LoadBalancerStatus] {
+    val reader: Reads[V1LoadBalancerStatus] = new Reads[V1LoadBalancerStatus] {
       override def reads(json: JsValue): JsResult[V1LoadBalancerStatus] =
         Try(
           V1LoadBalancerStatus(
@@ -1544,7 +1544,7 @@ object IngressSupport {
   case class V1LoadBalancerStatus(ingress: Seq[V1LoadBalancerIngress])
 
   object V1ObjectMeta {
-    val reader = new Reads[V1ObjectMeta] {
+    val reader: Reads[V1ObjectMeta] = new Reads[V1ObjectMeta] {
       override def reads(json: JsValue): JsResult[V1ObjectMeta] =
         Try(
           V1ObjectMeta(
@@ -1590,7 +1590,7 @@ object IngressSupport {
   )
 
   object V1OwnerReference {
-    val reader = new Reads[V1OwnerReference] {
+    val reader: Reads[V1OwnerReference] = new Reads[V1OwnerReference] {
       override def reads(json: JsValue): JsResult[V1OwnerReference] =
         Try(
           V1OwnerReference(
@@ -1618,7 +1618,7 @@ object IngressSupport {
   )
 
   object V1LoadBalancerIngress {
-    val reader = new Reads[V1LoadBalancerIngress] {
+    val reader: Reads[V1LoadBalancerIngress] = new Reads[V1LoadBalancerIngress] {
       override def reads(json: JsValue): JsResult[V1LoadBalancerIngress] =
         Try(
           V1LoadBalancerIngress(

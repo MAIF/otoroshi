@@ -37,7 +37,7 @@ case class NgCustomTimeouts(
 }
 
 object NgCustomTimeouts         {
-  val format                                               = new Format[NgCustomTimeouts] {
+  val format: Format[NgCustomTimeouts]                                               = new Format[NgCustomTimeouts] {
     override def reads(json: JsValue): JsResult[NgCustomTimeouts] = {
       Try {
         NgCustomTimeouts(
@@ -166,8 +166,8 @@ case class NgClientConfig(
 }
 
 object NgClientConfig {
-  val default                                          = NgClientConfig()
-  val format                                           = new Format[NgClientConfig] {
+  val default: NgClientConfig                                          = NgClientConfig()
+  val format: Format[NgClientConfig]                                           = new Format[NgClientConfig] {
     override def reads(json: JsValue): JsResult[NgClientConfig] = {
       Try {
         NgClientConfig(
@@ -251,8 +251,8 @@ case class NgTlsConfig(
 }
 
 object NgTlsConfig {
-  val default                                     = NgTlsConfig()
-  val format                                      = new Format[NgTlsConfig] {
+  val default: NgTlsConfig                                     = NgTlsConfig()
+  val format: Format[NgTlsConfig]                                      = new Format[NgTlsConfig] {
     override def reads(json: JsValue): JsResult[NgTlsConfig] = {
       Try {
         NgTlsConfig(
@@ -358,7 +358,7 @@ object NgBackend {
         )
     }
   }
-  val fmt                                         = new Format[NgBackend] {
+  val fmt: Format[NgBackend]                                         = new Format[NgBackend] {
     override def writes(o: NgBackend): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgBackend] = JsSuccess(readFromJson(json))
   }
@@ -378,7 +378,7 @@ case class NgMinimalBackend(
     "rewrite"        -> rewrite,
     "load_balancing" -> loadBalancing.toJson
   )
-  def toBackend(client: NgClientConfig, healthCheck: Option[HealthCheck]) = {
+  def toBackend(client: NgClientConfig, healthCheck: Option[HealthCheck]): NgBackend = {
     NgBackend(
       targets = targets,
       root = root,
@@ -427,7 +427,7 @@ case class NgTarget(
   def isSecondary: Boolean = backup
 
   lazy val baseUrl: String                  = s"${if (tls) "https" else "http"}://${ipAddress.getOrElse(hostname)}$defaultPortString"
-  lazy val defaultPortString                = port match {
+  lazy val defaultPortString: String                = port match {
     case 443 => ""
     case 80  => ""
     case _   => s":$port"
@@ -460,7 +460,7 @@ case class NgTarget(
 }
 
 object NgTarget {
-  val default                              = NgTarget(
+  val default: NgTarget                              = NgTarget(
     id = "www.otoroshi.io",
     hostname = "www.otoroshi.io",
     port = 443,
@@ -525,7 +525,7 @@ object NgTarget {
       backup = obj.select("backup").asOpt[Boolean].getOrElse(false)
     )
   }
-  val fmt                                  = new Format[NgTarget] {
+  val fmt: Format[NgTarget]                                  = new Format[NgTarget] {
     override def writes(o: NgTarget): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgTarget] = JsSuccess(readFrom(json))
   }
@@ -538,7 +538,7 @@ object StoredNgBackend {
     } catch {
       case e: Throwable => throw e
     }
-  val format                                     = new Format[StoredNgBackend] {
+  val format: Format[StoredNgBackend]                                     = new Format[StoredNgBackend] {
     override def reads(json: JsValue): JsResult[StoredNgBackend] = Try {
       StoredNgBackend(
         location = otoroshi.models.EntityLocation.readFromKey(json),

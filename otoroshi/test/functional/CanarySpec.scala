@@ -10,7 +10,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration) extends Otor
 
   lazy val serviceHost = "canary.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""

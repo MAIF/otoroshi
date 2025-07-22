@@ -16,7 +16,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
   //lazy val serviceHost = "cb.oto.tools"
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""

@@ -20,7 +20,7 @@ case class QueryTransformerConfig(
 }
 
 object QueryTransformerConfig {
-  val format = new Format[QueryTransformerConfig] {
+  val format: Format[QueryTransformerConfig] = new Format[QueryTransformerConfig] {
     override def writes(o: QueryTransformerConfig): JsValue             = Json.obj(
       "remove" -> o.remove,
       "rename" -> o.rename,

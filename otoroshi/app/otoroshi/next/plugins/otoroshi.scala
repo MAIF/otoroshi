@@ -40,7 +40,7 @@ case class NgOtoroshiChallengeConfig(
 
 object NgOtoroshiChallengeConfig {
   def apply(raw: JsValue): NgOtoroshiChallengeConfig = format.reads(raw).get
-  val format                                         = new Format[NgOtoroshiChallengeConfig] {
+  val format: Format[NgOtoroshiChallengeConfig]                                         = new Format[NgOtoroshiChallengeConfig] {
     override def reads(raw: JsValue): JsResult[NgOtoroshiChallengeConfig] = Try {
       lazy val secComVersion: SecComVersion = {
         raw.select("version").asOpt[Int] match {
@@ -98,7 +98,7 @@ case class NgOtoroshiInfoConfig(
 
 object NgOtoroshiInfoConfig {
   def apply(raw: JsValue): NgOtoroshiInfoConfig = NgOtoroshiInfoConfig.format.reads(raw).get
-  val format                                    = new Format[NgOtoroshiInfoConfig] {
+  val format: Format[NgOtoroshiInfoConfig]                                    = new Format[NgOtoroshiInfoConfig] {
     override def reads(raw: JsValue): JsResult[NgOtoroshiInfoConfig] = Try {
       lazy val secComVersion: SecComInfoTokenVersion = SecComInfoTokenVersion(
         raw.select("version").asOpt[String].getOrElse("Latest")
@@ -137,10 +137,10 @@ object NgOtoroshiInfoConfig {
 }
 
 object NgOtoroshiChallengeKeys {
-  val ClaimKey      = TypedKey[OtoroshiClaim]("otoroshi.next.core.plugins.OtoroshiChallenge.OtoroshiClaim")
-  val StateTokenKey = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateToken")
-  val StateValueKey = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateValue")
-  val ConfigKey     = TypedKey[NgOtoroshiChallengeConfig]("otoroshi.next.core.plugins.OtoroshiChallenge.Config")
+  val ClaimKey: TypedKey[OtoroshiClaim]      = TypedKey[OtoroshiClaim]("otoroshi.next.core.plugins.OtoroshiChallenge.OtoroshiClaim")
+  val StateTokenKey: TypedKey[String] = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateToken")
+  val StateValueKey: TypedKey[String] = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateValue")
+  val ConfigKey: TypedKey[NgOtoroshiChallengeConfig]     = TypedKey[NgOtoroshiChallengeConfig]("otoroshi.next.core.plugins.OtoroshiChallenge.Config")
 }
 
 class OtoroshiChallenge extends NgRequestTransformer {
@@ -482,8 +482,8 @@ case class PossibleCerts(certIds: Seq[String]) extends NgPluginConfig {
 }
 
 object PossibleCerts {
-  val default                        = PossibleCerts(Seq.empty)
-  val format                         = new Format[PossibleCerts] {
+  val default: PossibleCerts                        = PossibleCerts(Seq.empty)
+  val format: Format[PossibleCerts]                         = new Format[PossibleCerts] {
     override def writes(o: PossibleCerts): JsValue             = Json.obj(
       "cert_ids" -> o.certIds
     )
@@ -667,8 +667,8 @@ case class OtoroshiMetricsEndpointConfig(filter: Option[String]) extends NgPlugi
 }
 
 object OtoroshiMetricsEndpointConfig {
-  val default                        = OtoroshiMetricsEndpointConfig(None)
-  val format                         = new Format[OtoroshiMetricsEndpointConfig] {
+  val default: OtoroshiMetricsEndpointConfig                        = OtoroshiMetricsEndpointConfig(None)
+  val format: Format[OtoroshiMetricsEndpointConfig]                         = new Format[OtoroshiMetricsEndpointConfig] {
     override def writes(o: OtoroshiMetricsEndpointConfig): JsValue             = Json.obj(
       "filter" -> o.filter.map(_.json).getOrElse(JsNull).asValue
     )

@@ -35,12 +35,12 @@ class CassandraDataStores(
     env: Env
 ) extends DataStores {
 
-  lazy val logger = Logger("otoroshi-cassandra-datastores")
+  lazy val logger: Logger = Logger("otoroshi-cassandra-datastores")
 
   lazy val redisStatsItems: Int =
     configuration.getOptionalWithFileSupport[Int]("app.cassandra.windowSize").getOrElse(99)
 
-  lazy val actorSystem =
+  lazy val actorSystem: ActorSystem =
     ActorSystem(
       "otoroshi-cassandra-system",
       configuration
@@ -49,7 +49,7 @@ class CassandraDataStores(
         .getOrElse(ConfigFactory.empty)
     )
 
-  lazy val mat = Materializer(actorSystem)
+  lazy val mat: Materializer = Materializer(actorSystem)
 
   lazy val redis: RedisLike with RawGetRedis = new NewCassandraRedis(
     actorSystem,

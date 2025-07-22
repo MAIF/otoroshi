@@ -20,7 +20,7 @@ case class JQConfig(request: String = ".", response: String = "") extends NgPlug
 }
 
 object JQConfig {
-  val format = new Format[JQConfig] {
+  val format: Format[JQConfig] = new Format[JQConfig] {
     override def writes(o: JQConfig): JsValue             = Json.obj(
       "request"  -> o.request,
       "response" -> o.response
@@ -42,7 +42,7 @@ case class JQRequestConfig(filter: String = ".") extends NgPluginConfig {
 }
 
 object JQRequestConfig {
-  val format = new Format[JQRequestConfig] {
+  val format: Format[JQRequestConfig] = new Format[JQRequestConfig] {
     override def writes(o: JQRequestConfig): JsValue             = Json.obj(
       "filter" -> o.filter
     )
@@ -62,7 +62,7 @@ case class JQResponseConfig(filter: String = ".") extends NgPluginConfig {
 }
 
 object JQResponseConfig {
-  val format = new Format[JQResponseConfig] {
+  val format: Format[JQResponseConfig] = new Format[JQResponseConfig] {
     override def writes(o: JQResponseConfig): JsValue             = Json.obj(
       "filter" -> o.filter
     )

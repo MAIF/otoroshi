@@ -25,7 +25,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-routes-api")
+  lazy val logger: Logger = Logger("otoroshi-routes-api")
 
   override def singularName: String = "route"
 
@@ -149,7 +149,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  def form() = ApiAction {
+  def form(): Action[AnyContent] = ApiAction {
     env.openApiSchema.asForms.get("otoroshi.next.models.NgRoute") match {
       case Some(value) =>
         Ok(
@@ -162,7 +162,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  def initiateRoute() = ApiAction {
+  def initiateRoute(): Action[AnyContent] = ApiAction {
     val defaultRoute = NgRoute(
       location = EntityLocation.default,
       id = s"route_${IdGenerator.uuid}",
@@ -217,7 +217,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
   }
 
-  def domainsAndCertificates() = ApiAction { ctx =>
+  def domainsAndCertificates(): Action[AnyContent] = ApiAction { ctx =>
     import otoroshi.ssl.SSLImplicits._
 
     val routes           = env.proxyState.allRoutes()

@@ -212,7 +212,7 @@ object WebAuthnOtoroshiAdmin {
 }
 
 object OtoroshiAdmin {
-  val format = new Format[OtoroshiAdmin] {
+  val format: Format[OtoroshiAdmin] = new Format[OtoroshiAdmin] {
     override def writes(o: OtoroshiAdmin): JsValue = o.json
     override def reads(json: JsValue): JsResult[OtoroshiAdmin] = {
       (json \ "type").asOpt[String] match {
@@ -272,7 +272,7 @@ case class AdminPreferences(userId: String, preferences: Map[String, JsValue]) {
 }
 
 object AdminPreferences {
-  val format = new Format[AdminPreferences] {
+  val format: Format[AdminPreferences] = new Format[AdminPreferences] {
     override def reads(json: JsValue): JsResult[AdminPreferences] = Try {
       AdminPreferences(
         userId = json.select("user_id").asString,

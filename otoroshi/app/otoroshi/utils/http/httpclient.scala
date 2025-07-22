@@ -42,10 +42,11 @@ import scala.concurrent.{Await, ExecutionContextExecutor, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try, Using}
 import scala.xml.{Elem, XML}
+import org.apache.pekko.http.scaladsl.HttpExt
 
 case class DNPart(raw: String) {
   private val parts = raw.split("=").map(_.trim)
-  val name = {
+  val name: String = {
     val head = parts.head.toLowerCase()
     if (head == "sn") {
       "surname"
@@ -57,7 +58,7 @@ case class DNPart(raw: String) {
 }
 
 case class DN(raw: String) {
-  val parts                  = raw.split(",").toSeq.map(_.trim).map(DNPart.apply)
+  val parts: Seq[DNPart]                  = raw.split(",").toSeq.map(_.trim).map(DNPart.apply)
   def isEqualsTo(other: DN): Boolean = {
     parts.size == other.parts.size && parts.forall(p => other.parts.exists(o => o.name == p.name && o.value == p.value))
   }
@@ -143,9 +144,9 @@ case class MtlsConfig(
 }
 
 object MtlsConfig {
-  val default                                = MtlsConfig()
+  val default: MtlsConfig                                = MtlsConfig()
   def read(opt: Option[JsValue]): MtlsConfig = opt.flatMap(json => format.reads(json).asOpt).getOrElse(default)
-  val format                                 = new Format[MtlsConfig] {
+  val format: Format[MtlsConfig]                                 = new Format[MtlsConfig] {
     override def reads(json: JsValue): JsResult[MtlsConfig] =
       Try {
         MtlsConfig(
@@ -571,7 +572,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
 
   val ec     = system.dispatcher
   val mat    = materializer
-  val client = Http(system)
+  val client: HttpExt = Http(system)
 
   override def underlying[T]: T = client.asInstanceOf[T]
 

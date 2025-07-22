@@ -11,6 +11,8 @@ import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc)
@@ -20,7 +22,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-auth-modules-api")
+  lazy val logger: Logger = Logger("otoroshi-auth-modules-api")
 
   override def singularName: String = "auth-module"
 
@@ -145,7 +147,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
     }
   }
 
-  def startRegistration(id: String) =
+  def startRegistration(id: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       // env.datastores.authConfigsDataStore.findById(id).flatMap {
       env.proxyState.authModuleAsync(id).flatMap {
@@ -166,7 +168,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
       }
     }
 
-  def finishRegistration(id: String) =
+  def finishRegistration(id: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       // env.datastores.authConfigsDataStore.findById(id).flatMap {
       env.proxyState.authModuleAsync(id).flatMap {

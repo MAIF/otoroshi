@@ -25,7 +25,7 @@ class BasicSpec() extends OtoroshiSpec {
   def name: String                     = "--"
   def configurationSpec: Configuration = Configuration.empty
 
-  override def getTestConfiguration(configuration: Configuration) = {
+  override def getTestConfiguration(configuration: Configuration): Configuration = {
     Configuration(
       ConfigFactory
         .parseString("{}")

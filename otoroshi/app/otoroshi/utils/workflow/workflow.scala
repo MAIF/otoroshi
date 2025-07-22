@@ -36,7 +36,7 @@ object WorkFlowSpec                                                             
         .asOpt[JsArray]
         .map(
           _.value
-            .map(WorkFlowTask.format.reads)
+            .map(WorkFlowTask.format.reads(_))
             .collect { case JsSuccess(value, _) =>
               value
             }.toSeq
@@ -142,7 +142,7 @@ trait WorkFlowTask {
 }
 
 object WorkFlowTask {
-  val format = new Format[WorkFlowTask] {
+  val format: Format[WorkFlowTask] = new Format[WorkFlowTask] {
     override def reads(json: JsValue): JsResult[WorkFlowTask] =
       json.select("type").asString match {
         case "http"             => HttpWorkFlowTask.format.reads(json)
@@ -159,8 +159,8 @@ object WorkFlowEl {
 
   import scala.jdk.CollectionConverters._
 
-  val logger             = Logger("workflow-el")
-  val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
+  val logger: Logger             = Logger("workflow-el")
+  val expressionReplacer: ReplaceAllWith = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
   def apply(value: String, ctx: WorkFlowTaskContext, env: Env): String = {
     value match {
@@ -239,7 +239,7 @@ case class WorkFlowTaskContext(
 }
 
 object WorkFlow {
-  val logger                              = Logger(s"otoroshi-workflow")
+  val logger: Logger                              = Logger(s"otoroshi-workflow")
   def apply(spec: WorkFlowSpec): WorkFlow = new WorkFlow(spec)
 }
 
@@ -335,9 +335,9 @@ case class WorkFlowPredicateOperator(operator: String) {
 
 case class WorkFlowPredicate(spec: JsValue) {
 
-  lazy val left     = WorkFlowPredicatePart(spec.select("left").as[JsValue])
-  lazy val right    = WorkFlowPredicatePart(spec.select("right").as[JsValue])
-  lazy val operator = WorkFlowPredicateOperator(spec.select("operator").as[String])
+  lazy val left: WorkFlowPredicatePart     = WorkFlowPredicatePart(spec.select("left").as[JsValue])
+  lazy val right: WorkFlowPredicatePart    = WorkFlowPredicatePart(spec.select("right").as[JsValue])
+  lazy val operator: WorkFlowPredicateOperator = WorkFlowPredicateOperator(spec.select("operator").as[String])
 
   def check(payload: JsValue): Boolean = {
     if (spec.asOpt[JsObject].getOrElse(Json.obj()).value.isEmpty) {
@@ -349,7 +349,7 @@ case class WorkFlowPredicate(spec: JsValue) {
 }
 
 object ComposeResponseWorkFlowTask {
-  val format = new Format[ComposeResponseWorkFlowTask] {
+  val format: Format[ComposeResponseWorkFlowTask] = new Format[ComposeResponseWorkFlowTask] {
     override def reads(json: JsValue): JsResult[ComposeResponseWorkFlowTask] =
       Try {
         ComposeResponseWorkFlowTask(json)
@@ -363,7 +363,7 @@ object ComposeResponseWorkFlowTask {
 
 case class ComposeResponseWorkFlowTask(spec: JsValue) extends WorkFlowTask {
 
-  lazy val name                          = spec.select("name").as[String]
+  lazy val name: String                          = spec.select("name").as[String]
   override def theType: WorkFlowTaskType = WorkFlowTaskType.ComposeResponse
   override def json: JsValue             = ComposeResponseWorkFlowTask.format.writes(this)
 
@@ -381,7 +381,7 @@ case class ComposeResponseWorkFlowTask(spec: JsValue) extends WorkFlowTask {
 }
 
 object HttpWorkFlowTask {
-  val format = new Format[HttpWorkFlowTask] {
+  val format: Format[HttpWorkFlowTask] = new Format[HttpWorkFlowTask] {
     override def reads(json: JsValue): JsResult[HttpWorkFlowTask] =
       Try {
         HttpWorkFlowTask(json)
@@ -398,8 +398,8 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
   override def theType: WorkFlowTaskType = WorkFlowTaskType.HTTP
   override def json: JsValue             = HttpWorkFlowTask.format.writes(this)
 
-  lazy val name                                                        = spec.select("name").as[String]
-  lazy val requestSpec                                                 = spec.select("request").as[JsObject]
+  lazy val name: String                                                        = spec.select("name").as[String]
+  lazy val requestSpec: JsObject                                                 = spec.select("request").as[JsObject]
   lazy val method: String                                              = requestSpec.select("method").asOpt[String].map(_.toUpperCase()).getOrElse("GET")
   def url(ctx: WorkFlowTaskContext, env: Env): String                  =
     applyEl(applyTransformation(requestSpec.select("url").as[JsValue], ctx, env).as[String], ctx, env)
@@ -417,9 +417,9 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
         case _                => ByteString(applyEl(Json.stringify(body), ctx, env))
       }
     }
-  lazy val successSpec                                                 = spec.select("success").as[JsObject]
-  lazy val successStatuses                                             = successSpec.select("statuses").asOpt[JsArray].map(_.value.map(_.asInt)).getOrElse(Seq(200))
-  lazy val successPredicate                                            = WorkFlowPredicate(successSpec.select("predicate").asOpt[JsObject].getOrElse(Json.obj()))
+  lazy val successSpec: JsObject                                                 = spec.select("success").as[JsObject]
+  lazy val successStatuses: scala.collection.Seq[Int]                                             = successSpec.select("statuses").asOpt[JsArray].map(_.value.map(_.asInt)).getOrElse(Seq(200))
+  lazy val successPredicate: WorkFlowPredicate                                            = WorkFlowPredicate(successSpec.select("predicate").asOpt[JsObject].getOrElse(Json.obj()))
 
   override def run(
       ctx: WorkFlowTaskContext

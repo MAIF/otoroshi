@@ -36,11 +36,11 @@ object Utils {
     new String(arr, StandardCharsets.UTF_8)
   }
 
-  def contextParamsToString(plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal]) = {
+  def contextParamsToString(plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal]): String = {
     rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
   }
 
-  def contextParamsToJson(plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal]) = {
+  def contextParamsToJson(plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal]): JsValue = {
     Json.parse(rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
   }
 }
@@ -163,9 +163,9 @@ object HFunction {
 
 object Logging extends AwaitCapable {
 
-  val logger = Logger("otoroshi-wasm-logger")
+  val logger: Logger = Logger("otoroshi-wasm-logger")
 
-  def proxyLog(config: WasmConfig) = HFunction.defineEmptyFunction(
+  def proxyLog(config: WasmConfig): HostFunction[EmptyUserData] = HFunction.defineEmptyFunction(
     config,
     "proxy_log",
     LibExtism.ExtismValType.I32,
@@ -231,7 +231,7 @@ object Logging extends AwaitCapable {
 
 object Http extends AwaitCapable {
 
-  def proxyHttpCall(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = {
+  def proxyHttpCall(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_http_call", config) {
       (
           plugin: ExtismCurrentPlugin,
@@ -984,7 +984,7 @@ object State {
 
   def getGlobalProxyConfig(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = {
+  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineClassicFunction(
       "proxy_global_config",
       config,

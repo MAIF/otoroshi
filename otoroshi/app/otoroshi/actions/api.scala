@@ -24,7 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 object ApiActionContext {
-  val forbidden  = Results.Forbidden(Json.obj("error" -> "You're not authorized here !"))
+  val forbidden: Result  = Results.Forbidden(Json.obj("error" -> "You're not authorized here !"))
   val fforbidden = forbidden.future
 }
 
@@ -333,7 +333,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
 
-  lazy val logger = Logger("otoroshi-api-action")
+  lazy val logger: Logger = Logger("otoroshi-api-action")
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
@@ -438,7 +438,7 @@ class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
 
-  lazy val logger = Logger("otoroshi-api-action")
+  lazy val logger: Logger = Logger("otoroshi-api-action")
 
   def error(message: String, ex: Option[Throwable] = None)(implicit request: Request[_]): Future[Result] = {
     ex match {

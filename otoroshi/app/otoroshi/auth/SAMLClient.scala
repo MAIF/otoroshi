@@ -800,8 +800,8 @@ case class SamlAuthModuleConfig(
   override def authModule(config: GlobalConfig): AuthModule             = new SAMLModule(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
-  override def cookieSuffix(desc: ServiceDescriptor)                    = s"saml-auth-$id"
-  override def asJson                                                   = location.jsonWithKey ++ Json.obj(
+  override def cookieSuffix(desc: ServiceDescriptor): String                    = s"saml-auth-$id"
+  override def asJson: JsValue                                                   = location.jsonWithKey ++ Json.obj(
     "type"                          -> "saml",
     "id"                            -> this.id,
     "name"                          -> this.name,
@@ -844,7 +844,7 @@ object SAMLModule {
 
   lazy val logger: Logger = Logger("SAMLModule")
 
-  def defaultConfig = SamlAuthModuleConfig(
+  def defaultConfig: SamlAuthModuleConfig = SamlAuthModuleConfig(
     id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
     name = "New auth. module",
     desc = "New auth. module",
@@ -1091,7 +1091,7 @@ object SAMLModule {
       .unmarshall(responseDocument.getDocumentElement)
   }
 
-  def decodeEncryptedAssertion(env: Env, samlConfig: SamlAuthModuleConfig, response: Response) = {
+  def decodeEncryptedAssertion(env: Env, samlConfig: SamlAuthModuleConfig, response: Response): Any = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
     if (samlConfig.credentials.encryptedAssertions && response.getEncryptedAssertions.size() > 0)

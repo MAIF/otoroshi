@@ -19,7 +19,7 @@ import scala.util.{Failure, Success, Try}
 case class GlobalPerIpAddressThrottlingQuotas(within: Boolean, secCalls: Long, maybeQuota: Option[Long])
 
 object GlobalPerIpAddressThrottlingQuotas {
-  val key = TypedKey[GlobalPerIpAddressThrottlingQuotas]("otoroshi.next.plugins.GlobalPerIpAddressThrottlingQuotas")
+  val key: TypedKey[GlobalPerIpAddressThrottlingQuotas] = TypedKey[GlobalPerIpAddressThrottlingQuotas]("otoroshi.next.plugins.GlobalPerIpAddressThrottlingQuotas")
 }
 
 class GlobalPerIpAddressThrottling extends NgAccessValidator {
@@ -184,7 +184,7 @@ case class NgServiceQuotasConfig(
 }
 
 object NgServiceQuotasConfig {
-  val format = new Format[NgServiceQuotasConfig] {
+  val format: Format[NgServiceQuotasConfig] = new Format[NgServiceQuotasConfig] {
     override def writes(o: NgServiceQuotasConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgServiceQuotasConfig] = Try {
       NgServiceQuotasConfig(
@@ -350,7 +350,7 @@ case class NgCustomQuotasConfig(
 }
 
 object NgCustomQuotasConfig {
-  val format = new Format[NgCustomQuotasConfig] {
+  val format: Format[NgCustomQuotasConfig] = new Format[NgCustomQuotasConfig] {
     override def writes(o: NgCustomQuotasConfig): JsValue             = Json.obj(
       "per_route"     -> o.perRoute,
       "global"        -> o.global,
@@ -522,7 +522,7 @@ case class NgCustomThrottlingConfig(
 }
 
 object NgCustomThrottlingConfig {
-  val format = new Format[NgCustomThrottlingConfig] {
+  val format: Format[NgCustomThrottlingConfig] = new Format[NgCustomThrottlingConfig] {
     override def writes(o: NgCustomThrottlingConfig): JsValue             = Json.obj(
       "per_route"        -> o.perRoute,
       "global"           -> o.global,

@@ -26,7 +26,7 @@ class Version1410Spec(name: String, configurationSpec: => Configuration) extends
 
   import scala.concurrent.duration._
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""

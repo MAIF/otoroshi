@@ -61,7 +61,7 @@ class NgTreeRouterWildcardSpec
 
 class NgTreeRouterWithEnvSpec(configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  override def getTestConfiguration(configuration: Configuration) = {
+  override def getTestConfiguration(configuration: Configuration): Configuration = {
     Configuration(
       ConfigFactory
         .parseString("{}")
@@ -90,7 +90,7 @@ class NgTreeRouterWithEnvSpec(configurationSpec: => Configuration) extends Otoro
 
 class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  override def getTestConfiguration(configuration: Configuration) = {
+  override def getTestConfiguration(configuration: Configuration): Configuration = {
     Configuration(
       ConfigFactory
         .parseString("{}")

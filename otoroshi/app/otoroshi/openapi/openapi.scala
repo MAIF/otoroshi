@@ -15,15 +15,16 @@ import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
 import scala.jdk.CollectionConverters._
+import org.slf4j
 
 case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
 
-  lazy val add_schemas   = raw.select("add_schemas").asOpt[JsObject].getOrElse(Json.obj())
-  lazy val merge_schemas = raw.select("merge_schemas").asOpt[JsObject].getOrElse(Json.obj())
-  lazy val fields_rename = raw.select("fields_rename").asOpt[JsObject].getOrElse(Json.obj())
-  lazy val add_fields    = raw.select("add_fields").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val add_schemas: JsObject   = raw.select("add_schemas").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val merge_schemas: JsObject = raw.select("merge_schemas").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val fields_rename: JsObject = raw.select("fields_rename").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val add_fields: JsObject    = raw.select("add_fields").asOpt[JsObject].getOrElse(Json.obj())
 
-  lazy val bulkControllerMethods             = raw
+  lazy val bulkControllerMethods: Seq[String]             = raw
     .select("bulkControllerMethods")
     .asOpt[Seq[String]]
     .getOrElse(
@@ -34,7 +35,7 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
         "bulkDeleteAction"
       )
     )
-  lazy val crudControllerMethods             = raw
+  lazy val crudControllerMethods: Seq[String]             = raw
     .select("crudControllerMethods")
     .asOpt[Seq[String]]
     .getOrElse(
@@ -141,12 +142,12 @@ class OpenApiGenerator(
     scanResult: ScanResult
 ) {
 
-  lazy val logger = Logger("otoroshi-openapi-generator").logger
+  lazy val logger: slf4j.Logger = Logger("otoroshi-openapi-generator").logger
 
-  val nullType       =
+  val nullType: JsObject       =
     // Json.obj("$ref" -> s"#/components/schemas/Null") // Json.obj("type" -> "null") needs openapi 3.1.0 support :(
     Json.obj("type" -> "string", "nullable" -> true, "description" -> "null type")
-  val openApiVersion = JsString("3.0.3")
+  val openApiVersion: JsString = JsString("3.0.3")
   val unknownValue   = "???"
 
   val world = scanResult.getAllClassesAsMap.asScala
@@ -171,7 +172,7 @@ class OpenApiGenerator(
       )
       .values).toSeq.distinct
 
-  var adts              = Seq.empty[JsObject]
+  var adts: Seq[JsObject]              = Nil
   val foundDescriptions = new UnboundedTrieMap[String, String]()
   val found             = new AtomicLong(0L)
   val notFound          = new AtomicLong(0L)
@@ -1047,7 +1048,7 @@ class OpenApiGenerator(
       })
   }
 
-  def discoverEntitiesFromPaths(result: JsValue) = {
+  def discoverEntitiesFromPaths(result: JsValue): Array[String] = {
     Json
       .prettyPrint(result)
       .split("\n")
@@ -1204,7 +1205,7 @@ class OpenApiGenerator(
     (getSpec(tags, paths, result), hasWritten)
   }
 
-  def getSpec(tags: JsValue, paths: JsValue, schemas: TrieMap[String, JsValue]) = {
+  def getSpec(tags: JsValue, paths: JsValue, schemas: TrieMap[String, JsValue]): JsObject = {
     Json.obj(
       "openapi"      -> openApiVersion,
       "info"         -> Json.obj(

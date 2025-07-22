@@ -37,7 +37,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     adminEntityValidators = Map.empty
   )
 
-  def sessions() =
+  def sessions(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         val options = SendAuditAndAlert("ACCESS_ADMIN_SESSIONS", s"User accessed admin session", None, Json.obj(), ctx)
@@ -47,7 +47,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def discardSession(id: String) =
+  def discardSession(id: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
@@ -88,7 +88,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def discardAllSessions() =
+  def discardAllSessions(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(SuperAdminOnly) {
         env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
@@ -124,7 +124,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def privateAppsSessions() =
+  def privateAppsSessions(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         val options = SendAuditAndAlert(
@@ -140,7 +140,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def discardPrivateAppsSession(id: String) =
+  def discardPrivateAppsSession(id: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
@@ -181,7 +181,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def discardAllPrivateAppsSessions() =
+  def discardAllPrivateAppsSessions(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(SuperAdminOnly) {
         env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
@@ -263,7 +263,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     }
   }
 
-  def registerSimpleAdmin =
+  def registerSimpleAdmin: Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         val usernameOpt = (ctx.request.body \ "username").asOpt[String].filterNot(_.isBlank)
@@ -314,7 +314,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def simpleAdmins =
+  def simpleAdmins: Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         val options = SendAuditAndAlert("ACCESS_SIMPLE_ADMINS", s"User accessed simple admins", None, Json.obj(), ctx)
@@ -324,7 +324,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def deleteAdmin(username: String) =
+  def deleteAdmin(username: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
@@ -360,7 +360,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def findAdmin(username: String) =
+  def findAdmin(username: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
@@ -371,7 +371,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def updateAdmin(username: String) =
+  def updateAdmin(username: String): Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
@@ -394,7 +394,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def findWebAuthnAdmin(username: String) =
+  def findWebAuthnAdmin(username: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
@@ -405,7 +405,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def updateWebAuthnAdmin(username: String) =
+  def updateWebAuthnAdmin(username: String): Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
@@ -428,7 +428,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def webAuthnAdmins() =
+  def webAuthnAdmins(): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         val options =
@@ -442,7 +442,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def registerWebAuthnAdmin() =
+  def registerWebAuthnAdmin(): Action[JsValue] =
     ApiAction.async(parse.json) { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         val usernameOpt   = (ctx.request.body \ "username").asOpt[String]
@@ -488,7 +488,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def webAuthnDeleteAdmin(username: String, id: String) =
+  def webAuthnDeleteAdmin(username: String, id: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {

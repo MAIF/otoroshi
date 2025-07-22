@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
 import scala.util.Try
 
 object Plugins {
-  val format = new Format[Plugins] {
+  val format: Format[Plugins] = new Format[Plugins] {
     override def writes(o: Plugins): JsValue             =
       Json.obj(
         "enabled"  -> o.enabled,

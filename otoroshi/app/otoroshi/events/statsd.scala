@@ -11,6 +11,8 @@ import github.gphat.censorinus._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
+import org.apache.pekko.actor.ActorRef
+import play.api.Logger
 
 case class StatsdConfig(datadog: Boolean, host: String, port: Int)
 
@@ -27,7 +29,7 @@ case class StatsdEvent(
 
 class StatsdWrapper(actorSystem: ActorSystem, env: Env) {
 
-  lazy val statsdActor = actorSystem.actorOf(StatsdActor.props(env))
+  lazy val statsdActor: ActorRef = actorSystem.actorOf(StatsdActor.props(env))
 
   lazy val defaultSampleRate: Double = 1.0
 
@@ -128,7 +130,7 @@ class StatsdActor(env: Env) extends Actor {
   var statsdclient: Option[StatsDClient]     = None
   var datadogclient: Option[DogStatsDClient] = None
 
-  lazy val logger = play.api.Logger("otoroshi-statsd-actor")
+  lazy val logger: Logger = play.api.Logger("otoroshi-statsd-actor")
 
   override def receive: Receive = {
     case StatsdEventClose()                                                                             =>
@@ -198,7 +200,7 @@ class StatsdActor(env: Env) extends Actor {
 }
 
 object StatsdActor {
-  def props(env: Env) = Props(new StatsdActor(env))
+  def props(env: Env): Props = Props(new StatsdActor(env))
 }
 
 class StatsDReporter(registry: SemanticMetricRegistry, env: Env) extends Reporter with Closeable {

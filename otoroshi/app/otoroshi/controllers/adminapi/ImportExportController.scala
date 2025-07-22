@@ -15,6 +15,10 @@ import play.api.libs.streams.Accumulator
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 
 import scala.concurrent.ExecutionContext
+import org.apache.pekko.stream.scaladsl.Source
+import play.api.mvc
+import play.api.libs.Files
+import play.api.mvc.AnyContent
 
 class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
@@ -22,13 +26,13 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(imp
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-import-export-api")
+  lazy val logger: Logger = Logger("otoroshi-import-export-api")
 
-  lazy val sourceBodyParser = BodyParser("Import/Export BodyParser") { _ =>
+  lazy val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("Import/Export BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def fullExport() =
+  def fullExport(): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         if (!ctx.request.accepts("application/json") && ctx.request.accepts("application/x-ndjson")) {
@@ -92,7 +96,7 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(imp
       }
     }
 
-  def fullImportFromFile() =
+  def fullImportFromFile(): mvc.Action[Files.TemporaryFile] =
     ApiAction.async(parse.temporaryFile) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.headers.get("X-Content-Type") match {
@@ -119,7 +123,7 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(imp
       }
     }
 
-  def fullImport() =
+  def fullImport(): mvc.Action[Source[ByteString, _]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.contentType match {

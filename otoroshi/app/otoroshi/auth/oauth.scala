@@ -29,7 +29,7 @@ import scala.util.{Failure, Success, Try}
 
 object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
 
-  lazy val logger = Logger("otoroshi-global-oauth2-config")
+  lazy val logger: Logger = Logger("otoroshi-global-oauth2-config")
 
   val _fmt: Format[GenericOauth2ModuleConfig] = new Format[GenericOauth2ModuleConfig] {
 
@@ -78,7 +78,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           claims = (json \ "claims").asOpt[String].getOrElse("email name"),
           refreshTokens = (json \ "refreshTokens").asOpt[Boolean].getOrElse(false),
           useJson = (json \ "useJson").asOpt[Boolean].getOrElse(false),
-          pkce = (json \ "pkce").asOpt[PKCEConfig](PKCEConfig._fmt.reads),
+          pkce = (json \ "pkce").asOpt[PKCEConfig](PKCEConfig._fmt.reads(_)),
           noWildcardRedirectURI = (json \ "noWildcardRedirectURI").asOpt[Boolean].getOrElse(false),
           useCookie = (json \ "useCookie").asOpt[Boolean].getOrElse(false),
           readProfileFromToken = (json \ "readProfileFromToken").asOpt[Boolean].getOrElse(false),
@@ -208,7 +208,7 @@ case class GenericOauth2ModuleConfig(
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
   override def form: Option[Form]                                       = None
-  override def asJson                                                   =
+  override def asJson: JsValue                                                   =
     location.jsonWithKey ++ Json.obj(
       "type"                          -> "oauth2",
       "id"                            -> this.id,
@@ -260,12 +260,12 @@ case class GenericOauth2ModuleConfig(
       }.toMap)
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
-  override def cookieSuffix(desc: ServiceDescriptor)                    = s"global-oauth-$id"
+  override def cookieSuffix(desc: ServiceDescriptor): String                    = s"global-oauth-$id"
 }
 
 case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModule {
 
-  lazy val logger = Logger("otoroshi-global-oauth2-module")
+  lazy val logger: Logger = Logger("otoroshi-global-oauth2-module")
 
   import otoroshi.utils.http.Implicits._
   import otoroshi.utils.syntax.implicits._
@@ -896,7 +896,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 }
 
 object GenericOauth2Module {
-  def defaultConfig = GenericOauth2ModuleConfig(
+  def defaultConfig: GenericOauth2ModuleConfig = GenericOauth2ModuleConfig(
     id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
     name = "New auth. module",
     desc = "New auth. module",

@@ -111,7 +111,7 @@ object EurekaApp {
         name = (json \ "name").asOpt[String].getOrElse("UNKNOWN_APP"),
         instances = (json \ "instances")
           .as[Seq[JsObject]]
-          .map(EurekaInstance.format.reads)
+          .map(EurekaInstance.format.reads(_))
           .collect { case JsSuccess(value, _) => value }
       )
     } match {
@@ -572,7 +572,7 @@ class EurekaTarget extends NgPreRouting {
 
   private def updatePreExtractedRequestTargetsKey(ctx: NgPreRoutingContext, apps: Seq[JsValue]) = {
     ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey -> apps.map(application => {
-      val instance = (application \ "application" \ "instance").as(EurekaInstance.format.reads)
+      val instance = (application \ "application" \ "instance").as(EurekaInstance.format.reads(_))
       EurekaInstance.toTarget(instance)
     }))
   }
@@ -711,7 +711,7 @@ class ExternalEurekaTarget extends NgPreRouting {
                         .as[JsObject] \ "application" \ "instance")
                         .as[JsArray]
                         .value
-                        .map(instance => instance.as(EurekaInstance.format.reads))
+                        .map(instance => instance.as(EurekaInstance.format.reads(_)))
                         .map(EurekaInstance.toTarget)
 
                       ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey -> instances.toSeq)

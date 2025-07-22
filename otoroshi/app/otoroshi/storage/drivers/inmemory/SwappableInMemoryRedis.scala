@@ -93,7 +93,7 @@ trait SwappableRedis {
 }
 
 object SwappableInMemoryRedis {
-  lazy val logger = Logger("otoroshi-atomic-in-memory-datastore")
+  lazy val logger: Logger = Logger("otoroshi-atomic-in-memory-datastore")
 }
 
 class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSystem)
@@ -443,7 +443,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
   import scala.jdk.CollectionConverters._
   import scala.concurrent.duration._
 
-  lazy val logger = Logger("otoroshi-datastores")
+  lazy val logger: Logger = Logger("otoroshi-datastores")
 
   val patterns: TrieMap[String, Pattern] = new UnboundedTrieMap[String, Pattern]()
 
@@ -451,7 +451,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   //@inline private def memory: ModernMemory = _storeHolder.get()
 
-  val memory = ModernMemory()
+  val memory: ModernMemory = ModernMemory()
 
   private val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 100.millis)(SchedulerHelper.runnable {
     try {

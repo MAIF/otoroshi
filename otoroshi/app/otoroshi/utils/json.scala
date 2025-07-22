@@ -30,7 +30,7 @@ trait Jsonable {
 
 object JsonOperationsHelper {
 
-  def getValueAtPath(input: String, obj: JsValue) = {
+  def getValueAtPath(input: String, obj: JsValue): (String, JsValue) = {
     var acc = obj
     var out = JsString("").as[JsValue]
 
@@ -114,7 +114,7 @@ object JsonOperationsHelper {
       )
     }
   }
-  def filterJson(obj: JsValue, fields: Seq[String]) = {
+  def filterJson(obj: JsValue, fields: Seq[String]): JsObject = {
     val out = fields.map(input => getValueAtPath(input, obj))
 
     out.foldLeft(Json.obj()) { case (acc, curr) =>

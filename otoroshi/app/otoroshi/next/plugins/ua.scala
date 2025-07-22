@@ -21,7 +21,7 @@ case class NgUserAgentExtractorConfig(
 }
 
 object NgUserAgentExtractorConfig {
-  val format = new Format[NgUserAgentExtractorConfig] {
+  val format: Format[NgUserAgentExtractorConfig] = new Format[NgUserAgentExtractorConfig] {
     override def writes(o: NgUserAgentExtractorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgUserAgentExtractorConfig] = Try {
       NgUserAgentExtractorConfig(
@@ -101,7 +101,7 @@ case class NgUserAgentInfoHeaderConfig(
 }
 
 object NgUserAgentInfoHeaderConfig {
-  val format = new Format[NgUserAgentInfoHeaderConfig] {
+  val format: Format[NgUserAgentInfoHeaderConfig] = new Format[NgUserAgentInfoHeaderConfig] {
     override def writes(o: NgUserAgentInfoHeaderConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgUserAgentInfoHeaderConfig] = Try {
       NgUserAgentInfoHeaderConfig(

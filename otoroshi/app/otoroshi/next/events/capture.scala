@@ -14,7 +14,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.RequestHeader
 
 object TrafficCaptureEvent {
-  val strippedHeaders =
+  val strippedHeaders: Seq[String] =
     Seq("Remote-Address", "Timeout-Access", "Raw-Request-URI", "Tls-Session-Info").map(_.toLowerCase())
 }
 
@@ -36,7 +36,7 @@ case class TrafficCaptureEvent(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  val timestamp = DateTime.now()
+  val timestamp: DateTime = DateTime.now()
 
   def toGoReplayFormat(
       captureRequest: Boolean,

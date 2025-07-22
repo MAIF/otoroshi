@@ -8,6 +8,8 @@ import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 import scala.concurrent.ExecutionContext
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 class NgPluginsController(
     ApiAction: ApiAction,
@@ -18,7 +20,7 @@ class NgPluginsController(
 
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
-  def categories() = ApiAction {
+  def categories(): mvc.Action[AnyContent] = ApiAction {
     val pluginsCategories = env.scriptManager.ngNames.distinct
       .filterNot(_.contains(".NgMerged"))
       .flatMap(name => env.scriptManager.getAnyScript[NgNamedPlugin](s"cp:$name").toOption.map(o => (name, o)))
@@ -29,11 +31,11 @@ class NgPluginsController(
     Ok(JsArray(categories))
   }
 
-  def steps() = ApiAction {
+  def steps(): mvc.Action[AnyContent] = ApiAction {
     Ok(JsArray(NgStep.all.map(_.json)))
   }
 
-  def form() = ApiAction { ctx =>
+  def form(): mvc.Action[AnyContent] = ApiAction { ctx =>
     (for {
       name <- ctx.request.getQueryString("name")
       form <- env.openApiSchema.asForms.get(name)
@@ -44,12 +46,12 @@ class NgPluginsController(
     }
   }
 
-  def forms() = ApiAction { ctx =>
+  def forms(): mvc.Action[AnyContent] = ApiAction { ctx =>
     val forms = new JsObject(env.openApiSchema.asForms.view.mapValues(_.json).toMap)
     Ok(forms)
   }
 
-  def plugins() = ApiAction {
+  def plugins(): mvc.Action[AnyContent] = ApiAction {
     val plugins = env.scriptManager.ngNames.distinct
       .filterNot(_.contains(".NgMerged"))
       .flatMap(name => env.scriptManager.getAnyScript[NgNamedPlugin](s"cp:$name").toOption.map(o => (name, o)))

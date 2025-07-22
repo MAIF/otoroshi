@@ -6,10 +6,12 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import otoroshi.openapi.{CrdsGenerator, OpenApiGenerator}
 import java.io.File
+import io.github.classgraph.ScanResult
+import play.api.libs.json.JsValue
 
 class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  val scanResult = new ClassGraph()
+  val scanResult: ScanResult = new ClassGraph()
       .addClassLoader(this.getClass.getClassLoader)
       .enableAllInfo()
       .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws"): _*)
@@ -85,7 +87,7 @@ class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
     write = true
   )
 
-  val spec = generator.run()
+  val spec: JsValue = generator.run()
 
   // Find the kubernetes crds folder
   private def findKubernetesCrdsPath(): Option[String] = {

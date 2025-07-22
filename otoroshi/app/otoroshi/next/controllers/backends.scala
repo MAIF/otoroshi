@@ -22,7 +22,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-backends-api")
+  lazy val logger: Logger = Logger("otoroshi-backends-api")
 
   override def singularName: String = "backend"
 
@@ -152,7 +152,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
     }
   }
 
-  def form() = ApiAction {
+  def form(): Action[AnyContent] = ApiAction {
     env.openApiSchema.asForms.get("otoroshi.next.models.NgBackend") match {
       case Some(value) =>
         Ok(
@@ -165,7 +165,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
     }
   }
 
-  def initiateStoredNgBackend() = ApiAction { ctx =>
+  def initiateStoredNgBackend(): Action[AnyContent] = ApiAction { ctx =>
     val defaultBackend = StoredNgBackend(
       location = EntityLocation.default,
       id = s"backend_${IdGenerator.uuid}",

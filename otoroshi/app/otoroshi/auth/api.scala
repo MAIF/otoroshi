@@ -71,7 +71,7 @@ case class RemoteUserValidatorSettings(
 }
 
 object RemoteUserValidatorSettings {
-  val format = new Format[RemoteUserValidatorSettings] {
+  val format: Format[RemoteUserValidatorSettings] = new Format[RemoteUserValidatorSettings] {
     override def reads(json: JsValue): JsResult[RemoteUserValidatorSettings] = Try {
       RemoteUserValidatorSettings(
         url = json.select("url").asString,
@@ -200,7 +200,7 @@ case class ErrorReason(display: String, internal: Option[JsObject] = None) {
 }
 
 object ErrorReason {
-  val format = new Format[ErrorReason] {
+  val format: Format[ErrorReason] = new Format[ErrorReason] {
 
     override def reads(json: JsValue): JsResult[ErrorReason] = Try {
       ErrorReason(
@@ -359,7 +359,7 @@ case class Form(schema: JsValue, flow: Seq[String] = Seq.empty) extends AsJson {
 }
 
 object Form {
-  val _fmt = new Format[Form] {
+  val _fmt: Format[Form] = new Format[Form] {
     override def writes(o: Form): JsValue = o.asJson
 
     override def reads(json: JsValue): JsResult[Form] = Try {
@@ -377,7 +377,7 @@ object Form {
 
 case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
 
-  lazy val unknownConfigTypeError = JsError("Unknown auth. config type")
+  lazy val unknownConfigTypeError: JsError = JsError("Unknown auth. config type")
 
   override def reads(json: JsValue): JsResult[AuthModuleConfig] = {
     (json \ "type").as[String] match {
@@ -403,9 +403,9 @@ case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
 
 object AuthModuleConfig {
 
-  lazy val logger = Logger("otoroshi-auth-module-config")
+  lazy val logger: Logger = Logger("otoroshi-auth-module-config")
 
-  def fromJsons(value: JsValue)(implicit env: Env) =
+  def fromJsons(value: JsValue)(implicit env: Env): AuthModuleConfig =
     try {
       _fmt(env).reads(value).get
     } catch {

@@ -11,6 +11,8 @@ import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.mvc
+import play.api.mvc.AnyContent
 
 class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc)
@@ -142,7 +144,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
     }
   }
 
-  def serviceGroupServices(serviceGroupId: String) =
+  def serviceGroupServices(serviceGroupId: String): mvc.Action[AnyContent] =
     ApiAction.async { ctx =>
       val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int =

@@ -366,7 +366,7 @@ case class OtoroshiExportAlert(
       "alert"      -> "OtoroshiExportAlert",
       "user"       -> user,
       "event"      -> event.toJson,
-      "export"     -> export
+      "export"     -> `export`
     )
 }
 
@@ -1506,7 +1506,7 @@ object AlertsActorSupervizer {
 
 object Alerts {
 
-  lazy val logger = Logger("otoroshi-alerts")
+  lazy val logger: Logger = Logger("otoroshi-alerts")
 
   def send[A <: AlertEvent](alert: A)(implicit env: Env): Unit = {
     // logger.trace("Alert " + Json.stringify(alert.toEnrichedJson))

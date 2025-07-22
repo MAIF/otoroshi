@@ -18,13 +18,14 @@ import java.util.concurrent.TimeUnit
 import scala.+:
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
+import play.api.libs.json.JsValue
 
 class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-apis-controller")
+  lazy val logger: Logger = Logger("otoroshi-apis-controller")
 
   case class RouteStats(
       calls: Long = 0,
@@ -34,7 +35,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
       duration: Double = 0.0,
       overhead: Double = 0.0
   ) {
-    def json = Json.obj(
+    def json: JsObject = Json.obj(
       "calls"    -> calls,
       "dataIn"   -> dataIn,
       "dataOut"  -> dataOut,
@@ -52,7 +53,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
-  def draftLiveStats(id: String, every: Option[Int]) =
+  def draftLiveStats(id: String, every: Option[Int]): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.canReadService(id) {
         Audit.send(
@@ -97,7 +98,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
       }
     }
 
-  def foldStats(stats: Seq[RouteStats]) = {
+  def foldStats(stats: Seq[RouteStats]): RouteStats = {
     stats.foldLeft(RouteStats()) { case (acc, item) =>
       acc.copy(
         calls = acc.calls + item.calls,
@@ -108,7 +109,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
-  def getStatsOfRoute(route: NgRoute) = {
+  def getStatsOfRoute(route: NgRoute): Future[RouteStats] = {
     for {
       calls    <- env.datastores.serviceDescriptorDataStore.calls(route.id)
       dataIn   <- env.datastores.serviceDescriptorDataStore.dataInFor(route.id)
@@ -128,7 +129,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
-  def liveStats(id: String, every: Option[Int]) =
+  def liveStats(id: String, every: Option[Int]): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.canReadService(id) {
         Audit.send(
@@ -170,7 +171,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
       }
     }
 
-  def start(id: String) = {
+  def start(id: String): Action[AnyContent] = {
     ApiAction.async { ctx =>
       ctx.canReadService(id) {
         Audit.send(
@@ -202,7 +203,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
-  def stop(id: String) = {
+  def stop(id: String): Action[AnyContent] = {
     ApiAction.async { ctx =>
       ctx.canReadService(id) {
         Audit.send(
@@ -224,7 +225,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
-  def getRoute(apiId: String, routeId: String) = {
+  def getRoute(apiId: String, routeId: String): Action[AnyContent] = {
     ApiAction.async { ctx =>
       ctx.canReadService(apiId) {
         Audit.send(
@@ -313,7 +314,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
-  def deprecateConsumer(apiId: String, consumerId: String) = {
+  def deprecateConsumer(apiId: String, consumerId: String): Action[AnyContent] = {
     ApiAction.async { ctx =>
       ctx.canReadService(apiId) {
         Audit.send(
@@ -335,7 +336,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
-  def closeConsumer(apiId: String, consumerId: String) = {
+  def closeConsumer(apiId: String, consumerId: String): Action[AnyContent] = {
     ApiAction.async { ctx =>
       ctx.canReadService(apiId) {
         Audit.send(
@@ -357,11 +358,11 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
-  def getHttpClientSettings(apiId: String) = ApiAction.async { _ =>
+  def getHttpClientSettings(apiId: String): Action[AnyContent] = ApiAction.async { _ =>
     Ok(NgClientConfig.default.json).future
   }
 
-  def createNewVersion(apiId: String) = {
+  def createNewVersion(apiId: String): Action[JsValue] = {
     ApiAction.async(parse.json) { ctx =>
       ctx.canReadService(apiId) {
         Audit.send(
@@ -431,7 +432,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
-  def fromOpenapi() = ApiAction.async(parse.json) { ctx =>
+  def fromOpenapi(): Action[JsValue] = ApiAction.async(parse.json) { ctx =>
     {
       val body = ctx.request.body
       (

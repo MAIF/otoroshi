@@ -17,7 +17,7 @@ object JsonMarshaller extends PlayJsonSupportLowPrioImplicits {
     override def mapNode(builder: MapBuilder): Node               = JsObject(builder.toSeq)
     override def mapNode(keyValues: Seq[(String, JsValue)]): Node = JsObject(keyValues)
 
-    override def arrayNode(values: Vector[JsValue]) = JsArray(values)
+    override def arrayNode(values: Vector[JsValue]): Node = JsArray(values)
 
     override def optionalArrayNodeValue(value: Option[JsValue]): Node = value match {
       case Some(v) => v

@@ -24,7 +24,7 @@ case class ContextValidationConfig(validators: Seq[JsonPathValidator] = Seq.empt
 }
 
 object ContextValidationConfig {
-  val format = new Format[ContextValidationConfig] {
+  val format: Format[ContextValidationConfig] = new Format[ContextValidationConfig] {
     override def writes(o: ContextValidationConfig): JsValue             = Json.obj(
       "validators" -> JsArray(o.validators.map(_.json))
     )

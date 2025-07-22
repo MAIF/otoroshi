@@ -21,8 +21,8 @@ case class JsonTransformConfig(filter: Option[String] = None) extends NgPluginCo
 }
 
 object JsonTransformConfig {
-  val library = ImmutableJqLibrary.of()
-  val format  = new Format[JsonTransformConfig] {
+  val library: ImmutableJqLibrary = ImmutableJqLibrary.of()
+  val format: Format[JsonTransformConfig]  = new Format[JsonTransformConfig] {
     override def writes(o: JsonTransformConfig): JsValue             =
       Json.obj("filter" -> o.filter.map(JsString.apply).getOrElse(JsNull).asValue)
     override def reads(json: JsValue): JsResult[JsonTransformConfig] = JsSuccess(
@@ -246,7 +246,7 @@ case class SOAPActionConfig(
 }
 
 object SOAPActionConfig {
-  val format = new Format[SOAPActionConfig] {
+  val format: Format[SOAPActionConfig] = new Format[SOAPActionConfig] {
     override def reads(json: JsValue): JsResult[SOAPActionConfig] = Try {
       SOAPActionConfig(
         url = json.select("url").asOpt[String],

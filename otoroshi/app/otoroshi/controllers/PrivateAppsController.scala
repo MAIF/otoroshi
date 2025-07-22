@@ -17,6 +17,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.json.JsValue
 
 class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateAppsAction, cc: ControllerComponents)(
     implicit env: Env
@@ -27,12 +28,12 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  def home =
+  def home: Action[AnyContent] =
     PrivateAppsAction { ctx =>
       Ok(otoroshi.views.html.privateapps.home(ctx.users.headOption, env))
     }
 
-  def redirect =
+  def redirect: Action[AnyContent] =
     PrivateAppsAction { ctx =>
       implicit val request: Request[AnyContent] = ctx.request
       Redirect(
@@ -44,7 +45,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       ) //.removingFromPrivateAppSession("pa-redirect-after-login")
     }
 
-  def error(message: Option[String] = None) =
+  def error(message: Option[String] = None): Action[AnyContent] =
     PrivateAppsAction { ctx =>
       Ok(otoroshi.views.html.oto.error(message.getOrElse(""), env))
     }
@@ -114,7 +115,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       }
   }
 
-  def registerSession(authModuleId: String, username: String) =
+  def registerSession(authModuleId: String, username: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       ctx.canWriteAuthModule(authModuleId) {
         registerSessionForUser(authModuleId, username).map { case (cipheredSessionId, host) =>
@@ -123,7 +124,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       }
     }
 
-  def selfRegistrationStart() =
+  def selfRegistrationStart(): Action[AnyContent] =
     Action.async { req =>
       withShortSession(req) { case (bam, _, _) =>
         bam.webAuthnRegistrationStart(req.body.asJson.get).map {
@@ -133,7 +134,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       }
     }
 
-  def selfRegistrationFinish() =
+  def selfRegistrationFinish(): Action[AnyContent] =
     Action.async { req =>
       withShortSession(req) { case (bam, _, _) =>
         bam.webAuthnRegistrationFinish(req.body.asJson.get).map {
@@ -143,7 +144,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       }
     }
 
-  def selfRegistrationDelete() =
+  def selfRegistrationDelete(): Action[AnyContent] =
     Action.async { req =>
       withShortSession(req) { case (bam, user, _) =>
         bam.webAuthnRegistrationDelete(user).map {
@@ -153,7 +154,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       }
     }
 
-  def selfUpdateProfilePage() =
+  def selfUpdateProfilePage(): Action[AnyContent] =
     Action.async { req =>
       withShortSession(req) { case (bam, user, ttl) =>
         Ok(
@@ -173,7 +174,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       }
     }
 
-  def selfUpdateProfile() =
+  def selfUpdateProfile(): Action[JsValue] =
     Action.async(parse.json) { req =>
       withShortSession(req) { case (bam, user, _) =>
         var newUser = user
@@ -220,7 +221,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       }
     }
 
-  def sendSelfUpdateLink(authModuleId: String, username: String) =
+  def sendSelfUpdateLink(authModuleId: String, username: String): Action[AnyContent] =
     ApiAction.async { ctx =>
       registerSessionForUser(authModuleId, username).flatMap { case (sessionId, host) =>
         // env.datastores.authConfigsDataStore.findById(authModuleId).flatMap {

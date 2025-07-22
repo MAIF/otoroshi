@@ -243,9 +243,9 @@ case class SnowMonkeyConfig(
 
 object SnowMonkeyConfig {
 
-  lazy val logger = Logger("otoroshi-snowmonkey-config")
+  lazy val logger: Logger = Logger("otoroshi-snowmonkey-config")
 
-  val durationFmt = new Format[FiniteDuration] {
+  val durationFmt: Format[FiniteDuration] = new Format[FiniteDuration] {
     override def reads(json: JsValue): JsResult[FiniteDuration] =
       json
         .asOpt[Long]
@@ -254,7 +254,7 @@ object SnowMonkeyConfig {
     override def writes(o: FiniteDuration): JsValue             = JsNumber(o.toMillis)
   }
 
-  val outageStrategyFmt = new Format[OutageStrategy] {
+  val outageStrategyFmt: Format[OutageStrategy] = new Format[OutageStrategy] {
     override def reads(json: JsValue): JsResult[OutageStrategy] =
       json
         .asOpt[String]

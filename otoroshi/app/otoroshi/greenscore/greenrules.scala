@@ -14,7 +14,7 @@ case class TripleBounds(excellent: Int = 0, sufficient: Int = 0, poor: Int = 0) 
     poor = poor + b.poor
   )
 
-  def incr(value: Int, thresholds: TripleBounds) = {
+  def incr(value: Int, thresholds: TripleBounds): TripleBounds = {
     if (value <= thresholds.excellent)
       copy(excellent = excellent + 1)
     else if (value <= thresholds.sufficient)
@@ -23,7 +23,7 @@ case class TripleBounds(excellent: Int = 0, sufficient: Int = 0, poor: Int = 0) 
       copy(poor = poor + 1)
   }
 
-  def json() = Json.obj(
+  def json(): JsObject = Json.obj(
     "excellent"  -> excellent,
     "sufficient" -> sufficient,
     "poor"       -> poor
@@ -56,7 +56,7 @@ case class Thresholds(
     headersOut: TripleBounds = TripleBounds(excellent = 10, sufficient = 30, poor = 50),
     headersIn: TripleBounds = TripleBounds(excellent = 10, sufficient = 30, poor = 50)
 ) {
-  def json() = Json.obj(
+  def json(): JsObject = Json.obj(
     "overhead"        -> overhead.json(),
     "duration"        -> duration.json(),
     "backendDuration" -> backendDuration.json(),
@@ -69,7 +69,7 @@ case class Thresholds(
 }
 
 case class Efficiency(excludedPaths: Seq[String] = Seq.empty) {
-  def json() = Json.obj(
+  def json(): JsObject = Json.obj(
     "paths" -> JsArray(excludedPaths.map(JsString))
   )
 }
@@ -93,14 +93,14 @@ object Thresholds {
     Try {
       JsSuccess(
         Thresholds(
-          calls = item.select("calls").as[TripleBounds](TripleBounds.reads),
-          dataIn = item.select("dataIn").as[TripleBounds](TripleBounds.reads),
-          dataOut = item.select("dataOut").as[TripleBounds](TripleBounds.reads),
-          overhead = item.select("overhead").as[TripleBounds](TripleBounds.reads),
-          duration = item.select("duration").as[TripleBounds](TripleBounds.reads),
-          backendDuration = item.select("backendDuration").as[TripleBounds](TripleBounds.reads),
-          headersIn = item.select("headersIn").as[TripleBounds](TripleBounds.reads),
-          headersOut = item.select("headersOut").as[TripleBounds](TripleBounds.reads)
+          calls = item.select("calls").as[TripleBounds](TripleBounds.reads(_)),
+          dataIn = item.select("dataIn").as[TripleBounds](TripleBounds.reads(_)),
+          dataOut = item.select("dataOut").as[TripleBounds](TripleBounds.reads(_)),
+          overhead = item.select("overhead").as[TripleBounds](TripleBounds.reads(_)),
+          duration = item.select("duration").as[TripleBounds](TripleBounds.reads(_)),
+          backendDuration = item.select("backendDuration").as[TripleBounds](TripleBounds.reads(_)),
+          headersIn = item.select("headersIn").as[TripleBounds](TripleBounds.reads(_)),
+          headersOut = item.select("headersOut").as[TripleBounds](TripleBounds.reads(_))
         )
       )
     } recover { case e =>
@@ -164,11 +164,11 @@ object Rule {
 case class RuleStateRecord(date: Long, states: Seq[RuleState])
 
 object RuleStateRecord {
-  val format = new Format[RuleStateRecord] {
+  val format: Format[RuleStateRecord] = new Format[RuleStateRecord] {
     override def reads(json: JsValue): JsResult[RuleStateRecord] = Try {
       RuleStateRecord(
         date = (json \ "date").as[Long],
-        states = json.select("states").asOpt[Seq[RuleState]](RuleState.reads).getOrElse(Seq.empty)
+        states = json.select("states").asOpt[Seq[RuleState]](RuleState.reads(_)).getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -203,7 +203,7 @@ object RuleState {
 }
 
 object RulesManager {
-  val rules = Seq(
+  val rules: Seq[Rule] = Seq(
     Rule(
       RuleId("AR01"),
       section = "architecture",
@@ -413,11 +413,11 @@ object RulesRouteConfiguration {
     }
   }
 
-  val format = new Format[RulesRouteConfiguration] {
+  val format: Format[RulesRouteConfiguration] = new Format[RulesRouteConfiguration] {
     override def reads(json: JsValue): JsResult[RulesRouteConfiguration] = Try {
       RulesRouteConfiguration(
         states = (json \ "states")
-          .asOpt[Seq[RuleStateRecord]](Reads.seq(RuleStateRecord.format.reads))
+          .asOpt[Seq[RuleStateRecord]](Reads.seq(RuleStateRecord.format.reads(_)))
           .getOrElse(Seq.empty)
       )
     } match {

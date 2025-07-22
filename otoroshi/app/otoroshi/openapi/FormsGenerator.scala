@@ -5,7 +5,7 @@ import play.api.libs.json._
 import scala.collection.concurrent.TrieMap
 
 class FormsGenerator(spec: TrieMap[String, JsValue]) {
-  val openapiTypesToFormTypes = Map(
+  val openapiTypesToFormTypes: Map[String,String] = Map(
     "integer" -> "number",
     "boolean" -> "bool"
   )

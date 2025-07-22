@@ -164,7 +164,7 @@ object ServiceLocation {
 }
 
 case class ApiDescriptor(exposeApi: Boolean = false, openApiDescriptorUrl: Option[String] = None) {
-  def toJson = ApiDescriptor.format.writes(this)
+  def toJson: JsObject = ApiDescriptor.format.writes(this)
 }
 
 object ApiDescriptor {
@@ -176,7 +176,7 @@ case class BaseQuotas(
     dailyQuota: Long = BaseQuotas.MaxValue,
     monthlyQuota: Long = BaseQuotas.MaxValue
 ) {
-  def toJson = BaseQuotas.format.writes(this)
+  def toJson: JsObject = BaseQuotas.format.writes(this)
 }
 
 object BaseQuotas {
@@ -635,10 +635,10 @@ case class HttpProtocol(value: String) {
 }
 
 object HttpProtocols {
-  val HTTP_1_0                                       = HttpProtocol("HTTP/1.0")
-  val HTTP_1_1                                       = HttpProtocol("HTTP/1.1")
-  val HTTP_2_0                                       = HttpProtocol("HTTP/2.0")
-  val HTTP_3_0                                       = HttpProtocol("HTTP/3.0")
+  val HTTP_1_0: HttpProtocol                                       = HttpProtocol("HTTP/1.0")
+  val HTTP_1_1: HttpProtocol                                       = HttpProtocol("HTTP/1.1")
+  val HTTP_2_0: HttpProtocol                                       = HttpProtocol("HTTP/2.0")
+  val HTTP_3_0: HttpProtocol                                       = HttpProtocol("HTTP/3.0")
   def parse(value: String): HttpProtocol             = parseSafe(value).getOrElse(HTTP_1_1)
   def parseSafe(value: String): Option[HttpProtocol] = value.toLowerCase().trim() match {
     case "http/1.0" => HTTP_1_0.some
@@ -662,12 +662,12 @@ case class Target(
     metadata: Map[String, String] = Map.empty
 ) {
 
-  def toJson               = Target.format.writes(this)
+  def toJson: JsValue               = Target.format.writes(this)
   def json                 = toJson
-  def asUrl                = s"$scheme://$host"
-  def asKey                = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
-  def asTargetStr          = s"$scheme://$host@${ipAddress.getOrElse(host)}"
-  def asCleanTarget        = s"$scheme://$host${ipAddress.map(v => s"@$v").getOrElse("")}"
+  def asUrl: String                = s"$scheme://$host"
+  def asKey: String                = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
+  def asTargetStr: String          = s"$scheme://$host@${ipAddress.getOrElse(host)}"
+  def asCleanTarget: String        = s"$scheme://$host${ipAddress.map(v => s"@$v").getOrElse("")}"
   def isPrimary: Boolean   = !backup
   def isSecondary: Boolean = backup
 
@@ -688,7 +688,7 @@ case class Target(
 }
 
 object Target {
-  val format = new Format[Target] {
+  val format: Format[Target] = new Format[Target] {
     override def writes(o: Target): JsValue             =
       Json.obj(
         "host"       -> o.host,
@@ -738,7 +738,7 @@ object Target {
 }
 
 case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Seq[String] = Seq.empty[String]) {
-  def toJson = IpFiltering.format.writes(this)
+  def toJson: JsObject = IpFiltering.format.writes(this)
   def matchesWhitelist(ipAddress: String): Boolean = {
     if (whitelist.nonEmpty) {
       whitelist.exists { ip =>
@@ -810,7 +810,7 @@ case class HealthCheck(
     healthyStatuses: Seq[Int] = Seq.empty,
     unhealthyStatuses: Seq[Int] = Seq.empty
 ) {
-  def toJson = Json.obj(
+  def toJson: JsObject = Json.obj(
     "enabled"           -> enabled,
     "url"               -> url,
     "timeout"           -> timeout,
@@ -836,7 +836,7 @@ object HealthCheck {
 
     override def writes(o: HealthCheck): JsValue = o.toJson
   }
-  val empty           = HealthCheck(enabled = false, "/")
+  val empty: HealthCheck           = HealthCheck(enabled = false, "/")
 }
 
 case class CustomTimeouts(
@@ -852,7 +852,7 @@ case class CustomTimeouts(
 
 object CustomTimeouts {
 
-  lazy val logger = Logger("otoroshi-custom-timeouts")
+  lazy val logger: Logger = Logger("otoroshi-custom-timeouts")
 
   implicit val format: Format[CustomTimeouts] = new Format[CustomTimeouts] {
 
@@ -904,7 +904,7 @@ case class ClientConfig(
     customTimeouts: Seq[CustomTimeouts] = Seq.empty[CustomTimeouts],
     cacheConnectionSettings: CacheConnectionSettings = CacheConnectionSettings()
 ) {
-  def toJson                                                                                            = ClientConfig.format.writes(this)
+  def toJson: JsValue                                                                                            = ClientConfig.format.writes(this)
   def timeouts(path: String): Option[CustomTimeouts] = {
     if (customTimeouts.isEmpty) None
     else customTimeouts.find(c => otoroshi.utils.RegexPool(c.path).matches(path))
@@ -986,7 +986,7 @@ object WSProxyServerJson {
 
 object ClientConfig {
 
-  lazy val logger = Logger("otoroshi-client-config")
+  lazy val logger: Logger = Logger("otoroshi-client-config")
 
   implicit val format: Format[ClientConfig] = new Format[ClientConfig] {
 
@@ -1048,12 +1048,12 @@ case class Canary(
     targets: Seq[Target] = Seq.empty[Target],
     root: String = "/"
 ) {
-  def toJson = Canary.format.writes(this)
+  def toJson: JsValue = Canary.format.writes(this)
 }
 
 object Canary {
 
-  lazy val logger = Logger("otoroshi-canary")
+  lazy val logger: Logger = Logger("otoroshi-canary")
 
   implicit val format: Format[Canary] = new Format[Canary] {
     override def reads(json: JsValue): JsResult[Canary] =
@@ -1085,8 +1085,8 @@ object Canary {
 }
 
 case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: String = "https://www.otoroshi.io") {
-  def toJson       = RedirectionSettings.format.writes(this)
-  def hasValidCode = RedirectionSettings.validRedirectionCodes.contains(code)
+  def toJson: JsValue       = RedirectionSettings.format.writes(this)
+  def hasValidCode: Boolean = RedirectionSettings.validRedirectionCodes.contains(code)
   def formattedTo(
       request: RequestHeader,
       descriptor: ServiceDescriptor,
@@ -1099,9 +1099,9 @@ case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: St
 
 object RedirectionSettings {
 
-  lazy val logger = Logger("otoroshi-redirection-settings")
+  lazy val logger: Logger = Logger("otoroshi-redirection-settings")
 
-  val validRedirectionCodes = Seq(301, 308, 302, 303, 307)
+  val validRedirectionCodes: Seq[Int] = Seq(301, 308, 302, 303, 307)
 
   implicit val format: Format[RedirectionSettings] = new Format[RedirectionSettings] {
     override def reads(json: JsValue): JsResult[RedirectionSettings] =
@@ -1144,7 +1144,7 @@ case class BasicAuthConstraints(
     )
 }
 object BasicAuthConstraints         {
-  val format = new Format[BasicAuthConstraints] {
+  val format: Format[BasicAuthConstraints] = new Format[BasicAuthConstraints] {
     override def writes(o: BasicAuthConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[BasicAuthConstraints] =
       Try {
@@ -1179,7 +1179,7 @@ case class ClientIdAuthConstraints(
     )
 }
 object ClientIdAuthConstraints      {
-  val format = new Format[ClientIdAuthConstraints] {
+  val format: Format[ClientIdAuthConstraints] = new Format[ClientIdAuthConstraints] {
     override def writes(o: ClientIdAuthConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[ClientIdAuthConstraints] =
       Try {
@@ -1210,7 +1210,7 @@ case class CustomHeadersAuthConstraints(
     )
 }
 object CustomHeadersAuthConstraints {
-  val format = new Format[CustomHeadersAuthConstraints] {
+  val format: Format[CustomHeadersAuthConstraints] = new Format[CustomHeadersAuthConstraints] {
     override def writes(o: CustomHeadersAuthConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[CustomHeadersAuthConstraints] =
       Try {
@@ -1245,7 +1245,7 @@ case class OtoBearerConstraints(
 }
 
 object OtoBearerConstraints {
-  val format = new Format[OtoBearerConstraints] {
+  val format: Format[OtoBearerConstraints] = new Format[OtoBearerConstraints] {
     override def writes(o: OtoBearerConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[OtoBearerConstraints] =
       Try {
@@ -1289,7 +1289,7 @@ case class JwtAuthConstraints(
     )
 }
 object JwtAuthConstraints {
-  val format = new Format[JwtAuthConstraints] {
+  val format: Format[JwtAuthConstraints] = new Format[JwtAuthConstraints] {
     override def writes(o: JwtAuthConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[JwtAuthConstraints] =
       Try {
@@ -1350,7 +1350,7 @@ case class ApiKeyRouteMatcher(
 }
 
 object ApiKeyRouteMatcher {
-  val format = new Format[ApiKeyRouteMatcher] {
+  val format: Format[ApiKeyRouteMatcher] = new Format[ApiKeyRouteMatcher] {
     override def writes(o: ApiKeyRouteMatcher): JsValue             =
       Json.obj(
         "noneTagIn"      -> JsArray(o.noneTagIn.map(JsString.apply)),
@@ -1405,7 +1405,7 @@ case class ApiKeyConstraints(
   lazy val hasNoRoutingConstraints: Boolean = routing.hasNoRoutingConstraints
 }
 object ApiKeyConstraints {
-  val format = new Format[ApiKeyConstraints] {
+  val format: Format[ApiKeyConstraints] = new Format[ApiKeyConstraints] {
     override def writes(o: ApiKeyConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[ApiKeyConstraints] =
       Try {
@@ -1510,7 +1510,7 @@ case class SecComHeaders(
 }
 
 object SecComHeaders {
-  val format = new Format[SecComHeaders] {
+  val format: Format[SecComHeaders] = new Format[SecComHeaders] {
     override def writes(o: SecComHeaders): JsValue             = o.json
     override def reads(json: JsValue): JsResult[SecComHeaders] =
       Try {
@@ -1532,7 +1532,7 @@ case class RestrictionPath(method: String, path: String) {
 }
 
 object RestrictionPath {
-  val format = new Format[RestrictionPath] {
+  val format: Format[RestrictionPath] = new Format[RestrictionPath] {
     override def writes(o: RestrictionPath): JsValue             =
       Json.obj(
         "method" -> o.method,
@@ -1732,7 +1732,7 @@ object Restrictions {
 
   private val failedFutureResp = (false, FastFuture.failed(new RuntimeException("Should never happen")))
 
-  val format = new Format[Restrictions] {
+  val format: Format[Restrictions] = new Format[Restrictions] {
     override def writes(o: Restrictions): JsValue             =
       Json.obj(
         "enabled"   -> o.enabled,
@@ -1902,10 +1902,10 @@ case class ServiceDescriptor(
   }
 
   def target: Target                                                 = targets.headOption.getOrElse(NgTarget.default.legacy)
-  def save()(implicit ec: ExecutionContext, env: Env)                = env.datastores.serviceDescriptorDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env)              = env.datastores.serviceDescriptorDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env)              = env.datastores.serviceDescriptorDataStore.exists(this)
-  def toJson                                                         = ServiceDescriptor.toJson(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                = env.datastores.serviceDescriptorDataStore.set(this)
+  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean]              = env.datastores.serviceDescriptorDataStore.delete(this)
+  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean]              = env.datastores.serviceDescriptorDataStore.exists(this)
+  def toJson: JsValue                                                         = ServiceDescriptor.toJson(this)
   def isUp(implicit ec: ExecutionContext, env: Env): Future[Boolean] = FastFuture.successful(true)
   // not useful anymore as circuit breakers should do the work
   // env.datastores.healthCheckDataStore.findLast(this).map(_.map(_.isUp).getOrElse(true))
@@ -1949,7 +1949,7 @@ case class ServiceDescriptor(
     )
   def theScheme: String                                           = if (forceHttps) "https://" else "http://"
   def theLine: String                                             = if (env == "prod") "" else s".$env"
-  def theDomain                                                   = if (s"$subdomain$theLine".isEmpty) domain else s".$subdomain$theLine"
+  def theDomain: String                                                   = if (s"$subdomain$theLine".isEmpty) domain else s".$subdomain$theLine"
   def exposedDomain: String                                       = s"$theScheme://$subdomain$theLine.$domain"
   lazy val _domain: String                                        = s"$subdomain$theLine.$domain"
 
@@ -2194,7 +2194,7 @@ case class ServiceDescriptor(
 
 object ServiceDescriptor {
 
-  lazy val logger = Logger("otoroshi-service-descriptor")
+  lazy val logger: Logger = Logger("otoroshi-service-descriptor")
 
   val _fmt: Format[ServiceDescriptor] = new Format[ServiceDescriptor] {
 
@@ -2455,7 +2455,7 @@ object ServiceDescriptor {
 }
 
 object ServiceDescriptorDataStore {
-  val logger = Logger("otoroshi-service-descriptor-datastore")
+  val logger: Logger = Logger("otoroshi-service-descriptor-datastore")
 }
 
 trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {

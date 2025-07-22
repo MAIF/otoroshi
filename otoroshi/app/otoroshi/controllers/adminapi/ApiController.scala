@@ -9,15 +9,16 @@ import play.api.libs.streams.Accumulator
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
+import org.apache.pekko.stream.scaladsl.Source
 
 class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-admin-api")
+  lazy val logger: Logger = Logger("otoroshi-admin-api")
 
-  val sourceBodyParser = BodyParser("ApiController BodyParser") { _ =>
+  val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("ApiController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 

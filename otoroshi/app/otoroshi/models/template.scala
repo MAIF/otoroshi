@@ -10,6 +10,7 @@ import play.api.libs.json._
 import java.util.Base64
 import scala.concurrent.ExecutionContext
 import scala.util.Try
+import scala.concurrent.Future
 
 case class ErrorTemplate(
     location: EntityLocation,
@@ -64,7 +65,7 @@ case class ErrorTemplate(
   }
 
   def toJson: JsValue                                 = ErrorTemplate.format.writes(this)
-  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.errorTemplateDataStore.set(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.errorTemplateDataStore.set(this)
 
   override def json: JsValue                    = ErrorTemplate.format.writes(this)
   override def internalId: String               = serviceId
@@ -75,8 +76,8 @@ case class ErrorTemplate(
 }
 
 object ErrorTemplate {
-  lazy val logger                                           = Logger("otoroshi-error-template")
-  val format                                                = new Format[ErrorTemplate] {
+  lazy val logger: Logger                                           = Logger("otoroshi-error-template")
+  val format: Format[ErrorTemplate]                                                = new Format[ErrorTemplate] {
     override def writes(o: ErrorTemplate): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "serviceId"           -> o.serviceId,
       "name"                -> o.name,

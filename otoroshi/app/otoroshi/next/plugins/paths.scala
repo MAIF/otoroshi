@@ -20,7 +20,7 @@ case class NgPublicPrivatePathsConfig(
 }
 
 object NgPublicPrivatePathsConfig {
-  val format = new Format[NgPublicPrivatePathsConfig] {
+  val format: Format[NgPublicPrivatePathsConfig] = new Format[NgPublicPrivatePathsConfig] {
     override def reads(json: JsValue): JsResult[NgPublicPrivatePathsConfig] = Try {
       NgPublicPrivatePathsConfig(
         privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),

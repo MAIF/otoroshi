@@ -86,7 +86,7 @@ case class NgPluginHttpRequest(
       transferEncoding
     )
   lazy val hasBody: Boolean                         = hasBodyWithoutLength._1
-  lazy val queryParams                              = uri.query().toMap
+  lazy val queryParams: Map[String,String]                              = uri.query().toMap
   // val ctype = contentType
   // (method.toUpperCase(), header("Content-Length")) match {
   //   case ("GET", Some(_))    => true
@@ -257,7 +257,7 @@ object NgPluginCategory {
   case object Websocket           extends NgPluginCategory { def name: String = "Websocket"        }
   case class Custom(name: String) extends NgPluginCategory
 
-  val all = Seq(
+  val all: Seq[NgPluginCategory] = Seq(
     Classic,
     AccessControl,
     Authentication,
@@ -295,7 +295,7 @@ object NgStep       {
   case object CallBackend       extends NgStep { def name: String = "CallBackend"       }
   case object Job               extends NgStep { def name: String = "Job"               }
 
-  val all = Seq(
+  val all: Seq[NgStep] = Seq(
     Router,
     Sink,
     PreRoute,

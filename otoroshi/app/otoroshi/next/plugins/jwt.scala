@@ -31,7 +31,7 @@ case class NgJwtVerificationConfig(verifiers: Seq[String] = Seq.empty) extends N
 }
 
 object NgJwtVerificationConfig {
-  val format = new Format[NgJwtVerificationConfig] {
+  val format: Format[NgJwtVerificationConfig] = new Format[NgJwtVerificationConfig] {
     override def reads(json: JsValue): JsResult[NgJwtVerificationConfig] = Try {
       NgJwtVerificationConfig(
         verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -154,7 +154,7 @@ case class NgJwtVerificationOnlyConfig(verifier: Option[String] = None, failIfAb
 }
 
 object NgJwtVerificationOnlyConfig {
-  val format = new Format[NgJwtVerificationOnlyConfig] {
+  val format: Format[NgJwtVerificationOnlyConfig] = new Format[NgJwtVerificationOnlyConfig] {
     override def reads(json: JsValue): JsResult[NgJwtVerificationOnlyConfig] = Try {
       NgJwtVerificationOnlyConfig(
         verifier = json.select("verifier").asOpt[String],
@@ -221,7 +221,7 @@ case class NgJwtSignerConfig(
 }
 
 object NgJwtSignerConfig {
-  val format = new Format[NgJwtSignerConfig] {
+  val format: Format[NgJwtSignerConfig] = new Format[NgJwtSignerConfig] {
     override def reads(json: JsValue): JsResult[NgJwtSignerConfig] = Try {
       NgJwtSignerConfig(
         verifier = json.select("verifier").asOpt[String],
@@ -426,7 +426,7 @@ case class NgJweSignerConfig(
 }
 
 object NgJweSignerConfig {
-  val format = new Format[NgJweSignerConfig] {
+  val format: Format[NgJweSignerConfig] = new Format[NgJweSignerConfig] {
     override def reads(json: JsValue): JsResult[NgJweSignerConfig] = Try {
       NgJweSignerConfig(
         keyManagementAlgorithm = json

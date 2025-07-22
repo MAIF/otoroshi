@@ -357,7 +357,7 @@ class ClientCertChainHeader extends RequestTransformer {
       "claims.name"
     )
 
-  override def configSchema =
+  override def configSchema: Option[JsObject] =
     Some(
       Json.obj(
         "pem.send"     -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> "pem.send")),

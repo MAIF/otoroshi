@@ -843,7 +843,7 @@ case class WasmJobsConfig(
 }
 
 object WasmJobsConfig {
-  val default = WasmJobsConfig()
+  val default: WasmJobsConfig = WasmJobsConfig()
 }
 
 class WasmJob(config: WasmJobsConfig) extends Job {
