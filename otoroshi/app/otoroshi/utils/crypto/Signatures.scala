@@ -1,10 +1,9 @@
 package otoroshi.utils.crypto
 
 import java.nio.charset.StandardCharsets
-
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import otoroshi.utils.syntax.implicits._
+import java.util.{Base64 => JavaBase64}
 
 object Signatures {
 
@@ -28,14 +27,14 @@ object Signatures {
   }
 
   def hmacSha256Sign(what: String, secret: String): String = {
-    org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(hmacSha256SignBytes(what, secret))
+    JavaBase64.getUrlEncoder.withoutPadding().encodeToString(hmacSha256SignBytes(what, secret))
   }
 
   def hmacSha384Sign(what: String, secret: String): String = {
-    org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(hmacSha384SignBytes(what, secret))
+    JavaBase64.getUrlEncoder.withoutPadding().encodeToString(hmacSha384SignBytes(what, secret))
   }
 
   def hmacSha512Sign(what: String, secret: String): String = {
-    org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(hmacSha512SignBytes(what, secret))
+    JavaBase64.getUrlEncoder.withoutPadding().encodeToString(hmacSha512SignBytes(what, secret))
   }
 }

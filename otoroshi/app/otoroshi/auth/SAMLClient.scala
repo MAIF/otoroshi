@@ -22,6 +22,7 @@ import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver
+import java.util.{Base64 => JavaBase64}
 import org.opensaml.xmlsec.keyinfo.impl.{
   ChainingKeyInfoCredentialResolver,
   StaticKeyInfoCredentialResolver,
@@ -931,7 +932,7 @@ object SAMLModule {
     val body         = stringWriter.toString
     val deflatedBody = doDeflate(body.getBytes(StandardCharsets.UTF_8))
 
-    org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(deflatedBody)
+    JavaBase64.getUrlEncoder.withoutPadding().encodeToString(deflatedBody)
   }
 
   def decodeAndValidateSamlResponse(
@@ -977,7 +978,7 @@ object SAMLModule {
       .toSeq
 
   def encodedCertToX509Certificate(encodedStr: String): X509Certificate = {
-    val isBase64Encoded = org.apache.commons.codec.binary.Base64.isBase64(encodedStr)
+    val isBase64Encoded = otoroshi.utils.string.Utils.isBase64(encodedStr)
 
     val encodedCert =
       if (isBase64Encoded)
@@ -1161,7 +1162,7 @@ object SAMLModule {
   }
 
   def decodeAndInflate(encodedResponse: String, method: String): Reader = {
-    val afterB64Decode = new ByteArrayInputStream(org.apache.commons.codec.binary.Base64.decodeBase64(encodedResponse))
+    val afterB64Decode = new ByteArrayInputStream(JavaBase64.getDecoder.decode(encodedResponse))
 
     if ("GET".equals(method)) {
       val afterInflate = new InflaterInputStream(afterB64Decode, new Inflater(true))

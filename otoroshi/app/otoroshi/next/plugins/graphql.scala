@@ -1253,44 +1253,54 @@ class GraphQLProxy extends NgBackendCall {
   )
 
   private def executeGraphQLCall(
-      schema: Schema[Unit, Any],
-      query: String,
-      initialData: JsValue,
-      maxDepth: Int,
-      complexityThreshold: Double
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[Seq[String], JsValue]] = {
+                                    schema: Schema[Unit, Any],
+                                    query: String,
+                                    initialData: JsValue,
+                                    maxDepth: Int,
+                                    complexityThreshold: Double,
+                                    variables: Map[String, JsValue] = Map.empty
+                                )(implicit env: Env, ec: ExecutionContext): Future[Either[Seq[String], JsValue]] = {
     QueryParser.parse(query) match {
       case Failure(error)    => Seq(s"Bad query format: ${error.getMessage}").leftf[JsValue]
       case Success(queryAst) =>
+        // Convert Map[String, JsValue] to JsObject
+        val variablesObject = JsObject(variables)
+
         Executor
-          .execute(
-            schema = schema,
-            queryAst = queryAst,
-            root = initialData,
-            exceptionHandler = exceptionHandler,
-            queryValidator = new QueryValidator() {
-              override def validateQuery(schema: Schema[_, _], queryAst: Document): Vector[Violation] = {
-                val violations = QueryValidator.default.validateQuery(schema, queryAst)
-                if (violations.nonEmpty) {
-                  throw ViolationsException(violations.map(_.errorMessage))
+            .execute(
+              schema = schema,
+              queryAst = queryAst,
+              root = initialData,
+              variables = variablesObject,  // Pass as JsObject
+              exceptionHandler = exceptionHandler,
+              queryValidator = new QueryValidator() {
+                override def validateQuery(
+                                              schema: Schema[_, _],
+                                              queryAst: Document,
+                                              variables: Map[String, sangria.execution.VariableValue],
+                                              errorsLimit: Option[Int]
+                                          ): Vector[Violation] = {
+                  val violations = QueryValidator.default.validateQuery(schema, queryAst, variables, errorsLimit)
+                  if (violations.nonEmpty) {
+                    throw ViolationsException(violations.map(_.errorMessage))
+                  }
+                  violations
                 }
-                violations
-              }
-            }, // QueryValidator.default,
-            deferredResolver = DeferredResolver.empty,
-            queryReducers = List(
-              QueryReducer.rejectMaxDepth[Unit](maxDepth),
-              QueryReducer.rejectComplexQueries[Unit](
-                complexityThreshold = complexityThreshold,
-                (_, _) => TooComplexQueryError
+              },
+              deferredResolver = DeferredResolver.empty,
+              queryReducers = List(
+                QueryReducer.rejectMaxDepth[Unit](maxDepth),
+                QueryReducer.rejectComplexQueries[Unit](
+                  complexityThreshold = complexityThreshold,
+                  (_, _) => TooComplexQueryError
+                )
               )
             )
-          )
-          .map((res: JsValue) => Right(res))
-          .recover {
-            case ViolationsException(errors) => errors.left[JsValue]
-            case e: Throwable                => Seq(e.getMessage).left[JsValue]
-          }
+            .map((res: JsValue) => Right(res))
+            .recover {
+              case ViolationsException(errors) => errors.left[JsValue]
+              case e: Throwable                => Seq(e.getMessage).left[JsValue]
+            }
     }
   }
 
@@ -1412,6 +1422,7 @@ class GraphQLProxy extends NgBackendCall {
           }
         } else {
           val query = body.select("query").asString
+          val variables = body.select("variables").asOpt[Map[String, JsValue]].getOrElse(Map.empty)
           getSchema(builder, config).flatMap {
             case Left(errors)  =>
                 inMemoryBodyResponse(
@@ -1430,7 +1441,7 @@ class GraphQLProxy extends NgBackendCall {
                     .byteString
                 ).vfuture
             case Right(schema) =>
-                executeGraphQLCall(schema, query, Json.obj(), config.maxDepth, config.maxComplexity).flatMap {
+              executeGraphQLCall(schema, query, Json.obj(), config.maxDepth, config.maxComplexity, variables).flatMap {
                   case Left(errors) =>
                       inMemoryBodyResponse(
                       200,

@@ -666,7 +666,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
 
   def this() = this(LdapAuthModule.defaultConfig)
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")

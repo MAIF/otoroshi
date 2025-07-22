@@ -1,16 +1,22 @@
 package otoroshi.netty
 
 import com.github.blemale.scaffeine.Scaffeine
+import io.netty.bootstrap._
 import io.netty.buffer.{ByteBuf, Unpooled}
+import io.netty.channel._
 import io.netty.channel.nio.NioIoHandler
-import io.netty.channel.{ChannelFutureListener, ChannelHandlerContext, ChannelInboundHandlerAdapter, MultiThreadIoEventLoopGroup}
+import io.netty.channel.socket.nio._
 import io.netty.handler.codec.http._
-import io.netty.handler.ssl.util.SelfSignedCertificate
-import io.netty.incubator.codec.quic.{QuicConnectionPathStats, QuicSslContext, QuicSslContextBuilder}
+import io.netty.incubator.codec.http3.{Http3, Http3ServerConnectionHandler}
+import io.netty.incubator.codec.quic._
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.util.ByteString
+import org.bouncycastle.asn1.x500.X500Name
+import org.bouncycastle.cert.jcajce.{JcaX509CertificateConverter, JcaX509v3CertificateBuilder}
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.netty.ImplicitUtils._
@@ -22,6 +28,11 @@ import play.api.libs.json.Json
 import play.api.mvc.{EssentialAction, FlashCookieBaker, SessionCookieBaker}
 import reactor.core.publisher.{Flux, Sinks}
 
+import java.math.BigInteger
+import java.security.cert.X509Certificate
+import java.security.{KeyPair, KeyPairGenerator, Security}
+import java.util.Date
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.tailrec
 import scala.concurrent.duration.{DurationInt, DurationLong}
@@ -65,6 +76,7 @@ class Http1RequestHandler(
     ctx.write(response)
   }
 
+  @SuppressWarnings(Array("deprecation")) // todo needs to be removed when the underlying method is also removed
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
     cause.printStackTrace()
     ctx.close()
@@ -570,6 +582,57 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
   private val logger = Logger("otoroshi-experimental-netty-http3-server")
   private val cache  = Scaffeine().maximumSize(1000).expireAfterWrite(5.seconds).build[String, QuicSslContext]()
 
+  private lazy val fallbackCert: (KeyPair, X509Certificate) = {
+    // Add BouncyCastle provider if not already added
+    if (Security.getProvider("BC") == null) {
+      Security.addProvider(new BouncyCastleProvider())
+    }
+
+    // Generate key pair
+    val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
+    keyPairGenerator.initialize(2048)
+    val keyPair = keyPairGenerator.generateKeyPair()
+
+    // Certificate details
+    val issuer = new X500Name("CN=localhost, O=Otoroshi Fallback, L=Unknown, ST=Unknown, C=XX")
+    val subject = issuer // self-signed, so issuer = subject
+    val serial = new BigInteger(64, new java.security.SecureRandom())
+    val notBefore = new Date()
+    val notAfter = new Date(notBefore.getTime + 365L * 24 * 60 * 60 * 1000) // 1 year
+
+    // Build certificate
+    val certBuilder = new JcaX509v3CertificateBuilder(
+      issuer,
+      serial,
+      notBefore,
+      notAfter,
+      subject,
+      keyPair.getPublic
+    )
+
+    // Sign certificate
+    val signer = new JcaContentSignerBuilder("SHA256WithRSA")
+        .setProvider("BC")
+        .build(keyPair.getPrivate)
+
+    val certificateHolder = certBuilder.build(signer)
+    val certificate = new JcaX509CertificateConverter()
+        .setProvider("BC")
+        .getCertificate(certificateHolder)
+
+    (keyPair, certificate)
+  }
+
+  private lazy val fallbackContext: QuicSslContext = {
+    val (keyPair, certificate) = fallbackCert
+    QuicSslContextBuilder
+        .forServer(keyPair.getPrivate, null, certificate)
+        .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
+        .earlyData(true)
+        .build()
+  }
+
+
   def start(
       handler: HttpRequestHandler,
       sessionCookieBaker: SessionCookieBaker,
@@ -578,20 +641,6 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
 
     if (config.http3.enabled && config.http3.port != -1) {
 
-      import io.netty.bootstrap._
-      import io.netty.channel._
-      import io.netty.channel.socket.nio._
-      import io.netty.incubator.codec.http3.{Http3, Http3ServerConnectionHandler}
-      import io.netty.incubator.codec.quic.{InsecureQuicTokenHandler, QuicChannel, QuicStreamChannel}
-
-      import java.util.concurrent.TimeUnit
-
-      val cert             = new SelfSignedCertificate()
-      val fakeCtx          = QuicSslContextBuilder
-        .forServer(cert.key(), null, cert.cert())
-        .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
-        .earlyData(true)
-        .build()
 
       @tailrec
       def mapDomain(domain: String): QuicSslContext = {
@@ -601,8 +650,8 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
               .latest()(env.otoroshiExecutionContext, env)
               .tlsSettings
               .defaultDomain match {
-            case None => fakeCtx
-            case Some(dom) => mapDomain(dom)
+            case None => fallbackContext  // Use the BouncyCastle-generated context
+            case Some(dom) => mapDomain(dom)  // Recursive call with the default domain
           }
         } else {
           cache.get(
@@ -611,7 +660,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
               val (validCerts, byDomain) =
                 DynamicKeyManager.validCertificatesByDomains(env.proxyState.allCertificates())
               DynamicKeyManager.getServerCertificateForDomain(domain, validCerts, byDomain, env, logger) match {
-                case None => fakeCtx
+                case None => fallbackContext  // Use the BouncyCastle-generated context
                 case Some(cert) =>
                   // logger.debug(s"found cert for domain: ${domain}: ${cert.name}")
                   val keypair = cert.cryptoKeyPair

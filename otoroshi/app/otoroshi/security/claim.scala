@@ -9,6 +9,7 @@ import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.Logger
 import play.api.libs.json._
+import java.util.{Base64 => JavaBase64}
 
 case class OtoroshiClaim(
     iss: String,                          // issuer
@@ -84,12 +85,12 @@ object OtoroshiClaim {
       logger.debug(s"signing following header: ${headerJson.prettify}")
       logger.debug(s"signing following payload: ${payloadJson.prettify}")
     }
-    val header: String              = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(headerJson))
-    val payload: String             = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(payloadJson))
+    val header: String              = JavaBase64.getUrlEncoder.withoutPadding().encodeToString(Json.toBytes(headerJson))
+    val payload: String             = JavaBase64.getUrlEncoder.withoutPadding().encodeToString(Json.toBytes(payloadJson))
     val signatureBytes: Array[Byte] =
       algorithm.sign(header.getBytes(StandardCharsets.UTF_8), payload.getBytes(StandardCharsets.UTF_8))
 
-    val signature: String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(signatureBytes)
+    val signature: String = JavaBase64.getUrlEncoder.withoutPadding().encodeToString(signatureBytes)
     String.format("%s.%s.%s", header, payload, signature)
   }
 }

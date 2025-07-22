@@ -24,6 +24,7 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
@@ -159,7 +160,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         val hash = MurmurHash3.stringHash(content)
         if (hash != lastHash.get()) {
           if (logger.isDebugEnabled) logger.debug("Writing state to disk ...")
-          Files.write(file.toPath, content.getBytes(Charsets.UTF_8))
+          Files.write(file.toPath, content.getBytes(StandardCharsets.UTF_8))
           lastHash.set(hash)
         }
       }

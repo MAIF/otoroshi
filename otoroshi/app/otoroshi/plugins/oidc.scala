@@ -1,31 +1,29 @@
 package otoroshi.plugins.oidc
 
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
+import com.auth0.jwt.JWT
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.GenericOauth2ModuleConfig
 import otoroshi.cluster.ClusterAgent
-import com.auth0.jwt.JWT
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models._
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
-import otoroshi.utils.{RegexPool, TypedMap}
+import otoroshi.security.IdGenerator
+import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
-import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.Results.TooManyRequests
 import play.api.mvc.{RequestHeader, Result, Results}
-import otoroshi.security.IdGenerator
-import otoroshi.utils.cache.types.UnboundedTrieMap
 
+import java.util.concurrent.atomic.AtomicReference
+import java.util.{Base64 => JavaBase64}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
@@ -118,7 +116,7 @@ class OIDCHeaders extends RequestTransformer {
     (payload \ name).asOpt[String] match {
       case None               => "--"
       case Some(value) if jwt =>
-        Try(new String(org.apache.commons.codec.binary.Base64.decodeBase64(value.split("\\.")(1)))).getOrElse("--")
+        Try(new String(JavaBase64.getDecoder.decode(value.split("\\.")(1)))).getOrElse("--")
       case Some(value)        => value
     }
   }
@@ -436,9 +434,7 @@ case class OIDCThirdPartyApiKeyConfig(
     rolesPath: Seq[String] = Seq.empty
 ) extends ThirdPartyApiKeyConfig {
 
-  import otoroshi.utils.http.Implicits._
-
-  import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+  import java.util.{Base64 => JavaBase64}
 
   def typ: ThirdPartyApiKeyConfigType = ThirdPartyApiKeyConfigType.OIDC
 
@@ -537,9 +533,9 @@ case class OIDCThirdPartyApiKeyConfig(
                     case Some(rawHeader) =>
                       val header = rawHeader.replace("Bearer ", "").replace("bearer ", "").trim()
                       val tokenHeader =
-                        Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(0)))).getOrElse(Json.obj())
+                        Try(Json.parse(JavaBase64.getDecoder.decode(header.split("\\.")(0)))).getOrElse(Json.obj())
                       val tokenBody =
-                        Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(1)))).getOrElse(Json.obj())
+                        Try(Json.parse(JavaBase64.getDecoder.decode(header.split("\\.")(1)))).getOrElse(Json.obj())
                       val kid = (tokenHeader \ "kid").asOpt[String].filterNot(_.trim.isEmpty)
                       val alg = (tokenHeader \ "alg").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("RS256")
                       jwtVerifier.asAlgorithmF(InputMode(alg, kid)) flatMap {

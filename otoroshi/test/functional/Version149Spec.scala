@@ -1,24 +1,22 @@
 package functional
 
-import java.util.concurrent.atomic.AtomicInteger
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.hash.Hashing
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.joda.time.DateTime
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatestplus.play.PlaySpec
 import otoroshi.env.Env
+import otoroshi.models._
+import otoroshi.security.IdGenerator
+import otoroshi.utils.syntax.implicits._
 import play.api.Configuration
 import play.api.libs.json.Json
-import otoroshi.security.IdGenerator
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
-import otoroshi.utils.syntax.implicits._
 
 class Version149Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
@@ -514,7 +512,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
 
   s"[$name] Otoroshi exchange protocol V2" should {
     "enforce token TTL (#290)" in {
-      import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+      import java.util.{Base64 => JavaBase64}
       val counter  = new AtomicInteger(0)
       val body     = """{"message":"hello world"}"""
       val server   = TargetService
@@ -525,7 +523,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           { r =>
             val state             = r.getHeader("Otoroshi-State").get()
             val tokenBody         =
-              Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
+              Try(Json.parse(JavaBase64.getDecoder.decode(state.value().split("\\.")(1)))).getOrElse(Json.obj())
             val stateValue        = (tokenBody \ "state").as[String]
             val respToken: String = JWT
               .create()
@@ -548,7 +546,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           { r =>
             val state             = r.getHeader("Otoroshi-State").get()
             val tokenBody         =
-              Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
+              Try(Json.parse(JavaBase64.getDecoder.decode(state.value().split("\\.")(1)))).getOrElse(Json.obj())
             val stateValue        = (tokenBody \ "state").as[String]
             val respToken: String = JWT
               .create()
@@ -660,7 +658,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       stopServers()
     }
     "allow latest version of info token (#320)" in {
-      import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+      import java.util.{Base64 => JavaBase64}
       val alg                        = HSAlgoSettings(
         512,
         "secret"
@@ -678,7 +676,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           val token     = r.getHeader("Otoroshi-Claim").get().value()
           val valid     =
             Try(JWT.require(alg.asAlgorithm(OutputMode).get).build().verify(token)).map(_ => true).getOrElse(false)
-          val tokenBody = Try(Json.parse(ApacheBase64.decodeBase64(token.split("\\.")(1)))).getOrElse(Json.obj())
+          val tokenBody = Try(Json.parse(JavaBase64.getDecoder.decode(token.split("\\.")(1)))).getOrElse(Json.obj())
           val valid2    = (tokenBody \ "apikey" \ "clientId").as[String] == apikey1.clientId
           println(Json.prettyPrint(tokenBody))
           valid && valid2
@@ -1391,17 +1389,17 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           Target(
             host = s"127.0.0.1:$port1",
             scheme = "http",
-            predicate = NetworkLocationMatch(zone = "dc1".option)
+            predicate = NetworkLocationMatch(zone = Some("dc1"))
           ),
           Target(
             host = s"127.0.0.1:$port2",
             scheme = "http",
-            predicate = NetworkLocationMatch(zone = "dc2".option)
+            predicate = NetworkLocationMatch(zone = Some("dc2"))
           ),
           Target(
             host = s"127.0.0.1:$port3",
             scheme = "http",
-            predicate = NetworkLocationMatch(zone = "dc3".option)
+            predicate = NetworkLocationMatch(zone = Some("dc3"))
           )
         ),
         publicPatterns = Seq("/.*"),

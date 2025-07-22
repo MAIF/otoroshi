@@ -2,7 +2,7 @@ package otoroshi.auth
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import java.util.{Base64 => JavaBase64}
 import org.joda.time.DateTime
 import otoroshi.auth.implicits.{RequestHeaderWithPrivateAppSession, ResultWithPrivateAppSession}
 import otoroshi.controllers.routes
@@ -15,6 +15,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.{WSProxyServer, WSResponse}
+import java.util.{Base64 => JavaBase64}
 import play.api.mvc.Results.Redirect
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
@@ -379,7 +380,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
     codeChallengeMethod match {
       case Some("S256") =>
-        (codeVerifier, org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(digest), "S256")
+        (codeVerifier, JavaBase64.getUrlEncoder.withoutPadding().encodeToString(digest), "S256")
       case _            => (codeVerifier, codeVerifier, "plain")
     }
   }
@@ -645,9 +646,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   def readProfileFromToken(accessToken: String)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     val algoSettings = authConfig.jwtVerifier.get
     val tokenHeader  =
-      Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+      Try(Json.parse(JavaBase64.getDecoder.decode(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
     val tokenBody    =
-      Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
+      Try(Json.parse(JavaBase64.getDecoder.decode(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
     val kid          = (tokenHeader \ "kid").asOpt[String]
     val alg          = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
     algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
@@ -827,7 +828,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     Try {
       val algoSettings = authConfig.jwtVerifier.get
       val tokenHeader  =
-        Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+        Try(Json.parse(JavaBase64.getDecoder.decode(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
       val kid          = (tokenHeader \ "kid").asOpt[String]
       val alg          = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
       algoSettings.asAlgorithmF(InputMode(alg, kid)).map {

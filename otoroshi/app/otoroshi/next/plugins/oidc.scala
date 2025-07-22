@@ -19,6 +19,7 @@ import play.api.mvc.{Result, Results}
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import java.util.{Base64 => JavaBase64}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
@@ -117,7 +118,7 @@ class OIDCHeaders extends NgRequestTransformer {
     (payload \ name).asOpt[String] match {
       case None               => "--"
       case Some(value) if jwt =>
-        Try(new String(org.apache.commons.codec.binary.Base64.decodeBase64(value.split("\\.")(1)))).getOrElse("--")
+        Try(new String(JavaBase64.getDecoder.decode(value.split("\\.")(1)))).getOrElse("--")
       case Some(value)        => value
     }
   }

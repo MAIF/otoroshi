@@ -1611,7 +1611,7 @@ class Env(
     scala.util.Try {
       val mac = javax.crypto.Mac.getInstance("HmacSHA256")
       mac.init(new javax.crypto.spec.SecretKeySpec(playSecret.getBytes("utf-8"), "HmacSHA256"))
-      org.apache.commons.codec.binary.Hex.encodeHexString(mac.doFinal(message.getBytes("utf-8")))
+      otoroshi.utils.string.Utils.encodeHexString(mac.doFinal(message.getBytes("utf-8")))
     } match {
       case scala.util.Success(s) => s
       case scala.util.Failure(e) =>

@@ -45,6 +45,7 @@ import play.api.libs.streams.Accumulator
 import play.api.libs.ws.SourceBody
 import play.api.mvc._
 
+import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -252,7 +253,7 @@ class BackOfficeController(
       env.Headers.OtoroshiClientId     -> apikey.clientId,
       env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
       env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
-        Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
+        Json.stringify(ctx.user.profile).getBytes(StandardCharsets.UTF_8)
       ),
       "Otoroshi-Tenant"                -> ctx.request.headers.get("Otoroshi-Tenant").getOrElse("default"),
       "Otoroshi-BackOffice-User"       -> JWT

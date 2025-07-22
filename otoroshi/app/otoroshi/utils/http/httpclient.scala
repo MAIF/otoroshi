@@ -2,7 +2,6 @@ package otoroshi.utils.http
 
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
-import org.apache.commons.codec.binary.Base64
 import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
@@ -32,8 +31,10 @@ import play.shaded.ahc.org.asynchttpclient.util.Assertions
 
 import java.io.{File, FileOutputStream}
 import java.net.{InetAddress, InetSocketAddress, URI}
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import java.util.{Base64 => JavaBase64}
 import javax.net.ssl.{SSLContext, SSLEngine}
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, _}
@@ -1481,7 +1482,7 @@ case class AkkaWsClientRequest(
     scheme match {
       case WSAuthScheme.BASIC =>
         addHttpHeaders(
-          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"$username:$password".getBytes(Charsets.UTF_8))}"
+          "Authorization" -> s"Basic ${JavaBase64.getEncoder.encodeToString(s"$username:$password".getBytes(StandardCharsets.UTF_8))}"
         )
       case _                  => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
     }

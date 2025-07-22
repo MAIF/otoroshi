@@ -20,6 +20,7 @@ import play.api.mvc.Results.BadRequest
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result, Results}
 import play.utils.UriEncoding
 
+import java.nio.charset.StandardCharsets
 import java.util.Base64
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -128,7 +129,7 @@ class OAuth1Caller extends NgRequestTransformer {
     encodeURI(signature)
   }
 
-  private def encode(param: String): String = UriEncoding.encodePathSegment(param, Charsets.UTF_8)
+  private def encode(param: String): String = UriEncoding.encodePathSegment(param, StandardCharsets.UTF_8)
 
   def prepareParameters(params: Seq[(String, String)]): String = params
     .map { case (k, v) => (encode(k), encode(v)) }

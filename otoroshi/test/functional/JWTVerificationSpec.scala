@@ -13,7 +13,7 @@ import otoroshi.models._
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import java.util.{Base64 => JavaBase64}
 import play.api.libs.json.Json
 
 import scala.util.{Failure, Success, Try}
@@ -22,7 +22,7 @@ class JWTVerification2Spec(name: String, configurationSpec: => Configuration) ex
   "blah" should {
     "very blah" in {
       def getPublicKey(value: String): ECPublicKey = {
-        val publicBytes = ApacheBase64.decodeBase64(
+        val publicBytes = JavaBase64.getDecoder.decode(
           value.replace("-----BEGIN PUBLIC KEY-----\n", "").replace("\n-----END PUBLIC KEY-----", "").trim()
         )
         val keySpec     = new X509EncodedKeySpec(publicBytes)
@@ -31,7 +31,7 @@ class JWTVerification2Spec(name: String, configurationSpec: => Configuration) ex
       }
 
       def getPrivateKey(value: String): ECPrivateKey = {
-        val publicBytes = ApacheBase64.decodeBase64(
+        val publicBytes = JavaBase64.getDecoder.decode(
           value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim()
         )
         val keySpec     = new PKCS8EncodedKeySpec(publicBytes)

@@ -1,6 +1,5 @@
 package otoroshi.netty
 
-import com.google.common.base.Charsets
 import io.netty
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.{ByteBufAllocator, Unpooled}
@@ -14,7 +13,6 @@ import io.netty.incubator.codec.http3._
 import io.netty.incubator.codec.quic._
 import io.netty.util.concurrent.GenericFutureListener
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
-import org.apache.commons.codec.binary.Base64
 import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
 import org.apache.pekko.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
 import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, StatusCode, Uri}
@@ -35,8 +33,10 @@ import reactor.core.publisher.{Flux, Sinks}
 
 import java.io.File
 import java.net.{InetSocketAddress, URI}
+import java.nio.charset.StandardCharsets
 import java.util
 import java.util.concurrent.TimeUnit
+import java.util.{Base64 => JavaBase64}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
@@ -452,7 +452,7 @@ case class NettyHttp3ClientWsRequest(
     scheme match {
       case WSAuthScheme.BASIC =>
         addHttpHeaders(
-          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"$username:$password".getBytes(Charsets.UTF_8))}"
+          "Authorization" -> s"Basic ${JavaBase64.getEncoder.encodeToString(s"$username:$password".getBytes(StandardCharsets.UTF_8))}"
         )
       case _                  => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
     }

@@ -17,6 +17,7 @@ import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarg
 import play.api.mvc.{Cookies, Headers, Request}
 
 import java.net.{InetAddress, URI, URLEncoder}
+import java.nio.charset.StandardCharsets
 import java.security.cert.X509Certificate
 import java.util.Base64
 import scala.concurrent.duration.DurationInt
@@ -134,7 +135,7 @@ class BackOfficeRequest(
     env.Headers.OtoroshiClientId     -> apikey.clientId,
     env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
     env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
-      Json.stringify(user.profile).getBytes(Charsets.UTF_8)
+      Json.stringify(user.profile).getBytes(StandardCharsets.UTF_8)
     ),
     "Otoroshi-Tenant"                -> request.headers.get("Otoroshi-Tenant").getOrElse("default"),
     "Otoroshi-BackOffice-User"       -> JWT

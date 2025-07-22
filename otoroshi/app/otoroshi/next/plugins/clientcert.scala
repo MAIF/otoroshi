@@ -2,7 +2,6 @@ package otoroshi.next.plugins
 
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
-import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
@@ -20,6 +19,7 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
 import java.security.cert.X509Certificate
+import java.util.{Base64 => JavaBase64}
 import scala.concurrent.duration.DurationLong
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -379,7 +379,7 @@ class NgCertificateAsApikey extends NgPreRouting {
             ctx.cachedConfig(internalName)(NgCertificateAsApikeyConfig.format).getOrElse(NgCertificateAsApikeyConfig())
           val serialNumber = cert.getSerialNumber.toString
           val subjectDN    = DN(cert.getSubjectX500Principal.getName).stringify
-          val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
+          val clientId     = JavaBase64.getEncoder.encodeToString((subjectDN + "-" + serialNumber).getBytes)
           env.datastores.apiKeyDataStore
             .findById(clientId)
             .flatMap {

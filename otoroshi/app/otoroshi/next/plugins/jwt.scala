@@ -4,9 +4,9 @@ import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import com.nimbusds.jose.crypto.{RSADecrypter, RSAEncrypter}
 import com.nimbusds.jose.jwk.RSAKey
-import com.nimbusds.jose._
+import com.nimbusds.jose.{EncryptionMethod, JOSEException, JWEAlgorithm, JWEHeader, JWEObject}
 import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import java.util.{Base64 => JavaBase64}
 import org.joda.time.DateTime
 import otoroshi.el.JwtExpressionLanguage
 import otoroshi.env.Env
@@ -352,16 +352,16 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
                       .obj("alg" -> tokenSigningAlgorithm.getName, "typ" -> "JWT")
                       .applyOnWithOpt(globalVerifier.algoSettings.keyId)((h, id) => h ++ Json.obj("kid" -> id))
                     val header         =
-                      ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
+                      JavaBase64.getUrlEncoder.withoutPadding().encodeToString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
                     val payload        =
-                      ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
+                      JavaBase64.getUrlEncoder.withoutPadding().encodeToString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
                     val content        = String.format("%s.%s", header, payload)
                     val signatureBytes =
                       tokenSigningAlgorithm.sign(
                         header.getBytes(StandardCharsets.UTF_8),
                         payload.getBytes(StandardCharsets.UTF_8)
                       )
-                    val signature      = ApacheBase64.encodeBase64URLSafeString(signatureBytes)
+                    val signature      = JavaBase64.getUrlEncoder.withoutPadding().encodeToString(signatureBytes)
 
                     val signedToken = s"$content.$signature"
 

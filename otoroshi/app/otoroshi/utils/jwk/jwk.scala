@@ -3,7 +3,7 @@ package otoroshi.utils.jwk
 import com.auth0.jwk.{GuavaCachedJwkProvider, Jwk, JwkProvider, UrlJwkProvider}
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.collect.Maps
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import java.util.{Base64 => JavaBase64}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.json.{JsArray, JsObject, Json}
 
@@ -57,7 +57,7 @@ object JwtVerifierHelper {
   val cache = new UnboundedTrieMap[String, JwkProvider]()
 
   def fromBase64(key: String): Array[Byte] = {
-    ApacheBase64.decodeBase64(key)
+    JavaBase64.getDecoder.decode(key)
   }
 
   def algorithm(algo: String, base64key: String, keyId: String = "none"): Algorithm = {

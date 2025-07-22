@@ -1,26 +1,25 @@
 package otoroshi.plugins.apikeys
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import com.google.common.base.Charsets
+import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import org.biscuitsec.biscuit.datalog.SymbolTable
 import org.biscuitsec.biscuit.token.builder.parser.Parser
-import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import com.google.common.base.Charsets
-import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
-import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.utils.JsonPathUtils
 import otoroshi.script._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.utils.JsonPathUtils
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.DN
@@ -30,10 +29,11 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
 
+import java.nio.charset.StandardCharsets
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.security.{KeyPair, SecureRandom}
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.collection.concurrent.TrieMap
+import java.util.{Base64 => JavaBase64}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
@@ -219,7 +219,7 @@ class CertificateAsApikey extends PreRouting {
         val conf         = context.configFor("CertificateAsApikey")
         val serialNumber = cert.getSerialNumber.toString
         val subjectDN    = DN(cert.getSubjectX500Principal.getName).stringify
-        val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
+        val clientId     = JavaBase64.getEncoder.encodeToString((subjectDN + "-" + serialNumber).getBytes)
         // TODO: validate CA DN based on config array
         // TODO: validate CA serial based on config array
         env.datastores.apiKeyDataStore
@@ -411,7 +411,7 @@ class ClientCredentialFlow extends RequestTransformer {
                 .flatMap(_.headOption)
                 .filter(_.startsWith("Basic "))
                 .map(_.replace("Basic ", ""))
-                .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                .map(v => JavaBase64.getDecoder.decode(v))
                 .map(v => new String(v))
                 .filter(_.contains(":"))
                 .map(_.split(":").toSeq)
@@ -428,7 +428,7 @@ class ClientCredentialFlow extends RequestTransformer {
                 .get("Authorization")
                 .filter(_.startsWith("Basic "))
                 .map(_.replace("Basic ", ""))
-                .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                .map(v => JavaBase64.getDecoder.decode(v))
                 .map(v => new String(v))
                 .filter(_.contains(":"))
                 .map(_.split(":").toSeq)
@@ -752,7 +752,7 @@ class ClientCredentialFlow extends RequestTransformer {
                       .get("Authorization")
                       .filter(_.startsWith("Basic "))
                       .map(_.replace("Basic ", ""))
-                      .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                      .map(v => JavaBase64.getDecoder.decode(v))
                       .map(v => new String(v))
                       .filter(_.contains(":"))
                       .map(_.split(":").toSeq)
@@ -793,7 +793,7 @@ class ClientCredentialFlow extends RequestTransformer {
                       .get("Authorization")
                       .filter(_.startsWith("Basic "))
                       .map(_.replace("Basic ", ""))
-                      .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                      .map(v => JavaBase64.getDecoder.decode(v))
                       .map(v => new String(v))
                       .filter(_.contains(":"))
                       .map(_.split(":").toSeq)
@@ -1013,7 +1013,7 @@ class ClientCredentialService extends RequestSink {
             .flatMap(_.headOption)
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => JavaBase64.getDecoder.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
@@ -1030,7 +1030,7 @@ class ClientCredentialService extends RequestSink {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => JavaBase64.getDecoder.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
@@ -1112,7 +1112,6 @@ class ClientCredentialService extends RequestSink {
 
             import org.biscuitsec.biscuit.crypto.KeyPair
             import org.biscuitsec.biscuit.token.Biscuit
-            import org.biscuitsec.biscuit.token.builder.Block
             import org.biscuitsec.biscuit.token.builder.Utils._
 
             import scala.jdk.CollectionConverters._
@@ -1312,7 +1311,7 @@ class ClientCredentialService extends RequestSink {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => JavaBase64.getDecoder.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
@@ -1354,8 +1353,6 @@ class ClientCredentialService extends RequestSink {
   }
 }
 
-import scala.concurrent.{ExecutionContext, Future}
-
 // MIGRATED
 class ApikeyAuthModule extends PreRouting {
 
@@ -1395,7 +1392,7 @@ class ApikeyAuthModule extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")

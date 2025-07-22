@@ -15,6 +15,7 @@ import play.api.libs.json.{JsArray, JsObject, JsValue}
 import play.utils.UriEncoding
 import otoroshi.utils.clevercloud.CleverCloudClient.CleverSettings
 
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.ThreadLocalRandom
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success}
@@ -45,7 +46,7 @@ object CleverCloudClient {
   case class Hmac(sharedKey: String) {
 
     private lazy val encoder = Base64.getUrlEncoder
-    private lazy val key     = new SecretKeySpec(sharedKey.getBytes(Charsets.UTF_8), "HmacSHA512")
+    private lazy val key     = new SecretKeySpec(sharedKey.getBytes(StandardCharsets.UTF_8), "HmacSHA512")
 
     private lazy val mac = {
       val a = Mac.getInstance("HmacSHA512")
@@ -53,7 +54,7 @@ object CleverCloudClient {
       a
     }
 
-    def signString(in: String): String = new String(encoder.encode(sign(in.getBytes(Charsets.UTF_8))), Charsets.UTF_8)
+    def signString(in: String): String = new String(encoder.encode(sign(in.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8)
 
     def sign(in: Array[Byte]): Array[Byte] = mac.synchronized { mac.doFinal(in) }
 
@@ -175,7 +176,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
   def signRequest(verb: HttpMethod, path: String, params: Seq[(String, String)], key: UserTokens): String = {
 
     val strKey = Seq(settings.apiConsumerKey, key.secret)
-      .map(UriEncoding.encodePathSegment(_, Charsets.UTF_8))
+      .map(UriEncoding.encodePathSegment(_, StandardCharsets.UTF_8))
       .mkString("&")
 
     Hmac(strKey).signString(prepareUrlToSign(verb, path, params))
@@ -183,7 +184,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
 
   def prepareUrlToSign(verb: HttpMethod, path: String, params: Seq[(String, String)]): String = {
     val toSign = Seq(verb, path, prepareParameters(params))
-      .map(p => UriEncoding.encodePathSegment(p.toString, Charsets.UTF_8))
+      .map(p => UriEncoding.encodePathSegment(p.toString, StandardCharsets.UTF_8))
       .mkString("&")
 
     // logger.debug("to sign : " + toSign)
@@ -200,7 +201,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
     str
   }
 
-  def encode(param: String): String = UriEncoding.encodePathSegment(param, Charsets.UTF_8)
+  def encode(param: String): String = UriEncoding.encodePathSegment(param, StandardCharsets.UTF_8)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

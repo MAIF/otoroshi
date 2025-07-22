@@ -4,7 +4,6 @@ import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
 import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
-import org.apache.commons.codec.binary.Hex
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
 import org.apache.pekko.http.scaladsl.ClientTransport
@@ -12,9 +11,9 @@ import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, Uri}
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.connectors.s3._
 import org.apache.pekko.stream.connectors.s3.headers.CannedAcl
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
-import org.apache.pekko.stream.connectors.s3._
 import org.apache.pekko.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source, SourceQueueWithComplete}
 import org.apache.pekko.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
 import org.apache.pekko.util.ByteString
@@ -56,6 +55,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider
 import java.io.File
 import java.lang.management.ManagementFactory
 import java.net.InetSocketAddress
+import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
@@ -1409,7 +1409,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
               cachedRef.set(stateCache)
               cachedAt.set(System.currentTimeMillis())
               cacheCount.set(counter.get())
-              cacheDigest.set(Hex.encodeHexString(digest.digest()))
+              cacheDigest.set(otoroshi.utils.string.Utils.encodeHexString(digest.digest()))
               env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
               // write state to file if enabled
               env.clusterConfig.leader.stateDumpPath
@@ -2166,7 +2166,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                     }
                   })
                   .flatMap { _ =>
-                    val cliDigest = Hex.encodeHexString(digest.digest())
+                    val cliDigest = otoroshi.utils.string.Utils.encodeHexString(digest.digest())
                     if (Cluster.logger.isDebugEnabled)
                       Cluster.logger.debug(
                         s"[${env.clusterConfig.mode.name}] Consumed state in ${System
@@ -2467,7 +2467,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             })
             .flatMap { _ =>
               val tryCount  = 1
-              val cliDigest = Hex.encodeHexString(digest.digest())
+              val cliDigest = otoroshi.utils.string.Utils.encodeHexString(digest.digest())
               if (Cluster.logger.isDebugEnabled)
                 Cluster.logger.debug(
                   s"[${env.clusterConfig.mode.name}] Consumed state in ${System
@@ -2851,7 +2851,7 @@ class SwappableInMemoryDataStores(
         val hash = MurmurHash3.stringHash(content)
         if (hash != lastHash.get()) {
           if (Cluster.logger.isDebugEnabled) Cluster.logger.debug("Writing state to disk ...")
-          java.nio.file.Files.write(file.toPath, content.getBytes(com.google.common.base.Charsets.UTF_8))
+          java.nio.file.Files.write(file.toPath, content.getBytes(StandardCharsets.UTF_8))
           lastHash.set(hash)
         }
       }

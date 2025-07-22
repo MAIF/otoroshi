@@ -1,23 +1,21 @@
 package otoroshi.plugins.external
 
-import java.security.MessageDigest
-import java.security.cert.X509Certificate
-import java.util.Base64
-import java.util.concurrent.TimeUnit
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor, WSProxyServerJson}
-import org.apache.commons.codec.binary.Hex
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{AccessContext, AccessValidator}
+import otoroshi.ssl.ClientCertificateValidator
 import otoroshi.utils.http.MtlsConfig
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
-import otoroshi.ssl.{ClientCertificateValidator, PemHeaders}
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.security.MessageDigest
+import java.security.cert.X509Certificate
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future}
 
 case class ExternalHttpValidatorConfig(config: JsValue) {
   lazy val url: String                  = (config \ "url").as[String]
@@ -129,7 +127,7 @@ class ExternalHttpValidator extends AccessValidator {
   private val digester = MessageDigest.getInstance("SHA-1")
 
   private def computeFingerPrint(cert: X509Certificate): String = {
-    Hex.encodeHexString(digester.digest(cert.getEncoded())).toLowerCase()
+    otoroshi.utils.string.Utils.encodeHexString(digester.digest(cert.getEncoded())).toLowerCase()
   }
 
   private def computeKeyFromChain(chain: Seq[X509Certificate]): String = {

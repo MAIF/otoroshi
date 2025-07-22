@@ -15,6 +15,7 @@ import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
 import play.utils.UriEncoding
 
+import java.nio.charset.StandardCharsets
 import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
@@ -149,7 +150,7 @@ class OAuth1CallerPlugin extends RequestTransformer {
     encodeURI(signature)
   }
 
-  private def encode(param: String): String = UriEncoding.encodePathSegment(param, Charsets.UTF_8)
+  private def encode(param: String): String = UriEncoding.encodePathSegment(param, StandardCharsets.UTF_8)
 
   def prepareParameters(params: Seq[(String, String)]): String = params
     .map { case (k, v) => (encode(k), encode(v)) }

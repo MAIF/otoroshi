@@ -17,6 +17,7 @@ import play.api.Configuration
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.libs.ws.WSAuthScheme
 
+import java.nio.charset.StandardCharsets
 import java.util.Base64
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -720,7 +721,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
         "Host"                     -> "otoroshi-api.oto.tools",
         "Accept"                   -> "application/json",
         "Otoroshi-Admin-Profile"   -> Base64.getUrlEncoder.encodeToString(
-          Json.stringify(user.profile).getBytes(Charsets.UTF_8)
+          Json.stringify(user.profile).getBytes(StandardCharsets.UTF_8)
         ),
         "Otoroshi-Tenant"          -> tenant.value,
         "Otoroshi-BackOffice-User" -> JWT

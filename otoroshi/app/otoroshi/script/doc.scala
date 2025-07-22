@@ -7,6 +7,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import scala.jdk.CollectionConverters._
 import scala.util.Try
@@ -280,7 +281,7 @@ class PluginDocumentationGenerator(docPath: String) {
       //   |
       //   |$documentation
       //   |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
 
     (plugin.name, file.getName)
@@ -321,7 +322,7 @@ class PluginDocumentationGenerator(docPath: String) {
         |@@@
         |
         |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
   }
 
@@ -356,7 +357,7 @@ class PluginDocumentationGenerator(docPath: String) {
         |
         |
         |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
   }
 }

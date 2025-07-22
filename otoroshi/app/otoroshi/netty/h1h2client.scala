@@ -1,17 +1,16 @@
 package otoroshi.netty
 
-import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
-import org.apache.pekko.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
-import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, Uri}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.util.ByteString
 import com.google.common.base.Charsets
-import io.netty.buffer.{ByteBuf, Unpooled}
+import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelOption
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.logging.LogLevel
-import io.netty.handler.ssl.{ClientAuth, SslContextBuilder}
-import org.apache.commons.codec.binary.Base64
+import io.netty.handler.ssl.SslContextBuilder
+import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
+import org.apache.pekko.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
+import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, Uri}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
@@ -20,21 +19,7 @@ import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.{
-  BodyWritable,
-  DefaultWSCookie,
-  EmptyBody,
-  InMemoryBody,
-  SourceBody,
-  WSAuthScheme,
-  WSBody,
-  WSCookie,
-  WSProxyServer,
-  WSRequest,
-  WSRequestFilter,
-  WSResponse,
-  WSSignatureCalculator
-}
+import play.api.libs.ws.{BodyWritable, DefaultWSCookie, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
 import play.api.mvc.MultipartFormData
 import reactor.core.publisher.{Flux, Mono}
 import reactor.netty.ByteBufFlux
@@ -45,8 +30,10 @@ import reactor.netty.transport.ProxyProvider
 
 import java.io.File
 import java.net.{InetSocketAddress, URI}
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.{Base64 => JavaBase64}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, Future, Promise}
 import scala.jdk.CollectionConverters._
@@ -143,7 +130,7 @@ case class NettyWsClientRequest(
     scheme match {
       case WSAuthScheme.BASIC =>
         addHttpHeaders(
-          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"$username:$password".getBytes(Charsets.UTF_8))}"
+          "Authorization" -> s"Basic ${JavaBase64.getEncoder.encodeToString(s"$username:$password".getBytes(StandardCharsets.UTF_8))}"
         )
       case _                  => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
     }

@@ -6,6 +6,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import scala.jdk.CollectionConverters._
 import scala.util.Try
@@ -189,7 +190,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
       //   |
       //   |$documentation
       //   |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
 
     (plugin.name, file.getName)
@@ -223,7 +224,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
              |${contents.mkString("\n")}
              |
              |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
   }
 }

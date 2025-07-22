@@ -11,7 +11,7 @@ import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import otoroshi.security.IdGenerator
 
 import scala.concurrent.Future
@@ -1200,32 +1200,35 @@ class BasicSpec() extends OtoroshiSpec {
 
     // FIXME there seem to be a side effect between the above test and this one, therefore we use a different subdomain
     "Validate sec. communication in V2" in {
-      import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+      import java.util.{Base64 => JavaBase64}
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
       val server  = TargetService
-        .full(
-          None,
-          "/api",
-          "application/json",
-          { r =>
-            val state             = r.getHeader("Otoroshi-State").get()
-            val tokenBody         =
-              Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
-            val stateValue        = (tokenBody \ "state").as[String]
-            val respToken: String = JWT
-              .create()
-              .withJWTId(IdGenerator.uuid)
-              .withAudience("Otoroshi")
-              .withClaim("state-resp", stateValue)
-              .withIssuedAt(DateTime.now().toDate)
-              .withExpiresAt(DateTime.now().plusSeconds(10).toDate)
-              .sign(Algorithm.HMAC512("secret"))
-            counter.incrementAndGet()
-            (200, body, List(RawHeader("Otoroshi-State-Resp", respToken)))
-          }
-        )
-        .await()
+          .full(
+            None,
+            "/api",
+            "application/json",
+            { r =>
+              val state             = r.getHeader("Otoroshi-State").get()
+              val parts             = state.value().split("\\.")
+              // JWT uses base64url encoding, not standard base64
+              val decoded           = JavaBase64.getUrlDecoder.decode(parts(1))
+              val tokenBodyStr      = new String(decoded)
+              val tokenBody         = Try(Json.parse(tokenBodyStr)).getOrElse(Json.obj())
+              val stateValue        = (tokenBody \ "state").as[String]
+              val respToken: String = JWT
+                  .create()
+                  .withJWTId(IdGenerator.uuid)
+                  .withAudience("Otoroshi")
+                  .withClaim("state-resp", stateValue)
+                  .withIssuedAt(DateTime.now().toDate)
+                  .withExpiresAt(DateTime.now().plusSeconds(10).toDate)
+                  .sign(Algorithm.HMAC512("secret"))
+              counter.incrementAndGet()
+              (200, body, List(RawHeader("Otoroshi-State-Resp", respToken)))
+            }
+          )
+          .await()
       val service = ServiceDescriptor(
         id = "seccom-v2-test",
         name = "seccom-v2-test",
@@ -1245,12 +1248,12 @@ class BasicSpec() extends OtoroshiSpec {
       val res     = createOtoroshiService(service).futureValue
 
       val resp1 = ws
-        .url(s"http://127.0.0.1:$port/api")
-        .withHttpHeaders(
-          "Host" -> "seccom2.oto.tools"
-        )
-        .get()
-        .futureValue
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> "seccom2.oto.tools"
+          )
+          .get()
+          .futureValue
 
       resp1.status mustBe 200
       resp1.body mustBe body

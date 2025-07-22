@@ -19,6 +19,7 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.http.RequestImplicits._
 
+import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -38,7 +39,7 @@ trait ApiActionContextCapable {
   def user(implicit env: Env): Option[JsValue] =
     request.headers
       .get(env.Headers.OtoroshiAdminProfile)
-      .flatMap(p => Try(Json.parse(new String(Base64.getDecoder.decode(p), Charsets.UTF_8))).toOption)
+      .flatMap(p => Try(Json.parse(new String(Base64.getDecoder.decode(p), StandardCharsets.UTF_8))).toOption)
 
   def from(implicit env: Env): String = request.theIpAddress
 
@@ -334,7 +335,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
   lazy val logger = Logger("otoroshi-api-action")
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   def error(message: String, ex: Option[Throwable] = None)(implicit request: Request[_]): Future[Result] = {
     ex match {
@@ -358,7 +359,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
     def perform(): Future[Result] = {
       request.headers.get(env.Headers.OtoroshiClaim).get.split("\\.").toSeq match {
         case Seq(head, body, signature) =>
-          val claim          = Json.parse(new String(OtoroshiClaim.decoder.decode(body), Charsets.UTF_8))
+          val claim          = Json.parse(new String(OtoroshiClaim.decoder.decode(body), StandardCharsets.UTF_8))
           val lastestApikey  = (claim \ "access_type").asOpt[String].exists(v => v == "apikey" || v == "both")
           val latestClientId = (claim \ "apikey" \ "clientId").asOpt[String]
           (claim \ "sub").as[String].split(":").toSeq match {

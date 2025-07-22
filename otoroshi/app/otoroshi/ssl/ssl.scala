@@ -1,14 +1,12 @@
 package otoroshi.ssl
 
+import com.github.blemale.scaffeine.Scaffeine
+import com.google.common.hash.Hashing
+import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.stream.{Materializer, TLSClientAuth}
 import org.apache.pekko.util.ByteString
-import com.github.blemale.scaffeine.Scaffeine
-import com.google.common.hash.Hashing
-import com.typesafe.sslconfig.ssl.SSLConfigSettings
-import org.apache.commons.codec.binary.Hex
-import org.apache.commons.codec.digest.DigestUtils
 import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
 import org.bouncycastle.openssl.jcajce.{JcaPEMKeyConverter, JcePEMDecryptorProviderBuilder}
 import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
@@ -1930,7 +1928,7 @@ object CertificateData {
       "sigAlgName"      -> cert.getSigAlgName,
       "sigAlgOID"       -> cert.getSigAlgOID,
       "_signature"      -> new String(encoder.encode(cert.getSignature)),
-      "signature"       -> DigestUtils.sha256Hex(cert.getSignature).toUpperCase().grouped(2).mkString(":"),
+      "signature"       -> otoroshi.utils.string.Utils.encodeHexString(java.security.MessageDigest.getInstance("SHA-256").digest(cert.getSignature)).toUpperCase().grouped(2).mkString(":"),
       "subjectDN"       -> DN(cert.getSubjectX500Principal.getName).stringify,
       "domain"          -> domain,
       "rawDomain"       -> rawDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -2603,7 +2601,7 @@ case class ClientCertificateValidator(
   }
 
   private def computeFingerPrint(cert: X509Certificate): String = {
-    Hex.encodeHexString(ClientCertificateValidator.digester.digest(cert.getEncoded())).toLowerCase()
+    otoroshi.utils.string.Utils.encodeHexString(ClientCertificateValidator.digester.digest(cert.getEncoded())).toLowerCase()
   }
 
   private def computeKeyFromChain(chain: Seq[X509Certificate]): String = {

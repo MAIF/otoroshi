@@ -291,9 +291,10 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
 
         val jsonSchemaFactory = JsonSchemaFactory.getInstance(VersionFlag.fromId(config.specification).get())
 
-        val schemaConfig = new SchemaValidatorsConfig()
-        schemaConfig.setPathType(PathType.JSON_POINTER)
-        schemaConfig.setFormatAssertionsEnabled(true)
+        val schemaConfig = SchemaValidatorsConfig.builder()
+            .pathType(PathType.JSON_POINTER)
+            .formatAssertionsEnabled(true)
+            .build()
 
         val schema = jsonSchemaFactory.getSchema(userSchema, schemaConfig)
 

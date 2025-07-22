@@ -223,35 +223,71 @@ object GraphQLFormats {
               "arguments" -> directive.arguments.map(argument =>
                 Json.obj(
                   "name"  -> argument.name,
-                  "value" -> argument.value.toString()
+                  "value" -> argumentValueToJson(argument.value)  // Fixed this line
                 )
               )
             )
           )
         )
-      override def reads(json: JsValue)                 =
+
+      override def reads(json: JsValue) =
         Try {
           JsSuccess(
             InterfaceTypeDefinition(
               name = json.select("name").as[String],
               fields = json
-                .select("fields")
-                .asOpt[JsArray]
-                .getOrElse(Json.arr())
-                .value
-                .map(_.as[JsObject])
-                .map(fieldDefinitionFmt.reads)
-                .flatMap {
-                  case JsSuccess(v, _) => Some(v)
-                  case JsError(_)      => None
-                }
-                .toVector
+                  .select("fields")
+                  .asOpt[JsArray]
+                  .getOrElse(Json.arr())
+                  .value
+                  .map(_.as[JsObject])
+                  .map(fieldDefinitionFmt.reads)
+                  .flatMap {
+                    case JsSuccess(v, _) => Some(v)
+                    case JsError(_)      => None
+                  }
+                  .toVector,
+              interfaces = Vector.empty,
+              directives = json
+                  .select("directives")
+                  .asOpt[JsArray]
+                  .getOrElse(Json.arr())
+                  .value
+                  .map(_.as[JsObject])
+                  .map(directive => {
+                    val directiveName = directive.select("name").as[String]
+                    Directive(
+                      name = directiveName,
+                      arguments = directive
+                          .select("arguments")
+                          .asOpt[JsArray]
+                          .getOrElse(Json.arr())
+                          .value
+                          .map(_.as[JsObject])
+                          .map(argument => {
+                            val name = argument.select("name").as[String]
+                            Argument(
+                              name = name,
+                              value = jsonToArgumentValue(
+                                argument.select("value").as[JsValue],
+                                isJsonDirectiveArgument = name == "data" && directiveName == "json"
+                              )
+                            )
+                          })
+                          .toVector
+                    )
+                  })
+                  .toVector,
+              description = None,
+              comments = Vector.empty,
+              trailingComments = Vector.empty,
+              location = None
             )
           )
         } recover { case e =>
           JsError(e.getMessage)
         } get
-    }
+    }  // Make sure this closing brace is present
 
   def astDocumentToJson(document: Document) = document.definitions.map {
     case definition: TypeSystemDefinition =>

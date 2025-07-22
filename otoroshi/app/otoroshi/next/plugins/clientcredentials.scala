@@ -1,14 +1,14 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import org.biscuitsec.biscuit.datalog.SymbolTable
 import org.biscuitsec.biscuit.token.builder.parser.Parser
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.models.{ApiKey, ApiKeyHelper, ServiceGroupIdentifier}
+import otoroshi.models.{ApiKey, ServiceGroupIdentifier}
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.plugins.apikeys.ClientCredentialFlowBody
@@ -24,6 +24,7 @@ import play.core.parsers.FormUrlEncodedParser
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.security.{KeyPair, SecureRandom}
+import java.util.{Base64 => JavaBase64}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util._
@@ -130,7 +131,7 @@ class NgClientCredentials extends NgRequestSink {
               .get("Authorization")
               .filter(_.startsWith("Basic "))
               .map(_.replace("Basic ", ""))
-              .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+              .map(v => JavaBase64.getDecoder.decode(v))
               .map(v => new String(v))
               .filter(_.contains(":"))
               .map(_.split(":").toSeq)
@@ -147,7 +148,7 @@ class NgClientCredentials extends NgRequestSink {
               .get("Authorization")
               .filter(_.startsWith("Basic "))
               .map(_.replace("Basic ", ""))
-              .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+              .map(v => JavaBase64.getDecoder.decode(v))
               .map(v => new String(v))
               .filter(_.contains(":"))
               .map(_.split(":").toSeq)
@@ -226,7 +227,6 @@ class NgClientCredentials extends NgRequestSink {
 
                 import org.biscuitsec.biscuit.crypto.KeyPair
                 import org.biscuitsec.biscuit.token.Biscuit
-                import org.biscuitsec.biscuit.token.builder.Block
                 import org.biscuitsec.biscuit.token.builder.Utils._
 
                 import scala.jdk.CollectionConverters._
@@ -423,7 +423,7 @@ class NgClientCredentials extends NgRequestSink {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => JavaBase64.getDecoder.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
@@ -543,7 +543,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
               .get("Authorization")
               .filter(_.startsWith("Basic "))
               .map(_.replace("Basic ", ""))
-              .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+              .map(v => JavaBase64.getDecoder.decode(v))
               .map(v => new String(v))
               .filter(_.contains(":"))
               .map(_.split(":").toSeq)
@@ -560,7 +560,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
               .get("Authorization")
               .filter(_.startsWith("Basic "))
               .map(_.replace("Basic ", ""))
-              .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+              .map(v => JavaBase64.getDecoder.decode(v))
               .map(v => new String(v))
               .filter(_.contains(":"))
               .map(_.split(":").toSeq)
@@ -714,7 +714,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
             .get("Authorization")
             .filter(_.startsWith("Basic "))
             .map(_.replace("Basic ", ""))
-            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => JavaBase64.getDecoder.decode(v))
             .map(v => new String(v))
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)

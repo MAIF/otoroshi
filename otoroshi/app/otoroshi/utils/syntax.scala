@@ -7,7 +7,7 @@ import org.apache.pekko.util.ByteString
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
-import org.apache.commons.codec.binary.{Base64, Hex}
+import java.util.{Base64 => JavaBase64}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.models.WSProxyServerJson
@@ -265,15 +265,15 @@ object implicits {
     def bytes: Array[Byte]                                     = obj.getBytes(StandardCharsets.UTF_8)
     def json: JsValue                                          = JsString(obj)
     def parseJson: JsValue                                     = Json.parse(obj)
-    def encodeBase64: String                                   = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
-    def base64: String                                         = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
-    def base64UrlSafe: String                                  = Base64.encodeBase64URLSafeString(obj.getBytes(StandardCharsets.UTF_8))
-    def fromBase64: String                                     = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
-    def decodeBase64: String                                   = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
+    def encodeBase64: String                                   = JavaBase64.getEncoder.encodeToString(obj.getBytes(StandardCharsets.UTF_8))
+    def base64: String                                         = JavaBase64.getEncoder.encodeToString(obj.getBytes(StandardCharsets.UTF_8))
+    def base64UrlSafe: String                                  = JavaBase64.getUrlEncoder.withoutPadding().encodeToString(obj.getBytes(StandardCharsets.UTF_8))
+    def fromBase64: String                                     = new String(JavaBase64.getDecoder.decode(obj), StandardCharsets.UTF_8)
+    def decodeBase64: String                                   = new String(JavaBase64.getDecoder.decode(obj), StandardCharsets.UTF_8)
     def sha256: String                                         =
-      Hex.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.getBytes(StandardCharsets.UTF_8)))
+      otoroshi.utils.string.Utils.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.getBytes(StandardCharsets.UTF_8)))
     def sha512: String                                         =
-      Hex.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.getBytes(StandardCharsets.UTF_8)))
+      otoroshi.utils.string.Utils.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.getBytes(StandardCharsets.UTF_8)))
     def chunks(size: Int): Source[String, NotUsed]             = Source(obj.grouped(size).toList)
     def camelToSnake: String = {
       obj.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase
@@ -289,8 +289,8 @@ object implicits {
   }
   implicit class BetterByteString(private val obj: ByteString) extends AnyVal {
     def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
-    def sha256: String                                 = Hex.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.toArray))
-    def sha512: String                                 = Hex.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.toArray))
+    def sha256: String                                 = otoroshi.utils.string.Utils.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.toArray))
+    def sha512: String                                 = otoroshi.utils.string.Utils.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.toArray))
   }
   implicit class BetterBoolean(private val obj: Boolean)       extends AnyVal {
     def json: JsValue = JsBoolean(obj)
