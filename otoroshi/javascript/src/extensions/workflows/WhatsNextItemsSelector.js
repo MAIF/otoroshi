@@ -53,6 +53,7 @@ import { ArrayDelOperator } from './operators/ArrayDelOperator'
 import { DecrOperator } from './operators/DecrOperator'
 import { IncrOperator } from './operators/IncrOperator'
 import { ReturnedNode } from './nodes/ReturnedNode'
+import { PredicateNode } from './nodes/PredicateNode'
 
 
 const ITEMS_BY_CATEGORY = [
@@ -77,7 +78,8 @@ const ITEMS_BY_CATEGORY = [
             "call": CallNode(),
             "wait": WaitNode(),
             "error": ErrorNode(),
-            "value": ValueNode()
+            "value": ValueNode(),
+            "predicate": PredicateNode()
         }
     },
     {
