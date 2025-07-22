@@ -2,11 +2,9 @@ import React, { useState } from 'react'
 import { NgForm } from '../../components/nginputs';
 
 export function ModalEditor({ node }) {
-    
+
     if (!node)
         return null
-
-    const [state, setState] = useState(node.data.workflow)
 
     const schema = {
         description: {
@@ -39,6 +37,10 @@ export function ModalEditor({ node }) {
             fields: [...(node.data.flow || []), 'result']
         }
     ]
+
+    const [state, setState] = useState(node.data.workflow ? Object.fromEntries(Object.entries(node.data.workflow).filter(([key, value]) => {
+        return Object.keys(schema).includes(key)
+    })) : {})
 
     return <div className='modal-editor'>
         <p className='p-3 m-0 whats-next-title'>{node.data.name}</p>

@@ -77,8 +77,7 @@ const ITEMS_BY_CATEGORY = [
             "call": CallNode(),
             "wait": WaitNode(),
             "error": ErrorNode(),
-            "value": ValueNode(),
-            "returned": ReturnedNode()
+            "value": ValueNode()
         }
     },
     {

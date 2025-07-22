@@ -53,7 +53,7 @@ export const AssignNode = _workflow => ({
     sources: ['output'],
     nodeRenderer: props => {
         return <div className='assign-node'>
-            {props.data.workflow.values?.map(value => {
+            {props.data.workflow?.values?.map(value => {
                 return <span key={value.name}>{value.name}</span>
             })}
         </div>

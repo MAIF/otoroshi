@@ -80,7 +80,7 @@ case class WaitNode(json: JsObject) extends Node {
   override def documentationExample: Option[JsObject] = Some(Json.obj(
     "kind" -> "wait",
     "description" -> "This node waits 20 seconds",
-    "duration" -> 20000,
+    "duration" -> 20000
   ))
   override def run(
       wfr: WorkflowRun

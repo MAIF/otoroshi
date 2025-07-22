@@ -1,6 +1,6 @@
 import React from 'react'
 import { CORE_FUNCTIONS } from '../models/Functions'
-import { NgCodeRenderer } from '../../../components/nginputs';
+import { NgCodeRenderer, NgSelectRenderer } from '../../../components/nginputs';
 import { Row } from '../../../components/Row';
 
 export function CallNode(_workflow) {
@@ -13,13 +13,18 @@ export function CallNode(_workflow) {
         flow: ['function', 'args'],
         schema: {
             function: {
-                type: 'select',
-                props: {
-                    creatable: true,
-                    options: Object.keys(CORE_FUNCTIONS),
-                },
-                label: 'Function',
-                placeholder: 'Select a function to execute'
+                // props: {
+                //     creatable: true,
+                //     options: Object.keys(CORE_FUNCTIONS),
+                // },
+                renderer: props => <Row title="Select a function to execute">
+                    <NgSelectRenderer
+                        options={Object.keys(CORE_FUNCTIONS).map(func => ({ label: func, value: func }))}
+                        ngOptions={{ spread: true }}
+                        value={props.value}
+                        onChange={(k) => props.onChange(k)}
+                    />
+                </Row>
             },
             args: {
                 renderer: props => <Row title="Arguments">
@@ -47,8 +52,9 @@ export function CallNode(_workflow) {
         },
         sources: ['output'],
         nodeRenderer: props => {
+            console.log(props.data.workflow)
             return <div className='assign-node'>
-                <span >{props.data.workflow.function}</span>
+                <span >{props.data.workflow?.function}</span>
             </div>
         }
     }

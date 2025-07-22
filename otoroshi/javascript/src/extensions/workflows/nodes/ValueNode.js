@@ -11,10 +11,10 @@ export const ValueNode = (_workflow) => ({
     schema: {
         value: ValueToCheck('Value', false)
     },
-    flow: ['value']
-    //     {
-    //   "kind": "workflow",
-    //   "steps": [ <Node> ],
-    //   "returned": <Value>
-    // }
+    flow: ['value'],
+    nodeRenderer: props => {
+        return <div className='assign-node'>
+            {JSON.stringify(props.data.workflow?.value, null, 4)}
+        </div>
+    }
 })
