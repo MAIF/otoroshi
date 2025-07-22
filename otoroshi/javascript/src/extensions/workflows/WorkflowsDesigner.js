@@ -1,20 +1,15 @@
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { QueryClient, QueryClientProvider, useQuery } from "react-query"
-import { useParams } from "react-router-dom";
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Flow } from './Flow'
 import { DesignerActions } from './DesignerActions'
 import { Navbar } from './Navbar'
 import { NodesExplorer } from './NodesExplorer'
-import Loader from '../../components/Loader';
 import { v4 as uuid } from 'uuid';
-import ELK from 'elkjs/lib/elk.bundled.js';
 
 import {
     applyNodeChanges,
     applyEdgeChanges,
     addEdge,
-    ReactFlowProvider,
     useReactFlow,
     useUpdateNodeInternals,
 } from '@xyflow/react';
@@ -22,106 +17,9 @@ import { NewTask } from './flow/NewTask';
 import { findNonOverlappingPosition } from './NewNodeSpawn';
 import { NODES, OPERATORS } from './models/Functions';
 import ReportExplorer from './ReportExplorer';
+import { onLayout } from './ElkOptions';
 
 const GROUP_NODES = ['if', 'switch', 'parallel', 'foreach', 'map', 'filter', 'flatmap']
-
-const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            retry: false,
-            refetchOnWindowFocus: false,
-        },
-    },
-});
-
-const elk = new ELK();
-
-const elkOptions = {
-    'elk.algorithm': 'layered',
-    'elk.layered.spacing.nodeNodeBetweenLayers': '120',
-    'elk.spacing.nodeNode': '150',
-
-    'elk.layered.edgeRouting.selfLoopDistribution': 'EQUALLY',
-    'elk.layered.edgeRouting.selfLoopOrdering': 'SEQUENCED',
-    'elk.layered.edgeRouting.splines.mode': 'ORTHOGONAL',
-    'elk.layered.edgeRouting.polyline.slanted': 'false',
-    'elk.layered.edgeRouting.orthogonal.nodesOnEdge': 'true',
-
-    'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
-    'elk.layered.crossingMinimization.greedySwitch.type': 'TWO_SIDED',
-
-    'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-    'elk.layered.nodePlacement.favorStraightEdges': 'true',
-    'elk.layered.nodePlacement.linearSegments.deflectionDampening': '0.3',
-
-    'elk.spacing.edgeNode': '80',
-    'elk.spacing.edgeEdge': '40',
-    'elk.layered.spacing.edgeNodeBetweenLayers': '50',
-    'elk.layered.spacing.edgeEdgeBetweenLayers': '35',
-
-
-    'elk.portConstraints': 'FIXED_ORDER',
-    'elk.layered.unnecessaryBendpoints': 'false',
-    'elk.layered.mergeEdges': 'false',
-
-    'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
-    'elk.layered.considerModelOrder.longEdgeStrategy': 'DUMMY_NODE_OVER',
-    'elk.layered.considerModelOrder.crossingCounterNodeInfluence': '0.05',
-
-    'elk.layered.cycleBreaking.strategy': 'GREEDY',
-    'elk.layered.layering.strategy': 'LONGEST_PATH',
-
-    'elk.spacing.componentComponent': '60',
-    'elk.spacing.portPort': '25',
-    'elk.spacing.portsSurrounding': '[top=25,left=25,bottom=25,right=25]',
-
-    'elk.layered.edgeRouting.orthogonal.searchHeuristic': 'MANHATTAN',
-    'elk.layered.thoroughness': '10',
-    'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH'
-};
-
-const applyStyles = () => {
-    const pageContainer = document.getElementById('content-scroll-container');
-    const parentPageContainer = document.getElementById('content-scroll-container-parent');
-
-    const pagePadding = pageContainer.style.paddingBottom
-    pageContainer.style.paddingBottom = 0
-
-    const parentPadding = parentPageContainer.style.padding
-    parentPageContainer.style.setProperty('padding', '0px', 'important')
-
-    return () => {
-        pageContainer.style.paddingBottom = pagePadding
-        parentPageContainer.style.padding = parentPadding
-    }
-}
-
-export function QueryContainer(props) {
-    useEffect(() => {
-        props.setTitle(undefined)
-        return applyStyles()
-    }, [])
-
-    return <QueryClientProvider client={queryClient}>
-        <Container {...props} />
-    </QueryClientProvider>
-}
-
-function Container(props) {
-    const params = useParams()
-
-    const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
-
-    const workflow = useQuery(
-        ['getWorkflow', params.workflowId],
-        () => client.findById(params.workflowId));
-
-    return <Loader loading={workflow.isLoading}>
-        <ReactFlowProvider>
-            <WorkflowsDesigner {...props} workflow={workflow.data} />
-        </ReactFlowProvider>
-    </Loader>
-}
 
 export function createSimpleNode(nodes, node) {
     // console.log('createSimpleNode', node.kind || node.data?.kind, node)
@@ -524,110 +422,36 @@ const initializeGraph = (config, orphans, addInformationsToNode) => {
     }
 }
 
-function WorkflowsDesigner(props) {
-    const [selectedNode, setSelectedNode] = useState()
-    const [isOnCreation, setOnCreationMode] = useState(false)
+const emptyWorkflow = {
+    kind: 'workflow',
+    steps: [],
+}
+
+export function WorkflowsDesigner(props) {
+    const updateNodeInternals = useUpdateNodeInternals()
+    const { screenToFlowPosition } = useReactFlow();
+
+    const [activeNode, setActiveNode] = useState(false)
 
     const [rfInstance, setRfInstance] = useState(null);
-
-    const initialState = initializeGraph(props.workflow?.config, props.workflow.orphans, addInformationsToNode)
-
-    const [nodes, internalSetNodes] = useState(initialState.nodes)
-    const [edges, setEdges] = useState(initialState.edges)
 
     const [report, setReport] = useState()
     const [reportIsOpen, setReportStatus] = useState(false)
 
-    useEffect(() => {
-        // FIX ??
-        // window.addEventListener('error', e => {
-        //     if (e.message === 'ResizeObserver loop completed with undelivered notifications.') {
-        //         const resizeObserverErrDiv = document.getElementById('webpack-dev-server-client-overlay-div');
-        //         const resizeObserverErr = document.getElementById('webpack-dev-server-client-overlay');
-        //         if (resizeObserverErr) {
-        //             resizeObserverErr.setAttribute('style', 'display: none');
-        //         }
-        //         if (resizeObserverErrDiv) {
-        //             resizeObserverErrDiv.setAttribute('style', 'display: none');
-        //         }
-        //     }
-        // });
-    }, [])
+    const initialState = initializeGraph(props.workflow?.config, props.workflow.orphans, addInformationsToNode)
 
-    const { fitView, screenToFlowPosition } = useReactFlow();
-    const updateNodeInternals = useUpdateNodeInternals()
-
-    const getLayoutedElements = (nodes, edges, options = {}) => {
-        const isHorizontal = options?.['elk.direction'] === 'RIGHT';
-        const graph = {
-            id: 'root',
-            layoutOptions: options,
-            children: nodes.map((n) => {
-                const targetPorts = n.data.targetHandles.map((t) => ({
-                    id: t.id,
-                    properties: {
-                        side: 'WEST',
-                    },
-                }));
-
-                const sourcePorts = n.data.sourceHandles.map((s) => ({
-                    id: s.id,
-                    properties: {
-                        side: 'EAST',
-                    },
-                }));
-
-                return {
-                    ...n,
-                    properties: {
-                        'org.eclipse.elk.portConstraints': 'FREE',
-                    },
-                    ports: [{ id: n.id }, ...targetPorts, ...sourcePorts],
-
-                    targetPosition: isHorizontal ? 'left' : 'top',
-                    sourcePosition: isHorizontal ? 'right' : 'bottom',
-
-                    width: 200,
-                    height: 100,
-                }
-            }),
-            edges: edges,
-        };
-
-        return elk
-            .layout(graph)
-            .then((layoutedGraph) => ({
-                nodes: layoutedGraph.children.map((node) => ({
-                    ...node,
-                    // React Flow expects a position property on the node instead of `x`
-                    // and `y` fields.
-                    position: { x: node.x, y: node.y },
-                })),
-
-                edges: layoutedGraph.edges,
-            }))
-            .catch(console.error);
-    };
-
-    const onLayout = ({ direction, nodes, edges, from }) => {
-        const opts = {
-            'elk.direction': direction,
-            ...elkOptions
-        };
-
-        getLayoutedElements(nodes, edges, opts)
-            .then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-                setNodes(layoutedNodes)
-                setEdges(layoutedEdges)
-                // fitView({
-                //     padding: 2
-                // });
-            });
-    };
+    const [nodes, setNodes] = useState(initialState.nodes)
+    const [edges, setEdges] = useState(initialState.edges)
 
     useLayoutEffect(() => {
-        onLayout({ direction: 'RIGHT', nodes, edges, from: 'useLayoutEffect' });
-    }, []);
+        onLayout({
+            direction: 'RIGHT',
+            nodes,
+            edges,
+            setNodes,
+            setEdges
+        })
+    }, [])
 
     const graphToJson = () => {
         const start = {
@@ -644,11 +468,6 @@ function WorkflowsDesigner(props) {
 
         return graph
     }
-
-    const emptyWorkflow = ({
-        kind: 'workflow',
-        steps: [],
-    })
 
     const nodeToJson = (node, currentWorkflow, disableRecursion, alreadySeen, isStart) => {
         const connections = edges.filter(edge => edge.source === node.id)
@@ -955,20 +774,19 @@ function WorkflowsDesigner(props) {
             data: {
                 ...(node.data || {}),
                 functions: {
-                    onDoubleClick: setSelectedNode,
-                    openNodesExplorer: setOnCreationMode,
-                    handleDeleteNode: handleDeleteNode,
+                    onDoubleClick: setActiveNode,
+                    openNodesExplorer: setActiveNode,
+                    onNodeDelete: onNodeDelete,
                     updateData: updateData,
-                    addHandleSource: addHandleSource,
-                    handleWorkflowChange: handleWorkflowChange,
+                    appendSourceHandle: appendSourceHandle,
+                    handleWorkflowChange: handleNodeDataChange,
                     deleteHandle: deleteHandle
                 }
             },
         }
     }
 
-    function handleWorkflowChange(nodeId, workflow) {
-        console.log(workflow)
+    function handleNodeDataChange(nodeId, workflow) {
         setNodes(eds => eds.map(node => {
             if (node.id === nodeId) {
                 return {
@@ -983,7 +801,7 @@ function WorkflowsDesigner(props) {
         }))
     }
 
-    function addHandleSource(nodeId, handlePrefix) {
+    function appendSourceHandle(nodeId, handlePrefix) {
         setNodes(eds => eds.map(node => {
             if (node.id === nodeId) {
                 return {
@@ -1030,12 +848,10 @@ function WorkflowsDesigner(props) {
         updateNodeInternals(nodeId)
     }
 
-    function handleDeleteNode(nodeId) {
+    function onNodeDelete(nodeId) {
         setNodes((nds) => nds.filter((node) => node.id !== nodeId));
         setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
     }
-
-    const setNodes = nodes => internalSetNodes(nodes)
 
     const onNodesChange = useCallback(
         (changes) => {
@@ -1052,7 +868,7 @@ function WorkflowsDesigner(props) {
                 event.stopPropagation()
 
                 setTimeout(() => {
-                    setOnCreationMode({
+                    setActiveNode({
                         ...connectionState.fromNode,
                         handle: connectionState.fromHandle,
                         event
@@ -1073,7 +889,7 @@ function WorkflowsDesigner(props) {
             setEdges(edges => {
                 const newEdges = !edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges
 
-                onLayout({ direction: 'RIGHT', nodes, edges: newEdges, from: 'onConnect' })
+                onLayout({ direction: 'RIGHT', nodes, edges: newEdges, setEdges, setNodes })
 
                 return newEdges
             })
@@ -1085,11 +901,11 @@ function WorkflowsDesigner(props) {
     const handleSelectNode = item => {
         let targetId = uuid()
 
-        console.log(isOnCreation)
+        console.log(activeNode)
 
-        let position = isOnCreation.fromOrigin ? isOnCreation.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position))
-        if (isOnCreation.event) {
-            const { clientX, clientY } = 'changedTouches' in isOnCreation.event ? isOnCreation.event.changedTouches[0] : isOnCreation.event
+        let position = activeNode.fromOrigin ? activeNode.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position))
+        if (activeNode.event) {
+            const { clientX, clientY } = 'changedTouches' in activeNode.event ? activeNode.event.changedTouches[0] : activeNode.event
             position = { x: clientX, y: clientY }
         }
 
@@ -1106,10 +922,10 @@ function WorkflowsDesigner(props) {
         let newEdges = []
         let predicateNode = undefined
 
-        if (isOnCreation && isOnCreation.handle) {
-            const sourceHandle = isOnCreation.handle.id
+        if (activeNode && activeNode.handle) {
+            const sourceHandle = activeNode.handle.id
 
-            const parent = nodes.find(node => node.id === isOnCreation.id)
+            const parent = nodes.find(node => node.id === activeNode.id)
 
             // if the node is the first child of a parallel or switch node, we need to insert an intermediate "predicate" node
             if (item.kind !== 'predicate' &&
@@ -1134,8 +950,8 @@ function WorkflowsDesigner(props) {
                 }
 
                 edges.push({
-                    id: `${isOnCreation.id}-${predicateNode.id}`,
-                    source: isOnCreation.id,
+                    id: `${activeNode.id}-${predicateNode.id}`,
+                    source: activeNode.id,
                     sourceHandle,
                     target: predicateNode.id,
                     targetHandle: `input-${predicateNode.id}`,
@@ -1155,12 +971,12 @@ function WorkflowsDesigner(props) {
 
             } else {
                 // If the handle is on the left, we have to reverse the edge direction
-                if (isOnCreation.handle.position === 'left') {
+                if (activeNode.handle.position === 'left') {
                     newEdges.push({
                         id: uuid(),
                         source: newNode.id,
                         sourceHandle: `output-${newNode.id}`,
-                        target: isOnCreation.id,
+                        target: activeNode.id,
                         targetHandle: sourceHandle,
                         type: 'customEdge',
                         animated: true,
@@ -1168,7 +984,7 @@ function WorkflowsDesigner(props) {
                 } else {
                     newEdges.push({
                         id: uuid(),
-                        source: isOnCreation.id,
+                        source: activeNode.id,
                         sourceHandle,
                         target: newNode.id,
                         targetHandle: `input-${newNode.id}`,
@@ -1201,7 +1017,7 @@ function WorkflowsDesigner(props) {
         setNodes(newNodes)
         setEdges(newEdges)
 
-        setOnCreationMode(false)
+        setActiveNode(false)
     }
 
     function run() {
@@ -1227,14 +1043,12 @@ function WorkflowsDesigner(props) {
         <DesignerActions run={run} />
         <Navbar workflow={props.workflow} save={handleSave} />
 
-        <NewTask onClick={() => setOnCreationMode(true)} />
+        <NewTask onClick={() => setActiveNode(true)} />
 
         <ReportExplorer report={report} isOpen={reportIsOpen} handleClose={() => setReportStatus(false)} />
 
         <NodesExplorer
-            isOpen={isOnCreation}
-            isEdition={selectedNode}
-            node={selectedNode}
+            activeNode={activeNode}
             handleSelectNode={handleSelectNode} />
         <Flow
             setRfInstance={setRfInstance}
@@ -1243,14 +1057,10 @@ function WorkflowsDesigner(props) {
             onEdgesChange={onEdgesChange}
             onNodesChange={onNodesChange}
             onClick={() => {
-                setOnCreationMode(false)
-                setSelectedNode(false)
+                setActiveNode(false)
                 setReportStatus(false)
             }}
-            onGroupNodeClick={groupNode => {
-                setOnCreationMode(groupNode)
-                setSelectedNode(groupNode)
-            }}
+            onGroupNodeClick={groupNode => setActiveNode(groupNode)}
             nodes={nodes}
             edges={edges}>
         </Flow>

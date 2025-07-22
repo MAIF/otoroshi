@@ -64,7 +64,7 @@ export default function Handles(props) {
                 className="btn btn-primaryColor add-handle"
                 onClick={e => {
                     e.stopPropagation()
-                    props.data.functions.addHandleSource(props.id, props.data.handlePrefix)
+                    props.data.functions.appendSourceHandle(props.id, props.data.handlePrefix)
                 }}>
                 Add pin <i className='fas fa-plus' />
             </button>}

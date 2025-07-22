@@ -3,11 +3,12 @@ import { v4 as uuid } from 'uuid';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
 import CodeInput from '../../components/inputs/CodeInput';
-import { QueryContainer as WorkflowsDesigner} from './WorkflowsDesigner';
+import { WorkflowsContainer as WorkflowsDesigner } from './WorkflowsContainer';
 
 const extensionId = 'otoroshi.extensions.Workflows';
 
 export function setupWorkflowsExtension(registerExtension) {
+
   registerExtension(extensionId, true, (ctx) => {
     class WorkflowTester extends Component {
       state = {
