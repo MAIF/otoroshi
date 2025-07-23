@@ -483,7 +483,7 @@ export function WorkflowsDesigner(props) {
             return [{
                 ...currentWorkflow,
                 returned: node.data.workflow?.returned,
-                id: node.id
+                // id: node.id
             }, alreadySeen]
         }
 
@@ -674,8 +674,6 @@ export function WorkflowsDesigner(props) {
                 kind
             }
         }
-
-        console.log(subflow)
 
         let outputWorkflow = subflow ? {
             ...subflow,
@@ -1029,7 +1027,7 @@ export function WorkflowsDesigner(props) {
             },
             body: JSON.stringify({
                 input: JSON.stringify({}, null, 4),
-                workflow: graphToJson()
+                workflow: graphToJson()[0]
             }),
         })
             .then((r) => r.json())
@@ -1038,6 +1036,8 @@ export function WorkflowsDesigner(props) {
                 setReportStatus(true)
             })
     }
+
+    console.log(nodes)
 
     return <div className='workflow'>
         <DesignerActions run={run} />

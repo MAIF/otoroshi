@@ -7,29 +7,35 @@ export default function ReportExplorer({ report, handleClose, isOpen }) {
     if (!report || !isOpen)
         return null
 
-    if (!report.done)
-        return report.error
+    // if (!report.done)
+    //     return report.error
 
     const steps = report.run.log.reduce((acc, log) => {
 
         if (log.message.includes('ending'))
             return acc
 
-        const id = log.message.match(/^starting '([0-9a-z]+)'/)[1]
-        const re = new RegExp(`^ending '${id}'$`);
+        const matches = log.message.match(/^starting '([a-zA-Z0-9-]+)'/)
 
-        const stop = report.run.log.find(l => re.test(l.message))?.timestamp
-        return [...acc, {
-            task: id, //log.node?.kind || log.message,
-            start: log.timestamp,
-            stop,
-            duration_ns: (stop ? stop - log.timestamp : 0) * 1_000_000,
-            ctx: {
-                error: log.error,
-                node: log.node,
-                memory: log.memory
-            }
-        }]
+        console.log(log.message, matches)
+        if (matches) {
+            const id = matches[1]
+            const re = new RegExp(`^ending '${id}'$`);
+
+            const stop = report.run.log.find(l => re.test(l.message))?.timestamp
+            return [...acc, {
+                task: id, //log.node?.kind || log.message,
+                start: log.timestamp,
+                stop,
+                duration_ns: (stop ? stop - log.timestamp : 0) * 1_000_000,
+                ctx: {
+                    error: log.error,
+                    node: log.node,
+                    memory: log.memory
+                }
+            }]
+        }
+        return acc
     }, [])
 
     const stepsByCategory = steps.reduce((acc, step) => {

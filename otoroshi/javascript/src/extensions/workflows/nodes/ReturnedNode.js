@@ -1,5 +1,6 @@
 import React from 'react'
 import { NgCodeRenderer } from '../../../components/nginputs'
+import { Row } from '../../../components/Row';
 
 export function ReturnedNode(_workflow) {
     return {
@@ -12,12 +13,29 @@ export function ReturnedNode(_workflow) {
         sources: ['output'],
         schema: {
             returned: {
-                type: 'code',
-                label: 'Returned value',
-                props: {
-                    mode: 'json',
-                    editorOnly: true,
-                },
+                renderer: props => {
+                    return <Row title="Returned operator (optional)">
+                        <NgCodeRenderer
+                            ngOptions={{ spread: true }}
+                            rawSchema={{
+                                props: {
+                                    showGutter: false,
+                                    ace_config: {
+                                        onLoad: (editor) => editor.renderer.setPadding(10),
+                                        fontSize: 14,
+                                    },
+                                    editorOnly: true,
+                                    height: '10rem',
+                                    mode: 'json',
+                                },
+                            }}
+                            value={props.value}
+                            onChange={(e) => {
+                                props.onChange(JSON.parse(e));
+                            }}
+                        />
+                    </Row>
+                }
             }
         },
         nodeRenderer: props => {

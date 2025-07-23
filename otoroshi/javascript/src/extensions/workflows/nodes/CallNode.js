@@ -27,32 +27,33 @@ export function CallNode(_workflow) {
                 </Row>
             },
             args: {
-                renderer: props => <Row title="Arguments">
-                    <NgCodeRenderer
-                        ngOptions={{ spread: true }}
-                        rawSchema={{
-                            props: {
-                                showGutter: false,
-                                ace_config: {
-                                    onLoad: (editor) => editor.renderer.setPadding(10),
-                                    fontSize: 14,
+                renderer: props => {
+                    return <Row title="Arguments">
+                        <NgCodeRenderer
+                            ngOptions={{ spread: true }}
+                            rawSchema={{
+                                props: {
+                                    showGutter: false,
+                                    ace_config: {
+                                        onLoad: (editor) => editor.renderer.setPadding(10),
+                                        fontSize: 14,
+                                    },
+                                    editorOnly: true,
+                                    height: '10rem',
+                                    mode: 'json',
                                 },
-                                editorOnly: true,
-                                height: '10rem',
-                                mode: 'json',
-                            },
-                        }}
-                        value={props.value}
-                        onChange={(e) => {
-                            props.onChange(e);
-                        }}
-                    />
-                </Row>
+                            }}
+                            value={props.value}
+                            onChange={(e) => {
+                                props.onChange(JSON.parse(e));
+                            }}
+                        />
+                    </Row>
+                }
             }
         },
         sources: ['output'],
         nodeRenderer: props => {
-            console.log(props.data.workflow)
             return <div className='assign-node'>
                 <span >{props.data.workflow?.function}</span>
             </div>
