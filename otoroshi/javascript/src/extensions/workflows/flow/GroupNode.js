@@ -1,5 +1,5 @@
 import React, { forwardRef, useLayoutEffect, useRef } from "react"
-import { NodeResizer, Panel } from "@xyflow/react";
+import { Panel } from "@xyflow/react";
 import NodeTrashButton from './NodeTrashButton';
 import Handles from "./Handles";
 
@@ -17,13 +17,6 @@ export const GroupNode = forwardRef((props, ref) => {
     }, [])
 
     return <>
-        {/* <NodeResizer
-            color="#ff0071"
-            isVisible={selected}
-            minWidth={200}
-            minHeight={100}
-        /> */}
-
         <Handles {...props} />
 
         {data.nodeRenderer && data.nodeRenderer(props)}

@@ -112,10 +112,9 @@ export const onLayout = ({ direction, nodes, edges, setNodes, setEdges }) => {
     if (edges.length > filteredEdges.length)
         console.error("got an edge with an empty source or an empty target")
 
-    getLayoutedElements(nodes, filteredEdges, opts)
+    return getLayoutedElements(nodes, filteredEdges, opts)
         .then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-            setNodes(layoutedNodes)
-            setEdges(layoutedEdges)
+            return { nodes: layoutedNodes, edges: layoutedEdges }
             // fitView({
             //     padding: 2
             // });

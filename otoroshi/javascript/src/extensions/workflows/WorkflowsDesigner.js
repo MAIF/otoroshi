@@ -12,6 +12,8 @@ import {
     addEdge,
     useReactFlow,
     useUpdateNodeInternals,
+    useNodesState,
+    useEdgesState,
 } from '@xyflow/react';
 import { NewTask } from './flow/NewTask';
 import { findNonOverlappingPosition } from './NewNodeSpawn';
@@ -434,24 +436,24 @@ export function WorkflowsDesigner(props) {
 
     const [activeNode, setActiveNode] = useState(false)
 
-    const [rfInstance, setRfInstance] = useState(null);
-
     const [report, setReport] = useState()
     const [reportIsOpen, setReportStatus] = useState(false)
 
-    const initialState = initializeGraph(props.workflow?.config, props.workflow.orphans, addInformationsToNode)
+    const [nodes, setNodes, onNodesChange] = useNodesState([])
+    const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
-    const [nodes, setNodes] = useState(initialState.nodes)
-    const [edges, setEdges] = useState(initialState.edges)
+    useEffect(() => {
+        const initialState = initializeGraph(props.workflow?.config, props.workflow.orphans, addInformationsToNode)
 
-    useLayoutEffect(() => {
         onLayout({
             direction: 'RIGHT',
-            nodes,
-            edges,
-            setNodes,
-            setEdges
+            nodes: initialState.nodes,
+            edges: initialState.edges
         })
+            .then(({ nodes, edges }) => {
+                setNodes(nodes)
+                setEdges(edges)
+            })
     }, [])
 
     const graphToJson = () => {
@@ -854,14 +856,14 @@ export function WorkflowsDesigner(props) {
         setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
     }
 
-    const onNodesChange = useCallback(
-        (changes) => {
-            return setNodes(eds => applyNodeChanges(changes, eds))
-        }, [])
-    const onEdgesChange = useCallback(
-        (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-        [],
-    )
+    // const onNodesChange = useCallback(
+    //     (changes) => {
+    //         return setNodes(eds => applyNodeChanges(changes, eds))
+    //     }, [])
+    // const onEdgesChange = useCallback(
+    //     (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    //     [],
+    // )
 
     const onConnectEnd = useCallback(
         (event, connectionState) => {
@@ -869,16 +871,14 @@ export function WorkflowsDesigner(props) {
             if (!connectionState.isValid) {
 
                 console.log('set active node')
-                // setTimeout(() => {
                 setActiveNode({
                     ...connectionState.fromNode,
                     handle: connectionState.fromHandle,
                     event
                 })
-                // }, 10)
             }
         },
-        [rfInstance],
+        [],
     );
 
     const onConnect = useCallback(
@@ -888,14 +888,15 @@ export function WorkflowsDesigner(props) {
                 animated: true,
             }
 
-            setEdges(edges => {
-                const newEdges = !edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges
-
-                onLayout({ direction: 'RIGHT', nodes, edges: newEdges, setEdges, setNodes })
-
-                return newEdges
+            onLayout({
+                direction: 'RIGHT',
+                nodes,
+                edges: !edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges
             })
-
+                .then(({ edges, nodes }) => {
+                    setEdges(edges)
+                    setNodes(nodes)
+                })
         },
         [setEdges, nodes],
     );
@@ -1040,6 +1041,19 @@ export function WorkflowsDesigner(props) {
             })
     }
 
+    const handleFlowClick = useCallback(() => {
+        if (!activeNode.handle) {
+            setActiveNode(false)
+            setReportStatus(false)
+        }
+    }, [activeNode])
+
+    const handleGroupNodeClick = useCallback(groupNode => {
+        setActiveNode(groupNode)
+    }, [])
+
+    console.log(nodes)
+
     return <div className='workflow'>
         <DesignerActions run={run} />
         <Navbar workflow={props.workflow} save={handleSave} />
@@ -1052,20 +1066,13 @@ export function WorkflowsDesigner(props) {
             activeNode={activeNode}
             handleSelectNode={handleSelectNode} />
         <Flow
-            setRfInstance={setRfInstance}
             onConnectEnd={onConnectEnd}
             onConnect={onConnect}
             onEdgesChange={onEdgesChange}
             onNodesChange={onNodesChange}
-            onClick={() => {
-                if (!activeNode.handle) {
-                    setActiveNode(false)
-                    setReportStatus(false)
-                }
-            }}
-            onGroupNodeClick={groupNode => setActiveNode(groupNode)}
+            onClick={handleFlowClick}
+            onGroupNodeClick={handleGroupNodeClick}
             nodes={nodes}
-            edges={edges}>
-        </Flow>
+            edges={edges} />
     </div>
 }
