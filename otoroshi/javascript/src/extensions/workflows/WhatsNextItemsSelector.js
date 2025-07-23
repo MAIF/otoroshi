@@ -79,7 +79,8 @@ const ITEMS_BY_CATEGORY = [
             "wait": WaitNode(),
             "error": ErrorNode(),
             "value": ValueNode(),
-            "predicate": PredicateNode()
+            "predicate": PredicateNode(),
+            "returned": ReturnedNode()
         }
     },
     {
@@ -193,9 +194,11 @@ export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCateg
 
 
     if (query.length > 0) {
+        const lowercaseQuery = query.toLowerCase()
         return ITEMS_BY_CATEGORY.flatMap(category => Object.entries(category.nodes))
-            .filter(([_key, value]) => value.name.toLowerCase().includes(query.toLowerCase()) ||
-                value.description.toLowerCase().includes(query.toLowerCase()))
+            .filter(([_key, value]) => value.name.toLowerCase().includes(lowercaseQuery) ||
+                value.description.toLowerCase().includes(lowercaseQuery) ||
+                value.kind.toLowerCase().includes(lowercaseQuery))
             .map(([_, node], i) => <Node
                 node={node}
                 onClick={() => handleSelectNode(node)}

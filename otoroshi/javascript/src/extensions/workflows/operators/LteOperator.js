@@ -9,12 +9,18 @@ export const LteOperator = _workflow => ({
     flow: ['a', 'b'],
     schema: {
         a: {
-            type: 'number',
-            label: 'First Number'
+            type: 'code',
+            label: 'First Number',
+            props: {
+                editorOnly: true
+            }
         },
         b: {
-            type: 'number',
-            label: 'Second Number'
+            type: 'code',
+            label: 'Second Number',
+            props: {
+                editorOnly: true
+            }
         }
     },
     sources: ['output'],

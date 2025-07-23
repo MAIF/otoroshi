@@ -5,7 +5,7 @@ import { WhatsNext } from './WhatsNext'
 
 export function NodesExplorer({ activeNode, handleSelectNode }) {
 
-    const isEdition = typeof activeNode === 'object'
+    const isEdition = typeof activeNode === 'object' && !activeNode.handle
 
     return <div className={`nodes-explorer ${(activeNode && !isEdition) ? 'nodes-explorer--opened' : (activeNode ? 'nodes-explorer--large-opened' : '')}`}>
         {isEdition && <ModalEditor node={activeNode} />}

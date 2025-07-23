@@ -95,7 +95,10 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
 
             edges: layoutedGraph.edges,
         }))
-        .catch(console.error);
+        .catch(err => {
+            console.log(err)
+            return { edges: [], nodes: [] }
+        });
 };
 
 export const onLayout = ({ direction, nodes, edges, setNodes, setEdges }) => {
@@ -104,7 +107,12 @@ export const onLayout = ({ direction, nodes, edges, setNodes, setEdges }) => {
         ...elkOptions
     }
 
-    getLayoutedElements(nodes, edges, opts)
+    const filteredEdges = edges.filter(f => f.target && f.source)
+
+    if (edges.length > filteredEdges.length)
+        console.error("got an edge with an empty source or an empty target")
+
+    getLayoutedElements(nodes, filteredEdges, opts)
         .then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
             setNodes(layoutedNodes)
             setEdges(layoutedEdges)

@@ -99,15 +99,16 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
             nodes = [...child.nodes, returnedNode]
 
             edges = edges.concat(child.edges)
-            edges.push({
-                id: `${targetId}-returned-node`,
-                source: returnedNode.id,
-                sourceHandle: `output-${returnedNode.id}`,
-                target: targetId,
-                targetHandle: handleId,
-                type: 'customEdge',
-                animated: true,
-            })
+            if (targetId && handleId)
+                edges.push({
+                    id: `${targetId}-returned-node`,
+                    source: returnedNode.id,
+                    sourceHandle: `output-${returnedNode.id}`,
+                    target: targetId,
+                    targetHandle: handleId,
+                    type: 'customEdge',
+                    animated: true,
+                })
         } else {
             const child = buildGraph(workflow.steps.reverse(), addInformationsToNode, targetId, handleId)
             nodes = [...child.nodes]
@@ -500,7 +501,9 @@ export function WorkflowsDesigner(props) {
 
             if (predicate) {
                 const res = removeReturnedFromWorkflow(nodeToJson(nodes.find(n => n.id === predicate.source), emptyWorkflow, true, alreadySeen))
-                predicateNode = res[0]
+                predicateNode = Object.fromEntries(
+                    Object.entries(res[0]?.steps[0]).filter(([key]) => key.startsWith('$'))
+                )
                 alreadySeen = alreadySeen.concat([res[1]])
             }
 
@@ -515,9 +518,6 @@ export function WorkflowsDesigner(props) {
                 elseNode = res[0]
                 alreadySeen = alreadySeen.concat([res[1]])
             }
-
-            console.log('elseNode', elseNode)
-            console.log('thenNode', thenNode)
 
             const elseNodeIds = elseNode ? elseNode.steps.map(n => n.id) : []
             const thenNodeIds = thenNode ? thenNode.steps.map(n => n.id) : []
@@ -562,8 +562,12 @@ export function WorkflowsDesigner(props) {
             const nodeLoop = connections.find(conn => conn.sourceHandle.startsWith('Item'))
 
             if (nodeLoop) {
-                const [node, seen] = removeReturnedFromWorkflow(nodeToJson(nodes.find(n => n.id === nodeLoop.target), emptyWorkflow, false, alreadySeen))
+                let [node, seen] = removeReturnedFromWorkflow(nodeToJson(nodes.find(n => n.id === nodeLoop.target), emptyWorkflow, false, alreadySeen))
                 alreadySeen = alreadySeen.concat([seen])
+
+                if (node.steps.length === 1)
+                    node = node.steps[0]
+
                 subflow = {
                     ...flow,
                     node,
@@ -773,7 +777,6 @@ export function WorkflowsDesigner(props) {
                 ...(node.data || {}),
                 functions: {
                     onDoubleClick: setActiveNode,
-                    openNodesExplorer: setActiveNode,
                     onNodeDelete: onNodeDelete,
                     updateData: updateData,
                     appendSourceHandle: appendSourceHandle,
@@ -862,16 +865,17 @@ export function WorkflowsDesigner(props) {
 
     const onConnectEnd = useCallback(
         (event, connectionState) => {
+            event.stopPropagation()
             if (!connectionState.isValid) {
-                event.stopPropagation()
 
-                setTimeout(() => {
-                    setActiveNode({
-                        ...connectionState.fromNode,
-                        handle: connectionState.fromHandle,
-                        event
-                    })
-                }, 2)
+                console.log('set active node')
+                // setTimeout(() => {
+                setActiveNode({
+                    ...connectionState.fromNode,
+                    handle: connectionState.fromHandle,
+                    event
+                })
+                // }, 10)
             }
         },
         [rfInstance],
@@ -898,8 +902,6 @@ export function WorkflowsDesigner(props) {
 
     const handleSelectNode = item => {
         let targetId = uuid()
-
-        console.log(activeNode)
 
         let position = activeNode.fromOrigin ? activeNode.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position))
         if (activeNode.event) {
@@ -1015,6 +1017,7 @@ export function WorkflowsDesigner(props) {
         setNodes(newNodes)
         setEdges(newEdges)
 
+        console.log('set active node to false 1019')
         setActiveNode(false)
     }
 
@@ -1037,8 +1040,6 @@ export function WorkflowsDesigner(props) {
             })
     }
 
-    console.log(nodes)
-
     return <div className='workflow'>
         <DesignerActions run={run} />
         <Navbar workflow={props.workflow} save={handleSave} />
@@ -1057,8 +1058,10 @@ export function WorkflowsDesigner(props) {
             onEdgesChange={onEdgesChange}
             onNodesChange={onNodesChange}
             onClick={() => {
-                setActiveNode(false)
-                setReportStatus(false)
+                if (!activeNode.handle) {
+                    setActiveNode(false)
+                    setReportStatus(false)
+                }
             }}
             onGroupNodeClick={groupNode => setActiveNode(groupNode)}
             nodes={nodes}

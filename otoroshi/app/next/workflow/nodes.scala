@@ -28,7 +28,7 @@ object NodesInitializer {
 
 case class ValueNode(json: JsObject) extends Node {
   override def documentationName: String = "value"
-  override def documentationDescription: String = "This node executes a sequence of nodes sequentially"
+  override def documentationDescription: String = "This node returns a simple value"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.deepMerge(Json.obj("properties" -> Json.obj(
     "value" -> Json.obj("description" -> "the returned value")
   ))).some
@@ -41,6 +41,7 @@ case class ValueNode(json: JsObject) extends Node {
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val value = WorkflowOperator.processOperators(json.select("value").asValue, wfr, env)
+    println("return value", value)
     value.rightf
   }
 }
@@ -416,6 +417,10 @@ case class IfThenElseNode(json: JsObject) extends Node {
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val pass =
       WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
+
+//    println("ifthennode", json.select("predicate").asValue)
+//    println("result", WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env))
+//    println("pass", pass)
     if (pass) {
       val node = Node.from(json.select("then").asObject)
       node.internalRun(wfr).recover { case t: Throwable =>
@@ -548,8 +553,12 @@ case class MapNode(json: JsObject) extends Node {
         Source(arr.value.toList)
           .mapAsync(1) { item =>
             wfr.memory.set("foreach_value", item)
-            node
+            val value = node
               .internalRun(wfr)
+
+            println("internal run", value)
+
+            value
               .recover { case t: Throwable =>
                 WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
               }
@@ -560,8 +569,10 @@ case class MapNode(json: JsObject) extends Node {
           .takeWhile(_.isRight, inclusive = true)
           .runWith(Sink.seq)(env.otoroshiMaterializer)
           .map { seq =>
+            println("seq", seq)
             val last = seq.last
             if (last.isLeft) {
+              println("LAST", last)
               last
             } else {
               val result = JsArray(seq.collect { case Right(v) =>
@@ -570,6 +581,7 @@ case class MapNode(json: JsObject) extends Node {
               json.select("destination").asOptString.foreach { destination =>
                 wfr.memory.set(destination, result)
               }
+              println("result", result)
               result.right
             }
           }

@@ -19,7 +19,12 @@ export const MemRefOperator = _workflow => ({
         }
     },
     sources: ['output'],
-    operator: true
+    operator: true,
+    nodeRenderer: props => {
+        return <div className='assign-node'>
+            <span >{props.data.workflow["$mem_ref"]["name"]}</span>
+        </div>
+    }
 });
 
 // String Lower Case Operator;

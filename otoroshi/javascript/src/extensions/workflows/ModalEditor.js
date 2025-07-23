@@ -1,6 +1,16 @@
 import React, { useState } from 'react'
 import { NgForm } from '../../components/nginputs';
 
+function getWorkflow(node) {
+
+    const { workflow, kind } = node.data
+
+    if (kind.startsWith('$') && workflow)
+        return workflow[kind]
+
+    return workflow
+}
+
 export function ModalEditor({ node }) {
 
     if (!node)
@@ -38,9 +48,9 @@ export function ModalEditor({ node }) {
         }
     ]
 
-    const [state, setState] = useState(node.data.workflow ? Object.fromEntries(Object.entries(node.data.workflow).filter(([key, value]) => {
-        return Object.keys(schema).includes(key)
-    })) : {})
+    const value = getWorkflow(node)
+
+    const [state, setState] = useState(value ? Object.fromEntries(Object.entries(value).filter(([key, _]) => Object.keys(schema).includes(key))) : {})
 
     return <div className='modal-editor'>
         <p className='p-3 m-0 whats-next-title'>{node.data.name}</p>
@@ -50,7 +60,13 @@ export function ModalEditor({ node }) {
                 flow={flow}
                 value={state}
                 onChange={newData => {
-                    node.data.functions.handleWorkflowChange(node.id, newData)
+                    if (node.data.operator) {
+                        node.data.functions.handleWorkflowChange(node.id, {
+                            [node.data.kind]: newData
+                        })
+                    } else {
+                        node.data.functions.handleWorkflowChange(node.id, newData)
+                    }
                     setState(newData)
                 }} />
         </div>
