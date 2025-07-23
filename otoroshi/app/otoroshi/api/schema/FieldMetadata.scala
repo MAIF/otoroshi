@@ -1,12 +1,11 @@
 package otoroshi.api.schema
 
 import org.json4s.JValue
-import scala.reflect.runtime.universe._
 
-// Field metadata
+// Field metadata - migrated to not depend on Type
 case class FieldMetadata(
                             name: String,
-                            fieldType: Type,
+                            fieldType: Any, // In Scala 3, we can't use Type, so we use Any or Class[_]
                             required: Boolean,
                             description: Option[String] = None,
                             defaultValue: Option[Any] = None,
@@ -18,5 +17,6 @@ case class FieldMetadata(
                             writeOnly: Boolean = false,
                             deprecated: Boolean = false,
                             customName: Option[String] = None,
-                            extensions: Map[String, JValue] = Map.empty
+                            extensions: Map[String, JValue] = Map.empty,
+                            genericType: Option[java.lang.reflect.Type] = None
                         )

@@ -1084,7 +1084,7 @@ case class AkkaWsClientRequest(
             ClientTransport.httpsProxy(proxyAddress, auth)
           case _                                 => ClientTransport.httpsProxy(proxyAddress)
         }
-        a: ConnectionPoolSettings => {
+        (a: ConnectionPoolSettings) => {
           if (ClientConfig.logger.isDebugEnabled)
             ClientConfig.logger.debug(
               s"[httpclient] using idleTimeout: $idleTimeout, connectionTimeout: $connectionTimeout"
@@ -1098,7 +1098,7 @@ case class AkkaWsClientRequest(
                 .withIdleTimeout(idleTimeout)
             )
         }
-      } getOrElse { a: ConnectionPoolSettings =>
+      } getOrElse { (a: ConnectionPoolSettings) =>
       val maybeIpAddress = targetOpt match {
         case None         => None
         case Some(target) =>
@@ -1250,7 +1250,7 @@ case class AkkaWsClientRequest(
         clientConfig,
         customizer
       )
-      .flatMap { response: HttpResponse =>
+      .flatMap { (response: HttpResponse) =>
         // FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2)
         val remaining = zeTimeout.toMillis - (System.currentTimeMillis() - start)
         if (alreadyFailed.get()) {

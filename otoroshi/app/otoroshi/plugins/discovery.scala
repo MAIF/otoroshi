@@ -184,6 +184,7 @@ object DiscoveryHelper {
 class DiscoverySelfRegistrationSink extends RequestSink {
 
   import kaleidoscope._
+//  import soundness.*
 
   override def name: String = "Global self registration endpoints (service discovery)"
 
@@ -238,6 +239,7 @@ class DiscoverySelfRegistrationSink extends RequestSink {
 class DiscoverySelfRegistrationTransformer extends RequestTransformer {
 
   import kaleidoscope._
+//  import soundness.*
 
   private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
 

@@ -1,13 +1,11 @@
 package otoroshi.api.schema
 
-import scala.reflect.runtime.universe._
-
-// Builder for immutable configuration
+// Builder for immutable configuration - migrated to use Class instead of Type
 class SchemaGeneratorBuilder {
     private var config = SchemaConfig()
     private val typeMappers = scala.collection.mutable.ListBuffer[TypeMapper]()
     private val annotationMappers = scala.collection.mutable.ListBuffer[AnnotationMapper]()
-    private val registeredADTs = scala.collection.mutable.Map[Type, Set[Type]]()
+    private val registeredADTs = scala.collection.mutable.Map[Class[_], Set[Class[_]]]()
 
     def withConfig(c: SchemaConfig): SchemaGeneratorBuilder = {
         config = c
@@ -24,13 +22,13 @@ class SchemaGeneratorBuilder {
         this
     }
 
-    def registerADT(rootType: Type, subtypes: Set[Type]): SchemaGeneratorBuilder = {
-        registeredADTs(rootType) = subtypes
+    def registerADT(rootClass: Class[_], subtypes: Set[Class[_]]): SchemaGeneratorBuilder = {
+        registeredADTs(rootClass) = subtypes
         this
     }
 
-    def registerADT(rootType: Type, subtypes: Type*): SchemaGeneratorBuilder = {
-        registerADT(rootType, subtypes.toSet)
+    def registerADT(rootClass: Class[_], subtypes: Class[_]*): SchemaGeneratorBuilder = {
+        registerADT(rootClass, subtypes.toSet)
     }
 
     def build(): ProductionSchemaGenerator = {

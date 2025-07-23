@@ -5,7 +5,8 @@ addSbtPlugin("io.spray"          % "sbt-revolver" % "0.10.0")
 addSbtPlugin("org.xerial.sbt"    % "sbt-sonatype" % "3.12.2")
 addSbtPlugin("ch.epfl.scala"     % "sbt-bloop"    % "2.0.10")
 addDependencyTreePlugin
-
+addSbtPlugin("ch.epfl.scala" % "sbt-scala3-migrate" % "0.7.2")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.11.1")
 addSbtPlugin("com.github.sbt" % "sbt-pgp"        % "2.3.0")
 addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.11.0")
 // addSbtPlugin("com.codecommit" % "sbt-github-packages" % "0.5.3")

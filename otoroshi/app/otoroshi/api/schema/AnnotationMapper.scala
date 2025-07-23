@@ -1,8 +1,8 @@
 package otoroshi.api.schema
 
-import scala.reflect.runtime.universe.MethodSymbol
+import java.lang.reflect.Field
 
-// Annotation mapper trait
+// Annotation mapper trait - migrated to use Java reflection
 trait AnnotationMapper {
-    def extractMetadata(symbol: MethodSymbol): FieldMetadata => FieldMetadata
+    def extractMetadata(field: Field): FieldMetadata => FieldMetadata
 }

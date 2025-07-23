@@ -54,35 +54,59 @@ inThisBuild(
 enablePlugins(PlayScala)
 disablePlugins(PlayFilters)
 
-lazy val scalaLangVersion    = "2.13.16"
-val playVersion = "3.0.8"
-lazy val metricsVersion          = "4.2.33"
-lazy val acme4jVersion           = "3.5.1" // "2.14"
-lazy val prometheusVersion       = "0.16.0"
-lazy val playJsonVersion         = "3.0.5"
-lazy val webAuthnVersion         = "2.7.0" //"1.7.0" //"2.1.0"
-lazy val kubernetesVersion       = "24.0.0"
-lazy val bouncyCastleVersion     = "1.81"
-lazy val bouncyCastleExtVersion  = "1.78.1"
-lazy val pulsarVersion           = "2.12.0.1"
-lazy val openTelemetryVersion    = "1.52.0"
-lazy val jacksonVersion          = "2.19.2"
-lazy val pekkoVersion            = "1.1.5"
-lazy val pekkoHttpVersion        = "1.2.0"
-lazy val pekkoConnectorsVersion  = "1.1.0"
-lazy val reactorNettyVersion     = "1.2.8"
-lazy val nettyVersion            = "4.2.3.Final"
-lazy val excludesJackson         = Seq(
+//lazy val scalaLangVersion   = "3.7.1"
+lazy val scalaLangVersion  = "2.13.16"
+val playVersion             = "3.0.8"
+val metricsVersion          = "4.2.33"
+val acme4jVersion           = "3.5.1" // "2.14"
+val prometheusVersion       = "0.16.0"
+val playJsonVersion         = "3.0.5"
+val webAuthnVersion         = "2.7.0" //"1.7.0" //"2.1.0"
+val kubernetesVersion       = "24.0.0"
+val bouncyCastleVersion     = "1.81"
+val bouncyCastleExtVersion  = "1.78.1"
+val pulsarVersion           = "2.12.0.1"
+val openTelemetryVersion    = "1.52.0"
+val jacksonVersion          = "2.19.2"
+val pekkoVersion            = "1.1.5"
+val pekkoHttpVersion        = "1.2.0"
+val pekkoConnectorsVersion  = "1.1.0"
+val reactorNettyVersion     = "1.2.8"
+val circeVersion            = "0.14.14"
+val nettyVersion            = "4.2.3.Final"
+val excludesJackson         = Seq(
   ExclusionRule(organization = "com.fasterxml.jackson.core"),
   ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
   ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
 )
-lazy val excludeScalaJava8Compat = Seq(
+val excludeScalaJava8Compat = Seq(
   ExclusionRule(organization = "org.scala-lang.modules")
 )
-lazy val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
+val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
   ExclusionRule(organization = "org.slf4j")
 )
+
+scalacOptions ++= Seq(
+//  "-Xsource:3",
+//  "-Wconf:cat=scala3-migration:s",
+//  "-Xmigration",
+  "-deprecation",
+  "-feature",
+//  "-explain-cyclic",
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  "-language:existentials",
+  "-language:postfixOps",
+)
+
+//libraryDependencies += compilerPlugin(
+//  "org.scalameta" % "semanticdb-scalac" % "4.13.8" cross CrossVersion.full
+//)
+//ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
+
+ThisBuild / scalafixScalaBinaryVersion := "2.13"
+//ThisBuild / semanticdbEnabled := true
+//ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
 dependencyOverrides ++= Seq(
   "org.apache.pekko" %% "pekko-actor"         % pekkoVersion,
@@ -106,7 +130,8 @@ libraryDependencies ++= Seq(
   "org.playframework"               %% "play-json-joda"                            % playJsonVersion,
   "joda-time"                        % "joda-time"                                 % "2.14.0",
   "io.github.rediscala" %% "rediscala" % "1.17.0",
-  "com.github.gphat"                %% "censorinus"                                % "2.1.16",
+  ("com.github.gphat"               %% "censorinus"                                % "2.1.16").cross(CrossVersion.for3Use2_13),
+//  "com.github.gphat"               %% "censorinus"                                % "2.1.16",
   "org.apache.pekko"                %% "pekko-connectors-kafka"                    % pekkoConnectorsVersion,
   "org.apache.pekko"                %% "pekko-connectors-s3"                       % pekkoConnectorsVersion,
   "org.apache.pekko" %% "pekko-actor"       % pekkoVersion,
@@ -116,6 +141,9 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.apache.pekko" %% "pekko-http"         % pekkoHttpVersion,
   "org.apache.pekko"                %% "pekko-http-xml"                            % pekkoHttpVersion,
+  "io.circe" %% "circe-core" % circeVersion,
+  "io.circe" %% "circe-generic" % circeVersion,
+  "io.circe" %% "circe-parser" % circeVersion,
   "com.spotify.metrics"              % "semantic-metrics-core"                     % "1.2.0",
   "io.dropwizard.metrics"            % "metrics-jmx"                               % metricsVersion excludeAll (excludesJackson *), // Apache 2.0
   "io.dropwizard.metrics"            % "metrics-json"                              % metricsVersion excludeAll (excludesJackson *), // Apache 2.0
@@ -125,7 +153,8 @@ libraryDependencies ++= Seq(
   "com.auth0"                        % "jwks-rsa"                                  % "0.22.2" excludeAll (excludesJackson *), // https://github.com/auth0/jwks-rsa-java
   "com.nimbusds"                     % "nimbus-jose-jwt"                           % "10.4",
   "de.svenkubiak"                    % "jBCrypt"                                   % "0.4.3",
-  "com.propensive"                  %% "kaleidoscope-core"                         % "0.5.0",
+  ("com.propensive"                  %% "kaleidoscope-core"                         % "0.5.0").cross(CrossVersion.for3Use2_13),
+//  "dev.soundness"                    % "kaleidoscope-core"                         % "0.39.0",
   "io.github.classgraph"             % "classgraph"                                % "4.8.181" excludeAll (excludesJackson *),
   "com.comcast"                     %% "ip4s-core"                                 % "3.7.0",
   "com.yubico"                       % "webauthn-server-core"                      % webAuthnVersion excludeAll (excludesJackson *),
@@ -145,9 +174,6 @@ libraryDependencies ++= Seq(
   "com.cronutils"                    % "cron-utils"                                % "9.2.1",
   "com.datastax.oss"                 % "java-driver-core"                          % "4.17.0" excludeAll (excludesJackson *),
   "org.gnieh"                       %% "diffson-play-json"                         % "4.6.0" excludeAll ExclusionRule(organization = "org.apache.pekko"),
-  "org.scala-lang"                   % "scala-compiler"                            % scalaLangVersion,
-  "org.scala-lang"                   % "scala-library"                             % scalaLangVersion,
-  "org.scala-lang"                   % "scala-reflect"                             % scalaLangVersion,
   "io.kubernetes"                    % "client-java"                               % kubernetesVersion excludeAll (excludesJackson *),
   "io.kubernetes"                    % "client-java-extended"                      % kubernetesVersion excludeAll (excludesJackson *),
   "org.bouncycastle"                 % "bcpkix-jdk18on"                            % bouncyCastleVersion excludeAll (excludesJackson *),
@@ -238,14 +264,6 @@ libraryDependencies ++= Seq(
   )
   // https://github.com/mvel/mvel
   // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
-)
-
-scalacOptions ++= Seq(
-  "-feature",
-  "-language:higherKinds",
-  "-language:implicitConversions",
-  "-language:existentials",
-  "-language:postfixOps"
 )
 
 // resolvers += "jitpack" at "https://jitpack.io"

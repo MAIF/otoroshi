@@ -325,40 +325,37 @@ class U2FController(
                     e.printStackTrace()
                     FastFuture.successful(BadRequest(Json.obj("error" -> "bad request 111")))
                   case Success(result) =>
-                      val username = (otoroshi \ "username").as[String]
-                      val password = (otoroshi \ "password").as[String]
-                      val label    = (otoroshi \ "label").as[String]
-                      val rights   =
-                      UserRights(
-                        Seq(UserRight(TenantAccess(ctx.currentTenant.value), Seq(TeamAccess("*"))))
-                      ) // UserRights.readFromObject(otoroshi)
-                      val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-                      val credential     = Json.parse(jsonMapper.writeValueAsString(result))
+                    val username = (otoroshi \ "username").as[String]
+                    val password = (otoroshi \ "password").as[String]
+                    val label    = (otoroshi \ "label").as[String]
+                    val rights   = UserRights(Seq(UserRight(TenantAccess(ctx.currentTenant.value), Seq(TeamAccess("*"))))) // UserRights.readFromObject(otoroshi)
+                    val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
+                    val credential     = Json.parse(jsonMapper.writeValueAsString(result))
 
-                      env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
-                      case None                                                  =>
-                          env.datastores.webAuthnAdminDataStore
-                          .registerUser(
-                            WebAuthnOtoroshiAdmin(
-                              username = username,
-                              password = saltedPassword,
-                              label = label,
-                              handle = handle,
-                              credentials = Map((credential \ "keyId" \ "id").as[String] -> credential),
-                              createdAt = DateTime.now(),
-                              typ = OtoroshiAdminType.WebAuthnAdmin,
-                              metadata = Map.empty,
-                              rights = rights,
-                              adminEntityValidators = Map.empty,
-                              location = EntityLocation(
-                                ctx.currentTenant,
-                                Seq(TeamId.all)
-                              ) //EntityLocation.readFromKey(ctx.request.body)
-                            )
+                    env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
+                    case None                                                  =>
+                        env.datastores.webAuthnAdminDataStore
+                        .registerUser(
+                          WebAuthnOtoroshiAdmin(
+                            username = username,
+                            password = saltedPassword,
+                            label = label,
+                            handle = handle,
+                            credentials = Map((credential \ "keyId" \ "id").as[String] -> credential),
+                            createdAt = DateTime.now(),
+                            typ = OtoroshiAdminType.WebAuthnAdmin,
+                            metadata = Map.empty,
+                            rights = rights,
+                            adminEntityValidators = Map.empty,
+                            location = EntityLocation(
+                              ctx.currentTenant,
+                              Seq(TeamId.all)
+                            ) //EntityLocation.readFromKey(ctx.request.body)
                           )
-                          .map { _ =>
-                            Ok(Json.obj("username" -> username))
-                          }
+                        )
+                        .map { _ =>
+                          Ok(Json.obj("username" -> username))
+                        }
                       case Some(user) if BCrypt.checkpw(password, user.password) =>
                           // update usrer
                           env.datastores.webAuthnAdminDataStore

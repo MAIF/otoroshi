@@ -116,9 +116,9 @@ class JwtUserExtractor extends PreRouting {
                     case (key, JsString(value))  => (key, value)
                     case (key, JsBoolean(value)) => (key, value.toString)
                   }.toMap
-                    val meta: Option[JsValue]             =
-                    metaPath.flatMap(path => Try(JsonPathUtils.getAt[JsObject](jsonToken, path)).toOption.flatten)
-                    val user: PrivateAppsUser             = PrivateAppsUser(
+                  val meta: Option[JsValue]             =
+                  metaPath.flatMap(path => Try(JsonPathUtils.getAt[JsObject](jsonToken, path)).toOption.flatten)
+                  val user: PrivateAppsUser             = PrivateAppsUser(
                     randomId = IdGenerator.uuid,
                     name = JsonPathUtils.getAt[String](jsonToken, namePath).getOrElse("--"),
                     email = JsonPathUtils.getAt[String](jsonToken, emailPath).getOrElse("--"),
@@ -134,10 +134,10 @@ class JwtUserExtractor extends PreRouting {
                     metadata = Map.empty,
                     location = ctx.descriptor.location
                   )
-                    ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
-                    val newElContext: Map[String, String] = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get ++ tokenMap
-                    ctx.attrs.put(otoroshi.plugins.Keys.ElCtxKey -> newElContext)
-                    Results.Ok(Json.obj()).future
+                  ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+                  val newElContext: Map[String, String] = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get ++ tokenMap
+                  ctx.attrs.put(otoroshi.plugins.Keys.ElCtxKey -> newElContext)
+                  Results.Ok(Json.obj()).future
               }
             }
             .recover { case e: Throwable =>

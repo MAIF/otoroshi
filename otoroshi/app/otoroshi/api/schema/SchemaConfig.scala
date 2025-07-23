@@ -1,7 +1,6 @@
 package otoroshi.api.schema
 
 import org.json4s.JValue
-
 import java.security.MessageDigest
 
 // Configuration
@@ -25,7 +24,7 @@ case class SchemaConfig(
             includeDefaults.toString,
             includeDescriptions.toString,
             maxDepth.toString,
-            namingStrategy.getClass.getName,
+            namingStrategy.hashCode.toString,
             openApiMode.toString
         )
         val digest = MessageDigest.getInstance("SHA-256")

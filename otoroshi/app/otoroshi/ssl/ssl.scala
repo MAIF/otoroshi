@@ -366,7 +366,7 @@ case class Cert(
       val keyStore: KeyStore = KeyStore.getInstance("JKS")
       keyStore.load(null, null)
       DynamicSSLEngineProvider.readPrivateKeyUniversal(this.id, this.privateKey, this.password, log = false).toOption.exists {
-        key: PrivateKey =>
+        (key: PrivateKey) =>
           // val key: PrivateKey = DynamicSSLEngineProvider.readPrivateKey(encodedKeySpec) /*Try(KeyFactory.getInstance("RSA")).map(_.generatePrivate(encodedKeySpec))
           //   .orElse(Try(KeyFactory.getInstance("EC")).map(_.generatePrivate(encodedKeySpec)))
           //   .orElse(Try(KeyFactory.getInstance("DSA")).map(_.generatePrivate(encodedKeySpec)))
@@ -1558,7 +1558,7 @@ object DynamicSSLEngineProvider {
       case cert                                 =>
         cert.certificate.foreach { certificate =>
           Try {
-            readPrivateKeyUniversal(cert.domain, cert.privateKey, cert.password).foreach { key: PrivateKey =>
+            readPrivateKeyUniversal(cert.domain, cert.privateKey, cert.password).foreach { (key: PrivateKey) =>
               // val key: PrivateKey = readPrivateKey(encodedKeySpec)
               val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.cleanChain)
               if (certificateChain.isEmpty) {
