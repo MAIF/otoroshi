@@ -13,18 +13,22 @@ export function CallNode(_workflow) {
         flow: ['function', 'args'],
         schema: {
             function: {
-                // props: {
-                //     creatable: true,
-                //     options: Object.keys(CORE_FUNCTIONS),
-                // },
-                renderer: props => <Row title="Select a function to execute">
-                    <NgSelectRenderer
-                        options={Object.keys(CORE_FUNCTIONS).map(func => ({ label: func, value: func }))}
-                        ngOptions={{ spread: true }}
-                        value={props.value}
-                        onChange={(k) => props.onChange(k)}
-                    />
-                </Row>
+                renderer: props => {
+                    const options = Object.keys(CORE_FUNCTIONS).includes(props.value) ? CORE_FUNCTIONS : {
+                        ...CORE_FUNCTIONS,
+                        [props.value]: ""
+                    }
+
+                    return <Row title="Select a function to execute">
+                        <NgSelectRenderer
+                            creatable={true}
+                            options={Object.keys(options).map(func => ({ label: func, value: func }))}
+                            ngOptions={{ spread: true }}
+                            value={props.value}
+                            onChange={(k) => props.onChange(k.value)}
+                        />
+                    </Row>
+                }
             },
             args: {
                 renderer: props => {

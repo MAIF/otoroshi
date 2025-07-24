@@ -76,10 +76,14 @@
     background: none;
     color: var(--text);
     opacity: .8;
-    gap: .25rem;
+    gap: .35rem;
     display: flex;
     align-items: center;
-    font-size: .75rem;
+    font-size: .65rem;
+  }
+
+  .add-tag i {
+    margin-left: .5rem;
   }
 
   .nodes-explorer {
@@ -91,7 +95,7 @@
     height: 100%;
     z-index: 10;
     background: var(--bg-color_level3);
-    transition: width 0.15s;
+    transition: width 0.3s;
     padding-bottom: 4rem;
 
     display: flex;
@@ -458,5 +462,16 @@
 
   .operator .node-one-output {
     background-color: var(--bg-color_level1);
+  }
+
+  .tag {
+    color: var(--reverse-text);
+    font-size: .8rem;
+    border-radius: 1rem;
+    border: 1px solid var(--color-primary);
+    background-color: var(--color-primary);
+    padding: .1rem .3rem;
+    min-width: 3rem;
+    text-align: center;
   }
 }

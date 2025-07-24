@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Flow } from './Flow'
 import { DesignerActions } from './DesignerActions'
@@ -7,8 +7,6 @@ import { NodesExplorer } from './NodesExplorer'
 import { v4 as uuid } from 'uuid';
 
 import {
-    applyNodeChanges,
-    applyEdgeChanges,
     addEdge,
     useReactFlow,
     useUpdateNodeInternals,
@@ -20,6 +18,7 @@ import { findNonOverlappingPosition } from './NewNodeSpawn';
 import { NODES, OPERATORS } from './models/Functions';
 import ReportExplorer from './ReportExplorer';
 import { onLayout } from './ElkOptions';
+import { TagsModal } from './TagsModal';
 
 const GROUP_NODES = ['if', 'switch', 'parallel', 'foreach', 'map', 'filter', 'flatmap']
 
@@ -33,6 +32,15 @@ export function createSimpleNode(nodes, node) {
 
     if (!data) {
         data = OPERATORS[(node.kind || node.data.kind).toLowerCase()](node)
+    }
+
+    if (data.operator) {
+        data = {
+            ...data,
+            workflow: {
+                [data.kind]: node
+            }
+        }
     }
 
     // maybe try catch here and create a node Value with raw value
@@ -97,7 +105,7 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
                 }
             }
 
-            const child = buildGraph(workflow.steps.reverse(), addInformationsToNode, returnedNode.id)
+            const child = buildGraph(workflow.steps.slice().reverse(), addInformationsToNode, returnedNode.id)
             nodes = [...child.nodes, returnedNode]
 
             edges = edges.concat(child.edges)
@@ -112,7 +120,7 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
                     animated: true,
                 })
         } else {
-            const child = buildGraph(workflow.steps.reverse(), addInformationsToNode, targetId, handleId)
+            const child = buildGraph(workflow.steps.slice().reverse(), addInformationsToNode, targetId, handleId)
             nodes = [...child.nodes]
 
             if (workflow.predicate) {
@@ -154,6 +162,8 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
         const hasThenSubGraph = thensubGraph && thensubGraph.nodes.length > 0
         const hasElseGraph = elseGraph && elseGraph.nodes.length > 0
         const hasPredicate = predicate && predicate.nodes.length > 0
+
+        console.log(predicate)
 
         if (hasThenSubGraph) {
             nodes = nodes.concat(thensubGraph.nodes)
@@ -376,7 +386,7 @@ const initializeGraph = (config, orphans, addInformationsToNode) => {
             sourceHandles: []
         }
     }
-    const subGraph = buildGraph(config.steps.reverse(), addInformationsToNode, returnedNode.id)
+    const subGraph = buildGraph(config.steps.slice().reverse(), addInformationsToNode, returnedNode.id)
 
     let startingEdge = {
         id: 'start-edge',
@@ -435,6 +445,7 @@ export function WorkflowsDesigner(props) {
     const { screenToFlowPosition } = useReactFlow();
 
     const [activeNode, setActiveNode] = useState(false)
+    const [showTagModal, openTagModal] = useState(false)
 
     const [report, setReport] = useState()
     const [reportIsOpen, setReportStatus] = useState(false)
@@ -442,8 +453,10 @@ export function WorkflowsDesigner(props) {
     const [nodes, setNodes, onNodesChange] = useNodesState([])
     const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
+    const [workflow, setWorkflow] = useState(props.workflow)
+
     useEffect(() => {
-        const initialState = initializeGraph(props.workflow?.config, props.workflow.orphans, addInformationsToNode)
+        const initialState = initializeGraph(workflow?.config, workflow.orphans, addInformationsToNode)
 
         onLayout({
             direction: 'RIGHT',
@@ -741,7 +754,7 @@ export function WorkflowsDesigner(props) {
         const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
 
         client.update({
-            ...props.workflow,
+            ...workflow,
             config,
             orphans: {
                 nodes: orphans.map(r => ({
@@ -855,15 +868,6 @@ export function WorkflowsDesigner(props) {
         setNodes((nds) => nds.filter((node) => node.id !== nodeId));
         setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
     }
-
-    // const onNodesChange = useCallback(
-    //     (changes) => {
-    //         return setNodes(eds => applyNodeChanges(changes, eds))
-    //     }, [])
-    // const onEdgesChange = useCallback(
-    //     (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    //     [],
-    // )
 
     const onConnectEnd = useCallback(
         (event, connectionState) => {
@@ -1045,6 +1049,7 @@ export function WorkflowsDesigner(props) {
         if (!activeNode.handle) {
             setActiveNode(false)
             setReportStatus(false)
+            openTagModal(false)
         }
     }, [activeNode])
 
@@ -1052,15 +1057,35 @@ export function WorkflowsDesigner(props) {
         setActiveNode(groupNode)
     }, [])
 
-    console.log(nodes)
+    const manageTags = useCallback(() => {
+        openTagModal(true)
+    }, [])
+
+    const setTags = useCallback(newTags => {
+        setWorkflow(workflow => ({
+            ...workflow,
+            tags: newTags
+        }))
+    }, [workflow])
 
     return <div className='workflow'>
         <DesignerActions run={run} />
-        <Navbar workflow={props.workflow} save={handleSave} />
+        <Navbar
+            workflow={workflow}
+            save={handleSave}
+            manageTags={manageTags} />
 
         <NewTask onClick={() => setActiveNode(true)} />
 
-        <ReportExplorer report={report} isOpen={reportIsOpen} handleClose={() => setReportStatus(false)} />
+        <ReportExplorer
+            report={report}
+            isOpen={reportIsOpen}
+            handleClose={() => setReportStatus(false)} />
+
+        <TagsModal
+            isOpen={showTagModal}
+            tags={workflow}
+            setTags={setTags} />
 
         <NodesExplorer
             activeNode={activeNode}
