@@ -894,7 +894,7 @@ class JsonPathSpec extends AnyWordSpec with Matchers with OptionValues {
         "$.otoroshiHeadersIn.*.key"
       )
 
-      println("res", res)
+      println(s"res $res")
     }
   }
 }

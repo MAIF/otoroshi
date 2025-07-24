@@ -13,6 +13,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.Configuration
 import play.api.libs.json.Json
+import play.api.libs.ws.DefaultBodyReadables.readableAsString
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.math.BigDecimal.RoundingMode
@@ -1413,7 +1414,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter3.get() mustBe 0
       (0 to 9).foreach { _ =>
         val response = call1(Map.empty)
-        println("response", response.status, response.headers, response.body)
+        println(s"response ${response.status} ${response.headers} ${response.body}")
         await(100.millis)
       }
       // println(counter1.get(), counter2.get(), counter3.get())

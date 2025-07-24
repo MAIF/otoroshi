@@ -10,6 +10,7 @@ import otoroshi.api.schema._
 import java.time._
 import java.util.UUID
 import scala.reflect.runtime.universe._
+import scala.reflect.ClassTag
 import scala.util.Try
 
 // Test data models
@@ -118,6 +119,7 @@ class ProductionSchemaGeneratorSpec extends AnyFlatSpec with Matchers {
     implicit val formats: Formats = DefaultFormats
 
     def parseSchema(json: JValue): Map[String, Any] = {
+        implicit val manifest: Manifest[Map[String, Any]] = Manifest.classType(classOf[Map[String, Any]])
         parse(compact(render(json))).extract[Map[String, Any]]
     }
 
@@ -451,8 +453,8 @@ class ProductionSchemaGeneratorSpec extends AnyFlatSpec with Matchers {
 
         // Simple enum (all case objects) should be inlined
         parsed("type") shouldBe "string"
-        val `enum` = parsed("enum").asInstanceOf[List[String]]
-        `enum` should contain allOf("Red", "Green", "Blue")
+        val enumValues = parsed("enum").asInstanceOf[List[String]]
+        enumValues should contain allOf ("Red", "Green", "Blue")
     }
 
     it should "handle Scala enumerations" ignore {
@@ -472,8 +474,8 @@ class ProductionSchemaGeneratorSpec extends AnyFlatSpec with Matchers {
         val statusSchema = properties("status").asInstanceOf[Map[String, Any]]
 
         statusSchema("type") shouldBe "string"
-        val `enum` = statusSchema("enum").asInstanceOf[List[String]]
-        `enum` should contain allOf("Active", "Inactive", "Pending")
+        val enumValues = statusSchema("enum").asInstanceOf[List[String]]
+        enumValues should contain allOf ("Active", "Inactive", "Pending")
     }
 
     it should "apply naming strategies" in {

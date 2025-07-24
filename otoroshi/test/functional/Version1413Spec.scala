@@ -634,6 +634,10 @@ class Transformer1 extends NgRequestTransformer {
       )
     )
   }
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 }
 
 class Transformer2 extends NgRequestTransformer {
@@ -658,6 +662,10 @@ class Transformer2 extends NgRequestTransformer {
       Right(ctx.otoroshiRequest)
     }
   }
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 }
 
 class Transformer3 extends NgRequestTransformer {
@@ -675,6 +683,10 @@ class Transformer3 extends NgRequestTransformer {
     }
     Right(ctx.otoroshiRequest)
   }
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 }
 
 class Validator1 extends NgAccessValidator {
@@ -688,4 +700,8 @@ class Validator1 extends NgAccessValidator {
   override def multiInstance: Boolean = true
 
   override def defaultConfigObject: Option[NgPluginConfig] = None
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 }

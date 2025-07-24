@@ -106,7 +106,7 @@ scalacOptions ++= Seq(
 //)
 //ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 
-ThisBuild / scalafixScalaBinaryVersion := "2.13"
+// ThisBuild / scalafixScalaBinaryVersion := "2.13" // Commented out for Scala 3
 //ThisBuild / semanticdbEnabled := true
 //ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 

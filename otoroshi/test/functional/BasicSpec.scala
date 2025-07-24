@@ -12,6 +12,7 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.DefaultBodyReadables.readableAsString
 import otoroshi.security.IdGenerator
 
 import scala.concurrent.Future
