@@ -33,7 +33,7 @@ object HealthCheck {
 
   val badHealth = new UnboundedTrieMap[String, Unit]()
 
-  def checkTarget(desc: ServiceDescriptor, target: Target, logger: Logger)(implicit
+  def checkTarget(desc: ServiceDescriptor, target: Target, logger: Logger)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -68,7 +68,7 @@ object HealthCheck {
           Some(env.Headers.OtoroshiIssuer),
           Some("HealthChecker")
         )
-        .serialize(desc.algoInfoFromOtoToBack)(env)
+        .serialize(desc.algoInfoFromOtoToBack)
       env.MtlsWs
         .url(url, target.mtlsConfig)
         .withRequestTimeout(Duration(desc.healthCheck.timeout, TimeUnit.MILLISECONDS))
@@ -174,15 +174,15 @@ object HealthCheck {
         .recover { case e =>
           ()
         }
-    }(ec, env.otoroshiActorSystem.scheduler)
+    }(using ec, env.otoroshiActorSystem.scheduler)
   }
 }
 
 object HealthCheckerActor {
-  def props(implicit env: Env): Props = Props(new HealthCheckerActor())
+  def props(using env: Env): Props = Props(new HealthCheckerActor())
 }
 
-class HealthCheckerActor()(implicit env: Env) extends Actor {
+class HealthCheckerActor()(using env: Env) extends Actor {
 
   implicit lazy val ec: ExecutionContextExecutor = context.dispatcher
   implicit lazy val mat: Materializer            = env.otoroshiMaterializer
@@ -273,8 +273,8 @@ class HealthCheckJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    implicit val mat: Materializer = env.otoroshiMaterializer
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
+    given mat: Materializer = env.otoroshiMaterializer
     val parallelChecks             = env.healtCheckWorkers
     val services                   = env.proxyState.allServices()
     val routes                     = env.proxyState.allRawRoutes()
@@ -320,7 +320,7 @@ class HealthCheckLocalCacheJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.rawDataStore.keys(s"${env.storageRoot}:targets:bad-health:*").map { keys =>
       HealthCheck.badHealth.clear()
       keys.foreach { key =>

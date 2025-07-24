@@ -50,7 +50,7 @@ case class KafkaConfig(
 case class SaslConfig(username: String, password: String, mechanism: String = "PLAIN")
 
 object SaslConfig {
-  implicit val format: Format[SaslConfig] = new Format[SaslConfig] { // Json.format[KafkaConfig]
+  given format: Format[SaslConfig] = new Format[SaslConfig] { // Json.format[KafkaConfig]
 
     override def writes(o: SaslConfig): JsValue =
       Json.obj(
@@ -75,7 +75,7 @@ object SaslConfig {
 
 object KafkaConfig {
 
-  implicit val format: Format[KafkaConfig] = new Format[KafkaConfig] { // Json.format[KafkaConfig]
+  given format: Format[KafkaConfig] = new Format[KafkaConfig] { // Json.format[KafkaConfig]
 
     override def writes(o: KafkaConfig): JsValue =
       Json.obj(
@@ -121,7 +121,7 @@ object KafkaSettings {
       .tick(0.second, 1.second, ())
       .filter(_ => DynamicSSLEngineProvider.isFirstSetupDone)
       .take(1)
-      .runWith(Sink.head)(env.otoroshiMaterializer)
+      .runWith(Sink.head)(using env.otoroshiMaterializer)
   }
 
   private def getSaslJaasClass(mechanism: String) = {
@@ -185,7 +185,7 @@ object KafkaSettings {
     if (config.mtlsConfig.mtls) {
       // AWAIT: valid
       Await.result(waitForFirstSetup(_env), 5.seconds) // wait until certs fully populated at least once
-      val (jks1, jks2, password) = config.mtlsConfig.toJKS(_env)
+      val (jks1, jks2, password) = config.mtlsConfig.toJKS(using _env)
       settings = settings
         .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
         .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required") // TODO - test it
@@ -214,7 +214,7 @@ class KafkaWrapper(actorSystem: ActorSystem, env: Env, topicFunction: KafkaConfi
 
   val kafkaWrapperActor: ActorRef = actorSystem.actorOf(KafkaWrapperActor.props(env, topicFunction))
 
-  def publish(event: JsValue, forcePush: Boolean = false)(env: Env, config: KafkaConfig): Future[Done] = {
+  def publish(event: JsValue, forcePush: Boolean = false)(using env: Env, config: KafkaConfig): Future[Done] = {
     kafkaWrapperActor ! KafkaWrapperEvent(event, env, if (forcePush) config.copy(sendEvents = true) else config)
     FastFuture.successful(Done)
   }
@@ -226,7 +226,7 @@ class KafkaWrapper(actorSystem: ActorSystem, env: Env, topicFunction: KafkaConfi
 
 class KafkaWrapperActor(env: Env, topicFunction: KafkaConfig => String) extends Actor {
 
-  implicit val ec: ExecutionContext = env.analyticsExecutionContext
+  given ec: ExecutionContext = env.analyticsExecutionContext
 
   var config: Option[KafkaConfig]               = None
   var eventProducer: Option[KafkaEventProducer] = None
@@ -272,7 +272,7 @@ object KafkaWrapperActor {
 
 class KafkaEventProducer(_env: otoroshi.env.Env, config: KafkaConfig, topicFunction: KafkaConfig => String) {
 
-  implicit val ec: ExecutionContext = _env.analyticsExecutionContext
+  given ec: ExecutionContext = _env.analyticsExecutionContext
 
   lazy val logger: Logger = play.api.Logger("otoroshi-kafka-connector")
 

@@ -217,7 +217,7 @@ class OAuth1CallerPlugin extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = ctx.configFor("OAuth1Caller")
 
     val metadata         = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.metadata).getOrElse(Map.empty)
@@ -262,7 +262,7 @@ class OAuth1CallerPlugin extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     ctx.otoroshiResponse.right.future
   }
 }

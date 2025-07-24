@@ -1,63 +1,43 @@
 package otoroshi.next.plugins
 
+import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
+import com.github.blemale.scaffeine.Scaffeine
+import com.jayway.jsonpath.PathNotFoundException
+import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
-import com.github.blemale.scaffeine.Scaffeine
-import com.jayway.jsonpath.PathNotFoundException
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.models.NgTreeRouter
 import otoroshi.next.models.NgTreeRouter_Test.NgFakeRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.JsonMarshaller.*
+import otoroshi.utils.JsonMarshaller.{given}
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{JsonPathUtils, JsonPathValidator, TypedMap}
-import play.api.libs.json._
-import play.api.libs.ws.WSResponse
-import otoroshi.utils.JsonMarshaller._
 import otoroshi.wasm.{WasmAuthorizations, WasmConfig, WasmDataRights}
-import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
+import play.api.libs.json.{*, given}
+import play.api.libs.ws.WSBodyWritables.*
+import play.api.libs.ws.WSResponse
 import sangria.ast
-import sangria.ast._
+import sangria.ast.*
 import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
+import sangria.marshalling.FromInput
 import sangria.parser.QueryParser
-import sangria.schema.{
-  Action,
-  AdditionalTypes,
-  AnyFieldResolver,
-  Argument,
-  AstDirectiveContext,
-  AstSchemaBuilder,
-  AstSchemaMaterializer,
-  BooleanType,
-  DefaultAstSchemaBuilder,
-  Directive,
-  DirectiveResolver,
-  FieldResolver,
-  InstanceCheck,
-  IntType,
-  IntrospectionSchemaBuilder,
-  ListInputType,
-  OptionInputType,
-  ResolverBasedAstSchemaBuilder,
-  ScalarType,
-  Schema,
-  StringType
-}
+import sangria.schema.{Action, AdditionalTypes, AnyFieldResolver, Argument, AstDirectiveContext, AstSchemaBuilder, AstSchemaMaterializer, BooleanType, DefaultAstSchemaBuilder, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, ListInputType, OptionInputType, ResolverBasedAstSchemaBuilder, ScalarType, Schema, StringType}
+import sangria.util.tag
 import sangria.util.tag.@@
 import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
-import scala.util._
+import scala.jdk.CollectionConverters.*
+import scala.util.*
 import scala.util.control.NoStackTrace
-import sangria.marshalling.FromInput
-import sangria.util.tag
 
 case object TooComplexQueryError                          extends Exception("Query is too expensive.") with NoStackTrace
 case class ViolationsException(errors: Seq[String])       extends Exception with NoStackTrace
@@ -145,7 +125,7 @@ class GraphQLQuery extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -169,7 +149,7 @@ class GraphQLQuery extends NgBackendCall {
       .url(config.url)
       .withRequestTimeout(config.timeout.millis)
       .withMethod(config.method)
-      .withHttpHeaders(config.headers.toSeq: _*)
+      .withHttpHeaders(config.headers.toSeq*)
       .withBody(Json.obj("query" -> query, "variables" -> JsNull))
       .execute()
       .map { resp =>
@@ -286,7 +266,7 @@ class GraphQLBackend extends NgBackendCall {
       initialData: JsObject,
       maxDepth: Int,
       variables: JsObject
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     QueryParser.parse(query) match {
       case Failure(error)    =>
         inMemoryBodyResponse(
@@ -401,7 +381,7 @@ class GraphQLBackend extends NgBackendCall {
   val wasmConfigurationAccessArg: Argument[Boolean] =
     Argument("configuration_access", BooleanType, defaultValue = false)
 
-  val arguments: List[Argument[_]] =
+  val arguments: List[Argument[?]] =
     urlArg :: methodArg :: timeoutArg :: headersArg :: queryArg :: responsePathArg :: responseFilterArg :: limitArg :: offsetArg :: paginateArg :: Nil
 
   val permissionDirective: Directive      = Directive(
@@ -501,7 +481,7 @@ class GraphQLBackend extends NgBackendCall {
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
       body: JsObject
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): ResolverBasedAstSchemaBuilder[Unit] =
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): ResolverBasedAstSchemaBuilder[Unit] =
     AstSchemaBuilder.resolverBased[Unit](
       AdditionalTypes(JsonType),
       InstanceCheck.field[Unit, JsValue],
@@ -599,7 +579,7 @@ class GraphQLBackend extends NgBackendCall {
       c: AstDirectiveContext[Unit],
       config: GraphQLBackendConfig,
       ctx: NgbBackendCallContext
-  )(implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
+  )(using env: Env, ec: ExecutionContext): Action[Unit, Any] = {
     val context    = buildContext(ctx)
     val authorized =
       config.permissions.exists(path => {
@@ -616,7 +596,7 @@ class GraphQLBackend extends NgBackendCall {
       c: AstDirectiveContext[Unit],
       config: GraphQLBackendConfig,
       ctx: NgbBackendCallContext
-  )(implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
+  )(using env: Env, ec: ExecutionContext): Action[Unit, Any] = {
     val context             = buildContext(ctx)
     val values: Seq[String] = c.arg(valuesArg)
     val authorized          = values.forall(value =>
@@ -635,7 +615,7 @@ class GraphQLBackend extends NgBackendCall {
       c: AstDirectiveContext[Unit],
       config: GraphQLBackendConfig,
       ctx: NgbBackendCallContext
-  )(implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
+  )(using env: Env, ec: ExecutionContext): Action[Unit, Any] = {
     val context             = buildContext(ctx)
     val values: Seq[String] = c.arg(valuesArg)
     val authorized          = values.exists(value =>
@@ -650,7 +630,7 @@ class GraphQLBackend extends NgBackendCall {
     permissionResponse(authorized, c)
   }
 
-  def authorizeDirectiveResolver(c: AstDirectiveContext[Unit], ctx: NgbBackendCallContext)(implicit
+  def authorizeDirectiveResolver(c: AstDirectiveContext[Unit], ctx: NgbBackendCallContext)(using
       env: Env,
       ec: ExecutionContext
   ): Action[Unit, Any] = {
@@ -669,21 +649,21 @@ class GraphQLBackend extends NgBackendCall {
 
   def httpRestDirectiveResolver(
       c: AstDirectiveContext[Unit]
-  )(implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
+  )(using env: Env, ec: ExecutionContext): Action[Unit, Any] = {
     val url = replaceTermsInUrl(c)
 
     var request = env.Ws
       .url(url)
       .withRequestTimeout(FiniteDuration(c.arg(timeoutArg), MILLISECONDS))
       .withMethod(c.arg(methodArg).getOrElse("GET"))
-      .withHttpHeaders(Json.parse(c.arg(headersArg).getOrElse("{}")).as[Map[String, String]].toSeq: _*)
+      .withHttpHeaders(Json.parse(c.arg(headersArg).getOrElse("{}")).as[Map[String, String]].toSeq*)
 
     if (c.arg(methodArg).contains("POST")) {
       request = request
         .withHttpHeaders(
           (Map("Content-Type" -> "application/json") ++ Json
             .parse(c.arg(headersArg).getOrElse("{}"))
-            .as[Map[String, String]]).toSeq: _*
+            .as[Map[String, String]]).toSeq*
         )
         .withBody(c.ctx.args.raw.foldLeft(Json.obj()) { case (acc, curr) =>
           acc + (curr._1 -> (curr._2 match {
@@ -725,7 +705,7 @@ class GraphQLBackend extends NgBackendCall {
       }
   }
 
-  def wasmDirectiveResolver(c: AstDirectiveContext[Unit], ctx: NgbBackendCallContext)(implicit
+  def wasmDirectiveResolver(c: AstDirectiveContext[Unit], ctx: NgbBackendCallContext)(using
       env: Env,
       ec: ExecutionContext
   ): Action[Unit, Any] = {
@@ -814,7 +794,7 @@ class GraphQLBackend extends NgBackendCall {
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
       body: JsObject
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Object] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Object] = {
     new SOAPAction()
       .process(
         ctx.copy(
@@ -867,7 +847,7 @@ class GraphQLBackend extends NgBackendCall {
     }
   }
 
-  private def mockDirectiveResolver(c: AstDirectiveContext[Unit], rawConfig: Option[JsObject])(implicit
+  private def mockDirectiveResolver(c: AstDirectiveContext[Unit], rawConfig: Option[JsObject])(using
       env: Env
   ): Object = {
     rawConfig match {
@@ -897,7 +877,7 @@ class GraphQLBackend extends NgBackendCall {
               }
               .map(r => {
                 val route    = r.routes.headOption.get
-                val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
+                val response = Json.parse(route.metadata("mock")).as[MockResponse](using MockResponse.format)
 
                 Json.parse(response.body) match {
                   case JsArray(value) =>
@@ -936,7 +916,7 @@ class GraphQLBackend extends NgBackendCall {
     )
   }
 
-  def replaceTermsInUrl(c: AstDirectiveContext[Unit])(implicit env: Env): String = {
+  def replaceTermsInUrl(c: AstDirectiveContext[Unit])(using env: Env): String = {
     val queryArgs = c.ctx.args.raw.map {
       case (str, Some(v)) => (str, String.valueOf(v))
       case (k, v)         => (k, String.valueOf(v))
@@ -990,7 +970,7 @@ class GraphQLBackend extends NgBackendCall {
       query: String,
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Action[Unit, Any] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Action[Unit, Any] = {
     val url = replaceQueryParams(c)
 
     val graphqlQuery = env.scriptManager.getAnyScript[GraphQLQuery](s"cp:${classOf[GraphQLQuery].getName}").toOption.get
@@ -1025,7 +1005,7 @@ class GraphQLBackend extends NgBackendCall {
       }
   }
 
-  def bodyToJson(source: Source[ByteString, _])(implicit mat: Materializer, ec: ExecutionContext): Future[JsObject] =
+  def bodyToJson(source: Source[ByteString, ?])(using mat: Materializer, ec: ExecutionContext): Future[JsObject] =
     source
       .runFold(ByteString.empty)(_ ++ _)
       .map { rawBody =>
@@ -1136,7 +1116,7 @@ class GraphQLBackend extends NgBackendCall {
       body.stringify.byteString
     )
 
-  def introspectionResponse(config: GraphQLBackendConfig, builder: ResolverBasedAstSchemaBuilder[Unit])(implicit
+  def introspectionResponse(config: GraphQLBackendConfig, builder: ResolverBasedAstSchemaBuilder[Unit])(using
       ec: ExecutionContext
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     QueryParser.parse(config.schema) match {
@@ -1154,7 +1134,7 @@ class GraphQLBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -1277,7 +1257,7 @@ class GraphQLProxy extends NgBackendCall {
       maxDepth: Int,
       complexityThreshold: Double,
       variables: Map[String, JsValue] = Map.empty
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[Seq[String], JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[Seq[String], JsValue]] = {
     QueryParser.parse(query) match {
       case Failure(error)    => Seq(s"Bad query format: ${error.getMessage}").leftf[JsValue]
       case Success(queryAst) =>
@@ -1293,7 +1273,7 @@ class GraphQLProxy extends NgBackendCall {
             exceptionHandler = exceptionHandler,
             queryValidator = new QueryValidator() {
               override def validateQuery(
-                  schema: Schema[_, _],
+                  schema: Schema[?, ?],
                   queryAst: Document,
                   variables: Map[String, sangria.execution.VariableValue],
                   errorsLimit: Option[Int]
@@ -1322,7 +1302,7 @@ class GraphQLProxy extends NgBackendCall {
     }
   }
 
-  private def getSchema(builder: ResolverBasedAstSchemaBuilder[Unit], config: GraphQLProxyConfig)(implicit
+  private def getSchema(builder: ResolverBasedAstSchemaBuilder[Unit], config: GraphQLProxyConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[Seq[String], Schema[Unit, Any]]] = {
@@ -1359,7 +1339,7 @@ class GraphQLProxy extends NgBackendCall {
             env.Ws
               .url(config.endpoint)
               .withMethod("POST")
-              .withHttpHeaders(headers: _*)
+              .withHttpHeaders(headers*)
               .withBody(
                 s"""{"operationName":"IntrospectionQuery","variables":{},"query":"${sangria.introspection
                   .introspectionQueryString(true)}"}""".replace("\n", "\\n")
@@ -1384,7 +1364,7 @@ class GraphQLProxy extends NgBackendCall {
       }
   }
 
-  def callBackendApi(body: ByteString, config: GraphQLProxyConfig)(implicit
+  def callBackendApi(body: ByteString, config: GraphQLProxyConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -1393,7 +1373,7 @@ class GraphQLProxy extends NgBackendCall {
     env.Ws
       .url(config.endpoint)
       .withMethod("POST")
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withBody(body)
       .execute()
     // .map { res =>
@@ -1404,7 +1384,7 @@ class GraphQLProxy extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

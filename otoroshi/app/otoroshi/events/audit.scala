@@ -18,7 +18,7 @@ trait AuditEvent extends AnalyticEvent {
 object AuditEvent {
   def generic(audit: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
       additionalPayload: JsObject
-  )(implicit env: Env): GenericAudit = {
+  )(using env: Env): GenericAudit = {
     GenericAudit(audit, env, `@service`, `@serviceId`)(additionalPayload)
   }
 }
@@ -32,7 +32,7 @@ case class GenericAudit(audit: String, env: Env, `@service`: String = "Otoroshi"
   val fromOrigin: Option[String]    = None
   val fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue = {
+  override def toJson(using _env: Env): JsValue = {
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -65,7 +65,7 @@ case class BackOfficeEvent(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit env: Env): JsValue =
+  override def toJson(using env: Env): JsValue =
     Json.obj(
       "@id"          -> `@id`,
       "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -105,7 +105,7 @@ case class AdminApiEvent(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -141,7 +141,7 @@ case class SnowMonkeyOutageRegisteredEvent(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -176,7 +176,7 @@ case class CircuitBreakerOpenedEvent(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -205,7 +205,7 @@ case class CircuitBreakerClosedEvent(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -234,7 +234,7 @@ case class MaxConcurrentRequestReachedEvent(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -263,7 +263,7 @@ case class JobStartedEvent(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -273,7 +273,7 @@ case class JobStartedEvent(
       "@service"   -> `@service`,
       "@env"       -> `@env`,
       "audit"      -> "JobStartedEvent",
-      "job"        -> job.auditJson(ctx)(_env)
+      "job"        -> job.auditJson(ctx)
     )
 }
 
@@ -291,7 +291,7 @@ case class JobStoppedEvent(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -301,7 +301,7 @@ case class JobStoppedEvent(
       "@service"   -> `@service`,
       "@env"       -> `@env`,
       "audit"      -> "JobStoppedEvent",
-      "job"        -> job.auditJson(ctx)(_env)
+      "job"        -> job.auditJson(ctx)
     )
 }
 
@@ -319,7 +319,7 @@ case class JobRunEvent(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -329,7 +329,7 @@ case class JobRunEvent(
       "@service"   -> `@service`,
       "@env"       -> `@env`,
       "audit"      -> "JobRunEvent",
-      "job"        -> job.auditJson(ctx)(_env)
+      "job"        -> job.auditJson(ctx)
     )
 }
 
@@ -348,7 +348,7 @@ case class JobErrorEvent(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -358,21 +358,21 @@ case class JobErrorEvent(
       "@service"   -> `@service`,
       "@env"       -> `@env`,
       "audit"      -> "JobErrorEvent",
-      "job"        -> job.auditJson(ctx)(_env),
+      "job"        -> job.auditJson(ctx),
       "err"        -> err.getMessage
     )
 }
 
 object Audit {
-  def send[A <: AuditEvent](audit: A)(implicit env: Env): Unit = {
-    implicit val ec: ExecutionContext = env.analyticsExecutionContext
+  def send[A <: AuditEvent](audit: A)(using env: Env): Unit = {
+    given ec: ExecutionContext = env.analyticsExecutionContext
     audit.toAnalytics()
     audit.toEnrichedJson.map(e => env.datastores.auditDataStore.push(e))
   }
 }
 
 trait AuditDataStore {
-  def count()(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def findAllRaw(from: Long = 0, to: Long = 1000)(implicit ec: ExecutionContext, env: Env): Future[Seq[ByteString]]
-  def push(event: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def count()(using ec: ExecutionContext, env: Env): Future[Long]
+  def findAllRaw(from: Long = 0, to: Long = 1000)(using ec: ExecutionContext, env: Env): Future[Seq[ByteString]]
+  def push(event: JsValue)(using ec: ExecutionContext, env: Env): Future[Long]
 }

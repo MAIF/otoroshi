@@ -21,7 +21,7 @@ case class PulsarConfig(
 }
 
 object PulsarConfig {
-  implicit val format: Format[PulsarConfig] = new Format[PulsarConfig] {
+  given format: Format[PulsarConfig] = new Format[PulsarConfig] {
     override def writes(o: PulsarConfig): JsValue =
       Json.obj(
         "uri"                   -> o.uri,

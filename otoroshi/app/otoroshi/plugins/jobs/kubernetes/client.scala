@@ -5,22 +5,23 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Framing, Sink, Source}
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.UrlSanitizer
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.*
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.WSRequest
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 object KubernetesClientNotifications {
@@ -87,7 +88,7 @@ object KubernetesClientNotifications {
     if (started.compareAndSet(false, true)) {
       env.otoroshiScheduler.scheduleWithFixedDelay(1.seconds, 10.seconds) { () =>
         printErrors()
-      }(env.otoroshiExecutionContext)
+      }(using env.otoroshiExecutionContext)
     }
   }
 }
@@ -97,8 +98,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   private val logger = Logger("otoroshi-plugins-kubernetes-client")
 
-  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit val mat: Materializer    = env.otoroshiMaterializer
+  given ec: ExecutionContext = env.otoroshiExecutionContext
+  given mat: Materializer    = env.otoroshiMaterializer
 
   KubernetesClientNotifications.startIfNeeded(env)
 
@@ -119,12 +120,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       DynamicSSLEngineProvider.certificates.find { case (_, c) =>
         c.id == "kubernetes-ca-cert"
       } match {
-        case None         => caCert.enrich().save()(ec, env)
+        case None         => caCert.enrich().save()(using ec, env)
         case Some((_, c)) =>
           if (c.contentHash == caCert.contentHash) {
             ()
           } else {
-            caCert.enrich().save()(ec, env)
+            caCert.enrich().save()(using ec, env)
           }
       }
     } catch {
@@ -138,12 +139,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       DynamicSSLEngineProvider.certificates.find { case (_, c) =>
         c.id == "kubernetes-client-cert"
       } match {
-        case None         => caCert.enrich().save()(ec, env)
+        case None         => caCert.enrich().save()(using ec, env)
         case Some((_, c)) =>
           if (c.contentHash == caCert.contentHash) {
             ()
           } else {
-            caCert.enrich().save()(ec, env)
+            caCert.enrich().save()(using ec, env)
           }
       }
     } catch {
@@ -754,7 +755,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                         crd = item.raw,
                         customizedSpec = customSpec,
                         error = err.map(_.getMessage).getOrElse("--")
-                      ).toAnalytics()(env)
+                      ).toAnalytics()(using env)
                     case Success(_)           => ()
                     case Failure(e)           =>
                       logger.error(s"error while reading entity of type $pluralName", e)
@@ -766,7 +767,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                         crd = item.raw,
                         customizedSpec = customSpec,
                         error = e.getMessage
-                      ).toAnalytics()(env)
+                      ).toAnalytics()(using env)
                   }
                 }
                 .collect { case Success((JsSuccess(item, _), raw)) =>
@@ -912,7 +913,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             resp.ignore()
             ().right
           } else {
-            resp.body(play.api.libs.ws.DefaultBodyReadables.readableAsString).left
+            resp.body(using play.api.libs.ws.DefaultBodyReadables.readableAsString).left
           }
         } match {
           case Success(r) => r
@@ -1143,7 +1144,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       labelSelector: Option[String] = None
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
     watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector)
     // Source.combine(
     //   watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector),
@@ -1157,7 +1158,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       labelSelector: Option[String] = None
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
     watchResources(namespaces, resources, "networking.k8s.io/v1beta1", timeout, stop, labelSelector)
   }
 
@@ -1167,7 +1168,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       labelSelector: Option[String] = None
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
     watchResources(namespaces, resources, "v1", timeout, stop, labelSelector, "/api")
   }
 
@@ -1179,7 +1180,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       stop: => Boolean,
       labelSelector: Option[String] = None,
       root: String = "/apis"
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
     if (namespaces.contains("*")) {
       resources
         .map(r => watchResource("*", r, api, timeout, stop, labelSelector, root))
@@ -1199,9 +1200,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       stop: => Boolean,
       labelSelector: Option[String] = None,
       root: String = "/apis"
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
 
-    import otoroshi.utils.http.Implicits._
+    import otoroshi.utils.http.Implicits.*
 
     val lastTime = new AtomicLong(0L)
     val last     = new AtomicReference[String]("0")
@@ -1218,7 +1219,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             logger.debug(s"watch on $api / $namespace / $resource for $timeout seconds ! ")
           val lblStart                              = labelSelector.map(s => s"?labelSelector=$s").getOrElse("")
           val cliStart: WSRequest                   = client(s"$root/$api/namespaces/$namespace/$resource$lblStart")
-          val f: Future[Source[Seq[ByteString], _]] = cliStart
+          val f: Future[Source[Seq[ByteString], ?]] = cliStart
             .addHttpHeaders(
               "Accept" -> "application/json"
             )

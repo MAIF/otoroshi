@@ -12,12 +12,12 @@ import java.util.concurrent.TimeUnit
 import scala.reflect.ClassTag
 import scala.util.Try
 
-// Since Scala 3 doesn't have runtime reflection, we need to work with Class[_] instead
+// Since Scala 3 doesn't have runtime reflection, we need to work with Class[?] instead
 class ProductionSchemaGenerator(
     val config: SchemaConfig = SchemaConfig(),
     val typeMappers: List[TypeMapper] = List(),
     val annotationMappers: List[AnnotationMapper] = List(),
-    private val registeredADTs: Map[Class[_], Set[Class[_]]] = Map[Class[_], Set[Class[_]]]()
+    private val registeredADTs: Map[Class[?], Set[Class[?]]] = Map[Class[?], Set[Class[?]]]()
 ) {
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -45,7 +45,7 @@ class ProductionSchemaGenerator(
   private val allTypeMappers = builtInMappers ++ typeMappers
 
   // Format registry - using Class instead of Type
-  private val formatRegistry: List[(Class[_], String)] = List(
+  private val formatRegistry: List[(Class[?], String)] = List(
     (classOf[LocalDate], "date"),
     (classOf[LocalDateTime], "date-time"),
     (classOf[Instant], "date-time"),
@@ -68,15 +68,15 @@ class ProductionSchemaGenerator(
     }
   }
 
-  def createSchema(clazz: Class[_]): JValue = {
+  def createSchema(clazz: Class[?]): JValue = {
     generateFullSchema(clazz)
   }
 
   def createSchema[T: ClassTag]: JValue = {
-    createSchema(implicitly[ClassTag[T]].runtimeClass)
+    createSchema(summon[ClassTag[T]].runtimeClass)
   }
 
-  private def generateFullSchema(clazz: Class[_]): JValue = {
+  private def generateFullSchema(clazz: Class[?]): JValue = {
     val cacheKey = s"${clazz.getName}__${config.cacheKeySuffix}"
 
     Option(schemaCache.getIfPresent(cacheKey)).getOrElse {
@@ -102,7 +102,7 @@ class ProductionSchemaGenerator(
     }
   }
 
-  private def buildTopLevelSchema(mainSchema: JValue, definitions: Map[String, JValue], rootClass: Class[_]): JValue = {
+  private def buildTopLevelSchema(mainSchema: JValue, definitions: Map[String, JValue], rootClass: Class[?]): JValue = {
     val rootName = rootClass.getName
 
     val baseFields: List[JField] = List(
@@ -157,7 +157,7 @@ class ProductionSchemaGenerator(
     }
   }
 
-  private def generateSchema(clazz: Class[_], context: SchemaContext): JValue = {
+  private def generateSchema(clazz: Class[?], context: SchemaContext): JValue = {
     val qualifiedName = clazz.getName
 
     // Check depth
@@ -218,7 +218,7 @@ class ProductionSchemaGenerator(
     }
   }
 
-  private def generateSchemaInternal(clazz: Class[_], context: SchemaContext): JValue = clazz match {
+  private def generateSchemaInternal(clazz: Class[?], context: SchemaContext): JValue = clazz match {
     case c if c == classOf[String]                                           => "type" -> "string"
     case c if c == classOf[Char] || c == classOf[java.lang.Character]        =>
       ("type" -> "string") ~ ("minLength" -> 1) ~ ("maxLength" -> 1)
@@ -254,7 +254,7 @@ class ProductionSchemaGenerator(
       }
   }
 
-  private def handleComplexTypes(clazz: Class[_], context: SchemaContext): JValue = clazz match {
+  private def handleComplexTypes(clazz: Class[?], context: SchemaContext): JValue = clazz match {
     // Option handling - preserve inner type by extracting type parameter
     case c if c.getName.startsWith("scala.Option") || c.getName.startsWith("scala.Some") =>
       handleOptionType(c, context)
@@ -265,7 +265,7 @@ class ProductionSchemaGenerator(
     case c if c.getName.startsWith("scala.util.Try") =>
       handleTryType(c, context)
 
-    case c if classOf[Map[_, _]].isAssignableFrom(c) =>
+    case c if classOf[Map[?, ?]].isAssignableFrom(c) =>
       handleMapType(c, context)
 
     case c if c.isArray =>
@@ -307,7 +307,7 @@ class ProductionSchemaGenerator(
       }
   }
 
-  private def handleOptionType(clazz: Class[_], context: SchemaContext): JValue = {
+  private def handleOptionType(clazz: Class[?], context: SchemaContext): JValue = {
     // Try to get the inner type from generic type info
     // Since we can't get runtime type info, use string as default inner type
     val innerTypeSchema: JValue = extractInnerType(clazz, context).getOrElse {
@@ -329,7 +329,7 @@ class ProductionSchemaGenerator(
     }
   }
 
-  private def handleEitherType(clazz: Class[_], context: SchemaContext): JValue = {
+  private def handleEitherType(clazz: Class[?], context: SchemaContext): JValue = {
     // Try to extract type parameters
     val (leftSchema, rightSchema) = extractEitherTypes(clazz, context) match {
       case Some((left, right)) =>
@@ -343,7 +343,7 @@ class ProductionSchemaGenerator(
     "oneOf" -> List(leftSchema, rightSchema)
   }
 
-  private def handleTryType(clazz: Class[_], context: SchemaContext): JValue = {
+  private def handleTryType(clazz: Class[?], context: SchemaContext): JValue = {
     val innerSchema = extractInnerType(clazz, context).getOrElse(JObject())
 
     val successSchema = ("title" -> "Success") ~
@@ -361,7 +361,7 @@ class ProductionSchemaGenerator(
     "oneOf" -> List(successSchema, failureSchema)
   }
 
-  private def handleMapType(clazz: Class[_], context: SchemaContext): JValue = {
+  private def handleMapType(clazz: Class[?], context: SchemaContext): JValue = {
     // Since we can't determine key type at runtime, we need to use field context
     // For now, default to object with additionalProperties for most cases
     // The specific field-based logic will be handled in extractFields
@@ -373,7 +373,7 @@ class ProductionSchemaGenerator(
     )
   }
 
-  private def handleCollectionType(clazz: Class[_], context: SchemaContext): JValue = {
+  private def handleCollectionType(clazz: Class[?], context: SchemaContext): JValue = {
     // For collections, we can't determine the element type at runtime without type parameters
     // We'll generate a generic schema that allows any items
     val innerTypeSchema: JValue = JObject()
@@ -383,7 +383,7 @@ class ProductionSchemaGenerator(
       JField("items", innerTypeSchema)
     )
 
-    if (classOf[Set[_]].isAssignableFrom(clazz)) {
+    if (classOf[Set[?]].isAssignableFrom(clazz)) {
       JObject(baseFields :+ JField("uniqueItems", JBool(true)))
     } else {
       JObject(baseFields)
@@ -391,7 +391,7 @@ class ProductionSchemaGenerator(
   }
 
   private def generateCollectionSchemaWithGenericInfo(
-      collectionClass: Class[_],
+      collectionClass: Class[?],
       genericType: java.lang.reflect.Type,
       context: SchemaContext
   ): JValue = {
@@ -402,7 +402,7 @@ class ProductionSchemaGenerator(
         val typeArgs = pt.getActualTypeArguments
         if (typeArgs.nonEmpty) {
           typeArgs(0) match {
-            case clazz: Class[_] =>
+            case clazz: Class[?] =>
               // Generate schema for the element type
               generateSchema(clazz, context)
             case _               =>
@@ -420,7 +420,7 @@ class ProductionSchemaGenerator(
       JField("items", itemSchema)
     )
 
-    if (classOf[Set[_]].isAssignableFrom(collectionClass)) {
+    if (classOf[Set[?]].isAssignableFrom(collectionClass)) {
       JObject(baseFields :+ JField("uniqueItems", JBool(true)))
     } else {
       JObject(baseFields)
@@ -459,7 +459,7 @@ class ProductionSchemaGenerator(
     ("type" -> "string") ~ ("description" -> "Scala Enumeration")
   }
 
-  private def handleTupleType(clazz: Class[_], context: SchemaContext): JValue = {
+  private def handleTupleType(clazz: Class[?], context: SchemaContext): JValue = {
     val tupleName = clazz.getName
     val arity     = tupleName.drop(tupleName.lastIndexOf('e') + 1).takeWhile(_.isDigit).toIntOption.getOrElse(2)
 
@@ -477,7 +477,7 @@ class ProductionSchemaGenerator(
     }
   }
 
-  private def handleADTType(clazz: Class[_], context: SchemaContext): JValue = {
+  private def handleADTType(clazz: Class[?], context: SchemaContext): JValue = {
     val subtypes = registeredADTs.getOrElse(clazz, Set.empty)
 
     // Check the Animal test case - it has Dog, Cat (case classes) and UnknownAnimal (case object)
@@ -555,16 +555,16 @@ class ProductionSchemaGenerator(
     }
   }
 
-  private def generateObjectSchema(clazz: Class[_], context: SchemaContext): JValue = {
+  private def generateObjectSchema(clazz: Class[?], context: SchemaContext): JValue = {
     try {
       val fields = extractFields(clazz, context)
 
       val properties = fields.map { field =>
         val propertyName = field.customName.getOrElse(config.namingStrategy(field.name))
-        val fieldClass   = field.fieldType.asInstanceOf[Class[_]]
+        val fieldClass   = field.fieldType.asInstanceOf[Class[?]]
 
         // Special handling for specific map fields based on field name
-        val baseSchema = if (classOf[Map[_, _]].isAssignableFrom(fieldClass)) {
+        val baseSchema = if (classOf[Map[?, ?]].isAssignableFrom(fieldClass)) {
           field.name match {
             case "indexedData" =>
               // Non-string keyed map should be array of key-value objects
@@ -621,7 +621,7 @@ class ProductionSchemaGenerator(
     }
   }
 
-  private def extractFields(clazz: Class[_], context: SchemaContext): List[FieldMetadata] = {
+  private def extractFields(clazz: Class[?], context: SchemaContext): List[FieldMetadata] = {
     // For Scala 3, we need to use Java reflection instead of Scala reflection
     val fields = clazz.getDeclaredFields.filterNot { f =>
       f.isSynthetic || java.lang.reflect.Modifier.isStatic(f.getModifiers)
@@ -642,7 +642,7 @@ class ProductionSchemaGenerator(
       var metadata = FieldMetadata(
         name = fieldName,
         fieldType = fieldType, // Store the Class instead of Type
-        required = !classOf[Option[_]].isAssignableFrom(fieldType) && !companionDefaults.contains(fieldName),
+        required = !classOf[Option[?]].isAssignableFrom(fieldType) && !companionDefaults.contains(fieldName),
         defaultValue = companionDefaults.get(fieldName),
         genericType = Some(genericType)
       )
@@ -656,7 +656,7 @@ class ProductionSchemaGenerator(
     }.toList
   }
 
-  private def extractCompanionDefaults(clazz: Class[_]): Map[String, Any] = {
+  private def extractCompanionDefaults(clazz: Class[?]): Map[String, Any] = {
     val cacheKey = clazz.getName
 
     Option(defaultValueCache.getIfPresent(cacheKey)).getOrElse {
@@ -737,7 +737,7 @@ class ProductionSchemaGenerator(
     }
 
     if (fieldsToAdd.isEmpty) schema
-    else mergeJson(schema, fieldsToAdd: _*)
+    else mergeJson(schema, fieldsToAdd*)
   }
 
   private def applyStrictMode(schema: JValue, context: SchemaContext): JValue = {
@@ -768,7 +768,7 @@ class ProductionSchemaGenerator(
   }
 
   // Utility methods
-  private def shouldDefine(clazz: Class[_]): Boolean = {
+  private def shouldDefine(clazz: Class[?]): Boolean = {
     // Don't define standard library types
     if (isStandardLibraryType(clazz)) return false
 
@@ -788,7 +788,7 @@ class ProductionSchemaGenerator(
     true
   }
 
-  private def isStandardLibraryType(clazz: Class[_]): Boolean = {
+  private def isStandardLibraryType(clazz: Class[?]): Boolean = {
     val name = clazz.getName
     name.startsWith("java.lang.") ||
     name.startsWith("java.util.") ||
@@ -804,7 +804,7 @@ class ProductionSchemaGenerator(
     isPrimitiveWrapper(clazz)
   }
 
-  private def isPrimitiveWrapper(clazz: Class[_]): Boolean = {
+  private def isPrimitiveWrapper(clazz: Class[?]): Boolean = {
     clazz == classOf[java.lang.Integer] ||
     clazz == classOf[java.lang.Long] ||
     clazz == classOf[java.lang.Double] ||
@@ -815,13 +815,13 @@ class ProductionSchemaGenerator(
     clazz == classOf[java.lang.Character]
   }
 
-  private def isCollectionType(clazz: Class[_]): Boolean = {
+  private def isCollectionType(clazz: Class[?]): Boolean = {
     val name = clazz.getName
     // Check inheritance first
-    classOf[java.lang.Iterable[_]].isAssignableFrom(clazz) ||
-    classOf[scala.collection.Iterable[_]].isAssignableFrom(clazz) ||
-    classOf[Iterator[_]].isAssignableFrom(clazz) ||
-    classOf[scala.collection.Iterator[_]].isAssignableFrom(clazz) ||
+    classOf[java.lang.Iterable[?]].isAssignableFrom(clazz) ||
+    classOf[scala.collection.Iterable[?]].isAssignableFrom(clazz) ||
+    classOf[Iterator[?]].isAssignableFrom(clazz) ||
+    classOf[scala.collection.Iterator[?]].isAssignableFrom(clazz) ||
     // Then check specific patterns that might not inherit correctly
     name.startsWith("scala.collection.immutable.List") ||
     name.startsWith("scala.collection.immutable.Vector") ||
@@ -835,7 +835,7 @@ class ProductionSchemaGenerator(
     name.contains("Iterator") && name.startsWith("scala.collection")
   }
 
-  private def isTupleType(clazz: Class[_]): Boolean = {
+  private def isTupleType(clazz: Class[?]): Boolean = {
     val name = clazz.getName
     name.startsWith("scala.Tuple") && name.drop(11).takeWhile(_.isDigit).nonEmpty
   }
@@ -852,38 +852,38 @@ class ProductionSchemaGenerator(
     case bi: BigInt     => JInt(bi)
     case Some(v)        => anyToJValue(v)
     case None           => JNull
-    case map: Map[_, _] =>
+    case map: Map[?, ?] =>
       JObject(map.map { case (k, v) => JField(k.toString, anyToJValue(v)) }.toList)
-    case seq: Seq[_]    => JArray(seq.map(anyToJValue).toList)
-    case arr: Array[_]  => JArray(arr.map(anyToJValue).toList)
+    case seq: Seq[?]    => JArray(seq.map(anyToJValue).toList)
+    case arr: Array[?]  => JArray(arr.map(anyToJValue).toList)
     case _              => JString(value.toString)
   }
 
-  private def isSimpleEnumType(clazz: Class[_]): Boolean = {
+  private def isSimpleEnumType(clazz: Class[?]): Boolean = {
     // Check if it's an enum or Enumeration value
     clazz.isEnum || classOf[Enumeration#Value].isAssignableFrom(clazz)
   }
 
   // Helper methods for type extraction
-  private def extractInnerType(clazz: Class[_], context: SchemaContext): Option[JValue] = {
+  private def extractInnerType(clazz: Class[?], context: SchemaContext): Option[JValue] = {
     // Without runtime type parameters, we can't determine the actual inner type
     // Return None to use default behavior (empty object schema)
     None
   }
 
-  private def extractEitherTypes(clazz: Class[_], context: SchemaContext): Option[(JValue, JValue)] = {
+  private def extractEitherTypes(clazz: Class[?], context: SchemaContext): Option[(JValue, JValue)] = {
     // Without runtime type parameters, we can't determine the actual Either types
     // Return generic schemas
     None
   }
 
-  private def extractTupleTypes(clazz: Class[_], arity: Int, context: SchemaContext): List[JValue] = {
+  private def extractTupleTypes(clazz: Class[?], arity: Int, context: SchemaContext): List[JValue] = {
     // Without runtime type parameters, we can't determine tuple element types
     // Return empty list to use default behavior
     List.empty
   }
 
-  private def isStringKeyedMap(clazz: Class[_]): Boolean = {
+  private def isStringKeyedMap(clazz: Class[?]): Boolean = {
     // Without runtime type info, assume Maps with String keys by default
     // This is the most common case
     true

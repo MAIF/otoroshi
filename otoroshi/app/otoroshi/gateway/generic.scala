@@ -82,7 +82,7 @@ case class StateRespInvalid(
 
 object ReverseProxyActionHelper {
 
-  def splitToCanary(desc: ServiceDescriptor, trackingId: String, reqNumber: Int, config: GlobalConfig)(implicit
+  def splitToCanary(desc: ServiceDescriptor, trackingId: String, reqNumber: Int, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[ServiceDescriptor] = {
@@ -106,7 +106,7 @@ object ReverseProxyActionHelper {
       logger: Logger
   )(
       f: JwtInjection => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     if (service.jwtVerifier.enabled) {
       service.jwtVerifier.shouldBeVerified(req.path).flatMap {
         case false => f(JwtInjection())
@@ -128,7 +128,7 @@ object ReverseProxyActionHelper {
       logger: Logger
   )(
       f: ServiceDescriptor => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     def chooseRemoteAddress(config: SidecarConfig) =
       if (config.strict) req.headers.get("Remote-Address").map(add => add.split(":")(0)).getOrElse(remoteAddress)
       else remoteAddress
@@ -216,7 +216,7 @@ object ReverseProxyActionHelper {
       paUsr: Option[PrivateAppsUser],
       ctx: Map[String, String],
       attrs: TypedMap
-  )(f: => Future[Either[Result, A]])(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(f: => Future[Either[Result, A]])(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     if (desc.headersVerification.isEmpty) {
       f
     } else {
@@ -242,7 +242,7 @@ object ReverseProxyActionHelper {
 
   def passWithReadOnly[A](readOnly: Boolean, req: RequestHeader, attrs: TypedMap)(
       f: => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     if (readOnly) {
       req.method.toLowerCase match {
         case "get"     => f
@@ -272,7 +272,7 @@ object ReverseProxyActionHelper {
       descriptor: ServiceDescriptor,
       uri: String,
       req: RequestHeader
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Either[StateRespInvalid, Done] = {
@@ -314,7 +314,7 @@ object ReverseProxyActionHelper {
                 env
               ).left
             case SecComVersion.V2                       =>
-              descriptor.algoChallengeFromBackToOto.asAlgorithm(otoroshi.models.OutputMode)(env) match {
+              descriptor.algoChallengeFromBackToOto.asAlgorithm(otoroshi.models.OutputMode) match {
                 case None       =>
                   StateRespInvalid(
                     at,
@@ -407,7 +407,7 @@ object ReverseProxyActionHelper {
     }
   }
 
-  /*def stateRespValid(stateValue: String, stateResp: Option[String], jti: String, descriptor: ServiceDescriptor)(implicit
+  /*def stateRespValid(stateValue: String, stateResp: Option[String], jti: String, descriptor: ServiceDescriptor)(using
     ec: ExecutionContext,
     env: Env
   ): Boolean = {
@@ -417,7 +417,7 @@ object ReverseProxyActionHelper {
         descriptor.secComVersion match {
           case SecComVersion.V1 => stateValue == resp
           case SecComVersion.V2 =>
-            descriptor.algoChallengeFromBackToOto.asAlgorithm(otoroshi.models.OutputMode)(env) match {
+            descriptor.algoChallengeFromBackToOto.asAlgorithm(otoroshi.models.OutputMode)(using env) match {
               case None       => false
               case Some(algo) => {
                 Try {
@@ -453,7 +453,7 @@ object ReverseProxyActionHelper {
 
   def passWithTcpUdpTunneling[A](req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap, ws: Boolean)(
       f: => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     if (ws) {
       if (desc.tcpUdpTunneling) {
         if (req.relativeUri.startsWith("/.well-known/otoroshi/tunnel")) {
@@ -522,7 +522,7 @@ object ReverseProxyActionHelper {
 
 case class ReverseProxyActionContext(
     req: RequestHeader,
-    requestBody: Source[ByteString, _],
+    requestBody: Source[ByteString, ?],
     snowMonkey: SnowMonkey,
     logger: Logger
 )
@@ -541,7 +541,7 @@ case class ActualCallContext(
     globalConfig: GlobalConfig,
     withTrackingCookies: Seq[Cookie],
     bodyAlreadyConsumed: AtomicBoolean,
-    requestBody: Source[ByteString, _],
+    requestBody: Source[ByteString, ?],
     secondStart: Long,
     firstOverhead: Long,
     cbDuration: Long,
@@ -586,7 +586,7 @@ class ReverseProxyAction(env: Env) {
       ctx: ReverseProxyActionContext,
       ws: Boolean,
       _actuallyCallDownstream: ActualCallContext => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, mat: Materializer, scheduler: Scheduler, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, mat: Materializer, scheduler: Scheduler, env: Env): Future[Either[Result, A]] = {
 
     val ReverseProxyActionContext(req, requestBody, snowMonkey, logger) = ctx
 
@@ -1209,7 +1209,7 @@ class ReverseProxyAction(env: Env) {
       .andThen { case _ =>
         val requests = env.datastores.requestsDataStore.decrementHandledRequests()
         env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", requests)
-      }(env.otoroshiExecutionContext)
+      }(using env.otoroshiExecutionContext)
   }
 }
 
@@ -1229,7 +1229,7 @@ object ReverseProxyHelper {
       ctx: HandleRequestContext,
       callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
       errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
 
     // Algo is :
     // if (app.private) {
@@ -1344,7 +1344,7 @@ object ReverseProxyHelper {
               .successful(
                 Results
                   .Ok(ByteString.empty)
-                  .withHeaders(descriptor.cors.asHeaders(req): _*)
+                  .withHeaders(descriptor.cors.asHeaders(req)*)
               )
               .map(Left.apply)
           }

@@ -21,7 +21,7 @@ case class OtoroshiClaim(
     metadata: JsObject = Json.obj()       // private claim
 ) {
   def toJson: JsValue                                                 = OtoroshiClaim.format.writes(this)
-  def serialize(jwtSettings: AlgoSettings)(implicit env: Env): String = OtoroshiClaim.serialize(this, jwtSettings)(env)
+  def serialize(jwtSettings: AlgoSettings)(using env: Env): String = OtoroshiClaim.serialize(this, jwtSettings)(using env)
   def withClaims(claims: JsValue): OtoroshiClaim                      =
     copy(metadata = metadata ++ claims.asOpt[JsObject].getOrElse(Json.obj()))
   def withClaims(claims: Option[JsValue]): OtoroshiClaim              =
@@ -48,7 +48,7 @@ case class OtoroshiClaim(
       case None    => this
     }
 
-  def payload(implicit env: Env): JsObject = Json.obj(
+  def payload(using env: Env): JsObject = Json.obj(
     "iss" -> env.Headers.OtoroshiIssuer, // TODO: maybe using iss is better ?
     "sub" -> sub,
     "aud" -> aud,
@@ -67,7 +67,7 @@ object OtoroshiClaim {
 
   lazy val logger: Logger = Logger("otoroshi-claim")
 
-  def serialize(claim: OtoroshiClaim, jwtSettings: AlgoSettings)(implicit env: Env): String = {
+  def serialize(claim: OtoroshiClaim, jwtSettings: AlgoSettings)(using env: Env): String = {
     val algorithm = jwtSettings.asAlgorithm(otoroshi.models.OutputMode).get
     // Here we bypass JWT lib limitations ...
     val header    = Json.obj(

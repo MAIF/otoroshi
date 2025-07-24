@@ -112,7 +112,7 @@ object OtoroshiTests {
   }
 }
 
-class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAndAfterAll {}
+class OtoroshiTests extends Suites(OtoroshiTests.getSuites()*) with BeforeAndAfterAll {}
 
 class DevOtoroshiTests
     extends Suites(

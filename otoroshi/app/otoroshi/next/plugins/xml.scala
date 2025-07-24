@@ -1,19 +1,20 @@
 package otoroshi.next.plugins
 
+import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 case class JsonTransformConfig(filter: Option[String] = None) extends NgPluginConfig {
@@ -72,7 +73,7 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
   override def transformsError: Boolean    = false
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
     if (ctx.request.hasBody && ctx.otoroshiRequest.contentType.exists(_.contains("text/xml"))) {
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
@@ -117,7 +118,7 @@ class JsonToXmlRequest extends NgRequestTransformer with JsonTransform {
   override def transformsError: Boolean    = false
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
     if (ctx.request.hasBody && ctx.otoroshiRequest.contentType.exists(_.contains("application/json"))) {
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
@@ -162,7 +163,7 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
   override def transformsError: Boolean    = false
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
     if (ctx.otoroshiResponse.contentType.exists(_.contains("text/xml"))) {
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
@@ -207,7 +208,7 @@ class JsonToXmlResponse extends NgRequestTransformer with JsonTransform {
   override def transformsError: Boolean    = false
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
     if (ctx.otoroshiResponse.contentType.exists(_.contains("application/json"))) {
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
@@ -361,7 +362,7 @@ class SOAPAction extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -374,7 +375,7 @@ class SOAPAction extends NgBackendCall {
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
       config: SOAPActionConfig
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -467,19 +468,19 @@ class SOAPAction extends NgBackendCall {
                 inMemoryBodyResponse(
                   400,
                   headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                  resp.body(play.api.libs.ws.DefaultBodyReadables.readableAsByteString)
+                  resp.body(using play.api.libs.ws.DefaultBodyReadables.readableAsByteString)
                 )
               } else if (resp.body.contains(":Fault>")) {
                 inMemoryBodyResponse(
                   500,
                   headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                  resp.body(play.api.libs.ws.DefaultBodyReadables.readableAsByteString)
+                  resp.body(using play.api.libs.ws.DefaultBodyReadables.readableAsByteString)
                 )
               } else {
                 inMemoryBodyResponse(
                   200,
                   headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                  resp.body(play.api.libs.ws.DefaultBodyReadables.readableAsByteString)
+                  resp.body(using play.api.libs.ws.DefaultBodyReadables.readableAsByteString)
                 )
               }
             }

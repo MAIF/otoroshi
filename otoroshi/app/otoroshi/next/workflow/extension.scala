@@ -83,7 +83,7 @@ class KvWorkflowConfigDataStore(extensionId: AdminExtensionId, redisCli: RedisLi
     extends WorkflowConfigDataStore
     with RedisLikeStore[Workflow] {
   override def fmt: Format[Workflow]                   = Workflow.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflows:$id"
   override def extractId(value: Workflow): String      = value.id
 }
@@ -129,8 +129,8 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
   override def stop(): Unit = ()
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val ev: Env              = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given ev: Env              = env
     for {
       configs <- datastores.workflowsDatastore.findAllAndFillSecrets()
     } yield {
@@ -182,11 +182,11 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
       ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
       req: RequestHeader,
       user: Option[BackOfficeUser],
-      body: Option[Source[ByteString, _]]
+      body: Option[Source[ByteString, ?]]
   ): Future[Result] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer    = env.otoroshiMaterializer
-    implicit val ev: Env              = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer    = env.otoroshiMaterializer
+    given ev: Env              = env
     (body match {
       case None             => Results.Ok(Json.obj("done" -> false, "error" -> "no body")).vfuture
       case Some(bodySource) =>

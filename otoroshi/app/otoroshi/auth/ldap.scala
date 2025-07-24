@@ -53,7 +53,7 @@ object LdapAuthUser {
               email = (json \ "email").as[String],
               ldapProfile = (json \ "ldapProfile").asOpt[JsObject],
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
-              userRights = (json \ "userRights").asOpt[UserRights](UserRights.format),
+              userRights = (json \ "userRights").asOpt[UserRights](using UserRights.format),
               adminEntityValidators = json
                 .select("adminEntityValidators")
                 .asOpt[JsObject]
@@ -122,7 +122,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
               location.teams.map(t => GroupFilter(filter, TenantAccess(location.tenant.value), t.value))
             case None         =>
               (json \ "groupFilters")
-                .asOpt[Seq[GroupFilter]](Reads.seq(GroupFilter._fmt))
+                .asOpt[Seq[GroupFilter]](using Reads.seq(using GroupFilter._fmt))
                 .getOrElse(Seq.empty[GroupFilter])
           },
           allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
@@ -137,7 +137,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+            (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false), // for backward compatibility reasons
           extractProfile = (json \ "extractProfile").asOpt[Boolean].getOrElse(false),
           extractProfileFilter = (json \ "extractProfileFilter").asOpt[Seq[String]].getOrElse(Seq.empty),
@@ -206,7 +206,7 @@ object GroupRights {
       Try {
         JsSuccess(
           GroupRights(
-            userRights = (json \ "rights").asOpt[UserRights](UserRights.format).getOrElse(UserRights(Seq.empty)),
+            userRights = (json \ "rights").asOpt[UserRights](using UserRights.format).getOrElse(UserRights(Seq.empty)),
             users = (json \ "users").asOpt[Seq[String]].getOrElse(Seq.empty[String])
           )
         )
@@ -292,7 +292,7 @@ case class LdapAuthModuleConfig(
   override def form: Option[Form]                                       = None
   override def authModule(config: GlobalConfig): AuthModule             = LdapAuthModule(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
 
   override def asJson: JsValue =
     location.jsonWithKey ++ Json.obj(
@@ -334,7 +334,7 @@ case class LdapAuthModuleConfig(
       }.toMap)
     )
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
 
   override def cookieSuffix(desc: ServiceDescriptor): String = s"ldap-auth-$id"
 
@@ -683,7 +683,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       .flatMap(a => a.headOption.map(head => (head, a.tail.mkString(":"))))
   }
 
-  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
+  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -717,7 +717,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       .get(email)
       .flatMap(_.rights.find(p => p.tenant.value.equals(authConfig.location.tenant.value)))
 
-  def bindAdminUser(username: String, password: String)(implicit
+  def bindAdminUser(username: String, password: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ErrorReason, BackOfficeUser]] = {
@@ -781,11 +781,11 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
-    implicit val req: RequestHeader = request
+    given req: RequestHeader = request
     val redirect                    = request
       .getQueryString("redirect")
       .filter(redirect =>
@@ -853,16 +853,16 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = FastFuture.successful(Right(None))
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
-    implicit val req: Request[AnyContent] = request
+    given req: Request[AnyContent] = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {
         case Some(token) =>
@@ -897,11 +897,11 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
-    implicit val req: RequestHeader = request
+    given req: RequestHeader = request
     val redirect                    = request.getQueryString("redirect")
     val hash                        = env.sign(s"${authConfig.id}:::backoffice")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
@@ -948,7 +948,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       }
     }
   }
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] =
@@ -957,8 +957,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   override def boCallback(
       request: Request[AnyContent],
       config: GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
-    implicit val req: Request[AnyContent] = request
+  )(using ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
+    given req: Request[AnyContent] = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {
         case Some(token) =>

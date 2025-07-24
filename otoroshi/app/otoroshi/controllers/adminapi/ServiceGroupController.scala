@@ -23,13 +23,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import play.api.mvc
 import play.api.mvc.AnyContent
 
-class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[ServiceGroup, JsValue]
     with CrudControllerHelper[ServiceGroup, JsValue] {
 
-  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit val mat: Materializer    = env.otoroshiMaterializer
+  given ec: ExecutionContext = env.otoroshiExecutionContext
+  given mat: Materializer    = env.otoroshiMaterializer
 
   override def singularName: String = "service-group"
 
@@ -46,7 +46,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
 
   override def writeEntity(entity: ServiceGroup): JsValue = ServiceGroup._fmt.writes(entity)
 
-  override def findByIdOps(id: String, req: RequestHeader)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ServiceGroup]]] = {
@@ -65,7 +65,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[ServiceGroup]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[ServiceGroup]]] = {
     env.datastores.serviceGroupDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -82,7 +82,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   override def createEntityOps(
       entity: ServiceGroup,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceGroup]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceGroup]]] = {
     entity.save().map {
       case true  =>
         Right(
@@ -107,7 +107,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   override def updateEntityOps(
       entity: ServiceGroup,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceGroup]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceGroup]]] = {
     entity.save().map {
       case true  =>
         Right(
@@ -132,7 +132,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ServiceGroup]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ServiceGroup]]] = {
     env.datastores.serviceGroupDataStore.delete(id).map {
       case true  =>
         Right(

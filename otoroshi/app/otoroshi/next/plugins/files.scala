@@ -107,7 +107,7 @@ class StaticBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -182,7 +182,7 @@ class S3Backend extends NgBackendCall {
     S3Attributes.settings(settings)
   }
 
-  private def fileExists(key: String, config: S3Configuration)(implicit
+  private def fileExists(key: String, config: S3Configuration)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Boolean] = {
@@ -197,7 +197,7 @@ class S3Backend extends NgBackendCall {
       }
   }
 
-  private def fileContent(key: String, config: S3Configuration)(implicit
+  private def fileContent(key: String, config: S3Configuration)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Option[(ObjectMetadata, ByteString)]] = {
@@ -217,7 +217,7 @@ class S3Backend extends NgBackendCall {
     None
   }
 
-  private def normalizeKey(key: String, config: S3Configuration)(implicit
+  private def normalizeKey(key: String, config: S3Configuration)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[String] = {
@@ -248,7 +248,7 @@ class S3Backend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

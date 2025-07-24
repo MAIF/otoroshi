@@ -24,7 +24,7 @@ class MaintenanceMode extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     Errors
       .craftResponseResult(
         "Service in maintenance mode",
@@ -57,7 +57,7 @@ class GlobalMaintenanceMode extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     if (ctx.route.id != env.backOfficeServiceId && env.datastores.globalConfigDataStore.latest().maintenanceMode) {
       Errors
         .craftResponseResult(
@@ -93,7 +93,7 @@ class BuildMode extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     Errors
       .craftResponseResult(
         "Service under construction",

@@ -18,7 +18,7 @@ import otoroshi.utils.http.Implicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.ws.SourceBody
+import play.api.libs.ws.{SourceBody, WSBodyWritables}
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
@@ -81,15 +81,15 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     readStateFromDisk(Files.readAllLines(file.toPath).asScala.toSeq)
     cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(SchedulerHelper.runnable {
       // AWAIT: valid
-      Await.result(writeStateToDisk()(ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
-    })(ds.actorSystem.dispatcher))
+      Await.result(writeStateToDisk()(using ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
+    })(using ds.actorSystem.dispatcher))
     FastFuture.successful(())
   }
 
   override def onStop(): Future[Unit] = {
     cancelRef.get().cancel()
     // AWAIT: valid
-    Await.result(writeStateToDisk()(ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
+    Await.result(writeStateToDisk()(using ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
     FastFuture.successful(())
   }
 
@@ -148,7 +148,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     }
   }
 
-  private def writeStateToDisk()(implicit ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  private def writeStateToDisk()(using ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val file = new File(dbPath)
     Source
       .futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4))
@@ -168,6 +168,8 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 }
 
 class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
+
+  import WSBodyWritables._
 
   private val logger = Logger("otoroshi-http-db-datastores")
 
@@ -191,8 +193,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   override def message: String = s"Now using HttpDb DataStores (loading from '$stateUrl')"
 
   override def onStart(): Future[Unit] = {
-    implicit val ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
-    implicit val mat: Materializer            = ds.materializer
+    given ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
+    given mat: Materializer            = ds.materializer
     readStateFromHttp().map { _ =>
       cancelRef.set(
         Source
@@ -214,8 +216,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def readStateFromHttp(): Future[Unit] = {
     if (logger.isDebugEnabled) logger.debug("Reading state from http db ...")
-    implicit val ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
-    implicit val mat: Materializer            = ds.materializer
+    given ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
+    given mat: Materializer            = ds.materializer
     val store                                 = new UnboundedConcurrentHashMap[String, Any]()
     val expirations                           = new UnboundedConcurrentHashMap[String, Long]()
     val headers                               = stateHeaders.toSeq ++ Seq(
@@ -224,7 +226,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withMethod("GET")
       .stream()
       .flatMap {
@@ -289,8 +291,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   }
 
   private def writeStateToHttp(): Future[Unit] = {
-    implicit val ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
-    implicit val mat: Materializer            = ds.materializer
+    given ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
+    given mat: Materializer            = ds.materializer
     val source                                = Source.futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4)).map { item =>
       ByteString(Json.stringify(item) + "\n")
     }
@@ -301,7 +303,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withMethod("POST")
       .withBody(SourceBody(source))
       .stream()
@@ -390,8 +392,8 @@ object S3Configuration {
 
 class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
-  private implicit val ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
-  private implicit val mat: Materializer            = ds.materializer
+  private given ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
+  private given mat: Materializer            = ds.materializer
 
   private val logger    = Logger("otoroshi-s3-datastores")
   private val cancelRef = new AtomicReference[Cancellable]()
@@ -455,7 +457,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(5.second, conf.writeEvery)(SchedulerHelper.runnable {
       // AWAIT: valid
       Await.result(writeStateToS3(), 60.seconds)
-    })(ds.actorSystem.dispatcher))
+    })(using ds.actorSystem.dispatcher))
     FastFuture.successful(())
   }
 
@@ -534,7 +536,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     }
   }
 
-  private def writeStateToS3()(implicit ec: ExecutionContext, mat: Materializer): Future[MultipartUploadResult] = {
+  private def writeStateToS3()(using ec: ExecutionContext, mat: Materializer): Future[MultipartUploadResult] = {
     Source
       .futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4))
       .map { item =>

@@ -35,7 +35,7 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
     (
       ctx.request.domain.contentEquals(
@@ -87,8 +87,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
   def regCert(arg1: String, arg2: String, arg3: Cert): Unit  = ()
   def regApk(arg1: String, arg2: String, arg3: ApiKey): Unit = ()
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat: Materializer = env.otoroshiMaterializer
+  override def handle(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
+    given mat: Materializer = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json: JsValue = ctx.request.contentType match {
         case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)
@@ -287,7 +287,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
     (
       ctx.request.domain.contentEquals(
@@ -300,8 +300,8 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
     ctx.request.method == "POST"
   }
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat: Materializer = env.otoroshiMaterializer
+  override def handle(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
+    given mat: Materializer = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json: JsValue = ctx.request.contentType match {
         case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)

@@ -15,7 +15,7 @@ trait Entity { self =>
   def theDescription: String
   def theTags: Seq[String]
   def theMetadata: Map[String, String]
-  def fillSecrets[A](reads: Format[A])(implicit env: Env, ec: ExecutionContext): Future[A] = {
+  def fillSecrets[A](reads: Format[A])(using env: Env, ec: ExecutionContext): Future[A] = {
     val jsonstr = json.stringify
     if (env.vaults.enabled && jsonstr.contains("${vault://")) {
       env.vaults.fillSecretsAsync(theId, jsonstr).map { filled =>

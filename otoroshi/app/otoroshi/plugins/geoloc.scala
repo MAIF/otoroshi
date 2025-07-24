@@ -63,7 +63,7 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config  = ctx.configFor("GeolocationInfo")
     val pathOpt = (config \ "path").asOpt[String].orElse(Some("global"))
     val log     = (config \ "log").asOpt[Boolean].getOrElse(false)
@@ -134,7 +134,7 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config        = ctx.configFor("GeolocationInfo")
     val timeout: Long = (config \ "timeout").asOpt[Long].getOrElse(2000)
     val apiKeyOpt     = (config \ "apikey").asOpt[String]
@@ -190,7 +190,7 @@ class GeolocationInfoHeader extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config     = ctx.configFor("GeolocationInfoHeader")
     val headerName = (config \ "headerName").asOpt[String].getOrElse("X-Geolocation-Info")
     ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
@@ -228,7 +228,7 @@ class GeolocationInfoEndpoint extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
       case ("get", "/.well-known/otoroshi/plugins/geolocation") =>
         ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
@@ -249,7 +249,7 @@ object IpStackGeolocationHelper {
 
   private val cache = Caches.bounded[String, Option[JsValue]](10000)
 
-  def find(ip: String, apikey: String, timeout: Long)(implicit
+  def find(ip: String, apikey: String, timeout: Long)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] = {
@@ -285,7 +285,7 @@ object MaxMindGeolocationHelper {
   private val exc     =
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() + 1))
 
-  def dbRefInit(path: String)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def dbRefInit(path: String)(using env: Env, ec: ExecutionContext): Unit = {
 
     def init(initializing: AtomicBoolean): Future[Unit] = {
       if (initializing.compareAndSet(false, true)) {
@@ -344,23 +344,23 @@ object MaxMindGeolocationHelper {
   }
   def dbInitializationDoneGet(path: String): Boolean       = dbs.get(path).exists(_._3.get())
 
-  private def initDbFromFilePath(file: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  private def initDbFromFilePath(file: String)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     Future {
       val cityDbFile = new File(file)
       val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
       dbRefSet(file, cityDb)
       dbInitializationDoneSet(file)
-    }(exc).andThen {
+    }(using exc).andThen {
       case Success(_) =>
         logger.info("Geolocation db from file path initialized")
         dbInitializationDoneSet(file)
       case Failure(e) =>
         logger.error("Geolocation db from file path initialization failed", e)
         dbInitializationDoneSet(file)
-    }(exc)
+    }(using exc)
   }
 
-  private def initDbFromURL(url: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  private def initDbFromURL(url: String)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.mmdb")
     env.Ws
@@ -374,7 +374,7 @@ object MaxMindGeolocationHelper {
           logger.error("Geolocation db initialization from URL failed, could not write file on disk")
           dbInitializationDoneSet(url)
         case resp                       =>
-          resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map { res =>
+          resp.bodyAsSource.runWith(FileIO.toPath(file))(using env.otoroshiMaterializer).map { res =>
             val cityDbFile = file.toFile
             val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
             dbRefSet(url, cityDb)
@@ -384,7 +384,7 @@ object MaxMindGeolocationHelper {
       }
   }
 
-  private def initDbFromURLWithUnzip(rawUrl: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  private def initDbFromURLWithUnzip(rawUrl: String)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.zip")
     val url  = rawUrl.replace("zip:", "")
@@ -399,7 +399,7 @@ object MaxMindGeolocationHelper {
           logger.error("Geolocation db initialization from zip file URL failed, status was not 200")
           dbInitializationDoneSet(rawUrl)
         case resp                       =>
-          resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map { res =>
+          resp.bodyAsSource.runWith(FileIO.toPath(file))(using env.otoroshiMaterializer).map { res =>
             Try {
               val builder  = new ProcessBuilder
               builder.command(
@@ -437,7 +437,7 @@ object MaxMindGeolocationHelper {
       }
   }
 
-  private def initDbFromURLWithUntar(rawUrl: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  private def initDbFromURLWithUntar(rawUrl: String)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.tar.gz")
     val url  = rawUrl.replace("tgz:", "")
@@ -452,7 +452,7 @@ object MaxMindGeolocationHelper {
           logger.error("Geolocation db initialization from tar.gz file URL failed, status was not 200")
           dbInitializationDoneSet(rawUrl)
         case resp                       =>
-          resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map { res =>
+          resp.bodyAsSource.runWith(FileIO.toPath(file))(using env.otoroshiMaterializer).map { res =>
             Try {
               val builder  = new ProcessBuilder
               builder.command(
@@ -493,7 +493,7 @@ object MaxMindGeolocationHelper {
       }
   }
 
-  def find(ip: String, file: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+  def find(ip: String, file: String)(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     env.metrics.withTimerAsync("otoroshi.plugins.geolocation.maxmind.details") {
       dbRefInit(file)
       cache.getIfPresent(ip) match {

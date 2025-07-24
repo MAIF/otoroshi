@@ -125,7 +125,7 @@ class OIDCHeaders extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     ctx.user match {
       case Some(user) if user.token.asOpt[JsObject].exists(_.value.nonEmpty) =>
         val config = ctx.cachedConfig(internalName)(OIDCHeadersConfig.format).getOrElse(OIDCHeadersConfig())
@@ -196,7 +196,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val pluginConfiguration = ctx
       .cachedConfig(internalName)(OIDCAccessTokenConfig.format)
       .getOrElse(OIDCAccessTokenConfig())
@@ -235,7 +235,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
         .mapAsync(1) { config =>
           checkOneConfig(config)
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { seq =>
           if (pluginConfiguration.atLeastOne) {
             seq.contains(true)
@@ -287,7 +287,7 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val pluginConfiguration = ctx
       .cachedConfig(internalName)(OIDCAccessTokenConfig.format)
       .getOrElse(OIDCAccessTokenConfig())
@@ -329,7 +329,7 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
         .mapAsync(1) { config =>
           checkOneConfig(config, ref)
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { _ =>
           Option(ref.get()).foreach(apk => ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apk))
           Done.right
@@ -426,7 +426,7 @@ class OIDCAuthToken extends NgAccessValidator {
   override def configFlow: Seq[String]        = OIDCAuthTokenConfig.configFlow
   override def configSchema: Option[JsObject] = OIDCAuthTokenConfig.configSchema
 
-  private def getSession(ctx: NgAccessContext, oauth2Config: OAuth2ModuleConfig, config: OIDCAuthTokenConfig)(implicit
+  private def getSession(ctx: NgAccessContext, oauth2Config: OAuth2ModuleConfig, config: OIDCAuthTokenConfig)(using
       env: Env,
       ec: ExecutionContext
   ) = {
@@ -631,7 +631,7 @@ class OIDCAuthToken extends NgAccessValidator {
       }
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(OIDCAuthTokenConfig.format)
       .getOrElse(OIDCAuthTokenConfig.default)

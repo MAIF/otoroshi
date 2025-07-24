@@ -116,7 +116,7 @@ object LetsEncryptHelper {
 
   def createCertificate(
       domain: String
-  )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Cert]] = {
+  )(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Cert]] = {
 
     env.datastores.globalConfigDataStore.singleton().flatMap { config =>
       val letsEncryptSettings = config.letsEncryptSettings
@@ -182,7 +182,7 @@ object LetsEncryptHelper {
     }
   }
 
-  def getChallengeForToken(domain: String, token: String)(implicit
+  def getChallengeForToken(domain: String, token: String)(using
       ec: ExecutionContext,
       env: Env,
       mat: Materializer
@@ -197,7 +197,7 @@ object LetsEncryptHelper {
     }
   }
 
-  def renew(cert: Cert)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Cert] = {
+  def renew(cert: Cert)(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Cert] = {
     env.datastores.rawDataStore.get(s"${env.storageRoot}:letsencrypt:renew:${cert.id}").flatMap {
       case Some(_) =>
         logger.warn(s"Certificate already in renewing process: ${cert.id} for ${cert.domain}")
@@ -238,7 +238,7 @@ object LetsEncryptHelper {
     }
   }
 
-  def createFromServices()(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
+  def createFromServices()(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
     env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
       env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
         val letsEncryptCertificates  = certificates.filter(_.letsEncrypt)
@@ -277,17 +277,17 @@ object LetsEncryptHelper {
     }
   }
 
-  private def orderLetsEncryptCertificate(account: Account, domain: String)(implicit
+  private def orderLetsEncryptCertificate(account: Account, domain: String)(using
       ec: ExecutionContext,
       env: Env,
       mat: Materializer
   ): Future[Order] = {
     Future {
       account.newOrder().domains(domain).create()
-    }(blockingEc)
+    }(using blockingEc)
   }
 
-  private def doChallenges(order: Order, domain: String)(implicit
+  private def doChallenges(order: Order, domain: String)(using
       ec: ExecutionContext,
       env: Env,
       mat: Materializer
@@ -296,7 +296,7 @@ object LetsEncryptHelper {
       .mapAsync(1) { auth =>
         Future {
           (auth, auth.findChallenge(classOf[Http01Challenge]))
-        }(blockingEc)
+        }(using blockingEc)
       }
       .collect {
         case (auth, opt) if opt.isPresent => (auth, opt.get())
@@ -332,7 +332,7 @@ object LetsEncryptHelper {
       attemptsLeft: Int,
       defaultDelay: FiniteDuration = 3.seconds,
       maxDelay: FiniteDuration = 30.seconds
-  )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
+  )(using ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
 
     def calculateDelay(retryAfterOpt: Option[Instant], attemptNumber: Int): FiniteDuration = {
       retryAfterOpt match {
@@ -377,7 +377,7 @@ object LetsEncryptHelper {
       getStatus: T => Status,
       maxAttempts: Int = 10,
       defaultDelay: FiniteDuration = 3.seconds
-  )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
+  )(using ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
 
     val fetchAndCheck = () =>
       Future {
@@ -398,7 +398,7 @@ object LetsEncryptHelper {
       domain: String,
       status: Status,
       challenge: Http01Challenge
-  )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Status]] = {
+  )(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Status]] = {
 
     logger.info(s"authorizing order $domain")
 
@@ -407,14 +407,14 @@ object LetsEncryptHelper {
     } else {
       Future {
         challenge.trigger()
-      }(blockingEc).flatMap { _ =>
+      }(using blockingEc).flatMap { _ =>
         pollAcmeResource(
           challenge,
           fetch = (c: Http01Challenge) => Option(c.fetch().orElse(null)),
           getStatus = (c: Http01Challenge) => c.getStatus,
           maxAttempts = 10,
           defaultDelay = 3.seconds
-        )(ec, mat.system.scheduler)
+        )(using ec, mat.system.scheduler)
           .map(_ => Right(Status.VALID))
           .recover { case e =>
             Left(s"Failed to authorize certificate for domain, ${e.getMessage}")
@@ -426,18 +426,18 @@ object LetsEncryptHelper {
   private def orderCertificate(
       order: Order,
       csr: Array[Byte]
-  )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Order]] = {
+  )(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Order]] = {
 
     Future {
       order.execute(csr)
-    }(blockingEc).flatMap { _ =>
+    }(using blockingEc).flatMap { _ =>
       pollAcmeResource(
         order,
         fetch = (o: Order) => Option(o.fetch().orElse(null)),
         getStatus = (o: Order) => o.getStatus,
         maxAttempts = 10,
         defaultDelay = 5.seconds
-      )(ec, mat.system.scheduler)
+      )(using ec, mat.system.scheduler)
         .map(Right(_))
         .recover { case e =>
           Left(s"Failed to order certificate for domain, ${e.getMessage}")

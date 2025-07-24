@@ -353,8 +353,8 @@ object NgBackend {
           loadBalancing = LoadBalancing.format
             .reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj()))
             .getOrElse(RoundRobin),
-          healthCheck = obj.select("health_check").asOpt(HealthCheck.format),
-          client = obj.select("client").asOpt(NgClientConfig.format).getOrElse(NgClientConfig())
+          healthCheck = obj.select("health_check").asOpt(using HealthCheck.format),
+          client = obj.select("client").asOpt(using NgClientConfig.format).getOrElse(NgClientConfig())
         )
     }
   }
@@ -516,13 +516,13 @@ object NgTarget {
       port = port,
       tls = tls,
       weight = obj.select("weight").asOpt[Int].getOrElse(1),
-      tlsConfig = obj.select("tls_config").asOpt(NgTlsConfig.format).getOrElse(NgTlsConfig()),
+      tlsConfig = obj.select("tls_config").asOpt(using NgTlsConfig.format).getOrElse(NgTlsConfig()),
       protocol = (obj \ "protocol")
         .asOpt[String]
         .filterNot(_.trim.isEmpty)
         .map(s => HttpProtocols.parse(s))
         .getOrElse(HttpProtocols.HTTP_1_1),
-      predicate = (obj \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
+      predicate = (obj \ "predicate").asOpt(using TargetPredicate.format).getOrElse(AlwaysMatch),
       ipAddress = ipAddress,
       backup = obj.select("backup").asOpt[Boolean].getOrElse(false)
     )
@@ -568,7 +568,7 @@ case class StoredNgBackend(
     metadata: Map[String, String],
     backend: NgBackend
 ) extends EntityLocationSupport {
-  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.backendsDataStore.set(this)
+  def save()(using env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.backendsDataStore.set(this)
   override def internalId: String                                      = id
   override def theName: String                                         = name
   override def theDescription: String                                  = description
@@ -585,9 +585,9 @@ case class StoredNgBackend(
 }
 
 trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): StoredNgBackend = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): StoredNgBackend = {
     val default = StoredNgBackend(
-      location = EntityLocation.ownEntityLocation(ctx)(env),
+      location = EntityLocation.ownEntityLocation(ctx)(using env),
       id = IdGenerator.namedId("backend", env),
       name = "New backend",
       description = "New backend",
@@ -595,9 +595,9 @@ trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
       tags = Seq.empty,
       backend = NgBackend.empty
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .backend
       .map { template =>
@@ -612,7 +612,7 @@ trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
 class KvStoredNgBackendDataStore(redisCli: RedisLike, _env: Env)
     extends StoredNgBackendDataStore
     with RedisLikeStore[StoredNgBackend] {
-  override def redisLike(implicit env: Env): RedisLike   = redisCli
+  override def redisLike(using env: Env): RedisLike   = redisCli
   override def fmt: Format[StoredNgBackend]              = StoredNgBackend.format
   override def key(id: String): String                   = s"${_env.storageRoot}:backends:$id"
   override def extractId(value: StoredNgBackend): String = value.id

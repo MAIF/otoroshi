@@ -229,13 +229,13 @@ object OtoroshiAdmin {
 trait SimpleAdminDataStore {
   def key(id: String): String
   def extractId(value: SimpleOtoroshiAdmin): String
-  def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[SimpleOtoroshiAdmin]]
-  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[SimpleOtoroshiAdmin]]
-  def deleteUser(username: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def deleteUsers(usernames: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def registerUser(user: SimpleOtoroshiAdmin)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def hasAlreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def findByUsername(username: String)(using ec: ExecutionContext, env: Env): Future[Option[SimpleOtoroshiAdmin]]
+  def findAll()(using ec: ExecutionContext, env: Env): Future[Seq[SimpleOtoroshiAdmin]]
+  def deleteUser(username: String)(using ec: ExecutionContext, env: Env): Future[Long]
+  def deleteUsers(usernames: Seq[String])(using ec: ExecutionContext, env: Env): Future[Long]
+  def registerUser(user: SimpleOtoroshiAdmin)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def hasAlreadyLoggedIn(email: String)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def alreadyLoggedIn(email: String)(using ec: ExecutionContext, env: Env): Future[Long]
   def template(env: Env): SimpleOtoroshiAdmin = {
     SimpleOtoroshiAdmin(
       username = "new.admin@foo.bar",
@@ -251,13 +251,13 @@ trait SimpleAdminDataStore {
 }
 
 trait WebAuthnAdminDataStore {
-  def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[WebAuthnOtoroshiAdmin]]
-  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[WebAuthnOtoroshiAdmin]]
-  def deleteUser(username: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def deleteUsers(usernames: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def registerUser(user: WebAuthnOtoroshiAdmin)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def hasAlreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def findByUsername(username: String)(using ec: ExecutionContext, env: Env): Future[Option[WebAuthnOtoroshiAdmin]]
+  def findAll()(using ec: ExecutionContext, env: Env): Future[Seq[WebAuthnOtoroshiAdmin]]
+  def deleteUser(username: String)(using ec: ExecutionContext, env: Env): Future[Long]
+  def deleteUsers(usernames: Seq[String])(using ec: ExecutionContext, env: Env): Future[Long]
+  def registerUser(user: WebAuthnOtoroshiAdmin)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def hasAlreadyLoggedIn(email: String)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def alreadyLoggedIn(email: String)(using ec: ExecutionContext, env: Env): Future[Long]
 }
 
 case class AdminPreferences(userId: String, preferences: Map[String, JsValue]) {
@@ -268,7 +268,7 @@ case class AdminPreferences(userId: String, preferences: Map[String, JsValue]) {
   def delete(id: String): AdminPreferences = {
     copy(preferences = preferences - id)
   }
-  def save()(implicit env: Env, ec: ExecutionContext): Future[AdminPreferences] = {
+  def save()(using env: Env, ec: ExecutionContext): Future[AdminPreferences] = {
     env.datastores.adminPreferencesDatastore.setPreferences(userId, this)
   }
 }
@@ -312,38 +312,38 @@ object AdminPreferences {
 
 class AdminPreferencesDatastore(env: Env) {
 
-  private implicit val ev: Env = env
+  private given ev: Env = env
 
   def computeKey(id: String): String = s"${env.storageRoot}:admins_prefs:$id"
 
-  def getPreferencesOrSetDefault(userId: String)(implicit ec: ExecutionContext): Future[AdminPreferences] = {
+  def getPreferencesOrSetDefault(userId: String)(using ec: ExecutionContext): Future[AdminPreferences] = {
     getPreferences(userId).flatMap {
       case None        => setPreferences(userId, AdminPreferences.defaultValue(userId))
       case Some(prefs) => prefs.vfuture
     }
   }
 
-  def getPreferences(userId: String)(implicit ec: ExecutionContext): Future[Option[AdminPreferences]] = {
+  def getPreferences(userId: String)(using ec: ExecutionContext): Future[Option[AdminPreferences]] = {
     val key = computeKey(userId)
     env.datastores.rawDataStore
       .get(key)
       .map(_.flatMap(bs => AdminPreferences.format.reads(bs.utf8String.parseJson).asOpt))
   }
 
-  def getPreference(userId: String, prefKey: String)(implicit ec: ExecutionContext): Future[Option[JsValue]] = {
+  def getPreference(userId: String, prefKey: String)(using ec: ExecutionContext): Future[Option[JsValue]] = {
     getPreferencesOrSetDefault(userId) map { prefs =>
       prefs.preferences.get(prefKey)
     }
   }
 
-  def setPreferences(userId: String, preferences: AdminPreferences)(implicit
+  def setPreferences(userId: String, preferences: AdminPreferences)(using
       ec: ExecutionContext
   ): Future[AdminPreferences] = {
     val key = computeKey(userId)
     env.datastores.rawDataStore.set(key, preferences.json.stringify.byteString, None).map(_ => preferences)
   }
 
-  def setPreference(userId: String, prefKey: String, value: JsValue)(implicit ec: ExecutionContext): Future[JsValue] = {
+  def setPreference(userId: String, prefKey: String, value: JsValue)(using ec: ExecutionContext): Future[JsValue] = {
     getPreferencesOrSetDefault(userId).flatMap { prefs =>
       prefs.set(prefKey, value).save().map { prefs =>
         value
@@ -351,12 +351,12 @@ class AdminPreferencesDatastore(env: Env) {
     }
   }
 
-  def deletePreferences(userId: String)(implicit ec: ExecutionContext): Future[Unit] = {
+  def deletePreferences(userId: String)(using ec: ExecutionContext): Future[Unit] = {
     val key = computeKey(userId)
     env.datastores.rawDataStore.del(Seq(key)).map(_ => ())
   }
 
-  def deletePreference(userId: String, prefKey: String)(implicit ec: ExecutionContext): Future[Unit] = {
+  def deletePreference(userId: String, prefKey: String)(using ec: ExecutionContext): Future[Unit] = {
     getPreferencesOrSetDefault(userId).flatMap { prefs =>
       prefs.delete(prefKey).save().map { _ =>
         ()

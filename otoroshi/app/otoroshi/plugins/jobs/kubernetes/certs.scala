@@ -22,7 +22,7 @@ object KubernetesCertSyncJob {
   private val running       = new AtomicBoolean(false)
   private val shouldRunNext = new AtomicBoolean(false)
 
-  def importCerts(certs: Seq[KubernetesCertSecret])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def importCerts(certs: Seq[KubernetesCertSecret])(using env: Env, ec: ExecutionContext): Future[Unit] = {
 
     val hashs = DynamicSSLEngineProvider.certificates.map { case (_, value) =>
       (value.contentHash, value)
@@ -86,7 +86,7 @@ object KubernetesCertSyncJob {
 
   def deleteOutOfSyncCerts(
       currentCerts: Seq[KubernetesCertSecret]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val paths = currentCerts.map(c => s"${c.namespace}/${c.name}")
     env.datastores.certificatesDataStore.findAll().flatMap { certs =>
       val ids = certs
@@ -97,7 +97,7 @@ object KubernetesCertSyncJob {
     }
   }
 
-  def syncKubernetesSecretsToOtoroshiCerts(client: KubernetesClient, jobRunning: => Boolean)(implicit
+  def syncKubernetesSecretsToOtoroshiCerts(client: KubernetesClient, jobRunning: => Boolean)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] =
@@ -138,7 +138,7 @@ object KubernetesCertSyncJob {
       }
     }
 
-  def syncOtoroshiCertToKubernetesSecrets(client: KubernetesClient, jobRunning: => Boolean)(implicit
+  def syncOtoroshiCertToKubernetesSecrets(client: KubernetesClient, jobRunning: => Boolean)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] =
@@ -146,7 +146,7 @@ object KubernetesCertSyncJob {
 
       import otoroshi.ssl.SSLImplicits._
 
-      implicit val mat: Materializer = env.otoroshiMaterializer
+      given mat: Materializer = env.otoroshiMaterializer
       if (!jobRunning) {
         shouldRunNext.set(false)
         running.set(false)
@@ -254,7 +254,7 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
-    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+    Try(KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext)) match {
       case Failure(e) =>
         e.printStackTrace()
         Some(false)
@@ -262,7 +262,7 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
     }
   }
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(false)
     lastWatchStopped.set(true)
     watchCommand.set(false)
@@ -271,14 +271,14 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
     ().future
   }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(true)
     watchCommand.set(false)
     lastWatchStopped.set(true)
     ().future
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf   = KubernetesConfig.theConfig(ctx)
     val client = new KubernetesClient(conf, env)
     logger.info("Running kubernetes to otoroshi certs. sync ...")
@@ -286,7 +286,7 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
     KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())
   }
 
-  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[String]] = {
@@ -299,10 +299,10 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
     }
   }
 
-  def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def handleWatch(config: KubernetesConfig, ctx: JobContext)(using env: Env, ec: ExecutionContext): Unit = {
     if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting namespaces watch ...")
-      implicit val mat: Materializer = env.otoroshiMaterializer
+      given mat: Materializer = env.otoroshiMaterializer
       watchCommand.set(true)
       lastWatchStopped.set(false)
       env.otoroshiScheduler.scheduleOnce(5.minutes) {
@@ -382,7 +382,7 @@ class OtoroshiToKubernetesCertSyncJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
-    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+    Try(KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext)) match {
       case Failure(e) =>
         e.printStackTrace()
         Some(false)
@@ -390,17 +390,17 @@ class OtoroshiToKubernetesCertSyncJob extends Job {
     }
   }
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(false)
     ().future
   }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(true)
     ().future
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf   = KubernetesConfig.theConfig(ctx)
     val client = new KubernetesClient(conf, env)
     logger.info("Running otoroshi certs. to kubernetes ssecrets  sync ...")

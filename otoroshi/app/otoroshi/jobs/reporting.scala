@@ -13,6 +13,7 @@ import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
+import play.api.libs.ws.WSBodyWritables._
 import play.api.{Configuration, Logger}
 
 import java.util.concurrent.TimeUnit
@@ -110,7 +111,7 @@ object AnonymousReportingJob {
     }
   }
 
-  def buildReport(globalConfig: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def buildReport(globalConfig: GlobalConfig)(using env: Env, ec: ExecutionContext): Future[JsValue] = {
     (for {
       members                   <- env.datastores.clusterStateDataStore.getMembers()
       calls                     <- env.datastores.serviceDescriptorDataStore.globalCalls()
@@ -453,7 +454,7 @@ class AnonymousReportingJob extends Job {
     )
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config       = AnonymousReportingJobConfig.fromEnv(env)
     if (config.enabled && globalConfig.anonymousReporting) {

@@ -70,7 +70,7 @@ object pgimplicits {
   }
 
   implicit class EnhancedRow(val row: Row) extends AnyVal {
-    def opt[A](name: String, typ: String, extractor: (Row, String) => A)(implicit logger: Logger): Option[A] = {
+    def opt[A](name: String, typ: String, extractor: (Row, String) => A)(using logger: Logger): Option[A] = {
       Try(extractor(row, name)) match {
         case Failure(ex)    =>
           logger.error(s"error while getting column '$name' of type $typ", ex)
@@ -78,16 +78,16 @@ object pgimplicits {
         case Success(value) => Some(value)
       }
     }
-    def optString(name: String)(implicit logger: Logger): Option[String]                 = opt(name, "String", (a, b) => a.getString(b))
-    def optLong(name: String)(implicit logger: Logger): Option[Long]                     =
+    def optString(name: String)(using logger: Logger): Option[String]                 = opt(name, "String", (a, b) => a.getString(b))
+    def optLong(name: String)(using logger: Logger): Option[Long]                     =
       opt(name, "Long", (a, b) => a.getLong(b).longValue())
-    def optOffsetDatetime(name: String)(implicit logger: Logger): Option[OffsetDateTime] =
+    def optOffsetDatetime(name: String)(using logger: Logger): Option[OffsetDateTime] =
       opt(name, "OffsetDateTime", (a, b) => a.getOffsetDateTime(b))
 
-    def optInterval(name: String)(implicit logger: Logger): Option[io.vertx.pgclient.data.Interval] =
+    def optInterval(name: String)(using logger: Logger): Option[io.vertx.pgclient.data.Interval] =
       opt(name, "Interval", (a, b) => a.get(classOf[io.vertx.pgclient.data.Interval], b))
 
-    def optJsObject(name: String)(implicit logger: Logger): Option[JsObject] =
+    def optJsObject(name: String)(using logger: Logger): Option[JsObject] =
       opt(
         name,
         "JsObject",
@@ -100,7 +100,7 @@ object pgimplicits {
           }
         }
       )
-    def optJsArray(name: String)(implicit logger: Logger): Option[JsArray]   =
+    def optJsArray(name: String)(using logger: Logger): Option[JsArray]   =
       opt(
         name,
         "JsArray",
@@ -277,7 +277,7 @@ class ReactivePgDataStores(
   }
 
   def runSchemaCreation(): Unit = {
-    implicit val ec: ExecutionContextExecutor = reactivePgActorSystem.dispatcher
+    given ec: ExecutionContextExecutor = reactivePgActorSystem.dispatcher
     logger.info("Running database migrations ...")
 
     // AWAIT: valid
@@ -326,7 +326,7 @@ class ReactivePgDataStores(
   }
 
   def setupCleanup(): Unit = {
-    implicit val ec: ExecutionContextExecutor = reactivePgActorSystem.dispatcher
+    given ec: ExecutionContextExecutor = reactivePgActorSystem.dispatcher
     cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(10.seconds, 30.seconds)(SchedulerHelper.runnable {
       try {
         client
@@ -355,8 +355,8 @@ class ReactivePgDataStores(
         targets = Seq(
           Target("mirror.otoroshi.io")
         )
-      ).save()(reactivePgActorSystem.dispatcher, env)
-    }(reactivePgActorSystem.dispatcher)
+      ).save()(using reactivePgActorSystem.dispatcher, env)
+    }(using reactivePgActorSystem.dispatcher)
   }
 
   override def before(
@@ -476,7 +476,7 @@ class ReactivePgDataStores(
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore = _jwtVerifDataStore
   override def authConfigsDataStore: AuthConfigsDataStore             = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore            = _certificateDataStore
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = {
     redis.asInstanceOf[ReactivePgRedis].info().map(_ => Healthy).recover { case _ =>
       Unreachable
     }
@@ -505,7 +505,7 @@ class ReactivePgDataStores(
   }
   override def rawExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -548,11 +548,11 @@ class ReactivePgDataStores(
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]] = {
 
-    implicit val ev: Env               = env
-    implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer     = env.otoroshiMaterializer
+    given ev: Env               = env
+    given ecc: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer     = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -578,14 +578,14 @@ class ReactivePgDataStores(
     )
   }
 
-  override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
+  override def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit] = {
 
-    implicit val ev: Env               = env
-    implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer     = env.otoroshiMaterializer
+    given ev: Env               = env
+    given ecc: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer     = env.otoroshiMaterializer
     redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
           .mapAsync(1) { json =>
@@ -604,8 +604,8 @@ class ReactivePgDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify).toSeq*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify).toSeq*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
@@ -635,9 +635,9 @@ class ReactivePgRedis(
 
   import scala.jdk.CollectionConverters._
 
-  private implicit val ec: ExecutionContextExecutor = system.dispatcher
+  private given ec: ExecutionContextExecutor = system.dispatcher
 
-  private implicit val logger: Logger = Logger("otoroshi-reactive-pg-kv")
+  private given logger: Logger = Logger("otoroshi-reactive-pg-kv")
 
   private val debugQueries = env.configuration.betterGetOptional[Boolean]("app.pg.logQueries").getOrElse(false)
 
@@ -701,12 +701,12 @@ class ReactivePgRedis(
     }.map { rows =>
       Source(rows.toList)
         .mapAsync(1) { case (key, value) =>
-          KindExtractorHelper.findKind(key)(env) match {
+          KindExtractorHelper.findKind(key)(using env) match {
             case Some(kind) => setEntityKind(key, kind, value)
             case None       => ().vfuture
           }
         }
-        .runWith(Sink.ignore)(env.otoroshiMaterializer)
+        .runWith(Sink.ignore)(using env.otoroshiMaterializer)
     }
   }
 
@@ -729,7 +729,7 @@ class ReactivePgRedis(
 
   override val optimized: Boolean = _optimized
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = {
     info().map(_ => Healthy).recover { case _ => Unreachable }
   }
 
@@ -779,7 +779,7 @@ class ReactivePgRedis(
 
   override def serviceDescriptors_findByHost(
       query: ServiceDescriptorQuery
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.services-find-by-host") {
       val queryRegex = "^" + query.toHost.replace("*", ".*").replace(".", "\\.")
       querySeq(
@@ -793,7 +793,7 @@ class ReactivePgRedis(
 
   override def serviceDescriptors_findByEnv(
       ev: String
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.services-find-by-env") {
       querySeq(
         s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'env' = '$ev' and (ttl_starting_at + ttl) > NOW();"
@@ -806,7 +806,7 @@ class ReactivePgRedis(
 
   override def serviceDescriptors_findByGroup(
       id: String
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.find-by-group") {
       querySeq(
         s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'groups' ? $$1 and (ttl_starting_at + ttl) > NOW();",
@@ -820,7 +820,7 @@ class ReactivePgRedis(
 
   override def apiKeys_findByService(
       service: ServiceDescriptor
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     measure("pg.ops.optm.apikeys-find-by-service") {
 
       var params     = Seq[Any]()
@@ -842,7 +842,7 @@ class ReactivePgRedis(
       }
     }
 
-  override def apiKeys_findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
+  override def apiKeys_findByGroup(groupId: String)(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     measure("pg.ops.optm.apikeys-find-by-group") {
       querySeq(
         s"select value from $schemaDotTable where kind = 'apikey' and jvalue -> 'authorizedEntities' ? $$1 and (ttl_starting_at + ttl) > NOW();",
@@ -896,7 +896,7 @@ class ReactivePgRedis(
     setBS(key, value.byteString, exSeconds, pxMilliseconds)
   }
 
-  override def del(keys: String*): Future[Long] = hardDelete(keys: _*)
+  override def del(keys: String*): Future[Long] = hardDelete(keys*)
 
   def hardDelete(keys: String*): Future[Long] =
     measure("pg.ops.del") {
@@ -1120,9 +1120,9 @@ class ReactivePgRedis(
       }
     }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  override def lpush(key: String, values: String*): Future[Long]                      = lpushBS(key, values.map(_.byteString): _*)
+  override def lpush(key: String, values: String*): Future[Long]                      = lpushBS(key, values.map(_.byteString)*)
 
-  override def lpushLong(key: String, values: Long*): Future[Long] = lpushBS(key, values.map(_.toString.byteString): _*)
+  override def lpushLong(key: String, values: Long*): Future[Long] = lpushBS(key, values.map(_.toString.byteString)*)
 
   private def getArray(key: String): Future[Option[Seq[ByteString]]] =
     measure("pg.ops.lget") {
@@ -1225,7 +1225,7 @@ class ReactivePgRedis(
     }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(_.byteString): _*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(_.byteString)*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] =
     measure("pg.ops.sadd") {
@@ -1265,7 +1265,7 @@ class ReactivePgRedis(
       }.map(_.getOrElse(Seq.empty))
     }
 
-  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(_.byteString): _*)
+  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(_.byteString)*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] =
     measure("pg.ops.srem") {
@@ -1327,7 +1327,7 @@ class SetMissingEntityKind extends OneTimeJob {
 
   override def uniqueId: JobId = JobId("io.otoroshi.core.storage.pg.SetMissingEntityKind")
 
-  override def singleRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def singleRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores match {
       case ds: ReactivePgDataStores => ds.setMissingEntityKind()
       case _                        => funit

@@ -1,39 +1,40 @@
 package otoroshi.script
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.scaladsl.{Flow, Source}
 import org.apache.pekko.util.ByteString
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.{DataInOut, GatewayEvent, Header, Location}
 import otoroshi.models.RemainingQuotas
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.http.Implicits.BetterStandaloneWSResponse
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.http.WSCookieWithSameSite
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.http.HttpEntity
-import play.api.http.websocket.{Message => PlayWSMessage}
+import play.api.http.websocket.Message as PlayWSMessage
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.WSBodyWritables.*
+import play.api.mvc.*
 import play.api.mvc.Results.Status
-import play.api.mvc._
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 trait RequestHandler extends StartableAndStoppable with NamedPlugin {
   override def pluginType: PluginType                                                                       = PluginType.RequestHandlerType
-  def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String]                                  = Seq.empty[String]
+  def handledDomains(using ec: ExecutionContext, env: Env): Seq[String]                                  = Seq.empty[String]
   def handle(
-      request: Request[Source[ByteString, _]],
-      defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result]                                                = defaultRouting(request)
+      request: Request[Source[ByteString, ?]],
+      defaultRouting: Request[Source[ByteString, ?]] => Future[Result]
+  )(using ec: ExecutionContext, env: Env): Future[Result]                                                = defaultRouting(request)
   def handleWs(
       request: RequestHeader,
-      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
+      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] =
     defaultRouting(request)
 }
 
@@ -67,18 +68,18 @@ class ForwardTrafficHandler extends RequestHandler {
     )
     .some
 
-  def hasBody(request: Request[_]): Boolean = request.theHasBody
+  def hasBody(request: Request[?]): Boolean = request.theHasBody
 
-  override def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String] = {
+  override def handledDomains(using ec: ExecutionContext, env: Env): Seq[String] = {
     val config                         = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get)
     val domains: Map[String, JsObject] = config.select("domains").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
     domains.keys.toSeq
   }
 
   override def handle(
-      request: Request[Source[ByteString, _]],
-      defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+      request: Request[Source[ByteString, ?]],
+      defaultRouting: Request[Source[ByteString, ?]] => Future[Result]
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     val config                         = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get)
     val domains: Map[String, JsObject] = config.select("domains").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
     domains.get(request.theDomain) match {
@@ -124,8 +125,8 @@ class ForwardTrafficHandler extends RequestHandler {
         val overhead        = System.currentTimeMillis() - start
         var builder         = env.gatewayClient
           .akkaUrl(s"$baseUrl$path")
-          .withHttpHeaders(headers: _*)
-          .withCookies(cookies: _*)
+          .withHttpHeaders(headers*)
+          .withCookies(cookies*)
           .withMethod(request.method)
           .withFollowRedirects(false)
 
@@ -256,8 +257,8 @@ class ForwardTrafficHandler extends RequestHandler {
             if (isChunked) {
               val res = Status(resp.status)
                 .chunked(resp.bodyAsSource)
-                .withHeaders(headersOut: _*)
-                .withCookies(cookiesOut: _*)
+                .withHeaders(headersOut*)
+                .withCookies(cookiesOut*)
               ctypeOut match {
                 case None      => res
                 case Some(ctp) => res.as(ctp)
@@ -272,8 +273,8 @@ class ForwardTrafficHandler extends RequestHandler {
                     ctypeOut
                   )
                 )
-                .withHeaders(headersOut: _*)
-                .withCookies(cookiesOut: _*)
+                .withHeaders(headersOut*)
+                .withCookies(cookiesOut*)
               ctypeOut match {
                 case None      => res
                 case Some(ctp) => res.as(ctp)

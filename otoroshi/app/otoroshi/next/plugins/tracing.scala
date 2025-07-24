@@ -230,7 +230,7 @@ class W3CTracing extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config     = ctx.cachedConfig(internalName)(W3CTracingConfig.format).getOrElse(W3CTracingConfig())
     val telemetry  = getOpenTelemetry(ctx.route.id, config)
     val propagator = telemetry.getPropagators.getTextMapPropagator
@@ -295,7 +295,7 @@ class W3CTracing extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     ctx.attrs.get(SpanKey).foreach { span =>
       span.addEvent("process_response")
       span.setAttribute("http.response", ctx.otoroshiResponse.status)
@@ -308,7 +308,7 @@ class W3CTracing extends NgRequestTransformer {
 
   override def transformError(
       ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     ctx.attrs.get(SpanKey).foreach { span =>
       span.addEvent("process_error")
       span.setAttribute("http.response", ctx.otoroshiResponse.status)

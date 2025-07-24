@@ -44,7 +44,7 @@ class ServiceDescriptorUsageWarning extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.serviceDescriptorDataStore.count().map { count =>
       if (count > 0L) {
         env.logger.warn("")
@@ -94,15 +94,15 @@ class ServiceDescriptorMigrationJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  private def warn(message: String)(implicit env: Env): Unit = {
+  private def warn(message: String)(using env: Env): Unit = {
     env.logger.warn(s"[service-descriptors-migration] $message")
   }
 
-  private def error(message: String, t: Throwable)(implicit env: Env): Unit = {
+  private def error(message: String, t: Throwable)(using env: Env): Unit = {
     env.logger.error(s"[service-descriptors-migration] $message", t)
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     if (env.configuration.getOptional[Boolean]("otoroshi.service-descriptors-migration-job.enabled").getOrElse(false)) {
       warn("Running full Service Descriptors migration !!!")
       warn("")
@@ -129,7 +129,7 @@ class ServiceDescriptorMigrationJob extends Job {
                   error(s"error while migrating '${descriptor.name}'", t)
                 }
             }
-            .runWith(Sink.ignore)(env.otoroshiMaterializer)
+            .runWith(Sink.ignore)(using env.otoroshiMaterializer)
             .andThen { case _ =>
               warn("migration done !")
             }

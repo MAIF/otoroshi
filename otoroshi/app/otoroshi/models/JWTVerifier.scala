@@ -166,13 +166,13 @@ trait AlgoSettings extends AsJson {
 
   def isAsync: Boolean
 
-  def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm]
+  def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm]
 
-  def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
-    FastFuture.successful(asAlgorithm(mode)(env))
+  def asAlgorithmF(mode: AlgoMode)(using env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
+    FastFuture.successful(asAlgorithm(mode)(using env))
   }
 
-  def transformValue(secret: String)(implicit env: Env): String = {
+  def transformValue(secret: String)(using env: Env): String = {
     AlgoSettings.fromCacheOrNot(
       secret,
       GlobalExpressionLanguage.apply(
@@ -246,7 +246,7 @@ case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) ex
 
   def isAsync: Boolean = false
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     size match {
       case 256 if base64 => Some(Algorithm.HMAC256(JavaBase64.getDecoder.decode(transformValue(secret))))
       case 384 if base64 => Some(Algorithm.HMAC384(JavaBase64.getDecoder.decode(transformValue(secret))))
@@ -312,7 +312,7 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     size match {
       case 256 =>
         Some(
@@ -393,7 +393,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     size match {
       case 256 =>
         Some(
@@ -504,12 +504,12 @@ case class JWKSAlgoSettings(
     }
   }
 
-  def fetchJWKS(alg: String, kid: String, oldStop: Long, oldKeys: Map[String, com.nimbusds.jose.jwk.JWK])(implicit
+  def fetchJWKS(alg: String, kid: String, oldStop: Long, oldKeys: Map[String, com.nimbusds.jose.jwk.JWK])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[Algorithm]] = {
     import otoroshi.utils.http.Implicits._
-    implicit val s: Scheduler = env.otoroshiScheduler
+    given s: Scheduler = env.otoroshiScheduler
     // val protocol = url.split("://").toSeq.headOption.getOrElse("http")
     JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, true))
     Retry
@@ -517,7 +517,7 @@ case class JWKSAlgoSettings(
         env.MtlsWs
           .url(url, tlsConfig)
           .withRequestTimeout(timeout)
-          .withHttpHeaders(headers.toSeq: _*)
+          .withHttpHeaders(headers.toSeq*)
           .withMaybeProxyServer(
             proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.jwk))
           )
@@ -553,15 +553,15 @@ case class JWKSAlgoSettings(
       }
   }
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     if (isAsync) {
       logger.warn(s"loading JWKS content from '$url' blocking style !")
     }
     // AWAIT: valid
-    Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), timeout)
+    Await.result(asAlgorithmF(mode)(using env, env.otoroshiExecutionContext), timeout)
   }
 
-  override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
+  override def asAlgorithmF(mode: AlgoMode)(using env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
     mode match {
       case InputMode(alg, Some(kid)) =>
         JWKSAlgoSettings.cache.getIfPresent(url) match {
@@ -619,7 +619,7 @@ case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings    
 
   def isAsync: Boolean = false
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     DynamicSSLEngineProvider.certificates
       .get(certId)
       .orElse {
@@ -671,7 +671,7 @@ case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings     
 
   def isAsync: Boolean = false
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     DynamicSSLEngineProvider.certificates
       .get(certId)
       .orElse {
@@ -723,7 +723,7 @@ case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
 
   def isAsync: Boolean = false
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+  override def asAlgorithm(mode: AlgoMode)(using env: Env): Option[Algorithm] = {
     mode match {
       case InputMode(typ, Some(kid)) =>
         val certs = DynamicSSLEngineProvider.certificates
@@ -866,7 +866,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
     arrayFields.foldLeft(verification)((a, b) => {
       if (b._2.contains(",")) {
         val values = b._2.split(",").map(_.trim)
-        a.withArrayClaim(b._1, values: _*)
+        a.withArrayClaim(b._1, values*)
       } else {
         a.withArrayClaim(b._1, b._2)
       }
@@ -1009,7 +1009,7 @@ sealed trait JwtVerifier extends AsJson {
   def isRef: Boolean
   def enabled: Boolean
   def strict: Boolean
-  def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def shouldBeVerified(path: String)(using ec: ExecutionContext, env: Env): Future[Boolean]
   def source: JwtTokenLocation
   def algoSettings: AlgoSettings
   def strategy: VerifierStrategy
@@ -1046,10 +1046,10 @@ sealed trait JwtVerifier extends AsJson {
       elContext: Map[String, String],
       attrs: TypedMap
   )(
-      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
-      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
+      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, ?]](badResult)
       case Right(goodResult) => goodResult
     }
   }
@@ -1063,7 +1063,7 @@ sealed trait JwtVerifier extends AsJson {
       attrs: TypedMap
   )(
       f: JwtInjection => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
       case Left(badResult)   => Left[Result, A](badResult)
       case Right(goodResult) => goodResult
@@ -1079,7 +1079,7 @@ sealed trait JwtVerifier extends AsJson {
       attrs: TypedMap
   )(
       f: JwtInjection => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
@@ -1096,7 +1096,7 @@ sealed trait JwtVerifier extends AsJson {
       sendEvent: Boolean
   )(
       f: JwtInjection => Future[A]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     if (isAsync) {
       internalVerifyAsync(request, descOpt, apikey, user, elContext, attrs, sendEvent)(f)
     } else {
@@ -1115,7 +1115,7 @@ sealed trait JwtVerifier extends AsJson {
       elContext: Map[String, String],
       attrs: TypedMap,
       sendEvent: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = env.metrics.withTimer(
+  )(using ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = env.metrics.withTimer(
     "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-sync"
   ) {
 
@@ -1434,7 +1434,7 @@ sealed trait JwtVerifier extends AsJson {
       sendEvent: Boolean
   )(
       f: JwtInjection => Future[A]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = env.metrics.withTimerAsync(
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = env.metrics.withTimerAsync(
     "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-async"
   ) {
 
@@ -1771,7 +1771,7 @@ case class LocalJwtVerifier(
 
   override def isRef = false
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def shouldBeVerified(path: String)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
 }
 
@@ -1799,10 +1799,10 @@ case class RefJwtVerifier(
 
   private def id: Option[String] = ids.headOption
 
-  def verifiersSync(implicit env: Env): Seq[GlobalJwtVerifier] = ids.flatMap(env.proxyState.jwtVerifier)
+  def verifiersSync(using env: Env): Seq[GlobalJwtVerifier] = ids.flatMap(env.proxyState.jwtVerifier)
 
   override def isAsync: Boolean = {
-    verifiersSync(OtoroshiEnvHolder.get()).forall(_.isAsync)
+    verifiersSync(using OtoroshiEnvHolder.get()).forall(_.isAsync)
   }
 
   override def verify(
@@ -1814,7 +1814,7 @@ case class RefJwtVerifier(
       attrs: TypedMap
   )(
       f: JwtInjection => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     verifyGen(request, desc, apikey, user, elContext, attrs)(c => f(c).map(Right.apply)).map {
       case Left(r)  => r
       case Right(r) => r
@@ -1829,8 +1829,8 @@ case class RefJwtVerifier(
       elContext: Map[String, String],
       attrs: TypedMap
   )(
-      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     verifyGen(request, desc, apikey, user, elContext, attrs)(f)
   }
 
@@ -1843,8 +1843,8 @@ case class RefJwtVerifier(
       attrs: TypedMap
   )(
       f: JwtInjection => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
-    implicit val mat: Materializer = env.otoroshiMaterializer
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+    given mat: Materializer = env.otoroshiMaterializer
     ids match {
       case s if s.isEmpty => f(JwtInjection())
       case _              =>
@@ -1852,7 +1852,7 @@ case class RefJwtVerifier(
         val last                                          = new AtomicReference[Either[Result, A]](
           Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id")))
         )
-        val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids: _*)
+        val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids*)
 
         def dequeueNext(): Unit = {
           queue.dequeueFirst(_ => true) match {
@@ -1918,7 +1918,7 @@ case class RefJwtVerifier(
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
       attrs: TypedMap
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, JwtInjection]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, JwtInjection]] = {
     ids match {
       case s if s.isEmpty => JwtInjection().right.future
       case _              =>
@@ -2019,7 +2019,7 @@ case class RefJwtVerifier(
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
       attrs: TypedMap
-  )(implicit ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = {
+  )(using ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = {
     ids match {
       case s if s.isEmpty => JwtInjection().right
       case _              =>
@@ -2093,7 +2093,7 @@ case class RefJwtVerifier(
     }
   }
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  override def shouldBeVerified(path: String)(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     ids match {
       case s if s.isEmpty => FastFuture.successful(false)
       case _              => FastFuture.successful(!excludedPatterns.exists(p => RegexPool.regex(p).matches(path)))
@@ -2181,10 +2181,10 @@ case class GlobalJwtVerifier(
 
   override def isRef = false
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalJwtVerifierDataStore.set(this)
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def shouldBeVerified(path: String)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     FastFuture.successful(true)
 
   override def enabled = true
@@ -2354,21 +2354,21 @@ object JwtVerifier extends FromJson[JwtVerifier] {
 
 object Implicits {
   implicit class EnhancedFuture[A](val fu: Future[A]) extends AnyVal {
-    def left[B](implicit ec: ExecutionContext): Future[Either[A, B]]  = fu.map(a => Left[A, B](a))
-    def right[B](implicit ec: ExecutionContext): Future[Either[B, A]] = fu.map(a => Right[B, A](a))
+    def left[B](using ec: ExecutionContext): Future[Either[A, B]]  = fu.map(a => Left[A, B](a))
+    def right[B](using ec: ExecutionContext): Future[Either[B, A]] = fu.map(a => Right[B, A](a))
   }
 }
 
 trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): GlobalJwtVerifier = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): GlobalJwtVerifier = {
     val defaultJwt = GlobalJwtVerifier(
       id = IdGenerator.namedId("jwt_verifier", env),
       name = "New jwt verifier",
       desc = "New jwt verifier",
       metadata = Map.empty
-    ).copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+    ).copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .verifier
       .map { template =>

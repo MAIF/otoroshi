@@ -1,16 +1,17 @@
 package functional
 
-import org.apache.pekko.stream.Materializer
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.stream.Materializer
 import org.joda.time.LocalTime
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.SnowMonkeyChaos
 import otoroshi.next.plugins.api.NgPluginHelper
 import play.api.Configuration
 import play.api.libs.json.Json
+import play.api.libs.ws.WSBodyWritables.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

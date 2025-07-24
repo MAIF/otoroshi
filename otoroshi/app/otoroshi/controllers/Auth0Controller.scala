@@ -39,7 +39,7 @@ class AuthController(
     PrivateAppsAction: PrivateAppsAction,
     BackOfficeAction: BackOfficeAction,
     cc: ControllerComponents
-)(implicit env: Env)
+)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
@@ -207,7 +207,7 @@ class AuthController(
           attrs = TypedMap.empty
         )
       } else {
-        FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(cors.asHeaders(ctx.request): _*))
+        FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(cors.asHeaders(ctx.request)*))
       }
     }
 
@@ -274,7 +274,7 @@ class AuthController(
   def confidentialAppLoginPage(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
       import otoroshi.utils.http.RequestImplicits._
-      implicit val req: Request[AnyContent] = ctx.request
+      given req: Request[AnyContent] = ctx.request
 
       (req.getQueryString("desc"), req.getQueryString("route")) match {
         case (None, None)         => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
@@ -330,7 +330,7 @@ class AuthController(
                                         route.legacy,
                                         auth,
                                         user.some
-                                      ): _*
+                                      )*
                                     )
                                 )
                               case redirectTo                  =>
@@ -382,7 +382,7 @@ class AuthController(
                                         route.legacy,
                                         auth,
                                         user.some
-                                      ): _*
+                                      )*
                                     )
                                 )
                             }
@@ -446,7 +446,7 @@ class AuthController(
                                         descriptor,
                                         auth,
                                         user.some
-                                      ): _*
+                                      )*
                                     )
                                 )
                               case redirectTo                  =>
@@ -497,7 +497,7 @@ class AuthController(
                                         descriptor,
                                         auth,
                                         user.some
-                                      ): _*
+                                      )*
                                     )
                                 )
                             }
@@ -514,14 +514,14 @@ class AuthController(
 
   def confidentialAppLogout(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
-      implicit val req: Request[AnyContent] = ctx.request
+      given req: Request[AnyContent] = ctx.request
       val redirectToOpt: Option[String]     = req.queryString.get("redirectTo").map(_.last)
       val hostOpt: Option[String]           = req.queryString.get("host").map(_.last)
       val cookiePrefOpt: Option[String]     = req.queryString.get("cp").map(_.last)
       (redirectToOpt, hostOpt, cookiePrefOpt) match {
         case (Some(redirectTo), Some(host), Some(cp)) =>
           FastFuture.successful(
-            Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp): _*)
+            Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp)*)
           )
         case _                                        =>
           Errors.craftResponseResult(
@@ -539,7 +539,7 @@ class AuthController(
     PrivateAppsAction.async { ctx =>
       import otoroshi.utils.http.RequestImplicits._
 
-      implicit val req: Request[AnyContent] = ctx.request
+      given req: Request[AnyContent] = ctx.request
 
       def saveUser(user: PrivateAppsUser, auth: AuthModuleConfig, descriptor: ServiceDescriptor, webauthn: Boolean)(
           implicit req: RequestHeader
@@ -582,7 +582,7 @@ class AuthController(
                 Redirect(redirectTo)
                   .removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                   .withCookies(
-                    env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                    env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some)*
                   )
 
               case _ =>
@@ -604,7 +604,7 @@ class AuthController(
                       s"$redirection&hash=$hash"
                     ).removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                       .withCookies(
-                        env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some): _*
+                        env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some)*
                       )
                   case redirectTo                  =>
                     val encodedRedirectTo  =
@@ -641,7 +641,7 @@ class AuthController(
                           "desc"
                         )
                         .withCookies(
-                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some)*
                         )
                     } else {
                       Redirect(setCookiesRedirect)
@@ -650,7 +650,7 @@ class AuthController(
                           "desc"
                         )
                         .withCookies(
-                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some)*
                         )
                     }
                 }
@@ -721,7 +721,7 @@ class AuthController(
                             s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
                           )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
-                        case Right(user) => saveUser(user, auth, descriptor, true)(ctx.request)
+                        case Right(user) => saveUser(user, auth, descriptor, true)(using ctx.request)
                       }
                     case _              =>
                       BadRequest(
@@ -743,7 +743,7 @@ class AuthController(
                               title = "Authorization error"
                             )
                         ).vfuture
-                      case Right(user) => saveUser(user, auth, descriptor, false)(ctx.request)
+                      case Right(user) => saveUser(user, auth, descriptor, false)(using ctx.request)
                     }
               }
             }
@@ -776,7 +776,7 @@ class AuthController(
                             s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
                           )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
-                        case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
+                        case Right(user) => saveUser(user, auth, route.legacy, true)(using ctx.request)
                       }
                     case _              =>
                       BadRequest(
@@ -798,7 +798,7 @@ class AuthController(
                               title = "Authorization error"
                             )
                         ).vfuture
-                      case Right(user) => saveUser(user, auth, route.legacy, false)(ctx.request)
+                      case Right(user) => saveUser(user, auth, route.legacy, false)(using ctx.request)
                     }
               }
             }
@@ -820,7 +820,7 @@ class AuthController(
                             s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
                           )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
-                        case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
+                        case Right(user) => saveUser(user, auth, route.legacy, true)(using ctx.request)
                       }
                     case _              =>
                       BadRequest(
@@ -842,7 +842,7 @@ class AuthController(
                               title = "Authorization error"
                             )
                         ).vfuture
-                      case Right(user) => saveUser(user, auth, route.legacy, false)(ctx.request)
+                      case Right(user) => saveUser(user, auth, route.legacy, false)(using ctx.request)
                     }
               }
             }
@@ -911,7 +911,7 @@ class AuthController(
 
   def backOfficeLogin(): Action[AnyContent] =
     BackOfficeAction.async { ctx =>
-      implicit val request: Request[AnyContent] = ctx.request
+      given request: Request[AnyContent] = ctx.request
       env.datastores.globalConfigDataStore.singleton().flatMap { (config: GlobalConfig) =>
         if (!(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty)) {
           config.backOfficeAuthRef match {
@@ -934,7 +934,7 @@ class AuthController(
   def backOfficeLogout(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       import otoroshi.utils.http.RequestImplicits._
-      implicit val request: Request[AnyContent] = ctx.request
+      given request: Request[AnyContent] = ctx.request
       val redirect                              = request.getQueryString("redirect")
       if (ctx.user.simpleLogin) {
         ctx.user.delete().map { _ =>
@@ -1011,9 +1011,9 @@ class AuthController(
 
   def backOfficeCallback(error: Option[String] = None, error_description: Option[String] = None): Action[AnyContent] = {
     BackOfficeAction.async { ctx =>
-      implicit val request: Request[AnyContent] = ctx.request
+      given request: Request[AnyContent] = ctx.request
 
-      def saveUser(user: BackOfficeUser, auth: AuthModuleConfig, webauthn: Boolean)(implicit req: RequestHeader) = {
+      def saveUser(user: BackOfficeUser, auth: AuthModuleConfig, webauthn: Boolean)(using req: RequestHeader) = {
         user
           .save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS))
           .map { boUser =>
@@ -1074,7 +1074,7 @@ class AuthController(
                                     s"login remote validation failed: ${error.display} - ${error.internal.map(_.stringify).getOrElse("")}"
                                   )
                                   BadRequest(Json.obj("error" -> error.display)).future
-                                case Right(user) => saveUser(user, auth, true)(ctx.request)
+                                case Right(user) => saveUser(user, auth, true)(using ctx.request)
                               }
                             case _              =>
                               BadRequest(
@@ -1097,7 +1097,7 @@ class AuthController(
                               )
                             case Right(user) =>
                               if (logger.isDebugEnabled) logger.debug(s"Login successful for user '${user.email}'")
-                              saveUser(user, auth, webauthn = false)(ctx.request)
+                              saveUser(user, auth, webauthn = false)(using ctx.request)
                           }
                       }
                   }

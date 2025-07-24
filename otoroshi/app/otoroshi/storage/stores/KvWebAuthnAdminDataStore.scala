@@ -17,7 +17,7 @@ class WebAuthnRegistrationsDataStore {
 
   lazy val logger: Logger = Logger("otoroshi-webauthn-admin-datastore")
 
-  def setRegistrationRequest(requestId: String, request: JsValue)(implicit
+  def setRegistrationRequest(requestId: String, request: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -30,13 +30,13 @@ class WebAuthnRegistrationsDataStore {
       .map(_ => ())
   }
 
-  def getRegistrationRequest(requestId: String)(implicit ec: ExecutionContext, env: Env): Future[Option[JsValue]] = {
+  def getRegistrationRequest(requestId: String)(using ec: ExecutionContext, env: Env): Future[Option[JsValue]] = {
     env.datastores.rawDataStore
       .get(s"${env.storageRoot}:webauthn:regreq:$requestId")
       .map(_.map(_.utf8String).map(Json.parse))
   }
 
-  def deleteRegistrationRequest(requestId: String)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  def deleteRegistrationRequest(requestId: String)(using ec: ExecutionContext, env: Env): Future[Unit] = {
     env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:webauthn:regreq:$requestId")).map(_ => ())
   }
 }
@@ -45,22 +45,22 @@ class KvWebAuthnAdminDataStore extends WebAuthnAdminDataStore {
 
   lazy val logger: Logger = Logger("otoroshi-webauthn-admin-datastore")
 
-  def key(id: String)(implicit env: Env): String = s"${env.storageRoot}:webauthn:admins:$id"
+  def key(id: String)(using env: Env): String = s"${env.storageRoot}:webauthn:admins:$id"
 
-  def hasAlreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def hasAlreadyLoggedIn(email: String)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.rawDataStore.sismember(s"${env.storageRoot}:users:alreadyloggedin", ByteString(email))
 
-  def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  def alreadyLoggedIn(email: String)(using ec: ExecutionContext, env: Env): Future[Long] =
     env.datastores.rawDataStore.sadd(s"${env.storageRoot}:users:alreadyloggedin", Seq(ByteString(email)))
 
-  def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[WebAuthnOtoroshiAdmin]] =
+  def findByUsername(username: String)(using ec: ExecutionContext, env: Env): Future[Option[WebAuthnOtoroshiAdmin]] =
     env.datastores.rawDataStore
       .get(key(username))
       .map(_.map(v => Json.parse(v.utf8String)).flatMap { user =>
         WebAuthnOtoroshiAdmin.reads(user).asOpt
       })
 
-  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[WebAuthnOtoroshiAdmin]] =
+  def findAll()(using ec: ExecutionContext, env: Env): Future[Seq[WebAuthnOtoroshiAdmin]] =
     env.datastores.rawDataStore
       .keys(key("*"))
       .flatMap(keys =>
@@ -73,17 +73,17 @@ class KvWebAuthnAdminDataStore extends WebAuthnAdminDataStore {
         }
       )
 
-  def deleteUser(username: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  def deleteUser(username: String)(using ec: ExecutionContext, env: Env): Future[Long] =
     env.datastores.rawDataStore.del(Seq(key(username)))
 
-  def save(payload: WebAuthnOtoroshiAdmin)(implicit
+  def save(payload: WebAuthnOtoroshiAdmin)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
     env.datastores.rawDataStore.set(key(payload.username), payload.json.stringify.byteString, None)
   }
 
-  override def deleteUsers(usernames: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+  override def deleteUsers(usernames: Seq[String])(using ec: ExecutionContext, env: Env): Future[Long] = {
     if (usernames.isEmpty) {
       FastFuture.successful(0L)
     } else {
@@ -91,6 +91,6 @@ class KvWebAuthnAdminDataStore extends WebAuthnAdminDataStore {
     }
   }
 
-  override def registerUser(user: WebAuthnOtoroshiAdmin)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def registerUser(user: WebAuthnOtoroshiAdmin)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     save(user)
 }

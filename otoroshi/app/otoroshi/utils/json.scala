@@ -2,10 +2,12 @@ package otoroshi.utils.json
 
 import org.joda.time.DateTime
 import play.api.libs.json._
+import play.api.libs.json.Json.JsValueWrapper
 
 object JsonImplicits {
-  implicit val jodaDateTimeWrites: Writes[DateTime] = play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites
-  implicit val jodaDateTimeReads: Reads[DateTime]   = play.api.libs.json.JodaReads.DefaultJodaDateTimeReads
+  given jodaDateTimeWrites: Writes[DateTime] = play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites
+  given jodaDateTimeReads: Reads[DateTime]   = play.api.libs.json.JodaReads.DefaultJodaDateTimeReads
+  given jodaDateTimeWrapper: Conversion[DateTime, JsValueWrapper] = (dt: DateTime) => JsNumber(dt.getMillis)
 }
 
 object JsonPatchHelpers {

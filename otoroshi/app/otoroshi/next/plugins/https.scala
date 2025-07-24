@@ -26,7 +26,7 @@ class ForceHttpsTraffic extends NgPreRouting {
 
   override def preRouteSync(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] = {
+  )(using env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] = {
     if (!ctx.request.theSecured) {
       NgPreRoutingErrorWithResult(
         Results.Redirect(s"https://${ctx.request.theDomain}${env.exposedHttpsPort}${ctx.request.relativeUri}")
@@ -102,7 +102,7 @@ class BlockHttpTraffic extends NgAccessValidator {
 
   private val defaultMessage = "All connections to this resource MUST use HTTPS and TLS"
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     if (!ctx.request.theSecured) {
       val config =
         ctx.cachedConfig(internalName)(BlockHttpTrafficConfig.format).getOrElse(BlockHttpTrafficConfig.default)

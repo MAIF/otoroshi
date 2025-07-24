@@ -13,6 +13,7 @@ import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
+import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 
 import java.time.temporal.ChronoUnit
@@ -25,18 +26,18 @@ import play.api.mvc
 class TryItController(
     BackOfficeActionAuth: BackOfficeActionAuth,
     cc: ControllerComponents
-)(implicit
+)(using
     env: Env
 ) extends AbstractController(cc) {
 
-  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit val mat: Materializer    = env.otoroshiMaterializer
+  given ec: ExecutionContext = env.otoroshiExecutionContext
+  given mat: Materializer    = env.otoroshiMaterializer
 
-  val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("TryItController BodyParser") { _ =>
+  val sourceBodyParser: BodyParser[Source[ByteString, ?]] = BodyParser("TryItController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def kafkaDataExporterTryIt(): mvc.Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) {
+  def kafkaDataExporterTryIt(): mvc.Action[Source[ByteString, ?]] = BackOfficeActionAuth.async(sourceBodyParser) {
     ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
         val jsonBody = bodyRaw.utf8String.parseJson
@@ -82,7 +83,7 @@ class TryItController(
       }
   }
 
-  def call(entity: Option[String] = None): mvc.Action[Source[ByteString, _]] =
+  def call(entity: Option[String] = None): mvc.Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
         val requestId                = UUID.randomUUID().toString
@@ -171,8 +172,8 @@ class TryItController(
               .akkaUrlWithTarget(url, target)
               .withFollowRedirects(false)
               .withMethod(method)
-              .addHttpHeaders(headers.toSeq: _*)
-              .withCookies(cookies: _*)
+              .addHttpHeaders(headers.toSeq*)
+              .withCookies(cookies*)
               .withRequestTimeout(1.minute)
             val respF     = body match {
               case None          => wsRequest.execute()

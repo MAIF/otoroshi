@@ -32,7 +32,7 @@ class PluginDocumentationGenerator(docPath: String) {
       val scanResult: ScanResult = new ClassGraph()
         .addClassLoader(this.getClass.getClassLoader)
         .enableClassInfo()
-        .acceptPackages(allPackages: _*)
+        .acceptPackages(allPackages*)
         .scan
 
       if (logger.isDebugEnabled) logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")

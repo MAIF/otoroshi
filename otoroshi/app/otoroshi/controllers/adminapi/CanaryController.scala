@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext
 import play.api.mvc
 import play.api.mvc.AnyContent
 
-class CanaryController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class CanaryController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext

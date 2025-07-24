@@ -20,7 +20,7 @@ import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[Tenant, JsValue]
     with CrudControllerHelper[Tenant, JsValue] {
@@ -48,7 +48,7 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Tenant]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
@@ -64,7 +64,7 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[Tenant]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -81,7 +81,7 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def createEntityOps(
       entity: Tenant,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Tenant]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.set(entity).map {
       case true  =>
         Right(
@@ -106,7 +106,7 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def updateEntityOps(
       entity: Tenant,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Tenant]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.set(entity).map {
       case true  =>
         Right(
@@ -131,7 +131,7 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Tenant]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.delete(id).map {
       case true  =>
         Right(

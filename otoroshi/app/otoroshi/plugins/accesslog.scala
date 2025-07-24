@@ -139,7 +139,7 @@ class AccessLog extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
 
     val snowflake = ctx.snowflake
     val status    = ctx.rawResponse.status
@@ -200,7 +200,7 @@ class AccessLog extends RequestTransformer {
 
   override def transformErrorWithCtx(
       ctx: TransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
 
     val snowflake = ctx.snowflake
     val status    = ctx.otoroshiResponse.status
@@ -303,7 +303,7 @@ class AccessLogJson extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
 
     val snowflake = ctx.snowflake
     val status    = ctx.rawResponse.status
@@ -390,7 +390,7 @@ class AccessLogJson extends RequestTransformer {
 
   override def transformErrorWithCtx(
       ctx: TransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
 
     val snowflake = ctx.snowflake
     val status    = ctx.otoroshiResponse.status
@@ -528,7 +528,7 @@ class KafkaAccessLog extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
 
     env.datastores.globalConfigDataStore.latestSafe match {
       case None               => Right(ctx.otoroshiResponse).future
@@ -644,7 +644,7 @@ class KafkaAccessLog extends RequestTransformer {
                   })
                 ),
                 true
-              )(env, kafkaConfig)
+              )(using env, kafkaConfig)
             }
             Right(ctx.otoroshiResponse).future
         }
@@ -653,7 +653,7 @@ class KafkaAccessLog extends RequestTransformer {
 
   override def transformErrorWithCtx(
       ctx: TransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
 
     env.datastores.globalConfigDataStore.latestSafe match {
       case None               => ctx.otoroshiResult.future
@@ -772,7 +772,7 @@ class KafkaAccessLog extends RequestTransformer {
                   })
                 ),
                 true
-              )(env, kafkaConfig)
+              )(using env, kafkaConfig)
             }
             ctx.otoroshiResult.future
         }

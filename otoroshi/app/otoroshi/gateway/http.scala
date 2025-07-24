@@ -2,41 +2,37 @@ package otoroshi.gateway
 
 import org.apache.pekko.actor.{ActorRef, ActorSystem, Scheduler}
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models.{BestResponseTime, ClientConfig, RemainingQuotas, SecComVersion, WeightedBestResponseTime}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
-import otoroshi.script.Implicits._
-import otoroshi.script.{
-  TransformerRequestBodyContext,
-  TransformerRequestContext,
-  TransformerResponseBodyContext,
-  TransformerResponseContext
-}
-import otoroshi.utils.UrlSanitizer
-import play.api.Logger
-import play.api.http.HttpEntity
-import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
-import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
-import play.api.mvc.Results.{BadGateway, Forbidden, HttpVersionNotSupported, NotFound, Status}
-import play.api.mvc._
+import otoroshi.env.Env
+import otoroshi.events.*
+import otoroshi.models.*
+import otoroshi.script.Implicits.*
+import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.UrlSanitizer
+import otoroshi.utils.http.Implicits.*
+import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
-import otoroshi.utils.http.Implicits._
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits.BetterSyntax
+import play.api.Logger
+import play.api.http.HttpEntity
+import play.api.libs.json.*
+import play.api.libs.streams.Accumulator
+import play.api.libs.ws.WSBodyWritables.*
+import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
+import play.api.mvc.*
+import play.api.mvc.Results.{BadGateway, Forbidden, HttpVersionNotSupported, NotFound, Status}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
-class HttpHandler()(implicit env: Env) {
+class HttpHandler()(using env: Env) {
 
   implicit lazy val currentEc: ExecutionContext       = env.otoroshiExecutionContext
   implicit lazy val currentScheduler: Scheduler       = env.otoroshiScheduler
@@ -45,7 +41,7 @@ class HttpHandler()(implicit env: Env) {
 
   lazy val logger: Logger = Logger("otoroshi-http-handler")
 
-  val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("Http BodyParser") { _ =>
+  val sourceBodyParser: BodyParser[Source[ByteString, ?]] = BodyParser("Http BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
@@ -55,7 +51,7 @@ class HttpHandler()(implicit env: Env) {
       snowMonkey: SnowMonkey,
       headersInFiltered: Seq[String],
       headersOutFiltered: Seq[String]
-  ): (RequestHeader, Source[ByteString, _]) => Future[Result] = { (req, body) =>
+  ): (RequestHeader, Source[ByteString, ?]) => Future[Result] = { (req, body) =>
     {
       reverseProxyAction
         .async[Result](
@@ -77,7 +73,7 @@ class HttpHandler()(implicit env: Env) {
       snowMonkey: SnowMonkey,
       headersInFiltered: Seq[String],
       headersOutFiltered: Seq[String]
-  ): Action[Source[ByteString, _]] =
+  ): Action[Source[ByteString, ?]] =
     actionBuilder.async(sourceBodyParser) { req =>
       env.metrics.withTimerAsync("handle-request")(
         reverseProxyAction
@@ -99,7 +95,7 @@ class HttpHandler()(implicit env: Env) {
       snowMonkey: SnowMonkey,
       headersInFiltered: Seq[String],
       headersOutFiltered: Seq[String]
-  ): Request[Source[ByteString, _]] => Future[Result] = (req: Request[Source[ByteString, _]]) => {
+  ): Request[Source[ByteString, ?]] => Future[Result] = (req: Request[Source[ByteString, ?]]) => {
     reverseProxyAction
       .async[Result](
         ReverseProxyActionContext(req, req.body, snowMonkey, logger),
@@ -374,10 +370,10 @@ class HttpHandler()(implicit env: Env) {
         )
         evt.toAnalytics()
         if (descriptor.logAnalyticsOnServer) {
-          evt.log()(env, env.analyticsExecutionContext) // pressure EC
+          evt.log()(using env, env.analyticsExecutionContext) // pressure EC
         }
-      }(env.analyticsExecutionContext) // pressure EC
-    }(env.analyticsExecutionContext) // pressure EC
+      }(using env.analyticsExecutionContext) // pressure EC
+    }(using env.analyticsExecutionContext) // pressure EC
     //.andThen {
     //  case _ => env.datastores.requestsDataStore.decrementProcessedRequests()
     //}
@@ -475,7 +471,7 @@ class HttpHandler()(implicit env: Env) {
                 otoroshiHeadersIn = headersIn.map(Header.apply)
               )
             )
-            badResult.withHeaders(_headersOut: _*)
+            badResult.withHeaders(_headersOut*)
           }
         case Right(httpRequest) =>
           val upstreamStart = System.currentTimeMillis()
@@ -517,13 +513,13 @@ class HttpHandler()(implicit env: Env) {
             .withFailureIndicator(alreadyFailed)
             //.withRequestTimeout(env.requestTimeout) // we should monitor leaks
             .withMethod(httpRequest.method)
-            // .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
+            // .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie")*)
             .withHttpHeaders(
               HeadersHelper
                 .addClaims(httpRequest.headers, httpRequest.claims, descriptor)
-                .filterNot(_._1 == "Cookie"): _*
+                .filterNot(_._1 == "Cookie")*
             )
-            .withCookies(wsCookiesIn: _*)
+            .withCookies(wsCookiesIn*)
             .withFollowRedirects(false)
             .withMaybeProxyServer(
               descriptor.clientConfig.proxy.orElse(globalConfig.proxies.services)
@@ -695,7 +691,7 @@ class HttpHandler()(implicit env: Env) {
                           case _                                                                                     => false
                         }
 
-                        val theStream: Source[ByteString, _] = resp.bodyAsSource
+                        val theStream: Source[ByteString, ?] = resp.bodyAsSource
                           .concat(snowMonkeyContext.trailingResponseBodyStream)
                           .alsoTo(Sink.onComplete {
                             case Success(_) =>
@@ -815,11 +811,11 @@ class HttpHandler()(implicit env: Env) {
                                     headersOut.filterNot { h =>
                                       val lower = h._1.toLowerCase()
                                       lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                    }: _*
+                                    }*
                                   )
                                   .withCookies(
                                     withTrackingCookies ++ jwtInjection.additionalCookies
-                                      .map(t => Cookie(t._1, t._2)) ++ cookies: _*
+                                      .map(t => Cookie(t._1, t._2)) ++ cookies*
                                   )
                                 contentType match {
                                   case None      => descriptor.gzip.handleResult(req, response)
@@ -855,11 +851,11 @@ class HttpHandler()(implicit env: Env) {
                                   headersOut.filterNot { h =>
                                     val lower = h._1.toLowerCase()
                                     lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                  }: _*
+                                  }*
                                 )
                                 .withCookies(
                                   (withTrackingCookies ++ jwtInjection.additionalCookies
-                                    .map(t => Cookie(t._1, t._2)) ++ cookies): _*
+                                    .map(t => Cookie(t._1, t._2)) ++ cookies)*
                                 )
                               contentType match {
                                 case None      => res
@@ -907,11 +903,11 @@ class HttpHandler()(implicit env: Env) {
                                   headersOut.filterNot { h =>
                                     val lower = h._1.toLowerCase()
                                     lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                  }: _*
+                                  }*
                                 )
                                 .withCookies(
                                   (withTrackingCookies ++ jwtInjection.additionalCookies
-                                    .map(t => Cookie(t._1, t._2)) ++ cookies): _*
+                                    .map(t => Cookie(t._1, t._2)) ++ cookies)*
                                 )
                               contentType match {
                                 case None      => res

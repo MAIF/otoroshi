@@ -72,8 +72,8 @@ object MyApp extends App {
   ).start()
 
   // will be useful to use Otoroshi internal apis
-  implicit val env = otoroshi.env
-  implicit val ec = otoroshi.executionContext
+  given env = otoroshi.env
+  given ec = otoroshi.executionContext
 
   for {
     _ <- otoroshi.dataStores.serviceGroupDataStore.set(group)

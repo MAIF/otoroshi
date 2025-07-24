@@ -27,9 +27,9 @@ object RequestImplicits {
       )
     }
     @inline
-    def theDomain(implicit env: Env): String = theHost.split(':').head
+    def theDomain(using env: Env): String = theHost.split(':').head
     @inline
-    def theSecured(implicit env: Env): Boolean = {
+    def theSecured(using env: Env): Boolean = {
       if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
         requestHeader.headers
           .get("X-Forwarded-Proto")
@@ -49,11 +49,11 @@ object RequestImplicits {
         .getOrElse(requestHeader.secure)
     }
     @inline
-    def theUrl(implicit env: Env): String = {
+    def theUrl(using env: Env): String = {
       s"$theProtocol://$theHost$relativeUri"
     }
     @inline
-    def theProtocol(implicit env: Env): String = {
+    def theProtocol(using env: Env): String = {
       if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
         requestHeader.headers
           .get("X-Forwarded-Proto")
@@ -70,7 +70,7 @@ object RequestImplicits {
       }
     }
     @inline
-    def theWsProtocol(implicit env: Env): String = {
+    def theWsProtocol(using env: Env): String = {
       if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
         requestHeader.headers
           .get("X-Forwarded-Proto")
@@ -87,7 +87,7 @@ object RequestImplicits {
       }
     }
     @inline
-    def theHost(implicit env: Env): String = {
+    def theHost(using env: Env): String = {
       if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
         requestHeader.headers.get("X-Forwarded-Host").getOrElse(requestHeader.host)
       } else {
@@ -95,7 +95,7 @@ object RequestImplicits {
       }
     }
     @inline
-    def theIpAddress(implicit env: Env): String = {
+    def theIpAddress(using env: Env): String = {
       if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
         requestHeader.headers
           .get("X-Forwarded-For")

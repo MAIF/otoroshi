@@ -75,11 +75,11 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
-    implicit val req: RequestHeader = request
+    given req: RequestHeader = request
 
     val redirect   = request
       .getQueryString("redirect")
@@ -133,7 +133,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
     getLogoutRequest(env, authConfig, user.map(_.metadata.getOrElse("saml-id", ""))).map {
       case Left(_)        => Right(None)
       case Right(encoded) =>
@@ -155,7 +155,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -224,7 +224,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -241,12 +241,12 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
           } else {
             s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}"
           }
-          Redirect(redirectUrl).addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))(request)
+          Redirect(redirectUrl).addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))(using request)
         }
     }
   }
 
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = {
@@ -271,7 +271,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, BackOfficeUser]] = {
@@ -377,7 +377,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           singleSignOnUrl = (json \ "singleSignOnUrl").as[String],
           singleLogoutUrl = (json \ "singleLogoutUrl").asOpt[String].filter(_.nonEmpty),
-          credentials = (json \ "credentials").as[SAMLCredentials](SAMLCredentials.fmt),
+          credentials = (json \ "credentials").as[SAMLCredentials](using SAMLCredentials.fmt),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
@@ -401,12 +401,12 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .map(n => NameIDFormat(n).getOrElse(NameIDFormat.Transient))
             .getOrElse(NameIDFormat.Transient),
           validateAssertions = (json \ "validateAssertions").as[Boolean],
-          signature = (json \ "signature").as[SAMLSignature](SAMLSignature.fmt),
+          signature = (json \ "signature").as[SAMLSignature](using SAMLSignature.fmt),
           usedNameIDAsEmail = (json \ "usedNameIDAsEmail").asOpt[Boolean].getOrElse(true),
           emailAttributeName = (json \ "emailAttributeName").asOpt[String],
           clientSideSessionEnabled = (json \ "clientSideSessionEnabled").asOpt[Boolean].getOrElse(true),
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+            (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
@@ -645,8 +645,8 @@ object SAMLCredentials {
         Try {
           JsSuccess(
             SAMLCredentials(
-              signingKey = (json \ "signingKey").as[Credential](Credential.fmt),
-              encryptionKey = (json \ "encryptionKey").as[Credential](Credential.fmt),
+              signingKey = (json \ "signingKey").as[Credential](using Credential.fmt),
+              encryptionKey = (json \ "encryptionKey").as[Credential](using Credential.fmt),
               signedDocuments = (json \ "signedDocuments").asOpt[Boolean].getOrElse(false),
               encryptedAssertions = (json \ "encryptedAssertions").asOpt[Boolean].getOrElse(false)
             )
@@ -801,7 +801,7 @@ case class SamlAuthModuleConfig(
   override def form: Option[Form]                                       = None
   override def authModule(config: GlobalConfig): AuthModule             = new SAMLModule(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
   override def cookieSuffix(desc: ServiceDescriptor): String            = s"saml-auth-$id"
   override def asJson: JsValue                                          = location.jsonWithKey ++ Json.obj(
     "type"                          -> "saml",
@@ -837,7 +837,7 @@ case class SamlAuthModuleConfig(
     }.toMap)
   )
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.authConfigsDataStore.set(this)
   }
 }
@@ -860,7 +860,7 @@ object SAMLModule {
   )
 
   def getRequest(env: Env, samlConfig: SamlAuthModuleConfig): Future[Either[String, String]] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    given ec: ExecutionContext = env.otoroshiExecutionContext
 
     InitializationService.initialize()
 
@@ -903,7 +903,7 @@ object SAMLModule {
       samlConfig: SamlAuthModuleConfig,
       nameId: Option[String]
   ): Future[Either[String, String]] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    given ec: ExecutionContext = env.otoroshiExecutionContext
 
     val request = buildObject(LogoutRequest.DEFAULT_ELEMENT_NAME).asInstanceOf[LogoutRequest]
     request.setID("z" + UUID.randomUUID().toString)
@@ -996,12 +996,12 @@ object SAMLModule {
   }
 
   def credentialToCertificate(env: Env, credential: Credential): Future[Either[String, Option[BasicX509Credential]]] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    given ec: ExecutionContext = env.otoroshiExecutionContext
 
     credential match {
       case Credential(_, _, Some(certId), true)                      =>
         env.datastores.certificatesDataStore
-          .findById(certId)(ec, env)
+          .findById(certId)(using ec, env)
           .map { optCert =>
             optCert
               .map { cert =>
@@ -1044,7 +1044,7 @@ object SAMLModule {
       samlConfig: SamlAuthModuleConfig,
       samlObject: RequestAbstractType
   ): Future[Either[String, RequestAbstractType]] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    given ec: ExecutionContext = env.otoroshiExecutionContext
 
     if (samlConfig.credentials.signedDocuments)
       credentialToCertificate(env, samlConfig.credentials.signingKey)
@@ -1094,7 +1094,7 @@ object SAMLModule {
   }
 
   def decodeEncryptedAssertion(env: Env, samlConfig: SamlAuthModuleConfig, response: Response): Any = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    given ec: ExecutionContext = env.otoroshiExecutionContext
 
     if (samlConfig.credentials.encryptedAssertions && response.getEncryptedAssertions.size() > 0)
       samlConfig.credentials.encryptionKey match {
@@ -1111,7 +1111,7 @@ object SAMLModule {
 
         case Credential(_, _, Some(certId), true) =>
           env.datastores.certificatesDataStore
-            .findById(certId)(ec, env)
+            .findById(certId)(using ec, env)
             .map { optCert =>
               optCert.map { cert =>
                 DynamicSSLEngineProvider.readPrivateKeyUniversal("test", cert.privateKey, cert.password) match {

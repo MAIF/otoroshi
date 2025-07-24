@@ -15,18 +15,18 @@ class IdGenerator(generatorId: Long) {
 
 object IdGenerator {
 
-  private[this] val LOWER_CASE_CHARACTERS =
+  private val LOWER_CASE_CHARACTERS =
     "abcdefghijklmnopqrstuvwxyz0123456789".toCharArray.map(_.toString)
-  private[this] val CHARACTERS            =
+  private val CHARACTERS            =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray.map(_.toString)
-  private[this] val EXTENDED_CHARACTERS   =
+  private val EXTENDED_CHARACTERS   =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789*$%)([]!=+-_:/;.><&".toCharArray.map(_.toString)
-  private[this] val INIT_STRING           = for (i <- 0 to 15) yield Integer.toHexString(i)
+  private val INIT_STRING           = for (i <- 0 to 15) yield Integer.toHexString(i)
 
-  private[this] val minus         = 1288834974657L
-  private[this] val counter       = new AtomicLong(-1L)
-  private[this] val lastTimestamp = new AtomicLong(-1L)
-  private[this] val duplicates    = new AtomicLong(-0L)
+  private val minus         = 1288834974657L
+  private val counter       = new AtomicLong(-1L)
+  private val lastTimestamp = new AtomicLong(-1L)
+  private val duplicates    = new AtomicLong(-0L)
 
   def apply(generatorId: Long) = new IdGenerator(generatorId)
 

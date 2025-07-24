@@ -8,6 +8,7 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.ws.WSBodyWritables._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -41,7 +42,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       )
     ).flatten
 
-  override def publish(event: Seq[JsValue])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def publish(event: Seq[JsValue])(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val state = IdGenerator.extendedToken(128)
     val claim = OtoroshiClaim(
       iss = env.Headers.OtoroshiIssuer,
@@ -50,9 +51,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       exp = DateTime.now().plusSeconds(30).toDate.getTime,
       iat = DateTime.now().toDate.getTime,
       jti = IdGenerator.uuid
-    ).serialize(HSAlgoSettings(512, "${config.app.claim.sharedKey}"))(
-      env
-    ) // TODO : maybe we need some config here ?
+    ).serialize(HSAlgoSettings(512, "${config.app.claim.sharedKey}"))
     val headers: Seq[(String, String)] = webhook.headers.toSeq ++ Seq(
       env.Headers.OtoroshiState -> state,
       env.Headers.OtoroshiClaim -> claim
@@ -77,7 +76,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       .getOrElse(webhook.url)
     val postResponse = env.MtlsWs
       .url(url, webhook.mtlsConfig)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withMaybeProxyServer(config.proxies.eventsWebhooks)
       .post(JsArray(event))
     postResponse.andThen {

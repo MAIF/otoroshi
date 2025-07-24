@@ -24,7 +24,7 @@ case class WasmPlugin(
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.wasmPluginsDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.wasmPluginsDataStore.set(this)
   override def internalId: String                                      = id
   override def json: JsValue                                           = WasmPlugin.format.writes(this)
   override def theName: String                                         = name
@@ -56,7 +56,7 @@ object WasmPlugin {
         id = (json \ "id").as[String],
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
-        config = (json \ "config").asOpt(WasmConfig.format).getOrElse(WasmConfig()),
+        config = (json \ "config").asOpt(using WasmConfig.format).getOrElse(WasmConfig()),
         steps = (json \ "steps")
           .asOpt[Seq[String]]
           .map(_.map(NgStep.apply).collect { case Some(s) => s })
@@ -72,7 +72,7 @@ object WasmPlugin {
 }
 
 trait WasmPluginDataStore extends BasicStore[WasmPlugin] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): WasmPlugin = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): WasmPlugin = {
     val defaultWasmPlugin = WasmPlugin(
       id = IdGenerator.namedId("wasm-plugin", env),
       name = "New wasm plugin",
@@ -80,9 +80,9 @@ trait WasmPluginDataStore extends BasicStore[WasmPlugin] {
       tags = Seq.empty,
       metadata = Map.empty,
       config = WasmConfig()
-    ).copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+    ).copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .script
       .map { template =>
@@ -98,7 +98,7 @@ class KvWasmPluginDataStore(redisCli: RedisLike, _env: Env)
     extends WasmPluginDataStore
     with RedisLikeStore[WasmPlugin] {
   override def fmt: Format[WasmPlugin]                 = WasmPlugin.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:wasm-plugins:$id"
   override def extractId(value: WasmPlugin): String    = value.id
 }
@@ -124,7 +124,7 @@ class WasmPluginsCacheManager extends Job {
   override def cronExpression(ctx: JobContext, env: Env): Option[String] = None
   override def predicate(ctx: JobContext, env: Env): Option[Boolean]     = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.wasmIntegration.runVmLoaderJob()
   }
 }

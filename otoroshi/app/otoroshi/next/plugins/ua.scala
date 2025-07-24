@@ -49,7 +49,7 @@ class NgUserAgentExtractor extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     ctx.request.headers.get("User-Agent") match {
       case None     => Done.rightf
       case Some(ua) =>
@@ -80,7 +80,7 @@ class NgUserAgentInfoEndpoint extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
       case ("get", "/.well-known/otoroshi/plugins/user-agent") =>
         ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
@@ -128,7 +128,7 @@ class NgUserAgentInfoHeader extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =
       ctx.cachedConfig(internalName)(NgUserAgentInfoHeaderConfig.format).getOrElse(NgUserAgentInfoHeaderConfig())
     ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {

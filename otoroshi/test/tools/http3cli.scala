@@ -15,7 +15,7 @@
 /*
 class Http3ClientSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
+  given ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
   val fu = for {
     resp0 <- NettyHttp3Client.getUrl(
@@ -29,7 +29,7 @@ class Http3ClientSpec extends AnyWordSpec with Matchers with OptionValues {
                "POST",
                "https://test-basic-apikey-next-gen.oto.tools:10048/",
                Map.empty,
-               Some(NettyHttp3ClientBody(Flux.just(Seq(ByteString("coucou")): _*), "text/plain".some, 6L.some))
+               Some(NettyHttp3ClientBody(Flux.just(Seq(ByteString("coucou"))*), "text/plain".some, 6L.some))
              )
     resp4 <- NettyHttp3Client.getUrl("GET", "https://www.google.fr", Map.empty, None)
   } yield {

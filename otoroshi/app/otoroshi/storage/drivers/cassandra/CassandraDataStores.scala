@@ -51,10 +51,10 @@ class CassandraDataStores(
 
   lazy val mat: Materializer = Materializer(actorSystem)
 
-  lazy val redis: RedisLike with RawGetRedis = new NewCassandraRedis(
+  lazy val redis: RedisLike & RawGetRedis = new NewCassandraRedis(
     actorSystem,
     configuration
-  )(actorSystem.dispatcher, mat, env)
+  )(using actorSystem.dispatcher, mat, env)
 
   override def before(
       configuration: Configuration,
@@ -166,14 +166,14 @@ class CassandraDataStores(
   override def errorTemplateDataStore: ErrorTemplateDataStore                   = _errorTemplateDataStore
   override def requestsDataStore: RequestsDataStore                             = _requestsDataStore
   override def canaryDataStore: CanaryDataStore                                 = _canaryDataStore
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(using ec)
   override def chaosDataStore: ChaosDataStore                                   = _chaosDataStore
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
   override def rawExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -225,11 +225,11 @@ class CassandraDataStores(
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]] = {
 
-    implicit val ev: Env               = env
-    implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer     = env.otoroshiMaterializer
+    given ev: Env               = env
+    given ecc: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer     = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -264,15 +264,15 @@ class CassandraDataStores(
     )
   }
 
-  override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
+  override def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit] = {
 
-    implicit val ev: Env               = env
-    implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer     = env.otoroshiMaterializer
+    given ev: Env               = env
+    given ecc: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer     = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
           .mapAsync(1) { json =>
@@ -287,8 +287,8 @@ class CassandraDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify).toSeq*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify).toSeq*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
@@ -303,7 +303,7 @@ class CassandraDataStores(
       }
   }
 
-  private def fetchValueForType(key: String, typ: String, value: Any)(implicit
+  private def fetchValueForType(key: String, typ: String, value: Any)(using
       ec: ExecutionContext
   ): Future[JsValue] = {
     (typ, value) match {

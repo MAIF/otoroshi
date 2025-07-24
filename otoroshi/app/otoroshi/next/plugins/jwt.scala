@@ -18,6 +18,7 @@ import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterString, BetterSyntax}
 import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
+import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.{Result, Results}
 
 import java.net.URLEncoder
@@ -65,7 +66,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
     "This plugin verifies the current request with one or more jwt verifier".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtVerificationConfig().some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgJwtVerificationConfig.format).getOrElse(NgJwtVerificationConfig())
 
     config.verifiers match {
@@ -76,7 +77,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     ctx.attrs.get(JwtInjectionKey) match {
       case None            => ctx.otoroshiRequest.right
       case Some(injection) =>
@@ -109,7 +110,7 @@ object JwtVerifierUtils {
       .vfuture
   }
 
-  def verify(ctx: NgAccessContext, verifierIds: Seq[String])(implicit
+  def verify(ctx: NgAccessContext, verifierIds: Seq[String])(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgAccess] = {
@@ -193,7 +194,7 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
   override def description: Option[String]       =
     "This plugin verifies the current request with one jwt verifier".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config =
       ctx.cachedConfig(internalName)(NgJwtVerificationOnlyConfig.format).getOrElse(NgJwtVerificationOnlyConfig())
 
@@ -261,7 +262,7 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
   override def name: String                      = "Jwt signer"
   override def description: Option[String]       = "This plugin can only generate token".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgJwtSignerConfig.format).getOrElse(NgJwtSignerConfig())
 
     if (config.failIfPresent) {
@@ -284,7 +285,7 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx.cachedConfig(internalName)(NgJwtSignerConfig.format).getOrElse(NgJwtSignerConfig())
 
     config.verifier match {
@@ -519,7 +520,7 @@ class JweSigner extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(NgJweSignerConfig.format).getOrElse(NgJweSignerConfig())
 
     config.certId match {
@@ -653,7 +654,7 @@ class JweExtractor extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(NgJweSignerConfig.format).getOrElse(NgJweSignerConfig())
 
     config.certId match {

@@ -15,14 +15,14 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
     extends AuthConfigsDataStore
     with RedisLikeStore[AuthModuleConfig] {
 
-  override def redisLike(implicit env: Env): RedisLike    = redisCli
+  override def redisLike(using env: Env): RedisLike    = redisCli
   override def fmt: Format[AuthModuleConfig]              = AuthModuleConfig._fmt(_env)
   override def key(id: String): String                    = s"${_env.storageRoot}:auth:configs:$id"
   override def extractId(value: AuthModuleConfig): String = value.id
 
   override def generateLoginToken(
       maybeTokenValue: Option[String] = None
-  )(implicit ec: ExecutionContext): Future[String] = {
+  )(using ec: ExecutionContext): Future[String] = {
     val token = maybeTokenValue.getOrElse(IdGenerator.token(128))
     if (_env.clusterConfig.mode.isWorker) {
       for {
@@ -35,7 +35,7 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
         .map(_ => token)
     }
   }
-  override def validateLoginToken(token: String)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def validateLoginToken(token: String)(using ec: ExecutionContext): Future[Boolean] = {
     if (_env.clusterConfig.mode.isWorker) {
       redisCli.exists(s"${_env.storageRoot}:auth:tokens:$token").flatMap {
         case true  =>
@@ -51,7 +51,7 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
     // FastFuture.successful(true)
   }
 
-  override def setUserForToken(token: String, user: JsValue)(implicit ec: ExecutionContext): Future[Unit] = {
+  override def setUserForToken(token: String, user: JsValue)(using ec: ExecutionContext): Future[Unit] = {
     if (_env.clusterConfig.mode.isWorker) {
       for {
         _ <- redisCli.set(
@@ -72,7 +72,7 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
     }
   }
 
-  override def getUserForToken(token: String)(implicit ec: ExecutionContext): Future[Option[JsValue]] = {
+  override def getUserForToken(token: String)(using ec: ExecutionContext): Future[Option[JsValue]] = {
     if (_env.clusterConfig.mode.isWorker) {
       redisCli
         .get(s"${_env.storageRoot}:auth:tokens:$token:user")

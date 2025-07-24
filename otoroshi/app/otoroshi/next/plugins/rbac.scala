@@ -178,7 +178,7 @@ class RBAC extends NgAccessValidator {
     pathMatch || dataMatch || matches(rolesTags, config) || matches(rolesMeta.toSeq, config)
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     var shouldPass = false
     val config     = ctx.cachedConfig(internalName)(RBACConfig.format).getOrElse(RBACConfig())
     ctx.attrs.get(otoroshi.next.plugins.Keys.JwtInjectionKey).foreach { injection =>

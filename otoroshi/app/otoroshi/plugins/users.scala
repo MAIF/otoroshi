@@ -56,7 +56,7 @@ class HasAllowedUsersValidator extends AccessValidator {
       |```
     """.stripMargin)
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.user match {
       case Some(user) =>
         val config              = (context.config \ "HasAllowedUsersValidator")

@@ -75,7 +75,7 @@ class PrivateAppsSessionManager(env: Env) {
 object implicits {
 
   implicit class RequestHeaderWithPrivateAppSession(val rh: RequestHeader) extends AnyVal {
-    def privateAppSession(implicit env: Env): Session = {
+    def privateAppSession(using env: Env): Session = {
       if (env.privateAppsSessionManager.isEnabled) {
         env.privateAppsSessionManager.decodeFromCookies(rh)
       } else {
@@ -85,7 +85,7 @@ object implicits {
   }
 
   implicit class ResultWithPrivateAppSession(val result: Result) extends AnyVal {
-    def privateAppSession(implicit request: RequestHeader, env: Env): Session = {
+    def privateAppSession(using request: RequestHeader, env: Env): Session = {
       if (env.privateAppsSessionManager.isEnabled) {
         env.privateAppsSessionManager.decodeFromCookies(request)
       } else {
@@ -93,7 +93,7 @@ object implicits {
       }
     }
 
-    def withPrivateAppSession(session: Session)(implicit env: Env): Result = try {
+    def withPrivateAppSession(session: Session)(using env: Env): Result = try {
       if (env.privateAppsSessionManager.isEnabled) {
         result.withCookies(env.privateAppsSessionManager.encodeAsCookie(session))
       } else {
@@ -105,11 +105,11 @@ object implicits {
         result
     }
 
-    def addingToPrivateAppSession(values: (String, String)*)(implicit request: RequestHeader, env: Env): Result = try {
+    def addingToPrivateAppSession(values: (String, String)*)(using request: RequestHeader, env: Env): Result = try {
       if (env.privateAppsSessionManager.isEnabled) {
         withPrivateAppSession(new Session(privateAppSession.data ++ values.toMap))
       } else {
-        result.addingToSession(values: _*)
+        result.addingToSession(values*)
       }
     } catch {
       case t: Throwable =>
@@ -117,11 +117,11 @@ object implicits {
         result
     }
 
-    def removingFromPrivateAppSession(keys: String*)(implicit request: RequestHeader, env: Env): Result = try {
+    def removingFromPrivateAppSession(keys: String*)(using request: RequestHeader, env: Env): Result = try {
       if (env.privateAppsSessionManager.isEnabled) {
         withPrivateAppSession(new Session(privateAppSession.data -- keys))
       } else {
-        result.removingFromSession(keys: _*)
+        result.removingFromSession(keys*)
       }
     } catch {
       case t: Throwable =>

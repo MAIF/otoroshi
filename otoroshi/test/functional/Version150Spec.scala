@@ -26,7 +26,7 @@ class ServiceGroupApiSpec(name: String, configurationSpec: => Configuration)
     extends OtoroshiSpec
     with ApiTester[ServiceGroup] {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -81,7 +81,7 @@ class TcpServiceApiSpec(name: String, configurationSpec: => Configuration)
     extends OtoroshiSpec
     with ApiTester[TcpService] {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -129,7 +129,7 @@ class TcpServiceApiSpec(name: String, configurationSpec: => Configuration)
 
 class ScriptApiSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec with ApiTester[Script] {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -179,7 +179,7 @@ class AuthModuleConfigApiSpec(name: String, configurationSpec: => Configuration)
     extends OtoroshiSpec
     with ApiTester[AuthModuleConfig] {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -230,7 +230,7 @@ class ClientValidatorApiSpec(name: String, configurationSpec: => Configuration)
     extends OtoroshiSpec
     with ApiTester[ClientCertificateValidator] {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -283,7 +283,7 @@ class JWTVerifierApiSpec(name: String, configurationSpec: => Configuration)
     extends OtoroshiSpec
     with ApiTester[GlobalJwtVerifier] {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -332,7 +332,7 @@ class JWTVerifierApiSpec(name: String, configurationSpec: => Configuration)
 
 class CertificateApiSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec with ApiTester[Cert] {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -364,7 +364,7 @@ class CertificateApiSpec(name: String, configurationSpec: => Configuration) exte
   }
 
   override def queryParams: Seq[(String, String)]       = Seq(("enrich", "false"))
-  override def singleEntity(): Cert                       = Await.result(env.datastores.certificatesDataStore.template()(ec, env), 10.seconds)
+  override def singleEntity(): Cert                       = Await.result(env.datastores.certificatesDataStore.template()(using ec, env), 10.seconds)
   override def entityName: String                         = "Cert"
   override def route(): String                            = "/api/certificates"
   override def readEntityFromJson(json: JsValue): Cert    = Cert._fmt.reads(json).get
@@ -383,7 +383,7 @@ class ServicesApiSpec(name: String, configurationSpec: => Configuration)
     extends OtoroshiSpec
     with ApiTester[ServiceDescriptor] {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -434,7 +434,7 @@ class ApikeyGroupApiSpec(name: String, configurationSpec: => Configuration)
     extends OtoroshiSpec
     with ApiTester[ApiKey] {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -484,7 +484,7 @@ class ApikeyServiceApiSpec(name: String, configurationSpec: => Configuration)
     extends OtoroshiSpec
     with ApiTester[ApiKey] {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -535,7 +535,7 @@ class ApikeyServiceApiSpec(name: String, configurationSpec: => Configuration)
 
 class ApikeyApiSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec with ApiTester[ApiKey] {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =

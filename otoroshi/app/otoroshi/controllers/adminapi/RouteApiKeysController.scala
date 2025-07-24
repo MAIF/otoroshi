@@ -27,7 +27,7 @@ import scala.util.{Failure, Success}
 import play.api.mvc
 import play.api.mvc.AnyContent
 
-class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 

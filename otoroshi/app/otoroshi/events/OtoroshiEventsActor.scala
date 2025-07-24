@@ -65,7 +65,7 @@ import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 object OtoroshiEventsActorSupervizer {
-  def props(implicit env: Env): Props = Props(new OtoroshiEventsActorSupervizer(env))
+  def props(using env: Env): Props = Props(new OtoroshiEventsActorSupervizer(env))
 }
 
 case object StartExporters
@@ -76,8 +76,8 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 
   lazy val logger: Logger = Logger("otoroshi-events-actor-supervizer")
 
-  implicit val e: Env               = env
-  implicit val ec: ExecutionContext = env.analyticsExecutionContext
+  given e: Env               = env
+  given ec: ExecutionContext = env.analyticsExecutionContext
 
   val dataExporters: TrieMap[String, DataExporter] = new UnboundedTrieMap[String, DataExporter]()
   val lastUpdate                                   = new AtomicReference[Long](0L)
@@ -183,18 +183,18 @@ trait CustomDataExporter extends NamedPlugin with StartableAndStoppable {
 
   override def pluginType: PluginType = PluginType.DataExporterType
 
-  def accept(event: JsValue, ctx: CustomDataExporterContext)(implicit env: Env): Boolean
+  def accept(event: JsValue, ctx: CustomDataExporterContext)(using env: Env): Boolean
 
-  def project(event: JsValue, ctx: CustomDataExporterContext)(implicit env: Env): JsValue
+  def project(event: JsValue, ctx: CustomDataExporterContext)(using env: Env): JsValue
 
-  def send(events: Seq[JsValue], ctx: CustomDataExporterContext)(implicit
+  def send(events: Seq[JsValue], ctx: CustomDataExporterContext)(using
       ec: ExecutionContext,
       env: Env
   ): Future[ExportResult]
 
-  def startExporter(ctx: CustomDataExporterContext)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def startExporter(ctx: CustomDataExporterContext)(using ec: ExecutionContext, env: Env): Future[Unit]
 
-  def stopExporter(ctx: CustomDataExporterContext)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def stopExporter(ctx: CustomDataExporterContext)(using ec: ExecutionContext, env: Env): Future[Unit]
 }
 
 object DataExporter {
@@ -218,10 +218,10 @@ object DataExporter {
     override def `@id`: String                       = raw.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
     override def `@timestamp`: DateTime              =
       raw.select("@timestamp").asOpt[String].map(DateTime.parse).getOrElse(DateTime.now())
-    override def toJson(implicit _env: Env): JsValue = raw
+    override def toJson(using _env: Env): JsValue = raw
   }
 
-  abstract class DefaultDataExporter(originalConfig: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+  abstract class DefaultDataExporter(originalConfig: DataExporterConfig)(using ec: ExecutionContext, env: Env)
       extends DataExporter {
 
     lazy val ref = new AtomicReference[DataExporterConfig](originalConfig)
@@ -271,7 +271,7 @@ object DataExporter {
           }
         }
 
-      val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
+      val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(using env.analyticsMaterializer)
 
       (stream, queue, done)
     }
@@ -376,8 +376,8 @@ object DataExporter {
 
 object Exporters {
 
-  class TCPExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class TCPExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     import io.netty.channel.ChannelOption
     import io.netty.handler.ssl.SslContextBuilder
@@ -419,14 +419,14 @@ object Exporters {
               val ctx                     = SslContextBuilder
                 .forClient()
                 .applyOn { ctx =>
-                  certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
+                  certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain*))
                   ctx
                 }
                 .applyOn { ctx =>
                   if (trustAll) {
                     ctx.trustManager(new VeryNiceTrustManager(Seq.empty))
                   } else {
-                    ctx.trustManager(trustedCerts.map(_.certificatesChain.head): _*)
+                    ctx.trustManager(trustedCerts.map(_.certificatesChain.head)*)
                   }
                 }
                 .build()
@@ -535,8 +535,8 @@ object Exporters {
     }
   }
 
-  class UDPExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class UDPExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     import io.netty.channel.unix.DomainSocketAddress
     import reactor.core.publisher.Mono
@@ -662,8 +662,8 @@ object Exporters {
     }
   }
 
-  class SyslogExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class SyslogExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     val clientRef  = new AtomicReference[Connection](null)
     val connecting = new AtomicBoolean(false)
@@ -705,14 +705,14 @@ object Exporters {
                 val ctx                     = SslContextBuilder
                   .forClient()
                   .applyOn { ctx =>
-                    certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
+                    certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain*))
                     ctx
                   }
                   .applyOn { ctx =>
                     if (trustAll) {
                       ctx.trustManager(new VeryNiceTrustManager(Seq.empty))
                     } else {
-                      ctx.trustManager(trustedCerts.map(_.certificatesChain.head): _*)
+                      ctx.trustManager(trustedCerts.map(_.certificatesChain.head)*)
                     }
                   }
                   .build()
@@ -928,8 +928,8 @@ object Exporters {
     }
   }
 
-  class JMSExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class JMSExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     val clientRef  = new AtomicReference[JMSConnection](null)
     val connecting = new AtomicBoolean(false)
@@ -998,8 +998,8 @@ object Exporters {
     }
   }
 
-  class ElasticExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class ElasticExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     val clientRef = new AtomicReference[ElasticWritesAnalytics]()
 
@@ -1025,8 +1025,8 @@ object Exporters {
     }
   }
 
-  class WebhookExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class WebhookExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[Webhook].map { eec =>
@@ -1038,8 +1038,8 @@ object Exporters {
     }
   }
 
-  class HttpCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class HttpCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[HttpCallSettings].map { eec =>
@@ -1051,8 +1051,8 @@ object Exporters {
     }
   }
 
-  class WorkflowCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class WorkflowCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[WorkflowCallSettings].map { eec =>
@@ -1064,8 +1064,8 @@ object Exporters {
     }
   }
 
-  class KafkaExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class KafkaExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     val clientRef = new AtomicReference[KafkaWrapper]()
 
@@ -1085,8 +1085,8 @@ object Exporters {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         Option(clientRef.get()).flatMap(cli => exporter[KafkaConfig].map(conf => (cli, conf))).map { case (cli, conf) =>
           Source(events.toList)
-            .mapAsync(10)(evt => cli.publish(evt)(env, conf.copy(sendEvents = true)))
-            .runWith(Sink.ignore)(env.analyticsMaterializer)
+            .mapAsync(10)(evt => cli.publish(evt)(using env, conf.copy(sendEvents = true)))
+            .runWith(Sink.ignore)(using env.analyticsMaterializer)
             .map(_ => ExportResult.ExportResultSuccess)
         } getOrElse {
           FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
@@ -1095,8 +1095,8 @@ object Exporters {
     }
   }
 
-  class PulsarExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class PulsarExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     val clientRef = new AtomicReference[Producer[JsValue]]()
 
@@ -1119,7 +1119,7 @@ object Exporters {
         }
         Source(events.toList)
           .mapAsync(10)(evt => cli.sendAsync(evt))
-          .runWith(Sink.ignore)(env.analyticsMaterializer)
+          .runWith(Sink.ignore)(using env.analyticsMaterializer)
           .map(_ => ExportResult.ExportResultSuccess)
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
@@ -1127,16 +1127,16 @@ object Exporters {
     }
   }
 
-  class ConsoleExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class ConsoleExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       events.foreach(e => logger.info(Json.stringify(e)))
       FastFuture.successful(ExportResult.ExportResultSuccess)
     }
   }
 
-  class MetricsExporter(_config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(_config)(ec, env) {
+  class MetricsExporter(_config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(_config)(using ec, env) {
 
     private def incGlobalOtoroshiMetrics(
         duration: Long,
@@ -1283,8 +1283,8 @@ object Exporters {
       .getOrElse(ExportResult.ExportResultFailure("Bad config.").vfuture)
   }
 
-  class CustomExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class CustomExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     def withCurrentExporter[A](f: CustomDataExporter => A): Option[A] = {
       val ref = exporter[ExporterRef].get.ref
@@ -1315,8 +1315,8 @@ object Exporters {
         .getOrElse(().future)
   }
 
-  class GenericMailerExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class GenericMailerExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       def sendEmail(gms: MailerSettings, globalConfig: GlobalConfig): Future[Unit] = {
         val titles = events
@@ -1367,8 +1367,8 @@ object Exporters {
     val blockingEc: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
   }
 
-  class GoReplayFileAppenderExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class GoReplayFileAppenderExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = throw new RuntimeException(
       "send is not supported !!!"
@@ -1413,7 +1413,7 @@ object Exporters {
           .mkString("")
 
         Future
-          .apply(Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc)
+          .apply(Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND))(using FileWriting.blockingEc)
           .map { _ =>
             ExportResult.ExportResultSuccess
           }
@@ -1423,8 +1423,8 @@ object Exporters {
     }
   }
 
-  class FileAppenderExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class FileAppenderExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       exporter[FileSettings].map { exporterConfig =>
         val path = Paths.get(
@@ -1458,7 +1458,7 @@ object Exporters {
 
         Future
           .apply(Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND))(
-            FileWriting.blockingEc
+            using FileWriting.blockingEc
           )
           .map { _ =>
             if (exporterConfig.maxNumberOfFile.nonEmpty) {
@@ -1530,7 +1530,7 @@ object Exporters {
     }
 
     def writeToS3AndDelete(conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
-      implicit val ec: ExecutionContextExecutor = FileWriting.blockingEc
+      given ec: ExecutionContextExecutor = FileWriting.blockingEc
       val (key, path)                           = computeKeyAndPath(conf)
       writeToS3WithKeyAndPath(key, path, maxNumberOfFile, conf).map { _ =>
         path.toFile.delete()
@@ -1545,8 +1545,8 @@ object Exporters {
         maxNumberOfFile: Option[Int],
         conf: S3Configuration
     ): Future[Unit] = {
-      implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-      implicit val mat: Materializer    = env.otoroshiMaterializer
+      given ec: ExecutionContext = env.otoroshiExecutionContext
+      given mat: Materializer    = env.otoroshiMaterializer
       val url                           =
         s"${conf.endpoint}/$key?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
       val wholeContent                  = Files.readString(path).byteString
@@ -1594,7 +1594,7 @@ object Exporters {
       (lastS3Write.get() + conf.writeEvery.toMillis) < System.currentTimeMillis()
 
     def ensureFileCreationAndRolling(conf: S3Configuration, maxFileSize: Long, maxNumberOfFile: Option[Int]): File = {
-      implicit val ec: ExecutionContextExecutor = FileWriting.blockingEc
+      given ec: ExecutionContextExecutor = FileWriting.blockingEc
       val (key, path)                           = computeKeyAndPath(conf)
       val file                                  = path.toFile
       if (!file.exists()) {
@@ -1623,7 +1623,7 @@ object Exporters {
     }
 
     def appendToCurrentFile(content: String, conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
-      implicit val ec: ExecutionContextExecutor = FileWriting.blockingEc
+      given ec: ExecutionContextExecutor = FileWriting.blockingEc
       val (_, path)                             = computeKeyAndPath(conf)
       debug(s"appending events to file '$path'")
       if (shouldWriteToS3(conf)) {
@@ -1639,8 +1639,8 @@ object Exporters {
     }
   }
 
-  class S3Exporter(config: DataExporterConfig)(implicit ec: ExecutionContext, _env: Env)
-      extends DefaultDataExporter(config)(ec, _env)
+  class S3Exporter(config: DataExporterConfig)(using ec: ExecutionContext, _env: Env)
+      extends DefaultDataExporter(config)(using ec, _env)
       with S3Support {
 
     def env: Env            = _env
@@ -1670,8 +1670,8 @@ object Exporters {
     }
   }
 
-  class GoReplayS3Exporter(config: DataExporterConfig)(implicit ec: ExecutionContext, _env: Env)
-      extends DefaultDataExporter(config)(ec, _env)
+  class GoReplayS3Exporter(config: DataExporterConfig)(using ec: ExecutionContext, _env: Env)
+      extends DefaultDataExporter(config)(using ec, _env)
       with S3Support {
 
     def env: Env            = _env
@@ -1802,8 +1802,8 @@ object Exporters {
     }
   }
 
-  class CustomMetricsExporter(_config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(_config)(ec, env) {
+  class CustomMetricsExporter(_config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(_config)(using ec, env) {
 
     def withEventLongValue(event: JsValue, selector: Option[String])(f: Long => Unit): Unit = {
 
@@ -1892,8 +1892,8 @@ object Exporters {
     }
   }
 
-  class WasmExporter(_config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(_config)(ec, env) {
+  class WasmExporter(_config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(_config)(using ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       exporter[WasmExporterSettings]
         .flatMap { exporterConfig =>
@@ -1992,8 +1992,8 @@ object Exporters {
     }
   }
 
-  class OtlpLogExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class OtlpLogExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = exporter[OtlpLogsExporterSettings] match {
       case None                 => ExportResult.ExportResultFailure("Bad config type !").vfuture
@@ -2017,8 +2017,8 @@ object Exporters {
     }
   }
 
-  class OtlpMetricsExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class OtlpMetricsExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = exporter[OtlpMetricsExporterSettings] match {
       case None                 => ExportResult.ExportResultFailure("Bad config type !").vfuture
@@ -2123,7 +2123,7 @@ class DataExporterUpdateJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     FastFuture.successful(env.otoroshiEventsActor ! UpdateExporters)
   }
 }

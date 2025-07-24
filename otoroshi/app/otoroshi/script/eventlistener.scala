@@ -16,7 +16,7 @@ class InternalEventListenerActor(listener: InternalEventListener, env: Env) exte
   override def receive: Receive = {
     case evt: OtoroshiEvent =>
       try {
-        listener.onEvent(evt)(env)
+        listener.onEvent(evt)(using env)
       } catch {
         case e: Throwable => InternalEventListenerActor.logger.error("Error while dispatching event", e)
       }
@@ -30,7 +30,7 @@ trait InternalEventListener {
 
   @inline def listening: Boolean = false
 
-  @inline def onEvent(evt: OtoroshiEvent)(implicit env: Env): Unit = ()
+  @inline def onEvent(evt: OtoroshiEvent)(using env: Env): Unit = ()
 
   private[script] def startEvent(pluginId: String, env: Env): Unit = {
     if (listening) {

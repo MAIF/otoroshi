@@ -12,7 +12,8 @@ import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.ws.WSProxyServer
+import play.api.libs.ws.{WSProxyServer, WSBodyWritables}
+import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
@@ -33,10 +34,11 @@ case class RemoteUserValidatorSettings(
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ErrorReason, JsValue]] = {
+    import WSBodyWritables._
     env.MtlsWs
       .url(url, tlsSettings.legacy)
       .withRequestTimeout(timeout)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .post(
         Json
           .obj(
@@ -106,7 +108,7 @@ trait ValidableUser { self =>
       desc: ServiceDescriptor,
       isRoute: Boolean,
       authModuleConfig: AuthModuleConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
     val jsonuser     = json
     val allowedUsers = authModuleConfig.allowedUsers
     val deniedUsers  = authModuleConfig.deniedUsers
@@ -169,14 +171,14 @@ trait ValidableUser { self =>
       desc: ServiceDescriptor,
       isRoute: Boolean,
       authModuleConfig: AuthModuleConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ErrorReason, self.type]] = {
     Source(remoteValidators.toList)
       .mapAsync(1) { remoteValidator =>
         remoteValidator.validate(jsonuser, desc, isRoute, authModuleConfig)
       }
       .filter(_.isLeft)
       .take(1)
-      .runWith(Sink.headOption)(env.otoroshiMaterializer)
+      .runWith(Sink.headOption)(using env.otoroshiMaterializer)
       .map {
         case None            => Right(this)
         case Some(Left(err)) => Left(err)
@@ -184,7 +186,7 @@ trait ValidableUser { self =>
       }
   }
 
-  def jsonPathValidate(jsonuser: JsValue, validators: Seq[JsonPathValidator])(implicit
+  def jsonPathValidate(jsonuser: JsValue, validators: Seq[JsonPathValidator])(using
       env: Env
   ): Either[ErrorReason, self.type] = {
     if (validators.forall(validator => validator.validate(jsonuser))) {
@@ -232,21 +234,21 @@ trait AuthModule {
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]]
-  def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]]
 
-  def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result]
-  def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  def boLoginPage(request: RequestHeader, config: GlobalConfig)(using ec: ExecutionContext, env: Env): Future[Result]
+  def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]]
-  def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
+  def boCallback(request: Request[AnyContent], config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, BackOfficeUser]]
@@ -325,7 +327,7 @@ object UserValidator {
  */
 
 trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport {
-  def _fmt()(implicit env: Env): Format[AuthModuleConfig]
+  def _fmt()(using env: Env): Format[AuthModuleConfig]
   def `type`: String
   def humanName: String
   def id: String
@@ -342,7 +344,7 @@ trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport
   def deniedUsers: Seq[String]
   def userValidators: Seq[JsonPathValidator]
   def remoteValidators: Seq[RemoteUserValidatorSettings]
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean]
   def withLocation(location: EntityLocation): AuthModuleConfig
   override def internalId: String               = id
   override def json: JsValue                    = asJson
@@ -390,9 +392,9 @@ case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
       case "wasm"          => WasmAuthModuleConfig.format.reads(json)
       case ref             =>
         env.datastores.authConfigsDataStore
-          .templates()(env)
+          .templates()(using env)
           .find(config => config.`type` == ref) match {
-          case Some(config) => config._fmt()(env).reads(json)
+          case Some(config) => config._fmt()(using env).reads(json)
           case None         => unknownConfigTypeError
         }
     }
@@ -405,7 +407,7 @@ object AuthModuleConfig {
 
   lazy val logger: Logger = Logger("otoroshi-auth-module-config")
 
-  def fromJsons(value: JsValue)(implicit env: Env): AuthModuleConfig =
+  def fromJsons(value: JsValue)(using env: Env): AuthModuleConfig =
     try {
       _fmt(env).reads(value).get
     } catch {
@@ -454,16 +456,16 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
 }
 
 trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
-  def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[AuthModuleConfig]]
-  def generateLoginToken(maybeTokenValue: Option[String] = None)(implicit ec: ExecutionContext): Future[String]
-  def validateLoginToken(token: String)(implicit ec: ExecutionContext): Future[Boolean]
+  def findById(id: String)(using ec: ExecutionContext, env: Env): Future[Option[AuthModuleConfig]]
+  def generateLoginToken(maybeTokenValue: Option[String] = None)(using ec: ExecutionContext): Future[String]
+  def validateLoginToken(token: String)(using ec: ExecutionContext): Future[Boolean]
 
-  def setUserForToken(token: String, user: JsValue)(implicit ec: ExecutionContext): Future[Unit]
-  def getUserForToken(token: String)(implicit ec: ExecutionContext): Future[Option[JsValue]]
+  def setUserForToken(token: String, user: JsValue)(using ec: ExecutionContext): Future[Unit]
+  def getUserForToken(token: String)(using ec: ExecutionContext): Future[Option[JsValue]]
 
-  def templates()(implicit env: Env): Seq[AuthModuleConfig] = env.scriptManager.authModules
+  def templates()(using env: Env): Seq[AuthModuleConfig] = env.scriptManager.authModules
 
-  def template(modType: Option[String], env: Env, ctx: Option[ApiActionContext[_]] = None)(implicit
+  def template(modType: Option[String], env: Env, ctx: Option[ApiActionContext[?]] = None)(using
       ec: ExecutionContext
   ): AuthModuleConfig = {
 
@@ -476,19 +478,19 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
       sessionCookieValues = SessionCookieValues(),
       clientSideSessionEnabled = true
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
 
     val defaultModule = modType match {
       case Some(ref) =>
-        templates()(env)
+        templates()(using env)
           .find(config => config.`type` == ref)
-          .map(_.withLocation(EntityLocation.ownEntityLocation(ctx)(env)))
+          .map(_.withLocation(EntityLocation.ownEntityLocation(ctx)(using env)))
           .getOrElse(defaultValue)
       case _         => defaultValue
     }
 
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .authConfig
       .map { template =>

@@ -31,9 +31,9 @@ class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) e
 
   s"[$name] Otoroshi" should {
 
-    implicit val system: ActorSystem = ActorSystem("otoroshi-test")
-    implicit val mat: Materializer = Materializer(system)
-    implicit val http: HttpExt = Http()(system)
+    given system: ActorSystem = ActorSystem("otoroshi-test")
+    given mat: Materializer = Materializer(system)
+    given http: HttpExt = Http()(using system)
 
     "warm up" in {
       startOtoroshi()
@@ -235,30 +235,30 @@ class ExperimentalSpec2(name: String, configurationSpec: => Configuration) exten
       {
         val (res1, status1) = otoroshiApiCall("GET", "/api/groups").futureValue
         status1 mustBe 200
-        Reads.seq[ServiceGroup](ServiceGroup._fmt).reads(res1).get.contains(testGroup) mustBe true
+        Reads.seq[ServiceGroup](using ServiceGroup._fmt).reads(res1).get.contains(testGroup) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", "/api/services").futureValue
         status1 mustBe 200
-        Reads.seq[ServiceDescriptor](ServiceDescriptor._fmt).reads(res1).get.contains(testServiceDescriptor) mustBe true
+        Reads.seq[ServiceDescriptor](using ServiceDescriptor._fmt).reads(res1).get.contains(testServiceDescriptor) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}/apikeys").futureValue
         status1 mustBe 200
-        //Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
+        //Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/apikeys").futureValue
         status1 mustBe 200
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
-        //Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
+        //Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/apikeys").futureValue
         status1 mustBe 200
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}").futureValue
@@ -301,7 +301,7 @@ class ExperimentalSpec2(name: String, configurationSpec: => Configuration) exten
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/services").futureValue
         status1 mustBe 200
-        Reads.seq[ServiceDescriptor](ServiceDescriptor._fmt).reads(res1).get.contains(testServiceDescriptor) mustBe true
+        Reads.seq[ServiceDescriptor](using ServiceDescriptor._fmt).reads(res1).get.contains(testServiceDescriptor) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}").futureValue

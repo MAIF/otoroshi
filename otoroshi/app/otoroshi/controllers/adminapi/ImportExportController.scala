@@ -20,7 +20,7 @@ import play.api.mvc
 import play.api.libs.Files
 import play.api.mvc.AnyContent
 
-class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
@@ -28,7 +28,7 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(imp
 
   lazy val logger: Logger = Logger("otoroshi-import-export-api")
 
-  lazy val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("Import/Export BodyParser") { _ =>
+  lazy val sourceBodyParser: BodyParser[Source[ByteString, ?]] = BodyParser("Import/Export BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
@@ -123,7 +123,7 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(imp
       }
     }
 
-  def fullImport(): mvc.Action[Source[ByteString, _]] =
+  def fullImport(): mvc.Action[Source[ByteString, ?]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.contentType match {

@@ -5,13 +5,13 @@ import org.apache.pekko.stream.{Materializer, OverflowStrategy, QueueOfferResult
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-final class WorkQueue[A](buffer: Int)(implicit mat: Materializer) {
+final class WorkQueue[A](buffer: Int)(using mat: Materializer) {
 
   type Task[A] = () => Future[A]
 
-  def apply(future: => Future[A])(implicit ec: ExecutionContext): Future[A] = run(() => future)
+  def apply(future: => Future[A])(using ec: ExecutionContext): Future[A] = run(() => future)
 
-  def run(task: Task[A])(implicit ec: ExecutionContext): Future[A] = {
+  def run(task: Task[A])(using ec: ExecutionContext): Future[A] = {
     val promise = Promise[A]()
     queue.offer(task -> promise) flatMap {
       case QueueOfferResult.Enqueued => promise.future

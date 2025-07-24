@@ -35,7 +35,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
 
   def redirect: Action[AnyContent] =
     PrivateAppsAction { ctx =>
-      implicit val request: Request[AnyContent] = ctx.request
+      given request: Request[AnyContent] = ctx.request
       Redirect(
         //request.session
         //  .get("pa-redirect-after-login")

@@ -23,7 +23,7 @@ import scala.concurrent.duration.FiniteDuration
 import play.api.mvc
 import play.api.mvc.AnyContent
 
-class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext

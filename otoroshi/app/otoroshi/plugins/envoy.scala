@@ -30,7 +30,7 @@ class EnvoyControlPlane extends RequestTransformer {
 
   override def deprecated: Boolean = true
 
-  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, ?]]]()
 
   override def name: String = "[DEPRECATED] Envoy Control Plane"
 
@@ -78,7 +78,7 @@ class EnvoyControlPlane extends RequestTransformer {
 
   def handleClusterDiscovery(
       body: JsValue
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
 
     def serviceToCluster(service: ServiceDescriptor): JsObject = {
       Json
@@ -164,7 +164,7 @@ class EnvoyControlPlane extends RequestTransformer {
 
   def handleListenerDiscovery(
       body: JsValue
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
 
     def extractFilters(service: ServiceDescriptor): JsArray = {
       val arr = Json.arr()
@@ -410,30 +410,30 @@ class EnvoyControlPlane extends RequestTransformer {
 
   override def beforeRequest(
       ctx: BeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]]())
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, ?]]())
     funit
   }
 
   override def afterRequest(
       ctx: AfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     awaitingRequests.remove(ctx.snowflake)
     funit
   }
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
 
   def withBody(ctx: TransformerRequestContext)(
       f: JsValue => Future[Result]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     awaitingRequests.get(ctx.snowflake).map { promise =>
-      val bodySource: Source[ByteString, _] = Source
+      val bodySource: Source[ByteString, ?] = Source
         .future(promise.future)
         .flatMapConcat(s => s)
       bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
@@ -446,7 +446,7 @@ class EnvoyControlPlane extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.request.method, ctx.request.path) match {
       case ("POST", "/v3/discovery:clusters")  => withBody(ctx)(handleClusterDiscovery)
       case ("POST", "/v3/discovery:listeners") => withBody(ctx)(handleListenerDiscovery)

@@ -153,12 +153,12 @@ object Xml {
     }
   }
 
-  private[this] class XmlNode(name: String, children: Seq[Node], atrributes: MetaData)
-      extends Elem(null, name, attributes1 = atrributes, TopScope, true, children: _*)
+  private class XmlNode(name: String, children: Seq[Node], atrributes: MetaData)
+      extends Elem(null, name, attributes1 = atrributes, TopScope, true, children*)
 
-  private[this] class XmlElem(name: String, value: String)
+  private class XmlElem(name: String, value: String)
       extends Elem(null, name, xml.Null, TopScope, true, Text(value))
 
-  private[this] class XmlElemWithAttributes(name: String, value: String, atrributes: MetaData)
+  private class XmlElemWithAttributes(name: String, value: String, atrributes: MetaData)
       extends Elem(null, name, attributes1 = atrributes, TopScope, true, Text(value))
 }

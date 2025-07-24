@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext
 import play.api.mvc
 import play.api.mvc.AnyContent
 
-class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext

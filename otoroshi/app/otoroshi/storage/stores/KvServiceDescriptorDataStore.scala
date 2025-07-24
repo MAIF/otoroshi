@@ -26,7 +26,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
 
   private val updateRef = new AtomicReference[Cancellable]()
 
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
 
   override def fmt: Format[ServiceDescriptor] = ServiceDescriptor._fmt
 
@@ -48,7 +48,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
   private def dataInForServiceStatsKey(name: String)  = s"${_env.storageRoot}:data:$name:stats:in"
   private def dataOutForServiceStatsKey(name: String) = s"${_env.storageRoot}:data:$name:stats:out"
 
-  override def set(value: ServiceDescriptor, pxMilliseconds: Option[Duration])(implicit
+  override def set(value: ServiceDescriptor, pxMilliseconds: Option[Duration])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -56,7 +56,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       val (_subdomain, _envir, _domain) = env.staticExposedDomain.map { v =>
         ServiceLocation.fullQuery(
           v,
-          env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
+          env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env)
         ) match {
           case None           => (value.subdomain, value.env, value.domain)
           case Some(location) => (location.subdomain, location.env, location.domain)
@@ -80,9 +80,9 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
     updateRef.set(
       env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 5.minutes)(
         SchedulerHelper.runnable(
-          cleanupFastLookups()(env.otoroshiExecutionContext, env.otoroshiMaterializer, env)
+          cleanupFastLookups()(using env.otoroshiExecutionContext, env.otoroshiMaterializer, env)
         )
-      )(env.otoroshiExecutionContext)
+      )(using env.otoroshiExecutionContext)
     )
   }
 
@@ -90,7 +90,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
     Option(updateRef.get()).foreach(_.cancel())
   }
 
-  override def cleanupFastLookups()(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Long] = {
+  override def cleanupFastLookups()(using ec: ExecutionContext, mat: Materializer, env: Env): Future[Long] = {
     redisCli
       .keys(s"${_env.storageRoot}:desclookup:*")
       .flatMap { keys =>
@@ -98,7 +98,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
           .mapAsync(1)(key => redisCli.pttl(key).map(ttl => (key, ttl)))
           .filter(_._2 == -1)
           .grouped(100)
-          .mapAsync(1)(seq => redisCli.del(seq.map(_._1): _*))
+          .mapAsync(1)(seq => redisCli.del(seq.map(_._1)*))
           .runFold(0L)(_ + _)
       }
       .andThen {
@@ -110,12 +110,12 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
 
   override def getFastLookups(
       query: ServiceDescriptorQuery
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[String]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[String]] =
     redisCli.smembers(query.asKey).map(_.map(_.utf8String))
 
   override def fastLookupExists(
       query: ServiceDescriptorQuery
-  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  )(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     for {
       size <- redisCli.scard(query.asKey)
     } yield {
@@ -126,23 +126,23 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
   override def addFastLookups(
       query: ServiceDescriptorQuery,
       services: Seq[ServiceDescriptor]
-  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  )(using ec: ExecutionContext, env: Env): Future[Boolean] =
     for {
-      r <- redisCli.sadd(query.asKey, services.map(_.id): _*)
+      r <- redisCli.sadd(query.asKey, services.map(_.id)*)
       _ <- redisCli.pexpire(query.asKey, 60000)
     } yield r > 0L
 
   override def removeFastLookups(
       query: ServiceDescriptorQuery,
       services: Seq[ServiceDescriptor]
-  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  )(using ec: ExecutionContext, env: Env): Future[Boolean] =
     for {
-      r <- redisCli.srem(query.asKey, services.map(_.id): _*)
+      r <- redisCli.srem(query.asKey, services.map(_.id)*)
     } yield r > 0L
 
   override def updateMetricsOnError(
       config: otoroshi.models.GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  )(using ec: ExecutionContext, env: Env): Future[Unit] = {
     if (config.enableEmbeddedMetrics) {
       val time                      = System.currentTimeMillis()
       val callsShiftGlobalTime      = redisCli.lpushLong(serviceCallStatsKey("global"), time).flatMap { _ =>
@@ -170,7 +170,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       dataOut: Long,
       upstreamLatency: Long,
       config: otoroshi.models.GlobalConfig
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -296,7 +296,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       dataIn: Long,
       dataOut: Long,
       config: otoroshi.models.GlobalConfig
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -344,7 +344,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
     }
   }
 
-  override def dataInPerSecFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Double] =
+  override def dataInPerSecFor(id: String)(using ec: ExecutionContext, env: Env): Future[Double] =
     redisCli.lrange(dataInForServiceStatsKey(id), 0, maxQueueSize).map { values =>
       if (values.isEmpty) 0.0
       else {
@@ -360,7 +360,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       }
     }
 
-  override def dataOutPerSecFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Double] =
+  override def dataOutPerSecFor(id: String)(using ec: ExecutionContext, env: Env): Future[Double] =
     redisCli.lrange(dataOutForServiceStatsKey(id), 0, maxQueueSize).map { values =>
       if (values.isEmpty) 0.0
       else {
@@ -376,18 +376,18 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       }
     }
 
-  override def globalCalls()(implicit ec: ExecutionContext, env: Env): Future[Long] = calls("global")
+  override def globalCalls()(using ec: ExecutionContext, env: Env): Future[Long] = calls("global")
 
-  override def globalCallsPerSec()(implicit ec: ExecutionContext, env: Env): Future[Double] = callsPerSec("global")
+  override def globalCallsPerSec()(using ec: ExecutionContext, env: Env): Future[Double] = callsPerSec("global")
 
-  override def globalCallsDuration()(implicit ec: ExecutionContext, env: Env): Future[Double] = callsDuration("global")
+  override def globalCallsDuration()(using ec: ExecutionContext, env: Env): Future[Double] = callsDuration("global")
 
-  override def globalCallsOverhead()(implicit ec: ExecutionContext, env: Env): Future[Double] = callsOverhead("global")
+  override def globalCallsOverhead()(using ec: ExecutionContext, env: Env): Future[Double] = callsOverhead("global")
 
-  override def calls(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def calls(id: String)(using ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.get(serviceCallKey(id)).map(_.map(_.utf8String.toLong).getOrElse(0L))
 
-  override def callsPerSec(id: String)(implicit ec: ExecutionContext, env: Env): Future[Double] =
+  override def callsPerSec(id: String)(using ec: ExecutionContext, env: Env): Future[Double] =
     redisCli.lrange(serviceCallStatsKey(id), 0, maxQueueSize).map { values =>
       if (values.isEmpty) 0.0
       else {
@@ -399,34 +399,34 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       }
     }
 
-  override def callsDuration(id: String)(implicit ec: ExecutionContext, env: Env): Future[Double] =
+  override def callsDuration(id: String)(using ec: ExecutionContext, env: Env): Future[Double] =
     redisCli.lrange(serviceCallDurationStatsKey(id), 0, maxQueueSize).map { values =>
       if (values.isEmpty) 0.0
       else
         values.map(_.utf8String.toDouble).foldLeft(0.0)(_ + _) / values.size.toDouble
     }
 
-  override def callsOverhead(id: String)(implicit ec: ExecutionContext, env: Env): Future[Double] =
+  override def callsOverhead(id: String)(using ec: ExecutionContext, env: Env): Future[Double] =
     redisCli.lrange(serviceCallOverheadStatsKey(id), 0, maxQueueSize).map { values =>
       if (values.isEmpty) 0.0
       else
         values.map(_.utf8String.toDouble).foldLeft(0.0)(_ + _) / values.size.toDouble
     }
 
-  override def globalDataIn()(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def globalDataIn()(using ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.get(dataInGlobalKey()).map(_.map(_.utf8String.toLong).getOrElse(0L))
 
-  override def globalDataOut()(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def globalDataOut()(using ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.get(dataOutGlobalKey()).map(_.map(_.utf8String.toLong).getOrElse(0L))
 
-  override def dataInFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def dataInFor(id: String)(using ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.get(dataInForServiceKey(id)).map(_.map(_.utf8String.toLong).getOrElse(0L))
 
-  override def dataOutFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def dataOutFor(id: String)(using ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.get(dataOutForServiceKey(id)).map(_.map(_.utf8String.toLong).getOrElse(0L))
 
   // TODO : rewrite with less naïve implem
-  override def findByEnv(env: String)(implicit ec: ExecutionContext, _env: Env): Future[Seq[ServiceDescriptor]] = {
+  override def findByEnv(env: String)(using ec: ExecutionContext, _env: Env): Future[Seq[ServiceDescriptor]] = {
     if (redisCli.optimized) {
       redisCli.asOptimized.serviceDescriptors_findByEnv(env)
     } else {
@@ -435,7 +435,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
   }
 
   // TODO : rewrite with less naïve implem
-  override def findByGroup(id: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+  override def findByGroup(id: String)(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     if (redisCli.optimized) {
       redisCli.asOptimized.serviceDescriptors_findByGroup(id)
     } else {
@@ -443,6 +443,6 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
     }
   }
 
-  override def count()(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def count()(using ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.keys(key("*")).map(_.size.toLong)
 }

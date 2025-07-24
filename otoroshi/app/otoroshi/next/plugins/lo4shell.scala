@@ -72,7 +72,7 @@ class NgLog4ShellFilter extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config           = ctx.cachedConfig(internalName)(NgLog4ShellFilterConfig.format).getOrElse(NgLog4ShellFilterConfig())
     val hasBadHeaders    = ctx.request.headers.toMap.values.flatten.exists(containsBadValue)
     val hasBadMethod     = containsBadValue(ctx.request.method)

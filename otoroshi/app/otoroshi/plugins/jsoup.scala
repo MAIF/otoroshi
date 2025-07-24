@@ -60,7 +60,7 @@ class HtmlPatcher extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val newHeaders =
       ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
     ctx.otoroshiResponse.copy(headers = newHeaders).right.future
@@ -68,7 +68,7 @@ class HtmlPatcher extends RequestTransformer {
 
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     ctx.rawResponse.headers.get("Content-Type").orElse(ctx.rawResponse.headers.get("content-type")) match {
       case Some(ctype) if ctype.contains("text/html") =>
         Source.future(

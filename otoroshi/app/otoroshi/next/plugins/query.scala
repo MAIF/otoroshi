@@ -57,7 +57,7 @@ class QueryTransformer extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config                                  = ctx.cachedConfig(internalName)(QueryTransformerConfig.format).getOrElse(QueryTransformerConfig())
     val uri                                     = ctx.otoroshiRequest.uri
     val queryRemoved: Map[String, List[String]] = config.remove.foldLeft(uri.query().toMultiMap) { case (query, name) =>
@@ -73,7 +73,7 @@ class QueryTransformer extends NgRequestTransformer {
       query.+((key, List(value)))
     }
     val added: Seq[(String, String)]            = queryAdded.toSeq.flatMap(t => t._2.map(v => (t._1, v)))
-    val newUri                                  = uri.copy(rawQueryString = None).withQuery(Uri.Query.apply(added: _*))
+    val newUri                                  = uri.copy(rawQueryString = None).withQuery(Uri.Query.apply(added*))
     ctx.otoroshiRequest.copy(url = newUri.toString()).right
   }
 }

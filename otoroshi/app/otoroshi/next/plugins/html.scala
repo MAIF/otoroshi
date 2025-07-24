@@ -46,7 +46,7 @@ class NgHtmlPatcher extends NgRequestTransformer {
     "This plugin can inject elements in html pages (in the body or in the head) returned by the service".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHtmlPatcherConfig().some
 
-  private def applyEl(str: String, ctx: NgTransformerResponseContext)(implicit env: Env): String = {
+  private def applyEl(str: String, ctx: NgTransformerResponseContext)(using env: Env): String = {
     GlobalExpressionLanguage(
       value = str,
       req = ctx.request.some,
@@ -62,7 +62,7 @@ class NgHtmlPatcher extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     ctx.rawResponse.headers.get("Content-Type").orElse(ctx.rawResponse.headers.get("content-type")) match {
       case Some(ctype) if ctype.contains("text/html") =>
         val newHeaders    =

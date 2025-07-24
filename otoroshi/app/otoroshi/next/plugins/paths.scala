@@ -54,7 +54,7 @@ class PublicPrivatePaths extends NgAccessValidator {
   override def defaultConfigObject: Option[NgPluginConfig] = NgPublicPrivatePathsConfig().some
   override def isAccessAsync: Boolean                      = true
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val uri                                                                 = ctx.request.thePath
     val NgPublicPrivatePathsConfig(strict, publicPatterns, privatePatterns) =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgPublicPrivatePathsConfig())

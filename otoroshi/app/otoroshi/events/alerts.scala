@@ -26,6 +26,7 @@ import play.api.libs.json.{
   Writes
 }
 import play.api.libs.ws.WSAuthScheme
+import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.RequestHeader
 import otoroshi.ssl.Cert
 
@@ -44,7 +45,7 @@ trait AlertEvent extends AnalyticEvent {
 object AlertEvent {
   def generic(alert: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
       additionalPayload: JsObject
-  )(implicit env: Env): GenericAlert = {
+  )(using env: Env): GenericAlert = {
     GenericAlert(alert, env, `@service`, `@serviceId`)(additionalPayload)
   }
 }
@@ -58,7 +59,7 @@ case class GenericAlert(alert: String, env: Env, `@service`: String = "Otoroshi"
   val fromOrigin: Option[String]    = None
   val fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue = {
+  override def toJson(using _env: Env): JsValue = {
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -85,7 +86,7 @@ case class ApiKeySecretWillRotate(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -114,7 +115,7 @@ case class ApiKeySecretHasRotated(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -143,7 +144,7 @@ case class MaxConcurrentRequestReachedAlert(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -173,7 +174,7 @@ case class HighOverheadAlert(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -203,7 +204,7 @@ case class CircuitBreakerOpenedAlert(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -232,7 +233,7 @@ case class CircuitBreakerClosedAlert(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -263,7 +264,7 @@ case class SessionDiscardedAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -293,7 +294,7 @@ case class SessionsDiscardedAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -323,7 +324,7 @@ case class PanicModeAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -354,7 +355,7 @@ case class OtoroshiExportAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -383,7 +384,7 @@ case class SnowMonkeyStartedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -411,7 +412,7 @@ case class SnowMonkeyStoppedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -439,7 +440,7 @@ case class SnowMonkeyConfigUpdatedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -467,7 +468,7 @@ case class SnowMonkeyResetAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -496,7 +497,7 @@ case class CertCreatedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -525,7 +526,7 @@ case class CertUpdatedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -554,7 +555,7 @@ case class CertDeleteAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -579,7 +580,7 @@ case class CertRenewalAlert(`@id`: String, `@env`: String, cert: Cert, `@timesta
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"         -> `@id`,
       "@timestamp"  -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -602,7 +603,7 @@ case class CertExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@timesta
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"         -> `@id`,
       "@timestamp"  -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -625,7 +626,7 @@ case class CertAlmostExpiredAlert(`@id`: String, `@env`: String, cert: Cert, `@t
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"         -> `@id`,
       "@timestamp"  -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -649,7 +650,7 @@ case class SnowMonkeyOutageRegisteredAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = None
   override def fromUserAgent: Option[String]       = None
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -681,7 +682,7 @@ case class U2FAdminDeletedAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -712,7 +713,7 @@ case class WebAuthnAdminDeletedAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -742,7 +743,7 @@ case class BlackListedBackOfficeUserAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -772,7 +773,7 @@ case class AdminLoggedInAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"          -> `@id`,
       "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -806,7 +807,7 @@ case class UserLoggedInAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"          -> `@id`,
       "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -839,7 +840,7 @@ case class AdminFirstLogin(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"          -> `@id`,
       "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -871,7 +872,7 @@ case class AdminLoggedOutAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"          -> `@id`,
       "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -903,7 +904,7 @@ case class DbResetAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -932,7 +933,7 @@ case class DangerZoneAccessAlert(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -964,7 +965,7 @@ case class GlobalConfigModification(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1019,7 +1020,7 @@ case class ApiKeyQuotasAlmostExceededAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = None
   override def fromUserAgent: Option[String]       = None
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1048,7 +1049,7 @@ case class ApiKeyQuotasExceededAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = None
   override def fromUserAgent: Option[String]       = None
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1077,10 +1078,10 @@ case class RevokedApiKeyUsageAlert(
   override def `@service`: String   = descriptor.map(_.name).getOrElse("--")
   override def `@serviceId`: String = descriptor.map(_.id).getOrElse("--")
 
-  override def fromOrigin: Option[String]    = Some(req.theIpAddress(env))
+  override def fromOrigin: Option[String]    = Some(req.theIpAddress(using env))
   override def fromUserAgent: Option[String] = Some(req.theUserAgent)
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1109,7 +1110,7 @@ case class ServiceGroupCreatedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1137,7 +1138,7 @@ case class ServiceGroupUpdatedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1165,7 +1166,7 @@ case class ServiceGroupDeletedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1193,7 +1194,7 @@ case class ServiceCreatedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1221,7 +1222,7 @@ case class ServiceUpdatedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1249,7 +1250,7 @@ case class ServiceDeletedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1277,7 +1278,7 @@ case class ApiKeyCreatedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1305,7 +1306,7 @@ case class ApiKeyUpdatedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1333,7 +1334,7 @@ case class ApiKeyDeletedAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -1350,17 +1351,17 @@ case class ApiKeyDeletedAlert(
 }
 /*
 object AlertsActor {
-  def props(implicit env: Env) = Props(new AlertsActor())
+  def props(using env: Env) = Props(new AlertsActor())
 }
 
-class AlertsActor(implicit env: Env) extends Actor {
+class AlertsActor(using env: Env) extends Actor {
 
   import org.joda.time.DateTime
   import otoroshi.events.KafkaWrapper
   import otoroshi.utils.http.Implicits._
 
-  implicit val ec  = env.analyticsExecutionContext
-  implicit val mat = env.analyticsMaterializer
+  given ec  = env.analyticsExecutionContext
+  given mat = env.analyticsMaterializer
 
   lazy val logger = Logger("otoroshi-alert-actor")
 
@@ -1420,14 +1421,14 @@ class AlertsActor(implicit env: Env) extends Actor {
       config <- env.datastores.globalConfigDataStore.singleton()
       r <- {
         config.kafkaConfig.foreach { kafkaConfig =>
-          kafkaWrapper.publish(evt)(env, kafkaConfig)
+          kafkaWrapper.publish(evt)(using env, kafkaConfig)
         }
         if (config.kafkaConfig.isEmpty) kafkaWrapper.close()
         Future.sequence(config.alertsWebhooks.map { webhook =>
           val url = webhook.url
           env.MtlsWs
             .url(url, webhook.mtlsConfig)
-            .withHttpHeaders(webhook.headers.toSeq: _*)
+            .withHttpHeaders(webhook.headers.toSeq*)
             .withMaybeProxyServer(config.proxies.alertWebhooks)
             .post(Json.obj("event" -> "ALERT", "payload" -> evt))
             .andThen {
@@ -1442,8 +1443,8 @@ class AlertsActor(implicit env: Env) extends Actor {
     } yield r
   }
 
-  lazy val (alertQueue, alertDone) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
-  lazy val (emailQueue, emailDone) = emailStream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
+  lazy val (alertQueue, alertDone) = stream.toMat(Sink.ignore)(Keep.both).run()(using env.analyticsMaterializer)
+  lazy val (emailQueue, emailDone) = emailStream.toMat(Sink.ignore)(Keep.both).run()(using env.analyticsMaterializer)
 
   override def receive: Receive = {
     case ge: AlertEvent => {
@@ -1501,22 +1502,22 @@ class AlertsActorSupervizer(env: Env) extends Actor {
 }
 
 object AlertsActorSupervizer {
-  def props(implicit env: Env) = Props(new AlertsActorSupervizer(env))
+  def props(using env: Env) = Props(new AlertsActorSupervizer(env))
 }*/
 
 object Alerts {
 
   lazy val logger: Logger = Logger("otoroshi-alerts")
 
-  def send[A <: AlertEvent](alert: A)(implicit env: Env): Unit = {
+  def send[A <: AlertEvent](alert: A)(using env: Env): Unit = {
     // logger.trace("Alert " + Json.stringify(alert.toEnrichedJson))
     alert.toAnalytics()
   }
 }
 
 trait AlertDataStore {
-  def count()(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def findAllRaw(from: Long = 0, to: Long = 1000)(implicit ec: ExecutionContext, env: Env): Future[Seq[ByteString]]
-  // def push(event: AlertEvent)(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def push(event: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def count()(using ec: ExecutionContext, env: Env): Future[Long]
+  def findAllRaw(from: Long = 0, to: Long = 1000)(using ec: ExecutionContext, env: Env): Future[Seq[ByteString]]
+  // def push(event: AlertEvent)(using ec: ExecutionContext, env: Env): Future[Long]
+  def push(event: JsValue)(using ec: ExecutionContext, env: Env): Future[Long]
 }

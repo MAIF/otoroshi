@@ -17,7 +17,7 @@ import scala.util.{Failure, Success, Try}
 
 object JsonHelpers {
 
-  def requestBody(request: NgPluginHttpRequest)(implicit ec: ExecutionContext, mat: Materializer): Future[JsValue] = {
+  def requestBody(request: NgPluginHttpRequest)(using ec: ExecutionContext, mat: Materializer): Future[JsValue] = {
     if (request.hasBody) {
       request.body.runFold(ByteString.empty)(_ ++ _).map { b =>
         val arr = b.toArray[Byte]
@@ -30,7 +30,7 @@ object JsonHelpers {
 
   def responseBody(
       response: NgPluginHttpResponse
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[JsValue] = {
+  )(using ec: ExecutionContext, mat: Materializer): Future[JsValue] = {
     response.body.runFold(ByteString.empty)(_ ++ _).map { b =>
       val arr = b.toArray[Byte]
       if (arr.isEmpty) {

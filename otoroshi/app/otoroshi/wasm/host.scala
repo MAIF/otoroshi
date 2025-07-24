@@ -1,28 +1,28 @@
 package otoroshi.wasm
 
+import io.otoroshi.wasm4s.scaladsl.*
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
-import io.otoroshi.wasm4s.scaladsl._
-import org.extism.sdk._
+import org.extism.sdk.*
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig
 import otoroshi.env.Env
 import otoroshi.events.WasmLogEvent
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.NgTarget
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{ConcurrentMutableTypedMap, RegexPool, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
-
-import scala.collection.immutable.ArraySeq
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Optional
 import java.util.concurrent.TimeUnit
+import scala.collection.immutable.ArraySeq
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
@@ -59,7 +59,7 @@ object Status extends Enumeration {
 }
 
 trait AwaitCapable {
-  def await[T](future: Future[T], atMost: FiniteDuration = 5.seconds)(implicit env: Env): T = {
+  def await[T](future: Future[T], atMost: FiniteDuration = 5.seconds)(using env: Env): T = {
     Await.result(future, atMost) // TODO: atMost from env
   }
 }
@@ -74,7 +74,7 @@ object HFunction {
   )(
       f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal]) => Unit
   ): HostFunction[EmptyUserData] = {
-    defineFunction[EmptyUserData](config, fname, None, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3))
+    defineFunction[EmptyUserData](config, fname, None, returnType, params*)((p1, p2, p3, _) => f(p1, p2, p3))
   }
 
   def defineClassicFunction(
@@ -84,9 +84,9 @@ object HFunction {
       params: LibExtism.ExtismValType*
   )(
       f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal], EnvUserData) => Unit
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val ev = EnvUserData(env.wasmIntegration.context, ec, mat, config)
-    defineFunction[EnvUserData](config, fname, ev.some, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3, ev))
+    defineFunction[EnvUserData](config, fname, ev.some, returnType, params*)((p1, p2, p3, _) => f(p1, p2, p3, ev))
   }
 
   def defineContextualFunction(
@@ -94,7 +94,7 @@ object HFunction {
       config: WasmConfig
   )(
       f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal], EnvUserData) => Unit
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val ev = EnvUserData(env.wasmIntegration.context, ec, mat, config)
     defineFunction[EnvUserData](
       config,
@@ -117,7 +117,7 @@ object HFunction {
   ): HostFunction[A] = {
     new HostFunction[A](
       fname,
-      Array(params: _*),
+      Array(params*),
       Array(returnType),
       new ExtismFunction[A] {
         override def invoke(
@@ -144,7 +144,7 @@ object HFunction {
   ): HostFunction[A] = {
     new HostFunction[A](
       fname,
-      Array(params: _*),
+      Array(params*),
       Array(),
       new ExtismFunction[A] {
         override def invoke(
@@ -188,7 +188,7 @@ object Logging extends AwaitCapable {
     returns(0).v.i32 = Status.StatusOK.id
   }
 
-  def proxyLogWithEvent(config: WasmConfig)(implicit
+  def proxyLogWithEvent(config: WasmConfig)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -217,7 +217,7 @@ object Logging extends AwaitCapable {
     }
   }
 
-  def getFunctions(config: WasmConfig)(implicit
+  def getFunctions(config: WasmConfig)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -233,7 +233,7 @@ object Http extends AwaitCapable {
 
   def proxyHttpCall(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_http_call", config) {
       (
           plugin: ExtismCurrentPlugin,
@@ -257,7 +257,7 @@ object Http extends AwaitCapable {
               .Ws
               .url(url)
               .withMethod((context \ "method").asOpt[String].getOrElse("GET"))
-              .withHttpHeaders((context \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
+              .withHttpHeaders((context \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq*)
               .withRequestTimeout(
                 Duration(
                   (context \ "request_timeout")
@@ -271,7 +271,7 @@ object Http extends AwaitCapable {
                 )
               )
               .withFollowRedirects((context \ "follow_redirects").asOpt[Boolean].getOrElse(false))
-              .withQueryStringParameters((context \ "query").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
+              .withQueryStringParameters((context \ "query").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq*)
             val bodyAsBytes              = context.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
             val bodyBase64               = context.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
             val bodyJson                 = context.select("body_json").asOpt[JsValue].map(str => ByteString(str.stringify))
@@ -319,7 +319,7 @@ object Http extends AwaitCapable {
     }
   }
 
-  def getAttributes(config: WasmConfig, attrs: Option[TypedMap])(implicit
+  def getAttributes(config: WasmConfig, attrs: Option[TypedMap])(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -337,7 +337,7 @@ object Http extends AwaitCapable {
     }
   }
 
-  def getAttribute(config: WasmConfig, attrs: Option[TypedMap])(implicit
+  def getAttribute(config: WasmConfig, attrs: Option[TypedMap])(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -363,7 +363,7 @@ object Http extends AwaitCapable {
     }
   }
 
-  def clearAttributes(config: WasmConfig, attrs: Option[TypedMap])(implicit
+  def clearAttributes(config: WasmConfig, attrs: Option[TypedMap])(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -383,7 +383,7 @@ object Http extends AwaitCapable {
     }
   }
 
-  lazy val possibleAttributes: Map[String, otoroshi.plugins.AttributeSetter[_]] = Seq(
+  lazy val possibleAttributes: Map[String, otoroshi.plugins.AttributeSetter[?]] = Seq(
     otoroshi.plugins.AttributeSetter(
       otoroshi.next.plugins.Keys.ResponseAddHeadersKey,
       json => json.asObject.value.view.mapValues(_.asString).toSeq
@@ -419,7 +419,7 @@ object Http extends AwaitCapable {
     }
     .toMap
 
-  def setAttribute(config: WasmConfig, attrs: Option[TypedMap])(implicit
+  def setAttribute(config: WasmConfig, attrs: Option[TypedMap])(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -451,7 +451,7 @@ object Http extends AwaitCapable {
     }
   }
 
-  def delAttribute(config: WasmConfig, attrs: Option[TypedMap])(implicit
+  def delAttribute(config: WasmConfig, attrs: Option[TypedMap])(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -475,7 +475,7 @@ object Http extends AwaitCapable {
     }
   }
 
-  def getFunctions(config: WasmConfig, attrs: Option[TypedMap])(implicit
+  def getFunctions(config: WasmConfig, attrs: Option[TypedMap])(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -497,7 +497,7 @@ object DataStore extends AwaitCapable {
       pluginRestricted: Boolean = false,
       prefix: Option[String] = None,
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_all_matching", config) {
       (
@@ -520,7 +520,7 @@ object DataStore extends AwaitCapable {
     }
   }
 
-  def proxyDataStoreKeys(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(implicit
+  def proxyDataStoreKeys(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -547,7 +547,7 @@ object DataStore extends AwaitCapable {
     }
   }
 
-  def proxyDataStoreGet(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(implicit
+  def proxyDataStoreGet(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -577,7 +577,7 @@ object DataStore extends AwaitCapable {
       pluginRestricted: Boolean = false,
       prefix: Option[String] = None,
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_exists", config) {
       (
@@ -598,7 +598,7 @@ object DataStore extends AwaitCapable {
     }
   }
 
-  def proxyDataStorePttl(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(implicit
+  def proxyDataStorePttl(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -622,7 +622,7 @@ object DataStore extends AwaitCapable {
     }
   }
 
-  def proxyDataStoreSetnx(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(implicit
+  def proxyDataStoreSetnx(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -656,7 +656,7 @@ object DataStore extends AwaitCapable {
     }
   }
 
-  def proxyDataStoreSet(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(implicit
+  def proxyDataStoreSet(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -690,7 +690,7 @@ object DataStore extends AwaitCapable {
     }
   }
 
-  def proxyDataStoreDel(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(implicit
+  def proxyDataStoreDel(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -723,7 +723,7 @@ object DataStore extends AwaitCapable {
       pluginRestricted: Boolean = false,
       prefix: Option[String] = None,
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_incrby", config) {
       (
@@ -749,7 +749,7 @@ object DataStore extends AwaitCapable {
       pluginRestricted: Boolean = false,
       prefix: Option[String] = None,
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_pexpire", config) {
       (
@@ -771,7 +771,7 @@ object DataStore extends AwaitCapable {
     }
   }
 
-  def getFunctions(config: WasmConfig, pluginId: String)(implicit
+  def getFunctions(config: WasmConfig, pluginId: String)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -869,7 +869,7 @@ object State {
 
   def getProxyState(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineClassicFunction(
       "proxy_state",
       config,
@@ -910,7 +910,7 @@ object State {
   }
   def proxyStateGetValue(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_state_value", config) { (plugin, params, returns, userData) =>
       {
         val context = Utils.contextParamsToJson(plugin, params)
@@ -973,7 +973,7 @@ object State {
 
   def getProxyConfig(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineClassicFunction(
       "proxy_config",
       config,
@@ -989,7 +989,7 @@ object State {
 
   def getGlobalProxyConfig(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineClassicFunction(
       "proxy_global_config",
       config,
@@ -1012,7 +1012,7 @@ object State {
 
   def getClusterState(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineClassicFunction(
       "proxy_cluster_state",
       config,
@@ -1028,7 +1028,7 @@ object State {
 
   def proxyClusteStateGetValue(
       config: WasmConfig
-  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_cluster_state_value", config) { (plugin, params, returns, userData) =>
       {
         val path = Utils.contextParamsToString(plugin, params)
@@ -1039,7 +1039,7 @@ object State {
     }
   }
 
-  def proxyGlobalMapSet(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
+  def proxyGlobalMapSet(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -1076,7 +1076,7 @@ object State {
     }
   }
 
-  def proxyGlobalMapDel(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
+  def proxyGlobalMapDel(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -1108,7 +1108,7 @@ object State {
     }
   }
 
-  def proxyGlobalMapGet(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
+  def proxyGlobalMapGet(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -1139,7 +1139,7 @@ object State {
     }
   }
 
-  def proxyGlobalMap(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
+  def proxyGlobalMap(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -1171,7 +1171,7 @@ object State {
     }
   }
 
-  def getFunctions(config: WasmConfig, pluginId: String)(implicit
+  def getFunctions(config: WasmConfig, pluginId: String)(using
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
@@ -1235,12 +1235,12 @@ object State {
 
 object HostFunctions {
 
-  def getFunctions(config: WasmConfig, pluginId: String, attrs: Option[TypedMap])(implicit
+  def getFunctions(config: WasmConfig, pluginId: String, attrs: Option[TypedMap])(using
       env: Env,
       executionContext: ExecutionContext
-  ): Array[HostFunction[_ <: HostUserData]] = {
+  ): Array[HostFunction[? <: HostUserData]] = {
 
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    given mat: Materializer = env.otoroshiMaterializer
 
     val functions =
       Logging.getFunctions(config) ++

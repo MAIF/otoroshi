@@ -68,7 +68,7 @@ class Redirection extends NgPreRouting {
 
   override def preRouteSync(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] = {
+  )(using env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgRedirectionSettings())
     if (config.hasValidCode) {
       val to = RedirectionExpressionLanguage(

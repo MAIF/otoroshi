@@ -14,8 +14,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait RequestSink extends StartableAndStoppable with NamedPlugin with InternalEventListener {
   def pluginType: PluginType                                                                       = PluginType.RequestSinkType
-  def matches(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean       = false
-  def handle(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] =
+  def matches(context: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean       = false
+  def handle(context: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] =
     FastFuture.successful(Results.NotImplemented(Json.obj("error" -> "not implemented yet")))
 }
 
@@ -24,13 +24,13 @@ object RequestSink {
   def maybeSinkRequest(
       snowflake: String,
       req: RequestHeader,
-      body: Source[ByteString, _],
+      body: Source[ByteString, ?],
       attrs: TypedMap,
       origin: RequestOrigin,
       status: Int,
       message: String,
       err: => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] =
+  )(using ec: ExecutionContext, env: Env): Future[Result] =
     env.metrics.withTimerAsync("otoroshi.core.proxy.request-sink") {
       env.datastores.globalConfigDataStore.singleton().flatMap {
         case config if !config.scripts.enabled                                        => err
@@ -74,7 +74,7 @@ case class RequestSinkContext(
     origin: RequestOrigin,
     status: Int,
     message: String,
-    body: Source[ByteString, _]
+    body: Source[ByteString, ?]
 ) extends ContextWithConfig {
 
   private def conf[A](prefix: String = "config-"): Option[JsValue] = {
@@ -84,7 +84,7 @@ case class RequestSinkContext(
       case _              => None
     }
   }
-  private def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
+  private def confAt[A](key: String, prefix: String = "config-")(using fjs: Reads[A]): Option[A] = {
     val conf = config match {
       case json: JsArray  => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
       case json: JsObject => (json \ s"$prefix$index").as[JsValue]

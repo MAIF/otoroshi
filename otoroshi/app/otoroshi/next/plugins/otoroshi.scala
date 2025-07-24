@@ -171,7 +171,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config             = ctx
       .cachedConfigFn(internalName)(json => NgOtoroshiChallengeConfig(json).some)
       .getOrElse(NgOtoroshiChallengeConfig(ctx.config))
@@ -204,7 +204,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config                                   = ctx.attrs.get(NgOtoroshiChallengeKeys.ConfigKey).get
     val stateValue                               = ctx.attrs.get(NgOtoroshiChallengeKeys.StateValueKey).get
     val stateRespHeaderName                      = config.responseHeaderName.getOrElse(env.Headers.OtoroshiStateResp)
@@ -247,7 +247,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
               ).left
             }
           case SecComVersion.V2 =>
-            config.algoBackendToOto.asAlgorithm(otoroshi.models.OutputMode)(env) match {
+            config.algoBackendToOto.asAlgorithm(otoroshi.models.OutputMode)(using env) match {
               case None       =>
                 StateRespInvalid(
                   at,
@@ -430,7 +430,7 @@ class OtoroshiInfos extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx
       .cachedConfigFn(internalName)(json => NgOtoroshiInfoConfig(json).some)
       .getOrElse(NgOtoroshiInfoConfig(ctx.config))
@@ -541,7 +541,7 @@ class OtoroshiOCSPResponderEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -572,7 +572,7 @@ class OtoroshiAIAEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -621,7 +621,7 @@ class OtoroshiJWKSEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -655,7 +655,7 @@ class OtoroshiHealthEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -718,7 +718,7 @@ class OtoroshiMetricsEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

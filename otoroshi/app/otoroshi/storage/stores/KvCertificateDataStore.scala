@@ -19,7 +19,7 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
 
   val logger: Logger = Logger("otoroshi-certificate-datastore")
 
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def fmt: Format[Cert]                       = Cert._fmt
   override def key(id: String): String                 = s"${_env.storageRoot}:certs:$id"
   override def extractId(value: Cert): String          = value.id
@@ -35,9 +35,9 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
   val cancelCreateRef       = new AtomicReference[Cancellable](null)
 
   def startSync(): Unit = {
-    implicit val ec: ExecutionContext = _env.otoroshiExecutionContext
-    implicit val mat: Materializer    = _env.otoroshiMaterializer
-    implicit val env: Env             = _env
+    given ec: ExecutionContext = _env.otoroshiExecutionContext
+    given mat: Materializer    = _env.otoroshiMaterializer
+    given env: Env             = _env
     importInitialCerts(logger)
     cancelRenewRef.set(
       _env.otoroshiActorSystem.scheduler
@@ -86,22 +86,22 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
     Option(cancelRef.get()).foreach(_.cancel())
   }
 
-  override def delete(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def delete(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     super.delete(id).andThen { case _ =>
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
-  override def delete(value: Cert)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def delete(value: Cert)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     super.delete(value).andThen { case _ =>
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
-  override def deleteAll()(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def deleteAll()(using ec: ExecutionContext, env: Env): Future[Long] =
     super.deleteAll().andThen { case _ =>
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
-  override def set(value: Cert, pxMilliseconds: Option[Duration] = None)(implicit
+  override def set(value: Cert, pxMilliseconds: Option[Duration] = None)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] =
@@ -109,12 +109,12 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
-  override def exists(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def exists(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     super.exists(id).andThen { case _ =>
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
-  override def exists(value: Cert)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def exists(value: Cert)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     super.exists(value).andThen { case _ =>
       redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }

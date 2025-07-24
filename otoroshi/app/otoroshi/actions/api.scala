@@ -36,12 +36,12 @@ trait ApiActionContextCapable {
   lazy val forbidden  = ApiActionContext.forbidden
   lazy val fforbidden = ApiActionContext.fforbidden
 
-  def user(implicit env: Env): Option[JsValue] =
+  def user(using env: Env): Option[JsValue] =
     request.headers
       .get(env.Headers.OtoroshiAdminProfile)
       .flatMap(p => Try(Json.parse(new String(Base64.getDecoder.decode(p), StandardCharsets.UTF_8))).toOption)
 
-  def from(implicit env: Env): String = request.theIpAddress
+  def from(using env: Env): String = request.theIpAddress
 
   def ua: String = request.theUserAgent
 
@@ -51,7 +51,7 @@ trait ApiActionContextCapable {
 
   private val bouRef = new AtomicReference[Either[String, Option[BackOfficeUser]]]()
 
-  def userIsSuperAdmin(implicit env: Env): Boolean = {
+  def userIsSuperAdmin(using env: Env): Boolean = {
     backOfficeUser match {
       case Left(_)           => false
       case Right(None)       =>
@@ -68,13 +68,13 @@ trait ApiActionContextCapable {
     }
   }
 
-  def oneAuthorizedTenant(implicit env: Env): TenantId =
+  def oneAuthorizedTenant(using env: Env): TenantId =
     backOfficeUser.toOption.flatten.map(_.rights.oneAuthorizedTenant).getOrElse(TenantId.default)
 
-  def oneAuthorizedTeam(implicit env: Env): TeamId =
+  def oneAuthorizedTeam(using env: Env): TeamId =
     backOfficeUser.toOption.flatten.map(_.rights.oneAuthorizedTeam).getOrElse(TeamId.default)
 
-  def backOfficeUser(implicit env: Env): Either[String, Option[BackOfficeUser]] = {
+  def backOfficeUser(using env: Env): Either[String, Option[BackOfficeUser]] = {
     Option(bouRef.get()).getOrElse {
       (
         if (env.bypassUserRightsCheck) {
@@ -127,7 +127,7 @@ trait ApiActionContextCapable {
     }
   }
 
-  private def rootOrTenantAdmin(user: BackOfficeUser)(f: => Boolean)(implicit env: Env): Boolean = {
+  private def rootOrTenantAdmin(user: BackOfficeUser)(f: => Boolean)(using env: Env): Boolean = {
     if (env.bypassUserRightsCheck || SuperAdminOnly.canPerform(user, currentTenant)) { // || TenantAdminOnly.canPerform(user, currentTenant)) {
       true
     } else {
@@ -135,11 +135,11 @@ trait ApiActionContextCapable {
     }
   }
 
-  def canUserReadJson(item: JsValue)(implicit env: Env): Boolean = {
+  def canUserReadJson(item: JsValue)(using env: Env): Boolean = {
     canUserRead(FakeEntityLocationSupport(EntityLocation.readFromKey(item)))
   }
 
-  def canUserRead[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
+  def canUserRead[T <: EntityLocationSupport](item: T)(using env: Env): Boolean = {
     backOfficeUser match {
       case Left(_)           => false
       case Right(None)       => true
@@ -156,11 +156,11 @@ trait ApiActionContextCapable {
     }
   }
 
-  def canUserWriteJson(item: JsValue)(implicit env: Env): Boolean = {
+  def canUserWriteJson(item: JsValue)(using env: Env): Boolean = {
     canUserWrite(FakeEntityLocationSupport(EntityLocation.readFromKey(item)))
   }
 
-  def canUserWrite[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
+  def canUserWrite[T <: EntityLocationSupport](item: T)(using env: Env): Boolean = {
     backOfficeUser match {
       case Left(_)           => false
       case Right(None)       => true
@@ -178,7 +178,7 @@ trait ApiActionContextCapable {
     }
   }
 
-  def checkRights(rc: RightsChecker)(f: Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def checkRights(rc: RightsChecker)(f: Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     if (env.bypassUserRightsCheck) {
       f
     } else {
@@ -197,7 +197,7 @@ trait ApiActionContextCapable {
 
   private def findServiceById(
       serviceId: String
-  )(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
     def getRouteCompositions = {
       env.datastores.routeCompositionDataStore.findById(serviceId) flatMap {
         case Some(service) => service.toRoutes.head.legacy.some.vfuture
@@ -244,7 +244,7 @@ trait ApiActionContextCapable {
   }
 
   /// utils methods
-  def canReadService(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def canReadService(id: String)(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     if (id == "global") {
       f
     } else {
@@ -255,42 +255,42 @@ trait ApiActionContextCapable {
     }
   }
 
-  def canWriteService(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def canWriteService(id: String)(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     findServiceById(id).flatMap {
       case Some(service) if canUserWrite(service) => f
       case _                                      => fforbidden
     }
   }
 
-  def canReadApikey(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def canReadApikey(id: String)(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.apiKeyDataStore.findById(id).flatMap {
       case Some(service) if canUserRead(service) => f
       case _                                     => fforbidden
     }
   }
 
-  def canWriteApikey(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def canWriteApikey(id: String)(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.apiKeyDataStore.findById(id).flatMap {
       case Some(service) if canUserWrite(service) => f
       case _                                      => fforbidden
     }
   }
 
-  def canReadGroup(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def canReadGroup(id: String)(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.serviceGroupDataStore.findById(id).flatMap {
       case Some(service) if canUserRead(service) => f
       case _                                     => fforbidden
     }
   }
 
-  def canWriteGroup(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def canWriteGroup(id: String)(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.serviceGroupDataStore.findById(id).flatMap {
       case Some(service) if canUserWrite(service) => f
       case _                                      => fforbidden
     }
   }
 
-  def canWriteAuthModule(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def canWriteAuthModule(id: String)(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     // env.datastores.authConfigsDataStore.findById(id).flatMap {
     env.proxyState.authModuleAsync(id).flatMap {
       case Some(mod) if canUserWrite(mod) => f
@@ -298,7 +298,7 @@ trait ApiActionContextCapable {
     }
   }
 
-  def validateEntity(json: JsValue, singularName: String)(implicit env: Env): Either[JsValue, JsValue] = {
+  def validateEntity(json: JsValue, singularName: String)(using env: Env): Either[JsValue, JsValue] = {
     backOfficeUser match {
       case Left(err)         => Left(err.json)
       case Right(None)       => Right(json)
@@ -327,7 +327,7 @@ trait ApiActionContextCapable {
 
 case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) extends ApiActionContextCapable {}
 
-class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
+class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
     extends ActionBuilder[ApiActionContext, AnyContent]
     with ActionFunction[Request, ApiActionContext] {
 
@@ -337,7 +337,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
-  def error(message: String, ex: Option[Throwable] = None)(implicit request: Request[_]): Future[Result] = {
+  def error(message: String, ex: Option[Throwable] = None)(using request: Request[?]): Future[Result] = {
     ex match {
       case Some(e) => logger.error(s"error message: $message", e)
       case None    => logger.error(s"error message: $message")
@@ -353,7 +353,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
   override def invokeBlock[A](request: Request[A], block: ApiActionContext[A] => Future[Result]): Future[Result] = {
 
-    implicit val req: Request[A] = request
+    given req: Request[A] = request
 
     val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
     def perform(): Future[Result] = {
@@ -432,7 +432,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
 case class UnAuthApiActionContent[A](req: Request[A])
 
-class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
+class UnAuthApiAction(val parser: BodyParser[AnyContent])(using env: Env)
     extends ActionBuilder[UnAuthApiActionContent, AnyContent]
     with ActionFunction[Request, UnAuthApiActionContent] {
 
@@ -440,7 +440,7 @@ class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
   lazy val logger: Logger = Logger("otoroshi-api-action")
 
-  def error(message: String, ex: Option[Throwable] = None)(implicit request: Request[_]): Future[Result] = {
+  def error(message: String, ex: Option[Throwable] = None)(using request: Request[?]): Future[Result] = {
     ex match {
       case Some(e) => logger.error(s"error message: $message", e)
       case None    => logger.error(s"error message: $message")
@@ -459,7 +459,7 @@ class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
       block: UnAuthApiActionContent[A] => Future[Result]
   ): Future[Result] = {
 
-    implicit val req: Request[A] = request
+    given req: Request[A] = request
 
     val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
     host match {

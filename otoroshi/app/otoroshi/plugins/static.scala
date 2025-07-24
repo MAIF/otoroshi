@@ -48,7 +48,7 @@ class StaticResponse extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config           = ctx.configFor("StaticResponse")
     val status           = config.select("status").asOpt[Int].getOrElse(200)
     val _headers         =
@@ -58,6 +58,6 @@ class StaticResponse extends RequestTransformer {
     val bodytext         = config.select("body").asOpt[String].map(ByteString.apply)
     val bodyBase64       = config.select("bodyBase64").asOpt[String].map(ByteString.apply).map(_.decodeBase64)
     val body: ByteString = bodytext.orElse(bodyBase64).getOrElse("""{"message":"hello world!"}""".byteString)
-    Left(Results.Status(status)(body).withHeaders(headers.toSeq: _*).as(contentType)).future
+    Left(Results.Status(status)(body).withHeaders(headers.toSeq*).as(contentType)).future
   }
 }

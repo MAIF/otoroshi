@@ -36,7 +36,7 @@ class NgHasClientCertValidator extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.request.clientCertificateChain match {
       case Some(_) => NgAccess.NgAllowed.vfuture
       case _       =>
@@ -73,7 +73,7 @@ class NgHasClientCertMatchingApikeyValidator extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
         "forbidden",
@@ -89,7 +89,7 @@ class NgHasClientCertMatchingApikeyValidator extends NgAccessValidator {
       .map(r => NgAccess.NgDenied(r))
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.request.clientCertificateChain match {
       case Some(_) =>
         ctx.apikey match {
@@ -165,7 +165,7 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
-  def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
         "forbidden",
@@ -181,7 +181,7 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
       .map(r => NgAccess.NgDenied(r))
   }
 
-  override def access(context: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(context: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     context.request.clientCertificateChain
       .map(
         _.map(cert =>
@@ -289,7 +289,7 @@ class NgClientCertChainHeader extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     ctx.request.clientCertificateChain match {
       case None        => Right(ctx.otoroshiRequest).future
       case Some(chain) =>
@@ -375,7 +375,7 @@ class NgCertificateAsApikey extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     ctx.request.clientCertificateChain.flatMap(_.headOption) match {
       case None       => Done.rightf
       case Some(cert) =>
@@ -405,7 +405,7 @@ class NgCertificateAsApikey extends NgPreRouting {
                 metadata = config.metadata
               )
               if (env.clusterConfig.mode.isWorker) {
-                ClusterAgent.clusterSaveApikey(env, apikey)(ec, env.otoroshiMaterializer)
+                ClusterAgent.clusterSaveApikey(env, apikey)(using ec, env.otoroshiMaterializer)
               }
               apikey.save().map(_ => apikey)
           }
@@ -469,7 +469,7 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
   private val cache                                        = new UnboundedTrieMap[String, (Long, JsValue)]
 
-  def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
         "forbidden",
@@ -485,7 +485,7 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
       .map(r => NgAccess.NgDenied(r))
   }
 
-  private def validate(certs: Seq[X509Certificate], values: JsValue, ctx: NgAccessContext)(implicit
+  private def validate(certs: Seq[X509Certificate], values: JsValue, ctx: NgAccessContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgAccess] = {
@@ -523,14 +523,14 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
     }
   }
 
-  private def fetch(method: String, url: String, headers: Map[String, String], timeout: Long, tls: NgTlsConfig)(implicit
+  private def fetch(method: String, url: String, headers: Map[String, String], timeout: Long, tls: NgTlsConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[JsValue] = {
     env.MtlsWs
       .url(url, tls.legacy)
       .withMethod(method)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .withRequestTimeout(timeout.millis)
       .execute()
       .map {
@@ -548,7 +548,7 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
       }
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.request.clientCertificateChain match {
       case Some(certs) =>
         val config = ctx

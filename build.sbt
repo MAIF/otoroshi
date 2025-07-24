@@ -17,6 +17,8 @@ scalacOptions ++= Seq(
     //  "-Wconf:cat=scala3-migration:s",
     //  "-Xmigration",
     //  "-deprecation",
+    "-rewrite",
+    "-source 3.4-migration",
     "-experimental",
     "-explain",
     "-feature",

@@ -1,22 +1,22 @@
 package otoroshi.utils.workflow
 
-import java.io.File
-import java.nio.file.Files
-import java.util.concurrent.atomic.AtomicReference
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.utils.JsonPathUtils
-import otoroshi.utils.ReplaceAllWith
+import otoroshi.utils.{JsonPathUtils, ReplaceAllWith}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 
+import java.io.File
+import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -102,10 +102,10 @@ trait WorkFlowTask {
   def name: String
   def theType: WorkFlowTaskType
   def json: JsValue
-  def run(ctx: WorkFlowTaskContext)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult]
+  def run(ctx: WorkFlowTaskContext)(using ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult]
   def withPredicate(spec: JsValue, ctx: WorkFlowTaskContext)(
       f: => Future[WorkFlowResult]
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
     lazy val predicate = WorkFlowPredicate(spec.select("predicate").asOpt[JsObject].getOrElse(Json.obj()))
     if (predicate.check(ctx.json)) {
       f
@@ -156,10 +156,10 @@ object WorkFlowTask {
 
 object WorkFlowEl {
 
-  import kaleidoscope.*
   import anticipation.Text
+  import kaleidoscope.*
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.*
 
   val logger: Logger                     = Logger("workflow-el")
   val expressionReplacer: ReplaceAllWith = ReplaceAllWith("\\$\\{([^}]*)\\}")
@@ -256,7 +256,7 @@ class WorkFlow(spec: WorkFlowSpec) {
 
   def run(
       input: WorkFlowRequest
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResponse] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResponse] = {
     val ctx = WorkFlowTaskContext(
       input.input,
       new UnboundedTrieMap[String, JsValue](),
@@ -371,7 +371,7 @@ case class ComposeResponseWorkFlowTask(spec: JsValue) extends WorkFlowTask {
 
   override def run(
       ctx: WorkFlowTaskContext
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
     withPredicate(spec, ctx) {
       val response = applyTransformation(spec.select("response").as[JsValue], ctx, env)
       //val responseStr = applyEl(response.stringify, ctx, env)
@@ -414,7 +414,7 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
       .view
       .mapValues(v => applyEl(v, ctx, env))
       .toMap
-  lazy val tls: MtlsConfig                                             = requestSpec.select("tls").asOpt(MtlsConfig.format).getOrElse(MtlsConfig())
+  lazy val tls: MtlsConfig                                             = requestSpec.select("tls").asOpt(using MtlsConfig.format).getOrElse(MtlsConfig())
   def bodyOpt(ctx: WorkFlowTaskContext, env: Env): Option[ByteString]  =
     requestSpec.select("body").asOpt[JsValue].map { body =>
       val finalBody = applyTransformation(body, ctx, env)
@@ -434,13 +434,13 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
 
   override def run(
       ctx: WorkFlowTaskContext
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
     withPredicate(spec, ctx) {
       val finalUrl = url(ctx, env)
       val req      = env.MtlsWs
         .url(finalUrl, tls)          // TODO: handle service-id
         .withRequestTimeout(timeout) // TODO: handle apikey
-        .withHttpHeaders(headers(ctx, env).toSeq: _*)
+        .withHttpHeaders(headers(ctx, env).toSeq*)
         .withMethod(method)
       val reqWithBody = bodyOpt(ctx, env).map(b => req.withBody(b)).getOrElse(req)
       reqWithBody

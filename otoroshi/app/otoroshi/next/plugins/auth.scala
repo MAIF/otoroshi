@@ -68,15 +68,15 @@ class NgLegacyAuthModuleCall extends NgAccessValidator {
 
   override def isAccessAsync: Boolean = true
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val authPlugin   = env.scriptManager
-      .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[AuthModule])(env.otoroshiExecutionContext) match {
+      .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[AuthModule])(using env.otoroshiExecutionContext) match {
       case Right(validator) => validator
       case Left(error)      => throw new RuntimeException(s"Failed to load AuthModule plugin: $error")
     }
     val apikeyPlugin = env.scriptManager
       .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[NgLegacyApikeyCall])(
-        env.otoroshiExecutionContext
+        using env.otoroshiExecutionContext
       ) match {
       case Right(validator) => validator
       case Left(error)      => throw new RuntimeException(s"Failed to load NgLegacyApikeyCall plugin: $error")
@@ -91,7 +91,7 @@ class NgLegacyAuthModuleCall extends NgAccessValidator {
       ctx.route.legacy.copy(publicPatterns = config.publicPatterns, privatePatterns = config.privatePatterns)
     val req          = ctx.request
     if (descriptor.isUriPublic(req.path)) {
-      authPlugin.access(ctx)(env, ec)
+      authPlugin.access(ctx)(using env, ec)
     } else {
       PrivateAppsUserHelper.isPrivateAppsSessionValid(req, descriptor, ctx.attrs).flatMap {
         case Some(_) if descriptor.strictlyPrivate => apikeyPlugin.access(ctx.copy(config = apikeyConfig.json))
@@ -196,7 +196,7 @@ class MultiAuthModule extends NgAccessValidator {
 
   override def isAccessAsync: Boolean = true
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val NgMultiAuthModuleConfig(modules, passWithApikey, useEmailPrompt, usersGroups) =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgMultiAuthModuleConfig())
 
@@ -241,7 +241,7 @@ class MultiAuthModule extends NgAccessValidator {
     }
   }
 
-  private def redirectToAuthModule(ctx: NgAccessContext, useEmailPrompt: Boolean)(implicit env: Env) = {
+  private def redirectToAuthModule(ctx: NgAccessContext, useEmailPrompt: Boolean)(using env: Env) = {
     val redirect = ctx.request
       .getQueryString("redirect")
       .getOrElse(s"${ctx.request.theProtocol}://${ctx.request.theHost}${ctx.request.relativeUri}")
@@ -265,7 +265,7 @@ class MultiAuthModule extends NgAccessValidator {
     }
   }
 
-  private def passWithAuthModule(authModuleId: String, ctx: NgAccessContext)(implicit
+  private def passWithAuthModule(authModuleId: String, ctx: NgAccessContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgAccess] = {
@@ -311,7 +311,7 @@ class MultiAuthModule extends NgAccessValidator {
                       ctx.request.theDomain,
                       ctx.route.legacy,
                       auth
-                    ): _*
+                    )*
                   )
               )
               .vfuture
@@ -337,7 +337,7 @@ class AuthModule extends NgAccessValidator {
 
   override def isAccessAsync: Boolean = true
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val NgAuthModuleConfig(module, passWithApikey) =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgAuthModuleConfig())
     val req                                        = ctx.request
@@ -406,7 +406,7 @@ class AuthModule extends NgAccessValidator {
                               req.theDomain,
                               descriptor,
                               auth
-                            ): _*
+                            )*
                           )
                       )
                       .vfuture
@@ -454,7 +454,7 @@ class NgAuthModuleUserExtractor extends NgAccessValidator {
     "This plugin extracts users from an authentication module without enforcing login".some
   override def defaultConfigObject: Option[NgAuthModuleUserExtractorConfig] = NgAuthModuleUserExtractorConfig().some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
 
     def error(status: Results.Status, msg: String, code: String): Future[NgAccess] = {
       Errors
@@ -541,7 +541,7 @@ class NgAuthModuleExpectedUser extends NgAccessValidator {
   override def description: Option[String]                                 = "This plugin enforce that a user from any auth. module is logged in".some
   override def defaultConfigObject: Option[NgAuthModuleExpectedUserConfig] = NgAuthModuleExpectedUserConfig().some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
 
     def error(status: Results.Status, msg: String, code: String): Future[NgAccess] = {
       Errors
@@ -625,7 +625,7 @@ class BasicAuthCaller extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config =
       ctx.cachedConfig(internalName)(BasicAuthCallerConfig.format.reads(_)).getOrElse(BasicAuthCallerConfig())
 
@@ -702,7 +702,7 @@ class SimpleBasicAuth extends NgAccessValidator {
   override def configFlow: Seq[String]        = SimpleBasicAuthConfig.configFlow
   override def configSchema: Option[JsObject] = SimpleBasicAuthConfig.configSchema
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config                =
       ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads(_)).getOrElse(SimpleBasicAuthConfig())
     val globalUsers           = env.datastores.globalConfigDataStore
@@ -760,7 +760,7 @@ class NgExpectedConsumer extends NgAccessValidator {
   override def defaultConfigObject: Option[NgPluginConfig] = None
   override def noJsForm: Boolean                           = true
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
 
     def error(status: Results.Status, msg: String, code: String): Future[NgAccess] = {
       Errors
@@ -862,7 +862,7 @@ class BasicAuthWithAuthModule extends NgAccessValidator {
   override def configFlow: Seq[String]                     = BasicAuthWithAuthModuleConfig.configFlow
   override def configSchema: Option[JsObject]              = BasicAuthWithAuthModuleConfig.configSchema
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
 
     val config     =
       ctx.cachedConfig(internalName)(BasicAuthWithAuthModuleConfig.format).getOrElse(BasicAuthWithAuthModuleConfig())

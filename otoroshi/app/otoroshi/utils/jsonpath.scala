@@ -39,12 +39,12 @@ object JsonPathUtils {
     }
   }
 
-  def getAtJson[T](payload: JsValue, path: String)(implicit r: Reads[T]): Option[T] = {
-    getAt[T](Json.stringify(payload), path)(r)
+  def getAtJson[T](payload: JsValue, path: String)(using r: Reads[T]): Option[T] = {
+    getAt[T](Json.stringify(payload), path)
   }
 
-  def getAt[T](payload: String, path: String)(implicit r: Reads[T]): Option[T] = {
-    getAtPoly(payload, path).flatMap(_.asOpt[T](r))
+  def getAt[T](payload: String, path: String)(using r: Reads[T]): Option[T] = {
+    getAtPoly(payload, path).flatMap(_.asOpt[T](using r))
   }
 
   def getAtPolyJsonStr(payload: JsValue, path: String): String = {
@@ -127,7 +127,7 @@ case class JsonPathReadError(message: String, path: String, payload: String, err
 case class JsonPathValidator(path: String, value: JsValue, error: Option[String] = None) extends JsonValidator {
   def json: JsValue         = JsonPathValidator.format.writes(this)
   override def kind: String = "json-path-validator"
-  def validate(ctx: JsValue)(implicit env: Env): Boolean = {
+  def validate(ctx: JsValue)(using env: Env): Boolean = {
     val maybeExpr = value.asOptString.getOrElse("")
     ctx.atPath(path).asOpt[JsValue] match {
       case None if maybeExpr == "NotDefined()"                      => true

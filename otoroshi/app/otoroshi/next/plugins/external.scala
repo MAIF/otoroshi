@@ -4,16 +4,17 @@ import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.mvc.Results
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util._
+import scala.util.*
 
 case class NgExternalValidatorConfig(
     cacheExpression: Option[String] = None,
@@ -81,7 +82,7 @@ class NgExternalValidator extends NgAccessValidator {
       rawUrl: String,
       config: NgExternalValidatorConfig,
       cacheKey: Option[String]
-  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = cache.synchronized {
+  )(using env: Env, ec: ExecutionContext): Future[NgAccess] = cache.synchronized {
     val promise = Promise[Boolean]()
     cacheKey.foreach(key => cache.put(key, (config.ttl, promise)))
     val url     = GlobalExpressionLanguage.apply(
@@ -112,7 +113,7 @@ class NgExternalValidator extends NgAccessValidator {
       .url(url)
       .withRequestTimeout(config.timeout)
       .withFollowRedirects(true)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .post(ctx.wasmJson)
       .flatMap { resp =>
         if (resp.status == 200) {
@@ -174,7 +175,7 @@ class NgExternalValidator extends NgAccessValidator {
       }
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(NgExternalValidatorConfig.format)
       .getOrElse(NgExternalValidatorConfig())

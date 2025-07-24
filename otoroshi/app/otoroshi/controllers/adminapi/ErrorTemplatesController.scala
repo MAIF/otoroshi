@@ -11,7 +11,7 @@ import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[ErrorTemplate, JsValue]
     with CrudControllerHelper[ErrorTemplate, JsValue] {
@@ -36,7 +36,7 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
 
   override def writeEntity(entity: ErrorTemplate): JsValue = ErrorTemplate.fmt.writes(entity)
 
-  override def findByIdOps(id: String, req: RequestHeader)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ErrorTemplate]]] = {
@@ -55,7 +55,7 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[ErrorTemplate]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[ErrorTemplate]]] = {
     env.datastores.errorTemplateDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -72,7 +72,7 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
   override def createEntityOps(
       entity: ErrorTemplate,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ErrorTemplate]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ErrorTemplate]]] = {
     env.datastores.errorTemplateDataStore.set(entity).map {
       case true  =>
         Right(
@@ -97,7 +97,7 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
   override def updateEntityOps(
       entity: ErrorTemplate,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ErrorTemplate]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ErrorTemplate]]] = {
     env.datastores.errorTemplateDataStore.set(entity).map {
       case true  =>
         Right(
@@ -122,7 +122,7 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ErrorTemplate]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ErrorTemplate]]] = {
     env.datastores.errorTemplateDataStore.delete(id).map {
       case true  =>
         Right(

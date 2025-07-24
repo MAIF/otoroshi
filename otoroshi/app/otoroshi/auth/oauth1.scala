@@ -13,6 +13,7 @@ import play.api.Logger
 import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsString, JsSuccess, JsValue, Json}
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.libs.ws.WSResponse
+import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.Results.{Ok, Redirect}
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
@@ -82,7 +83,7 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
             .map(_.view.mapValues(UserRights.readFromArray).toMap)
             .getOrElse(Map.empty),
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+            (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
@@ -188,7 +189,7 @@ case class Oauth1ModuleConfig(
   override def form: Option[Form]                                       = None
   override def authModule(config: GlobalConfig): AuthModule             = Oauth1AuthModule(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
 
   override def asJson: JsValue =
     location.jsonWithKey ++ Json.obj(
@@ -220,7 +221,7 @@ case class Oauth1ModuleConfig(
       }.toMap)
     )
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
 
   override def cookieSuffix(desc: ServiceDescriptor): String = s"ldap-auth-$id"
 }
@@ -273,7 +274,7 @@ object Oauth1AuthModule {
   def post(env: Env, url: String, body: Map[String, String]): Future[WSResponse] = env.Ws
     .url(url)
     .addHttpHeaders(("Content-Type", "application/x-www-form-urlencoded"))
-    .post(body)(writeableOf_urlEncodedSimpleForm)
+    .post(body)(using writeableOf_urlEncodedSimpleForm)
 
   def getOauth1TemplateRequest(callbackURL: Option[String]): Map[String, String] = {
     val signatureMethod = "HMAC-SHA1"
@@ -312,11 +313,11 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
-    implicit val _r: RequestHeader = request
+    given _r: RequestHeader = request
 
     val baseParams: Map[String, String] =
       getOauth1TemplateRequest(Some(authConfig.callbackURL)) ++ Map("oauth_consumer_key" -> authConfig.consumerKey)
@@ -376,23 +377,23 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = FastFuture.successful(Right(None))
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = callback(request, config, isBoLogin = false, Some(descriptor))
     .asInstanceOf[Future[Either[ErrorReason, PrivateAppsUser]]]
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
 
-    implicit val _r: RequestHeader = request
+    given _r: RequestHeader = request
 
     val baseParams: Map[String, String] =
       getOauth1TemplateRequest(Some(authConfig.callbackURL)) ++ Map("oauth_consumer_key" -> authConfig.consumerKey)
@@ -434,13 +435,13 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
   }
 
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] =
     FastFuture.successful(Right(None))
 
-  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, BackOfficeUser]] =
@@ -451,7 +452,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
       config: GlobalConfig,
       isBoLogin: Boolean,
       descriptor: Option[ServiceDescriptor] = None
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[ErrorReason, RefreshableUser]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[ErrorReason, RefreshableUser]] = {
 
     val method  = authConfig.httpMethod.methods.accessToken
     val queries = mapOfSeqToMap(request.queryString)

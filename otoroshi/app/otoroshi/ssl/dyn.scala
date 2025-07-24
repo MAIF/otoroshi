@@ -14,7 +14,7 @@ case class ConfigAndHash(config: Config, hash: String)
 case class SSLConfigAndHash(config: SSLConfigSettings, hash: String)
 
 class PlayLoggerFactory(logger: Logger) extends LoggerFactory {
-  override def apply(clazz: Class[_]): NoDepsLogger = new PlayLoggerFactoryLogger(logger)
+  override def apply(clazz: Class[?]): NoDepsLogger = new PlayLoggerFactoryLogger(logger)
   override def apply(name: String): NoDepsLogger    = new PlayLoggerFactoryLogger(logger)
 }
 

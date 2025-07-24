@@ -129,8 +129,8 @@ class ReactorNettyRequest(
       flashCookieBaker,
       exclusive
     )
-    with Request[Source[ByteString, _]] {
-  lazy val body: Source[ByteString, _] = {
+    with Request[Source[ByteString, ?]] {
+  lazy val body: Source[ByteString, ?] = {
     val flux: Publisher[ByteString] = req.receive().map { bb =>
       val builder = ByteString.newBuilder
       bb.readBytes(builder.asOutputStream, bb.readableBytes())
@@ -229,7 +229,7 @@ class ReactorNettyRequestHeader(
       Seq(
         ("Tls-Session-Info", s.toString)
       )
-    )): _*
+    ))*
   )
   lazy val connection: RemoteConnection = new ReactorNettyRemoteConnection(req, secure, sessionOpt)
   lazy val target: RequestTarget        = new ReactorNettyRequestTarget(req)
@@ -307,8 +307,8 @@ class NettyRequest(
     flashCookieBaker: FlashCookieBaker,
     addressGet: () => String
 ) extends NettyRequestHeader(listenerId, req, ctx, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, addressGet)
-    with Request[Source[ByteString, _]] {
-  lazy val body: Source[ByteString, _] = {
+    with Request[Source[ByteString, ?]] {
+  lazy val body: Source[ByteString, ?] = {
     Source.fromPublisher(rawBody)
   }
   def withBody(newBody: Flux[ByteString]): NettyRequest =
@@ -417,7 +417,7 @@ class NettyRequestHeader(
       Seq(
         ("Tls-Session-Info", s.toString)
       )
-    )): _*
+    ))*
   )
   lazy val connection: RemoteConnection            = new NettyRemoteConnection(req, ctx, secure, sessionOpt, addressGet)
   lazy val target: RequestTarget                   = new NettyRequestTarget(req)

@@ -16,7 +16,7 @@ class KvCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryDataStore 
   def canaryCountKey(id: String): String   = s"${_env.storageRoot}:canary:$id:count:canary"
   def standardCountKey(id: String): String = s"${_env.storageRoot}:canary:$id:count:standard"
 
-  override def destroyCanarySession(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  override def destroyCanarySession(serviceId: String)(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     for {
       _ <- redisCli.del(canaryCountKey(serviceId))
       _ <- redisCli.del(standardCountKey(serviceId))
@@ -42,7 +42,7 @@ class KvCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryDataStore 
     }
   }
 
-  def canaryCampaign(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[ServiceCanaryCampaign] = {
+  def canaryCampaign(serviceId: String)(using ec: ExecutionContext, env: Env): Future[ServiceCanaryCampaign] = {
     for {
       canary   <- redisCli.get(canaryCountKey(serviceId)).map(_.map(_.utf8String.toLong).getOrElse(0L))
       standard <- redisCli.get(standardCountKey(serviceId)).map(_.map(_.utf8String.toLong).getOrElse(0L))

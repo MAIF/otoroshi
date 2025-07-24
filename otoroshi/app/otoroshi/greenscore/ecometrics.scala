@@ -391,7 +391,7 @@ class EcoMetrics {
 
   private def calculateRulesByDate(rules: RulesRouteConfiguration): Seq[RouteScoreByDateAndSection] = {
     val enrichedRules = rules.states
-      .sortBy(_.date)(Ordering.Long)
+      .sortBy(_.date)(using Ordering.Long)
       .zipWithIndex
       .foldLeft(Seq.empty[RuleStateRecord]) { case (acc, (item, i)) =>
         acc :+ item.copy(
@@ -440,7 +440,7 @@ class EcoMetrics {
   ): Option[Seq[RouteScoreByDateAndSection]] = {
     if (
       rules.states
-        .sortBy(_.date)(Ordering.Long)
+        .sortBy(_.date)(using Ordering.Long)
         .headOption
         .exists(createdAt => createdAt.date <= date)
     ) {
@@ -448,7 +448,7 @@ class EcoMetrics {
       val record: RuleStateRecord = RuleStateRecord(
         date = date,
         states = rules.states
-          .sortBy(_.date)(Ordering.Long)
+          .sortBy(_.date)(using Ordering.Long)
           .flatMap(r => r.states.map(state => (r.date, state)))
           .foldLeft(RulesManager.rules.map(r => RuleState(r.id, enabled = false))) { case (acc, (recordState, state)) =>
             if (recordState <= date) {
@@ -492,7 +492,7 @@ class EcoMetrics {
   private def mergeRoutesScoreByDateAndSection(routes: Seq[(RouteRules, RouteScore)]) = {
     val dates = routes
       .flatMap(item => item._2.sectionsScoreByDate.map(_.date))
-      .sorted(Ordering.Long)
+      .sorted(using Ordering.Long)
       .toSet
 
     dates.foldLeft(Seq.empty[RouteScoreAtDate]) { case (acc, date) =>

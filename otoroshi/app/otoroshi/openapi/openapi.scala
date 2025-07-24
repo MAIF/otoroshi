@@ -342,7 +342,7 @@ class OpenApiGenerator(
           m.setAccessible(true)
           val res = m.invoke(c.getDeclaredConstructor().newInstance())
           res match {
-            case value: Option[_] =>
+            case value: Option[?] =>
               world.get(value.get.getClass.getName) match {
                 case Some(newClazz) =>
                   fields = (newClazz.getFieldInfo.asScala ++ newClazz.getDeclaredFieldInfo.asScala).toSet

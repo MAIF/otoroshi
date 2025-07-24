@@ -33,7 +33,7 @@ class U2FController(
     BackOfficeAction: BackOfficeAction,
     BackOfficeActionAuth: BackOfficeActionAuth,
     cc: ControllerComponents
-)(implicit env: Env)
+)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
@@ -57,7 +57,7 @@ class U2FController(
 
   def simpleLogin: Action[JsValue] =
     BackOfficeAction.async(parse.json) { ctx =>
-      implicit val req: Request[JsValue] = ctx.request
+      given req: Request[JsValue] = ctx.request
       val usernameOpt                    = (ctx.request.body \ "username").asOpt[String]
       val passwordOpt                    = (ctx.request.body \ "password").asOpt[String]
       (usernameOpt, passwordOpt) match {
@@ -433,7 +433,7 @@ class U2FController(
     BackOfficeAction.async(parse.json) { ctx =>
       import scala.jdk.CollectionConverters._
 
-      implicit val req: Request[JsValue] = ctx.request
+      given req: Request[JsValue] = ctx.request
 
       val json                    = ctx.request.body
       val webauthn                = (json \ "webauthn").as[JsObject]

@@ -19,12 +19,12 @@ case class ServiceGroup(
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
-  def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+  def services(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     env.datastores.serviceDescriptorDataStore.findByGroup(id)
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                  = env.datastores.serviceGroupDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                =
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean]                  = env.datastores.serviceGroupDataStore.set(this)
+  def delete()(using ec: ExecutionContext, env: Env): Future[Boolean]                =
     env.datastores.serviceGroupDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                =
+  def exists()(using ec: ExecutionContext, env: Env): Future[Boolean]                =
     env.datastores.serviceGroupDataStore.exists(this)
   def toJson: JsValue                                                                   = ServiceGroup.toJson(this)
 
@@ -77,8 +77,8 @@ object ServiceGroup {
 }
 
 trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): ServiceGroup = initiateNewGroup(env, ctx)
-  def initiateNewGroup(env: Env, ctx: Option[ApiActionContext[_]] = None): ServiceGroup = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): ServiceGroup = initiateNewGroup(env, ctx)
+  def initiateNewGroup(env: Env, ctx: Option[ApiActionContext[?]] = None): ServiceGroup = {
     val defaultGroup = ServiceGroup(
       id = IdGenerator.namedId("group", env),
       name = "product-group",
@@ -86,9 +86,9 @@ trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
       metadata = Map.empty,
       tags = Seq.empty
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .group
       .map { template =>

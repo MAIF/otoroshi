@@ -25,7 +25,7 @@ object InfoTokenHelper {
       issuer: Option[String] = None,
       sub: Option[String] = None,
       addFields: Option[AddFieldsSettings]
-  )(implicit env: Env): OtoroshiClaim = {
+  )(using env: Env): OtoroshiClaim = {
     import otoroshi.ssl.SSLImplicits._
     val clientCertChain = requestHeader
       .flatMap(_.clientCertificateChain)

@@ -49,7 +49,7 @@ object Key {
     JsString(k.key)
   }
 
-  implicit val format: Format[Key] = Format(reads, writes)
+  given format: Format[Key] = Format(reads, writes)
 
   implicit class EnhancedString(val str: String) extends AnyVal {
     def asKey: Key = Key(str)

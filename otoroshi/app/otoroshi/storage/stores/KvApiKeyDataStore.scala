@@ -17,7 +17,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
 
   lazy val logger: Logger = Logger("otoroshi-apikey-datastore")
 
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
 
   override def fmt: Format[ApiKey] = ApiKey._fmt
 
@@ -33,17 +33,17 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
 
   def throttlingKey(name: String): String = s"${_env.storageRoot}:apikey:quotas:second:$name"
 
-  override def clearFastLookupByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+  override def clearFastLookupByService(serviceId: String)(using ec: ExecutionContext, env: Env): Future[Long] = {
     redisCli.del(s"${env.storageRoot}:apikey:byservice:$serviceId")
   }
 
-  override def deleteFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit
+  override def deleteFastLookupByService(serviceId: String, apiKey: ApiKey)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Long] =
     redisCli.srem(s"${env.storageRoot}:apikey:byservice:$serviceId", apiKey.clientId)
 
-  override def addFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit
+  override def addFastLookupByService(serviceId: String, apiKey: ApiKey)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Long] = {
@@ -54,17 +54,17 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     } yield r
   }
 
-  override def deleteFastLookupByGroup(groupId: String, apiKey: ApiKey)(implicit
+  override def deleteFastLookupByGroup(groupId: String, apiKey: ApiKey)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Long] =
     redisCli.srem(s"${env.storageRoot}:apikey:bygroup:$groupId", apiKey.clientId)
 
-  override def clearFastLookupByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+  override def clearFastLookupByGroup(groupId: String)(using ec: ExecutionContext, env: Env): Future[Long] = {
     redisCli.del(s"${env.storageRoot}:apikey:bygroup:$groupId")
   }
 
-  override def addFastLookupByGroup(groupId: String, apiKey: ApiKey)(implicit
+  override def addFastLookupByGroup(groupId: String, apiKey: ApiKey)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Long] = {
@@ -75,7 +75,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     } yield r
   }
 
-  override def remainingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] =
+  override def remainingQuotas(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[RemainingQuotas] =
     for {
       throttlingCallsPerWindow <-
         redisCli.get(throttlingKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
@@ -93,7 +93,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       remainingCallsPerMonth = Math.max(0, apiKey.monthlyQuota - monthlyCalls)
     )
 
-  override def resetQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] = {
+  override def resetQuotas(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[RemainingQuotas] = {
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
     val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
@@ -124,7 +124,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     )
   }
 
-  override def updateQuotas(apiKey: ApiKey, increment: Long = 1L)(implicit
+  override def updateQuotas(apiKey: ApiKey, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
   ): Future[RemainingQuotas] = {
@@ -165,30 +165,30 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     }
   }
 
-  override def withingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def withingQuotas(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     for {
       sec <- withinThrottlingQuota(apiKey)
       day <- withinDailyQuota(apiKey)
       mon <- withinMonthlyQuota(apiKey)
     } yield sec && day && mon
 
-  override def withinThrottlingQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def withinThrottlingQuota(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     redisCli
       .get(throttlingKey(apiKey.clientId))
       .fast
       .map(_.map(_.utf8String.toLong).getOrElse(0L) <= apiKey.throttlingQuota)
 
-  override def withinDailyQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def withinDailyQuota(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L) < apiKey.dailyQuota)
 
-  override def withinMonthlyQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def withinMonthlyQuota(apiKey: ApiKey)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     redisCli
       .get(monthlyQuotaKey(apiKey.clientId))
       .fast
       .map(_.map(_.utf8String.toLong).getOrElse(0L) < apiKey.monthlyQuota)
 
   // optimized
-  override def findByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
+  override def findByService(serviceId: String)(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
     env.datastores.serviceDescriptorDataStore.findOrRouteById(serviceId).flatMap {
       case Some(descriptor) =>
         if (redisCli.optimized) {
@@ -205,7 +205,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
   }
 
   // optimized
-  override def findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
+  override def findByGroup(groupId: String)(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
     if (redisCli.optimized) {
       redisCli.asOptimized.apiKeys_findByGroup(groupId)
     } else {
@@ -222,7 +222,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
   }
 
   // optimized
-  override def findAuthorizeKeyFor(clientId: String, serviceId: String)(implicit
+  override def findAuthorizeKeyFor(clientId: String, serviceId: String)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[ApiKey]] = {
@@ -251,7 +251,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     }
   }
 
-  override def findAuthorizeKeyForFromCache(clientId: String, serviceId: String)(implicit env: Env): Option[ApiKey] = {
+  override def findAuthorizeKeyForFromCache(clientId: String, serviceId: String)(using env: Env): Option[ApiKey] = {
     env.proxyState.apikey(clientId) match {
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId)) => opt
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteIdentifier(serviceId))             => opt
@@ -273,7 +273,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     }
   }
 
-  override def findAuthorizeKeyForBearer(bearer: String, serviceId: String)(implicit
+  override def findAuthorizeKeyForBearer(bearer: String, serviceId: String)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[ApiKey]] = {

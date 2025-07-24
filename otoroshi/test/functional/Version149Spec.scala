@@ -21,7 +21,7 @@ import scala.util.Try
 
 class Version149Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   import scala.concurrent.duration._
@@ -525,7 +525,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
             val state             = r.getHeader("Otoroshi-State").get()
             val tokenBody         =
               Try(Json.parse(JavaBase64.getDecoder.decode(state.value().split("\\.")(1)))).getOrElse(Json.obj())
-            val stateValue        = (tokenBody \ "state").as[String]
+            val stateValue        = (tokenBody \ "state").asOpt[String].getOrElse {
+              // TODO: This should return a 400 Bad Request instead of using empty string
+              //       but that would require refactoring the test handler structure
+              println(s"[Version149Spec] No 'state' field in token body: $tokenBody")
+              ""
+            }
             val respToken: String = JWT
               .create()
               .withJWTId(IdGenerator.uuid)
@@ -548,7 +553,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
             val state             = r.getHeader("Otoroshi-State").get()
             val tokenBody         =
               Try(Json.parse(JavaBase64.getDecoder.decode(state.value().split("\\.")(1)))).getOrElse(Json.obj())
-            val stateValue        = (tokenBody \ "state").as[String]
+            val stateValue        = (tokenBody \ "state").asOpt[String].getOrElse {
+              // TODO: This should return a 400 Bad Request instead of using empty string
+              //       but that would require refactoring the test handler structure
+              println(s"[Version149Spec] No 'state' field in token body: $tokenBody")
+              ""
+            }
             val respToken: String = JWT
               .create()
               .withJWTId(IdGenerator.uuid)

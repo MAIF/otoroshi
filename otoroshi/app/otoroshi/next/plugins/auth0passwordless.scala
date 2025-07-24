@@ -13,6 +13,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
+import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.Results
 
 import java.util.concurrent.TimeUnit
@@ -143,7 +144,7 @@ class Auth0PasswordlessStartFlowEndpoint extends NgBackendCall {
       params: JsObject,
       config: Auth0PasswordlessAuthConfig,
       oauthConfig: GenericOauth2ModuleConfig
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -209,7 +210,7 @@ class Auth0PasswordlessStartFlowEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -264,7 +265,7 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
       params: JsObject,
       config: Auth0PasswordlessAuthConfig,
       oauthConfig: GenericOauth2ModuleConfig
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -360,7 +361,7 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
                               "session_id"             -> sessionId // can be passed as cookie value, or "Otoroshi-Token" header, or "pappsToken" query params
                             )
                           )
-                          .withCookies(cookies: _*)
+                          .withCookies(cookies*)
                       ),
                       None
                     ).right
@@ -379,7 +380,7 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -430,7 +431,7 @@ class Auth0PasswordlessStartEndFlowEndpoints extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -481,7 +482,7 @@ class Auth0PasswordlessFlow extends NgBackendCall with NgAccessValidator {
   override def configFlow: Seq[String]                     = Auth0PasswordlessAuthConfig.configFlow
   override def configSchema: Option[JsObject]              = Auth0PasswordlessAuthConfig.configSchema
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.user match {
       case Some(_) => NgAccess.NgAllowed.vfuture
       case None    =>
@@ -517,7 +518,7 @@ class Auth0PasswordlessFlow extends NgBackendCall with NgAccessValidator {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

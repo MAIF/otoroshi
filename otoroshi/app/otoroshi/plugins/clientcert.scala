@@ -29,7 +29,7 @@ class HasClientCertValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(_) => FastFuture.successful(true)
       case _       => FastFuture.successful(false)
@@ -53,7 +53,7 @@ class HasClientCertMatchingApikeyValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(_) =>
         context.apikey match {
@@ -122,7 +122,7 @@ class HasClientCertMatchingValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain
       .map(
         _.map(cert =>
@@ -288,13 +288,13 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
     }
   }
 
-  private def fetch(url: String, headers: Map[String, String], ttl: Long, mtlsConfig: MtlsConfig)(implicit
+  private def fetch(url: String, headers: Map[String, String], ttl: Long, mtlsConfig: MtlsConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[JsValue] = {
     env.MtlsWs
       .url(url, mtlsConfig)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .get()
       .map {
         case r if r.status == 200 =>
@@ -311,7 +311,7 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
       }
   }
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(certs) =>
         val config: JsValue = (context.config \ "HasClientCertMatchingHttpValidator")
@@ -439,7 +439,7 @@ class ClientCertChainHeader extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     ctx.request.clientCertificateChain match {
       case None        => Right(ctx.otoroshiRequest).future
       case Some(chain) =>

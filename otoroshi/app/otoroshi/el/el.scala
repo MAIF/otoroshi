@@ -78,6 +78,8 @@ object GlobalExpressionLanguage {
       attrs: TypedMap,
       env: Env
   ): String = env.metrics.withTimer(s"el.apply") {
+
+    given Env = env
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
       case v if v.contains("${") =>
@@ -261,19 +263,19 @@ object GlobalExpressionLanguage {
               route.get.metadata.getOrElse(field.s, s"no-meta-${field.s}")
 
             case "req.fullUrl" if req.isDefined                                           =>
-              s"${req.get.theProtocol(env)}://${req.get.theHost(env)}${req.get.relativeUri}"
+              s"${req.get.theProtocol}://${req.get.theHost}${req.get.relativeUri}"
             case "req.listener" if req.isDefined                                          =>
               attrs.get(otoroshi.plugins.Keys.CurrentListenerKey).getOrElse(HttpListenerNames.Standard)
             case "req.id" if req.isDefined                                                => req.get.id.toString
             case "req.path" if req.isDefined                                              => req.get.path
             case "req.uri" if req.isDefined                                               => req.get.relativeUri
-            case "req.host" if req.isDefined                                              => req.get.theHost(env)
-            case "req.domain" if req.isDefined                                            => req.get.theDomain(env)
+            case "req.host" if req.isDefined                                              => req.get.theHost
+            case "req.domain" if req.isDefined                                            => req.get.theDomain
             case "req.method" if req.isDefined                                            => req.get.method
-            case "req.protocol" if req.isDefined                                          => req.get.theProtocol(env)
-            case "req.ip" if req.isDefined                                                => req.get.theIpAddress(env)
-            case "req.ip_address" if req.isDefined                                        => req.get.theIpAddress(env)
-            case "req.secured" if req.isDefined                                           => req.get.theSecured(env).toString
+            case "req.protocol" if req.isDefined                                          => req.get.theProtocol
+            case "req.ip" if req.isDefined                                                => req.get.theIpAddress
+            case "req.ip_address" if req.isDefined                                        => req.get.theIpAddress
+            case "req.secured" if req.isDefined                                           => req.get.theSecured.toString
             case "req.version" if req.isDefined                                           => req.get.version
             case r"req.headers.$field(.*):$defaultValue(.*)" if req.isDefined             =>
               req.get.headers.get(field.s).getOrElse(defaultValue.s)
@@ -414,17 +416,17 @@ object GlobalExpressionLanguage {
                 .getOrElse(s"no-ctx-$field")
             case r"vault://$path(.*)"                                                          =>
               Await.result(
-                env.vaults.fillSecretsAsync("el-exp", s"vault://$path")(env.otoroshiExecutionContext),
+                env.vaults.fillSecretsAsync("el-exp", s"vault://$path")(using env.otoroshiExecutionContext),
                 5.seconds
               )
             case r"global_config.metadata.$name(.*)"                                           =>
               env.datastores.globalConfigDataStore
-                .latest()(env.otoroshiExecutionContext, env)
+                .latest()(using env.otoroshiExecutionContext, env)
                 .metadata
                 .getOrElse(name.s, s"no-metadata-${name}")
             case r"global_config.env.$path(.*)"                                                =>
               env.datastores.globalConfigDataStore
-                .latest()(env.otoroshiExecutionContext, env)
+                .latest()(using env.otoroshiExecutionContext, env)
                 .env
                 .at(path.s)
                 .asOpt[JsValue]

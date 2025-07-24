@@ -47,7 +47,7 @@ case class ValueNode(json: JsObject) extends Node {
   )
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val value = WorkflowOperator.processOperators(json.select("value").asValue, wfr, env)
     value.rightf
   }
@@ -76,7 +76,7 @@ case class ErrorNode(json: JsObject) extends Node {
   )
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val message = json.select("message").asOpt[String].getOrElse("")
     val details = json.select("details").asOpt[JsObject]
     WorkflowError(
@@ -108,7 +108,7 @@ case class WaitNode(json: JsObject) extends Node {
   )
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val duration = json.select("duration").asOpt[Long].getOrElse(0L).millis
     val promise  = Promise[Either[WorkflowError, JsValue]]()
     env.otoroshiScheduler.scheduleOnce(duration) {
@@ -124,7 +124,7 @@ case class NoopNode(json: JsObject) extends Node {
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.some
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     println("noop, doing nothing")
     JsNull.rightf
   }
@@ -167,7 +167,7 @@ case class WorkflowNode(json: JsObject) extends Node {
 
   lazy val steps: Seq[Node] = json.select("steps").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => Node.from(o))
 
-  def next(nodes: Seq[Node], wfr: WorkflowRun)(implicit
+  def next(nodes: Seq[Node], wfr: WorkflowRun)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[WorkflowError, JsValue]] = {
@@ -189,7 +189,7 @@ case class WorkflowNode(json: JsObject) extends Node {
 
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     next(steps, wfr)
   }
 }
@@ -225,17 +225,17 @@ case class CallNode(json: JsObject) extends Node {
 
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     WorkflowFunction.get(functionName) match {
       case None           => WorkflowError(s"function '$functionName' not supported in task '$id'", None, None).leftf
       case Some(function) =>
-        function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
+        function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(using env, ec, wfr)
     }
   }
 }
 
 case class AssignOperation(json: JsObject) {
-  def execute(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def execute(wfr: WorkflowRun)(using env: Env, ec: ExecutionContext): Unit = {
     val name  = json.select("name").asString
     val value = WorkflowOperator.processOperators(json.select("value").asValue, wfr, env)
     wfr.memory.set(name, value)
@@ -295,7 +295,7 @@ case class AssignNode(json: JsObject) extends Node {
     json.select("values").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => AssignOperation(o))
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     values.foreach(_.execute(wfr: WorkflowRun))
     Right(JsNull).vfuture
   }
@@ -355,7 +355,7 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
   lazy val paths: Seq[JsObject]                           = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     Future
       .sequence(
         paths
@@ -445,7 +445,7 @@ case class SwitchNode(json: JsObject) extends Node {
   )
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val paths: Seq[JsObject] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
     paths.find(o =>
       WorkflowOperator.processOperators(o.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
@@ -500,7 +500,7 @@ case class IfThenElseNode(json: JsObject) extends Node {
   )
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val pass =
       WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
     if (pass) {
@@ -550,7 +550,7 @@ case class ForEachNode(json: JsObject) extends Node {
   )
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val values         = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
     val node           = Node.from(json.select("node").asObject)
     val iterableObject = values.asOpt[JsObject]
@@ -572,7 +572,7 @@ case class ForEachNode(json: JsObject) extends Node {
             }
         }
         .takeWhile(_.isRight, inclusive = true)
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { seq =>
           val last = seq.last
           if (last.isLeft) {
@@ -597,7 +597,7 @@ case class ForEachNode(json: JsObject) extends Node {
             }
         }
         .takeWhile(_.isRight, inclusive = true)
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { seq =>
           val last = seq.last
           if (last.isLeft) {
@@ -642,7 +642,7 @@ case class MapNode(json: JsObject) extends Node {
   )
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val values = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
     val node   = Node.from(json.select("node").asObject)
     values match {
@@ -660,7 +660,7 @@ case class MapNode(json: JsObject) extends Node {
               }
           }
           .takeWhile(_.isRight, inclusive = true)
-          .runWith(Sink.seq)(env.otoroshiMaterializer)
+          .runWith(Sink.seq)(using env.otoroshiMaterializer)
           .map { seq =>
             val last = seq.last
             if (last.isLeft) {
@@ -709,7 +709,7 @@ case class FlatMapNode(json: JsObject) extends Node {
   )
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val values = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
     val node   = Node.from(json.select("node").asObject)
     values match {
@@ -727,7 +727,7 @@ case class FlatMapNode(json: JsObject) extends Node {
               }
           }
           .takeWhile(_.isRight, inclusive = true)
-          .runWith(Sink.seq)(env.otoroshiMaterializer)
+          .runWith(Sink.seq)(using env.otoroshiMaterializer)
           .map { seq =>
             val last = seq.last
             if (last.isLeft) {
@@ -775,7 +775,7 @@ case class FilterNode(json: JsObject) extends Node {
   )
   override def run(
       wfr: WorkflowRun
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val values = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
     val node   = Node.from(json.select("predicate").asObject)
     val not    = json.select("not").asOptBoolean.getOrElse(false)
@@ -797,7 +797,7 @@ case class FilterNode(json: JsObject) extends Node {
               }
           }
           .takeWhile(_._2.isRight, inclusive = true)
-          .runWith(Sink.seq)(env.otoroshiMaterializer)
+          .runWith(Sink.seq)(using env.otoroshiMaterializer)
           .map { seq =>
             val last = seq.last
             if (last._2.isLeft) {

@@ -21,11 +21,11 @@ case class PrivateAppsActionContext[A](
     globalConfig: otoroshi.models.GlobalConfig
 ) {
   def connected: Boolean              = users.nonEmpty
-  def from(implicit env: Env): String = request.theIpAddress
+  def from(using env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
 }
 
-class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
+class PrivateAppsAction(val parser: BodyParser[AnyContent])(using env: Env)
     extends ActionBuilder[PrivateAppsActionContext, AnyContent]
     with ActionFunction[Request, PrivateAppsActionContext] {
 
@@ -68,7 +68,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
             .collect { case Some(user) =>
               user
             }
-            .runWith(Sink.seq)(env.otoroshiMaterializer)
+            .runWith(Sink.seq)(using env.otoroshiMaterializer)
             .flatMap { users =>
               block(PrivateAppsActionContext(request, users, globalConfig))
             }
@@ -79,7 +79,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                 val discardingCookies: Seq[DiscardingCookie] = cookies.flatMap { cookie =>
                   env.removePrivateSessionCookiesWithSuffix(host, cookie.name.replace("oto-papps-", ""))
                 }
-                result.discardingCookies(discardingCookies: _*)
+                result.discardingCookies(discardingCookies*)
               }
           } else {
             block(PrivateAppsActionContext(request, Seq.empty, globalConfig))

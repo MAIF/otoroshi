@@ -123,7 +123,7 @@ object ApiRoute {
 case class ApiFlows(id: String, name: String, consumers: Seq[String] = Seq.empty, plugins: NgPlugins)
 
 object ApiFlows {
-  def empty(implicit env: Env): ApiFlows = ApiFlows(
+  def empty(using env: Env): ApiFlows = ApiFlows(
     "default_flow",
     "default_flow",
     plugins = NgPlugins.apply(
@@ -295,8 +295,8 @@ object ApiDocumentation {
 
     override def reads(json: JsValue): JsResult[ApiDocumentation] = Try {
       ApiDocumentation(
-        specification = json.select("specification").as(ApiSpecification._fmt),
-        home = json.select("home").as(ApiPage._fmt),
+        specification = json.select("specification").as(using ApiSpecification._fmt),
+        home = json.select("home").as(using ApiPage._fmt),
         pages = (json \ "pages")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiPage._fmt.reads(v).asOpt))
@@ -371,16 +371,16 @@ object ApiConsumer {
             )
           case "mtls"    =>
             ApiConsumerSettings.Mtls(
-              consumerConfig = (json \ "settings").asOpt(NgHasClientCertMatchingValidatorConfig.format)
+              consumerConfig = (json \ "settings").asOpt(using NgHasClientCertMatchingValidatorConfig.format)
             )
           case "keyless" => ApiConsumerSettings.Keyless()
           case "oauth2"  =>
             ApiConsumerSettings.OAuth2(
-              consumerConfig = (json \ "settings").asOpt(NgClientCredentialTokenEndpointConfig.format)
+              consumerConfig = (json \ "settings").asOpt(using NgClientCredentialTokenEndpointConfig.format)
             )
           case "jwt"     =>
             ApiConsumerSettings.JWT(
-              consumerConfig = (json \ "settings").asOpt(NgJwtVerificationOnlyConfig.format)
+              consumerConfig = (json \ "settings").asOpt(using NgJwtVerificationOnlyConfig.format)
             )
         },
         status = json.select("status").asString.toLowerCase match {
@@ -497,8 +497,8 @@ object ApiConsumerSubscription {
       action: DeleteAction,
       env: Env
   ): Future[Either[JsValue, Unit]] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val e: Env               = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given e: Env               = env
 
     env.datastores.apiDataStore.findById(entity.apiRef) flatMap {
       case Some(api) =>
@@ -532,8 +532,8 @@ object ApiConsumerSubscription {
       env: Env
   ): Future[Either[JsValue, ApiConsumerSubscription]] = {
 
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val e: Env               = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given e: Env               = env
 
     def onError(error: String): Either[JsValue, ApiConsumerSubscription] = Json
       .obj(
@@ -601,14 +601,14 @@ object ApiConsumerSubscription {
   val format: Format[ApiConsumerSubscription] = new Format[ApiConsumerSubscription] {
     override def reads(json: JsValue): JsResult[ApiConsumerSubscription] = Try {
       ApiConsumerSubscription(
-        location = json.select("location").as(EntityLocation.format),
+        location = json.select("location").as(using EntityLocation.format),
         id = json.select("id").asString,
         name = json.select("name").asString,
         description = json.select("description").asString,
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
-        dates = json.select("dates").as(ApiConsumerSubscriptionDates._fmt),
+        dates = json.select("dates").as(using ApiConsumerSubscriptionDates._fmt),
         ownerRef = json.select("owner_ref").asString,
         consumerRef = json.select("consumer_ref").asString,
         subscriptionKind = json.select("subscription_kind").asString.toLowerCase match {
@@ -726,7 +726,7 @@ object ApiConsumerStatus {
 case class ApiBackend(id: String, name: String, backend: NgBackend, client: String)
 
 object ApiBackend {
-  def empty(implicit env: Env): ApiBackend = ApiBackend(
+  def empty(using env: Env): ApiBackend = ApiBackend(
     IdGenerator.namedId("api_backend", env),
     name = "default_backend",
     backend = NgBackend.empty.copy(
@@ -747,7 +747,7 @@ object ApiBackend {
       ApiBackend(
         id = json.select("id").asString,
         name = json.select("name").asString,
-        backend = json.select("backend").as(NgBackend.fmt),
+        backend = json.select("backend").as(using NgBackend.fmt),
         client = json.select("client").asOpt[String].getOrElse("default_client")
       )
     } match {
@@ -783,7 +783,7 @@ object ApiBackendClient {
       ApiBackendClient(
         id = json.select("id").asString,
         name = json.select("name").asString,
-        client = json.select("client").as(NgClientConfig.format)
+        client = json.select("client").as(using NgClientConfig.format)
       )
     } match {
       case Failure(ex)    =>
@@ -870,8 +870,8 @@ case class Api(
 
   override def theMetadata: Map[String, String] = metadata
 
-  def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+  def toRoutes(using env: Env): Future[Seq[NgRoute]] = {
+    given ec: ExecutionContext = env.otoroshiExecutionContext
 
     if (state == ApiRemoved || !enabled) {
       Seq.empty.vfuture
@@ -939,8 +939,8 @@ case class Api(
     ).legacy
   }
 
-  def routeToNgRoute(apiRoute: ApiRoute, optApi: Option[Api] = None)(implicit env: Env): Future[Option[NgRoute]] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+  def routeToNgRoute(apiRoute: ApiRoute, optApi: Option[Api] = None)(using env: Env): Future[Option[NgRoute]] = {
+    given ec: ExecutionContext = env.otoroshiExecutionContext
 
     val api = optApi.map(api => api).getOrElse(this)
 
@@ -985,7 +985,7 @@ case class Api(
     }
   }
 
-  def apiRouteToNgRoute(routeId: String)(implicit env: Env): Future[Option[NgRoute]] = {
+  def apiRouteToNgRoute(routeId: String)(using env: Env): Future[Option[NgRoute]] = {
     routes.find(_.id == routeId) match {
       case Some(apiRoute) => routeToNgRoute(apiRoute)
       case None           => None.vfuture
@@ -995,7 +995,7 @@ case class Api(
 
 object Api {
 
-  def fromOpenApi(domain: String, openapi: String, serverURL: Option[String], root: Option[String])(implicit
+  def fromOpenApi(domain: String, openapi: String, serverURL: Option[String], root: Option[String])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Api] = {
@@ -1079,7 +1079,7 @@ object Api {
         blueprint = ApiBlueprint.REST,
         state = ApiStaging,
         backends = Seq(backend),
-        flows = Seq(ApiFlows.empty(env)),
+        flows = Seq(ApiFlows.empty(using env)),
         consumers = Seq(
           ApiConsumer(
             id = "keyless",
@@ -1094,7 +1094,7 @@ object Api {
     }
   }
 
-  private def addPluginToFlow[T <: NgPlugin](consumer: ApiConsumer, flow: ApiFlows)(implicit
+  private def addPluginToFlow[T <: NgPlugin](consumer: ApiConsumer, flow: ApiFlows)(using
       ct: ClassTag[T]
   ): ApiFlows = {
     if (flow.consumers.contains(consumer.id)) {
@@ -1163,7 +1163,7 @@ object Api {
     //    }
   }
 
-//  def removePluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(implicit ct: ClassTag[T]): Api = {
+//  def removePluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(using ct: ClassTag[T]): Api = {
 //    api.copy(flows = api.flows
 //      .map(flow => {
 //        if (flow.consumers.contains(consumer.id)) {
@@ -1186,8 +1186,8 @@ object Api {
       action: WriteAction,
       env: Env
   ): Future[Either[JsValue, Api]] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val e: Env               = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given e: Env               = env
 
     if (action == WriteAction.Update) {
       oldEntity
@@ -1294,7 +1294,7 @@ object Api {
           .map(_.flatMap(v => ApiBackendClient._fmt.reads(v).asOpt))
           .getOrElse(Seq(ApiBackendClient.defaultClient)),
         documentation = (json \ "documentation")
-          .asOpt[ApiDocumentation](ApiDocumentation._fmt.reads(_)),
+          .asOpt[ApiDocumentation](using ApiDocumentation._fmt.reads(_)),
         consumers = (json \ "consumers")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiConsumer._fmt.reads(v).asOpt))
@@ -1309,7 +1309,7 @@ object Api {
           .getOrElse(Seq.empty),
         testing = json
           .select("testing")
-          .asOpt(ApiTesting._fmt.reads(_))
+          .asOpt(using ApiTesting._fmt.reads(_))
           .getOrElse(ApiTesting())
       )
     } match {
@@ -1337,8 +1337,8 @@ trait ApiDataStore extends BasicStore[Api] {
       state = ApiStaging,
       blueprint = ApiBlueprint.REST,
       routes = Seq.empty,
-      backends = Seq(ApiBackend.empty(env)),
-      flows = Seq(ApiFlows.empty(env)),
+      backends = Seq(ApiBackend.empty(using env)),
+      flows = Seq(ApiFlows.empty(using env)),
       clients = Seq(ApiBackendClient.defaultClient),
       documentation = None,
       consumers = Seq.empty,
@@ -1346,7 +1346,7 @@ trait ApiDataStore extends BasicStore[Api] {
       testing = ApiTesting()
     )
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .api
       .map { template =>
@@ -1360,7 +1360,7 @@ trait ApiDataStore extends BasicStore[Api] {
 
 class KvApiDataStore(redisCli: RedisLike, _env: Env) extends ApiDataStore with RedisLikeStore[Api] {
   override def fmt: Format[Api]                        = Api.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:apis:$id"
   override def extractId(value: Api): String           = value.id
 }
@@ -1391,7 +1391,7 @@ trait ApiConsumerSubscriptionDataStore extends BasicStore[ApiConsumerSubscriptio
     )
 
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .apiConsumerSubscription
       .map { template =>
@@ -1407,7 +1407,7 @@ class KvApiConsumerSubscriptionDataStore(redisCli: RedisLike, _env: Env)
     extends ApiConsumerSubscriptionDataStore
     with RedisLikeStore[ApiConsumerSubscription] {
   override def fmt: Format[ApiConsumerSubscription]              = ApiConsumerSubscription.format
-  override def redisLike(implicit env: Env): RedisLike           = redisCli
+  override def redisLike(using env: Env): RedisLike           = redisCli
   override def key(id: String): String                           = s"${_env.storageRoot}:apiconsumersubscriptions:$id"
   override def extractId(value: ApiConsumerSubscription): String = value.id
 }

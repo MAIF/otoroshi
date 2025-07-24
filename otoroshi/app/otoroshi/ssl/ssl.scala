@@ -1,6 +1,6 @@
 package otoroshi.ssl
 
-import com.github.blemale.scaffeine.Scaffeine
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import org.apache.pekko.http.scaladsl.util.FastFuture
@@ -18,31 +18,32 @@ import otoroshi.env.Env
 import otoroshi.events.{Alerts, CertAlmostExpiredAlert, CertExpiredAlert, CertRenewalAlert}
 import otoroshi.gateway.Errors
 import otoroshi.metrics.{FakeHasMetrics, HasMetrics}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.DN
 import otoroshi.utils.letsencrypt.LetsEncryptHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{RegexPool, TypedMap}
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.WSProxyServer
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.{Configuration, Logger}
 import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
 
-import java.io._
+import java.io.*
 import java.lang.reflect.Field
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets.US_ASCII
 import java.nio.file.Files
-import java.security._
-import java.security.cert._
+import java.security.*
+import java.security.cert.*
 import java.security.spec.{KeySpec, PKCS8EncodedKeySpec}
 import java.util
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
@@ -54,12 +55,11 @@ import java.util.{Base64, Date}
 import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.{Cipher, EncryptedPrivateKeyInfo, SecretKey, SecretKeyFactory}
-import javax.net.ssl._
+import javax.net.ssl.*
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.{FiniteDuration, *}
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
-import com.github.blemale.scaffeine.Cache
 
 /**
  * git over http works with otoroshi
@@ -193,8 +193,8 @@ case class Cert(
 
   def renew(
       _duration: Option[FiniteDuration] = None
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Cert] = {
-    import SSLImplicits._
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Cert] = {
+    import SSLImplicits.*
     val duration = _duration.getOrElse(FiniteDuration(365, TimeUnit.DAYS))
     this match {
       case original if original.letsEncrypt => LetsEncryptHelper.renew(this)
@@ -266,7 +266,7 @@ case class Cert(
     }
   }
   // def password: Option[String] = None
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     val current = this.enrich()
     env.datastores.certificatesDataStore.set(current)
   }
@@ -288,9 +288,9 @@ case class Cert(
       sans = (meta \ "subAltNames").asOpt[Seq[String]].getOrElse(Seq.empty)
     )
   }
-  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def delete()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.certificatesDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def exists()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.certificatesDataStore.exists(this)
   def toJson: JsValue                                                    = Cert.toJson(this)
   lazy val isUsable: Boolean                                             = notRevoked && notExpired && isValid
@@ -407,7 +407,7 @@ case class Cert(
     new KeyPair(pubkey, privkey)
   }
 
-  def toGenCertResponse(implicit env: Env): GenCertResponse = {
+  def toGenCertResponse(using env: Env): GenCertResponse = {
     val query = GenCsrQuery(
       hosts = Seq(domain),
       subject = Some(subject)
@@ -416,7 +416,7 @@ case class Cert(
       serial = serialNumberLng.get,
       cert = certificate.get,
       csr = Await
-        .result(env.pki.genCsr(query, None)(env.otoroshiExecutionContext), 10.seconds) match {
+        .result(env.pki.genCsr(query, None)(using env.otoroshiExecutionContext), 10.seconds) match {
         case Right(response) => response.csr
         case Left(error)     => throw new RuntimeException(s"Failed to generate CSR: $error")
       },
@@ -430,7 +430,7 @@ case class Cert(
 
 object Cert {
 
-  import SSLImplicits._
+  import SSLImplicits.*
 
   val OtoroshiCaDN: String             = s"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi"
   val OtoroshiCA                       = "otoroshi-root-ca"
@@ -580,7 +580,7 @@ object Cert {
     }
   def fromJsonSafe(value: JsValue): JsResult[Cert] = _fmt.reads(value)
 
-  def createFromServices()(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
+  def createFromServices()(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
     env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
       env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
         val certs                    = certificates.filterNot(_.letsEncrypt)
@@ -639,11 +639,11 @@ trait CertificateDataStore extends BasicStore[Cert] {
     )
   }
 
-  def nakedTemplate(env: Env, ctx: Option[ApiActionContext[_]] = None): Future[Cert] = {
+  def nakedTemplate(env: Env, ctx: Option[ApiActionContext[?]] = None): Future[Cert] = {
     val defaultCert = syncTemplate(env)
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .certificate
       .map { template =>
@@ -655,7 +655,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
       .vfuture
   }
 
-  def template(ctx: Option[ApiActionContext[_]] = None)(implicit ec: ExecutionContext, env: Env): Future[Cert] = {
+  def template(ctx: Option[ApiActionContext[?]] = None)(using ec: ExecutionContext, env: Env): Future[Cert] = {
     nakedTemplate(env, ctx)
     // env.pki
     //   .genSelfSignedCert(
@@ -675,7 +675,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
     //   }
   }
 
-  def renewCertificates()(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
+  def renewCertificates()(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
     def willBeInvalidSoon(cert: Cert): Boolean = {
       val enriched       = cert.enrich()
       val globalInterval = new Interval(enriched.from, enriched.to)
@@ -880,7 +880,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
       logger: Logger,
       id: Option[String] = None,
       importCa: Boolean
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Unit = {
@@ -904,7 +904,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
               (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber)
             )
           if (!found) {
-            cert.save()(ec, env).andThen {
+            cert.save()(using ec, env).andThen {
               case Success(e) => logger.info(s"successful import of $name !")
               case Failure(e) => logger.error(s"error while storing $name ...", e)
             }
@@ -937,7 +937,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
             (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber)
           )
         if (!found) {
-          cert.save()(ec, env).andThen {
+          cert.save()(using ec, env).andThen {
             case Success(e) => logger.info(s"successful import of $name !")
             case Failure(e) => logger.error(s"error while storing $name ...", e)
           }
@@ -948,7 +948,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
     }
   }
 
-  def importInitialCerts(logger: Logger)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def importInitialCerts(logger: Logger)(using env: Env, ec: ExecutionContext): Unit = {
     importOneCert(
       "root CA certificate",
       env.configuration,
@@ -958,7 +958,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
       logger,
       Some(Cert.OtoroshiCA),
       env.configuration.getOptional[Boolean]("otoroshi.ssl.rootCa.importCa").getOrElse(false)
-    )(env, ec)
+    )(using env, ec)
     importOneCert(
       "initial certificate",
       env.configuration,
@@ -968,7 +968,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
       logger,
       None,
       env.configuration.getOptional[Boolean]("otoroshi.ssl.initialCertImportCa").getOrElse(false)
-    )(env, ec)
+    )(using env, ec)
     env.configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("otoroshi.ssl.initialCerts")
       .getOrElse(Seq.empty[Configuration])
@@ -983,11 +983,11 @@ trait CertificateDataStore extends BasicStore[Cert] {
           logger,
           None,
           conf.getOptional[Boolean]("importCa").getOrElse(false)
-        )(env, ec)
+        )(using env, ec)
       }
   }
 
-  def hasInitialCerts()(implicit env: Env, ec: ExecutionContext): Boolean = {
+  def hasInitialCerts()(using env: Env, ec: ExecutionContext): Boolean = {
     val hasInitialCert  =
       env.configuration.betterHas("otoroshi.ssl.initialCert") &&
       env.configuration.betterHas("otoroshi.ssl.initialCertKey")
@@ -1000,7 +1000,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
   def autoGenerateCertificateForDomain(
       domain: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
     env.datastores.globalConfigDataStore.latestSafe match {
       case None         => FastFuture.successful(None)
       case Some(config) =>
@@ -1081,11 +1081,11 @@ trait CertificateDataStore extends BasicStore[Cert] {
   }
 
   def jautoGenerateCertificateForDomain(domain: String, env: Env): Option[Cert] = {
-    import scala.concurrent.duration._
+    import scala.concurrent.duration.*
     Try {
       // TODO: blocking ec
-      implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-      implicit val ev: Env              = env
+      given ec: ExecutionContext = env.otoroshiExecutionContext
+      given ev: Env              = env
       // AWAIT: valid
       Await.result(env.datastores.certificatesDataStore.autoGenerateCertificateForDomain(domain), 10.seconds)
     } match {
@@ -1531,7 +1531,7 @@ object DynamicSSLEngineProvider {
 
   def createKeyStore(certificates: Seq[Cert]): KeyStore = {
 
-    import SSLImplicits._
+    import SSLImplicits.*
 
     if (logger.isDebugEnabled) logger.debug(s"Creating keystore ...")
     val keyStore: KeyStore = KeyStore.getInstance("JKS")
@@ -1710,7 +1710,7 @@ object DynamicSSLEngineProvider {
       if (logger.isDebugEnabled) logger.debug(s"[$id] Found no private key :(")
       Left(s"[$id] Found no private key")
     } else {
-      import otoroshi.utils.syntax.implicits._
+      import otoroshi.utils.syntax.implicits.*
       Try {
         // val reader = new PemReader(new StringReader(privateKey))
         val parser    = new PEMParser(new StringReader(content))
@@ -1899,9 +1899,9 @@ object noCATrustManager extends X509TrustManager {
 
 object CertificateData {
 
-  import otoroshi.ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits.*
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.*
 
   private val logger                                 = Logger("otoroshi-cert-data")
   private val encoder                                = Base64.getEncoder
@@ -1993,7 +1993,7 @@ object PemHeaders {
 
 object FakeKeyStore {
 
-  import otoroshi.ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits.*
 
   private val EMPTY_PASSWORD = Array.emptyCharArray
   private val encoder        = Base64.getEncoder
@@ -2016,9 +2016,9 @@ object FakeKeyStore {
     val KeystoreType           = "JKS"
   }
 
-  private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  private given ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
-  def generateKeyStore(host: String)(implicit env: Env): KeyStore = {
+  def generateKeyStore(host: String)(using env: Env): KeyStore = {
     val keyStore: KeyStore = KeyStore.getInstance(KeystoreSettings.KeystoreType)
     val (cert, keyPair)    = generateX509Certificate(host)
     keyStore.load(null, EMPTY_PASSWORD)
@@ -2027,12 +2027,12 @@ object FakeKeyStore {
     keyStore
   }
 
-  def generateX509Certificate(host: String)(implicit env: Env): (X509Certificate, KeyPair) = {
+  def generateX509Certificate(host: String)(using env: Env): (X509Certificate, KeyPair) = {
     val resp = createSelfSignedCertificate(host, 365.days, None, None)
     (resp.cert, resp.keyPair)
   }
 
-  def generateCert(host: String)(implicit env: Env): Cert = {
+  def generateCert(host: String)(using env: Env): Cert = {
     val (cert, keyPair) = generateX509Certificate(host)
     Cert(
       id = IdGenerator.token(32),
@@ -2075,7 +2075,7 @@ object FakeKeyStore {
       ca: X509Certificate,
       caChain: Seq[X509Certificate],
       caKeyPair: KeyPair
-  )(implicit env: Env): GenCertResponse = {
+  )(using env: Env): GenCertResponse = {
 
     val f = env.pki.genCert(
       GenCsrQuery(
@@ -2103,7 +2103,7 @@ object FakeKeyStore {
       duration: FiniteDuration,
       kp: Option[KeyPair],
       serial: Option[Long]
-  )(implicit env: Env): GenCertResponse = {
+  )(using env: Env): GenCertResponse = {
 
     val f    = env.pki.genSelfSignedCert(
       GenCsrQuery(
@@ -2130,7 +2130,7 @@ object FakeKeyStore {
       ca: X509Certificate,
       caChain: Seq[X509Certificate],
       caKeyPair: KeyPair
-  )(implicit env: Env): GenCertResponse = {
+  )(using env: Env): GenCertResponse = {
 
     val f    = env.pki.genCert(
       GenCsrQuery(
@@ -2159,7 +2159,7 @@ object FakeKeyStore {
       ca: X509Certificate,
       caChain: Seq[X509Certificate],
       caKeyPair: KeyPair
-  )(implicit env: Env): GenCertResponse = {
+  )(using env: Env): GenCertResponse = {
 
     val f    = env.pki.genSubCA(
       GenCsrQuery(
@@ -2181,7 +2181,7 @@ object FakeKeyStore {
     resp.toOption.get
   }
 
-  def createCA(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long])(implicit
+  def createCA(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long])(using
       env: Env
   ): GenCertResponse = {
 
@@ -2334,7 +2334,7 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProto
   override def setHandshakeApplicationProtocolSelector(
       selector: BiFunction[SSLEngine, util.List[String], String]
   ): Unit = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
     if (!lock) {
       delegate.setHandshakeApplicationProtocolSelector(new BiFunction[SSLEngine, util.List[String], String] {
         override def apply(t: SSLEngine, u: util.List[String]): String = {
@@ -2369,9 +2369,9 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProto
 }
 
 sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCertificateValidator] {
-  def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]]
-  def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def getValidation(key: String)(using ec: ExecutionContext, env: Env): Future[Option[Boolean]]
+  def setValidation(key: String, value: Boolean, ttl: Long)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def removeValidation(key: String)(using ec: ExecutionContext, env: Env): Future[Long]
   def template: ClientCertificateValidator = {
     ClientCertificateValidator(
       id = IdGenerator.token,
@@ -2390,18 +2390,18 @@ class KvClientCertificateValidationDataStore(redisCli: RedisLike, env: Env)
     extends ClientCertificateValidationDataStore
     with RedisLikeStore[ClientCertificateValidator] {
 
-  def dsKey(k: String)(implicit env: Env): String                                                           = s"${env.storageRoot}:certificates:clients:$k"
-  override def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] =
+  def dsKey(k: String)(using env: Env): String                                                           = s"${env.storageRoot}:certificates:clients:$k"
+  override def getValidation(key: String)(using ec: ExecutionContext, env: Env): Future[Option[Boolean]] =
     redisCli.get(dsKey(key)).map(_.map(_.utf8String.toBoolean))
-  override def setValidation(key: String, value: Boolean, ttl: Long)(implicit
+  override def setValidation(key: String, value: Boolean, ttl: Long)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean]                                                                                        =
     redisCli.set(dsKey(key), value.toString, pxMilliseconds = Some(ttl))
-  def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]                  = redisCli.del(dsKey(key))
+  def removeValidation(key: String)(using ec: ExecutionContext, env: Env): Future[Long]                  = redisCli.del(dsKey(key))
 
   override def fmt: Format[ClientCertificateValidator]              = ClientCertificateValidator.fmt
-  override def redisLike(implicit env: Env): RedisLike              = redisCli
+  override def redisLike(using env: Env): RedisLike              = redisCli
   override def key(id: String): String                              = s"${env.storageRoot}:certificates:validators:$id"
   override def extractId(value: ClientCertificateValidator): String = value.id
 }
@@ -2505,7 +2505,7 @@ case class ClientCertificateValidator(
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   /*
   TEST CODE
@@ -2535,12 +2535,12 @@ case class ClientCertificateValidator(
   app.listen(3000, () => console.log('certificate validation server'));
    */
 
-  import otoroshi.ssl.SSLImplicits._
-  import play.api.http.websocket.{Message => PlayWSMessage}
+  import otoroshi.ssl.SSLImplicits.*
+  import play.api.http.websocket.Message as PlayWSMessage
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.clientCertificateValidationDataStore.set(this)
 
   def asJson: JsValue = ClientCertificateValidator.fmt.writes(this)
@@ -2551,7 +2551,7 @@ case class ClientCertificateValidator(
       apikey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None,
       config: GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
     val certPayload                         = chain
       .map { cert =>
         cert.asPem
@@ -2578,7 +2578,7 @@ case class ClientCertificateValidator(
       headers.toSeq ++ Seq("Host" -> host, "Content-Type" -> "application/json", "Accept" -> "application/json")
     env.Ws // no need for mtls here
       .url(url + path)
-      .withHttpHeaders(finalHeaders: _*)
+      .withHttpHeaders(finalHeaders*)
       .withMethod(method)
       .withBody(payload)
       .withRequestTimeout(Duration(timeout, TimeUnit.MILLISECONDS))
@@ -2591,7 +2591,7 @@ case class ClientCertificateValidator(
               .asOpt[String]
               .map(_.toLowerCase == "good") // TODO: return custom message, also device identification for logging
           case _   =>
-            resp.ignore()(env.otoroshiMaterializer)
+            resp.ignore()(using env.otoroshiMaterializer)
             None
         }
       }
@@ -2601,15 +2601,15 @@ case class ClientCertificateValidator(
       }
   }
 
-  private def getLocalValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+  private def getLocalValidation(key: String)(using ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
     env.datastores.clientCertificateValidationDataStore.getValidation(key)
   }
 
-  private def setGoodLocalValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  private def setGoodLocalValidation(key: String)(using ec: ExecutionContext, env: Env): Future[Unit] = {
     env.datastores.clientCertificateValidationDataStore.setValidation(key, value = true, goodTtl).map(_ => ())
   }
 
-  private def setBadLocalValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  private def setBadLocalValidation(key: String)(using ec: ExecutionContext, env: Env): Future[Unit] = {
     env.datastores.clientCertificateValidationDataStore.setValidation(key, value = false, badTtl).map(_ => ())
   }
 
@@ -2629,7 +2629,7 @@ case class ClientCertificateValidator(
       apikey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None,
       config: GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  )(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     val key = computeKeyFromChain(chain) + "-" + apikey
       .map(_.clientId)
       .orElse(user.map(_.randomId))
@@ -2662,7 +2662,7 @@ case class ClientCertificateValidator(
       attrs: TypedMap
   )(
       f: => Future[A]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     request.clientCertificateChain match {
       case Some(chain) if alwaysValid => f.map(Right.apply)
       case Some(chain)                =>
@@ -2701,7 +2701,7 @@ case class ClientCertificateValidator(
       user: Option[PrivateAppsUser] = None,
       config: GlobalConfig,
       attrs: TypedMap
-  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(f: => Future[Result])(using ec: ExecutionContext, env: Env): Future[Result] = {
     internalValidateClientCertificates(req, desc, apikey, user, config, attrs)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
@@ -2716,10 +2716,10 @@ case class ClientCertificateValidator(
       config: GlobalConfig,
       attrs: TypedMap
   )(
-      f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     internalValidateClientCertificates(req, desc, apikey, user, config, attrs)(f).map {
-      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
+      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, ?]](badResult)
       case Right(goodResult) => goodResult
     }
   }
@@ -2733,7 +2733,7 @@ case class ClientCertificateValidator(
       attrs: TypedMap
   )(
       f: => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     internalValidateClientCertificates(req, desc, apikey, user, config, attrs)(f).map {
       case Left(badResult)   => Left[Result, A](badResult)
       case Right(goodResult) => goodResult
@@ -2801,7 +2801,7 @@ class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrus
 
 object SSLImplicits {
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.*
 
   private val logger = Logger("otoroshi-ssl-implicits")
 
@@ -2904,7 +2904,7 @@ case class RawCertificate(
     client: Boolean = false
 ) {
 
-  import SSLImplicits._
+  import SSLImplicits.*
 
   def matchesDomain(dom: String): Boolean = sans.exists(d => RegexPool.apply(d).matches(dom))
 

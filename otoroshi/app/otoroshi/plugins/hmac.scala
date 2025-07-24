@@ -102,7 +102,7 @@ class HMACCallerPlugin extends RequestTransformer {
 
   override def transformRequestWithCtx(
       context: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = context.configFor("HMACCallerPlugin")
     (config \ "secret").asOpt[String] match {
       case None         =>
@@ -220,7 +220,7 @@ class HMACValidator extends AccessValidator {
       FastFuture.successful(false)
   }
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] =
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] =
     ((context.configFor("HMACAccessValidator") \ "secret").asOpt[String] match {
       case Some(value) if value.nonEmpty => Some(value)
       case _                             => context.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.clientSecret)

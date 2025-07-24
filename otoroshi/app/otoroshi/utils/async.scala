@@ -11,7 +11,7 @@ import scala.util.{Failure, Success}
  */
 object AsyncUtils {
 
-  def mapAsync[A](items: Seq[Future[A]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
+  def mapAsync[A](items: Seq[Future[A]])(using ec: ExecutionContext): Future[Seq[A]] = {
 
     val promise = Promise[Seq[A]]()
     var results = Seq.empty[A]
@@ -38,7 +38,7 @@ object AsyncUtils {
     promise.future
   }
 
-  def flatmapAsync[A](items: Seq[Future[Seq[A]]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
+  def flatmapAsync[A](items: Seq[Future[Seq[A]]])(using ec: ExecutionContext): Future[Seq[A]] = {
 
     val promise = Promise[Seq[A]]()
     var results = Seq.empty[A]
@@ -65,7 +65,7 @@ object AsyncUtils {
     promise.future
   }
 
-  def mapAsyncF[I, A](items: Seq[I])(f: Function[I, Future[A]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
+  def mapAsyncF[I, A](items: Seq[I])(f: Function[I, Future[A]])(using ec: ExecutionContext): Future[Seq[A]] = {
 
     val promise = Promise[Seq[A]]()
     var results = Seq.empty[A]
@@ -92,7 +92,7 @@ object AsyncUtils {
     promise.future
   }
 
-  def filterAsyncF[I](items: Seq[I])(f: Function[I, Future[Boolean]])(implicit ec: ExecutionContext): Future[Seq[I]] = {
+  def filterAsyncF[I](items: Seq[I])(f: Function[I, Future[Boolean]])(using ec: ExecutionContext): Future[Seq[I]] = {
 
     val promise = Promise[Seq[I]]()
     var results = Seq.empty[I]
@@ -127,7 +127,7 @@ object AsyncUtils {
 
   def findAsyncF[I](
       items: Seq[I]
-  )(f: Function[I, Future[Boolean]])(implicit ec: ExecutionContext): Future[Option[I]] = {
+  )(f: Function[I, Future[Boolean]])(using ec: ExecutionContext): Future[Option[I]] = {
 
     val promise = Promise[Option[I]]()
 
@@ -155,7 +155,7 @@ object AsyncUtils {
 
   def flatmapAsyncF[I, A](
       items: Seq[I]
-  )(f: Function[I, Future[Seq[A]]])(implicit ec: ExecutionContext): Future[Seq[A]] = {
+  )(f: Function[I, Future[Seq[A]]])(using ec: ExecutionContext): Future[Seq[A]] = {
 
     val promise = Promise[Seq[A]]()
     var results = Seq.empty[A]
@@ -182,7 +182,7 @@ object AsyncUtils {
     promise.future
   }
 
-  def foreachAsync[A](items: Seq[Future[A]])(implicit ec: ExecutionContext): Future[Unit] = {
+  def foreachAsync[A](items: Seq[Future[A]])(using ec: ExecutionContext): Future[Unit] = {
 
     val promise = Promise[Unit]()
 
@@ -207,7 +207,7 @@ object AsyncUtils {
     promise.future
   }
 
-  def foreachAsyncF[I, A](items: Seq[I])(f: Function[I, Future[A]])(implicit ec: ExecutionContext): Future[Unit] = {
+  def foreachAsyncF[I, A](items: Seq[I])(f: Function[I, Future[A]])(using ec: ExecutionContext): Future[Unit] = {
 
     val promise = Promise[Unit]()
 
@@ -232,7 +232,7 @@ object AsyncUtils {
     promise.future
   }
 
-  def chainAsync[A](items: Seq[Function[A, Future[A]]])(input: A)(implicit ec: ExecutionContext): Future[A] = {
+  def chainAsync[A](items: Seq[Function[A, Future[A]]])(input: A)(using ec: ExecutionContext): Future[A] = {
     val promise   = Promise[A]()
     var latest: A = input
 
@@ -260,7 +260,7 @@ object AsyncUtils {
 
   def chainAsyncF[I, A](
       items: Seq[I]
-  )(input: A)(f: (I, A) => Future[A])(implicit ec: ExecutionContext): Future[A] = {
+  )(input: A)(f: (I, A) => Future[A])(using ec: ExecutionContext): Future[A] = {
     val promise   = Promise[A]()
     var latest: A = input
 
@@ -288,7 +288,7 @@ object AsyncUtils {
 
   def chainAsyncE[Err, A](
       items: Seq[Function[A, Future[Either[Err, A]]]]
-  )(input: A)(implicit ec: ExecutionContext): Future[Either[Err, A]] = {
+  )(input: A)(using ec: ExecutionContext): Future[Either[Err, A]] = {
     val promise   = Promise[Either[Err, A]]()
     var latest: A = input
 
@@ -317,7 +317,7 @@ object AsyncUtils {
 
   def chainAsyncFE[Err, I, A](
       items: Seq[I]
-  )(input: A)(f: (I, A) => Future[Either[Err, A]])(implicit ec: ExecutionContext): Future[Either[Err, A]] = {
+  )(input: A)(f: (I, A) => Future[Either[Err, A]])(using ec: ExecutionContext): Future[Either[Err, A]] = {
     val promise   = Promise[Either[Err, A]]()
     var latest: A = input
 

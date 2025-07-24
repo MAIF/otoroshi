@@ -44,7 +44,7 @@ class NgGenericAllowedList extends NgAccessValidator {
   override def description: Option[String]                 =
     "This plugin checks let requests pass based on an el expression".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(NgGenericListConfig.format)
       .getOrElse(NgGenericListConfig())
@@ -110,7 +110,7 @@ class NgGenericBlockList extends NgAccessValidator {
   override def description: Option[String]                 =
     "This plugin checks let requests is blocked based on an el expression".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(NgGenericListConfig.format)
       .getOrElse(NgGenericListConfig())

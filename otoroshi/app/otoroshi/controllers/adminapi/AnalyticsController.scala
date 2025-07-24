@@ -28,7 +28,7 @@ import utils.EntityFiltering
 import scala.concurrent.{ExecutionContext, Future}
 
 case class Part(fieldName: String, f: () => Future[Option[JsValue]]) {
-  def call(req: RequestHeader)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[JsObject] = {
+  def call(req: RequestHeader)(using ec: ExecutionContext, mat: Materializer, env: Env): Future[JsObject] = {
     req.getQueryString("fields") match {
       case None                                                                                          =>
         f().map {
@@ -45,7 +45,7 @@ case class Part(fieldName: String, f: () => Future[Option[JsValue]]) {
   }
 }
 
-class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
+class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
     env: Env
 ) extends AbstractController(cc) {
 

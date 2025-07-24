@@ -107,7 +107,7 @@ class Log4ShellFilter extends RequestTransformer {
   private val logger = Logger("otoroshi-plugins-log4shell")
 
   private val requestBodyKey =
-    TypedKey[Future[Source[ByteString, _]]]("otoroshi.plugins.log4j.Log4ShellFilterRequestBody")
+    TypedKey[Future[Source[ByteString, ?]]]("otoroshi.plugins.log4j.Log4ShellFilterRequestBody")
 
   override def name: String = "Log4Shell mitigation plugin"
 
@@ -158,12 +158,12 @@ class Log4ShellFilter extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config    = ctx.configFor("Log4ShellFilter")
     val status    = config.select("status").asOpt[Int].getOrElse(200)
     val body      = config.select("body").asOpt[String].getOrElse("")
     val parseBody = config.select("parseBody").asOpt[Boolean].getOrElse(false)
-    val promise   = Promise[Source[ByteString, _]]()
+    val promise   = Promise[Source[ByteString, ?]]()
     ctx.attrs.put(requestBodyKey -> promise.future)
     val hasBadHeaders    = ctx.request.headers.toMap.values.flatten.exists(containsBadValue)
     val hasBadMethod     = containsBadValue(ctx.request.method)
@@ -195,7 +195,7 @@ class Log4ShellFilter extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     ctx.attrs.get(requestBodyKey) match {
       case None       => ctx.body
       case Some(body) => Source.future(body).flatMapConcat(b => b)

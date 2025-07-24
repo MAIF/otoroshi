@@ -68,7 +68,7 @@ class NgHasAllowedUsersValidator extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
-  def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
         "forbidden",
@@ -84,7 +84,7 @@ class NgHasAllowedUsersValidator extends NgAccessValidator {
       .map(r => NgAccess.NgDenied(r))
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.user match {
       case Some(user) =>
         val config      = ctx
@@ -174,7 +174,7 @@ class NgJwtUserExtractor extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config =
       ctx.cachedConfig(internalName)(NgJwtUserExtractorConfig.format).getOrElse(NgJwtUserExtractorConfig("none"))
     env.datastores.globalJwtVerifierDataStore.findById(config.verifier).flatMap {

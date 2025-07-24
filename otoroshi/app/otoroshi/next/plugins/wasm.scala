@@ -21,6 +21,7 @@ import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.ws.WSCookie
+import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.{Request, Result, Results}
 
 import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
@@ -103,8 +104,8 @@ class WasmRouteMatcher extends NgRouteMatcher {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Wasm)
   override def steps: Seq[NgStep]                          = Seq(NgStep.MatchRoute)
 
-  override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
-    implicit val ec: ExecutionContext = env.wasmIntegration.executionContext
+  override def matches(ctx: NgRouteMatcherContext)(using env: Env): Boolean = {
+    given ec: ExecutionContext = env.wasmIntegration.executionContext
     val config                        = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
@@ -148,7 +149,7 @@ class WasmPreRoute extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
@@ -226,7 +227,7 @@ class WasmBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -310,7 +311,7 @@ class WasmAccessValidator extends NgAccessValidator {
   override def isAccessAsync: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
 
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
@@ -433,7 +434,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
@@ -472,8 +473,8 @@ class WasmRequestTransformer extends NgRequestTransformer {
                   Left(
                     Results
                       .Status(status)(body)
-                      .withCookies(cookies: _*)
-                      .withHeaders(headers.toSeq: _*)
+                      .withCookies(cookies*)
+                      .withHeaders(headers.toSeq*)
                       .as(contentType)
                   )
                 } else {
@@ -520,7 +521,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
@@ -559,8 +560,8 @@ class WasmResponseTransformer extends NgRequestTransformer {
                   Left(
                     Results
                       .Status(status)(body)
-                      .withCookies(cookies: _*)
-                      .withHeaders(headers.toSeq: _*)
+                      .withCookies(cookies*)
+                      .withHeaders(headers.toSeq*)
                       .as(contentType)
                   )
                 } else {
@@ -595,7 +596,7 @@ class WasmSink extends NgRequestSink {
   override def description: Option[String]                 = "Handle unmatched requests with a wasm plugin".some
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
-  override def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val config = WasmConfig.format.reads(ctx.config) match {
       case JsSuccess(value, _) => value
       case JsError(_)          => WasmConfig()
@@ -619,18 +620,18 @@ class WasmSink extends NgRequestSink {
   }
 
   private def requestToWasmJson(
-      body: Source[ByteString, _]
-  )(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
-    implicit val mat: Materializer = env.otoroshiMaterializer
+      body: Source[ByteString, ?]
+  )(using ec: ExecutionContext, env: Env): Future[JsValue] = {
+    given mat: Materializer = env.otoroshiMaterializer
     body.runFold(ByteString.empty)(_ ++ _).map { rawBody =>
       Writes.arrayWrites[Byte].writes(rawBody.toArray[Byte])
     }
   }
 
-  override def handleSync(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Result =
+  override def handleSync(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Result =
     Await.result(this.handle(ctx), 10.seconds)
 
-  override def handle(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  override def handle(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
     val config = WasmConfig.format.reads(ctx.config) match {
       case JsSuccess(value, _) => value
       case JsError(_)          => WasmConfig()
@@ -684,7 +685,7 @@ class WasmSink extends NgRequestSink {
 
               Results
                 .Status(status)(body)
-                .withHeaders(headers.toSeq: _*)
+                .withHeaders(headers.toSeq*)
                 .as(contentType)
           }.andThen { case _ =>
             vm.release()
@@ -714,7 +715,7 @@ class WasmRequestHandler extends RequestHandler {
     )
     .some
 
-  override def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String] = {
+  override def handledDomains(using ec: ExecutionContext, env: Env): Seq[String] = {
     env.datastores.globalConfigDataStore
       .latest()
       .plugins
@@ -726,10 +727,10 @@ class WasmRequestHandler extends RequestHandler {
   }
 
   private def requestToWasmJson(
-      request: Request[Source[ByteString, _]]
-  )(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
+      request: Request[Source[ByteString, ?]]
+  )(using ec: ExecutionContext, env: Env): Future[JsValue] = {
     if (request.theHasBody) {
-      implicit val mat: Materializer = env.otoroshiMaterializer
+      given mat: Materializer = env.otoroshiMaterializer
       request.body.runFold(ByteString.empty)(_ ++ _).map { rawBody =>
         JsonHelpers.requestToJson(request, TypedMap.empty).asObject ++ Json.obj(
           "request_body_bytes" -> rawBody.toArray[Byte]
@@ -741,9 +742,9 @@ class WasmRequestHandler extends RequestHandler {
   }
 
   override def handle(
-      request: Request[Source[ByteString, _]],
-      defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+      request: Request[Source[ByteString, ?]],
+      defaultRouting: Request[Source[ByteString, ?]] => Future[Result]
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     val configmap = env.datastores.globalConfigDataStore
       .latest()
       .plugins
@@ -788,7 +789,7 @@ class WasmRequestHandler extends RequestHandler {
                       val contentType: Option[String]  = headers.getIgnoreCase("Content-Type")
                       val status: Int                  = (response \ "status").asOpt[Int].getOrElse(200)
                       val cookies: Seq[WSCookie]       = WasmUtils.convertJsonCookies(response).getOrElse(Seq.empty)
-                      val body: Source[ByteString, _]  =
+                      val body: Source[ByteString, ?]  =
                         response.select("body").asOpt[String].map(b => ByteString(b)) match {
                           case None    => ByteString.empty.singleSource
                           case Some(b) => Source.single(b)
@@ -802,8 +803,8 @@ class WasmRequestHandler extends RequestHandler {
                             contentType = contentType
                           )
                         )
-                        .withHeaders(headers.toSeq: _*)
-                        .withCookies(cookies.map(_.toCookie): _*)
+                        .withHeaders(headers.toSeq*)
+                        .withCookies(cookies.map(_.toCookie)*)
                         .vfuture
                     case Left(bad) => Results.InternalServerError(bad).vfuture
                   }.andThen { case _ =>
@@ -869,7 +870,7 @@ class WasmJob(config: WasmJobsConfig) extends Job {
   override def predicate(ctx: JobContext, env: Env): Option[Boolean]           =
     None // TODO: make it configurable base on global env ???
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
+  override def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = Try {
     env.wasmIntegration.wasmVmFor(config.config).flatMap {
       case None          => Future.failed(new RuntimeException("no plugin found"))
       case Some((vm, _)) =>
@@ -888,7 +889,7 @@ class WasmJob(config: WasmJobsConfig) extends Job {
       funit
     case Success(s) => s
   }
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]  = Try {
+  override def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit]  = Try {
     env.wasmIntegration.wasmVmFor(config.config).flatMap {
       case None          => Future.failed(new RuntimeException("no plugin found"))
       case Some((vm, _)) =>
@@ -907,7 +908,7 @@ class WasmJob(config: WasmJobsConfig) extends Job {
       funit
     case Success(s) => s
   }
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]   = Try {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit]   = Try {
     env.wasmIntegration.wasmVmFor(config.config).flatMap {
       case None                    => Future.failed(new RuntimeException("no plugin found"))
       case Some((vm, localConfig)) =>
@@ -954,7 +955,7 @@ class WasmJobsLauncher extends Job {
 
   private val handledJobs = new UnboundedTrieMap[String, Job]()
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = Try {
     val globalConfig            = env.datastores.globalConfigDataStore.latest()
     val wasmJobs                =
       globalConfig.plugins.ngPlugins().slots.filter(_.enabled).filter(_.plugin == s"cp:${classOf[WasmJob].getName}")
@@ -1010,7 +1011,7 @@ class WasmOPA extends NgAccessValidator {
     opa = true
   ).some
 
-  private def onError(error: String, ctx: NgAccessContext, status: Option[Int] = Some(400))(implicit
+  private def onError(error: String, ctx: NgAccessContext, status: Option[Int] = Some(400))(using
       env: Env,
       ec: ExecutionContext
   ) = Errors
@@ -1025,7 +1026,7 @@ class WasmOPA extends NgAccessValidator {
     )
     .map(r => NgAccess.NgDenied(r))
 
-  private def execute(vm: WasmVm, ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext) = {
+  private def execute(vm: WasmVm, ctx: NgAccessContext)(using env: Env, ec: ExecutionContext) = {
     vm.callOpa("execute", ctx.wasmJson.stringify)
       .flatMap {
         case Right((rawResult, _)) =>
@@ -1043,7 +1044,7 @@ class WasmOPA extends NgAccessValidator {
       }
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
@@ -1096,7 +1097,7 @@ class WasmRouter extends NgRouter {
     "Can decide for routing with a wasm plugin".some
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
-  override def findRoute(ctx: NgRouterContext)(implicit env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = {
+  override def findRoute(ctx: NgRouterContext)(using env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = {
     val config = WasmConfig.format.reads(ctx.config).getOrElse(WasmConfig())
     Await.result(
       env.wasmIntegration.wasmVmFor(config).flatMap {
@@ -1128,7 +1129,7 @@ class WasmRouter extends NgRouter {
             pathParams = response
               .select("path_params")
               .asOpt[Map[String, String]]
-              .map(m => scala.collection.mutable.HashMap.apply(m.toSeq: _*))
+              .map(m => scala.collection.mutable.HashMap.apply(m.toSeq*))
               .getOrElse(scala.collection.mutable.HashMap.empty),
             noMoreSegments = response.select("no_more_segments").asOpt[Boolean].getOrElse(false)
           )

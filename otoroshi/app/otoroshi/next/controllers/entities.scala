@@ -10,7 +10,7 @@ import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
 
-class EntitiesController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class EntitiesController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext

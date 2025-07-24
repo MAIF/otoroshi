@@ -40,7 +40,7 @@ object HealthController {
     }
   }
 
-  def fetchHealth()(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, JsValue]] = {
+  def fetchHealth()(using env: Env, ec: ExecutionContext): Future[Either[JsValue, JsValue]] = {
     val membersF = if (env.clusterConfig.mode == ClusterMode.Leader) {
       env.datastores.clusterStateDataStore.getMembers()
     } else {
@@ -149,7 +149,7 @@ object HealthController {
       acceptsJson: Boolean,
       acceptsProm: Boolean,
       filter: Option[String]
-  )(implicit env: Env, ec: ExecutionContext): Result = {
+  )(using env: Env, ec: ExecutionContext): Result = {
     if (format.contains("old_json") || format.contains("old")) {
       Results.Ok(env.metrics.jsonExport(filter)).as("application/json")
     } else if (format.contains("json")) {
@@ -166,7 +166,7 @@ object HealthController {
   }
 }
 
-class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOfficeActionAuth)(implicit env: Env)
+class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOfficeActionAuth)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext

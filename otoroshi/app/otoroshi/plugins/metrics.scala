@@ -59,7 +59,7 @@ class ServiceMetrics extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method, ctx.rawRequest.path) match {
       case ("GET", "/.well-known/otoroshi/plugins/metrics") =>
         val format = ctx.request.getQueryString("format")
@@ -114,7 +114,7 @@ class ServiceMetrics extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val start: Long    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
     val duration: Long = System.currentTimeMillis() - start
 
@@ -148,7 +148,7 @@ class ServiceMetrics extends RequestTransformer {
 
   override def transformErrorWithCtx(
       ctx: TransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     val start: Long    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
     val duration: Long = System.currentTimeMillis() - start
     // env.metrics.counter(s"otoroshi.service.requests.count.total.${ctx.descriptor.name.slug}").inc()
@@ -238,7 +238,7 @@ class PrometheusEndpoint extends RequestSink {
       """.stripMargin
     )
 
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     ctx.request.headers.get("Host") match {
       case Some(v) if v == env.adminApiHost && ctx.request.uri.startsWith("/prometheus")                => true
       case Some(v) if env.adminApiDomains.contains(v) && ctx.request.uri.startsWith("/prometheus")      => true
@@ -247,7 +247,7 @@ class PrometheusEndpoint extends RequestSink {
     }
   }
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  override def handle(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
 
     val config         = ctx.configFor("PrometheusEndpoint")
     val queryName      = (config \ "accessKeyQuery").asOpt[String].getOrElse("access_key")
@@ -374,7 +374,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val start: Double    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L).toDouble
     val duration: Double = System.currentTimeMillis().toDouble - start
     val config           = ctx.configFor("PrometheusServiceMetrics")
@@ -425,7 +425,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
 
   override def transformErrorWithCtx(
       ctx: TransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     val start: Double    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L).toDouble
     val duration: Double = System.currentTimeMillis().toDouble - start
     val config           = ctx.configFor("PrometheusServiceMetrics")

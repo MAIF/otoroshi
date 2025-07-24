@@ -115,7 +115,7 @@ class ResponseCache extends RequestTransformer {
 
   override def start(env: Env): Future[Unit] = {
     val actorSystem                           = ActorSystem("cache-redis")
-    implicit val ec: ExecutionContextExecutor = actorSystem.dispatcher
+    given ec: ExecutionContextExecutor = actorSystem.dispatcher
     jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(1.minute, 10.minutes) {
       //jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 10.seconds) {
       SchedulerHelper.runnable(
@@ -127,7 +127,7 @@ class ResponseCache extends RequestTransformer {
         }
       )
     })
-    env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
+    env.datastores.globalConfigDataStore.singleton()(using ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "ResponseCache").isDefined) {
         val redis: RedisClientMasterSlaves = {
           val master = RedisServer(
@@ -147,7 +147,7 @@ class ResponseCache extends RequestTransformer {
                 password = (config \ "password").asOpt[String]
               )
             }
-          RedisClientMasterSlaves(master, slaves)(actorSystem)
+          RedisClientMasterSlaves(master, slaves)(using actorSystem)
         }
         ref.set((redis, actorSystem))
       }
@@ -162,9 +162,9 @@ class ResponseCache extends RequestTransformer {
   }
 
   private def cleanCache(env: Env): Future[Unit] = {
-    implicit val ev: Env              = env
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer    = env.otoroshiMaterializer
+    given ev: Env              = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer    = env.otoroshiMaterializer
     env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
       val possibleServices = services.filter(s =>
         s.transformerRefs.nonEmpty && s.transformerRefs.contains("cp:otoroshi.plugins.cache.ResponseCache")
@@ -223,14 +223,14 @@ class ResponseCache extends RequestTransformer {
     }
   }
 
-  private def get(key: String)(implicit env: Env, ec: ExecutionContext): Future[Option[ByteString]] = {
+  private def get(key: String)(using env: Env, ec: ExecutionContext): Future[Option[ByteString]] = {
     ref.get() match {
       case null  => env.datastores.rawDataStore.get(key)
       case redis => redis._1.get(key)
     }
   }
 
-  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit
+  private def set(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -290,7 +290,7 @@ class ResponseCache extends RequestTransformer {
   private def cachedResponse(
       ctx: TransformerRequestContext,
       config: ResponseCacheConfig
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Unit, Option[JsValue]]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Unit, Option[JsValue]]] = {
     if (filter(ctx.request, config)) {
       get(
         s"${env.storageRoot}:noclustersync:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}"
@@ -305,7 +305,7 @@ class ResponseCache extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = ResponseCacheConfig(ctx.configFor("ResponseCache"))
     if (config.enabled) {
       cachedResponse(ctx, config).map {
@@ -325,7 +325,7 @@ class ResponseCache extends RequestTransformer {
             ResponseCache.logger.debug(
               s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache"
             )
-          Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
+          Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq*))
       }
     } else {
       FastFuture.successful(Right(ctx.otoroshiRequest))
@@ -334,7 +334,7 @@ class ResponseCache extends RequestTransformer {
 
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     val config = ResponseCacheConfig(ctx.configFor("ResponseCache"))
     if (config.enabled && couldCacheResponse(ctx, config)) {
       val size = new AtomicLong(0L)

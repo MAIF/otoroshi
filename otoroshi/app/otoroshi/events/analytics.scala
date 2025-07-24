@@ -18,6 +18,7 @@ import otoroshi.tcp.TcpService
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.utils.json.JsonImplicits._
+import otoroshi.utils.json.JsonImplicits.{jodaDateTimeWrapper, jodaDateTimeReads, jodaDateTimeWrites}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue}
 
 import scala.collection.mutable
@@ -29,10 +30,10 @@ case object SendToAnalytics
 
 /*
 object AnalyticsActor {
-  def props(exporter: DataExporterConfig)(implicit env: Env) = Props(new AnalyticsActor(exporter))
+  def props(exporter: DataExporterConfig)(using env: Env) = Props(new AnalyticsActor(exporter))
 }
 
-class AnalyticsActor(exporter: DataExporterConfig)(implicit env: Env) extends Actor {
+class AnalyticsActor(exporter: DataExporterConfig)(using env: Env) extends Actor {
 
   implicit lazy val ec = env.analyticsExecutionContext
 
@@ -52,8 +53,8 @@ class AnalyticsActor(exporter: DataExporterConfig)(implicit env: Env) extends Ac
         logger.debug("SEND_TO_ANALYTICS_HOOK: " + config.analyticsWebhooks)
         config.kafkaConfig.foreach { kafkaConfig =>
           evts.foreach {
-            case evt: AuditEvent => kafkaWrapperAudit.publish(evt)(env, kafkaConfig)
-            case evt             => kafkaWrapperAnalytics.publish(evt)(env, kafkaConfig)
+            case evt: AuditEvent => kafkaWrapperAudit.publish(evt)(using env, kafkaConfig)
+            case evt             => kafkaWrapperAnalytics.publish(evt)(using env, kafkaConfig)
           }
           if (config.kafkaConfig.isEmpty) {
             kafkaWrapperAnalytics.close()
@@ -70,7 +71,7 @@ class AnalyticsActor(exporter: DataExporterConfig)(implicit env: Env) extends Ac
       }
     }
 
-  lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
+  lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(using env.analyticsMaterializer)
 
   override def receive: Receive = {
     case ge: AnalyticEvent => {
@@ -102,8 +103,8 @@ class AnalyticsActorSupervizer(env: Env) extends Actor {
 
   lazy val logger    = Logger("otoroshi-analytics-actor-supervizer")
 
-  implicit val e = env
-  implicit val ec  = env.analyticsExecutionContext
+  given e = env
+  given ec  = env.analyticsExecutionContext
 
   val namesAndRefs: Map[ActorRef, Tuple2[String, DataExporterConfig]] = Map.empty
 
@@ -116,7 +117,7 @@ class AnalyticsActorSupervizer(env: Env) extends Actor {
   override def receive: Receive = {
     case Terminated(ref) =>
       logger.debug("Restarting analytics actor child")
-      context.watch(context.actorOf(AnalyticsActor.props(namesAndRefs(ref)._2)(env), namesAndRefs(ref)._1))
+      context.watch(context.actorOf(AnalyticsActor.props(namesAndRefs(ref)._2)(using env), namesAndRefs(ref)._1))
     case evt => context.children.map(_ ! evt)
   }
 
@@ -126,7 +127,7 @@ class AnalyticsActorSupervizer(env: Env) extends Actor {
         val childName = s"analytics-actor-${exporter.id}"
         if (context.child(childName).isEmpty) {
           logger.debug(s"Starting new child $childName")
-          val ref = context.actorOf(AnalyticsActor.props(exporter)(env), childName)
+          val ref = context.actorOf(AnalyticsActor.props(exporter)(using env), childName)
           namesAndRefs + (ref -> (childName -> exporter))
           context.watch(ref)
         }
@@ -140,7 +141,7 @@ class AnalyticsActorSupervizer(env: Env) extends Actor {
 }
 
 object AnalyticsActorSupervizer {
-  def props(implicit env: Env) = Props(new AnalyticsActorSupervizer(env))
+  def props(using env: Env) = Props(new AnalyticsActorSupervizer(env))
 }
  */
 
@@ -148,7 +149,7 @@ object AnalyticEvent {
   lazy val logger: Logger = Logger("otoroshi-analytics-event")
   def generic(typ: String, `@service`: String = "Otoroshi", `@serviceId`: String = "")(
       additionalPayload: JsObject
-  )(implicit env: Env): GenericAnalytic = {
+  )(using env: Env): GenericAnalytic = {
     GenericAnalytic(typ, env, `@service`, `@serviceId`)(additionalPayload)
   }
 }
@@ -156,10 +157,10 @@ object AnalyticEvent {
 trait OtoroshiEvent {
   def `@id`: String
   def `@timestamp`: DateTime
-  def toJson(implicit _env: Env): JsValue
-  def toEnrichedJson(implicit _env: Env, ec: ExecutionContext): Future[JsValue] = FastFuture.successful(toJson(_env))
-  def dispatch()(implicit env: Env): Unit = {
-    env.scriptManager.dispatchEvent(this)(env.analyticsExecutionContext)
+  def toJson(using _env: Env): JsValue
+  def toEnrichedJson(using _env: Env, ec: ExecutionContext): Future[JsValue] = FastFuture.successful(toJson)
+  def dispatch()(using env: Env): Unit = {
+    env.scriptManager.dispatchEvent(this)(using env.analyticsExecutionContext)
   }
 }
 
@@ -173,9 +174,9 @@ trait AnalyticEvent extends OtoroshiEvent {
   def fromOrigin: Option[String]
   def fromUserAgent: Option[String]
 
-  def toJson(implicit _env: Env): JsValue
-  override def toEnrichedJson(implicit _env: Env, ec: ExecutionContext): Future[JsValue] = {
-    val jsonObject = toJson(_env).as[JsObject]
+  def toJson(using _env: Env): JsValue
+  override def toEnrichedJson(using _env: Env, ec: ExecutionContext): Future[JsValue] = {
+    val jsonObject = toJson.as[JsObject]
     val uaDetails  = (jsonObject \ "userAgentInfo").asOpt[JsValue] match {
       case Some(details) => details
       case None          =>
@@ -231,12 +232,12 @@ trait AnalyticEvent extends OtoroshiEvent {
     )
   }
 
-  def toAnalytics()(implicit env: Env): Unit = {
-    dispatch()(env)
+  def toAnalytics()(using env: Env): Unit = {
+    dispatch()(using env)
     env.otoroshiEventsActor ! this
   }
 
-  def log()(implicit _env: Env, ec: ExecutionContext): Unit = {
+  def log()(using _env: Env, ec: ExecutionContext): Unit = {
     toEnrichedJson.map(e => AnalyticEvent.logger.info(Json.stringify(e)))
   }
 }
@@ -251,7 +252,7 @@ case class GenericAnalytic(typ: String, env: Env, `@service`: String = "Otoroshi
   val fromUserAgent: Option[String] = None
   val `@type`: String               = typ
 
-  override def toJson(implicit _env: Env): JsValue = {
+  override def toJson(using _env: Env): JsValue = {
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -275,7 +276,7 @@ case class Identity(
 }
 
 object Identity {
-  implicit val format: Format[Identity] = new Format[Identity] {
+  given format: Format[Identity] = new Format[Identity] {
     override def writes(o: Identity): JsValue             = Json.obj(
       "identityType" -> o.identityType,
       "identity"     -> o.identity,
@@ -301,20 +302,20 @@ object Identity {
 case class Location(host: String, scheme: String, uri: String)
 
 object Location {
-  implicit val format: OFormat[Location] = Json.format[Location]
+  given format: OFormat[Location] = Json.format[Location]
 }
 
 case class Header(key: String, value: String)
 
 object Header {
-  implicit val format: OFormat[Header]       = Json.format[Header]
+  given format: OFormat[Header]       = Json.format[Header]
   def apply(tuple: (String, String)): Header = Header(tuple._1, tuple._2)
 }
 
 case class DataInOut(dataIn: Long, dataOut: Long)
 
 object DataInOut {
-  implicit val fmt: OFormat[DataInOut] = Json.format[DataInOut]
+  given fmt: OFormat[DataInOut] = Json.format[DataInOut]
 }
 
 case class OtoroshiViz(fromTo: String, from: String, to: String, fromLbl: String, toLbl: String) {
@@ -322,7 +323,7 @@ case class OtoroshiViz(fromTo: String, from: String, to: String, fromLbl: String
 }
 
 object OtoroshiViz {
-  implicit val format: OFormat[OtoroshiViz] = Json.format[OtoroshiViz]
+  given format: OFormat[OtoroshiViz] = Json.format[OtoroshiViz]
 }
 
 case class GatewayEvent(
@@ -371,7 +372,7 @@ case class GatewayEvent(
 ) extends AnalyticEvent {
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = headers.find(h => h.key.toLowerCase() == "user-agent").map(_.value)
-  def toJson(implicit _env: Env): JsValue    = GatewayEvent.writes(this, _env)
+  def toJson(using _env: Env): JsValue    = GatewayEvent.writes(this, _env)
 }
 
 object GatewayEvent {
@@ -443,7 +444,7 @@ case class TcpEvent(
 ) extends AnalyticEvent {
   override def fromOrigin: Option[String]    = Some(remote)
   override def fromUserAgent: Option[String] = None
-  def toJson(implicit _env: Env): JsValue    = TcpEvent.writes(this, _env)
+  def toJson(using _env: Env): JsValue    = TcpEvent.writes(this, _env)
 }
 
 object TcpEvent {
@@ -485,8 +486,8 @@ case class HealthCheckEvent(
 ) extends AnalyticEvent {
   override def fromOrigin: Option[String]                                  = None
   override def fromUserAgent: Option[String]                               = None
-  def toJson(implicit _env: Env): JsValue                                  = HealthCheckEvent.format.writes(this)
-  def pushToRedis()(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  def toJson(using _env: Env): JsValue                                  = HealthCheckEvent.format.writes(this)
+  def pushToRedis()(using ec: ExecutionContext, env: Env): Future[Long] =
     toEnrichedJson.flatMap(e => env.datastores.healthCheckDataStore.push(e))
   def isUp: Boolean                                                        =
     if (error.isDefined) {
@@ -501,17 +502,17 @@ case class HealthCheckEvent(
 }
 
 object HealthCheckEvent {
-  implicit val format: OFormat[HealthCheckEvent] = Json.format[HealthCheckEvent]
+  given format: OFormat[HealthCheckEvent] = Json.format[HealthCheckEvent]
 }
 
 trait HealthCheckDataStore {
   def findAll(
       serviceDescriptor: ServiceDescriptor
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[HealthCheckEvent]]
+  )(using ec: ExecutionContext, env: Env): Future[Seq[HealthCheckEvent]]
   def findLast(
       serviceDescriptor: ServiceDescriptor
-  )(implicit ec: ExecutionContext, env: Env): Future[Option[HealthCheckEvent]]
-  def push(event: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  )(using ec: ExecutionContext, env: Env): Future[Option[HealthCheckEvent]]
+  def push(event: JsValue)(using ec: ExecutionContext, env: Env): Future[Long]
 }
 
 case class WebsocketEvent(
@@ -531,7 +532,7 @@ case class WebsocketEvent(
 ) extends AnalyticEvent {
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
-  def toJson(implicit _env: Env): JsValue    = WebsocketEvent.writes(this, _env)
+  def toJson(using _env: Env): JsValue    = WebsocketEvent.writes(this, _env)
 }
 
 object WebsocketEvent {
@@ -567,44 +568,44 @@ trait AnalyticsReadsService {
       page: Int = 1,
       size: Int = 50,
       order: String = "desc"
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
-  def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataIn(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchDataIn(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataOut(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchDataOut(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchAvgDuration(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchAvgDuration(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchAvgOverhead(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchAvgOverhead(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchStatusesPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchStatusesPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchStatusesHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchStatusesHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataInStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchDataInStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataOutStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchDataOutStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDurationStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchDurationStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
@@ -618,7 +619,7 @@ trait AnalyticsReadsService {
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchOverheadStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchOverheadStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
@@ -627,11 +628,11 @@ trait AnalyticsReadsService {
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchApiKeyPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchApiKeyPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchUserPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  def fetchUserPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
@@ -656,7 +657,7 @@ trait AnalyticsReadsService {
       to: Option[DateTime],
       excludedPaths: Seq[String],
       interval: Option[String]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
@@ -664,12 +665,12 @@ trait AnalyticsReadsService {
 
 trait AnalyticsWritesService {
   def init(): Unit
-  def publish(event: Seq[JsValue])(implicit env: Env, ec: ExecutionContext): Future[Unit]
+  def publish(event: Seq[JsValue])(using env: Env, ec: ExecutionContext): Future[Unit]
 }
 
 class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends AnalyticsReadsService {
 
-  private def underlyingService()(implicit env: Env, ec: ExecutionContext): Future[Option[AnalyticsReadsService]] = {
+  private def underlyingService()(using env: Env, ec: ExecutionContext): Future[Option[AnalyticsReadsService]] = {
     FastFuture.successful(
       globalConfig.elasticReadsConfig.map(c => new ElasticReadsAnalytics(c, env))
     )
@@ -683,7 +684,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       page: Int,
       size: Int,
       order: String = "desc"
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -696,7 +697,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchHits(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -706,7 +707,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchDataIn(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -715,7 +716,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchDataOut(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -725,7 +726,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchAvgDuration(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -735,7 +736,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchAvgOverhead(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -745,7 +746,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchStatusesPiechart(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -755,7 +756,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchStatusesHistogram(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -765,7 +766,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchDataInStatsHistogram(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -775,7 +776,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchDataOutStatsHistogram(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -785,7 +786,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchDurationStatsHistogram(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -795,7 +796,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchDurationPercentilesHistogram(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -805,7 +806,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchOverheadPercentilesHistogram(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -815,7 +816,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchOverheadStatsHistogram(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -825,7 +826,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       from: Option[DateTime],
       to: Option[DateTime],
       size: Int
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]                                          =
@@ -844,7 +845,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
         .getOrElse(FastFuture.successful(None))
     )
 
-  override def fetchUserPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  override def fetchUserPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -858,7 +859,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       from: Option[DateTime],
       to: Option[DateTime],
       size: Int
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -871,7 +872,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       servicesDescriptors: Seq[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchServicesStatus(servicesDescriptors, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -881,7 +882,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       servicesDescriptor: ServiceDescriptor,
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchServiceResponseTime(servicesDescriptor, from, to))
         .getOrElse(FastFuture.successful(None))
@@ -893,7 +894,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       to: Option[DateTime],
       excludedPaths: Seq[String],
       interval: Option[String]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchRouteEfficiency(route, from, to, excludedPaths, interval))
         .getOrElse(FastFuture.successful(None))
@@ -914,7 +915,7 @@ case class WasmLogEvent(
 ) extends AnalyticEvent {
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
-  def toJson(implicit _env: Env): JsValue    = WasmLogEvent.writes(this)
+  def toJson(using _env: Env): JsValue    = WasmLogEvent.writes(this)
 }
 
 object WasmLogEvent {
@@ -945,7 +946,7 @@ case class ApiDeploymentEvent(
 ) extends AnalyticEvent {
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
-  def toJson(implicit _env: Env): JsValue    = ApiDeploymentEvent.writes(this, _env)
+  def toJson(using _env: Env): JsValue    = ApiDeploymentEvent.writes(this, _env)
 }
 
 object ApiDeploymentEvent {

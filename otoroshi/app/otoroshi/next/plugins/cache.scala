@@ -80,7 +80,7 @@ class NgHttpClientCache extends NgRequestTransformer {
   override def description: Option[String]                 = "This plugin add cache headers to responses".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHttpClientCacheConfig.default.some
 
-  private def methodMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(implicit
+  private def methodMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -88,7 +88,7 @@ class NgHttpClientCache extends NgRequestTransformer {
     config.methods.map(_.toLowerCase().trim).contains(ctx.request.method.toLowerCase())
   }
 
-  private def statusMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(implicit
+  private def statusMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -96,7 +96,7 @@ class NgHttpClientCache extends NgRequestTransformer {
     config.status.contains(ctx.otoroshiResponse.status)
   }
 
-  private def contentMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(implicit
+  private def contentMatch(ctx: NgTransformerResponseContext, config: NgHttpClientCacheConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -111,7 +111,7 @@ class NgHttpClientCache extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config =
       ctx.cachedConfig(internalName)(NgHttpClientCacheConfig.format).getOrElse(NgHttpClientCacheConfig.default)
     if (methodMatch(ctx, config) && statusMatch(ctx, config) && contentMatch(ctx, config)) {
@@ -199,7 +199,7 @@ object NgResponseCacheConfig {
         ttl = json.select("ttl").asOpt[Long].getOrElse(60.minutes.toMillis),
         maxSize = json.select("maxSize").asOpt[Long].getOrElse(50L * 1024L * 1024L),
         autoClean = json.select("autoClean").asOpt[Boolean].getOrElse(true),
-        filter = json.select("filter").asOpt[NgResponseCacheFilterConfig](NgResponseCacheFilterConfig.format.reads(_))
+        filter = json.select("filter").asOpt[NgResponseCacheFilterConfig](using NgResponseCacheFilterConfig.format.reads(_))
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -249,8 +249,8 @@ class NgResponseCache extends NgRequestTransformer {
 
   override def start(env: Env): Future[Unit] = {
     val actorSystem                           = ActorSystem("cache-redis")
-    implicit val ec: ExecutionContextExecutor = actorSystem.dispatcher
-    env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
+    given ec: ExecutionContextExecutor = actorSystem.dispatcher
+    env.datastores.globalConfigDataStore.singleton()(using ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "ResponseCache").isDefined) {
         val redis: RedisClientMasterSlaves = {
           val master = RedisServer(
@@ -270,7 +270,7 @@ class NgResponseCache extends NgRequestTransformer {
                 password = (config \ "password").asOpt[String]
               )
             }
-          RedisClientMasterSlaves(master, slaves)(actorSystem)
+          RedisClientMasterSlaves(master, slaves)(using actorSystem)
         }
         ref.set((redis, actorSystem))
       }
@@ -284,14 +284,14 @@ class NgResponseCache extends NgRequestTransformer {
     FastFuture.successful(())
   }
 
-  private def get(key: String)(implicit env: Env, ec: ExecutionContext): Future[Option[ByteString]] = {
+  private def get(key: String)(using env: Env, ec: ExecutionContext): Future[Option[ByteString]] = {
     ref.get() match {
       case null  => env.datastores.rawDataStore.get(key)
       case redis => redis._1.get(key)
     }
   }
 
-  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit
+  private def set(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -351,7 +351,7 @@ class NgResponseCache extends NgRequestTransformer {
   private def cachedResponse(
       ctx: NgTransformerRequestContext,
       config: NgResponseCacheConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[Unit, Option[JsValue]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[Unit, Option[JsValue]]] = {
     if (filter(ctx.request, config)) {
       get(
         s"${env.storageRoot}:noclustersync:cache:${ctx.route.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}"
@@ -366,7 +366,7 @@ class NgResponseCache extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(NgResponseCacheConfig.format).getOrElse(NgResponseCacheConfig())
 
     cachedResponse(ctx, config).map {
@@ -386,13 +386,13 @@ class NgResponseCache extends NgRequestTransformer {
           NgResponseCache.logger.debug(
             s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache"
           )
-        Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
+        Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq*))
     }
   }
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(NgResponseCacheConfig.format).getOrElse(NgResponseCacheConfig())
 
     if (couldCacheResponse(ctx, config)) {
@@ -470,14 +470,14 @@ class NgResponseCacheCleanupJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     cleanCache(env)
   }
 
   private def cleanCache(env: Env): Future[Unit] = {
-    implicit val ev: Env              = env
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer    = env.otoroshiMaterializer
+    given ev: Env              = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer    = env.otoroshiMaterializer
     val functions                     = env.proxyState.allRoutes().map { route =>
       (route, route.plugins.getPluginByClass[NgResponseCache])
     } collect { case (route, Some(plugin)) =>

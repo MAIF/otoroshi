@@ -60,9 +60,9 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-class WebSocketHandler()(implicit env: Env) {
+class WebSocketHandler()(using env: Env) {
 
-  type WSFlow = Flow[PlayWSMessage, PlayWSMessage, _]
+  type WSFlow = Flow[PlayWSMessage, PlayWSMessage, ?]
 
   implicit lazy val currentEc: ExecutionContext       = env.otoroshiExecutionContext
   implicit lazy val currentScheduler: Scheduler       = env.otoroshiScheduler
@@ -104,7 +104,7 @@ class WebSocketHandler()(implicit env: Env) {
       ctx: ActualCallContext,
       headersInFiltered: Seq[String],
       headersOutFiltered: Seq[String]
-  ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+  ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
 
     val ActualCallContext(
       req,
@@ -314,10 +314,10 @@ class WebSocketHandler()(implicit env: Env) {
         )
         evt.toAnalytics()
         if (descriptor.logAnalyticsOnServer) {
-          evt.log()(env, env.analyticsExecutionContext) // pressure EC
+          evt.log()(using env, env.analyticsExecutionContext) // pressure EC
         }
-      }(env.analyticsExecutionContext) // pressure EC
-    }(env.analyticsExecutionContext) // pressure EC
+      }(using env.analyticsExecutionContext) // pressure EC
+    }(using env.analyticsExecutionContext) // pressure EC
 
     val wsCookiesIn     = req.cookies.toSeq.map(c =>
       WSCookieWithSameSite(
@@ -401,7 +401,7 @@ class WebSocketHandler()(implicit env: Env) {
                   otoroshiHeadersIn = headersIn.map(Header.apply)
                 )
               )
-              badResult.withHeaders(_headersOut: _*)
+              badResult.withHeaders(_headersOut*)
             }
             .asLeft[WSFlow]
         case Right(_) if descriptor.tcpUdpTunneling && !req.relativeUri.startsWith("/.well-known/otoroshi/tunnel") =>
@@ -441,7 +441,7 @@ class WebSocketHandler()(implicit env: Env) {
             .map(_.toLowerCase())
             .getOrElse("tcp") match {
             case "tcp"     =>
-              val flow: Flow[PlayWSMessage, PlayWSMessage, _] =
+              val flow: Flow[PlayWSMessage, PlayWSMessage, ?] =
                 Flow[PlayWSMessage]
                   .collect {
                     case PlayWSBinaryMessage(data) =>
@@ -472,7 +472,7 @@ class WebSocketHandler()(implicit env: Env) {
                   })
               FastFuture.successful(Right(flow))
             case "udp-old" =>
-              val flow: Flow[PlayWSMessage, PlayWSMessage, _] =
+              val flow: Flow[PlayWSMessage, PlayWSMessage, ?] =
                 Flow[PlayWSMessage]
                   .collect {
                     case PlayWSBinaryMessage(data) =>
@@ -647,11 +647,11 @@ object WebSocketProxyActor {
       target: Target,
       rawRequest: RequestHeader,
       route: Option[NgRoute] = None
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
-  ): Flow[PlayWSMessage, PlayWSMessage, _] = {
+  ): Flow[PlayWSMessage, PlayWSMessage, ?] = {
     val avoid                                = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
     val _headers                             = headers.toList.filterNot(t => avoid.contains(t._1)).flatMap {
       // case (key, value) if key.toLowerCase == "cookie"     =>
@@ -778,9 +778,9 @@ class WebSocketProxyActor(
 
   import scala.concurrent.duration._
 
-  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit val mat: Materializer    = env.otoroshiMaterializer
-  implicit val e: Env               = env
+  given ec: ExecutionContext = env.otoroshiExecutionContext
+  given mat: Materializer    = env.otoroshiMaterializer
+  given e: Env               = env
 
   lazy val source: Source[Message, SourceQueueWithComplete[Message]] =
     Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](50000, OverflowStrategy.dropTail)
@@ -878,8 +878,8 @@ class WebSocketProxyActor(
       queueRef.set(materialized._2)
       connected.andThen {
         case Success(r) =>
-          implicit val ec  = env.otoroshiExecutionContext
-          implicit val mat = env.otoroshiMaterializer
+          given ec: ExecutionContext = env.otoroshiExecutionContext
+          given mat: Materializer = env.otoroshiMaterializer
           if (logger.isTraceEnabled)
             logger.trace(
               s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
@@ -888,7 +888,7 @@ class WebSocketProxyActor(
             if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] connected to target with response '${bs.utf8String}'")
           }
         case Failure(e) => logger.error(s"[WEBSOCKET] error", e)
-      }(context.dispatcher)
+      }(using context.dispatcher)
     } catch {
       case e: Exception => logger.error("[WEBSOCKET] error during call", e)
     }
@@ -951,7 +951,7 @@ class WebsocketEngine(
       applyResponseFilter: Boolean = false
   )(
       closeConnection: NgWebsocketResponse => Unit
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
 
     val promise = Promise[Either[NgWebsocketError, WebsocketMessage]]()
 
@@ -1001,7 +1001,7 @@ class WebsocketEngine(
 
   def handleRequest(data: play.api.http.websocket.Message)(
       closeConnection: NgWebsocketResponse => Unit
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     if (ctxPlugins.hasNoWebsocketPlugins) {
       val r: Either[NgWebsocketError, WebsocketMessage] =
         Right[NgWebsocketError, WebsocketMessage](WebsocketMessage.PlayMessage(data))
@@ -1015,7 +1015,7 @@ class WebsocketEngine(
 
   def handleResponse(data: org.apache.pekko.http.scaladsl.model.ws.Message)(
       closeConnection: NgWebsocketResponse => Unit
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     if (ctxPlugins.hasNoWebsocketPlugins) {
       WebsocketMessage.AkkaMessage(data).rightf[NgWebsocketError]
     } else {

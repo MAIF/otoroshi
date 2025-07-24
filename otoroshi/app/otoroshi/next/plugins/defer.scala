@@ -49,7 +49,7 @@ class NgDeferPlugin extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config        = ctx.cachedConfig(internalName)(NgDeferPluginConfig.format).getOrElse(NgDeferPluginConfig())
     val headerTimeout = ctx.request.headers.get("X-Defer").map(_.toLong)
     val queryTimeout  = ctx.request.getQueryString("defer").map(_.toLong)

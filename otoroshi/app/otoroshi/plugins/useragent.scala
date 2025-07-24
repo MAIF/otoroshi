@@ -7,16 +7,16 @@ import com.blueconic.browscap.{UserAgentParser, UserAgentService}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.Keys
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.cache.Caches
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.future.Implicits.*
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
 
 object UserAgentHelper {
@@ -25,13 +25,13 @@ object UserAgentHelper {
 
   private val logger = Logger("otoroshi-plugins-user-agent-helper")
 
-  private val ec                       = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
+  private given ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
   private val parserInitializing       = new AtomicBoolean(false)
   private val parserInitializationDone = new AtomicBoolean(false)
   private val parserRef                = new AtomicReference[UserAgentParser]()
   private val cache                    = Caches.expireAfterWrite[String, Option[JsObject]](10.minutes, 999)
 
-  def userAgentDetails(ua: String)(implicit env: Env): Option[JsObject] = {
+  def userAgentDetails(ua: String)(using env: Env): Option[JsObject] = {
     env.metrics.withTimer("otoroshi.plugins.useragent.details") {
       if (parserInitializing.compareAndSet(false, true)) {
         val start = System.currentTimeMillis()
@@ -39,10 +39,10 @@ object UserAgentHelper {
         Future {
           parserRef.set(new UserAgentService().loadParser()) // blocking for a looooooong time !
           parserInitializationDone.set(true)
-        }(ec).andThen {
+        }.andThen {
           case Success(_) => logger.info(s"User-Agent parser initialized in ${System.currentTimeMillis() - start} ms")
           case Failure(e) => logger.error("User-Agent parser initialization failed", e)
-        }(ec)
+        }
       }
       cache.getIfPresent(ua) match {
         case details @ Some(_)                      => details.flatten
@@ -98,7 +98,7 @@ class UserAgentExtractor extends PreRouting {
       |```
     """.stripMargin)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = ctx.configFor("UserAgentInfo")
     val log    = (config \ "log").asOpt[Boolean].getOrElse(false)
     ctx.request.headers.get("User-Agent") match {
@@ -136,7 +136,7 @@ class UserAgentInfoEndpoint extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
       case ("get", "/.well-known/otoroshi/plugins/user-agent") =>
         ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
@@ -184,7 +184,7 @@ class UserAgentInfoHeader extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config     = ctx.configFor("UserAgentInfoHeader")
     val headerName = (config \ "headerName").asOpt[String].getOrElse("X-User-Agent-Info")
     ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {

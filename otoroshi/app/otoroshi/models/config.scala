@@ -22,6 +22,7 @@ import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.letsencrypt.LetsEncryptSettings
 import otoroshi.utils.mailer.MailerSettings
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.json.JsonImplicits.given
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
@@ -208,7 +209,7 @@ case class Webhook(
 }
 
 object Webhook {
-  implicit val format: Format[Webhook] = new Format[Webhook] {
+  given format: Format[Webhook] = new Format[Webhook] {
     override def reads(json: JsValue): JsResult[Webhook] =
       Try {
         Webhook(
@@ -239,7 +240,7 @@ case class CleverCloudSettings(
 )
 
 object CleverCloudSettings {
-  implicit val format: OFormat[CleverCloudSettings] = Json.format[CleverCloudSettings]
+  given format: OFormat[CleverCloudSettings] = Json.format[CleverCloudSettings]
 }
 
 case class Proxies(
@@ -374,19 +375,19 @@ object GeolocationSettings {
 
 sealed trait GeolocationSettings {
   def enabled: Boolean
-  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def find(ip: String)(using env: Env, ec: ExecutionContext): Future[Option[JsValue]]
   def json: JsValue
 }
 
 case object NoneGeolocationSettings extends GeolocationSettings {
   def enabled: Boolean                                                                   = false
-  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = FastFuture.successful(None)
+  def find(ip: String)(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] = FastFuture.successful(None)
   def json: JsValue                                                                      = Json.obj("type" -> "none")
 }
 
 case class MaxmindGeolocationSettings(enabled: Boolean, path: String) extends GeolocationSettings {
   def json: JsValue = Json.obj("type" -> "maxmind", "path" -> path, "enabled" -> enabled)
-  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+  def find(ip: String)(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     if (enabled) {
       MaxMindGeolocationHelper.find(ip, path)
     } else {
@@ -397,7 +398,7 @@ case class MaxmindGeolocationSettings(enabled: Boolean, path: String) extends Ge
 
 case class IpStackGeolocationSettings(enabled: Boolean, apikey: String, timeout: Long) extends GeolocationSettings {
   def json: JsValue = Json.obj("type" -> "ipstack", "apikey" -> apikey, "timeout" -> timeout, "enabled" -> enabled)
-  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+  def find(ip: String)(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     if (enabled) {
       IpStackGeolocationHelper.find(ip, apikey, timeout)
     } else {
@@ -424,7 +425,7 @@ object UserAgentSettings {
 
 case class UserAgentSettings(enabled: Boolean) {
   def json: JsValue = Json.obj("enabled" -> enabled)
-  def find(ua: String)(implicit env: Env): Option[JsValue] = {
+  def find(ua: String)(using env: Env): Option[JsValue] = {
     if (enabled) {
       UserAgentHelper.userAgentDetails(ua)
     } else {
@@ -624,8 +625,8 @@ object TlsWasmoSettings {
     override def reads(json: JsValue): JsResult[TlsWasmoSettings] = {
       Try {
         TlsWasmoSettings(
-          settings = (json \ "settings").as[WasmoSettings](WasmoSettings.format.reads(_)),
-          tlsConfig = (json \ "tlsConfig").as[MtlsConfig](MtlsConfig.format.reads(_))
+          settings = (json \ "settings").as[WasmoSettings](using WasmoSettings.format.reads(_)),
+          tlsConfig = (json \ "tlsConfig").as[MtlsConfig](using MtlsConfig.format.reads(_))
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -701,20 +702,20 @@ case class GlobalConfig(
 
   def theName: String = "otoroshi-global-config"
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalConfigDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalConfigDataStore.set(this)
 
-  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def delete()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalConfigDataStore.delete(this)
 
-  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def exists()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalConfigDataStore.exists(this)
 
   def toJson: JsValue = GlobalConfig.toJson(this)
 
-  def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def withinThrottlingQuota()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalConfigDataStore.withinThrottlingQuota()
 
-  def cleverClient(implicit env: Env): Option[CleverCloudClient] =
+  def cleverClient(using env: Env): Option[CleverCloudClient] =
     cleverSettings match {
       case None           => None
       case Some(settings) =>
@@ -896,7 +897,7 @@ object GlobalConfig {
           u2fLoginOnly = (json \ "u2fLoginOnly").asOpt[Boolean].getOrElse(false),
           logAnalyticsOnServer = (json \ "logAnalyticsOnServer").asOpt[Boolean].getOrElse(false),
           useAkkaHttpClient = (json \ "useAkkaHttpClient").asOpt[Boolean].getOrElse(false),
-          ipFiltering = (json \ "ipFiltering").asOpt[IpFiltering](IpFiltering.format).getOrElse(IpFiltering()),
+          ipFiltering = (json \ "ipFiltering").asOpt[IpFiltering](using IpFiltering.format).getOrElse(IpFiltering()),
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(BaseQuotas.MaxValue),
           perIpThrottlingQuota = (json \ "perIpThrottlingQuota").asOpt[Long].getOrElse(BaseQuotas.MaxValue),
           elasticReadsConfig = (json \ "elasticReadsConfig").asOpt[JsObject].flatMap { config =>
@@ -914,11 +915,11 @@ object GlobalConfig {
             }*/
           },
           analyticsWebhooks =
-            (json \ "analyticsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]),
+            (json \ "analyticsWebhooks").asOpt[Seq[Webhook]](using Reads.seq(using Webhook.format)).getOrElse(Seq.empty[Webhook]),
           alertsWebhooks =
-            (json \ "alertsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]),
+            (json \ "alertsWebhooks").asOpt[Seq[Webhook]](using Reads.seq(using Webhook.format)).getOrElse(Seq.empty[Webhook]),
           elasticWritesConfigs = (json \ "elasticWritesConfigs")
-            .asOpt[Seq[ElasticAnalyticsConfig]](Reads.seq(ElasticAnalyticsConfig.format))
+            .asOpt[Seq[ElasticAnalyticsConfig]](using Reads.seq(using ElasticAnalyticsConfig.format))
             .getOrElse(Seq.empty[ElasticAnalyticsConfig]),
           alertsEmails = (json \ "alertsEmails").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           endlessIpAddresses = (json \ "endlessIpAddresses").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
@@ -977,7 +978,7 @@ object GlobalConfig {
               case _                                                                                  => None
             }
           },
-          snowMonkeyConfig = (json \ "snowMonkeyConfig").asOpt(SnowMonkeyConfig._fmt).getOrElse(SnowMonkeyConfig()),
+          snowMonkeyConfig = (json \ "snowMonkeyConfig").asOpt(using SnowMonkeyConfig._fmt).getOrElse(SnowMonkeyConfig()),
           scripts = GlobalScripts.format
             .reads((json \ "scripts").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(GlobalScripts()),
@@ -1006,7 +1007,7 @@ object GlobalConfig {
             .select("templates")
             .asOpt[String]
             .flatMap(str => DefaultTemplates.format.reads(Json.parse(str)).asOpt)
-            .orElse(json.select("templates").asOpt(DefaultTemplates.format))
+            .orElse(json.select("templates").asOpt(using DefaultTemplates.format))
             .getOrElse(DefaultTemplates()),
           wasmoSettings = readWasmoSettings(json),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
@@ -1035,20 +1036,20 @@ object GlobalConfig {
 }
 
 trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
-  def incrementCallsForIpAddress(ip: String)(implicit ec: ExecutionContext): Future[Long]
-  def quotaForIpAddress(ip: String)(implicit ec: ExecutionContext): Future[Option[Long]]
-  def isOtoroshiEmpty()(implicit ec: ExecutionContext): Future[Boolean]
-  def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def updateQuotas(config: otoroshi.models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig]
-  def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig
+  def incrementCallsForIpAddress(ip: String)(using ec: ExecutionContext): Future[Long]
+  def quotaForIpAddress(ip: String)(using ec: ExecutionContext): Future[Option[Long]]
+  def isOtoroshiEmpty()(using ec: ExecutionContext): Future[Boolean]
+  def withinThrottlingQuota()(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def updateQuotas(config: otoroshi.models.GlobalConfig)(using ec: ExecutionContext, env: Env): Future[Unit]
+  def singleton()(using ec: ExecutionContext, env: Env): Future[GlobalConfig]
+  def latest()(using ec: ExecutionContext, env: Env): GlobalConfig
   def latestSafe: Option[GlobalConfig]
   def latestUnsafe: GlobalConfig
-  def fullImport(exportSource: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue]
-  def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]]
-  def quotasValidationFor(from: String)(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])]
-  def migrate()(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def fullImport(exportSource: JsObject)(using ec: ExecutionContext, env: Env): Future[Unit]
+  def fullExport()(using ec: ExecutionContext, env: Env): Future[JsValue]
+  def allEnv()(using ec: ExecutionContext, env: Env): Future[Set[String]]
+  def quotasValidationFor(from: String)(using ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])]
+  def migrate()(using ec: ExecutionContext, env: Env): Future[Unit]
   def template: GlobalConfig = GlobalConfig()
 }
 
@@ -1114,7 +1115,7 @@ case class OtoroshiExport(
     already ++ ex ++ add
   }
 
-  def customizeWith(customization: JsObject)(implicit env: Env): OtoroshiExport = {
+  def customizeWith(customization: JsObject)(using env: Env): OtoroshiExport = {
     val cconfig     = customization.select("config").asOpt[JsObject].getOrElse(Json.obj())
     val finalConfig = GlobalConfig.fromJsons(config.toJson.asObject.deepMerge(cconfig))
     copy(

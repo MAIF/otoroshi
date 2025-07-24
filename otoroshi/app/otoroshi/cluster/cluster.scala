@@ -45,6 +45,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
+import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.RequestHeader
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
@@ -596,7 +597,7 @@ case class ClusterBackup(
     instanceCanRead: Boolean = false
 ) {
 
-  def tryToWriteBackup(payload: () => ByteString)(implicit ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  def tryToWriteBackup(payload: () => ByteString)(using ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     if (enabled && instanceCanWrite) {
       kind match {
         case ClusterBackupKind.S3 =>
@@ -612,7 +613,7 @@ case class ClusterBackup(
     }
   }
 
-  def tryToReadBackup()(implicit ec: ExecutionContext, mat: Materializer): Future[Either[String, ByteString]] = {
+  def tryToReadBackup()(using ec: ExecutionContext, mat: Materializer): Future[Either[String, ByteString]] = {
     if (enabled && instanceCanRead) {
       kind match {
         case ClusterBackupKind.S3 =>
@@ -650,7 +651,7 @@ case class ClusterBackup(
     S3Attributes.settings(settings)
   }
 
-  private def writeToS3(payload: ByteString, conf: S3Configuration)(implicit
+  private def writeToS3(payload: ByteString, conf: S3Configuration)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[MultipartUploadResult] = {
@@ -675,7 +676,7 @@ case class ClusterBackup(
 
   private def readFromS3(
       conf: S3Configuration
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[Option[ByteString]] = {
+  )(using ec: ExecutionContext, mat: Materializer): Future[Option[ByteString]] = {
     S3.getObject(conf.bucket, conf.key)
       .withAttributes(s3ClientSettingsAttrs(conf))
       .runWith(Sink.fold(ByteString.empty)(_ ++ _))
@@ -758,7 +759,7 @@ case class MemberView(
 }
 
 object MemberView {
-  def fromRequest(request: RequestHeader, stats: JsObject = Json.obj())(implicit env: Env): MemberView = {
+  def fromRequest(request: RequestHeader, stats: JsObject = Json.obj())(using env: Env): MemberView = {
     MemberView(
       id = request.headers
         .get(ClusterAgent.OtoroshiWorkerIdHeader)
@@ -808,7 +809,7 @@ object MemberView {
         .getOrElse(RelayRouting.default)
     )
   }
-  def fromJsonSafe(value: JsValue)(implicit env: Env): JsResult[MemberView] =
+  def fromJsonSafe(value: JsValue)(using env: Env): JsResult[MemberView] =
     Try {
       JsSuccess(
         MemberView(
@@ -875,26 +876,26 @@ object MemberView {
 }
 
 trait ClusterStateDataStore {
-  def registerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]]
-  def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def updateDataIn(in: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def updateDataOut(out: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def dataInAndOut()(implicit ec: ExecutionContext, env: Env): Future[(Long, Long)]
+  def registerMember(member: MemberView)(using ec: ExecutionContext, env: Env): Future[Unit]
+  def getMembers()(using ec: ExecutionContext, env: Env): Future[Seq[MemberView]]
+  def clearMembers()(using ec: ExecutionContext, env: Env): Future[Long]
+  def updateDataIn(in: Long)(using ec: ExecutionContext, env: Env): Future[Unit]
+  def updateDataOut(out: Long)(using ec: ExecutionContext, env: Env): Future[Unit]
+  def dataInAndOut()(using ec: ExecutionContext, env: Env): Future[(Long, Long)]
 }
 
 class KvClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterStateDataStore {
 
-  override def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+  override def clearMembers()(using ec: ExecutionContext, env: Env): Future[Long] = {
     redisLike
       .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(0L)
-        else redisLike.del(keys: _*)
+        else redisLike.del(keys*)
       )
   }
 
-  override def registerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def registerMember(member: MemberView)(using ec: ExecutionContext, env: Env): Future[Unit] = {
     val key = s"${env.storageRoot}:cluster:members:${member.name}"
     redisLike.get(key).flatMap {
       case Some(m) =>
@@ -915,13 +916,13 @@ class KvClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterSta
     }
   }
 
-  override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
+  override def getMembers()(using ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
     // if (env.clusterConfig.mode == ClusterMode.Leader) {
     redisLike
       .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-        else redisLike.mget(keys: _*)
+        else redisLike.mget(keys*)
       )
       .map(seq =>
         seq.filter(_.isDefined).map(_.get).map(v => MemberView.fromJsonSafe(Json.parse(v.utf8String))).collect {
@@ -933,7 +934,7 @@ class KvClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterSta
     // }
   }
 
-  override def updateDataIn(in: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def updateDataIn(in: Long)(using ec: ExecutionContext, env: Env): Future[Unit] = {
     for {
       _ <- redisLike.lpushLong(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", in)
       _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", 0, 100)
@@ -944,7 +945,7 @@ class KvClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterSta
     } yield ()
   }
 
-  override def updateDataOut(out: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def updateDataOut(out: Long)(using ec: ExecutionContext, env: Env): Future[Unit] = {
     for {
       _ <- redisLike.lpushLong(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", out)
       _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", 0, 100)
@@ -955,7 +956,7 @@ class KvClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterSta
     } yield ()
   }
 
-  override def dataInAndOut()(implicit ec: ExecutionContext, env: Env): Future[(Long, Long)] = {
+  override def dataInAndOut()(using ec: ExecutionContext, env: Env): Future[(Long, Long)] = {
     for {
       keysIn  <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:in")
       keysOut <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:out")
@@ -1000,16 +1001,16 @@ class KvClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterSta
 
 class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) extends ClusterStateDataStore {
 
-  override def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+  override def clearMembers()(using ec: ExecutionContext, env: Env): Future[Long] = {
     redisLike
       .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(0L)
-        else redisLike.del(keys: _*)
+        else redisLike.del(keys*)
       )
   }
 
-  override def registerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def registerMember(member: MemberView)(using ec: ExecutionContext, env: Env): Future[Unit] = {
     val key = s"${env.storageRoot}:cluster:members:${member.name}"
     redisLike.get(key).flatMap {
       case Some(m) =>
@@ -1030,13 +1031,13 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
     }
   }
 
-  override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
+  override def getMembers()(using ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
     // if (env.clusterConfig.mode == ClusterMode.Leader) {
     redisLike
       .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-        else redisLike.mget(keys: _*)
+        else redisLike.mget(keys*)
       )
       .map(seq =>
         seq.filter(_.isDefined).map(_.get).map(v => MemberView.fromJsonSafe(Json.parse(v.utf8String))).collect {
@@ -1048,7 +1049,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
     // }
   }
 
-  override def updateDataIn(in: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def updateDataIn(in: Long)(using ec: ExecutionContext, env: Env): Future[Unit] = {
     for {
       _ <- redisLike.lpush(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", in)
       _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", 0, 100)
@@ -1059,7 +1060,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
     } yield ()
   }
 
-  override def updateDataOut(out: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def updateDataOut(out: Long)(using ec: ExecutionContext, env: Env): Future[Unit] = {
     for {
       _ <- redisLike.lpush(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", out)
       _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", 0, 100)
@@ -1070,7 +1071,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
     } yield ()
   }
 
-  override def dataInAndOut()(implicit ec: ExecutionContext, env: Env): Future[(Long, Long)] = {
+  override def dataInAndOut()(using ec: ExecutionContext, env: Env): Future[(Long, Long)] = {
     for {
       keysIn  <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:in")
       keysOut <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:out")
@@ -1129,7 +1130,7 @@ object ClusterAgent {
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
 
-  private def clusterGetApikey(env: Env, id: String)(implicit
+  private def clusterGetApikey(env: Env, id: String)(using
       executionContext: ExecutionContext,
       mat: Materializer
   ): Future[Option[JsValue]] = {
@@ -1152,7 +1153,7 @@ object ClusterAgent {
       }
   }
 
-  def clusterSaveApikey(env: Env, apikey: ApiKey)(implicit
+  def clusterSaveApikey(env: Env, apikey: ApiKey)(using
       executionContext: ExecutionContext,
       mat: Materializer
   ): Future[Unit] = {
@@ -1839,7 +1840,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 Cluster.logger.debug(
                   s"[${env.clusterConfig.mode.name}] no local session found after leader call failed"
                 )
-              PrivateAppsUser.fromCookie(id, reqOpt)(env) match {
+              PrivateAppsUser.fromCookie(id, reqOpt)(using env) match {
                 case None        =>
                   if (Cluster.logger.isDebugEnabled)
                     Cluster.logger.debug(
@@ -1996,7 +1997,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def loadStateFromBackup(): Future[Boolean] = {
     if (env.clusterConfig.backup.instanceCanRead) {
-      env.clusterConfig.backup.tryToReadBackup()(env.otoroshiExecutionContext, env.otoroshiMaterializer).flatMap {
+      env.clusterConfig.backup.tryToReadBackup()(using env.otoroshiExecutionContext, env.otoroshiMaterializer).flatMap {
         case Left(err)      =>
           Cluster.logger.error(s"unable to load cluster state from backup: $err")
           false.vfuture
@@ -2249,7 +2250,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   private def pushQuotas(): Unit = {
     try {
-      implicit val _env: Env = env
+      given _env: Env = env
       if (isPushingQuotas.compareAndSet(false, true)) {
         val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
         val start         = System.currentTimeMillis()
@@ -2406,7 +2407,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           queueRef.set(q)
           q
         }
-    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _] = pushSource
+    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, ?] = pushSource
 
     def handleOfferFailure(
         key: String,
@@ -2559,7 +2560,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             tunnels = env.tunnelManager.currentTunnels.toSeq,
             stats = Json.obj()
           )
-          GlobalStatusUpdate.build()(env, env.otoroshiExecutionContext).map { stats =>
+          GlobalStatusUpdate.build()(using env, env.otoroshiExecutionContext).map { stats =>
             val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
             queueRef
               .get()
@@ -2578,7 +2579,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 .andThen(handleOfferFailure(key, incr))
             }
           }
-        }(env.otoroshiExecutionContext)
+        }(using env.otoroshiExecutionContext)
       )
     }
 
@@ -2728,7 +2729,7 @@ class SwappableInMemoryDataStores(
   private val materializer                                                = Materializer(actorSystem)
   val _optimized: Boolean                                                 = configuration.betterGetOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
   val _modern: Boolean                                                    = configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
-  lazy val swredis: OptimizedRedisLike with RedisLike with SwappableRedis = if (_modern) {
+  lazy val swredis: OptimizedRedisLike & RedisLike & SwappableRedis = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {
     new SwappableInMemoryRedis(_optimized, env, actorSystem)
@@ -2755,9 +2756,9 @@ class SwappableInMemoryDataStores(
         actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(
           utils.SchedulerHelper.runnable(
             // AWAIT: valid
-            Await.result(writeStateToDisk(dbPath)(actorSystem.dispatcher, materializer), 10.seconds)
+            Await.result(writeStateToDisk(dbPath)(using actorSystem.dispatcher, materializer), 10.seconds)
           )
-        )(actorSystem.dispatcher)
+        )(using actorSystem.dispatcher)
       )
     }
     redis.start()
@@ -2777,7 +2778,7 @@ class SwappableInMemoryDataStores(
     cancelRef.get().cancel()
     dbPathOpt.foreach { dbPath =>
       // AWAIT: valid
-      Await.result(writeStateToDisk(dbPath)(actorSystem.dispatcher, materializer), 10.seconds)
+      Await.result(writeStateToDisk(dbPath)(using actorSystem.dispatcher, materializer), 10.seconds)
     }
     actorSystem.terminate()
     FastFuture.successful(())
@@ -2844,9 +2845,9 @@ class SwappableInMemoryDataStores(
     }
   }
 
-  private def writeStateToDisk(dbPath: String)(implicit ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  private def writeStateToDisk(dbPath: String)(using ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val file = new File(dbPath)
-    completeExport(100)(ec, mat, env)
+    completeExport(100)(using ec, mat, env)
       .map { item =>
         Json.stringify(item) + "\n"
       }
@@ -2951,10 +2952,10 @@ class SwappableInMemoryDataStores(
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
   override def rawExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -3006,11 +3007,11 @@ class SwappableInMemoryDataStores(
       .mapConcat(keys => keys.toList)
   }
 
-  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]] = {
 
-    implicit val ev: Env               = env
-    implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer     = env.otoroshiMaterializer
+    given ev: Env               = env
+    given ecc: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer     = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -3046,15 +3047,15 @@ class SwappableInMemoryDataStores(
     )
   }
 
-  override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
+  override def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit] = {
 
-    implicit val ev: Env               = env
-    implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer     = env.otoroshiMaterializer
+    given ev: Env               = env
+    given ecc: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer     = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
           .mapAsync(1) { json =>
@@ -3069,8 +3070,8 @@ class SwappableInMemoryDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify).toSeq*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify).toSeq*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
@@ -3087,7 +3088,7 @@ class SwappableInMemoryDataStores(
 
   def completeExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -3191,7 +3192,7 @@ object ClusterMessageFromWorker                                           {
 
     override def reads(json: JsValue): JsResult[ClusterMessageFromWorker] = Try {
       ClusterMessageFromWorker(
-        member = MemberView.fromJsonSafe(json.select("member").asValue)(OtoroshiEnvHolder.get()).get,
+        member = MemberView.fromJsonSafe(json.select("member").asValue)(using OtoroshiEnvHolder.get()).get,
         payload = json.select("payload").asValue
       )
     } match {
@@ -3211,15 +3212,15 @@ case class ClusterMessageFromWorker(member: MemberView, payload: JsValue) {
 
 sealed trait ClusterLeaderUpdateMessage {
   def json: JsValue
-  def update(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def update(member: MemberView)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.clusterConfig.mode match {
       case ClusterMode.Off    => ().vfuture
       case ClusterMode.Worker => updateWorker(member)
       case ClusterMode.Leader => updateLeader(member)
     }
   }
-  def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit]
-  def updateWorker(member: MemberView)(implicit env: Env): Future[Unit]
+  def updateLeader(member: MemberView)(using env: Env, ec: ExecutionContext): Future[Unit]
+  def updateWorker(member: MemberView)(using env: Env): Future[Unit]
 }
 object ClusterLeaderUpdateMessage       {
 
@@ -3302,7 +3303,7 @@ object ClusterLeaderUpdateMessage       {
       )
     }
 
-    def build()(implicit env: Env, ec: ExecutionContext): Future[GlobalStatusUpdate] = {
+    def build()(using env: Env, ec: ExecutionContext): Future[GlobalStatusUpdate] = {
       for {
         rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
         duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
@@ -3365,11 +3366,11 @@ object ClusterLeaderUpdateMessage       {
 
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
-    override def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    override def updateLeader(member: MemberView)(using env: Env, ec: ExecutionContext): Future[Unit] = {
       NgCustomThrottling.updateQuotas(expr, group, calls.get(), ttl)
     }
 
-    override def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
+    override def updateWorker(member: MemberView)(using env: Env): Future[Unit] = {
       env.clusterAgent.incrementCustomQuota(expr, group, calls.get()).vfuture
     }
   }
@@ -3385,11 +3386,11 @@ object ClusterLeaderUpdateMessage       {
 
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
-    override def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    override def updateLeader(member: MemberView)(using env: Env, ec: ExecutionContext): Future[Unit] = {
       NgCustomQuotas.updateQuotas(expr, group, calls.get())
     }
 
-    override def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
+    override def updateWorker(member: MemberView)(using env: Env): Future[Unit] = {
       env.clusterAgent.incrementCustomQuota(expr, group, calls.get()).vfuture
     }
   }
@@ -3413,11 +3414,11 @@ object ClusterLeaderUpdateMessage       {
 
     override def json: JsValue = GlobalStatusUpdate.format.writes(this)
 
-    override def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    override def updateLeader(member: MemberView)(using env: Env, ec: ExecutionContext): Future[Unit] = {
       env.datastores.clusterStateDataStore.registerMember(member.copy(stats = json.asObject))
     }
 
-    override def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
+    override def updateWorker(member: MemberView)(using env: Env): Future[Unit] = {
       // TODO: membership + global stats ?
       FastFuture.successful(())
     }
@@ -3428,14 +3429,14 @@ object ClusterLeaderUpdateMessage       {
 
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
-    def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    def updateLeader(member: MemberView)(using env: Env, ec: ExecutionContext): Future[Unit] = {
       env.datastores.apiKeyDataStore.findById(clientId).flatMap {
         case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, calls.get()).map(_ => ())
         case None         => FastFuture.successful(())
       }
     }
 
-    def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
+    def updateWorker(member: MemberView)(using env: Env): Future[Unit] = {
       env.clusterAgent.incrementApi(clientId, calls.get()).vfuture
     }
 
@@ -3478,7 +3479,7 @@ object ClusterLeaderUpdateMessage       {
       headersOut.addAndGet(headersOutInc)
     }
 
-    def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    def updateLeader(member: MemberView)(using env: Env, ec: ExecutionContext): Future[Unit] = {
       env.datastores.serviceDescriptorDataStore.findOrRouteById(routeId).flatMap {
         case Some(_) =>
           val config = env.datastores.globalConfigDataStore.latest()
@@ -3494,7 +3495,7 @@ object ClusterLeaderUpdateMessage       {
       }
     }
 
-    def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
+    def updateWorker(member: MemberView)(using env: Env): Future[Unit] = {
       env.clusterAgent
         .incrementService(
           routeId,

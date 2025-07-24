@@ -253,14 +253,14 @@ class LettuceDataStores(
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore = _jwtVerifDataStore
   override def authConfigsDataStore: AuthConfigsDataStore             = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore            = _certificateDataStore
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = {
     redis.info().map(_ => Healthy).recover { case _ =>
       Unreachable
     }
   }
   override def rawExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -311,11 +311,11 @@ class LettuceDataStores(
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]] = {
 
-    implicit val ev: Env               = env
-    implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer     = env.otoroshiMaterializer
+    given ev: Env               = env
+    given ecc: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer     = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -349,15 +349,15 @@ class LettuceDataStores(
     )
   }
 
-  override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
+  override def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit] = {
 
-    implicit val ev: Env               = env
-    implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer     = env.otoroshiMaterializer
+    given ev: Env               = env
+    given ecc: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer     = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
           .mapAsync(1) { json =>
@@ -372,8 +372,8 @@ class LettuceDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify).toSeq*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify).toSeq*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
@@ -388,7 +388,7 @@ class LettuceDataStores(
       }
   }
 
-  private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
+  private def fetchValueForType(typ: String, key: String)(using ec: ExecutionContext): Future[JsValue] = {
     typ match {
       case "hash"   => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
       case "list"   => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))

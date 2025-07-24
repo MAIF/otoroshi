@@ -31,7 +31,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
   override def extractId(value: GlobalConfig): String = "global" // WARN : its a singleton, id is always global
 
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
 
   def throttlingKey(): String = s"${_env.storageRoot}:throttling:global"
 
@@ -40,7 +40,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   private val quotasForIpAddressCache =
     new UnboundedConcurrentHashMap[String, java.util.concurrent.atomic.AtomicLong]() // TODO: check growth over time
 
-  def incrementCallsForIpAddress(ipAddress: String)(implicit
+  def incrementCallsForIpAddress(ipAddress: String)(using
       ec: ExecutionContext
   ): Future[Long] = {
 
@@ -71,7 +71,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     }
   }
 
-  def quotaForIpAddress(ipAddress: String)(implicit ec: ExecutionContext): Future[Option[Long]] = {
+  def quotaForIpAddress(ipAddress: String)(using ec: ExecutionContext): Future[Option[Long]] = {
     @inline
     def actualCall() =
       redisCli.get(s"${_env.storageRoot}:throttling:peripquota:$ipAddress").map(_.map(_.utf8String.toLong)).andThen {
@@ -89,13 +89,13 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     }
   }
 
-  override def isOtoroshiEmpty()(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def isOtoroshiEmpty()(using ec: ExecutionContext): Future[Boolean] = {
     redisCli.keys(key("global")).map(_.isEmpty)
   }
 
   private val throttlingQuotasCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
-  override def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  override def withinThrottlingQuota()(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     val config = latest()
     //singleton().map { config =>
     redisCli.get(throttlingKey()).map { bs =>
@@ -114,7 +114,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
   def quotasValidationFor(
       from: String
-  )(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])] = {
+  )(using ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])] = {
     val a = withinThrottlingQuota()
     val b = incrementCallsForIpAddress(from)
     val c = quotaForIpAddress(from)
@@ -128,7 +128,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
   override def updateQuotas(
       config: otoroshi.models.GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Unit] =
+  )(using ec: ExecutionContext, env: Env): Future[Unit] =
     for {
       _        <- redisCli.pttl(throttlingKey()).filter(_ > -1).recoverWith { case _ =>
                     redisCli.expire(throttlingKey(), env.throttlingWindow)
@@ -137,16 +137,16 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       fu        = env.metrics.markLong(s"global.throttling-quotas", secCalls)
     } yield ()
 
-  override def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]] = singleton().map(_.lines.toSet)
+  override def allEnv()(using ec: ExecutionContext, env: Env): Future[Set[String]] = singleton().map(_.lines.toSet)
 
   private val configCache     = new java.util.concurrent.atomic.AtomicReference[GlobalConfig](null)
   private val lastConfigCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
-  override def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[GlobalConfig]] = {
+  override def findById(id: String)(using ec: ExecutionContext, env: Env): Future[Option[GlobalConfig]] = {
     val staticGlobalScripts: GlobalScripts = env.staticGlobalScripts
     if (/*env.staticExposedDomainEnabled && */ staticGlobalScripts.enabled) {
       super
-        .findById(id)(ec, env)
+        .findById(id)(using ec, env)
         .map(_.map { c =>
           c.copy(
             scripts = GlobalScripts(
@@ -167,16 +167,16 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
           )
         })
     } else {
-      super.findById(id)(ec, env)
+      super.findById(id)(using ec, env)
     }
   }
   override def findByIdAndFillSecrets(
       id: String
-  )(implicit ec: ExecutionContext, env: Env): Future[Option[GlobalConfig]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Option[GlobalConfig]] = {
     val staticGlobalScripts: GlobalScripts = env.staticGlobalScripts
     if (/*env.staticExposedDomainEnabled && */ staticGlobalScripts.enabled) {
       super
-        .findByIdAndFillSecrets(id)(ec, env)
+        .findByIdAndFillSecrets(id)(using ec, env)
         .map(_.map { c =>
           c.copy(
             scripts = GlobalScripts(
@@ -197,11 +197,11 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
           )
         })
     } else {
-      super.findByIdAndFillSecrets(id)(ec, env)
+      super.findByIdAndFillSecrets(id)(using ec, env)
     }
   }
 
-  override def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig = {
+  override def latest()(using ec: ExecutionContext, env: Env): GlobalConfig = {
     val ref = configCache.get()
     if (ref == null) {
       // new Throwable().printStackTrace()
@@ -216,7 +216,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   override def latestSafe: Option[GlobalConfig] = Option(configCache.get())
   override def latestUnsafe: GlobalConfig       = configCache.get()
 
-  override def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig] = {
+  override def singleton()(using ec: ExecutionContext, env: Env): Future[GlobalConfig] = {
     val time = System.currentTimeMillis
     val ref  = configCache.get()
 
@@ -245,16 +245,16 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     }
   }
 
-  override def set(value: GlobalConfig, pxMilliseconds: Option[Duration] = None)(implicit
+  override def set(value: GlobalConfig, pxMilliseconds: Option[Duration] = None)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
-    super.set(value, pxMilliseconds)(ec, env).andThen { case Success(_) =>
+    super.set(value, pxMilliseconds)(using ec, env).andThen { case Success(_) =>
       value.fillSecrets(GlobalConfig._fmt).map(gc => configCache.set(gc))
     }
   }
 
-  override def fullImport(exportSource: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def fullImport(exportSource: JsObject)(using ec: ExecutionContext, env: Env): Future[Unit] = {
     val config             = GlobalConfig.fromJsons((exportSource \ "config").asOpt[JsObject].getOrElse(GlobalConfig().toJson))
     val admins             = (exportSource \ "admins").asOpt[JsArray].getOrElse(Json.arr())
     val simpleAdmins       = (exportSource \ "simpleAdmins").asOpt[JsArray].getOrElse(Json.arr())
@@ -281,7 +281,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     for {
       _ <- redisCli
              .keys(s"${env.storageRoot}:*")
-             .flatMap(keys => if (keys.nonEmpty) redisCli.del(keys: _*) else FastFuture.successful(0L))
+             .flatMap(keys => if (keys.nonEmpty) redisCli.del(keys*) else FastFuture.successful(0L))
       _ <- config.save()
       _ <-
         Future.sequence(
@@ -314,7 +314,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     } yield { () }
   }
 
-  override def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
+  override def fullExport()(using ec: ExecutionContext, env: Env): Future[JsValue] = {
     // val appConfig =
     //   Json.parse(
     //     env.configuration
@@ -379,7 +379,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     ).json
   }
 
-  override def migrate()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def migrate()(using ec: ExecutionContext, env: Env): Future[Unit] = {
     val migrationKey = s"${_env.storageRoot}:migrations:globalconfig:before130"
     redisCli.get(key("global")).map(_.get).flatMap { configBS =>
       val json = Json.parse(configBS.utf8String)

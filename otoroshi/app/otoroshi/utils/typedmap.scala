@@ -15,26 +15,26 @@ import scala.collection.concurrent.TrieMap
 trait TypedMap {
   def update[A](key: TypedKey[A])(f: Option[A] => A): TypedMap = put(key -> f(get[A](key)))
   def get[A](key: TypedKey[A]): Option[A]
-  def contains(key: TypedKey[_]): Boolean
-  def put(entries: TypedEntry[_]*): TypedMap
-  def putIfAbsent(entries: TypedEntry[_]*): TypedMap
-  def remove(entries: TypedKey[_]*): TypedMap
-  def replace(entries: TypedEntry[_]*): TypedMap
-  def update(entries: TypedEntry[_]*): TypedMap
+  def contains(key: TypedKey[?]): Boolean
+  def put(entries: TypedEntry[?]*): TypedMap
+  def putIfAbsent(entries: TypedEntry[?]*): TypedMap
+  def remove(entries: TypedKey[?]*): TypedMap
+  def replace(entries: TypedEntry[?]*): TypedMap
+  def update(entries: TypedEntry[?]*): TypedMap
   def clear(): TypedMap
   def getOrElseUpdate[A](key: TypedKey[A], op: => Any): TypedMap
-  def toMap: Map[TypedKey[_], Any]
+  def toMap: Map[TypedKey[?], Any]
   def json: JsValue
 }
 
 object TypedMap {
-  def empty: TypedMap = new ConcurrentMutableTypedMap(new UnboundedTrieMap[TypedKey[_], Any])
-  def apply(entries: TypedEntry[_]*): TypedMap = {
-    TypedMap.empty.put(entries: _*)
+  def empty: TypedMap = new ConcurrentMutableTypedMap(new UnboundedTrieMap[TypedKey[?], Any])
+  def apply(entries: TypedEntry[?]*): TypedMap = {
+    TypedMap.empty.put(entries*)
   }
 }
 
-final class ConcurrentMutableTypedMap(val m: TrieMap[TypedKey[_], Any]) extends TypedMap {
+final class ConcurrentMutableTypedMap(val m: TrieMap[TypedKey[?], Any]) extends TypedMap {
 
   override def json: JsValue = {
     JsObject(m.toSeq.zipWithIndex.map {
@@ -53,7 +53,7 @@ final class ConcurrentMutableTypedMap(val m: TrieMap[TypedKey[_], Any]) extends 
       case ((key, value: JsValue), idx)                                                            => (key.displayName.getOrElse(s"key-$idx"), value)
       case ((key, value: Jsonable), idx)                                                           => (key.displayName.getOrElse(s"key-$idx"), value.json)
       case ((key, value: AsJson), idx)                                                             => (key.displayName.getOrElse(s"key-$idx"), value.asJson)
-      case ((key, value: Map[_, _]), idx)                                                          =>
+      case ((key, value: Map[?, ?]), idx)                                                          =>
         (
           key.displayName.getOrElse(s"key-$idx"),
           JsObject(value.map { case (k, v) => (k.toString, JsString(v.toString)) })
@@ -78,7 +78,7 @@ final class ConcurrentMutableTypedMap(val m: TrieMap[TypedKey[_], Any]) extends 
             "included_plugins" -> v.allPlugins.map(p => JsString(p.plugin))
           )
         )
-      case ((key, v: Seq[_]), idx) if key.displayName.contains("otoroshi.next.core.MatchedRoutes") =>
+      case ((key, v: Seq[?]), idx) if key.displayName.contains("otoroshi.next.core.MatchedRoutes") =>
         (key.displayName.getOrElse(s"key-$idx"), JsArray(v.asInstanceOf[Seq[String]].map(JsString.apply)))
       case ((key, value), idx)                                                                     => (key.displayName.getOrElse(s"key-$idx"), JsString(value.toString))
     })
@@ -86,41 +86,41 @@ final class ConcurrentMutableTypedMap(val m: TrieMap[TypedKey[_], Any]) extends 
 
   override def toString: String = m.mkString("{", ", ", "}")
 
-  override def toMap: Map[TypedKey[_], Any] = m.toMap
+  override def toMap: Map[TypedKey[?], Any] = m.toMap
 
   override def get[A](key: TypedKey[A]): Option[A] = m.get(key).asInstanceOf[Option[A]]
 
-  override def contains(key: TypedKey[_]): Boolean = m.contains(key)
+  override def contains(key: TypedKey[?]): Boolean = m.contains(key)
 
-  override def putIfAbsent(entries: TypedEntry[_]*): TypedMap = {
+  override def putIfAbsent(entries: TypedEntry[?]*): TypedMap = {
     entries.foreach { e =>
       m.putIfAbsent(e.key, e.value)
     }
     this
   }
 
-  override def put(entries: TypedEntry[_]*): TypedMap = {
+  override def put(entries: TypedEntry[?]*): TypedMap = {
     entries.foreach { e =>
       m.put(e.key, e.value)
     }
     this
   }
 
-  override def remove(keys: TypedKey[_]*): TypedMap = {
+  override def remove(keys: TypedKey[?]*): TypedMap = {
     keys.foreach { key =>
       m.remove(key)
     }
     this
   }
 
-  override def replace(entries: TypedEntry[_]*): TypedMap = {
+  override def replace(entries: TypedEntry[?]*): TypedMap = {
     entries.foreach { e =>
       m.replace(e.key, e.value)
     }
     this
   }
 
-  override def update(entries: TypedEntry[_]*): TypedMap = {
+  override def update(entries: TypedEntry[?]*): TypedMap = {
     entries.foreach { e =>
       m.update(e.key, e.value)
     }

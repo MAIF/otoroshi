@@ -82,7 +82,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
       case HttpEntity.NoEntity                                   => HttpServerBodyResponse(Flux.empty[Array[Byte]](), None, None, chunked = false)
       case HttpEntity.Strict(data, contentType)                  =>
         HttpServerBodyResponse(
-          Flux.just(Seq(data.toArray[Byte]): _*),
+          Flux.just(Seq(data.toArray[Byte])*),
           contentType,
           Some(data.size.toLong),
           chunked = false
@@ -450,7 +450,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
 
       def handleFunction(
           secure: Boolean
-      ): BiFunction[_ >: HttpServerRequest, _ >: HttpServerResponse, _ <: Publisher[Void]] = {
+      ): BiFunction[? >: HttpServerRequest, ? >: HttpServerResponse, ? <: Publisher[Void]] = {
         if (config.newEngineOnly) { (req, res) =>
           {
             val channel = NettyHelper.getChannel(req)
@@ -511,7 +511,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
               .accessLog(config.accessLog, logCustom)
               .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-https", LogLevel.INFO))
               .port(config.httpsPort)
-              .protocol(protocols: _*)
+              .protocol(protocols*)
               //.applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
               //.applyOnIf(!config.http2.enabled)(_.protocol(HttpProtocol.HTTP11))
               .runOn(groupHttps)
@@ -555,7 +555,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
               .accessLog(config.accessLog, logCustom)
               .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-http", LogLevel.INFO))
               .port(config.httpPort)
-              .protocol(protocols: _*)
+              .protocol(protocols*)
               //.applyOnIf(config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
               //.applyOnIf(!config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11))
               .handle(handleFunction(false))

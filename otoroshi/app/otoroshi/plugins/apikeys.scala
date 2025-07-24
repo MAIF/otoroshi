@@ -110,7 +110,7 @@ class HasAllowedApiKeyValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.apikey match {
       case Some(apiKey) =>
         val config           = (context.config \ "HasAllowedApiKeyValidator")
@@ -167,7 +167,7 @@ class ApiKeyAllowedOnThisServiceValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(ctx: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     ctx.apikey match {
       case Some(apiKey) =>
         val serviceIds = apiKey.tags.map(tag => tag.replace("allowed-on-", ""))
@@ -212,7 +212,7 @@ class CertificateAsApikey extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(context: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     context.request.clientCertificateChain.flatMap(_.headOption) match {
       case None       => FastFuture.successful(())
       case Some(cert) =>
@@ -243,7 +243,7 @@ class CertificateAsApikey extends PreRouting {
                 metadata = (conf \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
               )
               if (env.clusterConfig.mode.isWorker) {
-                ClusterAgent.clusterSaveApikey(env, apikey)(ec, env.otoroshiMaterializer)
+                ClusterAgent.clusterSaveApikey(env, apikey)(using ec, env.otoroshiMaterializer)
               }
               apikey.save().map(_ => apikey)
           }
@@ -277,7 +277,7 @@ class ClientCredentialFlowExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.request.headers.get("Authorization") match {
       case Some(auth) if auth.startsWith("Bearer ") =>
         val token = auth.replace("Bearer ", "")
@@ -357,25 +357,25 @@ class ClientCredentialFlow extends RequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, ?]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]]())
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, ?]]())
     funit
   }
 
   override def afterRequest(
       ctx: AfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     awaitingRequests.remove(ctx.snowflake)
     funit
   }
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val conf              = ctx.configFor("ClientCredentialFlow")
     val _signWithKeyPair  = (conf \ "signWithKeyPair").asOpt[Boolean].getOrElse(false)
     val useJwtToken       = (conf \ "jwtToken").asOpt[Boolean].getOrElse(true)
@@ -392,7 +392,7 @@ class ClientCredentialFlow extends RequestTransformer {
       awaitingRequests.get(ctx.snowflake).map { promise =>
         val consumed = new AtomicBoolean(false)
 
-        val bodySource: Source[ByteString, _] = Source
+        val bodySource: Source[ByteString, ?] = Source
           .future(promise.future)
           .flatMapConcat(s => s)
           .alsoTo(Sink.onComplete { case _ =>
@@ -580,7 +580,7 @@ class ClientCredentialFlow extends RequestTransformer {
         awaitingRequests.get(ctx.snowflake).map { promise =>
           val consumed = new AtomicBoolean(false)
 
-          val bodySource: Source[ByteString, _] = Source
+          val bodySource: Source[ByteString, ?] = Source
             .future(promise.future)
             .flatMapConcat(s => s)
             .alsoTo(Sink.onComplete { case _ =>
@@ -914,7 +914,7 @@ class ClientCredentialFlow extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
@@ -982,7 +982,7 @@ class ClientCredentialService extends RequestSink {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.Sink)
 
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val conf          = ClientCredentialServiceConfig(ctx.configFor("ClientCredentialService"))
     val domainMatches = conf.domain match {
       case "*"   => true
@@ -995,8 +995,8 @@ class ClientCredentialService extends RequestSink {
 
   private def handleBody(
       ctx: RequestSinkContext
-  )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat: Materializer = env.otoroshiMaterializer
+  )(f: Map[String, String] => Future[Result])(using env: Env, ec: ExecutionContext): Future[Result] = {
+    given mat: Materializer = env.otoroshiMaterializer
     val charset                    = ctx.request.charset.getOrElse("UTF-8")
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {
@@ -1039,7 +1039,7 @@ class ClientCredentialService extends RequestSink {
     }
   }
 
-  private def jwks(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit
+  private def jwks(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -1049,7 +1049,7 @@ class ClientCredentialService extends RequestSink {
     }
   }
 
-  private def introspect(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit
+  private def introspect(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -1095,7 +1095,7 @@ class ClientCredentialService extends RequestSink {
       ccfb: ClientCredentialFlowBody,
       conf: ClientCredentialServiceConfig,
       ctx: RequestSinkContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Result] =
+  )(using env: Env, ec: ExecutionContext): Future[Result] =
     ccfb match {
       case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope, bearerKind) =>
         val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
@@ -1282,7 +1282,7 @@ class ClientCredentialService extends RequestSink {
           .future
     }
 
-  private def token(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit
+  private def token(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] =
@@ -1330,7 +1330,7 @@ class ClientCredentialService extends RequestSink {
       }
     }
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  override def handle(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
     val conf        = ClientCredentialServiceConfig(ctx.configFor("ClientCredentialService"))
     val secureMatch = if (conf.secure) ctx.request.theSecured else true
     if (secureMatch) {
@@ -1474,7 +1474,7 @@ class ApikeyAuthModule extends PreRouting {
     result
   }
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.request.headers.get("Authorization") match {
       case Some(auth) if auth.startsWith("Basic ") =>
         extractUsernamePassword(auth) match {

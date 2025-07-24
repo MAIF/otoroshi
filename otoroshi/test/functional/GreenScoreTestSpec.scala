@@ -1,22 +1,22 @@
 package otoroshi.greenscore
 
-import org.apache.pekko.stream.Materializer
 import com.typesafe.config.ConfigFactory
 import functional.OtoroshiSpec
+import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.greenscore.EcoMetrics.MAX_GREEN_SCORE_NOTE
 import otoroshi.greenscore.{GreenScoreEntity, GreenScoreExtension, RouteRules, RouteScoreAtDate, RuleState, RuleStateRecord, RulesManager, RulesRouteConfiguration}
 import otoroshi.models.{EntityLocation, RoundRobin}
-import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPlugins, NgRoute, NgTarget}
+import otoroshi.next.models.*
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsNull, JsObject, JsValue}
-import play.api.libs.ws.WSAuthScheme
+import play.api.libs.ws.WSBodyWritables.*
+import play.api.libs.ws.{WSAuthScheme, WSResponse}
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
-import play.api.libs.ws.WSResponse
+import scala.concurrent.{Await, Future}
 
 class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

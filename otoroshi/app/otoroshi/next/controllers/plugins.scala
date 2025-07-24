@@ -14,11 +14,11 @@ import play.api.mvc.AnyContent
 class NgPluginsController(
     ApiAction: ApiAction,
     cc: ControllerComponents
-)(implicit
+)(using
     env: Env
 ) extends AbstractController(cc) {
 
-  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+  given ec: ExecutionContext = env.otoroshiExecutionContext
 
   def categories(): mvc.Action[AnyContent] = ApiAction {
     val pluginsCategories = env.scriptManager.ngNames.distinct

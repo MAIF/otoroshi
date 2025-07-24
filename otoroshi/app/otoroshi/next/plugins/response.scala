@@ -70,7 +70,7 @@ class StaticResponse extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -289,7 +289,7 @@ object MockResponsesConfig {
           .map(arr => arr.flatMap(v => MockResponse.format.reads(v).asOpt))
           .getOrElse(Seq.empty),
         passThrough = json.select("pass_through").asOpt[Boolean].getOrElse(true),
-        formData = json.select("form_data").asOpt[MockFormData](MockFormData.format.reads(_))
+        formData = json.select("form_data").asOpt[MockFormData](using MockFormData.format.reads(_))
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -314,7 +314,7 @@ class MockResponses extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -349,7 +349,7 @@ class MockResponses extends NgBackendCall {
         import anticipation.Text
 
         val route    = result.routes.headOption.get
-        val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
+        val response = Json.parse(route.metadata("mock")).as[MockResponse](using MockResponse.format)
 
         def replaceOn(value: String) = {
           val newValue = Try {
@@ -478,7 +478,7 @@ class NgErrorRewriter extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(NgErrorRewriterConfig.fmt).getOrElse(NgErrorRewriterConfig.default)
     if (config.matching(ctx.otoroshiResponse.status)) {
       val errorId                                         = UUID.randomUUID().toString
@@ -511,7 +511,7 @@ class NgErrorRewriter extends NgRequestTransformer {
           responseBody
         )
         if (config.log) {
-          logger.error(s"new error rewritten with id: $errorId, event: ${event.toJson(env).prettify}")
+          logger.error(s"new error rewritten with id: $errorId, event: ${event.toJson.prettify}")
         }
         if (config.`export`) {
           event.toAnalytics()
@@ -543,7 +543,7 @@ case class ErrorRewriteReport(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue = Json.obj(
+  override def toJson(using _env: Env): JsValue = Json.obj(
     "@id"               -> `@id`,
     "@timestamp"        -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"             -> `@type`,

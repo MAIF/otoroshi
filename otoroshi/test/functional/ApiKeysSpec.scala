@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "auth.oto.tools"
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(

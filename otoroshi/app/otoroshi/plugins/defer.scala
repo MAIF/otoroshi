@@ -49,7 +49,7 @@ class DeferPlugin extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config         = ctx.configFor("DeferPlugin")
     val defaultTimeout = (config \ "defaultDefer").asOpt[Long].getOrElse(0L)
     val headerTimeout  = ctx.request.headers.get("X-Defer").map(_.toLong)

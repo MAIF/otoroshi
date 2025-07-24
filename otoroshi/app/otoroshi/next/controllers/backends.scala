@@ -14,7 +14,7 @@ import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[StoredNgBackend, JsValue]
     with CrudControllerHelper[StoredNgBackend, JsValue] {
@@ -42,7 +42,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[StoredNgBackend]]] = {
@@ -61,7 +61,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[StoredNgBackend]]] = {
@@ -81,7 +81,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def createEntityOps(
       entity: StoredNgBackend,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  =>
         Right(
@@ -106,7 +106,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def updateEntityOps(
       entity: StoredNgBackend,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  =>
         Right(
@@ -131,7 +131,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredNgBackend]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.delete(id).map {
       case true  =>
         Right(
@@ -175,7 +175,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
       metadata = Map.empty,
       backend = NgBackend.empty
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx.some)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx.some)(using env))
     env.datastores.globalConfigDataStore
       .latest()
       .templates

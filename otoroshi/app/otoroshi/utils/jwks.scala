@@ -13,7 +13,7 @@ import scala.util.{Failure, Try}
 
 object JWKSHelper {
 
-  def jwks(req: RequestHeader, certIds: Seq[String])(implicit
+  def jwks(req: RequestHeader, certIds: Seq[String])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[JsValue]]] = {

@@ -82,7 +82,7 @@ package object modules {
     lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
     lazy val httpHandler: HttpHandler               = wire[HttpHandler]
     lazy val webSocketHandler: WebSocketHandler     = wire[WebSocketHandler]
-    lazy val filters                                = new DefaultHttpFilters(httpFilters: _*)
+    lazy val filters                                = new DefaultHttpFilters(httpFilters*)
 
     override lazy val httpRequestHandler: HttpRequestHandler = wire[GatewayRequestHandler]
     override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]

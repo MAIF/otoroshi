@@ -142,7 +142,7 @@ object BiscuitHelper {
     }
   }
 
-  def verify(verifier: Authorizer, config: BiscuitConfig, ctx: VerificationContext)(implicit
+  def verify(verifier: Authorizer, config: BiscuitConfig, ctx: VerificationContext)(using
       env: Env
   ): Either[org.biscuitsec.biscuit.error.Error, Unit] = {
     verifier.set_time()
@@ -276,7 +276,7 @@ class BiscuitExtractor extends PreRouting {
     FastFuture.failed(PreRoutingErrorWithResult(Results.Unauthorized(error)))
   }
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = BiscuitHelper.readConfig("BiscuitExtractor", ctx)
 
     def verification(verifier: Authorizer): Future[Unit] = {
@@ -377,7 +377,7 @@ class BiscuitValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(ctx: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = BiscuitHelper.readConfig("BiscuitValidator", ctx)
     BiscuitHelper.extractToken(ctx.request, config) match {
       case Some(PubKeyBiscuitToken(token)) =>

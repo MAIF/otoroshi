@@ -9,7 +9,7 @@ class KvPrivateAppsUserDataStore(redisCli: RedisLike, _env: Env)
     extends PrivateAppsUserDataStore
     with RedisLikeStore[PrivateAppsUser] {
   private val _fmt: Format[PrivateAppsUser]              = PrivateAppsUser.fmt
-  override def redisLike(implicit env: Env): RedisLike   = redisCli
+  override def redisLike(using env: Env): RedisLike   = redisCli
   override def fmt: Format[PrivateAppsUser]              = _fmt
   override def key(id: String): String                   = s"${_env.storageRoot}:users:private:$id"
   override def extractId(value: PrivateAppsUser): String = value.randomId

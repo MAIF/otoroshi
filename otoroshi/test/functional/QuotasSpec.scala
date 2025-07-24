@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 class QuotasSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "quotas.oto.tools"
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(

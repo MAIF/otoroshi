@@ -16,6 +16,7 @@ import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterS
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
+import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result, Results}
 import play.utils.UriEncoding
@@ -203,7 +204,7 @@ class OAuth1Caller extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val oAuth1CallerConfig =
       ctx.cachedConfig(internalName)(OAuth1CallerConfig.format).getOrElse(OAuth1CallerConfig())
 
@@ -344,7 +345,7 @@ class OAuth2Caller extends NgRequestTransformer {
        |Do not forget to enable client retry to handle token generation on expire.
        |""".stripMargin.some
 
-  def getToken(key: String, config: OAuth2CallerConfig)(implicit
+  def getToken(key: String, config: OAuth2CallerConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -434,7 +435,7 @@ class OAuth2Caller extends NgRequestTransformer {
   def fetchRefreshTheToken(
       refreshToken: String,
       config: OAuth2CallerConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  )(using env: Env, ec: ExecutionContext): Future[JsValue] = {
     val ctype   = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
     val builder =
       env.MtlsWs
@@ -463,7 +464,7 @@ class OAuth2Caller extends NgRequestTransformer {
         )
           .applyOnWithOpt(config.scope) { (json, scope) => json ++ Map("scope" -> scope) }
           .applyOnWithOpt(config.audience) { (json, audience) => json ++ Map("audience" -> audience) }
-      )(writeableOf_urlEncodedSimpleForm)
+      )(using writeableOf_urlEncodedSimpleForm)
     }
     // TODO: check status code
     future1.map(_.json).map { json =>
@@ -473,7 +474,7 @@ class OAuth2Caller extends NgRequestTransformer {
     }
   }
 
-  def tryRenewToken(key: String, config: OAuth2CallerConfig)(implicit
+  def tryRenewToken(key: String, config: OAuth2CallerConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, String]] = {
@@ -520,7 +521,7 @@ class OAuth2Caller extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2CallerConfig.format)
 
     rawConfig match {
@@ -561,7 +562,7 @@ class OAuth2Caller extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2CallerConfig.format)
 
     rawConfig match {

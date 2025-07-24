@@ -34,7 +34,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import play.api.mvc
 import play.api.mvc.AnyContent
 
-class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[ServiceDescriptor, JsValue]
     with CrudControllerHelper[ServiceDescriptor, JsValue]
@@ -43,7 +43,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
-  lazy val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("ServicesController BodyParser") { _ =>
+  lazy val sourceBodyParser: BodyParser[Source[ByteString, ?]] = BodyParser("ServicesController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
@@ -64,7 +64,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   override def writeEntity(entity: ServiceDescriptor): JsValue = ServiceDescriptor._fmt.writes(entity)
 
-  override def findByIdOps(id: String, req: RequestHeader)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ServiceDescriptor]]] = {
@@ -81,7 +81,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  override def findAllOps(req: RequestHeader)(implicit
+  override def findAllOps(req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[ServiceDescriptor]]] = {
@@ -101,7 +101,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def createEntityOps(
       entity: ServiceDescriptor,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
     env.datastores.serviceDescriptorDataStore.set(entity).map {
       case true  =>
         Right(
@@ -126,7 +126,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def updateEntityOps(
       entity: ServiceDescriptor,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
     env.datastores.serviceDescriptorDataStore.set(entity).map {
       case true  =>
         Right(
@@ -148,7 +148,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  override def deleteEntityOps(id: String, req: RequestHeader)(implicit
+  override def deleteEntityOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[ServiceDescriptor]]] = {
@@ -435,7 +435,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def updateServiceTemplate(serviceId: String): mvc.Action[Source[ByteString, _]] =
+  def updateServiceTemplate(serviceId: String): mvc.Action[Source[ByteString, ?]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
         val requestBody    = Json.parse(bodyRaw.utf8String)
@@ -478,7 +478,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
     }
 
-  def createServiceTemplate(serviceId: String): mvc.Action[Source[ByteString, _]] =
+  def createServiceTemplate(serviceId: String): mvc.Action[Source[ByteString, ?]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
         val requestBody    = Json.parse(bodyRaw.utf8String)

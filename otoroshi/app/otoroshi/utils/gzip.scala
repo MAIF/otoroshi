@@ -75,13 +75,13 @@ case class GzipConfig(
   import play.api.http.HeaderNames._
   import otoroshi.utils.http.RequestImplicits._
 
-  private def createGzipFlow: Flow[ByteString, ByteString, _] = GzipFlow.gzip(bufferSize, compressionLevel)
+  private def createGzipFlow: Flow[ByteString, ByteString, ?] = GzipFlow.gzip(bufferSize, compressionLevel)
 
-  def handleResult(request: RequestHeader, result: Result)(implicit
+  def handleResult(request: RequestHeader, result: Result)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Result] = {
-    implicit val ec: ExecutionContextExecutor = mat.executionContext
+    given ec: ExecutionContextExecutor = mat.executionContext
 
     if (enabled && (!excludedPatterns.exists(p => RegexPool.regex(p).matches(request.relativeUri)))) {
       if (mayCompress(request) && shouldCompress(result) && shouldGzip(request, result)) {
@@ -151,7 +151,7 @@ case class GzipConfig(
     }
   }
 
-  private def compressStrictEntity(source: Source[ByteString, Any], contentType: Option[String])(implicit
+  private def compressStrictEntity(source: Source[ByteString, Any], contentType: Option[String])(using
       ec: ExecutionContext,
       mat: Materializer
   ) = {
@@ -258,11 +258,11 @@ case class GzipConfig(
 
 object GzipFlow {
 
-  def gzip(bufferSize: Int = 512, compressionLevel: Int = 5): Flow[ByteString, ByteString, _] = {
+  def gzip(bufferSize: Int = 512, compressionLevel: Int = 5): Flow[ByteString, ByteString, ?] = {
     Flow[ByteString].via(new Chunker(bufferSize)).via(Compression.gzip)
   }
 
-  def gunzip(bufferSize: Int = 512, max: Int = 64 * 1024): Flow[ByteString, ByteString, _] = {
+  def gunzip(bufferSize: Int = 512, max: Int = 64 * 1024): Flow[ByteString, ByteString, ?] = {
     Flow[ByteString].via(new Chunker(bufferSize)).via(Compression.gunzip(max))
   }
 

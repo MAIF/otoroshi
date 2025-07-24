@@ -65,7 +65,7 @@ case class ErrorTemplate(
   }
 
   def toJson: JsValue                                                  = ErrorTemplate.format.writes(this)
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.errorTemplateDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.errorTemplateDataStore.set(this)
 
   override def json: JsValue                    = ErrorTemplate.format.writes(this)
   override def internalId: String               = serviceId

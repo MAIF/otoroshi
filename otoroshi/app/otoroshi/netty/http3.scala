@@ -1,14 +1,14 @@
 package otoroshi.netty
 
 import com.github.blemale.scaffeine.Scaffeine
-import io.netty.bootstrap._
+import io.netty.bootstrap.*
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel._
+import io.netty.channel.*
 import io.netty.channel.nio.NioIoHandler
-import io.netty.channel.socket.nio._
-import io.netty.handler.codec.http._
+import io.netty.channel.socket.nio.*
+import io.netty.handler.codec.http.*
 import io.netty.incubator.codec.http3.{Http3, Http3ServerConnectionHandler}
-import io.netty.incubator.codec.quic._
+import io.netty.incubator.codec.quic.*
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Sink
@@ -19,9 +19,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.netty.ImplicitUtils._
+import otoroshi.netty.ImplicitUtils.*
 import otoroshi.ssl.{DynamicKeyManager, DynamicSSLEngineProvider}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.http.{HttpEntity, HttpRequestHandler}
 import play.api.libs.json.Json
@@ -35,9 +35,10 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.tailrec
+import scala.compiletime.uninitialized
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.concurrent.{Await, ExecutionContext}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Try}
 
 class Http1RequestHandler(
@@ -50,8 +51,8 @@ class Http1RequestHandler(
     config: ReactorNettyServerConfig
 ) extends ChannelInboundHandlerAdapter {
 
-  private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  private implicit val mat: Materializer    = env.otoroshiMaterializer
+  private given ec: ExecutionContext = env.otoroshiExecutionContext
+  private given mat: Materializer    = env.otoroshiMaterializer
 
   private val NOT_HANDLED          =
     Unpooled.wrappedBuffer(s"${Json.obj("error" -> "not handled")}\r\n".getBytes(CharsetUtil.US_ASCII))
@@ -60,7 +61,7 @@ class Http1RequestHandler(
   private val ERROR                = Unpooled.wrappedBuffer(s"${Json.obj("error" -> "error")}\r\n".getBytes(CharsetUtil.US_ASCII))
 
   private var keepAlive            = false
-  private var request: HttpRequest = _
+  private var request: HttpRequest = uninitialized
   private val hotSource            = Sinks.many().unicast().onBackpressureBuffer[ByteString]()
   private val hotFlux              = hotSource.asFlux()
 
@@ -626,7 +627,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
     val (keyPair, certificate) = fallbackCert
     QuicSslContextBuilder
       .forServer(keyPair.getPrivate, null, certificate)
-      .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
+      .applicationProtocols(Http3.supportedApplicationProtocols()*)
       .earlyData(true)
       .build()
   }
@@ -644,7 +645,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
         if (logger.isDebugEnabled) logger.debug(s"sni domain: $domain")
         if (domain == null) {
           env.datastores.globalConfigDataStore
-            .latest()(env.otoroshiExecutionContext, env)
+            .latest()(using env.otoroshiExecutionContext, env)
             .tlsSettings
             .defaultDomain match {
             case None      => fallbackContext // Use the BouncyCastle-generated context
@@ -664,14 +665,14 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                   val chain   = cert.certificatesChain
                   if (logger.isDebugEnabled) logger.debug(s"for domain: $domain, found ${cert.name} / ${cert.id}")
                   QuicSslContextBuilder
-                    .forServer(keypair.getPrivate, cert.password.orNull, chain: _*)
+                    .forServer(keypair.getPrivate, cert.password.orNull, chain*)
                     .clientAuth(config.clientAuth match {
                       case otoroshi.ssl.ClientAuth.None => io.netty.handler.ssl.ClientAuth.NONE
                       case otoroshi.ssl.ClientAuth.Want => io.netty.handler.ssl.ClientAuth.OPTIONAL
                       case otoroshi.ssl.ClientAuth.Need => io.netty.handler.ssl.ClientAuth.REQUIRE
                     })
                     .trustManager(DynamicSSLEngineProvider.currentServerTrustManager)
-                    .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
+                    .applicationProtocols(Http3.supportedApplicationProtocols()*)
                     .earlyData(true)
                     .build()
               }

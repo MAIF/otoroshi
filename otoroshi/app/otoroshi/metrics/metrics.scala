@@ -41,7 +41,7 @@ import scala.jdk.CollectionConverters._
 
 trait TimerMetrics {
   def withTimer[T](name: String, display: Boolean = false)(f: => T): T = f
-  def withTimerAsync[T](name: String, display: Boolean = false)(f: => Future[T])(implicit
+  def withTimerAsync[T](name: String, display: Boolean = false)(f: => Future[T])(using
       ec: ExecutionContext
   ): Future[T]                                                         = f
 }
@@ -58,8 +58,8 @@ object FakeHasMetrics extends HasMetrics {
 
 class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends TimerMetrics {
 
-  private implicit val ev: Env              = env
-  private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+  private given ev: Env              = env
+  private given ec: ExecutionContext = env.otoroshiExecutionContext
 
   private val logger = Logger("otoroshi-metrics")
 
@@ -263,7 +263,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   override def withTimerAsync[T](name: String, display: Boolean = false)(
       f: => Future[T]
-  )(implicit ec: ExecutionContext): Future[T] = {
+  )(using ec: ExecutionContext): Future[T] = {
     val jmxCtx = jmxRegistry.timer(name).time()
     val ctx    = metricRegistry.timer(MetricId.build(name)).time()
     f.andThen { case r =>

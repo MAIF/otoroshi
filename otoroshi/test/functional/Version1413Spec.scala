@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext
 
 class Version1413Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
@@ -622,7 +622,7 @@ class Transformer1 extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     TransformersCounters.counter.incrementAndGet()
     ctx.attrs.put(Attrs.CurrentUserKey -> FakeUser("bobby"))
 
@@ -646,7 +646,7 @@ class Transformer2 extends NgRequestTransformer {
   override def isTransformRequestAsync                     = false
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     TransformersCounters.counter.incrementAndGet()
     ctx.attrs.get(Attrs.CurrentUserKey) match {
       case Some(FakeUser("bobby")) => TransformersCounters.attrsCounter.incrementAndGet()
@@ -675,7 +675,7 @@ class Transformer3 extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     TransformersCounters.counter3.incrementAndGet()
     ctx.attrs.get(Attrs.CurrentUserKey) match {
       case Some(FakeUser("bobby")) => TransformersCounters.attrsCounter.incrementAndGet()
@@ -692,7 +692,7 @@ class Transformer3 extends NgRequestTransformer {
 class Validator1 extends NgAccessValidator {
   override def isAccessAsync = false
 
-  override def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess = {
+  override def accessSync(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): NgAccess = {
     TransformersCounters.counterValidator.incrementAndGet()
     NgAccess.NgAllowed
   }

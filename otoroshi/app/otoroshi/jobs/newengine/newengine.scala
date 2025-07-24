@@ -31,7 +31,7 @@ object NewEngine {
     enabledRawFromConfig(config, env)._1
   }
 
-  def enabled(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  def enabled(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       enabledFromConfig(config, env)
     }
@@ -68,7 +68,7 @@ class NewEngineJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     NewEngine.enabled.map { enabled =>
       if (!enabled) {
         logger.info(s"You are using the legacy Otoroshi proxy engine !")

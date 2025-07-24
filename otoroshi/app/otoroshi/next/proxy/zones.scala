@@ -13,12 +13,13 @@ import otoroshi.models.{Target, TargetPredicate}
 import otoroshi.next.models.NgRoute
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.http.HttpEntity
 import play.api.libs.json.Json
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.WSResponse
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationLong
@@ -49,7 +50,7 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 
 class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
-  override def asResult()(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  override def asResult()(using ec: ExecutionContext, env: Env): Future[Result] = {
     val cookieEncoder                  = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
     val cl                             = resp.headers.getIgnoreCase("Content-Length").map(_.last).map(_.toLong)
     val ct                             = resp.headers.getIgnoreCase("Content-Type").map(_.last)
@@ -67,19 +68,19 @@ class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
     Results
       .Status(resp.status)
       .sendEntity(HttpEntity.Streamed(resp.bodyAsSource, cl, ct))
-      .withHeaders(headers: _*)
-      .applyOnIf(setCookie.nonEmpty)(_.withCookies(setCookie.toSeq: _*))
+      .withHeaders(headers*)
+      .applyOnIf(setCookie.nonEmpty)(_.withCookies(setCookie.toSeq*))
       .vfuture
   }
 }
 
 case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInteger) {
-  def call(req: RequestHeader, body: Source[ByteString, _])(implicit
+  def call(req: RequestHeader, body: Source[ByteString, ?])(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport
   ): Future[Either[NgProxyEngineError, Done]] = {
-    implicit val sched: Scheduler = env.otoroshiScheduler
+    given sched: Scheduler = env.otoroshiScheduler
     val cookieEncoder             = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
     Retry.retry(
       times = env.clusterConfig.worker.retries,
@@ -154,7 +155,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
         .withMethod("POST")
         .withRequestTimeout(route.backend.client.globalTimeout.milliseconds)
         .withBody(body)
-        .withHttpHeaders(headers: _*)
+        .withHttpHeaders(headers*)
         .execute()
         .map { resp =>
           Left(new RelayRoutingResult(resp))
@@ -164,7 +165,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
 }
 
 class PossibleLeaders(members: Seq[MemberView], route: NgRoute) {
-  def chooseNext(counter: AtomicInteger)(implicit env: Env): SelectedLeader = {
+  def chooseNext(counter: AtomicInteger)(using env: Env): SelectedLeader = {
     val useLeader = env.clusterConfig.mode.isWorker && env.clusterConfig.relay.leaderOnly
     if (useLeader) {
       SelectedLeader(

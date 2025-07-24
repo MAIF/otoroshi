@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext
 object HeadersHelper {
 
   @inline
-  def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader)(implicit env: Env): Seq[(String, String)] = {
+  def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader)(using env: Env): Seq[(String, String)] = {
     if (desc.xForwardedHeaders && env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
       val xForwardedFor   = request.headers
         .get("X-Forwarded-For")
@@ -61,7 +61,7 @@ object HeadersHelper {
       snowMonkeyContext: SnowMonkeyContext,
       jwtInjection: JwtInjection,
       attrs: TypedMap
-  )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
+  )(using env: Env, ec: ExecutionContext): Seq[(String, String)] = {
 
     val stateRequestHeaderName =
       descriptor.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState)
@@ -150,7 +150,7 @@ object HeadersHelper {
         // )
         .appendIf(
           descriptor.enforceSecureCommunication && descriptor.sendInfoToken,
-          claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(env)
+          claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(using env)
         )
         .appendIf(
           descriptor.enforceSecureCommunication && descriptor.sendStateChallenge,
@@ -165,7 +165,7 @@ object HeadersHelper {
         .appendAll(additionalHeaders)
         .appendAll(jwtAdditionalHeaders)
         .removeAll(jwtInjection.removeHeaders)
-        .appendAll(xForwardedHeader(descriptor, req)(env))
+        .appendAll(xForwardedHeader(descriptor, req)(using env))
     }
   }
 
@@ -174,13 +174,13 @@ object HeadersHelper {
       headers: Map[String, String],
       claim: OtoroshiClaim,
       descriptor: ServiceDescriptor
-  )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
+  )(using env: Env, ec: ExecutionContext): Seq[(String, String)] = {
     val claimRequestHeaderName =
       descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
     val doIt                   = descriptor.enforceSecureCommunication && descriptor.sendInfoToken
     headers.toSeq
       .removeIf(claimRequestHeaderName, doIt)
-      .appendIf(doIt, claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(env))
+      .appendIf(doIt, claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(using env))
   }
 
   @inline
@@ -199,7 +199,7 @@ object HeadersHelper {
       canaryId: String,
       remainingQuotas: RemainingQuotas,
       attrs: TypedMap
-  )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
+  )(using env: Env, ec: ExecutionContext): Seq[(String, String)] = {
 
     val stateResponseHeaderName = descriptor.secComHeaders.stateResponseName
       .getOrElse(env.Headers.OtoroshiStateResp)
@@ -321,7 +321,7 @@ object HeadersHelper {
       canaryId: String,
       remainingQuotas: RemainingQuotas,
       attrs: TypedMap
-  )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
+  )(using env: Env, ec: ExecutionContext): Seq[(String, String)] = {
 
     val stateResponseHeaderName = descriptor.secComHeaders.stateResponseName
       .getOrElse(env.Headers.OtoroshiStateResp)
@@ -431,7 +431,7 @@ object HeadersHelper {
       stateRequestHeaderName: String,
       claimRequestHeaderName: String,
       attrs: TypedMap
-  )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
+  )(using env: Env, ec: ExecutionContext): Seq[(String, String)] = {
     val headersIn: Seq[(String, String)] = {
       (descriptor.missingOnlyHeadersIn
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
@@ -460,7 +460,7 @@ object HeadersHelper {
         env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
       ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendInfoToken) {
               Map(
-                claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(env)
+                claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(using env)
               )
             } else {
               Map.empty[String, String]
@@ -491,7 +491,7 @@ object HeadersHelper {
         .filterNot(h => h._2 == "null") ++ fromOtoroshi
         .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
         .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
-        .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(descriptor, req)(env)
+        .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(descriptor, req)(using env)
     }
     headersIn
   }
@@ -513,7 +513,7 @@ object HeadersHelper {
       remainingQuotas: RemainingQuotas,
       stateResponseHeaderName: String,
       attrs: TypedMap
-  )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
+  )(using env: Env, ec: ExecutionContext): Seq[(String, String)] = {
 
     val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(c => c._2.map(v => (c._1, v)))
     val _headersOut: Seq[(String, String)] = {
@@ -579,7 +579,7 @@ object HeadersHelper {
       remainingQuotas: RemainingQuotas,
       stateResponseHeaderName: String,
       attrs: TypedMap
-  )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
+  )(using env: Env, ec: ExecutionContext): Seq[(String, String)] = {
     val _headersOut: Seq[(String, String)] = {
       descriptor.missingOnlyHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)

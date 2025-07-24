@@ -33,9 +33,9 @@ class Log4ShellSpec extends AnyWordSpec with Matchers with OptionValues with Sca
         .mustBe(true)
     }
     "find lot of bad headers" in {
-      implicit val system: ActorSystem = ActorSystem()
-      implicit val ec: ExecutionContextExecutor = system.dispatcher
-      implicit val mat: Materializer = Materializer(system)
+      given system: ActorSystem = ActorSystem()
+      given ec: ExecutionContextExecutor = system.dispatcher
+      given mat: Materializer = Materializer(system)
       val http            = Http()
       http
         .singleRequest(

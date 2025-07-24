@@ -54,12 +54,12 @@ case class PrivateAppsUser(
   def field(name: String): Option[String] = (profile \ name).asOpt[String]
   def userId: Option[String]              = (profile \ "user_id").asOpt[String].orElse((profile \ "sub").asOpt[String])
 
-  def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[PrivateAppsUser] =
+  def save(duration: Duration)(using ec: ExecutionContext, env: Env): Future[PrivateAppsUser] =
     env.datastores.privateAppsUserDataStore
       .set(this.copy(expiredAt = DateTime.now().plus(duration.toMillis)), Some(duration))
       .map(_ => this.copy(expiredAt = DateTime.now().plus(duration.toMillis)))
 
-  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def delete()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.privateAppsUserDataStore.delete(randomId)
 
   def toJson: JsValue        = PrivateAppsUser.fmt.writes(this)
@@ -73,14 +73,14 @@ case class PrivateAppsUser(
       "tags"     -> tags
     )
 
-  def withAuthModuleConfig[A](f: AuthModuleConfig => A)(implicit ec: ExecutionContext, env: Env): Unit = {
+  def withAuthModuleConfig[A](f: AuthModuleConfig => A)(using ec: ExecutionContext, env: Env): Unit = {
     // env.datastores.authConfigsDataStore.findById(authConfigId).map {
     env.proxyState.authModuleAsync(authConfigId).map {
       case None       => ()
       case Some(auth) => f(auth)
     }
   }
-  override def updateToken(tok: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  override def updateToken(tok: JsValue)(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.privateAppsUserDataStore.set(
       copy(
         token = tok,
@@ -96,7 +96,7 @@ case class PrivateAppsUser(
 
 object PrivateAppsUser {
 
-  def fromCookie(sessionId: String, reqOpt: Option[RequestHeader])(implicit env: Env): Option[PrivateAppsUser] = {
+  def fromCookie(sessionId: String, reqOpt: Option[RequestHeader])(using env: Env): Option[PrivateAppsUser] = {
     reqOpt
       .map { req =>
         val verifier =
@@ -194,7 +194,7 @@ object PrivateAppsUserHelper {
       logger: Logger
   )
 
-  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(implicit
+  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(using
       executionContext: ExecutionContext,
       env: Env
   ): Future[Option[PrivateAppsUser]] = {
@@ -213,7 +213,7 @@ object PrivateAppsUserHelper {
     }
   }
 
-  def isPrivateAppsSessionValidWithAuth(req: RequestHeader, desc: ServiceDescriptor, auth: AuthModuleConfig)(implicit
+  def isPrivateAppsSessionValidWithAuth(req: RequestHeader, desc: ServiceDescriptor, auth: AuthModuleConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[PrivateAppsUser]] = {
@@ -253,7 +253,7 @@ object PrivateAppsUserHelper {
     }
   }
 
-  def isPrivateAppsSessionValidWithMultiAuth(req: RequestHeader, route: NgRoute)(implicit
+  def isPrivateAppsSessionValidWithMultiAuth(req: RequestHeader, route: NgRoute)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[JsObject]] = {
@@ -289,7 +289,7 @@ object PrivateAppsUserHelper {
       ctx: PassWithAuthContext,
       callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
       errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
 
     val PassWithAuthContext(req, query, descriptor, attrs, config, logger) = ctx
 
@@ -339,7 +339,7 @@ object PrivateAppsUserHelper {
                             query.toHost,
                             descriptor,
                             auth
-                          ): _*
+                          )*
                         )
                     )
                   )

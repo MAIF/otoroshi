@@ -51,7 +51,7 @@ class IpAddressAllowedList extends NgAccessValidator {
   override def defaultConfigObject: Option[NgPluginConfig] = NgIpAddressesConfig().some
   override def isAccessAsync: Boolean                      = true
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress                  = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
     val NgIpAddressesConfig(addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressesConfig())
@@ -102,7 +102,7 @@ class IpAddressBlockList extends NgAccessValidator {
   override def defaultConfigObject: Option[NgPluginConfig] = NgIpAddressesConfig().some
   override def isAccessAsync: Boolean                      = true
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress                  = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
     val NgIpAddressesConfig(addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressesConfig())
@@ -181,7 +181,7 @@ class EndlessHttpResponse extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val remoteAddress                                  = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
     // val finger = ctx.config.select("finger").asOpt[Boolean].getOrElse(false)

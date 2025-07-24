@@ -17,7 +17,7 @@ import play.api.mvc
 import play.api.libs.json.JsValue
 import play.api.mvc.AnyContent
 
-class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext

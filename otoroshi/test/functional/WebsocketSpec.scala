@@ -40,9 +40,9 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration) extends O
 
     "support websockets" in {
 
-      implicit val system: ActorSystem = ActorSystem("otoroshi-test")
-      implicit val mat: Materializer = Materializer(system)
-      implicit val http: HttpExt = Http()(system)
+      given system: ActorSystem = ActorSystem("otoroshi-test")
+      given mat: Materializer = Materializer(system)
+      given http: HttpExt = Http()(using system)
 
       val service = ServiceDescriptor(
         id = "ws-test",

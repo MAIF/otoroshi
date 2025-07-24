@@ -1,25 +1,26 @@
 package otoroshi.utils.clevercloud
 
-import java.util.Base64
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
+import com.google.common.base.Charsets
 import org.apache.pekko.NotUsed
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.Materializer
-import com.google.common.base.Charsets
 import otoroshi.env.Env
 import otoroshi.models.GlobalConfig
+import otoroshi.utils.clevercloud.CleverCloudClient.CleverSettings
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue}
+import play.api.libs.ws.WSBodyWritables.*
+import play.api.libs.ws.WSResponse
 import play.utils.UriEncoding
-import otoroshi.utils.clevercloud.CleverCloudClient.CleverSettings
 
 import java.nio.charset.StandardCharsets
+import java.util.Base64
 import java.util.concurrent.ThreadLocalRandom
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success}
-import play.api.libs.ws.WSResponse
 
 object CleverCloudClient {
 
@@ -76,11 +77,10 @@ object CleverCloudClient {
 
 class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSettings, val orgaId: String) {
 
-  import otoroshi.utils.http.Implicits._
+  import CleverCloudClient.*
+  import otoroshi.utils.http.Implicits.*
 
-  import CleverCloudClient._
-
-  implicit val mat: Materializer = env.otoroshiMaterializer
+  given mat: Materializer = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-clevercloud-client")
 
@@ -109,7 +109,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       .url(url)
       .withHttpHeaders("Authorization" -> params)
       .withMaybeProxyServer(config.proxies.clevercloud)
-      .withQueryStringParameters(queryParams: _*)
+      .withQueryStringParameters(queryParams*)
 
     // logger.debug(
     //   s"""
@@ -207,22 +207,22 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  def summary()(implicit ec: ExecutionContext): Future[JsObject] =
+  def summary()(using ec: ExecutionContext): Future[JsObject] =
     cleverCall(endpoint = "/summary").fast.map(_.json.as[JsObject])
 
-  def app(orga: String, id: String)(implicit ec: ExecutionContext): Future[JsObject] =
+  def app(orga: String, id: String)(using ec: ExecutionContext): Future[JsObject] =
     cleverCall(endpoint = s"/organisations/$orga/applications/$id").fast.map(_.json.as[JsObject])
 
-  def apps(orga: String)(implicit ec: ExecutionContext): Future[JsArray] =
+  def apps(orga: String)(using ec: ExecutionContext): Future[JsArray] =
     cleverCall(endpoint = s"/organisations/$orga/applications").fast.map(_.json.as[JsArray])
 
-  def addon(orga: String, id: String)(implicit ec: ExecutionContext): Future[JsObject] =
+  def addon(orga: String, id: String)(using ec: ExecutionContext): Future[JsObject] =
     cleverCall(endpoint = s"/organisations/$orga/addons/$id").fast.map(_.json.as[JsObject])
 
-  def appTags(orga: String, id: String)(implicit ec: ExecutionContext): Future[JsValue] =
+  def appTags(orga: String, id: String)(using ec: ExecutionContext): Future[JsValue] =
     cleverCall(endpoint = s"/organisations/$orga/applications/$id/tags").fast.map(_.json.as[JsValue])
 
-  def createTagsForApp(orga: String, id: String, tags: Seq[String])(implicit ec: ExecutionContext): Future[NotUsed] =
+  def createTagsForApp(orga: String, id: String, tags: Seq[String])(using ec: ExecutionContext): Future[NotUsed] =
     Future
       .sequence(tags.map { tag =>
         cleverCall(method = CleverCloudClient.PUT, endpoint = s"/organisations/$orga/applications/$id/tags/$tag")
@@ -235,7 +235,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       })
       .map(_ => NotUsed)
 
-  def deleteTagsForApp(orga: String, id: String)(implicit ec: ExecutionContext): Future[NotUsed] =
+  def deleteTagsForApp(orga: String, id: String)(using ec: ExecutionContext): Future[NotUsed] =
     cleverCall(endpoint = s"/organisations/$orga/applications/$id/tags").fast.map(_.json.as[JsArray]).flatMap { seq =>
       FastFuture
         .sequence(seq.value.map(_.as[String]).map { tag =>
@@ -250,7 +250,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
         .map(_ => NotUsed)
     }
 
-  def createTagsForAddon(orga: String, id: String, tags: Seq[String])(implicit ec: ExecutionContext): Future[NotUsed] =
+  def createTagsForAddon(orga: String, id: String, tags: Seq[String])(using ec: ExecutionContext): Future[NotUsed] =
     FastFuture
       .sequence(tags.map { tag =>
         cleverCall(method = CleverCloudClient.PUT, endpoint = s"/organisations/$orga/addons/$id/tags/$tag").andThen {
@@ -262,7 +262,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       })
       .map(_ => NotUsed)
 
-  def deleteTagsForAddon(orga: String, id: String)(implicit ec: ExecutionContext): Future[NotUsed] =
+  def deleteTagsForAddon(orga: String, id: String)(using ec: ExecutionContext): Future[NotUsed] =
     cleverCall(endpoint = s"/organisations/$orga/addons/$id/tags").fast.map(_.json.as[JsArray]).flatMap { seq =>
       FastFuture
         .sequence(seq.value.map(_.as[String]).map { tag =>
@@ -277,10 +277,10 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
         .map(_ => NotUsed)
     }
 
-  def addonTags(orga: String, id: String)(implicit ec: ExecutionContext): Future[JsValue] =
+  def addonTags(orga: String, id: String)(using ec: ExecutionContext): Future[JsValue] =
     cleverCall(endpoint = s"/organisations/$orga/addons/$id/tags").fast.map(_.json.as[JsValue])
 
-  def appEnv(orga: String, id: String)(implicit ec: ExecutionContext): Future[Map[String, String]] =
+  def appEnv(orga: String, id: String)(using ec: ExecutionContext): Future[Map[String, String]] =
     cleverCall(endpoint = s"/organisations/$orga/applications/$id/env").fast
       .map(_.json.as[JsArray].value.map(obj => ((obj \ "name").as[String], (obj \ "value").as[String])).toMap)
 

@@ -80,7 +80,7 @@ class ZipFileBackend extends NgBackendCall {
 
   private def getZipFile(
       config: ZipFileBackendConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, ZipFile]] = fileCache.synchronized {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, ZipFile]] = fileCache.synchronized {
     val url = config.url
     if (url.startsWith("file://")) {
       Right(new ZipFile(url.replace("file://", ""))).vfuture
@@ -120,9 +120,9 @@ class ZipFileBackend extends NgBackendCall {
     }
   }
 
-  private def atPath(_path: String, zip: ZipFile, config: ZipFileBackendConfig)(implicit
+  private def atPath(_path: String, zip: ZipFile, config: ZipFileBackendConfig)(using
       env: Env
-  ): Option[(String, Source[ByteString, _])] = {
+  ): Option[(String, Source[ByteString, ?])] = {
     var path =
       if (_path == "/") "index.html"
       else {
@@ -165,7 +165,7 @@ class ZipFileBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -334,7 +334,7 @@ class ZipBombBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

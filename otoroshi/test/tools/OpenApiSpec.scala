@@ -14,7 +14,7 @@ class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
   val scanResult: ScanResult = new ClassGraph()
       .addClassLoader(this.getClass.getClassLoader)
       .enableAllInfo()
-      .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws"): _*)
+      .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws")*)
       .scan
 
   // Debug current working directory

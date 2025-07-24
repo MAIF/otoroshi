@@ -88,7 +88,7 @@ object BasicAuthUser {
               name = (json \ "name").as[String],
               password = (json \ "password").as[String],
               email = (json \ "email").as[String],
-              webauthn = (json \ "webauthn").asOpt(WebAuthnDetails.fmt),
+              webauthn = (json \ "webauthn").asOpt(using WebAuthnDetails.fmt),
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
               tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
               rights = UserRights.readFromObject(json),
@@ -148,11 +148,11 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           basicAuth = (json \ "basicAuth").asOpt[Boolean].getOrElse(false),
           webauthn = (json \ "webauthn").asOpt[Boolean].getOrElse(false),
-          users = (json \ "users").asOpt(Reads.seq(BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser]),
+          users = (json \ "users").asOpt(using Reads.seq(using BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+            (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
@@ -205,21 +205,21 @@ case class BasicAuthModuleConfig(
       "sessionMaxAge"            -> this.sessionMaxAge,
       "metadata"                 -> this.metadata,
       "tags"                     -> JsArray(tags.map(JsString.apply)),
-      "users"                    -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
+      "users"                    -> Writes.seq(using BasicAuthUser.fmt).writes(this.users),
       "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "userValidators"           -> JsArray(userValidators.map(_.json)),
       "allowedUsers"             -> this.allowedUsers,
       "deniedUsers"              -> this.deniedUsers,
       "remoteValidators"         -> JsArray(remoteValidators.map(_.json))
     )
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor): String            = s"basic-auth-$id"
   def theDescription: String                                            = desc
   def theMetadata: Map[String, String]                                  = metadata
   def theName: String                                                   = name
   def theTags: Seq[String]                                              = tags
 
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig] = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig] = AuthModuleConfig._fmt(env)
 }
 
 object BasicAuthModule {
@@ -250,7 +250,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   }
 
-  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
+  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -279,7 +279,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  def bindAdminUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
+  def bindAdminUser(username: String, password: String, descriptor: ServiceDescriptor)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ErrorReason, BackOfficeUser]] = {
@@ -314,11 +314,11 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
-    implicit val req: RequestHeader = request
+    given req: RequestHeader = request
     val redirect                    = request
       .getQueryString("redirect")
       .filter(redirect =>
@@ -393,16 +393,16 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = FastFuture.successful(Right(None))
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
-    implicit val req: Request[AnyContent] = request
+    given req: Request[AnyContent] = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {
         case Some(token) =>
@@ -464,11 +464,11 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
-    implicit val req: RequestHeader = request
+    given req: RequestHeader = request
     val redirect                    = request.getQueryString("redirect")
     val hash                        = env.sign(s"${authConfig.id}:::backoffice")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
@@ -515,7 +515,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       }
     }
   }
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] =
@@ -524,8 +524,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   override def boCallback(
       request: Request[AnyContent],
       config: GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
-    implicit val req: Request[AnyContent] = request
+  )(using ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
+    given req: Request[AnyContent] = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {
         case Some(token) =>
@@ -568,7 +568,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   def webAuthnLoginStart(
       body: JsValue,
       descriptor: ServiceDescriptor
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
     import scala.jdk.CollectionConverters._
 
@@ -634,7 +634,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   def webAuthnAdminLoginStart(
       body: JsValue
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
     import scala.jdk.CollectionConverters._
 
@@ -701,7 +701,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   def webAuthnLoginFinish(
       body: JsValue,
       descriptor: ServiceDescriptor
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, PrivateAppsUser]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ErrorReason, PrivateAppsUser]] = {
 
     import scala.jdk.CollectionConverters._
 
@@ -782,7 +782,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   def webAuthnAdminLoginFinish(
       body: JsValue
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, BackOfficeUser]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ErrorReason, BackOfficeUser]] = {
 
     import scala.jdk.CollectionConverters._
 
@@ -863,7 +863,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   def webAuthnRegistrationStart(
       body: JsValue
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
     import scala.jdk.CollectionConverters._
 
@@ -931,7 +931,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   def webAuthnRegistrationFinish(
       body: JsValue
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
     import scala.jdk.CollectionConverters._
 
@@ -1027,7 +1027,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   def webAuthnRegistrationDelete(
       user: BasicAuthUser
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
     val conf = authConfig.copy(users = authConfig.users.filterNot(_.email == user.email) :+ user.copy(webauthn = None))
     conf.save().map { _ =>
       Right(Json.obj("username" -> user.email))

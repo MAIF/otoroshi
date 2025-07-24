@@ -40,7 +40,7 @@ object CassImplicits {
     import scala.jdk.CollectionConverters._
     import scala.compat.java8.FutureConverters._
 
-    def list()(implicit mat: Materializer): Future[Seq[Row]] = {
+    def list()(using mat: Materializer): Future[Seq[Row]] = {
       val ref  = new AtomicReference[AsyncResultSet](rsf)
       val base = Source(ref.get().currentPage().asScala.toList)
       if (ref.get().hasMorePages) {
@@ -75,7 +75,7 @@ object NewCassandraRedis {
   val logger: Logger = Logger("otoroshi-cassandra-datastores")
 }
 
-class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(implicit
+class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(using
     ec: ExecutionContext,
     mat: Materializer,
     env: Env
@@ -457,10 +457,10 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
   override def llen(key: String): Future[Long] =
     getListAt(key).map(_.size)
 
-  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply): _*)
+  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply)*)
 
   override def lpushLong(key: String, values: Long*): Future[Long] =
-    lpushBS(key, values.map(_.toString).map(ByteString.apply): _*)
+    lpushBS(key, values.map(_.toString).map(ByteString.apply)*)
 
   override def lpushBS(key: String, values: ByteString*): Future[Long] =
     executeAsync(s"INSERT INTO otoroshi.values (key, type, lvalue) values ('$key', 'list', [ ]) IF NOT EXISTS;")
@@ -525,7 +525,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply)*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
     executeAsync(s"INSERT INTO otoroshi.values (key, type, svalue) values ('$key', 'set', {}) IF NOT EXISTS;")
@@ -543,7 +543,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 
   override def smembers(key: String): Future[Seq[ByteString]] = getSetAt(key).map(_.toSeq)
 
-  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
+  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply)*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
     executeAsync(
@@ -556,7 +556,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     smembers(key).map(_.size.toLong) // TODO: find something for that OUTCH !!!
   }
 
-  def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+  def health()(using ec: ExecutionContext): Future[DataStoreHealth] = {
     executeAsync("SHOW VERSION").map(_ => Healthy).recover { case _ =>
       Unreachable
     }

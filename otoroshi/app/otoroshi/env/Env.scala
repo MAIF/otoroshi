@@ -175,7 +175,7 @@ class Env(
     val _finalConfigJson1Str          = _finalConfigJson1.stringify
     val _finalConfigJson1StrWithVault = Await.result(
       vaults.fillSecretsAsync("otoroshi-config", _finalConfigJson1Str)(
-        ExecutionContext.fromExecutor(Executors.newFixedThreadPool(3))
+        using ExecutionContext.fromExecutor(Executors.newFixedThreadPool(3))
       ),
       30.seconds
     )
@@ -286,12 +286,12 @@ class Env(
     val promise = Promise[Unit]()
     otoroshiActorSystem.scheduler.scheduleOnce(duration) {
       promise.trySuccess(())
-    }(otoroshiExecutionContext)
+    }(using otoroshiExecutionContext)
     promise.future
   }
 
   // val healthCheckerActor  = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
-  val otoroshiEventsActor: ActorRef = otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(this))
+  val otoroshiEventsActor: ActorRef = otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(using this))
   val analyticsQueue: ActorRef      = otoroshiActorSystem.actorOf(AnalyticsQueue.props(this))
 
   lazy val sidecarConfig: Option[SidecarConfig] = (
@@ -693,7 +693,7 @@ class Env(
       config.copy(
         wsClientConfig = wsClientConfig
       )
-    )(otoroshiMaterializer)
+    )(using otoroshiMaterializer)
 
     import scala.jdk.CollectionConverters._
     ahcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
@@ -711,11 +711,11 @@ class Env(
         case Success(_) => ()
         case Failure(e) => logger.error("error while publishing ahc stats", e)
       }
-    }(otoroshiExecutionContext))
+    }(using otoroshiExecutionContext))
 
     WsClientChooser(
       ahcClient,
-      new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
+      new AkkWsClient(wsClientConfig, this)(using otoroshiActorSystem, otoroshiMaterializer),
       reactorClientGateway,
       configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
@@ -761,10 +761,10 @@ class Env(
         case Success(_) => ()
         case Failure(e) => logger.error("error while publishing ahc stats", e)
       }
-    }(otoroshiExecutionContext))
+    }(using otoroshiExecutionContext))
     WsClientChooser(
       wsClient,
-      new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
+      new AkkWsClient(wsClientConfig, this)(using otoroshiActorSystem, otoroshiMaterializer),
       reactorClientInternal,
       configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
@@ -945,7 +945,7 @@ class Env(
       case _ if clusterConfig.mode == ClusterMode.Worker                   =>
         new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
       case v if v.startsWith("cp:")                                        =>
-        scriptManager.getAnyScript[DataStoresBuilder](v)(otoroshiExecutionContext) match {
+        scriptManager.getAnyScript[DataStoresBuilder](v)(using otoroshiExecutionContext) match {
           case Left(err)  =>
             logger.error(s"specified datastore with name '$v' does not exists or failed to instanciate: $err")
             System.exit(-1)
@@ -1091,7 +1091,7 @@ class Env(
   // ua.start()
   adminExtensions.start()
   lifecycle.addStopHook(() => {
-    implicit val ec: ExecutionContext = otoroshiExecutionContext
+    given ec: ExecutionContext = otoroshiExecutionContext
     // geoloc.stop()
     // ua.stop()
     // healthCheckerActor ! PoisonPill
@@ -1266,7 +1266,7 @@ class Env(
   )
 
   lazy val backofficeRoute: NgRoute =
-    NgRoute.fromServiceDescriptor(backOfficeServiceDescriptor, debug = false)(otoroshiExecutionContext, this)
+    NgRoute.fromServiceDescriptor(backOfficeServiceDescriptor, debug = false)(using otoroshiExecutionContext, this)
 
   lazy val backOfficeDescriptor: RoutingInfo = RoutingInfo(
     id = backofficeRoute.id,
@@ -1302,7 +1302,7 @@ class Env(
     // TODO: remove timeout
     timeout(300.millis).andThen { case _ =>
       tunnelAgent.start()
-    }(otoroshiExecutionContext)
+    }(using otoroshiExecutionContext)
     ().vfuture
   }
 
@@ -1346,7 +1346,7 @@ class Env(
   } yield OS(name, version, arch)).getOrElse(OS.default)
 
   timeout(300.millis).andThen { case _ =>
-    implicit val ec: ExecutionContext = otoroshiExecutionContext // internalActorSystem.dispatcher
+    given ec: ExecutionContext = otoroshiExecutionContext // internalActorSystem.dispatcher
 
     setupLoggers()
 
@@ -1401,7 +1401,7 @@ class Env(
       .andThen {
         case Success(true) if clusterConfig.mode == ClusterMode.Worker  =>
           logger.info(s"The main datastore seems to be empty, registering default config.")
-          defaultConfig.save()(ec, this)
+          defaultConfig.save()(using ec, this)
         case Success(true) if clusterConfig.mode != ClusterMode.Worker  =>
           logger.info(s"The main datastore seems to be empty, registering some basic services")
           val login                          =
@@ -1416,25 +1416,25 @@ class Env(
             configuration.getOptionalWithFileSupport[String]("app.importFrom") match {
               case Some(url) if url.startsWith("http://") || url.startsWith("https://") =>
                 logger.info(s"Importing from URL: $url")
-                _internalClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
+                _internalClient.url(url).withHttpHeaders(headers*).get().fast.map { resp =>
                   val json = resp.json.as[JsObject]
                   datastores.globalConfigDataStore
-                    .fullImport(json)(ec, this)
+                    .fullImport(json)(using ec, this)
                     .andThen {
                       case Success(_) => logger.info("Successful import !")
                       case Failure(e) => logger.error("Error while importing initial data !", e)
-                    }(ec)
+                    }
                 }
               case Some(path)                                                           =>
                 logger.info(s"Importing from: $path")
                 val source = Source.fromFile(path).getLines().mkString("\n")
                 val json   = Json.parse(source).as[JsObject]
                 datastores.globalConfigDataStore
-                  .fullImport(json)(ec, this)
+                  .fullImport(json)(using ec, this)
                   .andThen {
                     case Success(_) => logger.info("Successful import !")
                     case Failure(e) => logger.error("Error while importing initial data !", e)
-                  }(ec)
+                  }
               case None                                                                 =>
               // No import source specified, do nothing
             }
@@ -1450,11 +1450,11 @@ class Env(
                   .as[JsObject]
                 logger.info(s"Importing from config file")
                 datastores.globalConfigDataStore
-                  .fullImport(importJson)(ec, this)
+                  .fullImport(importJson)(using ec, this)
                   .andThen {
                     case Success(_) => logger.info("Successful import !")
                     case Failure(e) => logger.error("Error while importing initial data !", e)
-                  }(ec)
+                  }
               case _         =>
                 val defaultGroup       =
                   ServiceGroup("default", "default-group", "The default service group", Seq.empty, Map.empty)
@@ -1517,17 +1517,17 @@ class Env(
                   )
                   .getOrElse(Json.obj())
 
-                val finalConfig = baseExport.customizeWith(initialCustomization)(this)
+                val finalConfig = baseExport.customizeWith(initialCustomization)(using this)
 
                 logger.info(
                   s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
                 )
 
-                datastores.globalConfigDataStore.fullImport(finalConfig.json)(ec, this)
+                datastores.globalConfigDataStore.fullImport(finalConfig.json)(using ec, this)
             }
           }
         case Success(false) if clusterConfig.mode != ClusterMode.Worker =>
-          datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).flatMap {
+          datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(using ec, this).flatMap {
             case Some(adminService) if !adminApiExposedDomains.forall(d => adminService.hosts.contains(d)) =>
               adminService
                 .copy(
@@ -1535,7 +1535,7 @@ class Env(
                     (adminService.hosts ++ adminApiAdditionalExposedDomain ++ adminApiExposedDomains :+ s"$adminApiExposedSubDomain.$domain").distinct,
                   additionalHeaders = Map("Host" -> backOfficeDescriptorHostHeader)
                 )
-                .save()(ec, this)
+                .save()(using ec, this)
             case Some(adminService) if !adminService.hosts.contains(s"$adminApiExposedSubDomain.$domain")  =>
               adminService
                 .copy(
@@ -1543,7 +1543,7 @@ class Env(
                     (adminService.hosts ++ adminApiAdditionalExposedDomain ++ adminApiExposedDomains :+ s"$adminApiExposedSubDomain.$domain").distinct,
                   additionalHeaders = Map("Host" -> backOfficeDescriptorHostHeader)
                 )
-                .save()(ec, this)
+                .save()(using ec, this)
             case Some(adminService)
                 if !adminService.additionalHeaders
                   .exists(t => t._1 == "Host" && t._2 == backOfficeDescriptorHostHeader) =>
@@ -1553,26 +1553,26 @@ class Env(
                     (adminService.hosts ++ adminApiAdditionalExposedDomain ++ adminApiExposedDomains :+ s"$adminApiExposedSubDomain.$domain").distinct,
                   additionalHeaders = Map("Host" -> backOfficeDescriptorHostHeader)
                 )
-                .save()(ec, this)
+                .save()(using ec, this)
             case Some(adminService)                                                                        =>
               ().future
             case _                                                                                         => ().future
           }
       }
       .map { _ =>
-        datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).map {
+        datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(using ec, this).map {
           case Some(s) if !s.publicPatterns.contains("/health")  =>
             logger.info("Updating BackOffice service to handle health check ...")
-            s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(ec, this)
+            s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(using ec, this)
           case Some(s) if !s.publicPatterns.contains("/metrics") =>
             logger.info("Updating BackOffice service to handle metrics ...")
-            s.copy(publicPatterns = s.publicPatterns :+ "/metrics").save()(ec, this)
+            s.copy(publicPatterns = s.publicPatterns :+ "/metrics").save()(using ec, this)
           case _                                                 =>
         }
       }
 
     {
-      datastores.tenantDataStore.findById("default")(ec, this).map {
+      datastores.tenantDataStore.findById("default")(using ec, this).map {
         case None    =>
           datastores.tenantDataStore.set(
             Tenant(
@@ -1581,10 +1581,10 @@ class Env(
               description = "Default organization created for any otoroshi instance",
               metadata = Map.empty
             )
-          )(ec, this)
+          )(using ec, this)
         case Some(_) =>
       }
-      datastores.teamDataStore.findById("default")(ec, this).map {
+      datastores.teamDataStore.findById("default")(using ec, this).map {
         case None    =>
           datastores.teamDataStore.set(
             Team(
@@ -1594,26 +1594,26 @@ class Env(
               description = "Default team created for any otoroshi instance",
               metadata = Map.empty
             )
-          )(ec, this)
+          )(using ec, this)
         case Some(_) =>
       }
     }
     ()
-  }(otoroshiExecutionContext)
+  }(using otoroshiExecutionContext)
 
   timeout(1000.millis).andThen { case _ =>
     jobManager.start()
     otoroshiEventsActor ! StartExporters
-  }(otoroshiExecutionContext)
+  }(using otoroshiExecutionContext)
 
   timeout(5000.millis).andThen {
     case _ if clusterConfig.mode != ClusterMode.Worker =>
-      implicit val ec = otoroshiExecutionContext
-      implicit val ev = this
+      given ec: ExecutionContext = otoroshiExecutionContext
+      given ev: Env = this
       for {
         _ <- datastores.globalConfigDataStore.migrate()
       } yield ()
-  }(otoroshiExecutionContext)
+  }(using otoroshiExecutionContext)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

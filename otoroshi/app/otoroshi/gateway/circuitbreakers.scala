@@ -29,7 +29,7 @@ import scala.util.{Failure, Success}
 
 object Timeout {
 
-  def timeout[A](message: => A, duration: FiniteDuration)(implicit
+  def timeout[A](message: => A, duration: FiniteDuration)(using
       ec: ExecutionContext,
       scheduler: Scheduler
   ): Future[A] = {
@@ -45,7 +45,7 @@ object Retry {
 
   lazy val logger: Logger = Logger("otoroshi-circuit-breaker")
 
-  private[this] def retryPromise[T](
+  private def retryPromise[T](
       totalCalls: Int,
       times: Int,
       delay: Long,
@@ -55,7 +55,7 @@ object Retry {
       ctx: String,
       f: Int => Future[T],
       counter: AtomicInteger
-  )(implicit ec: ExecutionContext, scheduler: Scheduler): Unit = {
+  )(using ec: ExecutionContext, scheduler: Scheduler): Unit = {
     try {
       (times, failure) match {
         case (0, Some(e)) =>
@@ -82,7 +82,7 @@ object Retry {
                   retryPromise[T](totalCalls, times - 1, newDelay, factor, promise, Some(e), ctx, f, counter)
                 }
               }
-          }(ec)
+          }(using ec)
       }
     } catch {
       case e: Throwable => promise.tryFailure(e)
@@ -97,7 +97,7 @@ object Retry {
       counter: AtomicInteger = new AtomicInteger(0)
   )(
       f: Int => Future[T]
-  )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
+  )(using ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
     val promise = Promise[T]()
     retryPromise[T](times, times, delay, factor, promise, None, ctx, f, counter)
     promise.future
@@ -122,7 +122,7 @@ case class AkkaCircuitBreakerWrapper(
     resetTimeout: FiniteDuration
 )
 
-class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler: Scheduler, env: Env) {
+class ServiceDescriptorCircuitBreaker()(using ec: ExecutionContext, scheduler: Scheduler, env: Env) {
 
   val reqCounter = new AtomicInteger(0)
   val breakers   = new UnboundedTrieMap[String, AkkaCircuitBreakerWrapper]()
@@ -318,7 +318,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       counter: AtomicInteger,
       attrs: TypedMap,
       f: (Target, Int, AtomicBoolean) => Future[Either[Result, A]]
-  )(implicit
+  )(using
       env: Env
   ): Future[Either[Result, A]] = {
     callGenNg[A](
@@ -354,7 +354,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       counter: AtomicInteger,
       attrs: TypedMap,
       f: (Target, Int, AtomicBoolean) => Future[Either[Result, A]]
-  )(implicit
+  )(using
       env: Env
   ): Future[Either[Result, A]] = {
 

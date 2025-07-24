@@ -1,5 +1,6 @@
 package otoroshi.next.tunnel
 
+import com.github.blemale.scaffeine.Scaffeine
 import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, Props}
 import org.apache.pekko.http.scaladsl.ClientTransport
 import org.apache.pekko.http.scaladsl.model.Uri
@@ -8,31 +9,32 @@ import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpg
 import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
 import org.apache.pekko.stream.{Materializer, OverflowStrategy}
 import org.apache.pekko.util.ByteString
-import com.github.blemale.scaffeine.Scaffeine
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
 import otoroshi.cluster.{ClusterConfig, MemberView}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, Target, TargetPredicate}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.{NgProxyEngineError, ProxyEngine, TunnelRequest}
 import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.http.{ManualResolveTransport, MtlsConfig}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.http.HttpEntity
-import play.api.http.websocket._
-import play.api.libs.json._
+import play.api.http.websocket.*
+import play.api.libs.json.*
 import play.api.libs.streams.ActorFlow
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{DefaultWSProxyServer, WSCookie}
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.{Configuration, Logger}
 
 import java.net.InetSocketAddress
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 import scala.collection.immutable
+import scala.compiletime.uninitialized
 import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.sys.env
@@ -77,7 +79,7 @@ class TunnelPlugin() extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -217,14 +219,14 @@ class TunnelAgent(env: Env) {
       waiting: Long
   ): Future[Unit] = {
 
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer    = env.otoroshiMaterializer
-    implicit val ev: Env              = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer    = env.otoroshiMaterializer
+    given ev: Env              = env
 
     logger.info(s"connecting tunnel '$tunnelId' ...")
 
     val promise                                                                    = Promise[Unit]()
-    val metadataSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _] = Source
+    val metadataSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, ?] = Source
       .tick(1.seconds, 10.seconds, ())
       .map { _ =>
         Try {
@@ -254,7 +256,7 @@ class TunnelAgent(env: Env) {
       .collect { case Success(value) =>
         value
       }
-    val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]     = Source
+    val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, ?]     = Source
       .tick(10.seconds, 10.seconds, ())
       .map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString))
       .map { pm =>
@@ -270,7 +272,7 @@ class TunnelAgent(env: Env) {
           queueRef.set(q)
           q
         }
-    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]         =
+    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, ?]         =
       pushSource.merge(pingSource.merge(metadataSource))
 
     def handleRequest(rawRequest: ByteString): Unit = Try {
@@ -469,7 +471,7 @@ class TunnelAgent(env: Env) {
     val promise = Promise[Unit]()
     env.otoroshiActorSystem.scheduler.scheduleOnce(duration) {
       promise.trySuccess(())
-    }(env.otoroshiExecutionContext)
+    }(using env.otoroshiExecutionContext)
     promise.future
   }
 }
@@ -482,8 +484,8 @@ class TunnelManager(env: Env) {
   private val workerWs       = env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-ws").getOrElse(true)
   private val logger         = Logger(s"otoroshi-tunnel-manager")
 
-  private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  private implicit val ev: Env              = env
+  private given ec: ExecutionContext = env.otoroshiExecutionContext
+  private given ev: Env              = env
 
   def currentTunnels: Set[String] = tunnels.asMap().keySet.toSet
 
@@ -635,9 +637,9 @@ class TunnelManager(env: Env) {
       secured: Boolean,
       member: MemberView
   ): Future[Result] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer    = env.otoroshiMaterializer
-    implicit val ev: Env              = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer    = env.otoroshiMaterializer
+    given ev: Env              = env
 
     val requestId: String = TunnelActor.genRequestId(env) // legit
     val requestJson       = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
@@ -670,9 +672,9 @@ class LeaderConnection(
 ) {
 
   private val logger                        = Logger("otoroshi-tunnel-leader-connection")
-  private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  private implicit val mat: Materializer    = env.otoroshiMaterializer
-  private implicit val factory: ActorSystem = env.otoroshiActorSystem
+  private given ec: ExecutionContext = env.otoroshiExecutionContext
+  private given mat: Materializer    = env.otoroshiMaterializer
+  private given factory: ActorSystem = env.otoroshiActorSystem
 
   private val useInternalPorts =
     env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-use-internal-ports").getOrElse(false)
@@ -682,7 +684,7 @@ class LeaderConnection(
   def location: String = member.location
 
   private val ref                                                                    = new AtomicLong(0L)
-  private val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _] = Source
+  private val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, ?] = Source
     .tick(10.seconds, 10.seconds, ())
     .map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString))
     .map { pm =>
@@ -697,7 +699,7 @@ class LeaderConnection(
         queueRef.set(q)
         q
     }
-  private val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]     = pushSource.merge(pingSource)
+  private val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, ?]     = pushSource.merge(pingSource)
   private val awaitingResponse                                                       = new UnboundedTrieMap[String, Promise[Result]]()
 
   def close(): Unit = {
@@ -891,12 +893,12 @@ class LeaderConnection(
     val promise = Promise[Unit]()
     env.otoroshiActorSystem.scheduler.scheduleOnce(duration) {
       promise.trySuccess(())
-    }(env.otoroshiExecutionContext)
+    }(using env.otoroshiExecutionContext)
     promise.future
   }
 }
 
-class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
@@ -1015,12 +1017,12 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
 }
 
 class Tunnel(val instanceId: String) {
-  private var _actor: TunnelActor                 = _
-  private var _flow: Flow[Message, Message, _]    = _
+  private var _actor: TunnelActor                 = uninitialized
+  private var _flow: Flow[Message, Message, ?]    = uninitialized
   def setActor(r: TunnelActor): Unit              = _actor = r
-  def setFlow(r: Flow[Message, Message, _]): Unit = _flow = r
+  def setFlow(r: Flow[Message, Message, ?]): Unit = _flow = r
   def actor: Option[TunnelActor]                  = Option(_actor)
-  def flow: Option[Flow[Message, Message, _]]     = Option(_flow)
+  def flow: Option[Flow[Message, Message, ?]]     = Option(_flow)
 }
 
 object TunnelRelayActor {
@@ -1029,11 +1031,11 @@ object TunnelRelayActor {
   }
 }
 
-class TunnelRelayActor(out: ActorRef, tunnelId: String)(implicit env: Env) extends Actor {
+class TunnelRelayActor(out: ActorRef, tunnelId: String)(using env: Env) extends Actor {
 
   private val logger                        = Logger("otoroshi-tunnel-relay-actor")
-  private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  private implicit val mat: Materializer    = env.otoroshiMaterializer
+  private given ec: ExecutionContext = env.otoroshiExecutionContext
+  private given mat: Materializer    = env.otoroshiMaterializer
 
   def handleRequest(data: ByteString): Unit = Try {
     val request = Json.parse(data.toArray)
@@ -1066,7 +1068,7 @@ object TunnelActor {
   private val counter = new AtomicLong(0L)
 
   def genRequestId(env: Env): String = {
-    val otoroshiId    = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).otoroshiId
+    val otoroshiId    = env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env).otoroshiId
     val clusterNodeId = env.clusterConfig.id
     val requestId     = IdGenerator.uuid
     s"$otoroshiId-$clusterNodeId-$requestId-${counter.incrementAndGet()}"
@@ -1087,7 +1089,7 @@ object TunnelActor {
     }
   }
 
-  def resultToJson(result: Result, requestId: String)(implicit
+  def resultToJson(result: Result, requestId: String)(using
       ec: ExecutionContext,
       mat: Materializer,
       env: Env
@@ -1167,8 +1169,8 @@ object TunnelActor {
           contentLength = contentLength
         )
       )
-      .withHeaders(headersList: _*)
-      .withCookies(cookies: _*)
+      .withHeaders(headersList*)
+      .withCookies(cookies*)
   }
 }
 
@@ -1195,7 +1197,7 @@ class TunnelActor(
     if (reversePingPong) {
       env.otoroshiScheduler.scheduleWithFixedDelay(10.seconds, 10.seconds)(() => {
         out ! BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "pong").stringify.byteString)
-      })(env.otoroshiExecutionContext)
+      })(using env.otoroshiExecutionContext)
     }
   }
 
@@ -1246,7 +1248,7 @@ class TunnelActor(
           s"${env.storageRoot}:tunnels:$tunnelId:meta",
           updatedData,
           120.seconds.toMillis.some
-        )(env.otoroshiExecutionContext, env)
+        )(using env.otoroshiExecutionContext, env)
       case "response"    =>
         Try {
           env.tunnelManager.tunnelHeartBeat(tunnelId)

@@ -34,8 +34,8 @@ import scala.util._
 object CorazaPluginKeys {
   val CorazaWasmVmKey: TypedKey[WasmVm] = TypedKey[WasmVm]("otoroshi.next.plugins.CorazaWasmVm")
 
-  val RequestBodyKey: TypedKey[Future[Source[ByteString, _]]] =
-    TypedKey[Future[Source[ByteString, _]]]("otoroshi.next.plugins.RequestBodyKey")
+  val RequestBodyKey: TypedKey[Future[Source[ByteString, ?]]] =
+    TypedKey[Future[Source[ByteString, ?]]]("otoroshi.next.plugins.RequestBodyKey")
   val HasBodyKey: TypedKey[Boolean]                           = TypedKey[Boolean]("otoroshi.next.plugins.HasBodyKey")
 }
 
@@ -84,7 +84,7 @@ object NgCorazaWAF {
 
   private val plugins = new UnboundedTrieMap[String, CorazaImplementation]()
 
-  def getPlugin(ref: String, attrs: TypedMap)(implicit env: Env): CorazaImplementation = plugins.synchronized {
+  def getPlugin(ref: String, attrs: TypedMap)(using env: Env): CorazaImplementation = plugins.synchronized {
     val config     = env.adminExtensions.extension[CorazaWafAdminExtension].get.states.config(ref).get
     val configHash = config.json.stringify.sha512
     val key        = s"ref=$ref&hash=$configHash"
@@ -148,7 +148,7 @@ class NgCorazaWAF extends NgRequestTransformer {
 
   override def beforeRequest(
       ctx: NgBeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
     val plugin = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     plugin.start(ctx.attrs)
@@ -156,14 +156,14 @@ class NgCorazaWAF extends NgRequestTransformer {
 
   override def afterRequest(
       ctx: NgAfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     ctx.attrs.get(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey).foreach(_.release())
     ().vfuture
   }
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpRequest]] = {
     val config  = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
     val plugin  = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
     val hasBody = ctx.request.theHasBody
@@ -175,7 +175,7 @@ class NgCorazaWAF extends NgRequestTransformer {
         .runFold(ByteString.empty)(_ ++ _)
         .flatMap { bytes =>
           val req     = ctx.otoroshiRequest.copy(body = bytes.chunks(16 * 1024))
-          val promise = Promise[Source[ByteString, _]]()
+          val promise = Promise[Source[ByteString, ?]]()
           ctx.attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.RequestBodyKey -> promise.future)
 
           val source = Source(bytes.grouped(16 * 1024).toList)
@@ -205,7 +205,7 @@ class NgCorazaWAF extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[mvc.Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(NgCorazaWAFConfig.format).getOrElse(NgCorazaWAFConfig("none"))
     val plugin = NgCorazaWAF.getPlugin(config.ref, ctx.attrs)
 
@@ -254,7 +254,7 @@ class NgIncomingRequestValidatorCorazaWAF extends NgIncomingRequestValidator {
 
   override def access(
       ctx: NgIncomingRequestValidatorContext
-  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  )(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.config.select("ref").asOpt[String] match {
       case None      => NgAccess.NgAllowed.vfuture
       case Some(ref) =>
@@ -358,7 +358,7 @@ class KvCorazaWafConfigDataStore(extensionId: AdminExtensionId, redisCli: RedisL
     extends CorazaWafConfigDataStore
     with RedisLikeStore[CorazaWafConfig] {
   override def fmt: Format[CorazaWafConfig]              = CorazaWafConfig.format
-  override def redisLike(implicit env: Env): RedisLike   = redisCli
+  override def redisLike(using env: Env): RedisLike   = redisCli
   override def key(id: String): String                   = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:configs:$id"
   override def extractId(value: CorazaWafConfig): String = value.id
 }
@@ -398,8 +398,8 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
   override def stop(): Unit = ()
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val ev: Env              = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given ev: Env              = env
     for {
       configs <- datastores.corazaConfigsDatastore.findAll()
     } yield {
@@ -507,7 +507,7 @@ case class CorazaTrailEvent(
 
   private val timestamp = DateTime.now()
 
-  override def toJson(implicit env: Env): JsValue = {
+  override def toJson(using env: Env): JsValue = {
     val rules = rawMatchedRules
       .split("\n")
       .toSeq
@@ -535,9 +535,9 @@ case class CorazaTrailEvent(
 
 class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env)
     extends CorazaImplementation {
-  private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+  private given ec: ExecutionContext = env.otoroshiExecutionContext
 
-  private lazy val pool: WasmVmPool = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
+  private lazy val pool: WasmVmPool = WasmVmPool.forConfigurationWithId(key, wasm)(using env.wasmIntegration.context)
 
   def start(attrs: TypedMap): Future[Unit] = {
     pool
@@ -545,7 +545,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
         WasmVmInitOptions(
           importDefaultHostFunctions = false,
           resetMemory = false,
-          _ => scala.collection.immutable.Seq.empty[org.extism.sdk.HostFunction[_ <: org.extism.sdk.HostUserData]]
+          _ => scala.collection.immutable.Seq.empty[org.extism.sdk.HostFunction[? <: org.extism.sdk.HostUserData]]
         )
       )
       .flatMap { vm =>
@@ -633,7 +633,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
           .asOpt[String]
           .getOrElse(Json.stringify(Json.obj("error" -> "---")))
         if (errors.nonEmpty) {
-          CorazaTrailEvent(errors, request, route).toAnalytics()(env)
+          CorazaTrailEvent(errors, request, route).toAnalytics()(using env)
         }
         if (response) {
           NgAccess.NgAllowed
@@ -693,7 +693,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
       }
 
     body_source
-      .runWith(Sink.head)(env.otoroshiMaterializer)
+      .runWith(Sink.head)(using env.otoroshiMaterializer)
       .flatMap(requestBody => {
         val in = Json.obj(
           "request"  -> Json

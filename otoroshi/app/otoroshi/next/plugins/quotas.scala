@@ -42,7 +42,7 @@ class GlobalPerIpAddressThrottling extends NgAccessValidator {
       status: Results.Status,
       message: String,
       code: String
-  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  )(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
         message,
@@ -58,7 +58,7 @@ class GlobalPerIpAddressThrottling extends NgAccessValidator {
       .map(e => NgAccess.NgDenied(e))
   }
 
-  def applyQuotas(ctx: NgAccessContext, quotas: GlobalPerIpAddressThrottlingQuotas)(implicit
+  def applyQuotas(ctx: NgAccessContext, quotas: GlobalPerIpAddressThrottlingQuotas)(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgAccess] = {
@@ -71,7 +71,7 @@ class GlobalPerIpAddressThrottling extends NgAccessValidator {
     }
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress = ctx.request.theIpAddress
     ctx.attrs.get(GlobalPerIpAddressThrottlingQuotas.key) match {
       case Some(quotas) => applyQuotas(ctx, quotas)
@@ -104,7 +104,7 @@ class GlobalThrottling extends NgAccessValidator {
       status: Results.Status,
       message: String,
       code: String
-  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  )(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
         message,
@@ -120,7 +120,7 @@ class GlobalThrottling extends NgAccessValidator {
       .map(e => NgAccess.NgDenied(e))
   }
 
-  def applyQuotas(ctx: NgAccessContext, quotas: GlobalPerIpAddressThrottlingQuotas)(implicit
+  def applyQuotas(ctx: NgAccessContext, quotas: GlobalPerIpAddressThrottlingQuotas)(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgAccess] = {
@@ -131,7 +131,7 @@ class GlobalThrottling extends NgAccessValidator {
     }
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress = ctx.request.theIpAddress
     ctx.attrs.get(GlobalPerIpAddressThrottlingQuotas.key) match {
       case Some(quotas) => applyQuotas(ctx, quotas)
@@ -159,7 +159,7 @@ class ApikeyQuotas extends NgAccessValidator {
   override def description: Option[String] =
     "Increments quotas for the currents apikey. Useful when 'legacy checks' are disabled on a service/globally or when apikey are extracted in a custom fashion.".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     // increments calls for apikey
     ctx.attrs
       .get(otoroshi.plugins.Keys.ApiKeyKey)
@@ -211,19 +211,19 @@ class NgServiceQuotas extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
-  private def totalCallsKey(name: String)(implicit env: Env): String =
+  private def totalCallsKey(name: String)(using env: Env): String =
     s"${env.storageRoot}:plugins:services-public-quotas:global:$name"
 
-  private def dailyQuotaKey(name: String)(implicit env: Env): String =
+  private def dailyQuotaKey(name: String)(using env: Env): String =
     s"${env.storageRoot}:plugins:services-public-quotas:daily:$name"
 
-  private def monthlyQuotaKey(name: String)(implicit env: Env): String =
+  private def monthlyQuotaKey(name: String)(using env: Env): String =
     s"${env.storageRoot}:plugins:services-public-quotas:monthly:$name"
 
-  private def throttlingKey(name: String)(implicit env: Env): String =
+  private def throttlingKey(name: String)(using env: Env): String =
     s"${env.storageRoot}:plugins:services-public-quotas:second:$name"
 
-  private def updateQuotas(route: NgRoute, qconf: NgServiceQuotasConfig, increment: Long = 1L)(implicit
+  private def updateQuotas(route: NgRoute, qconf: NgServiceQuotasConfig, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -249,7 +249,7 @@ class NgServiceQuotas extends NgAccessValidator {
     } yield ()
   }
 
-  private def withingQuotas(route: NgRoute, qconf: NgServiceQuotasConfig)(implicit
+  private def withingQuotas(route: NgRoute, qconf: NgServiceQuotasConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] =
@@ -262,12 +262,12 @@ class NgServiceQuotas extends NgAccessValidator {
   private def withinThrottlingQuota(
       route: NgRoute,
       qconf: NgServiceQuotasConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  )(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.rawDataStore
       .get(throttlingKey(route.id))
       .map(_.map(_.utf8String.toLong).getOrElse(0L) <= qconf.throttlingQuota)
 
-  private def withinDailyQuota(route: NgRoute, qconf: NgServiceQuotasConfig)(implicit
+  private def withinDailyQuota(route: NgRoute, qconf: NgServiceQuotasConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] =
@@ -275,7 +275,7 @@ class NgServiceQuotas extends NgAccessValidator {
       .get(dailyQuotaKey(route.id))
       .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.dailyQuota)
 
-  private def withinMonthlyQuota(route: NgRoute, qconf: NgServiceQuotasConfig)(implicit
+  private def withinMonthlyQuota(route: NgRoute, qconf: NgServiceQuotasConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] =
@@ -283,7 +283,7 @@ class NgServiceQuotas extends NgAccessValidator {
       .get(monthlyQuotaKey(route.id))
       .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.monthlyQuota)
 
-  def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
         "forbidden",
@@ -299,7 +299,7 @@ class NgServiceQuotas extends NgAccessValidator {
       .map(r => NgAccess.NgDenied(r))
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgServiceQuotasConfig.format).getOrElse(NgServiceQuotasConfig())
     withingQuotas(ctx.route, config).flatMap {
       case true  => updateQuotas(ctx.route, config).map(_ => NgAccess.NgAllowed)
@@ -378,13 +378,13 @@ object NgCustomQuotasConfig {
 
 object NgCustomQuotas {
 
-  private def dailyQuotaKey(name: String, group: String)(implicit env: Env): String =
+  private def dailyQuotaKey(name: String, group: String)(using env: Env): String =
     s"${env.storageRoot}:plugins:custom-quotas:$group:daily:$name"
 
-  private def monthlyQuotaKey(name: String, group: String)(implicit env: Env): String =
+  private def monthlyQuotaKey(name: String, group: String)(using env: Env): String =
     s"${env.storageRoot}:plugins:custom-quotas:$group:monthly:$name"
 
-  def updateQuotas(expr: String, group: String, increment: Long = 1L)(implicit
+  def updateQuotas(expr: String, group: String, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -418,7 +418,7 @@ class NgCustomQuotas extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
-  private def updateQuotas(ctx: NgAccessContext, qconf: NgCustomQuotasConfig, increment: Long = 1L)(implicit
+  private def updateQuotas(ctx: NgAccessContext, qconf: NgCustomQuotasConfig, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -428,7 +428,7 @@ class NgCustomQuotas extends NgAccessValidator {
     NgCustomQuotas.updateQuotas(expr, group, increment)
   }
 
-  private def withingQuotas(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(implicit
+  private def withingQuotas(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -438,7 +438,7 @@ class NgCustomQuotas extends NgAccessValidator {
     } yield day && mon
   }
 
-  private def withinDailyQuota(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(implicit
+  private def withinDailyQuota(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -447,7 +447,7 @@ class NgCustomQuotas extends NgAccessValidator {
       .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.dailyQuota)
   }
 
-  private def withinMonthlyQuota(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(implicit
+  private def withinMonthlyQuota(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -456,7 +456,7 @@ class NgCustomQuotas extends NgAccessValidator {
       .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.monthlyQuota)
   }
 
-  def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
         "forbidden",
@@ -472,7 +472,7 @@ class NgCustomQuotas extends NgAccessValidator {
       .map(r => NgAccess.NgDenied(r))
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgCustomQuotasConfig.format).getOrElse(NgCustomQuotasConfig())
     withingQuotas(ctx, config).flatMap {
       case true  => updateQuotas(ctx, config).map(_ => NgAccess.NgAllowed)
@@ -548,10 +548,10 @@ object NgCustomThrottlingConfig {
 
 object NgCustomThrottling {
 
-  def throttlingKey(name: String, group: String)(implicit env: Env): String =
+  def throttlingKey(name: String, group: String)(using env: Env): String =
     s"${env.storageRoot}:plugins:custom-throttling:$group:second:$name"
 
-  def updateQuotas(expr: String, group: String, increment: Long = 1L, ttl: Long)(implicit
+  def updateQuotas(expr: String, group: String, increment: Long = 1L, ttl: Long)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -576,7 +576,7 @@ class NgCustomThrottling extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
-  private def updateQuotas(ctx: NgAccessContext, qconf: NgCustomThrottlingConfig, increment: Long = 1L)(implicit
+  private def updateQuotas(ctx: NgAccessContext, qconf: NgCustomThrottlingConfig, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -589,13 +589,13 @@ class NgCustomThrottling extends NgAccessValidator {
   private def withingQuotas(
       ctx: NgAccessContext,
       qconf: NgCustomThrottlingConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  )(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.rawDataStore
       .get(NgCustomThrottling.throttlingKey(qconf.computeExpression(ctx, env), qconf.computeGroup(ctx, env)))
       .map(_.map(_.utf8String.toLong).getOrElse(0L) <= qconf.throttlingQuota)
   }
 
-  def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
         "forbidden",
@@ -611,7 +611,7 @@ class NgCustomThrottling extends NgAccessValidator {
       .map(r => NgAccess.NgDenied(r))
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgCustomThrottlingConfig.format).getOrElse(NgCustomThrottlingConfig())
     withingQuotas(ctx, config).flatMap {
       case true  => updateQuotas(ctx, config).map(_ => NgAccess.NgAllowed)

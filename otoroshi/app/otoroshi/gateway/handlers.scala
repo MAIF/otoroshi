@@ -55,9 +55,9 @@ case class ProxyDone(
     otoroshiHeadersIn: Seq[Header]
 )
 
-class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
+class ErrorHandler()(using env: Env) extends HttpErrorHandler {
 
-  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+  given ec: ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger: Logger = Logger("otoroshi-error-handler")
 
@@ -153,8 +153,8 @@ class AnalyticsQueue(env: Env) extends Actor {
   override def receive: Receive = {
     case AnalyticsQueueEvent(descriptor, duration, overhead, dataIn, dataOut, upstreamLatency, config) =>
       descriptor
-        .updateMetrics(duration, overhead, dataIn, dataOut, upstreamLatency, config)(context.dispatcher, env)
-      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher, env)
+        .updateMetrics(duration, overhead, dataIn, dataOut, upstreamLatency, config)(using context.dispatcher, env)
+      env.datastores.globalConfigDataStore.updateQuotas(config)(using context.dispatcher, env)
   }
 }
 
@@ -162,7 +162,7 @@ object GatewayRequestHandler {
 
   lazy val logger: Logger = Logger("otoroshi-http-handler")
 
-  def removePrivateAppsCookies(route: NgRoute, req: RequestHeader, attrs: TypedMap)(implicit
+  def removePrivateAppsCookies(route: NgRoute, req: RequestHeader, attrs: TypedMap)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -186,7 +186,7 @@ object GatewayRequestHandler {
       u.flatMap { optUser =>
         auth.authModule(globalConfig).paLogout(req, optUser, globalConfig, routeLegacy).map {
           case Left(body)   =>
-            body.discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
+            body.discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth)*)
             body
           case Right(value) =>
             value match {
@@ -206,7 +206,7 @@ object GatewayRequestHandler {
                     .url + s"?redirectTo=$finalRedirect&host=${req.theHost}&cp=${auth.routeCookieSuffix(route)}"
                 if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
                 Redirect(redirectTo)
-                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
+                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth)*)
               case Some(logoutUrl) =>
                 val cookieOpt         =
                   request.cookies.find(c => c.name.startsWith(s"oto-papps-${auth.cookieSuffix(routeLegacy)}"))
@@ -223,7 +223,7 @@ object GatewayRequestHandler {
                   logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))
                 if (logger.isTraceEnabled) logger.trace("should redirect to " + actualRedirectUrl)
                 Redirect(actualRedirectUrl)
-                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
+                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth)*)
             }
         }
       }
@@ -232,7 +232,7 @@ object GatewayRequestHandler {
 
   def withAuthConfig(route: NgRoute, req: RequestHeader, attrs: TypedMap)(
       f: AuthModuleConfig => Future[Result]
-  )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext): Future[Result] = {
 
     lazy val missingAuthRefError = Errors.craftResponseResult(
       "Auth. config. ref not found on the route",
@@ -292,7 +292,7 @@ class GatewayRequestHandler(
     backofficeActionBuilder: BackOfficeAction,
     privateActionBuilder: PrivateAppsAction,
     healthController: HealthController
-)(implicit env: Env, mat: Materializer)
+)(using env: Env, mat: Materializer)
     extends DefaultHttpRequestHandler(webCommands, optDevContext, () => router, errorHandler, configuration, filters) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
@@ -306,7 +306,7 @@ class GatewayRequestHandler(
   )
   lazy val monitoringPaths: Seq[String] = Seq("/health", "/metrics", "/live", "/ready", "/startup")
 
-  val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("Gateway BodyParser") { _ =>
+  val sourceBodyParser: BodyParser[Source[ByteString, ?]] = BodyParser("Gateway BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
@@ -341,8 +341,8 @@ class GatewayRequestHandler(
   ).map(_.toLowerCase)
 
   // TODO : very dirty ... fix it using Play 2.6 request.hasBody
-  // def hasBody(request: Request[_]): Boolean = request.hasBody
-  def hasBody(request: Request[_]): Boolean = {
+  // def hasBody(request: Request[?]): Boolean = request.hasBody
+  def hasBody(request: Request[?]): Boolean = {
     request.theHasBody
     // (request.method, request.headers.get("Content-Length")) match {
     //   case ("GET", Some(_))    => true
@@ -716,7 +716,7 @@ class GatewayRequestHandler(
       }
     }
 
-  def ocsp(): Action[Source[ByteString, _]] =
+  def ocsp(): Action[Source[ByteString, ?]] =
     actionBuilder.async(sourceBodyParser) { req =>
       env.ocspResponder.respond(req, req.body, Seq.empty)
     }
@@ -784,7 +784,7 @@ class GatewayRequestHandler(
                     ma.getOrElse(86400),
                     SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true)),
                     secOpt
-                  ): _*
+                  )*
                 )
               )
             case (Some(redirectTo), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure)                  =>
@@ -797,7 +797,7 @@ class GatewayRequestHandler(
                     ma.getOrElse(86400),
                     SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true)),
                     secOpt
-                  ): _*
+                  )*
                 )
               )
             case _                                                                                                =>

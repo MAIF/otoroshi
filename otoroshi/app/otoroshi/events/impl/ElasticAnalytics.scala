@@ -19,6 +19,7 @@ import play.api.libs.json._
 import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Environment, Logger}
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.ws.WSBodyWritables._
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.duration.DurationLong
@@ -449,7 +450,7 @@ object ElasticUtils {
     } yield s"Basic ${Base64.getEncoder.encodeToString(s"$user:$password".getBytes())}"
   }
 
-  def url(url: String, config: ElasticAnalyticsConfig, env: Env)(implicit ec: ExecutionContext): WSRequest = {
+  def url(url: String, config: ElasticAnalyticsConfig, env: Env)(using ec: ExecutionContext): WSRequest = {
     val builder =
       env.MtlsWs
         .url(url, config.mtlsConfig)
@@ -458,10 +459,10 @@ object ElasticUtils {
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
       }
-      .addHttpHeaders(config.headers.toSeq: _*)
+      .addHttpHeaders(config.headers.toSeq*)
   }
 
-  def getElasticVersion(config: ElasticAnalyticsConfig, logger: Logger, env: Env)(implicit
+  def getElasticVersion(config: ElasticAnalyticsConfig, logger: Logger, env: Env)(using
       ec: ExecutionContext
   ): Future[ElasticVersion] = {
 
@@ -516,7 +517,7 @@ object ElasticUtils {
     }
   }
 
-  def applyTemplate(config: ElasticAnalyticsConfig, logger: Logger, env: Env)(implicit
+  def applyTemplate(config: ElasticAnalyticsConfig, logger: Logger, env: Env)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Unit] = {
@@ -597,7 +598,7 @@ object ElasticUtils {
     }
   }
 
-  def checkAvailability(config: ElasticAnalyticsConfig, env: Env)(implicit
+  def checkAvailability(config: ElasticAnalyticsConfig, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, JsValue]] = {
     url(urlFromPath("/_cluster/health", config), config, env)
@@ -611,7 +612,7 @@ object ElasticUtils {
       }
   }
 
-  def checkVersion(config: ElasticAnalyticsConfig, logger: Logger, env: Env)(implicit
+  def checkVersion(config: ElasticAnalyticsConfig, logger: Logger, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, String]] = {
     url(urlFromPath("", config), config, env)
@@ -629,7 +630,7 @@ object ElasticUtils {
       }
   }
 
-  def checkSearch(config: ElasticAnalyticsConfig, env: Env)(implicit
+  def checkSearch(config: ElasticAnalyticsConfig, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Long]] = {
     val countUrl = config.index match {
@@ -662,7 +663,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   private def urlFromPath(path: String): String = ElasticUtils.urlFromPath(path, config)
   private val index: String                     = config.index.getOrElse("otoroshi-events")
   private val `type`: String                    = config.`type`.getOrElse("event")
-  private implicit val mat: Materializer        = Materializer(system)
+  private given mat: Materializer        = Materializer(system)
 
   if (config.applyTemplate) {
     init()
@@ -674,7 +675,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     if (ElasticWritesAnalytics.isInitialized(config)._1) {
       ()
     } else {
-      implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+      given ec: ExecutionContext = env.otoroshiExecutionContext
       config.version match {
         case Some(versionRaw) =>
           val version = Version(versionRaw) match {
@@ -706,7 +707,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     if (ElasticWritesAnalytics.isInitialized(config)._1) {
       ()
     } else {
-      implicit val ec: ExecutionContext = executionContext
+      given ec: ExecutionContext = executionContext
       logger.info(
         s"Creating Otoroshi template for $index on es cluster at ${config.uris.map(uri => s"$uri/$index/${`type`}").mkString(", ")}"
       )
@@ -745,7 +746,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     s"$indexClause\n$sourceClause"
   }
 
-  override def publish(event: Seq[JsValue])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def publish(event: Seq[JsValue])(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val builder = env.MtlsWs
       .url(urlFromPath("/_bulk"), config.mtlsConfig)
       .withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
@@ -762,7 +763,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
           "Content-Type"  -> "application/x-ndjson"
         )
       }
-      .addHttpHeaders(config.headers.toSeq: _*)
+      .addHttpHeaders(config.headers.toSeq*)
     Source(event.toList)
       .grouped(config.maxBulkSize)
       .map(_.map(bulkRequest))
@@ -796,14 +797,14 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
 
 object ElasticReadsAnalytics {
   private val cache = new UnboundedTrieMap[String, ElasticVersion]()
-  def getElasticVersion(config: ElasticAnalyticsConfig, logger: Logger)(implicit env: Env): ElasticVersion = {
+  def getElasticVersion(config: ElasticAnalyticsConfig, logger: Logger)(using env: Env): ElasticVersion = {
     val key: String = config.uris.mkString(",")
     cache.get(key) match {
       case Some(version) =>
         version
       case None          =>
         val version =
-          Await.result(ElasticUtils.getElasticVersion(config, logger, env)(env.otoroshiExecutionContext), 30.seconds)
+          Await.result(ElasticUtils.getElasticVersion(config, logger, env)(using env.otoroshiExecutionContext), 30.seconds)
         cache.putIfAbsent(key, version)
         version
     }
@@ -812,7 +813,7 @@ object ElasticReadsAnalytics {
 
 class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsReadsService {
 
-  private val executionContext: ExecutionContext = env.analyticsExecutionContext
+  private given executionContext: ExecutionContext = env.analyticsExecutionContext
   private val system: ActorSystem                = env.analyticsActorSystem
 
   private def urlFromPath(path: String): String = ElasticUtils.urlFromPath(path, config)
@@ -822,29 +823,29 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_search") else urlFromPath(s"/$index/_search")
   private val countUri                          =
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_count") else urlFromPath(s"/$index/_count")
-  private implicit val mat: Materializer        = Materializer(system)
+  private given mat: Materializer        = Materializer(system)
 
   lazy val logger: Logger = Logger("otoroshi-analytics-reads-elastic")
 
-  private lazy val version = ElasticReadsAnalytics.getElasticVersion(config, logger)(env)
+  private lazy val version = ElasticReadsAnalytics.getElasticVersion(config, logger)(using env)
 
   private def authHeader(): Option[String] = ElasticUtils.authHeader(config)
 
-  private def url(url: String): WSRequest = ElasticUtils.url(url, config, env)(env.analyticsExecutionContext)
+  private def url(url: String): WSRequest = ElasticUtils.url(url, config, env)
 
-  def checkAvailability()(implicit ec: ExecutionContext): Future[Either[JsValue, JsValue]] =
+  def checkAvailability()(using ec: ExecutionContext): Future[Either[JsValue, JsValue]] =
     ElasticUtils.checkAvailability(config, env)
 
-  def checkSearch()(implicit ec: ExecutionContext): Future[Either[JsValue, Long]] =
+  def checkSearch()(using ec: ExecutionContext): Future[Either[JsValue, Long]] =
     ElasticUtils.checkSearch(config, env)
 
-  def checkVersion()(implicit ec: ExecutionContext): Future[Either[JsValue, String]] =
+  def checkVersion()(using ec: ExecutionContext): Future[Either[JsValue, String]] =
     ElasticUtils.checkVersion(config, logger, env)
 
-  def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] =
+  def getElasticVersion()(using ec: ExecutionContext): Future[ElasticVersion] =
     ElasticUtils.getElasticVersion(config, logger, env)
 
-  private def query(query: JsObject, debug: Boolean = false)(implicit ec: ExecutionContext): Future[QueryResponse] = {
+  private def query(query: JsObject, debug: Boolean = false)(using ec: ExecutionContext): Future[QueryResponse] = {
     val builder = env.MtlsWs.url(searchUri, config.mtlsConfig)
     if (logger.isDebugEnabled) logger.debug(s"Query to Elasticsearch: $searchUri")
     if (logger.isDebugEnabled) logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
@@ -853,7 +854,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
       }
-      .addHttpHeaders(config.headers.toSeq: _*)
+      .addHttpHeaders(config.headers.toSeq*)
       .post(query)
       .flatMap { resp =>
         resp.status match {
@@ -866,7 +867,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       }
   }
 
-  private def count(query: JsObject, debug: Boolean = false)(implicit ec: ExecutionContext): Future[QueryResponse] = {
+  private def count(query: JsObject, debug: Boolean = false)(using ec: ExecutionContext): Future[QueryResponse] = {
     val builder = env.MtlsWs.url(countUri, config.mtlsConfig)
     if (logger.isDebugEnabled) logger.debug(s"Query to Elasticsearch: $countUri")
     if (logger.isDebugEnabled) logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
@@ -875,7 +876,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
       }
-      .addHttpHeaders(config.headers.toSeq: _*)
+      .addHttpHeaders(config.headers.toSeq*)
       .post(query)
       .flatMap { resp =>
         resp.status match {
@@ -888,7 +889,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       }
   }
 
-  override def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  override def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] = {
@@ -917,7 +918,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       page: Int,
       size: Int,
       order: String = "desc"
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] = {
@@ -966,25 +967,25 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     }
   }
 
-  override def fetchDataIn(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  override def fetchDataIn(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     sum("data.dataIn", filterable, from, to).map(Some.apply)
 
-  override def fetchDataOut(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  override def fetchDataOut(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     sum("data.dataOut", filterable, from, to).map(Some.apply)
 
-  override def fetchAvgDuration(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  override def fetchAvgDuration(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     avg("duration", filterable, from, to).map(Some.apply)
 
-  override def fetchAvgOverhead(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  override def fetchAvgOverhead(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -1120,7 +1121,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -1130,7 +1131,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -1140,7 +1141,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -1151,7 +1152,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       from: Option[DateTime],
       to: Option[DateTime],
       size: Int
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -1181,7 +1182,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       )
     ).map(Some.apply)
 
-  override def fetchUserPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+  override def fetchUserPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -1204,7 +1205,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       from: Option[DateTime],
       to: Option[DateTime],
       size: Int
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -1214,7 +1215,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       filterable: Option[Filterable],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -1225,7 +1226,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       filterable: Option[Filterable],
       mayBeFrom: Option[DateTime],
       mayBeTo: Option[DateTime]
-  )(implicit ec: ExecutionContext): Future[JsObject] = {
+  )(using ec: ExecutionContext): Future[JsObject] = {
     for {
       noraw <- query(
                  Json.obj(
@@ -1308,7 +1309,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       filterable: Option[Filterable],
       mayBeFrom: Option[DateTime],
       mayBeTo: Option[DateTime]
-  )(implicit ec: ExecutionContext): Future[JsObject] = {
+  )(using ec: ExecutionContext): Future[JsObject] = {
     for {
       noraw <- query(
                  Json.obj(
@@ -1435,7 +1436,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       filterable: Option[Filterable],
       mayBeFrom: Option[DateTime],
       mayBeTo: Option[DateTime]
-  )(implicit
+  )(using
       ec: ExecutionContext
   ): Future[JsObject] = {
     aggregation("sum", field, filterable, mayBeFrom, mayBeTo)
@@ -1445,7 +1446,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       filterable: Option[Filterable],
       mayBeFrom: Option[DateTime],
       mayBeTo: Option[DateTime]
-  )(implicit
+  )(using
       ec: ExecutionContext
   ): Future[JsObject] = {
     aggregation("avg", field, filterable, mayBeFrom, mayBeTo)
@@ -1457,7 +1458,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       filterable: Option[Filterable],
       mayBeFrom: Option[DateTime],
       mayBeTo: Option[DateTime]
-  )(implicit ec: ExecutionContext): Future[JsObject] = {
+  )(using ec: ExecutionContext): Future[JsObject] = {
     for {
       noraw <- query(
                  Json.obj(
@@ -1506,7 +1507,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       to: Option[DateTime],
       size: Int = 200,
       additionalFilters: Seq[JsObject] = Seq.empty
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[JsValue] = {
@@ -1848,7 +1849,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       servicesDescriptors: Seq[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     val extendedBounds = from
       .map { from =>
         Json.obj(
@@ -2016,7 +2017,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       servicesDescriptor: ServiceDescriptor,
       from: Option[DateTime],
       to: Option[DateTime]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     val extendedBounds = from
       .map { from =>
         Json.obj(
@@ -2127,7 +2128,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       to: Option[DateTime],
       excludedPaths: Seq[String] = Seq.empty,
       interval: Option[String]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     val extendedBounds = from
       .map { from =>
         Json.obj(

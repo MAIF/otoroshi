@@ -61,7 +61,7 @@ object WasmAuthModuleConfig {
         allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
         deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
         sessionCookieValues =
-          (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+          (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
         userValidators = (json \ "userValidators")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
@@ -100,11 +100,11 @@ case class WasmAuthModuleConfig(
 
   override def form: Option[Form]                                               = None
   override def cookieSuffix(desc: ServiceDescriptor): String                    = s"wasm-auth-$id"
-  override def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def save()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.authConfigsDataStore.set(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig         = copy(location = location)
   override def asJson: JsValue                                                  = WasmAuthModuleConfig.format.writes(this)
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]              = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig]              = AuthModuleConfig._fmt(env)
   override def `type`: String                                                   = "wasm"
   override def humanName: String                                                = "Wasm auth. module provider"
   override def desc: String                                                     = description
@@ -129,7 +129,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     authConfig.wasmRef.flatMap(env.proxyState.wasmPlugin).map { plugin =>
       val route = NgRoute.fromServiceDescriptor(descriptor, debug = false)
       val input = Json.obj(
@@ -174,7 +174,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                 Results
                   .Status(response.select("status").asOpt[Int].getOrElse(200))
                   .apply(body)
-                  .withHeaders(headers.toSeq: _*)
+                  .withHeaders(headers.toSeq*)
                   .as(contentType)
             }
             .andThen { case _ =>
@@ -195,7 +195,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
     authConfig.wasmRef.flatMap(env.proxyState.wasmPlugin).map { plugin =>
       val route = NgRoute.fromServiceDescriptor(descriptor, debug = false)
       val input = Json.obj(
@@ -249,7 +249,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -297,7 +297,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -341,7 +341,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                 Results
                   .Status(response.select("status").asOpt[Int].getOrElse(200))
                   .apply(body)
-                  .withHeaders(headers.toSeq: _*)
+                  .withHeaders(headers.toSeq*)
                   .as(contentType)
             }
             .andThen { case _ =>
@@ -357,7 +357,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = {
@@ -411,7 +411,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, BackOfficeUser]] = {

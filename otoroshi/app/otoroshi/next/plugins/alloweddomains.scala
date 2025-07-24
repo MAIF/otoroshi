@@ -22,7 +22,7 @@ class NgIncomingRequestValidatorAllowedDomainNames extends NgIncomingRequestVali
 
   override def access(
       ctx: NgIncomingRequestValidatorContext
-  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  )(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.config.select("domains").asOpt[Seq[String]] match {
       case None          => NgAccess.NgAllowed.vfuture
       case Some(domains) =>
@@ -50,7 +50,7 @@ class NgIncomingRequestValidatorDeniedDomainNames extends NgIncomingRequestValid
 
   override def access(
       ctx: NgIncomingRequestValidatorContext
-  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  )(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.config.select("domains").asOpt[Seq[String]] match {
       case None          => NgAccess.NgAllowed.vfuture
       case Some(domains) =>

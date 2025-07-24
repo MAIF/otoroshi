@@ -146,14 +146,10 @@ object EntityFiltering {
                       case JsNumber(value) => value.toInt
                       case value           => value.asOpt[Int].getOrElse(0)
                     }
-                  })(
-                    Ordering[Int].reverse
-                  )
+                  })(using Ordering[Int].reverse)
               } else {
                 sortedArray
-                  .sortBy(r => String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1, r)._2))(
-                    Ordering[String].reverse
-                  )
+                  .sortBy(r => String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1, r)._2))(using Ordering[String].reverse)
               }
             }
 

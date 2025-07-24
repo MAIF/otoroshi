@@ -80,8 +80,8 @@ case class KubernetesConfig(
 
 object KubernetesConfig {
   import scala.jdk.CollectionConverters._
-  def theConfig(ctx: ContextWithConfig)(implicit env: Env, ec: ExecutionContext): KubernetesConfig = {
-    val globalConfig = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
+  def theConfig(ctx: ContextWithConfig)(using env: Env, ec: ExecutionContext): KubernetesConfig = {
+    val globalConfig = env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env)
     val conf         = ctx
       .configForOpt("KubernetesConfig")
       .orElse((globalConfig.scripts.jobConfig \ "KubernetesConfig").asOpt[JsValue])
@@ -128,7 +128,7 @@ object KubernetesConfig {
     }
 
   }
-  def theConfig(conf: JsValue)(implicit _env: Env, ec: ExecutionContext): KubernetesConfig = {
+  def theConfig(conf: JsValue)(using _env: Env, ec: ExecutionContext): KubernetesConfig = {
     sys.env.get("KUBECONFIG") match {
       case Some(configPath) =>
         val configContent         = Files.readAllLines(new File(configPath).toPath).asScala.mkString("\n").trim()

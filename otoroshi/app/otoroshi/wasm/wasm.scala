@@ -75,16 +75,16 @@ object WasmAuthorizations {
         httpAccess = (json \ "httpAccess").asOpt[Boolean].getOrElse(false),
         proxyHttpCallTimeout = (json \ "proxyHttpCallTimeout").asOpt[Int].getOrElse(5000),
         globalDataStoreAccess = (json \ "globalDataStoreAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads(_))
+          .asOpt[WasmDataRights](using WasmDataRights.fmt.reads(_))
           .getOrElse(WasmDataRights()),
         pluginDataStoreAccess = (json \ "pluginDataStoreAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads(_))
+          .asOpt[WasmDataRights](using WasmDataRights.fmt.reads(_))
           .getOrElse(WasmDataRights()),
         globalMapAccess = (json \ "globalMapAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads(_))
+          .asOpt[WasmDataRights](using WasmDataRights.fmt.reads(_))
           .getOrElse(WasmDataRights()),
         pluginMapAccess = (json \ "pluginMapAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads(_))
+          .asOpt[WasmDataRights](using WasmDataRights.fmt.reads(_))
           .getOrElse(WasmDataRights()),
         proxyStateAccess = (json \ "proxyStateAccess").asOpt[Boolean].getOrElse(false),
         configurationAccess = (json \ "configurationAccess").asOpt[Boolean].getOrElse(false)
@@ -116,7 +116,7 @@ case class WasmConfig(
     with WasmConfiguration {
   // still here for compat reason
   def lifetime: WasmVmLifetime = WasmVmLifetime.Forever
-  //def wasmPool()(implicit env: Env): WasmVmPool = WasmVmPool.forConfig(this)
+  //def wasmPool()(using env: Env): WasmVmPool = WasmVmPool.forConfig(this)
   def json: JsValue            = Json.obj(
     "source"         -> source.json,
     "memoryPages"    -> memoryPages,
@@ -185,8 +185,8 @@ object WasmConfig {
         //   )
         //   .getOrElse(WasmVmLifetime.Forever),
         authorizations = (json \ "authorizations")
-          .asOpt[WasmAuthorizations](WasmAuthorizations.format.reads(_))
-          .orElse((json \ "accesses").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads(_)))
+          .asOpt[WasmAuthorizations](using WasmAuthorizations.format.reads(_))
+          .orElse((json \ "accesses").asOpt[WasmAuthorizations](using WasmAuthorizations.format.reads(_)))
           .getOrElse {
             WasmAuthorizations()
           },
@@ -208,8 +208,8 @@ object WasmConfig {
 
 class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
 
-  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit val ev: Env              = env
+  given ec: ExecutionContext = env.otoroshiExecutionContext
+  given ev: Env              = env
 
   val logger: Logger                                        = Logger("otoroshi-wasm-integration")
   val materializer: Materializer                            = env.otoroshiMaterializer
@@ -266,7 +266,7 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
   override def hostFunctions(
       config: WasmConfiguration,
       pluginId: String
-  ): Array[HostFunction[_ <: HostUserData]] = {
+  ): Array[HostFunction[? <: HostUserData]] = {
     HostFunctions.getFunctions(config.asInstanceOf[WasmConfig], pluginId, None)
   }
 }
@@ -292,7 +292,7 @@ class WasmVmPoolCleaner extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = env.datastores.globalConfigDataStore
       .latest()
       .plugins

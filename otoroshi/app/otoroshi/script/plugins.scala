@@ -57,7 +57,7 @@ case class Plugins(
 
   private val transformers = new AtomicReference[Seq[String]](null)
 
-  private def plugin[A](ref: String)(implicit ec: ExecutionContext, env: Env, ct: ClassTag[A]): Option[A] = {
+  private def plugin[A](ref: String)(using ec: ExecutionContext, env: Env, ct: ClassTag[A]): Option[A] = {
     env.scriptManager.getAnyScript[NamedPlugin](ref) match {
       case Right(validator) if ct.runtimeClass.isAssignableFrom(validator.getClass) => validator.asInstanceOf[A].some
       case _                                                                        => None
@@ -93,7 +93,7 @@ case class Plugins(
 
   private def getPlugins[A](
       req: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env, ct: ClassTag[A]): Seq[String] = {
+  )(using ec: ExecutionContext, env: Env, ct: ClassTag[A]): Seq[String] = {
     val globalPlugins = env.datastores.globalConfigDataStore.latestSafe
       .map(_.plugins)
       .filter(p => p.enabled && p.refs.nonEmpty)
@@ -128,19 +128,19 @@ case class Plugins(
 
   def json: JsValue = Plugins.format.writes(this)
 
-  def sinks(req: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[String] = {
+  def sinks(req: RequestHeader)(using ec: ExecutionContext, env: Env): Seq[String] = {
     getPlugins[RequestSink](req)
   }
 
-  def preRoutings(req: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[String] = {
+  def preRoutings(req: RequestHeader)(using ec: ExecutionContext, env: Env): Seq[String] = {
     getPlugins[PreRouting](req)
   }
 
-  def accessValidators(req: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[String] = {
+  def accessValidators(req: RequestHeader)(using ec: ExecutionContext, env: Env): Seq[String] = {
     getPlugins[AccessValidator](req)
   }
 
-  def requestTransformers(req: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[String] = {
+  def requestTransformers(req: RequestHeader)(using ec: ExecutionContext, env: Env): Seq[String] = {
     val cachedTransformers = transformers.get()
     if (cachedTransformers == null) {
       val trs = getPlugins[RequestTransformer](req)
@@ -158,7 +158,7 @@ case class Plugins(
 
   private def getHandlersMap(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): (Boolean, Map[String, RequestHandler]) =
+  )(using ec: ExecutionContext, env: Env): (Boolean, Map[String, RequestHandler]) =
     env.metrics.withTimer("otoroshi.plugins.req-handlers.handlers-map-compute") {
       request_handlers_cache.get(
         request_handlers_cache_name,
@@ -178,7 +178,7 @@ case class Plugins(
       // }
     }
 
-  def canHandleRequest(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Boolean =
+  def canHandleRequest(request: RequestHeader)(using ec: ExecutionContext, env: Env): Boolean =
     env.metrics.withTimer("otoroshi.plugins.req-handlers.can-handle-request") {
       if (enabled) {
         val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
@@ -203,9 +203,9 @@ case class Plugins(
     }
 
   def handleRequest(
-      request: Request[Source[ByteString, _]],
-      defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimer("handle-ng-dispatch") {
+      request: Request[Source[ByteString, ?]],
+      defaultRouting: Request[Source[ByteString, ?]] => Future[Result]
+  )(using ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimer("handle-ng-dispatch") {
     if (enabled) {
       val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
       val maybeHandler                          =
@@ -223,12 +223,12 @@ case class Plugins(
   def handleWsRequest(
       request: RequestHeader,
       defaultRouting: RequestHeader => Future[
-        Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, _]]
+        Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, ?]]
       ]
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, _]]] =
+  ): Future[Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, ?]]] =
     env.metrics.withTimer("handle-ng-ws-dispatch") {
       if (enabled) {
         val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)

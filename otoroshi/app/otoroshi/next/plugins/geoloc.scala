@@ -54,7 +54,7 @@ class NgMaxMindGeolocationInfoExtractor extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config = ctx
       .cachedConfig(internalName)(NgMaxMindGeolocationInfoExtractorConfig.format)
       .getOrElse(NgMaxMindGeolocationInfoExtractorConfig())
@@ -128,7 +128,7 @@ class NgIpStackGeolocationInfoExtractor extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config = ctx
       .cachedConfig(internalName)(NgIpStackGeolocationInfoExtractorConfig.format)
       .getOrElse(NgIpStackGeolocationInfoExtractorConfig())
@@ -183,7 +183,7 @@ class NgGeolocationInfoHeader extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =
       ctx.cachedConfig(internalName)(NgGeolocationInfoHeaderConfig.format).getOrElse(NgGeolocationInfoHeaderConfig())
     ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
@@ -214,7 +214,7 @@ class NgGeolocationInfoEndpoint extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
       case ("get", "/.well-known/otoroshi/plugins/geolocation") =>
         ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {

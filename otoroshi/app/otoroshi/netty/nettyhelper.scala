@@ -32,7 +32,7 @@ object NettyHelper {
   //   val listener: ConnectionObserver                                             = ???
   //   val compressionPredicate: BiPredicate[HttpServerRequest, HttpServerResponse] =
   //     (req: HttpServerRequest, res: HttpServerResponse) => false
-  //   val mapHandle: BiFunction[_ >: Mono[Void], _ >: Connection, _ <: Mono[Void]] =
+  //   val mapHandle: BiFunction[? >: Mono[Void], ? >: Connection, ? <: Mono[Void]] =
   //     (mono: Mono[Void], conn: Connection) => mono
   //   val resolvePath                                                              = true
   //   val secured                                                                  = true

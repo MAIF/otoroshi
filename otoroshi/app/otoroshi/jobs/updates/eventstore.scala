@@ -47,7 +47,7 @@ class EventstoreCheckerJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.globalConfigDataStore.singleton().flatMap { config =>
       config.elasticReadsConfig match {
         case None           =>

@@ -17,7 +17,7 @@ import otoroshi.security.IdGenerator
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 
@@ -217,7 +217,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
-  def checkNewUserRights(ctx: ApiActionContext[_], rights: UserRights)(f: => Future[Result]): Future[Result] = {
+  def checkNewUserRights(ctx: ApiActionContext[?], rights: UserRights)(f: => Future[Result]): Future[Result] = {
     if (!ctx.userIsSuperAdmin && rights.superAdmin) {
       FastFuture.successful(Forbidden(Json.obj("error" -> "you can't set superadmin rights to an admin")))
     } else {

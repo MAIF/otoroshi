@@ -85,7 +85,7 @@ object NgClientCredentialsConfig {
         defaultKeyPair = json.select("defaultKeyPair").asOpt[String].getOrElse(Cert.OtoroshiJwtSigning),
         domain = json.select("domain").asOpt[String].getOrElse("*"),
         secure = json.select("secure").asOpt[Boolean].getOrElse(true),
-        biscuit = json.select("biscuit").asOpt(BiscuitConf.format)
+        biscuit = json.select("biscuit").asOpt(using BiscuitConf.format)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -106,7 +106,7 @@ class NgClientCredentials extends NgRequestSink {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                          = Seq(NgStep.Sink)
 
-  override def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val conf          = NgClientCredentialsConfig.format.reads(ctx.config).getOrElse(NgClientCredentialsConfig())
     val domainMatches = conf.domain match {
       case "*"   => true
@@ -119,8 +119,8 @@ class NgClientCredentials extends NgRequestSink {
 
   private def handleBody(
       ctx: NgRequestSinkContext
-  )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat: Materializer = env.otoroshiMaterializer
+  )(f: Map[String, String] => Future[Result])(using env: Env, ec: ExecutionContext): Future[Result] = {
+    given mat: Materializer = env.otoroshiMaterializer
     val charset                    = ctx.request.charset.getOrElse("UTF-8")
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {
@@ -162,7 +162,7 @@ class NgClientCredentials extends NgRequestSink {
     }
   }
 
-  private def jwks(conf: NgClientCredentialsConfig, ctx: NgRequestSinkContext)(implicit
+  private def jwks(conf: NgClientCredentialsConfig, ctx: NgRequestSinkContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -172,7 +172,7 @@ class NgClientCredentials extends NgRequestSink {
     }
   }
 
-  private def introspect(conf: NgClientCredentialsConfig, ctx: NgRequestSinkContext)(implicit
+  private def introspect(conf: NgClientCredentialsConfig, ctx: NgRequestSinkContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -218,7 +218,7 @@ class NgClientCredentials extends NgRequestSink {
       ccfb: ClientCredentialFlowBody,
       conf: NgClientCredentialsConfig,
       ctx: NgRequestSinkContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Result] =
+  )(using env: Env, ec: ExecutionContext): Future[Result] =
     ccfb match {
       case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope, bearerKind) =>
         val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
@@ -399,7 +399,7 @@ class NgClientCredentials extends NgRequestSink {
           .future
     }
 
-  private def token(conf: NgClientCredentialsConfig, ctx: NgRequestSinkContext)(implicit
+  private def token(conf: NgClientCredentialsConfig, ctx: NgRequestSinkContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] =
@@ -447,7 +447,7 @@ class NgClientCredentials extends NgRequestSink {
       }
     }
 
-  override def handle(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  override def handle(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
     val conf        = NgClientCredentialsConfig.format.reads(ctx.config).getOrElse(NgClientCredentialsConfig())
     val secureMatch = if (conf.secure) ctx.request.theSecured else true
     if (secureMatch) {
@@ -531,8 +531,8 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
 
   private def handleBody(
       ctx: NgbBackendCallContext
-  )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat: Materializer = env.otoroshiMaterializer
+  )(f: Map[String, String] => Future[Result])(using env: Env, ec: ExecutionContext): Future[Result] = {
+    given mat: Materializer = env.otoroshiMaterializer
     val charset                    = ctx.rawRequest.charset.getOrElse("UTF-8")
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {
@@ -597,7 +597,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
       ccfb: NgClientCredentialTokenEndpointBody,
       conf: NgClientCredentialTokenEndpointConfig,
       ctx: NgbBackendCallContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Result] =
+  )(using env: Env, ec: ExecutionContext): Future[Result] =
     ccfb match {
       case NgClientCredentialTokenEndpointBody(
             "client_credentials",
@@ -685,7 +685,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

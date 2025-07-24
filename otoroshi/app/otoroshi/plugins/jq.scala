@@ -23,8 +23,8 @@ class JqBodyTransformer extends RequestTransformer {
 
   private val logger = Logger("otoroshi-plugins-jq")
 
-  private val requestKey  = TypedKey[Future[Source[ByteString, _]]]("otoroshi.plugins.jq.RequestBody")
-  private val responseKey = TypedKey[Source[ByteString, _]]("otoroshi.plugins.jq.ResponseBody")
+  private val requestKey  = TypedKey[Future[Source[ByteString, ?]]]("otoroshi.plugins.jq.RequestBody")
+  private val responseKey = TypedKey[Source[ByteString, ?]]("otoroshi.plugins.jq.ResponseBody")
 
   private val library = ImmutableJqLibrary.of()
 
@@ -80,7 +80,7 @@ class JqBodyTransformer extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val config   = ctx.configFor("JqBodyTransformer").select("response")
     val filter   = config.select("filter").asOpt[String].getOrElse(".")
     val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -149,8 +149,8 @@ class JqBodyTransformer extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val promise = Promise[Source[ByteString, _]]()
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    val promise = Promise[Source[ByteString, ?]]()
     ctx.attrs.put(requestKey -> promise.future)
     val config   = ctx.configFor("JqBodyTransformer").select("request")
     val filter   = config.select("filter").asOpt[String].getOrElse(".")
@@ -224,7 +224,7 @@ class JqBodyTransformer extends RequestTransformer {
 
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     ctx.attrs.get(responseKey) match {
       case None       => Source.empty
       case Some(body) => body
@@ -233,7 +233,7 @@ class JqBodyTransformer extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     ctx.attrs.get(requestKey) match {
       case None       => Source.empty
       case Some(body) => Source.future(body).flatMapConcat(b => b)

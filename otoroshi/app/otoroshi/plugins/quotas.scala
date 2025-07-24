@@ -60,7 +60,7 @@ class InstanceQuotas extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(ctx: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = ctx.configFor("InstanceQuotas")
     if (ctx.descriptor.id == env.backOfficeServiceId) {
       if (
@@ -175,16 +175,16 @@ class ServiceQuotas extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  private def totalCallsKey(name: String)(implicit env: Env): String   =
+  private def totalCallsKey(name: String)(using env: Env): String   =
     s"${env.storageRoot}:plugins:services-public-quotas:global:$name"
-  private def dailyQuotaKey(name: String)(implicit env: Env): String   =
+  private def dailyQuotaKey(name: String)(using env: Env): String   =
     s"${env.storageRoot}:plugins:services-public-quotas:daily:$name"
-  private def monthlyQuotaKey(name: String)(implicit env: Env): String =
+  private def monthlyQuotaKey(name: String)(using env: Env): String =
     s"${env.storageRoot}:plugins:services-public-quotas:monthly:$name"
-  private def throttlingKey(name: String)(implicit env: Env): String   =
+  private def throttlingKey(name: String)(using env: Env): String   =
     s"${env.storageRoot}:plugins:services-public-quotas:second:$name"
 
-  private def updateQuotas(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig, increment: Long = 1L)(implicit
+  private def updateQuotas(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -221,7 +221,7 @@ class ServiceQuotas extends AccessValidator {
     // )
   }
 
-  private def withingQuotas(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(implicit
+  private def withingQuotas(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] =
@@ -234,13 +234,13 @@ class ServiceQuotas extends AccessValidator {
   private def withinThrottlingQuota(
       descriptor: ServiceDescriptor,
       qconf: ServiceQuotasConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  )(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.rawDataStore
       .get(throttlingKey(descriptor.id))
       .fast
       .map(_.map(_.utf8String.toLong).getOrElse(0L) <= qconf.throttlingQuota)
 
-  private def withinDailyQuota(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(implicit
+  private def withinDailyQuota(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] =
@@ -249,7 +249,7 @@ class ServiceQuotas extends AccessValidator {
       .fast
       .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.dailyQuota)
 
-  private def withinMonthlyQuota(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(implicit
+  private def withinMonthlyQuota(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] =
@@ -258,7 +258,7 @@ class ServiceQuotas extends AccessValidator {
       .fast
       .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.monthlyQuota)
 
-  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(ctx: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = ctx.configFor("ServiceQuotas")
     val qconf  = ServiceQuotasConfig(
       throttlingQuota = (config \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),

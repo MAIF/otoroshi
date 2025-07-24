@@ -25,7 +25,7 @@ import java.util.concurrent.atomic._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
+class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(using
     env: Env
 ) extends AbstractController(cc) {
 
@@ -34,7 +34,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
-  val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("ClusterController BodyParser") { _ =>
+  val sourceBodyParser: BodyParser[Source[ByteString, ?]] = BodyParser("ClusterController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
 
@@ -272,7 +272,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def updateState(): Action[Source[ByteString, _]] =
+  def updateState(): Action[Source[ByteString, ?]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.clusterConfig.mode match {
@@ -449,7 +449,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
 
   private val cookieEncoder = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
 
-  def relayRouting(): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) { ctx =>
+  def relayRouting(): Action[Source[ByteString, ?]] = ApiAction.async(sourceBodyParser) { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
       env.clusterConfig.mode match {
         case Off => NotFound(Json.obj("error" -> "Cluster API not available")).future
@@ -500,7 +500,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       action.apply(req).run().flatMap { result =>
         if (result.header.status == 204) {
           ActorFlow
-            .actorRef(out => ClusterStateActor.props(out, env))(env.otoroshiActorSystem, env.otoroshiMaterializer)
+            .actorRef(out => ClusterStateActor.props(out, env))(using env.otoroshiActorSystem, env.otoroshiMaterializer)
             .rightf
         } else {
           result.leftf
@@ -517,8 +517,8 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
 
   private val ref = new AtomicReference[Cancellable]()
 
-  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit val mat: Materializer    = env.otoroshiMaterializer
+  given ec: ExecutionContext = env.otoroshiExecutionContext
+  given mat: Materializer    = env.otoroshiMaterializer
 
   def debug(msg: String): Unit = {
     if (env.isDev) {
@@ -561,11 +561,11 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
         case JsSuccess(msgfw, _) =>
           ClusterLeaderUpdateMessage.read(msgfw.payload) match {
             case Some(msg: ClusterLeaderUpdateMessage.ApikeyCallIncr)     =>
-              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+              msg.update(msgfw.member)(using env, env.otoroshiExecutionContext)
             case Some(msg: ClusterLeaderUpdateMessage.RouteCallIncr)      =>
-              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+              msg.update(msgfw.member)(using env, env.otoroshiExecutionContext)
             case Some(msg: ClusterLeaderUpdateMessage.GlobalStatusUpdate) =>
-              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+              msg.update(msgfw.member)(using env, env.otoroshiExecutionContext)
             case _                                                        =>
           }
         case JsError(err)        => Cluster.logger.error(s"ws error while reading ClusterMessageFromWorker: $err")

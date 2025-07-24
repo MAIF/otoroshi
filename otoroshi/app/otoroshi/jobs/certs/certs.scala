@@ -38,7 +38,7 @@ class InitialCertsJob extends Job {
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
   @deprecated(message = "this way of generating certs is deprecated, use the new pki", since = "1.5.0")
-  def runWithOldSchoolPki(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def runWithOldSchoolPki(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.certificatesDataStore
       .findAll()
       .map { certs =>
@@ -81,7 +81,7 @@ class InitialCertsJob extends Job {
       id: String,
       found: Option[Cert],
       from: Option[Cert]
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
     found.filter(_.enrich().valid) match {
       case None            =>
         val query = GenCsrQuery(
@@ -121,7 +121,7 @@ class InitialCertsJob extends Job {
     }
   }
 
-  def runWithNewPki()(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def runWithNewPki()(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val disableWildcardGen =
       !env.configuration.betterGetOptional[Boolean]("otoroshi.ssl.genWildcardCert").getOrElse(true)
     for {
@@ -211,7 +211,7 @@ class InitialCertsJob extends Job {
     } yield ()
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     runWithNewPki()
   }
 }

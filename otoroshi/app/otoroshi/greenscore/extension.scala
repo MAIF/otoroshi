@@ -106,7 +106,7 @@ object GreenScoreEntity {
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        thresholds = json.select("thresholds").as[Thresholds](Thresholds.reads(_)),
+        thresholds = json.select("thresholds").as[Thresholds](using Thresholds.reads(_)),
         routes = json
           .select("routes")
           .asOpt[JsArray]
@@ -126,7 +126,7 @@ object GreenScoreEntity {
               .toSeq
           })
           .getOrElse(Seq.empty[RouteRules]),
-        efficiency = json.select("efficiency").asOpt(Efficiency.reads(_)).getOrElse(Efficiency())
+        efficiency = json.select("efficiency").asOpt(using Efficiency.reads(_)).getOrElse(Efficiency())
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -141,7 +141,7 @@ class KvGreenScoreDataStore(extensionId: AdminExtensionId, redisCli: RedisLike, 
     extends GreenScoreDataStore
     with RedisLikeStore[GreenScoreEntity] {
   override def fmt: Format[GreenScoreEntity]              = GreenScoreEntity.format
-  override def redisLike(implicit env: Env): RedisLike    = redisCli
+  override def redisLike(using env: Env): RedisLike    = redisCli
   override def key(id: String): String                    = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:greenscores:$id"
   override def extractId(value: GreenScoreEntity): String = value.id
 }
@@ -187,8 +187,8 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
   }
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val ev: Env              = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given ev: Env              = env
     for {
       scores <- datastores.greenscoresDatastore.findAll()
     } yield {
@@ -203,8 +203,8 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       "/api/extensions/green-score",
       wantsBody = false,
       (ctx, request, apk, _) => {
-        implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-        implicit val ev: Env              = env
+        given ec: ExecutionContext = env.otoroshiExecutionContext
+        given ev: Env              = env
 
         for {
           groups <- datastores.greenscoresDatastore.findAll()
@@ -225,12 +225,12 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       "/api/extensions/green-score",
       wantsBody = true,
       (ctx, request, apk, body) => {
-        implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-        implicit val ev: Env              = env
+        given ec: ExecutionContext = env.otoroshiExecutionContext
+        given ev: Env              = env
 
         body
           .map(
-            _.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer)
+            _.runFold(ByteString.empty)(_ ++ _)(using env.otoroshiMaterializer)
               .map(r => Json.parse(r.utf8String))
           )
           .getOrElse(Json.arr().vfuture)
@@ -267,8 +267,8 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       "/api/extensions/green-score/efficiency/:group/:route",
       wantsBody = false,
       (routerCtx, request, _, _) => {
-        implicit val e: Env                = env
-        implicit val ctx: ExecutionContext = env.analyticsExecutionContext
+        given e: Env                = env
+        given ctx: ExecutionContext = env.analyticsExecutionContext
 
         val fromAndTo = request
           .getQueryString("day")

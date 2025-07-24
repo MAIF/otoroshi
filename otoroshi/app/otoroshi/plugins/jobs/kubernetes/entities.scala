@@ -132,7 +132,7 @@ case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[ServiceDescriptor]] = {
-    KubernetesIngressToDescriptor.asDescriptors(this)(conf, otoConfig, client, logger)(env, ec)
+    KubernetesIngressToDescriptor.asDescriptors(this)(conf, otoConfig, client, logger)(using env, ec)
   }
 
   def asRoutes(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(
@@ -140,7 +140,7 @@ case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[NgRoute]] = {
-    KubernetesIngressToDescriptor.asRoutes(this)(conf, otoConfig, client, logger)(env, ec)
+    KubernetesIngressToDescriptor.asRoutes(this)(conf, otoConfig, client, logger)(using env, ec)
   }
 }
 

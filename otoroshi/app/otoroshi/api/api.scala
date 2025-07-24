@@ -97,9 +97,9 @@ object OtoroshiLoaderHelper {
 
     import scala.concurrent.duration._
 
-    implicit val ec: ExecutionContext = components.env.otoroshiExecutionContext
-    implicit val scheduler: Scheduler = components.env.otoroshiScheduler
-    implicit val mat: Materializer    = components.env.otoroshiMaterializer
+    given ec: ExecutionContext = components.env.otoroshiExecutionContext
+    given scheduler: Scheduler = components.env.otoroshiScheduler
+    given mat: Materializer    = components.env.otoroshiMaterializer
 
     val failOnTimeout                        =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.failOnTimeout").getOrElse(false)
@@ -165,7 +165,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -195,7 +195,7 @@ object OtoroshiLoaderHelper {
                 }
                 .filter(identity)
                 .take(1)
-                .runWith(Sink.head)(mat)
+                .runWith(Sink.head)
                 .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
                 .recover { case e: Throwable =>
                   SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -252,7 +252,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -280,7 +280,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -308,7 +308,7 @@ object OtoroshiLoaderHelper {
               .map(_.initialized)
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -335,7 +335,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -479,7 +479,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: ServerConfig, _configuration
 
   override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 
-  lazy val filters = new DefaultHttpFilters(httpFilters: _*)
+  lazy val filters = new DefaultHttpFilters(httpFilters*)
 
   lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
   lazy val httpHandler: HttpHandler               = wire[HttpHandler]
@@ -592,9 +592,9 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     this
   }
 
-  implicit val materializer: Materializer         = components.materializer
-  implicit val executionContext: ExecutionContext = components.executionContext
-  implicit val env: Env                           = components.env
+  given materializer: Materializer         = components.materializer
+  given executionContext: ExecutionContext = components.executionContext
+  given env: Env                           = components.env
 
   val dataStores: DataStores = components.env.datastores
   val ws: WSClient           = components.wsClient
@@ -652,7 +652,7 @@ case class ResourceVersion(
     "schema"     -> schema
   )
 
-  def jsonWithSchema(kind: String, clazz: Class[_])(implicit env: Env): JsValue = Json.obj(
+  def jsonWithSchema(kind: String, clazz: Class[?])(using env: Env): JsValue = Json.obj(
     "name"       -> name,
     "served"     -> served,
     "deprecated" -> deprecated,
@@ -660,7 +660,7 @@ case class ResourceVersion(
     "schema"     -> finalSchema(kind, clazz)
   )
 
-  def finalSchema(kind: String, clazz: Class[_])(implicit env: Env): JsValue = {
+  def finalSchema(kind: String, clazz: Class[?])(using env: Env): JsValue = {
     schema.getOrElse {
       Try(
         Json.parse(
@@ -695,7 +695,7 @@ case class Resource(
     singularName: String,
     group: String,
     version: ResourceVersion,
-    access: ResourceAccessApi[_]
+    access: ResourceAccessApi[?]
 ) {
   lazy val groupKind: String = s"$group/$kind"
   def json: JsValue          = Json.obj(
@@ -706,7 +706,7 @@ case class Resource(
     "version"       -> version.json
   )
 
-  def jsonWithSchema(implicit env: Env): JsValue = Json.obj(
+  def jsonWithSchema(using env: Env): JsValue = Json.obj(
     "kind"          -> kind,
     "plural_name"   -> pluralName,
     "singular_name" -> singularName,
@@ -735,7 +735,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   def extractId(value: T): String
   def extractIdJson(value: JsValue): String
   def idFieldName(): String
-  def template(version: String, params: Map[String, String], ctx: Option[ApiActionContext[_]] = None): JsValue =
+  def template(version: String, params: Map[String, String], ctx: Option[ApiActionContext[?]] = None): JsValue =
     Json.obj()
 
   def canRead: Boolean
@@ -763,7 +763,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       env: Env
   ): Future[Either[JsValue, Unit]] = ().rightf
 
-  def validateToJson(json: JsValue, singularName: String, f: => Either[String, Option[BackOfficeUser]])(implicit
+  def validateToJson(json: JsValue, singularName: String, f: => Either[String, Option[BackOfficeUser]])(using
       env: Env
   ): JsResult[JsValue] = {
     def readEntity(): JsResult[JsValue] = format.reads(json) match {
@@ -802,7 +802,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       body: JsValue,
       action: WriteAction,
       oldEntity: Option[JsValue]
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsValue]] = {
@@ -844,7 +844,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     }
   }
 
-  def findAll(version: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]] = {
+  def findAll(version: String)(using ec: ExecutionContext, env: Env): Future[Seq[JsValue]] = {
     env.datastores.rawDataStore
       .allMatching(key("*"))
       .map { rawItems =>
@@ -869,7 +869,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       }
   }
 
-  def deleteAll(version: String, singularName: String, canWrite: JsValue => Boolean)(implicit
+  def deleteAll(version: String, singularName: String, canWrite: JsValue => Boolean)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Unit]] = {
@@ -915,7 +915,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       }
   }
 
-  def deleteOne(version: String, id: String, singularName: String)(implicit
+  def deleteOne(version: String, id: String, singularName: String)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Unit]] = {
@@ -939,7 +939,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   }
 
   // no validation as it's only used by kubernetes jobs
-  def deleteMany(version: String, ids: Seq[String])(implicit
+  def deleteMany(version: String, ids: Seq[String])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -950,7 +950,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     }
   }
 
-  def findOne(version: String, id: String)(implicit
+  def findOne(version: String, id: String)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[JsValue]] = {
@@ -987,7 +987,7 @@ case class GenericResourceAccessApii[T <: EntityLocationSupport](
     extractIdf: T => String,
     extractIdJsonf: JsValue => String,
     idFieldNamef: () => String,
-    tmpl: (String, Map[String, String], Option[ApiActionContext[_]]) => JsValue = (v, p, ctx) => Json.obj(),
+    tmpl: (String, Map[String, String], Option[ApiActionContext[?]]) => JsValue = (v, p, ctx) => Json.obj(),
     canRead: Boolean = true,
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
@@ -998,7 +998,7 @@ case class GenericResourceAccessApii[T <: EntityLocationSupport](
   override def extractId(value: T): String                                                                         = value.theId
   override def extractIdJson(value: JsValue): String                                                               = extractIdJsonf(value)
   override def idFieldName(): String                                                                               = idFieldNamef()
-  override def template(version: String, template: Map[String, String], ctx: Option[ApiActionContext[_]]): JsValue =
+  override def template(version: String, template: Map[String, String], ctx: Option[ApiActionContext[?]]): JsValue =
     tmpl(version, template, ctx)
   override def all(): Seq[T]                                                                                       = throw new UnsupportedOperationException()
   override def one(id: String): Option[T]                                                                          = throw new UnsupportedOperationException()
@@ -1012,7 +1012,7 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
     extractIdf: T => String,
     extractIdJsonf: JsValue => String,
     idFieldNamef: () => String,
-    tmpl: (String, Map[String, String], Option[ApiActionContext[_]]) => JsValue = (v, p, ctx) => Json.obj(),
+    tmpl: (String, Map[String, String], Option[ApiActionContext[?]]) => JsValue = (v, p, ctx) => Json.obj(),
     canRead: Boolean = true,
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
@@ -1029,7 +1029,7 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
   override def template(
       version: String,
       template: Map[String, String],
-      ctx: Option[ApiActionContext[_]] = None
+      ctx: Option[ApiActionContext[?]] = None
   ): JsValue                                         = tmpl(version, template, ctx)
   override def all(): Seq[T]                         = stateAll()
   override def one(id: String): Option[T]            = stateOne(id)
@@ -1043,7 +1043,7 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
     extractIdf: T => String,
     extractIdJsonf: JsValue => String,
     idFieldNamef: () => String,
-    tmpl: (String, Map[String, String], Option[ApiActionContext[_]]) => JsValue = (v, p, ctx) => Json.obj(),
+    tmpl: (String, Map[String, String], Option[ApiActionContext[?]]) => JsValue = (v, p, ctx) => Json.obj(),
     canRead: Boolean = true,
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
@@ -1066,7 +1066,7 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
   override def template(
       version: String,
       template: Map[String, String],
-      ctx: Option[ApiActionContext[_]] = None
+      ctx: Option[ApiActionContext[?]] = None
   ): JsValue                                         = tmpl(version, template, ctx)
   override def all(): Seq[T]                         = stateAll()
   override def one(id: String): Option[T]            = stateOne(id)
@@ -1111,7 +1111,7 @@ class OtoroshiResources(env: Env) {
         json => json.select("id").asString,
         () => "id",
         tmpl = (v, p, ctx) => {
-          env.datastores.routeDataStore.template(ctx)(env).json
+          env.datastores.routeDataStore.template(ctx)(using env).json
         },
         stateAll = () => env.proxyState.allRawRoutes(),
         stateOne = id => env.proxyState.rawRoute(id),
@@ -1256,8 +1256,8 @@ class OtoroshiResources(env: Env) {
         () => "id",
         (v, p, ctx) =>
           env.datastores.certificatesDataStore
-            .template(ctx)(env.otoroshiExecutionContext, env)
-            .awaitf(10.seconds)(env.otoroshiExecutionContext)
+            .template(ctx)(using env.otoroshiExecutionContext, env)
+            .awaitf(10.seconds)(using env.otoroshiExecutionContext)
             .json,
         stateAll = () => env.proxyState.allCertificates(),
         stateOne = id => env.proxyState.certificate(id),
@@ -1298,7 +1298,7 @@ class OtoroshiResources(env: Env) {
         json => json.select("id").asString,
         () => "id",
         (v, p, ctx) =>
-          env.datastores.authConfigsDataStore.template(p.get("type"), env, ctx)(env.otoroshiExecutionContext).json,
+          env.datastores.authConfigsDataStore.template(p.get("type"), env, ctx)(using env.otoroshiExecutionContext).json,
         stateAll = () => env.proxyState.allAuthModules(),
         stateOne = id => env.proxyState.authModule(id),
         stateUpdate = seq => env.proxyState.updateAuthModules(seq)
@@ -1642,28 +1642,28 @@ class OtoroshiResources(env: Env) {
   ) ++ env.adminExtensions.resources()
 }
 
-class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   private val sourceBodyParser = BodyParser("GenericApiController BodyParser") { _ =>
-    Accumulator.source[ByteString].map(Right.apply)(env.otoroshiExecutionContext)
+    Accumulator.source[ByteString].map(Right.apply)(using env.otoroshiExecutionContext)
   }
 
-  private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+  private given ec: ExecutionContext = env.otoroshiExecutionContext
 
-  private implicit val mat: Materializer = env.otoroshiMaterializer
+  private given mat: Materializer = env.otoroshiMaterializer
 
   private lazy val commitVersion = Option(System.getenv("COMMIT_ID")).getOrElse(env.otoroshiVersion)
 
   //private def filterPrefix: Option[String] = "filter.".some
 
   private def adminApiEvent(
-      ctx: ApiActionContext[_],
+      ctx: ApiActionContext[?],
       action: String,
       message: String,
       meta: JsValue,
       alert: Option[String]
-  )(implicit env: Env): Unit = {
+  )(using env: Env): Unit = {
     val event: AdminApiEvent = AdminApiEvent(
       env.snowflakeGenerator.nextIdStr(),
       env.env,
@@ -1694,8 +1694,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   private def notFoundBody: JsValue = Json.obj("error" -> "not_found", "error_description" -> "resource not found")
 
   private def bodyIn(
-      ctx: ApiActionContext[_],
-      request: Request[Source[ByteString, _]],
+      ctx: ApiActionContext[?],
+      request: Request[Source[ByteString, ?]],
       resource: Resource,
       version: String,
       defaultEntity: Option[JsObject] = None
@@ -2055,7 +2055,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           )
           .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
-            r.withHeaders(addHeaders.toSeq: _*)
+            r.withHeaders(addHeaders.toSeq*)
           }
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
@@ -2067,7 +2067,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         res(Yaml.write(JsArray(arr.map(o => o.asObject ++ Json.obj("kind" -> resEntity.get.groupKind)))))
           .as("application/yaml")
           .applyOnIf(addHeaders.nonEmpty) { r =>
-            r.withHeaders(addHeaders.toSeq: _*)
+            r.withHeaders(addHeaders.toSeq*)
           }
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
@@ -2079,7 +2079,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         res(Yaml.write(entity.content.asObject ++ Json.obj("kind" -> resEntity.get.groupKind)))
           .as("application/yaml")
           .applyOnIf(addHeaders.nonEmpty) { r =>
-            r.withHeaders(addHeaders.toSeq: _*)
+            r.withHeaders(addHeaders.toSeq*)
           }
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
@@ -2107,7 +2107,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           .as("application/yaml")
           .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
-            r.withHeaders(addHeaders.toSeq: _*)
+            r.withHeaders(addHeaders.toSeq*)
           }
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
@@ -2131,7 +2131,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           .as("application/yaml")
           .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
-            r.withHeaders(addHeaders.toSeq: _*)
+            r.withHeaders(addHeaders.toSeq*)
           }
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
@@ -2152,7 +2152,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           .as("application/json")
           .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
-            r.withHeaders(addHeaders.toSeq: _*)
+            r.withHeaders(addHeaders.toSeq*)
           }
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
@@ -2173,7 +2173,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           .as("application/json")
           .withHeaders("X-Pages" -> entity.pages.toString)
           .applyOnIf(addHeaders.nonEmpty) { r =>
-            r.withHeaders(addHeaders.toSeq: _*)
+            r.withHeaders(addHeaders.toSeq*)
           }
           .applyOnIf(resEntity.nonEmpty && resEntity.get.version.deprecated) { r =>
             r.withHeaders("Otoroshi-Api-Deprecated" -> "yes")
@@ -2282,8 +2282,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // PATCH /apis/:group/:version/:entity/_bulk
-  def bulkPatch(group: String, version: String, entity: String): Action[Source[ByteString, _]] =
-    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def bulkPatch(group: String, version: String, entity: String): Action[Source[ByteString, ?]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       import otoroshi.utils.json.JsonPatchHelpers.patchJson
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
@@ -2379,8 +2379,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
 
   // POST /apis/:group/:version/:entity/_bulk
-  def bulkCreate(group: String, version: String, entity: String): Action[Source[ByteString, _]] =
-    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def bulkCreate(group: String, version: String, entity: String): Action[Source[ByteString, ?]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
@@ -2482,13 +2482,13 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
 
   // PUT /apis/:group/:version/:entity/_bulk
-  def bulkUpdate(group: String, version: String, entity: String): Action[Source[ByteString, _]] =
-    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def bulkUpdate(group: String, version: String, entity: String): Action[Source[ByteString, ?]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
             val grouping                   = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
-            val src: Source[ByteString, _] = ctx.request.body
+            val src: Source[ByteString, ?] = ctx.request.body
               .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, allowTruncation = true))
               .map(bs => Try(Json.parse(bs.utf8String)))
               .collect { case Success(e) => e }
@@ -2603,8 +2603,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
 
   // DELETE /apis/:group/:version/:entity/_bulk
-  def bulkDelete(group: String, version: String, entity: String): Action[Source[ByteString, _]] =
-    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def bulkDelete(group: String, version: String, entity: String): Action[Source[ByteString, ?]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
@@ -2738,8 +2738,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // POST /apis/:group/:version/:entity
-  def create(group: String, version: String, entity: String): Action[Source[ByteString, _]] =
-    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def create(group: String, version: String, entity: String): Action[Source[ByteString, ?]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -2893,8 +2893,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // POST /apis/:group/:version/:entity/:id
-  def upsert(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] =
-    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def upsert(group: String, version: String, entity: String, id: String): Action[Source[ByteString, ?]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -2976,8 +2976,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
 
   // PUT /apis/:group/:version/:entity/:id
-  def update(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] =
-    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def update(group: String, version: String, entity: String, id: String): Action[Source[ByteString, ?]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -3035,8 +3035,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
 
   // PATCH /apis/:group/:version/:entity/:id
-  def patch(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] =
-    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def patch(group: String, version: String, entity: String, id: String): Action[Source[ByteString, ?]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, ?]]) =>
       import otoroshi.utils.json.JsonPatchHelpers.patchJson
       withResource(group, version, entity, ctx.request) { resource =>
         resource.access.findOne(version, id).flatMap {

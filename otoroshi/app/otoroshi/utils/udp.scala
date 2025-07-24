@@ -1,7 +1,6 @@
 package otoroshi.utils.udp
 
 import java.net.InetSocketAddress
-
 import org.apache.pekko.actor.{ActorRef, ActorSystem}
 import org.apache.pekko.io.{IO, Udp}
 import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Outlet}
@@ -9,6 +8,7 @@ import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler}
 import org.apache.pekko.util.ByteString
 
+import scala.compiletime.uninitialized
 import scala.concurrent.{Future, Promise}
 
 final class Datagram(val data: ByteString, val remote: InetSocketAddress) {
@@ -31,23 +31,23 @@ object Datagram {
 object UdpClient {
   def flow(
       localAddress: InetSocketAddress
-  )(implicit system: ActorSystem): Flow[Datagram, Datagram, Future[InetSocketAddress]] = {
+  )(using system: ActorSystem): Flow[Datagram, Datagram, Future[InetSocketAddress]] = {
     Flow.fromGraph(new UdpBindFlow(localAddress))
   }
 }
 
 private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPromise: Promise[InetSocketAddress])(
     val shape: FlowShape[Datagram, Datagram]
-)(implicit val system: ActorSystem)
+)(using val system: ActorSystem)
     extends GraphStageLogic(shape) {
 
   private def in  = shape.in
   private def out = shape.out
 
-  private var listener: ActorRef = _
+  private var listener: ActorRef = uninitialized
 
   override def preStart(): Unit = {
-    implicit val sender: ActorRef = getStageActor(processIncoming).ref
+    given sender: ActorRef = getStageActor(processIncoming).ref
     IO(Udp) ! Udp.Bind(sender, localAddress)
   }
 
@@ -98,7 +98,7 @@ private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPr
   )
 }
 
-private[utils] final class UdpBindFlow(localAddress: InetSocketAddress)(implicit val system: ActorSystem)
+private[utils] final class UdpBindFlow(localAddress: InetSocketAddress)(using val system: ActorSystem)
     extends GraphStageWithMaterializedValue[FlowShape[Datagram, Datagram], Future[InetSocketAddress]] {
   val in: Inlet[Datagram]                  = Inlet("UdpBindFlow.in")
   val out: Outlet[Datagram]                = Outlet("UdpBindFlow.in")

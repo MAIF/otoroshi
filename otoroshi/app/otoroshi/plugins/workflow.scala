@@ -97,8 +97,8 @@ class WorkflowJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    implicit val mat: Materializer = env.otoroshiMaterializer
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
+    given mat: Materializer = env.otoroshiMaterializer
     val input                      = ctx.configFor("WorkflowJob").select("input").asOpt[JsObject].getOrElse(Json.obj())
     val specJson                   = ctx.configFor("WorkflowJob").select("workflow").asOpt[JsObject].getOrElse(Json.obj())
     val spec                       = WorkFlowSpec.inline(specJson)
@@ -109,25 +109,25 @@ class WorkflowJob extends Job {
 
 class WorkflowEndpoint extends RequestTransformer {
 
-  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, ?]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]]())
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, ?]]())
     funit
   }
 
   override def afterRequest(
       ctx: AfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     awaitingRequests.remove(ctx.snowflake)
     funit
   }
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
@@ -161,13 +161,13 @@ class WorkflowEndpoint extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val specJson = ctx.configFor("WorkflowEndpoint").select("workflow").as[JsValue]
     val spec     = WorkFlowSpec.inline(specJson)
     val workflow = WorkFlow(spec)
     awaitingRequests.get(ctx.snowflake).map { promise =>
       val consumed                          = new AtomicBoolean(false)
-      val bodySource: Source[ByteString, _] = Source
+      val bodySource: Source[ByteString, ?] = Source
         .future(promise.future)
         .flatMapConcat(s => s)
         .alsoTo(Sink.onComplete { case _ =>

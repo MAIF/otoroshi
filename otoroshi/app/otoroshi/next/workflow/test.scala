@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 object WorkflowTest {
 
   def test1(): Unit = {
-    implicit val executorContext: ExecutionContextExecutorService =
+    given executorContext: ExecutionContextExecutorService =
       ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
     val env: Env                                                  = ???
     val engine                                                    = new WorkflowEngine(env)
@@ -132,7 +132,7 @@ object WorkflowTest {
   }
 
   def main(args: Array[String]): Unit = {
-    implicit val executorContext: ExecutionContextExecutorService =
+    given executorContext: ExecutionContextExecutorService =
       ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
     val env: Env                                                  = ???
     val engine                                                    = new WorkflowEngine(env)

@@ -19,6 +19,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSCookie
+import play.api.libs.ws.WSBodyWritables._
 
 import java.nio.charset.StandardCharsets
 import scala.concurrent.duration._
@@ -164,7 +165,7 @@ case class HttpCallSettings(
     )
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -185,7 +186,7 @@ case class HttpCallSettings(
       .url(url, tlsConfig.legacy)
       .withRequestTimeout(timeout)
       .withMethod(method)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .withBody(finalBody)
       .execute()
       .map { resp =>
@@ -224,7 +225,7 @@ case class WorkflowCallSettings(ref: String) extends Exporter {
     )
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -486,10 +487,10 @@ object DataExporterConfig {
                 maxFileSize = (json \ "config" \ "maxFileSize").as[Long]
               )
             case "s3"            =>
-              (json \ "config").as(S3ExporterSettings.format)
+              (json \ "config").as(using S3ExporterSettings.format)
             case "goreplays3"    =>
               GoReplayS3Settings(
-                (json \ "config" \ "s3").as(S3Configuration.format),
+                (json \ "config" \ "s3").as(using S3Configuration.format),
                 (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
                 (json \ "config" \ "captureRequests").asOpt[Boolean].getOrElse(true),
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
@@ -710,11 +711,11 @@ case class DataExporterConfig(
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.dataExporterConfigDataStore.set(this)
   }
 
-  def exporter()(implicit ec: ExecutionContext, env: Env): DataExporter = {
+  def exporter()(using ec: ExecutionContext, env: Env): DataExporter = {
     config match {
       case c: KafkaConfig                 => new KafkaExporter(this)
       case c: PulsarConfig                => new PulsarExporter(this)
@@ -751,8 +752,8 @@ case class DataExporterConfig(
 object DataExporterConfigMigrationJob {
 
   def cleanupGlobalConfig(env: Env): Future[Unit] = {
-    implicit val ev: Env              = env
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    given ev: Env              = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
     env.datastores.globalConfigDataStore.findById("global").map {
       case Some(config) =>
         env.datastores.globalConfigDataStore.set(
@@ -770,9 +771,9 @@ object DataExporterConfigMigrationJob {
 
   def saveExporters(configs: Seq[DataExporterConfig], env: Env): Future[Unit] = {
 
-    implicit val ev: Env              = env
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer    = env.otoroshiMaterializer
+    given ev: Env              = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer    = env.otoroshiMaterializer
 
     Source(configs.toList)
       .mapAsync(1)(ex => {
@@ -783,9 +784,9 @@ object DataExporterConfigMigrationJob {
   }
   def extractExporters(env: Env): Future[Seq[DataExporterConfig]] = {
 
-    implicit val ev: Env              = env
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer    = env.otoroshiMaterializer
+    given ev: Env              = env
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer    = env.otoroshiMaterializer
 
     val alertDataExporterConfigFiltering     = DataExporterConfigFiltering(
       include = Seq(Json.obj("@type" -> Json.obj("$regex" -> "Alert.*")))
@@ -897,7 +898,7 @@ class DataExporterConfigMigrationJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     DataExporterConfigMigrationJob
       .extractExporters(env)
       .flatMap(configs => DataExporterConfigMigrationJob.saveExporters(configs, env))

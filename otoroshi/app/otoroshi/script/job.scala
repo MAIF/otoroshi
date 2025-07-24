@@ -133,7 +133,7 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
   def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 
   def currentConfig(name: String, ctx: JobContext, env: Env): Option[JsValue] = {
-    val globalConfig = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
+    val globalConfig = env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env)
     val context      = Json.obj(
       "env"      -> globalConfig.env,
       "instance" -> env.configurationJson.select("otoroshi").select("instance").asValue
@@ -148,7 +148,7 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
             case Some(predicates) =>
               val validators =
                 predicates.map(v => JsonValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
-              validators.forall(_.validate(context)(env))
+              validators.forall(_.validate(context)(using env))
           }
         }
       case Some(obj @ JsObject(_)) =>
@@ -157,7 +157,7 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
           case Some(predicates) =>
             val validators =
               predicates.map(v => JsonValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
-            if (validators.forall(_.validate(context)(env))) {
+            if (validators.forall(_.validate(context)(using env))) {
               obj.some
             } else {
               None
@@ -167,21 +167,21 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     }
   }
 
-  private[script] def jobStartHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  private[script] def jobStartHook(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     JobStartedEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx).toAnalytics()
-    jobStart(ctx)(env, ec)
+    jobStart(ctx)(using env, ec)
   }
 
-  private[script] def jobStopHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  private[script] def jobStopHook(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     JobStoppedEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx).toAnalytics()
     promise.trySuccess(())
-    jobStop(ctx)(env, ec)
+    jobStop(ctx)(using env, ec)
   }
 
-  private[script] def jobRunHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  private[script] def jobRunHook(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     JobRunEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx).toAnalytics()
     try {
-      jobRun(ctx)(env, ec).andThen { case Failure(e) =>
+      jobRun(ctx)(using env, ec).andThen { case Failure(e) =>
         JobErrorEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx, e)
       }
     } catch {
@@ -191,9 +191,9 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     }
   }
 
-  def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
-  def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]  = Job.funit
-  def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]   = Job.funit
+  def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
+  def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit]  = Job.funit
+  def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit]   = Job.funit
 
   private def header(env: Env): String = s"[${uniqueId.id} / ${env.number}] -"
 
@@ -214,16 +214,16 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     Option(refId.get()).getOrElse(s"cp:${self.getClass.getName}")
   }
 
-  final def launchNow()(implicit env: Env): Future[Unit] = {
+  final def launchNow()(using env: Env): Future[Unit] = {
     val manager = env.jobManager
     manager.registerJob(this)
     manager.startIfPossible(this)
     promise.future.andThen { case _ =>
       manager.unregisterJob(this)
-    }(manager.jobExecutor)
+    }(using manager.jobExecutor)
   }
 
-  final def auditJson(ctx: JobContext)(implicit env: Env): JsValue =
+  final def auditJson(ctx: JobContext)(using env: Env): JsValue =
     Json.obj(
       "uniqueId"       -> uniqueId.id,
       "name"           -> name,
@@ -263,8 +263,8 @@ case class RegisteredJobContext(
     ref: AtomicReference[Option[Cancellable]]
 ) {
 
-  private implicit val ec: ExecutionContextExecutor = actorSystem.dispatcher
-  private implicit val ev: Env                      = env
+  private given ec: ExecutionContextExecutor = actorSystem.dispatcher
+  private given ev: Env                      = env
 
   private lazy val attrs = TypedMap.empty
   private lazy val randomLock = {
@@ -289,7 +289,7 @@ case class RegisteredJobContext(
           actorSystem = actorSystem,
           scheduler = actorSystem.scheduler
         )
-      )(env, actorSystem.dispatcher)
+      )(using env, actorSystem.dispatcher)
     }
   }
 
@@ -307,7 +307,7 @@ case class RegisteredJobContext(
           actorSystem = actorSystem,
           scheduler = actorSystem.scheduler
         )
-      )(env, actorSystem.dispatcher)
+      )(using env, actorSystem.dispatcher)
     }
   }
 
@@ -581,8 +581,8 @@ class JobManager(env: Env) {
   private val scanRef                = new AtomicReference[Cancellable]()
   private val lockRef                = new AtomicReference[Cancellable]()
 
-  private[script] implicit val jobExecutor: ExecutionContextExecutor = jobActorSystem.dispatcher
-  private implicit val ev: Env                                       = env
+  private[script] given jobExecutor: ExecutionContextExecutor = jobActorSystem.dispatcher
+  private given ev: Env                                       = env
 
   private[script] def registerLock(jobId: JobId, value: String): Unit = {
     val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"
@@ -636,10 +636,10 @@ class JobManager(env: Env) {
       .filterNot(_ == classOf[WasmJob].getName)
       .map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
     scanRef.set(
-      jobScheduler.scheduleAtFixedRate(1.second, 1.second)(SchedulerHelper.runnable(scanRegisteredJobs()))(jobExecutor)
+      jobScheduler.scheduleAtFixedRate(1.second, 1.second)(SchedulerHelper.runnable(scanRegisteredJobs()))
     )
     lockRef.set(
-      jobScheduler.scheduleAtFixedRate(1.second, 10.seconds)(utils.SchedulerHelper.runnable(updateLocks()))(jobExecutor)
+      jobScheduler.scheduleAtFixedRate(1.second, 10.seconds)(utils.SchedulerHelper.runnable(updateLocks()))
     )
   }
 
@@ -729,8 +729,8 @@ class StalledJobsDetector extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 20.seconds.some
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    implicit val mat: Materializer = env.otoroshiMaterializer
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
+    given mat: Materializer = env.otoroshiMaterializer
     env.datastores.rawDataStore.keys(s"${env.storageRoot}:locks:jobs:*").flatMap { keys =>
       Source(keys.toList)
         .mapAsync(1) { key =>
@@ -754,9 +754,9 @@ trait OneTimeJob extends Job {
 
   private val canRun = new AtomicBoolean(false)
 
-  def singleStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
-  def singleStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]  = funit
-  def singleRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]   = funit
+  def singleStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = funit
+  def singleStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit]  = funit
+  def singleRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit]   = funit
 
   final override def cronExpression(ctx: JobContext, env: Env): Option[String]       = None
   final override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.second.some
@@ -770,7 +770,7 @@ trait OneTimeJob extends Job {
     env.jobManager.unregisterJob(this)
   }
 
-  private def stopJob(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  private def stopJob(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     if (canRun.get()) {
       env.datastores.rawDataStore
         .set(
@@ -792,7 +792,7 @@ trait OneTimeJob extends Job {
     }
   }
 
-  final override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  final override def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.rawDataStore.get(s"${env.storageRoot}:jobs:one-time-done:${uniqueId.id}").flatMap {
       case None    =>
         canRun.set(true)
@@ -804,11 +804,11 @@ trait OneTimeJob extends Job {
     }
   }
 
-  final override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  final override def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     stopJob(ctx)
   }
 
-  final override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  final override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     if (canRun.get()) {
       singleRun(ctx).andThen { case _ =>
         stopJob(ctx)
@@ -827,7 +827,7 @@ class TestEveryJob extends Job {
   override def kind:     JobKind                = JobKind.ScheduledEvery
   override def interval: Option[FiniteDuration] = Some(2.seconds)
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     println(s"Hello from job from $uniqueId - $underlyingId")
     Job.funit
   }
@@ -841,19 +841,19 @@ class TestAutonomousJob extends Job {
 
   val ref = new AtomicReference[Cancellable]()
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ref.set(ctx.scheduler.schedule(0.millisecond, 10.seconds) {
       println(s"Hello from job from $uniqueId - $underlyingId")
     })
     Job.funit
   }
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     println(s"Starting $uniqueId")
     Job.funit
   }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     println(s"Stopping $uniqueId")
     Option(ref.get()).foreach(_.cancel())
     Job.funit
@@ -867,7 +867,7 @@ class TestCronJob extends Job {
   override def kind:     JobKind                = JobKind.Cron
   override def cronExpression: Option[String] = Some("0 * * * * ?")
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     println(s"Hello from job from $uniqueId - $underlyingId")
     Job.funit
   }
@@ -880,17 +880,17 @@ class TestOnceJob extends Job {
   override def kind:     JobKind                    = JobKind.ScheduledOnce
   override def initialDelay: Option[FiniteDuration] = Some(4.seconds)
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     println(s"Starting $uniqueId")
     Job.funit
   }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     println(s"Stopping $uniqueId")
     Job.funit
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     println(s"Hello from job from $uniqueId - $underlyingId")
     Job.funit
   }

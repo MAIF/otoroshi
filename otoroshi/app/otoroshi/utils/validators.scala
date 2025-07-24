@@ -12,7 +12,7 @@ trait JsonValidator {
   def kind: String
   def json: JsValue
   def error: Option[String]
-  def validate(ctx: JsValue)(implicit env: Env): Boolean
+  def validate(ctx: JsValue)(using env: Env): Boolean
 }
 
 object JsonValidator {
@@ -60,15 +60,15 @@ case class WasmPluginValidator(ref: String, error: Option[String] = None) extend
     "ref"  -> ref
   )
 
-  override def validate(ctx: JsValue)(implicit env: Env): Boolean = {
+  override def validate(ctx: JsValue)(using env: Env): Boolean = {
     val fu = env.wasmIntegration.withPooledVm(config) { vm =>
-      vm.callExtismFunction("validate", ctx.prettify)(env.otoroshiExecutionContext)
+      vm.callExtismFunction("validate", ctx.prettify)(using env.otoroshiExecutionContext)
         .map {
           case Right(rawResult) =>
             val result = Json.parse(rawResult)
             (result \ "result").asOpt[Boolean].getOrElse(false)
           case Left(_)          => false
-        }(env.otoroshiExecutionContext)
+        }(using env.otoroshiExecutionContext)
     }
     Await.result(fu, 30.seconds)
   }
@@ -102,16 +102,16 @@ case class OpaPluginValidator(ref: String, error: Option[String] = None) extends
     "ref"  -> ref
   )
 
-  override def validate(ctx: JsValue)(implicit env: Env): Boolean = {
+  override def validate(ctx: JsValue)(using env: Env): Boolean = {
     val fu = env.wasmIntegration.withPooledVm(config) { vm =>
-      vm.callOpa("execute", ctx.prettify)(env.otoroshiExecutionContext)
+      vm.callOpa("execute", ctx.prettify)(using env.otoroshiExecutionContext)
         .map {
           case Right((rawResult, _)) =>
             val response = Json.parse(rawResult)
             val result   = response.asOpt[JsArray].getOrElse(Json.arr())
             (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
           case Left(_)               => false
-        }(env.otoroshiExecutionContext)
+        }(using env.otoroshiExecutionContext)
     }
     Await.result(fu, 30.seconds)
   }

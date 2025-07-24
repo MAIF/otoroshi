@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
 import play.api.mvc
 import play.api.mvc.AnyContent
 
-class EventsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class EventsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 
