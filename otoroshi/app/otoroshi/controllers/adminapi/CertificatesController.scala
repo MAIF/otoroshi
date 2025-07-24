@@ -4,7 +4,16 @@ import otoroshi.actions.ApiAction
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
@@ -20,7 +29,7 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
     with CrudControllerHelper[Cert, JsValue] {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-certificates-api")
 
@@ -89,22 +98,22 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
     val enriched = if (noEnrich) entity else entity.enrich()
     env.datastores.certificatesDataStore.set(enriched).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_CERTIFICATE",
-              message = "User created a certificate",
-              metadata = entity.toJson.as[JsObject],
-              alert = "CertCreatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_CERTIFICATE",
+            message = "User created a certificate",
+            metadata = entity.toJson.as[JsObject],
+            alert = "CertCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "certificate not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "certificate not stored ...")
           )
+        )
     }
   }
 
@@ -116,22 +125,22 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
     val enriched = if (noEnrich) entity else entity.enrich()
     env.datastores.certificatesDataStore.set(enriched).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_CERTIFICATE",
-              message = "User updated a certificate",
-              metadata = entity.toJson.as[JsObject],
-              alert = "CertUpdatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_CERTIFICATE",
+            message = "User updated a certificate",
+            metadata = entity.toJson.as[JsObject],
+            alert = "CertUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "certificate not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "certificate not stored ...")
           )
+        )
     }
   }
 
@@ -141,21 +150,21 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Cert]]] = {
     env.datastores.certificatesDataStore.delete(id).map {
       case true  =>
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_CERTIFICATE",
-              message = "User deleted a certificate",
-              metadata = Json.obj("CertId" -> id),
-              alert = "CertDeletedAlert"
-            )
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_CERTIFICATE",
+            message = "User deleted a certificate",
+            metadata = Json.obj("CertId" -> id),
+            alert = "CertDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "certificate not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "certificate not deleted ...")
           )
+        )
     }
   }
 }

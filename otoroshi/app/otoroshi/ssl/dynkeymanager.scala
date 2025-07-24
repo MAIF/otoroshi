@@ -28,8 +28,8 @@ object KeyManagerCompatibility {
 
 object DynamicKeyManager {
 
-  val cache: Cache[String,Cert]    = Scaffeine().maximumSize(1000).expireAfterWrite(5.seconds).build[String, Cert]()
-  val sessions: Cache[String,(SSLSession, PrivateKey, Array[X509Certificate])] = Scaffeine()
+  val cache: Cache[String, Cert]                                                = Scaffeine().maximumSize(1000).expireAfterWrite(5.seconds).build[String, Cert]()
+  val sessions: Cache[String, (SSLSession, PrivateKey, Array[X509Certificate])] = Scaffeine()
     .maximumSize(1000)
     .expireAfterWrite(5.seconds)
     .build[String, (SSLSession, PrivateKey, Array[X509Certificate])]()
@@ -63,70 +63,69 @@ object DynamicKeyManager {
         // logger.debug(s"[${domain}] found cert from cache: ${cert.id} - '${cert.name}'")
         Some(cert)
       case None       =>
+        val tlsSettings = env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings).getOrElse(TlsSettings())
 
-          val tlsSettings = env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings).getOrElse(TlsSettings())
+        val directCert = certsByDomains.get(domain)
 
-          val directCert = certsByDomains.get(domain)
-
-          val maybeCert: Option[Cert] = directCert
-            .orElse {
-              // foundCert: no * before with * then longer before smaller
+        val maybeCert: Option[Cert] = directCert
+          .orElse {
+            // foundCert: no * before with * then longer before smaller
+            validCerts
+              .flatMap(c => c.allDomains.map(d => (d, c)))
+              .filter(c => c._2.sanMatchesDomain(domain, c._1))
+              .sortWith {
+                case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*")  => d1.size > d2.size
+                case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*") => false
+                case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*") => true
+                case ((_, _), (_, _))                                            => true
+              }
+              .seffectOnIf(logger.isDebugEnabled)(certs =>
+                logger.debug(s"possible certificates for '$domain': \n${certs
+                  .map(c => s"  * '${c._2.name}' | '${c._1}' | - ${c._2.allDomains.mkString(", ")}")
+                  .mkString("\n")}")
+              )
+              .map(_._2)
+              .headOption
+              .seffectOnIf(logger.isDebugEnabled)(opt => logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'"))
+          }
+          .orElse {
+            //foundCertDef
+            tlsSettings.defaultDomain.flatMap { d =>
               validCerts
                 .flatMap(c => c.allDomains.map(d => (d, c)))
                 .filter(c => c._2.sanMatchesDomain(domain, c._1))
                 .sortWith {
-                  case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*")   => d1.size > d2.size
-                  case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*")  => false
-                  case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*")  => true
-                  case ((_, _), (_, _)) => true
+                  case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*")  => d1.size > d2.size
+                  case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*") => false
+                  case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*") => true
+                  case ((_, _), (_, _))                                            => true
                 }
-                .seffectOnIf(logger.isDebugEnabled)(certs =>
-                  logger.debug(s"possible certificates for '$domain': \n${certs
-                    .map(c => s"  * '${c._2.name}' | '${c._1}' | - ${c._2.allDomains.mkString(", ")}")
-                    .mkString("\n")}")
-                )
                 .map(_._2)
                 .headOption
-                .seffectOnIf(logger.isDebugEnabled)(opt => logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'"))
             }
-            .orElse {
-              //foundCertDef
-              tlsSettings.defaultDomain.flatMap { d =>
-                validCerts
-                  .flatMap(c => c.allDomains.map(d => (d, c)))
-                  .filter(c => c._2.sanMatchesDomain(domain, c._1))
-                  .sortWith {
-                    case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*")   => d1.size > d2.size
-                    case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*")  => false
-                    case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*")  => true
-                    case ((_, _), (_, _)) => true
-                  }
-                  .map(_._2)
-                  .headOption
-              }
-            }
-
-          // certs.find(_.matchesDomain(domain)).orElse(tlsSettings.defaultDomain.flatMap(d => certs.find(_.matchesDomain(d)))).map { c =>
-          maybeCert.map { c =>
-            DynamicKeyManager.cache.put(domain, c)
-            c
-          } match {
-            case None if tlsSettings.randomIfNotFound =>
-                validCerts
-                .filterNot(_.client)
-                .headOption
-                .map { c =>
-                  DynamicKeyManager.cache.put(domain, c)
-                  // logger.debug(s"[${domain}] found random cert : ${c.id} - '${c.name}'")
-                  c
-                }
-            case None                                 =>
-              // logger.debug(s"[${domain}] no cert found !")
-              None
-            case s @ Some(cert)                       =>
-              // logger.debug(s"[${domain}] found cert : ${cert.id} - '${cert.name}'")
-              s
           }
+
+        // certs.find(_.matchesDomain(domain)).orElse(tlsSettings.defaultDomain.flatMap(d => certs.find(_.matchesDomain(d)))).map { c =>
+        maybeCert.map { c =>
+          DynamicKeyManager.cache.put(domain, c)
+          c
+        } match {
+          case None if tlsSettings.randomIfNotFound =>
+            validCerts
+              .filterNot(_.client)
+              .headOption
+              .map { c =>
+                DynamicKeyManager.cache.put(domain, c)
+                // logger.debug(s"[${domain}] found random cert : ${c.id} - '${c.name}'")
+                c
+              }
+          case None                                 =>
+            // logger.debug(s"[${domain}] no cert found !")
+            None
+          case s @ Some(cert)                       =>
+            // logger.debug(s"[${domain}] found cert : ${cert.id} - '${cert.name}'")
+            s
+        }
     }
   }
 }

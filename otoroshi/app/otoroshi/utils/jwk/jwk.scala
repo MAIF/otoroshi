@@ -48,7 +48,7 @@ class StringJwkProvider(jwkRaw: String) extends JwkProvider {
     .toMap
 
   override def get(keyId: String): Jwk = {
-      json(keyId)
+    json(keyId)
   }
 }
 

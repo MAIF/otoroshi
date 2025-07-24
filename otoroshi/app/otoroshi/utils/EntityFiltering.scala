@@ -13,8 +13,9 @@ object EntityFiltering {
     _entity match {
       case arr @ JsArray(_) =>
         val prefix     = filterPrefix
-        val filters    = request.queryString
-          .view.mapValues(_.last).toMap
+        val filters    = request.queryString.view
+          .mapValues(_.last)
+          .toMap
           .collect {
             case v if prefix.isEmpty                                  => v
             case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
@@ -129,40 +130,38 @@ object EntityFiltering {
           .getOrElse(Seq.empty[(String, Boolean)])
         val hasSorted = sorted.nonEmpty
         if (hasSorted) {
-          JsArray(sorted.foldLeft(arr.value) {
-            case (sortedArray, sort) =>
+          JsArray(sorted.foldLeft(arr.value) { case (sortedArray, sort) =>
+            val out = if (sortedArray.isEmpty) {
+              sortedArray
+            } else {
+              val isANumber = JsonOperationsHelper.getValueAtPath(sort._1, sortedArray.head)._2 match {
+                case JsNumber(_) => true
+                case _           => false
+              }
 
-              val out = if (sortedArray.isEmpty) {
+              if (isANumber) {
                 sortedArray
+                  .sortBy(r => {
+                    JsonOperationsHelper.getValueAtPath(sort._1, r)._2 match {
+                      case JsNumber(value) => value.toInt
+                      case value           => value.asOpt[Int].getOrElse(0)
+                    }
+                  })(
+                    Ordering[Int].reverse
+                  )
               } else {
-                val isANumber = JsonOperationsHelper.getValueAtPath(sort._1, sortedArray.head)._2 match {
-                  case JsNumber(_) => true
-                  case _           => false
-                }
-
-                if (isANumber) {
-                  sortedArray
-                    .sortBy(r => {
-                      JsonOperationsHelper.getValueAtPath(sort._1, r)._2 match {
-                        case JsNumber(value) => value.toInt
-                        case value           => value.asOpt[Int].getOrElse(0)
-                      }
-                    })(
-                      Ordering[Int].reverse
-                    )
-                } else {
-                  sortedArray
-                    .sortBy(r => String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1, r)._2))(
-                      Ordering[String].reverse
-                    )
-                }
+                sortedArray
+                  .sortBy(r => String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1, r)._2))(
+                    Ordering[String].reverse
+                  )
               }
+            }
 
-              if (sort._2) {
-                out.reverse
-              } else {
-                out
-              }
+            if (sort._2) {
+              out.reverse
+            } else {
+              out
+            }
           }).some
         } else {
           arr.some

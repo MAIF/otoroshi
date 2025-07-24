@@ -32,14 +32,14 @@ case class ZipFileBackendConfig(
 }
 
 object ZipFileBackendConfig {
-  val default: ZipFileBackendConfig = ZipFileBackendConfig(
+  val default: ZipFileBackendConfig        = ZipFileBackendConfig(
     "https://github.com/MAIF/otoroshi/releases/download/16.11.2/otoroshi-manual-16.11.2.zip",
     Map.empty,
     "./zips",
     None,
     1.hour.toMillis
   )
-  val format: Format[ZipFileBackendConfig]  = new Format[ZipFileBackendConfig] {
+  val format: Format[ZipFileBackendConfig] = new Format[ZipFileBackendConfig] {
     override def writes(o: ZipFileBackendConfig): JsValue = Json.obj(
       "url"     -> o.url,
       "headers" -> o.headers,
@@ -232,8 +232,8 @@ case class ZipBombBackendConfig(
 }
 
 object ZipBombBackendConfig {
-  val configFlow: Seq[String]        = Seq("or", "size", "status", "content_type", "predicates")
-  val configSchema: Option[JsObject] = Some(
+  val configFlow: Seq[String]              = Seq("or", "size", "status", "content_type", "predicates")
+  val configSchema: Option[JsObject]       = Some(
     Json.obj(
       "predicates"   -> Json.parse("""{
           |  "label": "Predicates",
@@ -281,7 +281,7 @@ object ZipBombBackendConfig {
       )
     )
   )
-  val format: Format[ZipBombBackendConfig]                         = new Format[ZipBombBackendConfig] {
+  val format: Format[ZipBombBackendConfig] = new Format[ZipBombBackendConfig] {
     override def writes(o: ZipBombBackendConfig): JsValue             = Json.obj(
       "predicates"   -> JsArray(o.predicates.map(_.json)),
       "or"           -> o.or,

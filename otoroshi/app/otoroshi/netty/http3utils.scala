@@ -53,7 +53,14 @@ class CustomHttp3FrameToHttpObjectCodec extends Http3RequestStreamInboundHandler
     if (isLast) {
       if (headers.method() == null && status == null) {
         val last = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER)
-        Http3ConversionUtil.addHttp3ToHttpHeaders(id, headers, last.trailingHeaders(), HttpVersion.HTTP_1_1, isTrailer = true, isRequest = true)
+        Http3ConversionUtil.addHttp3ToHttpHeaders(
+          id,
+          headers,
+          last.trailingHeaders(),
+          HttpVersion.HTTP_1_1,
+          isTrailer = true,
+          isRequest = true
+        )
         ctx.fireChannelRead(last)
       } else {
         val full = newFullMessage(id, headers, ctx.alloc())
@@ -94,34 +101,34 @@ class CustomHttp3FrameToHttpObjectCodec extends Http3RequestStreamInboundHandler
     }
     msg match {
       case res: HttpResponse     =>
-          if (res.status().equals(HttpResponseStatus.CONTINUE)) {
-            res match {
-              case fres: FullHttpResponse =>
-                  val headers = toHttp3Headers(res)
-                  ctx.write(new DefaultHttp3HeadersFrame(headers))
-                  fres.release()
-                  return
-              case _                      => throw new EncoderException(HttpResponseStatus.CONTINUE.toString() + " must be a FullHttpResponse")
-            }
+        if (res.status().equals(HttpResponseStatus.CONTINUE)) {
+          res match {
+            case fres: FullHttpResponse =>
+              val headers = toHttp3Headers(res)
+              ctx.write(new DefaultHttp3HeadersFrame(headers))
+              fres.release()
+              return
+            case _                      => throw new EncoderException(HttpResponseStatus.CONTINUE.toString() + " must be a FullHttpResponse")
           }
+        }
       case msg: HttpMessage      =>
-          val headers = toHttp3Headers(msg)
-          ctx.write(new DefaultHttp3HeadersFrame(headers))
+        val headers = toHttp3Headers(msg)
+        ctx.write(new DefaultHttp3HeadersFrame(headers))
       case last: LastHttpContent =>
-          val readable    = last.content().isReadable()
-          val hasTrailers = !last.trailingHeaders().isEmpty()
+        val readable    = last.content().isReadable()
+        val hasTrailers = !last.trailingHeaders().isEmpty()
 
-          if (readable) {
-            ctx.write(new DefaultHttp3DataFrame(last.content()))
-          }
-          if (hasTrailers) {
-            val headers = Http3ConversionUtil.toHttp3Headers(last.trailingHeaders(), validateHeaders)
-            ctx.write(new DefaultHttp3HeadersFrame(headers))
-          }
-          if (!readable) {
-            last.release();
-          }
-          ctx.channel().asInstanceOf[QuicStreamChannel].shutdownOutput()
+        if (readable) {
+          ctx.write(new DefaultHttp3DataFrame(last.content()))
+        }
+        if (hasTrailers) {
+          val headers = Http3ConversionUtil.toHttp3Headers(last.trailingHeaders(), validateHeaders)
+          ctx.write(new DefaultHttp3HeadersFrame(headers))
+        }
+        if (!readable) {
+          last.release();
+        }
+        ctx.channel().asInstanceOf[QuicStreamChannel].shutdownOutput()
       case content: HttpContent  => ctx.write(new DefaultHttp3DataFrame(content.content()))
       case _                     => throw new RuntimeException("error")
     }

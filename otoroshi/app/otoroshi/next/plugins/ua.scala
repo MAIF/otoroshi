@@ -56,11 +56,11 @@ class NgUserAgentExtractor extends NgPreRouting {
         otoroshi.plugins.useragent.UserAgentHelper.userAgentDetails(ua) match {
           case None       => Done.rightf
           case Some(info) =>
-              val config =
-                ctx.cachedConfig(internalName)(NgUserAgentExtractorConfig.format).getOrElse(NgUserAgentExtractorConfig())
-              if (config.log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
-              ctx.attrs.putIfAbsent(otoroshi.plugins.Keys.UserAgentInfoKey -> info)
-              Done.rightf
+            val config =
+              ctx.cachedConfig(internalName)(NgUserAgentExtractorConfig.format).getOrElse(NgUserAgentExtractorConfig())
+            if (config.log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
+            ctx.attrs.putIfAbsent(otoroshi.plugins.Keys.UserAgentInfoKey -> info)
+            Done.rightf
         }
     }
   }
@@ -134,13 +134,13 @@ class NgUserAgentInfoHeader extends NgRequestTransformer {
     ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
       case None       => Right(ctx.otoroshiRequest).future
       case Some(info) =>
-          Right(
-            ctx.otoroshiRequest.copy(
-              headers = ctx.otoroshiRequest.headers ++ Map(
-                config.headerName -> Json.stringify(info)
-              )
+        Right(
+          ctx.otoroshiRequest.copy(
+            headers = ctx.otoroshiRequest.headers ++ Map(
+              config.headerName -> Json.stringify(info)
             )
-          ).future
+          )
+        ).future
     }
   }
 }

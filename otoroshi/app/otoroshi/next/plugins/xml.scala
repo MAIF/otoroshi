@@ -21,8 +21,8 @@ case class JsonTransformConfig(filter: Option[String] = None) extends NgPluginCo
 }
 
 object JsonTransformConfig {
-  val library: ImmutableJqLibrary = ImmutableJqLibrary.of()
-  val format: Format[JsonTransformConfig]  = new Format[JsonTransformConfig] {
+  val library: ImmutableJqLibrary         = ImmutableJqLibrary.of()
+  val format: Format[JsonTransformConfig] = new Format[JsonTransformConfig] {
     override def writes(o: JsonTransformConfig): JsValue             =
       Json.obj("filter" -> o.filter.map(JsString.apply).getOrElse(JsNull).asValue)
     override def reads(json: JsValue): JsResult[JsonTransformConfig] = JsSuccess(
@@ -36,18 +36,18 @@ trait JsonTransform {
     config.filter match {
       case None         => body.right
       case Some(filter) =>
-          val response = ImmutableJqRequest
-            .builder()
-            .lib(JsonTransformConfig.library)
-            .input(body)
-            .filter(filter)
-            .build()
-            .execute()
-          if (response.hasErrors) {
-            JsArray(response.getErrors.asScala.map(err => JsString(err))).stringify.left
-          } else {
-            response.getOutput.right
-          }
+        val response = ImmutableJqRequest
+          .builder()
+          .lib(JsonTransformConfig.library)
+          .input(body)
+          .filter(filter)
+          .build()
+          .execute()
+        if (response.hasErrors) {
+          JsArray(response.getErrors.asScala.map(err => JsString(err))).stringify.left
+        } else {
+          response.getOutput.right
+        }
     }
   }
 }
@@ -81,14 +81,14 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
         transform(jsonBody, config) match {
           case Left(err)   => Results.InternalServerError(err).as("application/json").left
           case Right(body) =>
-              ctx.otoroshiRequest
-                .copy(
-                  body = Source(body.byteString.grouped(16 * 1024).toList),
-                  headers = ctx.otoroshiRequest.headers
-                    .removeAndPutIgnoreCase("Content-Type" -> "application/json")
-                    .removeAndPutIgnoreCase("Content-Length" -> jsonBody.size.toString)
-                )
-                .right
+            ctx.otoroshiRequest
+              .copy(
+                body = Source(body.byteString.grouped(16 * 1024).toList),
+                headers = ctx.otoroshiRequest.headers
+                  .removeAndPutIgnoreCase("Content-Type" -> "application/json")
+                  .removeAndPutIgnoreCase("Content-Length" -> jsonBody.size.toString)
+              )
+              .right
         }
       }
     } else {
@@ -125,15 +125,15 @@ class JsonToXmlRequest extends NgRequestTransformer with JsonTransform {
         transform(jsonBody, config) match {
           case Left(err)   => Results.InternalServerError(err).as("application/json").left
           case Right(body) =>
-              val xmlBody = otoroshi.utils.xml.Xml.toXml(Json.parse(body)).toString().byteString
-              ctx.otoroshiRequest
-                .copy(
-                  body = Source(xmlBody.grouped(16 * 1024).toList),
-                  headers = ctx.otoroshiRequest.headers
-                    .removeAndPutIgnoreCase("Content-Type" -> "text/xml")
-                    .removeAndPutIgnoreCase("Content-Length" -> xmlBody.size.toString)
-                )
-                .right
+            val xmlBody = otoroshi.utils.xml.Xml.toXml(Json.parse(body)).toString().byteString
+            ctx.otoroshiRequest
+              .copy(
+                body = Source(xmlBody.grouped(16 * 1024).toList),
+                headers = ctx.otoroshiRequest.headers
+                  .removeAndPutIgnoreCase("Content-Type" -> "text/xml")
+                  .removeAndPutIgnoreCase("Content-Length" -> xmlBody.size.toString)
+              )
+              .right
         }
       }
     } else {
@@ -171,14 +171,14 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
         transform(jsonBody, config) match {
           case Left(err)   => Results.InternalServerError(err).as("application/json").left
           case Right(body) =>
-              ctx.otoroshiResponse
-                .copy(
-                  body = Source(body.byteString.grouped(16 * 1024).toList),
-                  headers = ctx.otoroshiResponse.headers
-                    .removeAndPutIgnoreCase("Content-Type" -> "application/json")
-                    .removeAndPutIgnoreCase("Content-Length" -> jsonBody.size.toString)
-                )
-                .right
+            ctx.otoroshiResponse
+              .copy(
+                body = Source(body.byteString.grouped(16 * 1024).toList),
+                headers = ctx.otoroshiResponse.headers
+                  .removeAndPutIgnoreCase("Content-Type" -> "application/json")
+                  .removeAndPutIgnoreCase("Content-Length" -> jsonBody.size.toString)
+              )
+              .right
         }
       }
     } else {
@@ -214,16 +214,16 @@ class JsonToXmlResponse extends NgRequestTransformer with JsonTransform {
         transform(bodyRaw.utf8String, config) match {
           case Left(err)   => Results.InternalServerError(err).as("application/json").left
           case Right(body) =>
-              val jsonBody = Json.parse(body)
-              val xmlBody  = otoroshi.utils.xml.Xml.toXml(jsonBody).toString().byteString
-              ctx.otoroshiResponse
-                .copy(
-                  body = Source(xmlBody.grouped(16 * 1024).toList),
-                  headers = ctx.otoroshiResponse.headers
-                    .removeAndPutIgnoreCase("Content-Type" -> "text/xml")
-                    .removeAndPutIgnoreCase("Content-Length" -> xmlBody.size.toString)
-                )
-                .right
+            val jsonBody = Json.parse(body)
+            val xmlBody  = otoroshi.utils.xml.Xml.toXml(jsonBody).toString().byteString
+            ctx.otoroshiResponse
+              .copy(
+                body = Source(xmlBody.grouped(16 * 1024).toList),
+                headers = ctx.otoroshiResponse.headers
+                  .removeAndPutIgnoreCase("Content-Type" -> "text/xml")
+                  .removeAndPutIgnoreCase("Content-Length" -> xmlBody.size.toString)
+              )
+              .right
         }
       }
     } else {
@@ -402,88 +402,88 @@ class SOAPAction extends NgBackendCall {
           Json.parse(err).stringify.byteString
         ).future
       case Right(body) =>
-          val soapEnvelop: String = el(config.envelope, body, ctx, env)
-          val operation           = config.action
-          val url                 = config.url.getOrElse(s"${ctx.route.backend.targets.head.baseUrl}${ctx.route.backend.root}")
-          val tlsConfig           = ctx.route.backend.targets.headOption.map(_.tlsConfig).filter(_.enabled)
-          val initReq             = tlsConfig match {
-            case None       => env.Ws.url(url)
-            case Some(conf) => env.MtlsWs.url(url, conf.legacy)
-          }
-          initReq
-            .withHttpHeaders(
-              "Content-Type" -> config.charset.getOrElse("text/xml; charset=utf-8")
+        val soapEnvelop: String = el(config.envelope, body, ctx, env)
+        val operation           = config.action
+        val url                 = config.url.getOrElse(s"${ctx.route.backend.targets.head.baseUrl}${ctx.route.backend.root}")
+        val tlsConfig           = ctx.route.backend.targets.headOption.map(_.tlsConfig).filter(_.enabled)
+        val initReq             = tlsConfig match {
+          case None       => env.Ws.url(url)
+          case Some(conf) => env.MtlsWs.url(url, conf.legacy)
+        }
+        initReq
+          .withHttpHeaders(
+            "Content-Type" -> config.charset.getOrElse("text/xml; charset=utf-8")
+          )
+          .applyOnWithOpt(operation) { case (ws, op) =>
+            ws.addHttpHeaders(
+              "X-SOAP-RequestAction" -> op,
+              "SOAPAction"           -> op
             )
-            .applyOnWithOpt(operation) { case (ws, op) =>
-              ws.addHttpHeaders(
-                "X-SOAP-RequestAction" -> op,
-                "SOAPAction"           -> op
-              )
-            }
-            .withMethod("POST")
-            .withBody(soapEnvelop)
-            .execute()
-            .map { resp =>
-              val headers = resp.headers
-                .view.mapValues(_.last)
-                .toSeq
-                .filterNot(_._1 == "Content-Type")
-                .filterNot(_._1 == "Content-Length")
-                .filterNot(_._1 == "content-type")
-                .filterNot(_._1 == "content-length")
-              if (
-                resp.contentType.contains("text/xml") || resp.contentType.contains("application/xml") || resp.contentType
-                  .contains("application/xml+soap")
-              ) {
-                val xmlBody  = scala.xml.XML.loadString(resp.body)
-                val jsonBody = otoroshi.utils.xml.Xml.toJson(xmlBody).stringify
-                val headerz  = headers :+ ("Content-Length" -> jsonBody.length.toString)
-                val status   = if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
-                  400
-                } else if (resp.body.contains(":Fault>")) {
-                  500
-                } else {
-                  200
-                }
-                transformResponseBody(jsonBody, config) match {
-                  case Left(error)     =>
-                    val rb = error.byteString
-                    inMemoryBodyResponse(
-                      500,
-                      headerz.toMap ++ Map("Content-Type" -> "application/json", "Content-Length" -> rb.size.toString),
-                      rb
-                    )
-                  case Right(response) =>
-                    val rb = response.byteString
-                    inMemoryBodyResponse(
-                      status,
-                      headerz.toMap ++ Map("Content-Type" -> "application/json", "Content-Length" -> rb.size.toString),
-                      rb
-                    )
-                }
+          }
+          .withMethod("POST")
+          .withBody(soapEnvelop)
+          .execute()
+          .map { resp =>
+            val headers = resp.headers.view
+              .mapValues(_.last)
+              .toSeq
+              .filterNot(_._1 == "Content-Type")
+              .filterNot(_._1 == "Content-Length")
+              .filterNot(_._1 == "content-type")
+              .filterNot(_._1 == "content-length")
+            if (
+              resp.contentType.contains("text/xml") || resp.contentType.contains("application/xml") || resp.contentType
+                .contains("application/xml+soap")
+            ) {
+              val xmlBody  = scala.xml.XML.loadString(resp.body)
+              val jsonBody = otoroshi.utils.xml.Xml.toJson(xmlBody).stringify
+              val headerz  = headers :+ ("Content-Length" -> jsonBody.length.toString)
+              val status   = if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
+                400
+              } else if (resp.body.contains(":Fault>")) {
+                500
               } else {
-                val headerz = headers :+ ("Content-Length" -> resp.body.length.toString)
-                if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
-                  inMemoryBodyResponse(
-                    400,
-                    headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                    resp.body.byteString
-                  )
-                } else if (resp.body.contains(":Fault>")) {
+                200
+              }
+              transformResponseBody(jsonBody, config) match {
+                case Left(error)     =>
+                  val rb = error.byteString
                   inMemoryBodyResponse(
                     500,
-                    headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                    resp.body.byteString
+                    headerz.toMap ++ Map("Content-Type" -> "application/json", "Content-Length" -> rb.size.toString),
+                    rb
                   )
-                } else {
+                case Right(response) =>
+                  val rb = response.byteString
                   inMemoryBodyResponse(
-                    200,
-                    headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                    resp.body.byteString
+                    status,
+                    headerz.toMap ++ Map("Content-Type" -> "application/json", "Content-Length" -> rb.size.toString),
+                    rb
                   )
-                }
+              }
+            } else {
+              val headerz = headers :+ ("Content-Length" -> resp.body.length.toString)
+              if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
+                inMemoryBodyResponse(
+                  400,
+                  headerz.toMap ++ Map("Content-Type" -> "text/xml"),
+                  resp.body(play.api.libs.ws.DefaultBodyReadables.readableAsByteString)
+                )
+              } else if (resp.body.contains(":Fault>")) {
+                inMemoryBodyResponse(
+                  500,
+                  headerz.toMap ++ Map("Content-Type" -> "text/xml"),
+                  resp.body(play.api.libs.ws.DefaultBodyReadables.readableAsByteString)
+                )
+              } else {
+                inMemoryBodyResponse(
+                  200,
+                  headerz.toMap ++ Map("Content-Type" -> "text/xml"),
+                  resp.body(play.api.libs.ws.DefaultBodyReadables.readableAsByteString)
+                )
               }
             }
+          }
     }
   }
 }

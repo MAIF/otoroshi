@@ -330,8 +330,8 @@ object SnowMonkeyConfig {
       _fmt.reads(value).get
     } catch {
       case e: Throwable =>
-          logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
-          throw e
+        logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        throw e
     }
   def fromJsonSafe(value: JsValue): JsResult[SnowMonkeyConfig] = _fmt.reads(value)
 }

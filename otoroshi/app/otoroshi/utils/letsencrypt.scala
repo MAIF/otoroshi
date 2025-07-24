@@ -151,7 +151,6 @@ object LetsEncryptHelper {
               if (logger.isDebugEnabled) logger.error(s"challenges failed: $err")
               FastFuture.successful(Left(err))
             case Right(_)  =>
-
               if (logger.isDebugEnabled) logger.debug(s"building csr for $domain")
               val keyPair       = KeyPairUtils.createKeyPair(2048)
               val csrByteString = buildCsr(domain, keyPair)
@@ -319,24 +318,27 @@ object LetsEncryptHelper {
       .toMat(Sink.seq)(Keep.right)
       .run()
       .map { seq =>
-        seq.find(_.isLeft).map(v => Left(v.swap.getOrElse(throw new RuntimeException("Invalid state")))).getOrElse(Right(seq.map(_.toOption.get)))
+        seq
+          .find(_.isLeft)
+          .map(v => Left(v.swap.getOrElse(throw new RuntimeException("Invalid state"))))
+          .getOrElse(Right(seq.map(_.toOption.get)))
       }
   }
 
   // Core polling logic that respects retry-after headers
   private def pollUntil[T](
-                      fetchAndCheck: () => Future[(Option[Instant], T)], // Returns (retryAfter, currentState)
-                      isComplete: T => Boolean,
-                      attemptsLeft: Int,
-                      defaultDelay: FiniteDuration = 3.seconds,
-                      maxDelay: FiniteDuration = 30.seconds
-                  )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
+      fetchAndCheck: () => Future[(Option[Instant], T)], // Returns (retryAfter, currentState)
+      isComplete: T => Boolean,
+      attemptsLeft: Int,
+      defaultDelay: FiniteDuration = 3.seconds,
+      maxDelay: FiniteDuration = 30.seconds
+  )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
 
     def calculateDelay(retryAfterOpt: Option[Instant], attemptNumber: Int): FiniteDuration = {
       retryAfterOpt match {
         case Some(retryAfterInstant) =>
           val suggestedDelay = Duration.between(Instant.now(), retryAfterInstant)
-          val delayMillis = Math.max(100, suggestedDelay.toMillis) // min 100ms
+          val delayMillis    = Math.max(100, suggestedDelay.toMillis) // min 100ms
           Math.min(delayMillis, maxDelay.toMillis).millis
 
         case None =>
@@ -369,20 +371,19 @@ object LetsEncryptHelper {
     pollOnce(attemptsLeft, 0)
   }
 
-
-
   private def pollAcmeResource[T](
-                             resource: T,
-                             fetch: T => Option[Instant],  // fetch method that returns retry-after
-                             getStatus: T => Status,
-                             maxAttempts: Int = 10,
-                             defaultDelay: FiniteDuration = 3.seconds
-                         )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
+      resource: T,
+      fetch: T => Option[Instant], // fetch method that returns retry-after
+      getStatus: T => Status,
+      maxAttempts: Int = 10,
+      defaultDelay: FiniteDuration = 3.seconds
+  )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
 
-    val fetchAndCheck = () => Future {
-      val retryAfter = fetch(resource)
-      (retryAfter, resource)
-    }
+    val fetchAndCheck = () =>
+      Future {
+        val retryAfter = fetch(resource)
+        (retryAfter, resource)
+      }
 
     pollUntil(
       fetchAndCheck,
@@ -394,10 +395,10 @@ object LetsEncryptHelper {
 
   // Now your methods become:
   private def authorizeOrder(
-                                domain: String,
-                                status: Status,
-                                challenge: Http01Challenge
-                            )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Status]] = {
+      domain: String,
+      status: Status,
+      challenge: Http01Challenge
+  )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Status]] = {
 
     logger.info(s"authorizing order $domain")
 
@@ -408,39 +409,39 @@ object LetsEncryptHelper {
         challenge.trigger()
       }(blockingEc).flatMap { _ =>
         pollAcmeResource(
-              challenge,
-              fetch = (c: Http01Challenge) => Option(c.fetch().orElse(null)),
-              getStatus = (c: Http01Challenge) => c.getStatus,
-              maxAttempts = 10,
-              defaultDelay = 3.seconds
-            )(ec, mat.system.scheduler)
-            .map(_ => Right(Status.VALID))
-            .recover { case e =>
-              Left(s"Failed to authorize certificate for domain, ${e.getMessage}")
-            }
+          challenge,
+          fetch = (c: Http01Challenge) => Option(c.fetch().orElse(null)),
+          getStatus = (c: Http01Challenge) => c.getStatus,
+          maxAttempts = 10,
+          defaultDelay = 3.seconds
+        )(ec, mat.system.scheduler)
+          .map(_ => Right(Status.VALID))
+          .recover { case e =>
+            Left(s"Failed to authorize certificate for domain, ${e.getMessage}")
+          }
       }
     }
   }
 
   private def orderCertificate(
-                                  order: Order,
-                                  csr: Array[Byte]
-                              )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Order]] = {
+      order: Order,
+      csr: Array[Byte]
+  )(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Order]] = {
 
     Future {
       order.execute(csr)
     }(blockingEc).flatMap { _ =>
       pollAcmeResource(
-            order,
-            fetch = (o: Order) => Option(o.fetch().orElse(null)),
-            getStatus = (o: Order) => o.getStatus,
-            maxAttempts = 10,
-            defaultDelay = 5.seconds
-          )(ec, mat.system.scheduler)
-          .map(Right(_))
-          .recover { case e =>
-            Left(s"Failed to order certificate for domain, ${e.getMessage}")
-          }
+        order,
+        fetch = (o: Order) => Option(o.fetch().orElse(null)),
+        getStatus = (o: Order) => o.getStatus,
+        maxAttempts = 10,
+        defaultDelay = 5.seconds
+      )(ec, mat.system.scheduler)
+        .map(Right(_))
+        .recover { case e =>
+          Left(s"Failed to order certificate for domain, ${e.getMessage}")
+        }
     }
   }
 

@@ -333,13 +333,13 @@ class FileWriteFunction extends WorkflowFunction {
         Files.writeString(
           f.toPath,
           value match {
-            case JsString(s)  => s
-            case JsNumber(s)  => s.toString()
-            case JsTrue       => "true"
-            case JsFalse      => "false"
-            case JsArray(_)   => value.stringify
-            case JsObject(_)  => value.stringify
-            case JsNull       => "null"
+            case JsString(s) => s
+            case JsNumber(s) => s.toString()
+            case JsTrue      => "true"
+            case JsFalse     => "false"
+            case JsArray(_)  => value.stringify
+            case JsObject(_) => value.stringify
+            case JsNull      => "null"
           }
         )
         Json.obj("file_path" -> f.getAbsolutePath).rightf

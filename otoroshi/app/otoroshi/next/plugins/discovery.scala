@@ -52,8 +52,7 @@ object NgDiscoverySelfRegistrationConfig {
 
 class NgDiscoverySelfRegistrationSink extends NgRequestSink {
 
-  import kaleidoscope._
-//  import soundness.*
+  import kaleidoscope.*
 
   override def name: String                                = "Global self registration endpoints (service discovery)"
   override def description: Option[String]                 =
@@ -74,10 +73,10 @@ class NgDiscoverySelfRegistrationSink extends NgRequestSink {
     val config = NgDiscoverySelfRegistrationConfig(ctx.config)
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             => DiscoveryHelper.register(None, ctx.body, config.legacy)
-      case ("delete", r"/discovery/${registrationId}@(.*)/_unregister") =>
-        DiscoveryHelper.unregister(registrationId, None, ctx.request, config.legacy)
-      case ("post", r"/discovery/${registrationId}@(.*)/_heartbeat")    =>
-        DiscoveryHelper.heartbeat(registrationId, None, ctx.request, config.legacy)
+      case ("delete", r"/discovery/$registrationId(.*)/_unregister") =>
+        DiscoveryHelper.unregister(registrationId.s, None, ctx.request, config.legacy)
+      case ("post", r"/discovery/$registrationId(.*)/_heartbeat")    =>
+        DiscoveryHelper.heartbeat(registrationId.s, None, ctx.request, config.legacy)
       case _                                                            => Results.NotFound(Json.obj("error" -> "resource not found !")).future
     }
   }
@@ -85,8 +84,7 @@ class NgDiscoverySelfRegistrationSink extends NgRequestSink {
 
 class NgDiscoverySelfRegistrationTransformer extends NgRequestTransformer {
 
-  import kaleidoscope._
-//  import soundness.*
+  import kaleidoscope.*
 
   override def name: String                                = "Self registration endpoints (service discovery)"
   override def description: Option[String]                 =
@@ -107,10 +105,10 @@ class NgDiscoverySelfRegistrationTransformer extends NgRequestTransformer {
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             =>
         DiscoveryHelper.register(ctx.route.id.some, ctx.otoroshiRequest.body, config.legacy).map(r => Left(r))
-      case ("delete", r"/discovery/${registrationId}@(.*)/_unregister") =>
-        DiscoveryHelper.unregister(registrationId, ctx.route.id.some, ctx.request, config.legacy).map(r => Left(r))
-      case ("post", r"/discovery/${registrationId}@(.*)/_heartbeat")    =>
-        DiscoveryHelper.heartbeat(registrationId, ctx.route.id.some, ctx.request, config.legacy).map(r => Left(r))
+      case ("delete", r"/discovery/$registrationId(.*)/_unregister") =>
+        DiscoveryHelper.unregister(registrationId.s, ctx.route.id.some, ctx.request, config.legacy).map(r => Left(r))
+      case ("post", r"/discovery/$registrationId(.*)/_heartbeat")    =>
+        DiscoveryHelper.heartbeat(registrationId.s, ctx.route.id.some, ctx.request, config.legacy).map(r => Left(r))
       case _                                                            => Right(ctx.otoroshiRequest).future
     }
   }
@@ -137,23 +135,23 @@ class NgDiscoveryTargetsSelector extends NgPreRouting {
     DiscoveryHelper.getTargetsFor(ctx.route.id, config.legacy).map {
       case targets if targets.isEmpty => Done.right
       case _targets                   =>
-          val reqNumber            = ctx.attrs.get(otoroshi.plugins.Keys.RequestNumberKey).getOrElse(0)
-          val trackingId           = ctx.attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse("none")
-          val targets: Seq[Target] = _targets
-            .map(_._2)
-            .filter(_.predicate.matches(reqNumber.toString, ctx.request, ctx.attrs))
-            .flatMap(t => Seq.fill(t.weight)(t))
-          val target               = ctx.route.backend.loadBalancing
-            .select(
-              reqNumber.toString,
-              trackingId,
-              ctx.request,
-              targets,
-              ctx.route.id,
-              1
-            )
-          ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetKey -> target)
-          Done.right
+        val reqNumber            = ctx.attrs.get(otoroshi.plugins.Keys.RequestNumberKey).getOrElse(0)
+        val trackingId           = ctx.attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse("none")
+        val targets: Seq[Target] = _targets
+          .map(_._2)
+          .filter(_.predicate.matches(reqNumber.toString, ctx.request, ctx.attrs))
+          .flatMap(t => Seq.fill(t.weight)(t))
+        val target               = ctx.route.backend.loadBalancing
+          .select(
+            reqNumber.toString,
+            trackingId,
+            ctx.request,
+            targets,
+            ctx.route.id,
+            1
+          )
+        ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetKey -> target)
+        Done.right
     }
   }
 }

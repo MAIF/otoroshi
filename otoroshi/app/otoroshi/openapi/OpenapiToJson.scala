@@ -9,18 +9,18 @@ import scala.collection.concurrent.TrieMap
 
 class OpenapiToJson(spec: JsValue) {
 
-  val logger: Logger              = Logger("otoroshi-openapi-to-json")
+  val logger: Logger      = Logger("otoroshi-openapi-to-json")
   val openAPIV3SchemaPath = "openAPIV3Schema/properties/spec/properties"
   val nullType            = "#/components/schemas/Null"
   val otoroshiSchemaType  = "#/components/schemas/otoroshi."
 
-  def run(): TrieMap[String,JsValue] = {
+  def run(): TrieMap[String, JsValue] = {
     val data = extractSchemasFromOpenapi()
     process(data)
     data
   }
 
-  def extractSchemasFromOpenapi(): TrieMap[String,JsValue] = {
+  def extractSchemasFromOpenapi(): TrieMap[String, JsValue] = {
     val schemas = (spec \ "components" \ "schemas").as[JsObject]
     val data    = new UnboundedTrieMap[String, JsValue]()
     schemas.fields.foreach(curr => data.put(curr._1, curr._2))
@@ -29,9 +29,10 @@ class OpenapiToJson(spec: JsValue) {
 
   def process(data: TrieMap[String, JsValue]): Unit = {
     var changed = true
-    do {
+    while {
       changed = replaceOneOf(data)
-    } while (changed)
+      changed
+    } do ()
   }
 
   def reads(path: String): JsPath = {
@@ -179,9 +180,9 @@ class OpenapiToJson(spec: JsValue) {
               case Some(arr) if arr.value.length > 2 || containsNullAndRef(arr.value.toIndexedSeq) => out
               case Some(arr) if containsOnlyRef(arr.value.toIndexedSeq)                            =>
                 Json.obj("type" -> (getRef(data, (arr.value.head \ "$ref").as[String]) \ "type").as[String])
-              case None if (out \ "enum").isDefined                                   =>
+              case None if (out \ "enum").isDefined                                                =>
                 out
-              case _                                                                  => Json.obj("properties" -> out, "type" -> "object")
+              case _                                                                               => Json.obj("properties" -> out, "type" -> "object")
             }
           )
       }

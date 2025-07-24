@@ -209,7 +209,7 @@ object WasmConfig {
 class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
 
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit val ev: Env = env
+  implicit val ev: Env              = env
 
   val logger: Logger                                        = Logger("otoroshi-wasm-integration")
   val materializer: Materializer                            = env.otoroshiMaterializer
@@ -226,8 +226,8 @@ class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
     tlsConfigOpt match {
       case None            => env.Ws.url(path)
       case Some(tlsConfig) =>
-          val cfg = NgTlsConfig.format.reads(tlsConfig.json).get.legacy
-          env.MtlsWs.url(path, cfg)
+        val cfg = NgTlsConfig.format.reads(tlsConfig.json).get.legacy
+        env.MtlsWs.url(path, cfg)
     }
   }
 

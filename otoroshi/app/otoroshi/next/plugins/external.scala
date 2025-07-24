@@ -152,26 +152,25 @@ class NgExternalValidator extends NgAccessValidator {
             .map(r => NgAccess.NgDenied(r))
         }
       }
-      .recoverWith {
-        case ex =>
-            logger.error(s"error while validating request with external service at '$url'", ex)
-            cacheKey.foreach { key =>
-              cache.getIfPresent(key).foreach(t => t._2.trySuccess(false))
-              cache.invalidate(key)
-            }
-            Errors
-              .craftResponseResult(
-                config.errorMessage,
-                Results.Status(config.errorStatus),
-                ctx.request,
-                None,
-                Some("errors.failed.external.validation.error"),
-                duration = ctx.report.getDurationNow(),
-                overhead = ctx.report.getOverheadInNow(),
-                attrs = ctx.attrs,
-                maybeRoute = ctx.route.some
-              )
-              .map(r => NgAccess.NgDenied(r))
+      .recoverWith { case ex =>
+        logger.error(s"error while validating request with external service at '$url'", ex)
+        cacheKey.foreach { key =>
+          cache.getIfPresent(key).foreach(t => t._2.trySuccess(false))
+          cache.invalidate(key)
+        }
+        Errors
+          .craftResponseResult(
+            config.errorMessage,
+            Results.Status(config.errorStatus),
+            ctx.request,
+            None,
+            Some("errors.failed.external.validation.error"),
+            duration = ctx.report.getDurationNow(),
+            overhead = ctx.report.getOverheadInNow(),
+            attrs = ctx.attrs,
+            maybeRoute = ctx.route.some
+          )
+          .map(r => NgAccess.NgDenied(r))
       }
   }
 
@@ -182,42 +181,42 @@ class NgExternalValidator extends NgAccessValidator {
     config.url match {
       case None         => NgAccess.NgAllowed.vfuture
       case Some(rawUrl) =>
-          config.cacheExpression match {
-            case None                     => externalValidation(ctx, rawUrl, config, None)
-            case Some(cacheExpressionRaw) =>
-                val cacheKey = GlobalExpressionLanguage.apply(
-                value = cacheExpressionRaw,
-                req = ctx.request.some,
-                service = None,
-                route = ctx.route.some,
-                apiKey = ctx.apikey,
-                user = ctx.user,
-                context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-                attrs = ctx.attrs,
-                env = env
-              )
-                cache.getIfPresent(cacheKey) match {
-                case None        => externalValidation(ctx, rawUrl, config, cacheKey.some)
-                case Some(tuple) =>
-                  tuple._2.future.flatMap {
-                    case true  => NgAccess.NgAllowed.vfuture
-                    case false =>
-                        Errors
-                        .craftResponseResult(
-                          config.errorMessage,
-                          Results.Status(config.errorStatus),
-                          ctx.request,
-                          None,
-                          Some("errors.failed.external.validation"),
-                          duration = ctx.report.getDurationNow(),
-                          overhead = ctx.report.getOverheadInNow(),
-                          attrs = ctx.attrs,
-                          maybeRoute = ctx.route.some
-                        )
-                        .map(r => NgAccess.NgDenied(r))
-                  }
-              }
-          }
+        config.cacheExpression match {
+          case None                     => externalValidation(ctx, rawUrl, config, None)
+          case Some(cacheExpressionRaw) =>
+            val cacheKey = GlobalExpressionLanguage.apply(
+              value = cacheExpressionRaw,
+              req = ctx.request.some,
+              service = None,
+              route = ctx.route.some,
+              apiKey = ctx.apikey,
+              user = ctx.user,
+              context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+              attrs = ctx.attrs,
+              env = env
+            )
+            cache.getIfPresent(cacheKey) match {
+              case None        => externalValidation(ctx, rawUrl, config, cacheKey.some)
+              case Some(tuple) =>
+                tuple._2.future.flatMap {
+                  case true  => NgAccess.NgAllowed.vfuture
+                  case false =>
+                    Errors
+                      .craftResponseResult(
+                        config.errorMessage,
+                        Results.Status(config.errorStatus),
+                        ctx.request,
+                        None,
+                        Some("errors.failed.external.validation"),
+                        duration = ctx.report.getDurationNow(),
+                        overhead = ctx.report.getOverheadInNow(),
+                        attrs = ctx.attrs,
+                        maybeRoute = ctx.route.some
+                      )
+                      .map(r => NgAccess.NgDenied(r))
+                }
+            }
+        }
     }
   }
 }

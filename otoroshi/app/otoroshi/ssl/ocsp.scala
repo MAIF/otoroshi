@@ -10,7 +10,11 @@ import org.bouncycastle.asn1.x509.{CRLReason, Extension, Extensions, SubjectPubl
 import org.bouncycastle.cert.X509CertificateHolder
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import org.bouncycastle.cert.ocsp._
-import org.bouncycastle.operator.jcajce.{JcaContentSignerBuilder, JcaContentVerifierProviderBuilder, JcaDigestCalculatorProviderBuilder}
+import org.bouncycastle.operator.jcajce.{
+  JcaContentSignerBuilder,
+  JcaContentVerifierProviderBuilder,
+  JcaDigestCalculatorProviderBuilder
+}
 import org.bouncycastle.operator.{DefaultDigestAlgorithmIdentifierFinder, DigestCalculatorProvider}
 import org.joda.time.DateTime
 import otoroshi.env.Env
@@ -41,7 +45,9 @@ object CertParentHelper {
     if (logger.isDebugEnabled)
       logger.debug(s"fromOtoroshiRootCa: ${cert.getSerialNumber} - ${DN(cert.getSubjectX500Principal.getName)}")
     if (level > 100) {
-      logger.error(s"failed to find origin for cert ${cert.getSerialNumber} - ${DN(cert.getSubjectX500Principal.getName)}")
+      logger.error(
+        s"failed to find origin for cert ${cert.getSerialNumber} - ${DN(cert.getSubjectX500Principal.getName)}"
+      )
       cache.put(cert.getSerialNumber, false)
       false
     } else {
@@ -75,7 +81,7 @@ object CertParentHelper {
                     if (logger.isDebugEnabled) logger.debug("not from otoroshi")
                     cache.put(cert.getSerialNumber, false)
                     false
-                  case Some(issuer) =>
+                  case Some(issuer)                                                                   =>
                     if (logger.isDebugEnabled) logger.debug("found issuer")
                     fromOtoroshiRootCa(issuer.certificate.get, level + 1)
                 }

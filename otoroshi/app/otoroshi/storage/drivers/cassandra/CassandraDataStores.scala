@@ -183,43 +183,43 @@ class CassandraDataStores(
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
         case keys                 =>
-            Future.sequence(
-              keys
-                .filterNot { key =>
-                  Cluster.filteredKey(key, env)
-                // key == s"${env.storageRoot}:cluster:" ||
-                // key == s"${env.storageRoot}:events:audit" ||
-                // key == s"${env.storageRoot}:events:alerts" ||
-                // key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                // key.startsWith(s"${env.storageRoot}:admins:") ||
-                // key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                // // key.startsWith(s"${env.storageRoot}:users:") ||
-                // key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
-                // key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                // key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                // key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                // key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
-                }
-                .map { key =>
-                  redis.rawGet(key).flatMap {
-                    case None                    => FastFuture.successful(JsNull)
-                    case Some((typ, ttl, value)) =>
-                        fetchValueForType(key, typ, value).map {
-                        case JsNull => JsNull
-                        case value  =>
-                          Json.obj(
-                            "k" -> key,
-                            "v" -> value,
-                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                            "w" -> typ
-                          )
+          Future.sequence(
+            keys
+              .filterNot { key =>
+                Cluster.filteredKey(key, env)
+              // key == s"${env.storageRoot}:cluster:" ||
+              // key == s"${env.storageRoot}:events:audit" ||
+              // key == s"${env.storageRoot}:events:alerts" ||
+              // key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+              // key.startsWith(s"${env.storageRoot}:admins:") ||
+              // key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+              // // key.startsWith(s"${env.storageRoot}:users:") ||
+              // key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
+              // key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+              // key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+              // key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+              // key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+              // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+              // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+              }
+              .map { key =>
+                redis.rawGet(key).flatMap {
+                  case None                    => FastFuture.successful(JsNull)
+                  case Some((typ, ttl, value)) =>
+                    fetchValueForType(key, typ, value).map {
+                      case JsNull => JsNull
+                      case value  =>
+                        Json.obj(
+                          "k" -> key,
+                          "v" -> value,
+                          "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                          "w" -> typ
+                        )
 
-                      }
-                  }
+                    }
                 }
-            )
+              }
+          )
       }
       .map(_.filterNot(_ == JsNull))
       .mapConcat(_.toList)
@@ -227,9 +227,9 @@ class CassandraDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -239,26 +239,26 @@ class CassandraDataStores(
         .mapAsync(1) {
           case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
           case keys                 =>
-              Source(keys.toList)
-                .mapAsync(1) { key =>
-                  redis.rawGet(key).flatMap {
-                    case None                    => FastFuture.successful(JsNull)
-                    case Some((typ, ttl, value)) =>
-                        fetchValueForType(key, typ, value).map {
-                        case JsNull => JsNull
-                        case value  =>
-                          Json.obj(
-                            "k" -> key,
-                            "v" -> value,
-                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                            "w" -> typ
-                          )
+            Source(keys.toList)
+              .mapAsync(1) { key =>
+                redis.rawGet(key).flatMap {
+                  case None                    => FastFuture.successful(JsNull)
+                  case Some((typ, ttl, value)) =>
+                    fetchValueForType(key, typ, value).map {
+                      case JsNull => JsNull
+                      case value  =>
+                        Json.obj(
+                          "k" -> key,
+                          "v" -> value,
+                          "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                          "w" -> typ
+                        )
 
-                      }
-                  }
+                    }
                 }
-                .runWith(Sink.seq)
-                .map(_.filterNot(_ == JsNull))
+              }
+              .runWith(Sink.seq)
+              .map(_.filterNot(_ == JsNull))
         }
         .mapConcat(_.toList)
     )
@@ -266,9 +266,9 @@ class CassandraDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")
@@ -307,16 +307,17 @@ class CassandraDataStores(
       ec: ExecutionContext
   ): Future[JsValue] = {
     (typ, value) match {
-      case ("hash", v: Map[String, ByteString] @unchecked ) =>
+      case ("hash", v: Map[String, ByteString] @unchecked) =>
         FastFuture.successful(JsObject(v.map(t => (t._1, JsString(t._2.utf8String)))))
-      case ("set", v: Set[ByteString] @unchecked )          => FastFuture.successful(JsArray(v.toSeq.map(s => JsString(s.utf8String))))
-      case ("list", v: Seq[ByteString] @unchecked )         => FastFuture.successful(JsArray(v.map(s => JsString(s.utf8String))))
-      case ("string", v: ByteString)                        =>
+      case ("set", v: Set[ByteString] @unchecked)          =>
+        FastFuture.successful(JsArray(v.toSeq.map(s => JsString(s.utf8String))))
+      case ("list", v: Seq[ByteString] @unchecked)         => FastFuture.successful(JsArray(v.map(s => JsString(s.utf8String))))
+      case ("string", v: ByteString)                       =>
         Option(v) match {
           case None    => FastFuture.successful(JsNull)
           case Some(a) => FastFuture.successful(JsString(a.utf8String))
         }
-      case _                                    => FastFuture.successful(JsNull)
+      case _                                               => FastFuture.successful(JsNull)
     }
   }
 }

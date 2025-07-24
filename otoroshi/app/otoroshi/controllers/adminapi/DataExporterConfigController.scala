@@ -5,7 +5,16 @@ import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events.UpdateExporters
 import otoroshi.models.DataExporterConfig
-import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsError, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
@@ -18,7 +27,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
     with CrudControllerHelper[DataExporterConfig, JsValue] {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-data-exporter-api")
 
@@ -84,23 +93,23 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
   ): Future[Either[ApiError[JsValue], EntityAndContext[DataExporterConfig]]] = {
     env.datastores.dataExporterConfigDataStore.set(entity).map {
       case true  =>
-          env.otoroshiEventsActor ! UpdateExporters
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_DATA_EXPORTER_CONFIG",
-              message = "User created a data exporter config",
-              metadata = entity.json.as[JsObject],
-              alert = "DataExporterConfigCreatedAlert"
-            )
+        env.otoroshiEventsActor ! UpdateExporters
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_DATA_EXPORTER_CONFIG",
+            message = "User created a data exporter config",
+            metadata = entity.json.as[JsObject],
+            alert = "DataExporterConfigCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "data exporter config not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "data exporter config not stored ...")
           )
+        )
     }
   }
 
@@ -110,23 +119,23 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
   ): Future[Either[ApiError[JsValue], EntityAndContext[DataExporterConfig]]] = {
     env.datastores.dataExporterConfigDataStore.set(entity).map {
       case true  =>
-          env.otoroshiEventsActor ! UpdateExporters
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_DATA_EXPORTER_CONFIG",
-              message = "User updated a data exporter config",
-              metadata = entity.json.as[JsObject],
-              alert = "DataExporterConfigUpdatedAlert"
-            )
+        env.otoroshiEventsActor ! UpdateExporters
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_DATA_EXPORTER_CONFIG",
+            message = "User updated a data exporter config",
+            metadata = entity.json.as[JsObject],
+            alert = "DataExporterConfigUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "data exporter config not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "data exporter config not stored ...")
           )
+        )
     }
   }
 
@@ -136,22 +145,22 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[DataExporterConfig]]] = {
     env.datastores.dataExporterConfigDataStore.delete(id).map {
       case true  =>
-          env.otoroshiEventsActor ! UpdateExporters
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_DATA_EXPORTER_CONFIG",
-              message = "User deleted a data exporter config",
-              metadata = Json.obj("dataExporterConfigId" -> id),
-              alert = "DataExporterConfigDeletedAlert"
-            )
+        env.otoroshiEventsActor ! UpdateExporters
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_DATA_EXPORTER_CONFIG",
+            message = "User deleted a data exporter config",
+            metadata = Json.obj("dataExporterConfigId" -> id),
+            alert = "DataExporterConfigDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "data exporter config not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "data exporter config not deleted ...")
           )
+        )
     }
   }
 }

@@ -7,7 +7,18 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
 import otoroshi.next.models.NgRoute
-import otoroshi.utils.controllers.{AdminApiHelper, ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SendAuditAndAlert, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  AdminApiHelper,
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SendAuditAndAlert,
+  SeqEntityAndContext
+}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -30,7 +41,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     with AdminApiHelper {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("ServicesController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)

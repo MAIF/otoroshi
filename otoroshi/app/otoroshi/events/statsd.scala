@@ -110,11 +110,16 @@ class StatsdWrapper(actorSystem: ActorSystem, env: Env) {
   def metric(name: String, value: Any)(implicit optConfig: Option[StatsdConfig]): Unit = {
     optConfig.foreach(config =>
       value match {
-        case b: Boolean => statsdActor ! StatsdEvent("set", name, 0.0, b.toString, defaultSampleRate, bypassSampler = false, config)
-        case b: Long    => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, bypassSampler = false, config)
-        case b: Double  => statsdActor ! StatsdEvent("gauge", name, b, "", defaultSampleRate, bypassSampler = false, config)
-        case b: Int     => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, bypassSampler = false, config)
-        case b: String  => statsdActor ! StatsdEvent("set", name, 0.0, b, defaultSampleRate, bypassSampler = false, config)
+        case b: Boolean =>
+          statsdActor ! StatsdEvent("set", name, 0.0, b.toString, defaultSampleRate, bypassSampler = false, config)
+        case b: Long    =>
+          statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, bypassSampler = false, config)
+        case b: Double  =>
+          statsdActor ! StatsdEvent("gauge", name, b, "", defaultSampleRate, bypassSampler = false, config)
+        case b: Int     =>
+          statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, bypassSampler = false, config)
+        case b: String  =>
+          statsdActor ! StatsdEvent("set", name, 0.0, b, defaultSampleRate, bypassSampler = false, config)
         case _          =>
       }
     )
@@ -134,37 +139,37 @@ class StatsdActor(env: Env) extends Actor {
 
   override def receive: Receive = {
     case StatsdEventClose()                                                                             =>
-        config = None
-        statsdclient.foreach(_.shutdown())
-        datadogclient.foreach(_.shutdown())
-        statsdclient = None
-        datadogclient = None
+      config = None
+      statsdclient.foreach(_.shutdown())
+      datadogclient.foreach(_.shutdown())
+      statsdclient = None
+      datadogclient = None
     case event: StatsdEvent if config.isEmpty                                                           =>
-        config = Some(event.config)
-        statsdclient.foreach(_.shutdown())
-        datadogclient.foreach(_.shutdown())
-        event.config.datadog match {
-          case true  =>
-            if (logger.isDebugEnabled) logger.debug("Running statsd for DataDog")
-            datadogclient = Some(new DogStatsDClient(event.config.host, event.config.port, "otoroshi"))
-          case false =>
-            if (logger.isDebugEnabled) logger.debug("Running statsd")
-            statsdclient = Some(new StatsDClient(event.config.host, event.config.port, "otoroshi"))
-        }
-        self ! event
+      config = Some(event.config)
+      statsdclient.foreach(_.shutdown())
+      datadogclient.foreach(_.shutdown())
+      event.config.datadog match {
+        case true  =>
+          if (logger.isDebugEnabled) logger.debug("Running statsd for DataDog")
+          datadogclient = Some(new DogStatsDClient(event.config.host, event.config.port, "otoroshi"))
+        case false =>
+          if (logger.isDebugEnabled) logger.debug("Running statsd")
+          statsdclient = Some(new StatsDClient(event.config.host, event.config.port, "otoroshi"))
+      }
+      self ! event
     case event: StatsdEvent if config.isDefined && config.get != event.config                           =>
-        config = Some(event.config)
-        statsdclient.foreach(_.shutdown())
-        datadogclient.foreach(_.shutdown())
-        event.config.datadog match {
-          case true  =>
-            if (logger.isDebugEnabled) logger.debug("Reconfiguring statsd for DataDog")
-            datadogclient = Some(new DogStatsDClient(event.config.host, event.config.port, "otoroshi"))
-          case false =>
-            if (logger.isDebugEnabled) logger.debug("Reconfiguring statsd")
-            statsdclient = Some(new StatsDClient(event.config.host, event.config.port, "otoroshi"))
-        }
-        self ! event
+      config = Some(event.config)
+      statsdclient.foreach(_.shutdown())
+      datadogclient.foreach(_.shutdown())
+      event.config.datadog match {
+        case true  =>
+          if (logger.isDebugEnabled) logger.debug("Reconfiguring statsd for DataDog")
+          datadogclient = Some(new DogStatsDClient(event.config.host, event.config.port, "otoroshi"))
+        case false =>
+          if (logger.isDebugEnabled) logger.debug("Reconfiguring statsd")
+          statsdclient = Some(new StatsDClient(event.config.host, event.config.port, "otoroshi"))
+      }
+      self ! event
     case StatsdEvent("counter", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _))   =>
       statsdclient.get.counter(name, value, sampleRate, bypassSampler)
     case StatsdEvent("decrement", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _)) =>
@@ -205,7 +210,7 @@ object StatsdActor {
 
 class StatsDReporter(registry: SemanticMetricRegistry, env: Env) extends Reporter with Closeable {
 
-  implicit val e: Env = env
+  implicit val e: Env               = env
   implicit val ec: ExecutionContext = env.analyticsExecutionContext
 
   private val cancellable = new AtomicReference[Option[Cancellable]](None)

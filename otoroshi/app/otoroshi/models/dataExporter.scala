@@ -751,7 +751,7 @@ case class DataExporterConfig(
 object DataExporterConfigMigrationJob {
 
   def cleanupGlobalConfig(env: Env): Future[Unit] = {
-    implicit val ev: Env = env
+    implicit val ev: Env              = env
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
     env.datastores.globalConfigDataStore.findById("global").map {
       case Some(config) =>
@@ -770,9 +770,9 @@ object DataExporterConfigMigrationJob {
 
   def saveExporters(configs: Seq[DataExporterConfig], env: Env): Future[Unit] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env              = env
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer    = env.otoroshiMaterializer
 
     Source(configs.toList)
       .mapAsync(1)(ex => {
@@ -783,9 +783,9 @@ object DataExporterConfigMigrationJob {
   }
   def extractExporters(env: Env): Future[Seq[DataExporterConfig]] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env              = env
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer    = env.otoroshiMaterializer
 
     val alertDataExporterConfigFiltering     = DataExporterConfigFiltering(
       include = Seq(Json.obj("@type" -> Json.obj("$regex" -> "Alert.*")))

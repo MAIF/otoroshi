@@ -34,8 +34,9 @@ import scala.util._
 object CorazaPluginKeys {
   val CorazaWasmVmKey: TypedKey[WasmVm] = TypedKey[WasmVm]("otoroshi.next.plugins.CorazaWasmVm")
 
-  val RequestBodyKey: TypedKey[Future[Source[ByteString, _]]] = TypedKey[Future[Source[ByteString, _]]]("otoroshi.next.plugins.RequestBodyKey")
-  val HasBodyKey: TypedKey[Boolean]     = TypedKey[Boolean]("otoroshi.next.plugins.HasBodyKey")
+  val RequestBodyKey: TypedKey[Future[Source[ByteString, _]]] =
+    TypedKey[Future[Source[ByteString, _]]]("otoroshi.next.plugins.RequestBodyKey")
+  val HasBodyKey: TypedKey[Boolean]                           = TypedKey[Boolean]("otoroshi.next.plugins.HasBodyKey")
 }
 
 trait CorazaImplementation {
@@ -127,14 +128,16 @@ object NgCorazaWAF {
 
 class NgCorazaWAF extends NgRequestTransformer {
 
-  override def steps: scala.collection.immutable.Seq[NgStep]                          = scala.collection.immutable.Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
-  override def categories: scala.collection.immutable.Seq[NgPluginCategory]           = scala.collection.immutable.Seq(NgPluginCategory.AccessControl, NgPluginCategory.Custom("WAF"))
-  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = true
-  override def name: String                                = "Coraza WAF"
-  override def description: Option[String]                 = "Coraza WAF plugin".some
-  override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
+  override def steps: scala.collection.immutable.Seq[NgStep]                =
+    scala.collection.immutable.Seq(NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: scala.collection.immutable.Seq[NgPluginCategory] =
+    scala.collection.immutable.Seq(NgPluginCategory.AccessControl, NgPluginCategory.Custom("WAF"))
+  override def visibility: NgPluginVisibility                               = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                                       = true
+  override def core: Boolean                                                = true
+  override def name: String                                                 = "Coraza WAF"
+  override def description: Option[String]                                  = "Coraza WAF plugin".some
+  override def defaultConfigObject: Option[NgPluginConfig]                  = NgCorazaWAFConfig("none").some
 
   override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = true
@@ -239,14 +242,15 @@ class NgCorazaWAF extends NgRequestTransformer {
 
 class NgIncomingRequestValidatorCorazaWAF extends NgIncomingRequestValidator {
 
-  override def steps: scala.collection.immutable.Seq[NgStep]                          = scala.collection.immutable.Seq(NgStep.ValidateAccess)
-  override def categories: scala.collection.immutable.Seq[NgPluginCategory]           = scala.collection.immutable.Seq(NgPluginCategory.AccessControl)
-  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = true
-  override def name: String                                = "Coraza WAF - Incoming Request Validator"
-  override def description: Option[String]                 = "Coraza WAF - Incoming Request Validator plugin".some
-  override def defaultConfigObject: Option[NgPluginConfig] = NgCorazaWAFConfig("none").some
+  override def steps: scala.collection.immutable.Seq[NgStep]                = scala.collection.immutable.Seq(NgStep.ValidateAccess)
+  override def categories: scala.collection.immutable.Seq[NgPluginCategory] =
+    scala.collection.immutable.Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility                               = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                                       = true
+  override def core: Boolean                                                = true
+  override def name: String                                                 = "Coraza WAF - Incoming Request Validator"
+  override def description: Option[String]                                  = "Coraza WAF - Incoming Request Validator plugin".some
+  override def defaultConfigObject: Option[NgPluginConfig]                  = NgCorazaWAFConfig("none").some
 
   override def access(
       ctx: NgIncomingRequestValidatorContext
@@ -283,16 +287,16 @@ case class CorazaWafConfig(
     ),
     poolCapacity: Int
 ) extends EntityLocationSupport {
-  override def internalId: String               = id
-  override def json: JsValue                    = CorazaWafConfig.format.writes(this)
-  override def theName: String                  = name
-  override def theDescription: String           = description
-  override def theTags: scala.collection.immutable.Seq[String]             = tags.toSeq
-  override def theMetadata: Map[String, String] = metadata
+  override def internalId: String                              = id
+  override def json: JsValue                                   = CorazaWafConfig.format.writes(this)
+  override def theName: String                                 = name
+  override def theDescription: String                          = description
+  override def theTags: scala.collection.immutable.Seq[String] = tags.toSeq
+  override def theMetadata: Map[String, String]                = metadata
 }
 
 object CorazaWafConfig {
-  def template(): CorazaWafConfig = CorazaWafConfig(
+  def template(): CorazaWafConfig     = CorazaWafConfig(
     location = EntityLocation.default,
     id = s"coraza-waf-config_${IdGenerator.uuid}",
     name = "New WAF",
@@ -304,7 +308,7 @@ object CorazaWafConfig {
     directives = Seq.empty,
     poolCapacity = 2
   )
-  val format: Format[CorazaWafConfig]                      = new Format[CorazaWafConfig] {
+  val format: Format[CorazaWafConfig] = new Format[CorazaWafConfig] {
     override def writes(o: CorazaWafConfig): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"                -> o.id,
       "name"              -> o.name,
@@ -395,7 +399,7 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
 
   override def syncStates(): Future[Unit] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val ev: Env = env
+    implicit val ev: Env              = env
     for {
       configs <- datastores.corazaConfigsDatastore.findAll()
     } yield {
@@ -537,7 +541,13 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
 
   def start(attrs: TypedMap): Future[Unit] = {
     pool
-      .getPooledVm(WasmVmInitOptions(importDefaultHostFunctions = false, resetMemory = false, _ => scala.collection.immutable.Seq.empty[org.extism.sdk.HostFunction[_ <: org.extism.sdk.HostUserData]]))
+      .getPooledVm(
+        WasmVmInitOptions(
+          importDefaultHostFunctions = false,
+          resetMemory = false,
+          _ => scala.collection.immutable.Seq.empty[org.extism.sdk.HostFunction[_ <: org.extism.sdk.HostUserData]]
+        )
+      )
       .flatMap { vm =>
         attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey -> vm)
         vm.finitialize {

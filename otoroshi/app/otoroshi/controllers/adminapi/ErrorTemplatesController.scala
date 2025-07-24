@@ -17,7 +17,7 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
     with CrudControllerHelper[ErrorTemplate, JsValue] {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   val logger: Logger = Logger("otoroshi-error-templates-api")
 
@@ -75,22 +75,22 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ErrorTemplate]]] = {
     env.datastores.errorTemplateDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_ERROR_TEMPLATE",
-              message = "User created a error template",
-              metadata = entity.json.as[JsObject],
-              alert = "ErrorTemplateCreatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_ERROR_TEMPLATE",
+            message = "User created a error template",
+            metadata = entity.json.as[JsObject],
+            alert = "ErrorTemplateCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Tcp service not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Tcp service not stored ...")
           )
+        )
     }
   }
 
@@ -100,22 +100,22 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ErrorTemplate]]] = {
     env.datastores.errorTemplateDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_ERROR_TEMPLATE",
-              message = "User updated a error template",
-              metadata = entity.json.as[JsObject],
-              alert = "ErrorTemplateUpdatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_ERROR_TEMPLATE",
+            message = "User updated a error template",
+            metadata = entity.json.as[JsObject],
+            alert = "ErrorTemplateUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Tcp service not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Tcp service not stored ...")
           )
+        )
     }
   }
 
@@ -125,21 +125,21 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ErrorTemplate]]] = {
     env.datastores.errorTemplateDataStore.delete(id).map {
       case true  =>
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_ERROR_TEMPLATE",
-              message = "User deleted a error template",
-              metadata = Json.obj("ErrorTemplateId" -> id),
-              alert = "ErrorTemplateDeletedAlert"
-            )
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_ERROR_TEMPLATE",
+            message = "User deleted a error template",
+            metadata = Json.obj("ErrorTemplateId" -> id),
+            alert = "ErrorTemplateDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Tcp service not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Tcp service not deleted ...")
           )
+        )
     }
   }
 }

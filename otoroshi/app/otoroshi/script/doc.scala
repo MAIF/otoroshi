@@ -62,38 +62,50 @@ class PluginDocumentationGenerator(docPath: String) {
         val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName).toSeq
+          .map(_.getName)
+          .toSeq
 
         val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
           scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName).toSeq
+          .map(_.getName)
+          .toSeq
 
         val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
-          scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName).toSeq
+          scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
+          .toSeq
 
         val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
-          scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName).toSeq
+          scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
+          .toSeq
 
         val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
           scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName).toSeq
+          .map(_.getName)
+          .toSeq
 
         val jobNames: Seq[String] = (scanResult.getSubclasses(classOf[Job].getName).asScala ++
           scanResult.getClassesImplementing(classOf[Job].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName).toSeq
+          .map(_.getName)
+          .toSeq
 
         val customExporters: Seq[String] = (scanResult.getSubclasses(classOf[CustomDataExporter].getName).asScala ++
           scanResult.getClassesImplementing(classOf[CustomDataExporter].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName).toSeq
+          .map(_.getName)
+          .toSeq
 
         val handlers: Seq[String] = (scanResult.getSubclasses(classOf[RequestHandler].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestHandler].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName).toSeq
+          .map(_.getName)
+          .toSeq
 
         (requestTransformers, validators, preRoutes, reqSinks, listenerNames, jobNames, customExporters, handlers)
       } catch {

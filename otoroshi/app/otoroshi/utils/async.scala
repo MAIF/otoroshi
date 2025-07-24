@@ -24,12 +24,12 @@ object AsyncUtils {
         head.andThen {
           case Failure(e)     => promise.tryFailure(e)
           case Success(value) =>
-              results = results :+ value
-              if (futures.size == 1) {
-                promise.trySuccess(results)
-              } else {
-                next(futures.tail)
-              }
+            results = results :+ value
+            if (futures.size == 1) {
+              promise.trySuccess(results)
+            } else {
+              next(futures.tail)
+            }
         }
       }
     }
@@ -51,12 +51,12 @@ object AsyncUtils {
         head.andThen {
           case Failure(e)     => promise.tryFailure(e)
           case Success(value) =>
-              results = results ++ value
-              if (futures.size == 1) {
-                promise.trySuccess(results)
-              } else {
-                next(futures.tail)
-              }
+            results = results ++ value
+            if (futures.size == 1) {
+              promise.trySuccess(results)
+            } else {
+              next(futures.tail)
+            }
         }
       }
     }
@@ -78,12 +78,12 @@ object AsyncUtils {
         f(head).andThen {
           case Failure(e)     => promise.tryFailure(e)
           case Success(value) =>
-              results = results :+ value
-              if (all.size == 1) {
-                promise.trySuccess(results)
-              } else {
-                next(all.tail)
-              }
+            results = results :+ value
+            if (all.size == 1) {
+              promise.trySuccess(results)
+            } else {
+              next(all.tail)
+            }
         }
       }
     }
@@ -105,18 +105,18 @@ object AsyncUtils {
         f(head).andThen {
           case Failure(e)     => promise.tryFailure(e)
           case Success(false) =>
-              if (all.size == 1) {
-                promise.trySuccess(results)
-              } else {
-                next(all.tail)
-              }
+            if (all.size == 1) {
+              promise.trySuccess(results)
+            } else {
+              next(all.tail)
+            }
           case Success(true)  =>
-              results = results :+ head
-              if (all.size == 1) {
-                promise.trySuccess(results)
-              } else {
-                next(all.tail)
-              }
+            results = results :+ head
+            if (all.size == 1) {
+              promise.trySuccess(results)
+            } else {
+              next(all.tail)
+            }
         }
       }
     }
@@ -139,11 +139,11 @@ object AsyncUtils {
         f(head).andThen {
           case Failure(e)     => promise.tryFailure(e)
           case Success(false) =>
-              if (all.size == 1) {
-                promise.trySuccess(None)
-              } else {
-                next(all.tail)
-              }
+            if (all.size == 1) {
+              promise.trySuccess(None)
+            } else {
+              next(all.tail)
+            }
           case Success(true)  => promise.trySuccess(Some(head))
         }
       }
@@ -168,12 +168,12 @@ object AsyncUtils {
         f(head).andThen {
           case Failure(e)     => promise.tryFailure(e)
           case Success(value) =>
-              results = results ++ value
-              if (all.size == 1) {
-                promise.trySuccess(results)
-              } else {
-                next(all.tail)
-              }
+            results = results ++ value
+            if (all.size == 1) {
+              promise.trySuccess(results)
+            } else {
+              next(all.tail)
+            }
         }
       }
     }
@@ -194,11 +194,11 @@ object AsyncUtils {
         head.andThen {
           case Failure(e) => promise.tryFailure(e)
           case Success(_) =>
-              if (futures.size == 1) {
-                promise.trySuccess(())
-              } else {
-                next(futures.tail)
-              }
+            if (futures.size == 1) {
+              promise.trySuccess(())
+            } else {
+              next(futures.tail)
+            }
         }
       }
     }
@@ -219,11 +219,11 @@ object AsyncUtils {
         f(head).andThen {
           case Failure(e) => promise.tryFailure(e)
           case Success(_) =>
-              if (all.size == 1) {
-                promise.trySuccess(())
-              } else {
-                next(all.tail)
-              }
+            if (all.size == 1) {
+              promise.trySuccess(())
+            } else {
+              next(all.tail)
+            }
         }
       }
     }
@@ -244,12 +244,12 @@ object AsyncUtils {
         head(latest).andThen {
           case Failure(e) => promise.tryFailure(e)
           case Success(l) =>
-              latest = l
-              if (futures.size == 1) {
-                promise.trySuccess(latest)
-              } else {
-                next(futures.tail)
-              }
+            latest = l
+            if (futures.size == 1) {
+              promise.trySuccess(latest)
+            } else {
+              next(futures.tail)
+            }
         }
       }
     }
@@ -272,12 +272,12 @@ object AsyncUtils {
         f(head, latest).andThen {
           case Failure(e) => promise.tryFailure(e)
           case Success(l) =>
-              latest = l
-              if (all.size == 1) {
-                promise.trySuccess(latest)
-              } else {
-                next(all.tail)
-              }
+            latest = l
+            if (all.size == 1) {
+              promise.trySuccess(latest)
+            } else {
+              next(all.tail)
+            }
         }
       }
     }
@@ -301,12 +301,12 @@ object AsyncUtils {
           case Failure(e)            => promise.tryFailure(e)
           case Success(Left(err))    => promise.trySuccess(err.left)
           case Success(Right(value)) =>
-              latest = value
-              if (futures.size == 1) {
-                promise.trySuccess(latest.right)
-              } else {
-                next(futures.tail)
-              }
+            latest = value
+            if (futures.size == 1) {
+              promise.trySuccess(latest.right)
+            } else {
+              next(futures.tail)
+            }
         }
       }
     }
@@ -330,12 +330,12 @@ object AsyncUtils {
           case Failure(e)            => promise.tryFailure(e)
           case Success(Left(err))    => promise.trySuccess(err.left)
           case Success(Right(value)) =>
-              latest = value
-              if (all.size == 1) {
-                promise.trySuccess(latest.right)
-              } else {
-                next(all.tail)
-              }
+            latest = value
+            if (all.size == 1) {
+              promise.trySuccess(latest.right)
+            } else {
+              next(all.tail)
+            }
         }
       }
     }

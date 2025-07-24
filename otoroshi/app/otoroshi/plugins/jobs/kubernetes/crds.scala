@@ -175,9 +175,9 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         watchCommand.set(false)
         lastWatchStopped.set(true)
       }
-      val conf         = KubernetesConfig.theConfig(ctx)
-      val client       = new KubernetesClient(conf, env)
-      val source       = Source
+      val conf                       = KubernetesConfig.theConfig(ctx)
+      val client                     = new KubernetesClient(conf, env)
+      val source                     = Source
         .future(getNamespaces(client, conf))
         .flatMapConcat { nses =>
           client
@@ -369,9 +369,9 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       .filter(e => metaExtr(e).get("otoroshi-provider").contains("kubernetes-crds"))
       .find(e => metaExtr(e).get("kubernetes-path").contains(res.path))
     (existingById, existingKubePath) match {
-      case (None, existingKube)                             => existingKube
-      case (Some(existing), None)                           => Some(existing)
-      case (Some(s1), Some(s2)) =>
+      case (None, existingKube)   => existingKube
+      case (Some(existing), None) => Some(existing)
+      case (Some(s1), Some(s2))   =>
         if (idExtr(s1) == idExtr(s2)) {
           Some(s1)
         } else {
@@ -696,9 +696,10 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       certs: Seq[Cert]
   ): Option[Cert] = {
     certs
-        //.find(c => c.id == id)
-        .filter(_.entityMetadata.get("otoroshi-provider").contains("kubernetes-crds"))
-        .filter(_.entityMetadata.get("csr").contains(csrJson.stringify)).find(c => caOpt.map(_.id) == c.caRef)
+      //.find(c => c.id == id)
+      .filter(_.entityMetadata.get("otoroshi-provider").contains("kubernetes-crds"))
+      .filter(_.entityMetadata.get("csr").contains(csrJson.stringify))
+      .find(c => caOpt.map(_.id) == c.caRef)
   }
 
   private[kubernetes] def customizeCert(
@@ -765,7 +766,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
               case None     => None
               case Some(dn) =>
                 DynamicSSLEngineProvider.certificates.find { case (_, cert) =>
-                  cert.id == dn || cert.certificate.exists(c => DN(c.getSubjectX500Principal.getName).isEqualsTo(DN(dn)))
+                  cert.id == dn || cert.certificate
+                    .exists(c => DN(c.getSubjectX500Principal.getName).isEqualsTo(DN(dn)))
                 }
             }
             val maybeCert = foundACertWithSameIdAndCsr(id, csrJson, caOpt.map(_._2), certs)
@@ -1220,10 +1222,10 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     )
   }
   def crdsFetchApiKeys(
-                          secrets: Seq[KubernetesSecret],
-                          apikeys: Seq[ApiKey],
-                          registerApkToExport: (String, String, ApiKey) => Unit,
-                          conf: KubernetesConfig
+      secrets: Seq[KubernetesSecret],
+      apikeys: Seq[ApiKey],
+      registerApkToExport: (String, String, ApiKey) => Unit,
+      conf: KubernetesConfig
   ): Future[Seq[OtoResHolder[ApiKey]]] = {
     val otoApikeySecrets = secrets.filter(_.theType == "otoroshi.io/apikey-secret")
     client
@@ -1414,11 +1416,11 @@ object KubernetesCRDsJob {
   }
 
   def context(
-                 conf: KubernetesConfig,
-                 attrs: TypedMap,
-                 clientSupport: ClientSupport,
-                 registerApkToExport: (String, String, ApiKey) => Unit,
-                 registerCertToExport: (String, String, Cert) => Unit
+      conf: KubernetesConfig,
+      attrs: TypedMap,
+      clientSupport: ClientSupport,
+      registerApkToExport: (String, String, ApiKey) => Unit,
+      registerCertToExport: (String, String, Cert) => Unit
   )(implicit env: Env, ec: ExecutionContext): Future[CRDContext] = {
     val useProxyState = conf.useProxyState
     for {
@@ -1459,7 +1461,8 @@ object KubernetesCRDsJob {
                      .map(r => (r, r.access.allJson()))
                      .groupBy(_._1)
                      .view
-                     .mapValues(_.flatMap(_._2)).toMap
+                     .mapValues(_.flatMap(_._2))
+                     .toMap
                      .vfuture
 
       services           <- clientSupport.client.fetchServices()
@@ -1591,23 +1594,24 @@ object KubernetesCRDsJob {
           compareAndSave(ctx.kubernetes.apiKeys)(ctx.otoroshi.apiKeys, _.clientId, _.save()) ++
           compareAndSave(ctx.kubernetes.routes)(ctx.otoroshi.routes, _.id, _.save()) ++
           compareAndSave(ctx.kubernetes.routesCompositions)(ctx.otoroshi.routeCompositions, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.backends)(ctx.otoroshi.backends, _.id, _.save()) ++ ctx.kubernetes.extRes.flatMap { case (resource, values) =>
-          compareAndSave(values)(
-            ctx.otoroshi.extRes.apply(resource),
-            v => v.select("id").asString,
-            v =>
-              resource.access
-                  .create(
-                    resource.version.name,
-                    resource.singularName,
-                    v.select("id").asOptString,
-                    v,
-                    WriteAction.Update,
-                    None
-                  )
-                  .map(_.isRight)
-          )
-        }
+          compareAndSave(ctx.kubernetes.backends)(ctx.otoroshi.backends, _.id, _.save()) ++ ctx.kubernetes.extRes
+            .flatMap { case (resource, values) =>
+              compareAndSave(values)(
+                ctx.otoroshi.extRes.apply(resource),
+                v => v.select("id").asString,
+                v =>
+                  resource.access
+                    .create(
+                      resource.version.name,
+                      resource.singularName,
+                      v.select("id").asOptString,
+                      v,
+                      WriteAction.Update,
+                      None
+                    )
+                    .map(_.isRight)
+              )
+            }
       ).toList
       logger.info(s"Will now sync ${entities.size} entities !")
       Source(entities)
@@ -1768,8 +1772,8 @@ object KubernetesCRDsJob {
           .applyOn(env.datastores.backendsDataStore.deleteByIds)
 
       _ <-
-        Source(ctx.otoroshi.extRes.map {
-          case (resource, values) => () =>
+        Source(ctx.otoroshi.extRes.map { case (resource, values) =>
+          () =>
             values
               .filter(sg =>
                 sg.select("metadata").as[Map[String, String]].get("otoroshi-provider").contains("kubernetes-crds")
@@ -1945,7 +1949,8 @@ object KubernetesCRDsJob {
                 val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
                 envs.map(v => (v \ "valueFrom" \ "secretKeyRef" \ "name").as[String])
               }
-              .toSeq.distinct
+              .toSeq
+              .distinct
 
             val updatedSecrets = _updatedSecrets.map { case (ns, n) => s"$ns/$n" }.toSet
 
@@ -1988,7 +1993,7 @@ object KubernetesCRDsJob {
       updatedSecretsRef: AtomicReference[Seq[(String, String)]]
   )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat: Materializer = env.otoroshiMaterializer
-    val lastSecrets  = updatedSecretsRef.get().map(t => t._1 + "/" + t._2)
+    val lastSecrets                = updatedSecretsRef.get().map(t => t._1 + "/" + t._2)
     clientSupport.client.fetchSecrets().flatMap { allSecretsRaw =>
       val allSecrets = allSecretsRaw.filter(_.metaId.isDefined).map(_.path)
       val outOfSync  = allSecrets.filterNot(v => lastSecrets.contains(v))

@@ -4,8 +4,7 @@ import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import kaleidoscope._
-//import soundness.*
+import kaleidoscope.*
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.models.NgTarget
@@ -49,7 +48,8 @@ object EurekaInstance {
       hostname = instance.hostname,
       tls = instance.isSecured,
       ipAddress = Some(instance.ipAddr),
-      port = if (instance.isSecured) instance.securePort else instance.port)
+      port = if (instance.isSecured) instance.securePort else instance.port
+    )
   }
 
   val format: Format[EurekaInstance] = new Format[EurekaInstance] {
@@ -492,29 +492,29 @@ class EurekaServerSink extends NgBackendCall {
     val config   = ctx.cachedConfig(internalName)(EurekaServerConfig.format).getOrElse(EurekaServerConfig())
 
     (ctx.request.method, ctx.request.path) match {
-      case ("PUT", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)/status")   =>
-        takeInstanceOutOfService(pluginId, appId, instanceId, ctx.rawRequest.getQueryString("value"))
-      case ("PUT", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)/metadata") =>
-        putMetadata(pluginId, appId, instanceId, ctx.request.queryString)
-      case ("GET", r"/eureka/apps/$appId@(.*)")                           =>
-        if (s"$appId".isEmpty)
+      case ("PUT", r"/eureka/apps/$appId(.*)/$instanceId(.*)/status")   =>
+        takeInstanceOutOfService(pluginId, appId.s, instanceId.s, ctx.rawRequest.getQueryString("value"))
+      case ("PUT", r"/eureka/apps/$appId(.*)/$instanceId(.*)/metadata") =>
+        putMetadata(pluginId, appId.s, instanceId.s, ctx.request.queryString)
+      case ("GET", r"/eureka/apps/$appId(.*)")                           =>
+        if (s"${appId.s}".isEmpty)
           getApps(pluginId)
         else
-          getAppWithId(pluginId, appId)
-      case ("GET", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)")          =>
-        getAppWithIdAndInstanceId(pluginId, appId, instanceId)
-      case ("GET", r"/eureka/instances/$instanceId@(.*)")                 =>
-        getInstanceWithId(pluginId, instanceId)
-      case ("GET", r"/eureka/vips/$vipAddress@(.*)")                      =>
-        getInstancesUnderVipAddress(pluginId, vipAddress)
-      case ("GET", r"/eureka/svips/$svipAddress@(.*)")                    =>
-        getInstancesUnderSecureVipAddress(pluginId, svipAddress)
-      case ("POST", r"/eureka/apps/$appId@(.*)")                          =>
-        createApp(pluginId, appId, ctx.request.hasBody, body, config.evictionTimeout)
-      case ("DELETE", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)")       =>
-        deleteAppWithId(pluginId, appId, instanceId)
-      case ("PUT", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)")          =>
-        checkHeartbeat(pluginId, appId, instanceId, config.evictionTimeout)
+          getAppWithId(pluginId, appId.s)
+      case ("GET", r"/eureka/apps/$appId(.*)/$instanceId(.*)") =>
+        getAppWithIdAndInstanceId(pluginId, appId.s, instanceId.s)
+      case ("GET", r"/eureka/instances/$instanceId(.*)") =>
+        getInstanceWithId(pluginId, instanceId.s)
+      case ("GET", r"/eureka/vips/$vipAddress(.*)") =>
+        getInstancesUnderVipAddress(pluginId, vipAddress.s)
+      case ("GET", r"/eureka/svips/$svipAddress(.*)") =>
+        getInstancesUnderSecureVipAddress(pluginId, svipAddress.s)
+      case ("POST", r"/eureka/apps/$appId(.*)")                          =>
+        createApp(pluginId, appId.s, ctx.request.hasBody, body, config.evictionTimeout)
+      case ("DELETE", r"/eureka/apps/$appId(.*)/$instanceId(.*)")       =>
+        deleteAppWithId(pluginId, appId.s, instanceId.s)
+      case ("PUT", r"/eureka/apps/$appId(.*)/$instanceId(.*)") =>
+        checkHeartbeat(pluginId, appId.s, instanceId.s, config.evictionTimeout)
       case _                                                              => notFoundResponse()
     }
   }
@@ -708,7 +708,7 @@ class ExternalEurekaTarget extends NgPreRouting {
                   .get()
                   .flatMap { res =>
                     if (res.status == 200) {
-                      val instances = (res.body.parseJson
+                      val instances = (res.body(play.api.libs.ws.DefaultBodyReadables.readableAsString).parseJson
                         .as[JsObject] \ "application" \ "instance")
                         .as[JsArray]
                         .value

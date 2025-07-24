@@ -84,39 +84,39 @@ class InitialCertsJob extends Job {
   )(implicit env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
     found.filter(_.enrich().valid) match {
       case None            =>
-          val query = GenCsrQuery(
-            hosts = hosts,
-            subject = subject.some,
-            ca = ca,
-            client = client,
-            duration = duration,
-            includeAIA = true
-          )
-          (from match {
-            case None if ca    => env.pki.genSelfSignedCA(query)
-            case Some(c) if ca =>
-              env.pki.genSubCA(query, c.certificates.head, c.certificates.tail, c.cryptoKeyPair.getPrivate)
-            case Some(c)       => env.pki.genCert(query, c.certificates.head, c.certificates.tail, c.cryptoKeyPair.getPrivate)
-            case _             => Left("bad configuration").future
-          }).flatMap {
-            case Left(error)     =>
-              logger.error(s"error while generating $name: $error")
-              None.future
-            case Right(response) =>
-                val cert = response.toCert
-                .enrich()
-                .copy(
-                  id = id,
-                  autoRenew = true,
-                  ca = ca,
-                  client = client,
-                  keypair = keypair,
-                  name = name,
-                  description = description,
-                  exposed = true
-                )
-                cert.save().map(_ => cert.some)
-          }
+        val query = GenCsrQuery(
+          hosts = hosts,
+          subject = subject.some,
+          ca = ca,
+          client = client,
+          duration = duration,
+          includeAIA = true
+        )
+        (from match {
+          case None if ca    => env.pki.genSelfSignedCA(query)
+          case Some(c) if ca =>
+            env.pki.genSubCA(query, c.certificates.head, c.certificates.tail, c.cryptoKeyPair.getPrivate)
+          case Some(c)       => env.pki.genCert(query, c.certificates.head, c.certificates.tail, c.cryptoKeyPair.getPrivate)
+          case _             => Left("bad configuration").future
+        }).flatMap {
+          case Left(error)     =>
+            logger.error(s"error while generating $name: $error")
+            None.future
+          case Right(response) =>
+            val cert = response.toCert
+              .enrich()
+              .copy(
+                id = id,
+                autoRenew = true,
+                ca = ca,
+                client = client,
+                keypair = keypair,
+                name = name,
+                description = description,
+                exposed = true
+              )
+            cert.save().map(_ => cert.some)
+        }
       case found @ Some(_) => found.future
     }
   }

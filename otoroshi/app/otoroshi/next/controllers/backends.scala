@@ -20,7 +20,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
     with CrudControllerHelper[StoredNgBackend, JsValue] {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-backends-api")
 
@@ -84,22 +84,22 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_STORED_NG_BACKEND",
-              message = "User created a backend",
-              metadata = entity.json.as[JsObject],
-              alert = "StoredNgBackendCreatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_STORED_NG_BACKEND",
+            message = "User created a backend",
+            metadata = entity.json.as[JsObject],
+            alert = "StoredNgBackendCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "backend not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "backend not stored ...")
           )
+        )
     }
   }
 
@@ -109,22 +109,22 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_STORED_NG_BACKEND",
-              message = "User updated a backend",
-              metadata = entity.json.as[JsObject],
-              alert = "StoredNgBackendUpdatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_STORED_NG_BACKEND",
+            message = "User updated a backend",
+            metadata = entity.json.as[JsObject],
+            alert = "StoredNgBackendUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "backend not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "backend not stored ...")
           )
+        )
     }
   }
 
@@ -134,21 +134,21 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.delete(id).map {
       case true  =>
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_STORED_NG_BACKEND",
-              message = "User deleted a backend",
-              metadata = Json.obj("StoredNgBackendId" -> id),
-              alert = "StoredNgBackendDeletedAlert"
-            )
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_STORED_NG_BACKEND",
+            message = "User deleted a backend",
+            metadata = Json.obj("StoredNgBackendId" -> id),
+            alert = "StoredNgBackendDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "backend not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "backend not deleted ...")
           )
+        )
     }
   }
 

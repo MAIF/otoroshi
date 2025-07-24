@@ -27,7 +27,7 @@ import play.api.{Configuration, Environment, Logger}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
-import otoroshi.storage.{ OptimizedRedisLike, RedisLike }
+import otoroshi.storage.{OptimizedRedisLike, RedisLike}
 
 class InMemoryDataStores(
     configuration: Configuration,
@@ -41,7 +41,7 @@ class InMemoryDataStores(
 
   lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.inmemory.windowSize").getOrElse(99)
 
-  lazy val actorSystem: ActorSystem =
+  lazy val actorSystem: ActorSystem                                       =
     ActorSystem(
       "otoroshi-inmemory-system",
       configuration
@@ -49,11 +49,11 @@ class InMemoryDataStores(
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  val materializer: Materializer     = Materializer(actorSystem)
-  val _optimized: Boolean       = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.optimized").getOrElse(false)
-  val _modern: Boolean          = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.modern").getOrElse(true)
+  val materializer: Materializer                                          = Materializer(actorSystem)
+  val _optimized: Boolean                                                 = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.optimized").getOrElse(false)
+  val _modern: Boolean                                                    = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.modern").getOrElse(true)
   // lazy val redis       = new SwappableInMemoryRedis(_optimized, env, actorSystem)
-  lazy val swredis: OptimizedRedisLike with RedisLike with SwappableRedis     = if (_modern) {
+  lazy val swredis: OptimizedRedisLike with RedisLike with SwappableRedis = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {
     new SwappableInMemoryRedis(_optimized, env, actorSystem)
@@ -204,44 +204,44 @@ class InMemoryDataStores(
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
         case keys                 =>
-            Future.sequence(
-              keys
-                .filterNot { key =>
-                  Cluster.filteredKey(key, env)
-                //key == s"${env.storageRoot}:cluster:" ||
-                //key == s"${env.storageRoot}:events:audit" ||
-                //key == s"${env.storageRoot}:events:alerts" ||
-                //key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                //key.startsWith(s"${env.storageRoot}:admins:") ||
-                //key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                //// key.startsWith(s"${env.storageRoot}:users:") ||
-                //key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
-                //key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                //key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                //key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                //key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                //(key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                //(key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+          Future.sequence(
+            keys
+              .filterNot { key =>
+                Cluster.filteredKey(key, env)
+              //key == s"${env.storageRoot}:cluster:" ||
+              //key == s"${env.storageRoot}:events:audit" ||
+              //key == s"${env.storageRoot}:events:alerts" ||
+              //key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+              //key.startsWith(s"${env.storageRoot}:admins:") ||
+              //key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+              //// key.startsWith(s"${env.storageRoot}:users:") ||
+              //key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
+              //key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+              //key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+              //key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+              //key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+              //(key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+              //(key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+              }
+              .map { key =>
+                redis.rawGet(key).flatMap {
+                  case None        => FastFuture.successful(JsNull)
+                  case Some(value) =>
+                    toJson(value) match {
+                      case (_, JsNull)       => FastFuture.successful(JsNull)
+                      case (what, jsonValue) =>
+                        redis.pttl(key).map { ttl =>
+                          Json.obj(
+                            "k" -> key,
+                            "v" -> jsonValue,
+                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                            "w" -> what
+                          )
+                        }
+                    }
                 }
-                .map { key =>
-                  redis.rawGet(key).flatMap {
-                    case None        => FastFuture.successful(JsNull)
-                    case Some(value) =>
-                        toJson(value) match {
-                        case (_, JsNull)       => FastFuture.successful(JsNull)
-                        case (what, jsonValue) =>
-                          redis.pttl(key).map { ttl =>
-                            Json.obj(
-                              "k" -> key,
-                              "v" -> jsonValue,
-                              "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                              "w" -> what
-                            )
-                          }
-                      }
-                  }
-                }
-            )
+              }
+          )
       }
       .map(_.filterNot(_ == JsNull))
       .mapConcat(_.toList)
@@ -249,9 +249,9 @@ class InMemoryDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -261,27 +261,27 @@ class InMemoryDataStores(
         .mapAsync(1) {
           case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
           case keys                 =>
-              Source(keys.toList)
-                .mapAsync(1) { key =>
-                  redis.rawGet(key).flatMap {
-                    case None        => FastFuture.successful(JsNull)
-                    case Some(value) =>
-                        toJson(value) match {
-                        case (_, JsNull)       => FastFuture.successful(JsNull)
-                        case (what, jsonValue) =>
-                          redis.pttl(key).map { ttl =>
-                            Json.obj(
-                              "k" -> key,
-                              "v" -> jsonValue,
-                              "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                              "w" -> what
-                            )
-                          }
-                      }
-                  }
+            Source(keys.toList)
+              .mapAsync(1) { key =>
+                redis.rawGet(key).flatMap {
+                  case None        => FastFuture.successful(JsNull)
+                  case Some(value) =>
+                    toJson(value) match {
+                      case (_, JsNull)       => FastFuture.successful(JsNull)
+                      case (what, jsonValue) =>
+                        redis.pttl(key).map { ttl =>
+                          Json.obj(
+                            "k" -> key,
+                            "v" -> jsonValue,
+                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                            "w" -> what
+                          )
+                        }
+                    }
                 }
-                .runWith(Sink.seq)
-                .map(_.filterNot(_ == JsNull))
+              }
+              .runWith(Sink.seq)
+              .map(_.filterNot(_ == JsNull))
         }
         .mapConcat(_.toList)
     )
@@ -289,9 +289,9 @@ class InMemoryDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")
@@ -331,22 +331,22 @@ class InMemoryDataStores(
     import scala.jdk.CollectionConverters._
 
     value match {
-      case str: String                                                     => ("string", JsString(str))
-      case str: ByteString                                                 => ("string", JsString(str.utf8String))
-      case lng: Long                                                       => ("string", JsString(lng.toString))
+      case str: String                                                                => ("string", JsString(str))
+      case str: ByteString                                                            => ("string", JsString(str.utf8String))
+      case lng: Long                                                                  => ("string", JsString(lng.toString))
       case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] @unchecked =>
         ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case map: TrieMap[String, ByteString]                                @unchecked =>
+      case map: TrieMap[String, ByteString] @unchecked                                =>
         ("hash", JsObject(map.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString]     @unchecked =>
+      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString] @unchecked     =>
         ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case list: scala.collection.mutable.ListBuffer[ByteString]           @unchecked =>
+      case list: scala.collection.mutable.ListBuffer[ByteString] @unchecked           =>
         ("list", JsArray(list.toSeq.map(a => JsString(a.utf8String))))
-      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString]       @unchecked =>
+      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString] @unchecked       =>
         ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case set: scala.collection.mutable.HashSet[ByteString]               @unchecked =>
+      case set: scala.collection.mutable.HashSet[ByteString] @unchecked               =>
         ("set", JsArray(set.toSeq.map(a => JsString(a.utf8String))))
-      case _                                                               => ("none", JsNull)
+      case _                                                                          => ("none", JsNull)
     }
   }
 }

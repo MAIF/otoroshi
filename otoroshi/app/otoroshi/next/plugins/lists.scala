@@ -52,34 +52,34 @@ class NgGenericAllowedList extends NgAccessValidator {
       config.expression match {
         case None             => NgAccess.NgAllowed.vfuture
         case Some(expression) =>
-            val value = GlobalExpressionLanguage.apply(
-              value = expression,
-              req = ctx.request.some,
-              service = None,
-              route = ctx.route.some,
-              apiKey = ctx.apikey,
-              user = ctx.user,
-              context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-              attrs = ctx.attrs,
-              env = env
-            )
-            if (config.values.contains(value)) {
-              NgAccess.NgAllowed.vfuture
-            } else {
-              Errors
-                .craftResponseResult(
-                  "forbidden",
-                  Results.Forbidden,
-                  ctx.request,
-                  None,
-                  Some("errors.unallowed.expression"),
-                  duration = ctx.report.getDurationNow(),
-                  overhead = ctx.report.getOverheadInNow(),
-                  attrs = ctx.attrs,
-                  maybeRoute = ctx.route.some
-                )
-                .map(r => NgAccess.NgDenied(r))
-            }
+          val value = GlobalExpressionLanguage.apply(
+            value = expression,
+            req = ctx.request.some,
+            service = None,
+            route = ctx.route.some,
+            apiKey = ctx.apikey,
+            user = ctx.user,
+            context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+            attrs = ctx.attrs,
+            env = env
+          )
+          if (config.values.contains(value)) {
+            NgAccess.NgAllowed.vfuture
+          } else {
+            Errors
+              .craftResponseResult(
+                "forbidden",
+                Results.Forbidden,
+                ctx.request,
+                None,
+                Some("errors.unallowed.expression"),
+                duration = ctx.report.getDurationNow(),
+                overhead = ctx.report.getOverheadInNow(),
+                attrs = ctx.attrs,
+                maybeRoute = ctx.route.some
+              )
+              .map(r => NgAccess.NgDenied(r))
+          }
       }
     } else {
       Errors
@@ -118,34 +118,34 @@ class NgGenericBlockList extends NgAccessValidator {
       config.expression match {
         case None             => NgAccess.NgAllowed.vfuture
         case Some(expression) =>
-            val value = GlobalExpressionLanguage.apply(
-              value = expression,
-              req = ctx.request.some,
-              service = None,
-              route = ctx.route.some,
-              apiKey = ctx.apikey,
-              user = ctx.user,
-              context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-              attrs = ctx.attrs,
-              env = env
-            )
-            if (!config.values.contains(value)) {
-              NgAccess.NgAllowed.vfuture
-            } else {
-              Errors
-                .craftResponseResult(
-                  "forbidden",
-                  Results.Forbidden,
-                  ctx.request,
-                  None,
-                  Some("errors.blocked.expression"),
-                  duration = ctx.report.getDurationNow(),
-                  overhead = ctx.report.getOverheadInNow(),
-                  attrs = ctx.attrs,
-                  maybeRoute = ctx.route.some
-                )
-                .map(r => NgAccess.NgDenied(r))
-            }
+          val value = GlobalExpressionLanguage.apply(
+            value = expression,
+            req = ctx.request.some,
+            service = None,
+            route = ctx.route.some,
+            apiKey = ctx.apikey,
+            user = ctx.user,
+            context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+            attrs = ctx.attrs,
+            env = env
+          )
+          if (!config.values.contains(value)) {
+            NgAccess.NgAllowed.vfuture
+          } else {
+            Errors
+              .craftResponseResult(
+                "forbidden",
+                Results.Forbidden,
+                ctx.request,
+                None,
+                Some("errors.blocked.expression"),
+                duration = ctx.report.getDurationNow(),
+                overhead = ctx.report.getOverheadInNow(),
+                attrs = ctx.attrs,
+                maybeRoute = ctx.route.some
+              )
+              .map(r => NgAccess.NgDenied(r))
+          }
       }
     } else {
       NgAccess.NgAllowed.vfuture

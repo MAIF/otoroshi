@@ -22,7 +22,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
     with CrudControllerHelper[NgRouteComposition, JsValue] {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-ng-service-api")
 
@@ -89,22 +89,22 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   ): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
     env.datastores.routeCompositionDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_NG_ROUTE_COMPOSITION",
-              message = "User created a route-composition",
-              metadata = entity.json.as[JsObject],
-              alert = "NgRouteCompoisitionCreatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_NG_ROUTE_COMPOSITION",
+            message = "User created a route-composition",
+            metadata = entity.json.as[JsObject],
+            alert = "NgRouteCompoisitionCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "route-composition not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "route-composition not stored ...")
           )
+        )
     }
   }
 
@@ -117,22 +117,22 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   ): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
     env.datastores.routeCompositionDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_NG_ROUTE_COMPOSITION",
-              message = "User updated a route-composition",
-              metadata = entity.json.as[JsObject],
-              alert = "NgRouteCompositionUpdatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_NG_ROUTE_COMPOSITION",
+            message = "User updated a route-composition",
+            metadata = entity.json.as[JsObject],
+            alert = "NgRouteCompositionUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "route-composition not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "route-composition not stored ...")
           )
+        )
     }
   }
 
@@ -145,21 +145,21 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRouteComposition]]] = {
     env.datastores.routeCompositionDataStore.delete(id).map {
       case true  =>
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_NG_ROUTE_COMPOSITION",
-              message = "User deleted a route-composition",
-              metadata = Json.obj("NgRouteCompositionId" -> id),
-              alert = "NgRouteCompositionDeletedAlert"
-            )
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_NG_ROUTE_COMPOSITION",
+            message = "User deleted a route-composition",
+            metadata = Json.obj("NgRouteCompositionId" -> id),
+            alert = "NgRouteCompositionDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "route-composition not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "route-composition not deleted ...")
           )
+        )
     }
   }
 
@@ -190,11 +190,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
           ),
           backend = NgMinimalBackend(
             targets = Seq(
-              NgTarget(
-                id = "target_1",
-                hostname = "request.otoroshi.io",
-                port = 443,
-                tls = true)
+              NgTarget(id = "target_1", hostname = "request.otoroshi.io", port = 443, tls = true)
             ),
             root = "/",
             rewrite = false,

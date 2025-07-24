@@ -3,6 +3,7 @@ package otoroshi.plugins.discovery
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+import kaleidoscope.*
 import otoroshi.env.Env
 import otoroshi.models.Target
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
@@ -60,17 +61,17 @@ object DiscoveryHelper {
     (serviceId match {
       case Some(sid) => unregisterTarget(sid, Target("--"), registrationId, config)
       case None      =>
-          env.datastores.rawDataStore
-            .allMatching(s"${env.storageRoot}:service-discovery:registrations:*:$registrationId")
-            .flatMap { items =>
-              Future
-                .sequence(items.map { item =>
-                  val sid = item.utf8String.parseJson.select("serviceId").asString
-                  env.datastores.rawDataStore
-                    .del(Seq(s"${env.storageRoot}:service-discovery:registrations:$sid:$registrationId"))
-                })
-                .map(_ => true)
-            }
+        env.datastores.rawDataStore
+          .allMatching(s"${env.storageRoot}:service-discovery:registrations:*:$registrationId")
+          .flatMap { items =>
+            Future
+              .sequence(items.map { item =>
+                val sid = item.utf8String.parseJson.select("serviceId").asString
+                env.datastores.rawDataStore
+                  .del(Seq(s"${env.storageRoot}:service-discovery:registrations:$sid:$registrationId"))
+              })
+              .map(_ => true)
+          }
     }).map { _ =>
       Results.Ok(Json.obj("done" -> true))
     }
@@ -88,19 +89,19 @@ object DiscoveryHelper {
           config.registrationTtl.toMillis
         )
       case None      =>
-          env.datastores.rawDataStore
-            .allMatching(s"${env.storageRoot}:service-discovery:registrations:*:$registrationId")
-            .flatMap { items =>
-              Future
-                .sequence(items.map { item =>
-                  val sid = item.utf8String.parseJson.select("serviceId").asString
-                  env.datastores.rawDataStore.pexpire(
-                    s"${env.storageRoot}:service-discovery:registrations:$sid:$registrationId",
-                    config.registrationTtl.toMillis
-                  )
-                })
-                .map(_ => true)
-            }
+        env.datastores.rawDataStore
+          .allMatching(s"${env.storageRoot}:service-discovery:registrations:*:$registrationId")
+          .flatMap { items =>
+            Future
+              .sequence(items.map { item =>
+                val sid = item.utf8String.parseJson.select("serviceId").asString
+                env.datastores.rawDataStore.pexpire(
+                  s"${env.storageRoot}:service-discovery:registrations:$sid:$registrationId",
+                  config.registrationTtl.toMillis
+                )
+              })
+              .map(_ => true)
+          }
     }).map { _ =>
       Results.Ok(Json.obj("done" -> true))
     }
@@ -183,8 +184,7 @@ object DiscoveryHelper {
 // MIGRATED
 class DiscoverySelfRegistrationSink extends RequestSink {
 
-  import kaleidoscope._
-//  import soundness.*
+  import kaleidoscope.*
 
   override def name: String = "Global self registration endpoints (service discovery)"
 
@@ -226,10 +226,10 @@ class DiscoverySelfRegistrationSink extends RequestSink {
     val config = SelfRegistrationConfig.from(ctx)
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             => DiscoveryHelper.register(None, ctx.body, config)
-      case ("delete", r"/discovery/${registrationId}@(.*)/_unregister") =>
-        DiscoveryHelper.unregister(registrationId, None, ctx.request, config)
-      case ("post", r"/discovery/${registrationId}@(.*)/_heartbeat")    =>
-        DiscoveryHelper.heartbeat(registrationId, None, ctx.request, config)
+      case ("delete", r"/discovery/$registrationId(.*)/_unregister") =>
+        DiscoveryHelper.unregister(registrationId.s, None, ctx.request, config)
+      case ("post", r"/discovery/$registrationId(.*)/_heartbeat")    =>
+        DiscoveryHelper.heartbeat(registrationId.s, None, ctx.request, config)
       case _                                                            => Results.NotFound(Json.obj("error" -> "resource not found !")).future
     }
   }
@@ -238,8 +238,7 @@ class DiscoverySelfRegistrationSink extends RequestSink {
 // MIGRATED
 class DiscoverySelfRegistrationTransformer extends RequestTransformer {
 
-  import kaleidoscope._
-//  import soundness.*
+  import kaleidoscope.*
 
   private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
 
@@ -301,19 +300,19 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
     val config = SelfRegistrationConfig.from(ctx)
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             =>
-          awaitingRequests.get(ctx.snowflake).map { promise =>
-            val bodySource: Source[ByteString, _] = Source
-              .future(promise.future)
-              .flatMapConcat(s => s)
-            DiscoveryHelper.register(ctx.descriptor.id.some, bodySource, config).map(r => Left(r))
-          } getOrElse {
-            // no body
-            Results.BadRequest(Json.obj("error" -> "bad_request", "error_description" -> s"no body found !")).leftf
-          }
-      case ("delete", r"/discovery/${registrationId}@(.*)/_unregister") =>
-        DiscoveryHelper.unregister(registrationId, ctx.descriptor.id.some, ctx.request, config).map(r => Left(r))
-      case ("post", r"/discovery/${registrationId}@(.*)/_heartbeat")    =>
-        DiscoveryHelper.heartbeat(registrationId, ctx.descriptor.id.some, ctx.request, config).map(r => Left(r))
+        awaitingRequests.get(ctx.snowflake).map { promise =>
+          val bodySource: Source[ByteString, _] = Source
+            .future(promise.future)
+            .flatMapConcat(s => s)
+          DiscoveryHelper.register(ctx.descriptor.id.some, bodySource, config).map(r => Left(r))
+        } getOrElse {
+          // no body
+          Results.BadRequest(Json.obj("error" -> "bad_request", "error_description" -> s"no body found !")).leftf
+        }
+      case ("delete", r"/discovery/$registrationId(.*)/_unregister") =>
+        DiscoveryHelper.unregister(registrationId.s, ctx.descriptor.id.some, ctx.request, config).map(r => Left(r))
+      case ("post", r"/discovery/$registrationId(.*)/_heartbeat")    =>
+        DiscoveryHelper.heartbeat(registrationId.s, ctx.descriptor.id.some, ctx.request, config).map(r => Left(r))
       case _                                                            => Right(ctx.otoroshiRequest).future
     }
   }
@@ -360,22 +359,22 @@ class DiscoveryTargetsSelector extends PreRouting {
     DiscoveryHelper.getTargetsFor(ctx.descriptor.id, config).map {
       case targets if targets.isEmpty => ()
       case _targets                   =>
-          val reqNumber            = ctx.attrs.get(otoroshi.plugins.Keys.RequestNumberKey).getOrElse(0)
-          val trackingId           = ctx.attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse("none")
-          val targets: Seq[Target] = _targets
-            .map(_._2)
-            .filter(_.predicate.matches(reqNumber.toString, ctx.request, ctx.attrs))
-            .flatMap(t => Seq.fill(t.weight)(t))
-          val target               = ctx.descriptor.targetsLoadBalancing
-            .select(
-              reqNumber.toString,
-              trackingId,
-              ctx.request,
-              targets,
-              ctx.descriptor.id,
-              1
-            )
-          ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetKey -> target)
+        val reqNumber            = ctx.attrs.get(otoroshi.plugins.Keys.RequestNumberKey).getOrElse(0)
+        val trackingId           = ctx.attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse("none")
+        val targets: Seq[Target] = _targets
+          .map(_._2)
+          .filter(_.predicate.matches(reqNumber.toString, ctx.request, ctx.attrs))
+          .flatMap(t => Seq.fill(t.weight)(t))
+        val target               = ctx.descriptor.targetsLoadBalancing
+          .select(
+            reqNumber.toString,
+            trackingId,
+            ctx.request,
+            targets,
+            ctx.descriptor.id,
+            1
+          )
+        ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetKey -> target)
     }
   }
 }
@@ -407,12 +406,11 @@ trait DiscoveryJob extends Job {
       newTargets <- fetchAllTargets(ctx, config)
     } yield {
       allTargets.foreach { case (did @ DiscoveryJobServiceId(id), targets) =>
-        targets.foreach {
-          case (drid @ DiscoveryJobRegistrationId(rid), target) =>
-              val newts = newTargets.getOrElse(did, Seq.empty)
-              if (!newts.contains((drid, target))) {
-                DiscoveryHelper.unregisterTarget(id, target, rid, config)
-              }
+        targets.foreach { case (drid @ DiscoveryJobRegistrationId(rid), target) =>
+          val newts = newTargets.getOrElse(did, Seq.empty)
+          if (!newts.contains((drid, target))) {
+            DiscoveryHelper.unregisterTarget(id, target, rid, config)
+          }
         }
       }
       newTargets.map { case (DiscoveryJobServiceId(id), targets) =>

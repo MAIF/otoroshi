@@ -5,7 +5,12 @@ import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer._
-import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringDeserializer, StringSerializer}
+import org.apache.kafka.common.serialization.{
+  ByteArrayDeserializer,
+  ByteArraySerializer,
+  StringDeserializer,
+  StringSerializer
+}
 import org.apache.pekko.Done
 import org.apache.pekko.actor.{Actor, ActorSystem, Props}
 import org.apache.pekko.http.scaladsl.util.FastFuture._

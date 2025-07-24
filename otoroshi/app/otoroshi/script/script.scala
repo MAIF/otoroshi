@@ -96,10 +96,10 @@ trait NamedPlugin { self =>
   def defaultConfig: Option[JsObject]   = None
   def configRoot: Option[String]        =
     defaultConfig match {
-      case None                                   => None
-      case Some(config) if config.value.size > 1  => None
-      case Some(config) if config.value.isEmpty   => None
-      case Some(config) => config.value.headOption.map(_._1)
+      case None                                  => None
+      case Some(config) if config.value.size > 1 => None
+      case Some(config) if config.value.isEmpty  => None
+      case Some(config)                          => config.value.headOption.map(_._1)
     }
   def configSchema: Option[JsObject]    =
     defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
@@ -136,10 +136,21 @@ trait NamedPlugin { self =>
               case ("mtls", a @ JsObject(_))       => genSchema(a, prefix + "mtls.")
               case ("filter", a @ JsObject(_))     => genSchema(a, prefix + "filter.")
               case ("not", a @ JsObject(_))        => genSchema(a, prefix + "not.")
-              case ("mtlsConfig", JsBoolean(_))    => Json.obj(prefix + "mtlsConfig" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + "mtlsConfig"))))
-              case ("mtls", JsBoolean(_))          => Json.obj(prefix + "mtls" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + "mtls"))))
-              case ("filter", JsBoolean(_))        => Json.obj(prefix + "filter" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + "filter"))))
-              case ("not", JsBoolean(_))           => Json.obj(prefix + "not" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + "not"))))
+              case ("mtlsConfig", JsBoolean(_))    =>
+                Json.obj(
+                  prefix + "mtlsConfig" -> Json
+                    .obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + "mtlsConfig")))
+                )
+              case ("mtls", JsBoolean(_))          =>
+                Json.obj(
+                  prefix + "mtls" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + "mtls")))
+                )
+              case ("filter", JsBoolean(_))        =>
+                Json.obj(
+                  prefix + "filter" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + "filter")))
+                )
+              case ("not", JsBoolean(_))           =>
+                Json.obj(prefix + "not" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + "not"))))
               case (key, JsObject(_))              =>
                 Json.obj(prefix + key -> Json.obj("type" -> "object", "props" -> Json.obj("label" -> (prefix + key))))
               case (key, JsNull)                   => Json.obj()
@@ -741,7 +752,7 @@ case class ScriptsState(compiling: Boolean, initialized: Boolean) {
 class ScriptManager(env: Env) {
 
   private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  private implicit val _env: Env = env
+  private implicit val _env: Env            = env
 
   private val cpScriptExec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   private val logger       = Logger("otoroshi-script-manager")
@@ -922,67 +933,69 @@ class ScriptManager(env: Env) {
 
         val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
           scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala)
-            .filterNot(predicate)
-            .map(_.getName)
-            .toSeq
+          .filterNot(predicate)
+          .map(_.getName)
+          .toSeq
 
         val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala)
-            .filterNot(predicate)
-            .map(_.getName)
-            .toSeq
+          .filterNot(predicate)
+          .map(_.getName)
+          .toSeq
 
         val reqHandlers: Seq[String] = (scanResult.getSubclasses(classOf[RequestHandler].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestHandler].getName).asScala)
           .filterNot(predicate)
           .map(_.getName)
-            .toSeq
+          .toSeq
 
         val tunnelHandlers: Seq[String] = (scanResult.getSubclasses(classOf[NgTunnelHandler].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgTunnelHandler].getName).asScala)
           .filterNot(predicate)
           .map(_.getName)
-            .toSeq
+          .toSeq
 
         val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
           scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
           .filterNot(predicate)
           .map(_.getName)
-            .toSeq
+          .toSeq
 
         val jobNames: Seq[String] = (scanResult.getSubclasses(classOf[Job].getName).asScala ++
           scanResult.getClassesImplementing(classOf[Job].getName).asScala)
           .filterNot(predicate)
           .map(_.getName)
-            .toSeq
+          .toSeq
 
         val customExporters: Seq[String] = (scanResult.getSubclasses(classOf[CustomDataExporter].getName).asScala ++
           scanResult.getClassesImplementing(classOf[CustomDataExporter].getName).asScala)
           .filterNot(predicate)
           .map(_.getName)
-            .toSeq
+          .toSeq
 
         val ngPlugins: Seq[String] =
           (scanResult.getSubclasses(classOf[NgPlugin].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgPlugin].getName).asScala)
             .filterNot(predicate)
             .map(_.getName)
-              .toSeq ++
+            .toSeq ++
           (scanResult.getSubclasses(classOf[NgNamedPlugin].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgNamedPlugin].getName).asScala)
             .filterNot(predicate)
             .map(_.getName)
-              .toSeq
+            .toSeq
 
         val adminExts: Seq[String] = (scanResult.getSubclasses(classOf[AdminExtension].getName).asScala ++
           scanResult.getClassesImplementing(classOf[AdminExtension].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName).toSeq
+          .map(_.getName)
+          .toSeq
 
         val authModuleConfigs: Seq[String] = (scanResult.getSubclasses(classOf[AuthModule].getName).asScala ++
           scanResult.getClassesImplementing(classOf[AuthModule].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName).toSeq
+          .map(_.getName)
+          .toSeq
 
         (
           requestTransformers,
@@ -1530,14 +1543,14 @@ case class Script(
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]   = env.datastores.scriptDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.scriptDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.scriptDataStore.exists(this)
-  def toJson: JsValue                                            = Script.toJson(this)
-  def hash: String                                      = Hashing.sha256().hashString(code, StandardCharsets.UTF_8).toString
-  def json: JsValue                                     = toJson
-  def internalId: String                                = id
-  def theDescription: String                            = desc
-  def theMetadata: Map[String, String]                  = metadata
-  def theName: String                                   = name
-  def theTags: Seq[String]                              = tags
+  def toJson: JsValue                                                    = Script.toJson(this)
+  def hash: String                                                       = Hashing.sha256().hashString(code, StandardCharsets.UTF_8).toString
+  def json: JsValue                                                      = toJson
+  def internalId: String                                                 = id
+  def theDescription: String                                             = desc
+  def theMetadata: Map[String, String]                                   = metadata
+  def theName: String                                                    = name
+  def theTags: Seq[String]                                               = tags
 }
 
 object Script {
@@ -1597,7 +1610,8 @@ object Script {
         logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
         throw e
     }
-  def fromJsonSafe(value: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], Script] = _fmt.reads(value).asEither.left.map(_.toSeq.map(e => (e._1, e._2.toSeq)))
+  def fromJsonSafe(value: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], Script] =
+    _fmt.reads(value).asEither.left.map(_.toSeq.map(e => (e._1, e._2.toSeq)))
 }
 
 trait ScriptDataStore extends BasicStore[Script] {

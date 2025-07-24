@@ -80,22 +80,22 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
     ctx.attrs.get(JwtInjectionKey) match {
       case None            => ctx.otoroshiRequest.right
       case Some(injection) =>
-          ctx.otoroshiRequest
-            .applyOnIf(injection.removeCookies.nonEmpty) { req =>
-              req.copy(cookies = req.cookies.filterNot(c => injection.removeCookies.contains(c.name)))
-            }
-            .applyOnIf(injection.removeHeaders.nonEmpty) { req =>
-              req.copy(headers =
-                req.headers.filterNot(tuple => injection.removeHeaders.map(_.toLowerCase).contains(tuple._1.toLowerCase))
-              )
-            }
-            .applyOnIf(injection.additionalHeaders.nonEmpty) { req =>
-              req.copy(headers = req.headers ++ injection.additionalHeaders)
-            }
-            .applyOnIf(injection.additionalCookies.nonEmpty) { req =>
-              req.copy(cookies = req.cookies ++ injection.additionalCookies.map(t => DefaultWSCookie(t._1, t._2)))
-            }
-            .right
+        ctx.otoroshiRequest
+          .applyOnIf(injection.removeCookies.nonEmpty) { req =>
+            req.copy(cookies = req.cookies.filterNot(c => injection.removeCookies.contains(c.name)))
+          }
+          .applyOnIf(injection.removeHeaders.nonEmpty) { req =>
+            req.copy(headers =
+              req.headers.filterNot(tuple => injection.removeHeaders.map(_.toLowerCase).contains(tuple._1.toLowerCase))
+            )
+          }
+          .applyOnIf(injection.additionalHeaders.nonEmpty) { req =>
+            req.copy(headers = req.headers ++ injection.additionalHeaders)
+          }
+          .applyOnIf(injection.additionalCookies.nonEmpty) { req =>
+            req.copy(cookies = req.cookies ++ injection.additionalCookies.map(t => DefaultWSCookie(t._1, t._2)))
+          }
+          .right
     }
   }
 }
@@ -308,104 +308,108 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
                     .BadRequest(Json.obj("error" -> "bad request"))
                     .left
                 case Some(tokenSigningAlgorithm) =>
-                    val user                   = ctx.user.orElse(ctx.attrs.get(otoroshi.plugins.Keys.UserKey))
-                    val apikey                 = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
-                    val optSub: Option[String] = apikey.map(_.clientName).orElse(user.map(_.email))
+                  val user                   = ctx.user.orElse(ctx.attrs.get(otoroshi.plugins.Keys.UserKey))
+                  val apikey                 = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+                  val optSub: Option[String] = apikey.map(_.clientName).orElse(user.map(_.email))
 
-                    val token = JsObject(
-                      JwtExpressionLanguage
-                        .fromJson(
-                          Json.obj(
-                            "jti" -> IdGenerator.uuid,
-                            "iat" -> Math.floor(System.currentTimeMillis().toDouble / 1000L).toDouble,
-                            "nbf" -> Math.floor(System.currentTimeMillis().toDouble / 1000L).toDouble,
-                            "iss" -> "Otoroshi",
-                            "exp" -> Math.floor((System.currentTimeMillis() + 60000L).toDouble / 1000L).toDouble,
-                            "sub" -> JsString(optSub.getOrElse("anonymous")),
-                            "aud" -> "backend"
-                          ) ++ globalVerifier.strategy.asInstanceOf[DefaultToken].token.as[JsObject],
-                          Some(ctx.request),
-                          None,
-                          ctx.route.some,
-                          apikey,
-                          user,
-                          Map.empty,
-                          ctx.attrs,
-                          env
-                        )
-                        .as[JsObject]
-                        .value
-                        .map { case (key, value) =>
-                          value match {
-                            case JsString(v) if v == "{iat}" =>
-                              (key, JsNumber(Math.floor(System.currentTimeMillis().toDouble / 1000L).toDouble))
-                            case JsString(v) if v == "{nbf}" =>
-                              (key, JsNumber(Math.floor(System.currentTimeMillis().toDouble / 1000L).toDouble))
-                            case JsString(v) if v == "{exp}" =>
-                              (key, JsNumber(Math.floor((System.currentTimeMillis() + 60000L).toDouble / 1000L).toDouble))
-                            case _                           => (key, value.as[JsValue])
-                          }
-                        }
-                    )
-
-                    val headerJson     = Json
-                      .obj("alg" -> tokenSigningAlgorithm.getName, "typ" -> "JWT")
-                      .applyOnWithOpt(globalVerifier.algoSettings.keyId)((h, id) => h ++ Json.obj("kid" -> id))
-                    val header         =
-                      JavaBase64.getUrlEncoder.withoutPadding().encodeToString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
-                    val payload        =
-                      JavaBase64.getUrlEncoder.withoutPadding().encodeToString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
-                    val content        = String.format("%s.%s", header, payload)
-                    val signatureBytes =
-                      tokenSigningAlgorithm.sign(
-                        header.getBytes(StandardCharsets.UTF_8),
-                        payload.getBytes(StandardCharsets.UTF_8)
+                  val token = JsObject(
+                    JwtExpressionLanguage
+                      .fromJson(
+                        Json.obj(
+                          "jti" -> IdGenerator.uuid,
+                          "iat" -> Math.floor(System.currentTimeMillis().toDouble / 1000L).toDouble,
+                          "nbf" -> Math.floor(System.currentTimeMillis().toDouble / 1000L).toDouble,
+                          "iss" -> "Otoroshi",
+                          "exp" -> Math.floor((System.currentTimeMillis() + 60000L).toDouble / 1000L).toDouble,
+                          "sub" -> JsString(optSub.getOrElse("anonymous")),
+                          "aud" -> "backend"
+                        ) ++ globalVerifier.strategy.asInstanceOf[DefaultToken].token.as[JsObject],
+                        Some(ctx.request),
+                        None,
+                        ctx.route.some,
+                        apikey,
+                        user,
+                        Map.empty,
+                        ctx.attrs,
+                        env
                       )
-                    val signature      = JavaBase64.getUrlEncoder.withoutPadding().encodeToString(signatureBytes)
-
-                    val signedToken = s"$content.$signature"
-
-                    val originalToken = JWT.decode(signedToken)
-                    ctx.attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> token)
-
-                    (globalVerifier.source match {
-                      case _: InQueryParam =>
-                        globalVerifier.source.asJwtInjection(originalToken, signedToken).right[Result]
-                      case InHeader(n, _)  =>
-                        val inj = globalVerifier.source.asJwtInjection(originalToken, signedToken)
-                        globalVerifier.source match {
-                          case InHeader(nn, _) if nn == n => inj.right[Result]
-                          case _                          => inj.copy(removeHeaders = Seq(n)).right[Result]
+                      .as[JsObject]
+                      .value
+                      .map { case (key, value) =>
+                        value match {
+                          case JsString(v) if v == "{iat}" =>
+                            (key, JsNumber(Math.floor(System.currentTimeMillis().toDouble / 1000L).toDouble))
+                          case JsString(v) if v == "{nbf}" =>
+                            (key, JsNumber(Math.floor(System.currentTimeMillis().toDouble / 1000L).toDouble))
+                          case JsString(v) if v == "{exp}" =>
+                            (key, JsNumber(Math.floor((System.currentTimeMillis() + 60000L).toDouble / 1000L).toDouble))
+                          case _                           => (key, value.as[JsValue])
                         }
-                      case InCookie(n)     =>
-                        globalVerifier.source
-                          .asJwtInjection(originalToken, signedToken)
-                          .copy(removeCookies = Seq(n))
-                          .right[Result]
-                    }) match {
-                      case Left(result)    => result.left
-                      case Right(newValue) =>
-                        ctx.otoroshiRequest
-                          .applyOnIf(newValue.removeCookies.nonEmpty) { req =>
-                            req.copy(cookies = req.cookies.filterNot(c => newValue.removeCookies.contains(c.name)))
-                          }
-                          .applyOnIf(newValue.removeHeaders.nonEmpty) { req =>
-                            req.copy(headers =
-                              req.headers.filterNot(tuple =>
-                                newValue.removeHeaders.map(_.toLowerCase).contains(tuple._1.toLowerCase)
-                              )
+                      }
+                  )
+
+                  val headerJson     = Json
+                    .obj("alg" -> tokenSigningAlgorithm.getName, "typ" -> "JWT")
+                    .applyOnWithOpt(globalVerifier.algoSettings.keyId)((h, id) => h ++ Json.obj("kid" -> id))
+                  val header         =
+                    JavaBase64.getUrlEncoder
+                      .withoutPadding()
+                      .encodeToString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
+                  val payload        =
+                    JavaBase64.getUrlEncoder
+                      .withoutPadding()
+                      .encodeToString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
+                  val content        = String.format("%s.%s", header, payload)
+                  val signatureBytes =
+                    tokenSigningAlgorithm.sign(
+                      header.getBytes(StandardCharsets.UTF_8),
+                      payload.getBytes(StandardCharsets.UTF_8)
+                    )
+                  val signature      = JavaBase64.getUrlEncoder.withoutPadding().encodeToString(signatureBytes)
+
+                  val signedToken = s"$content.$signature"
+
+                  val originalToken = JWT.decode(signedToken)
+                  ctx.attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> token)
+
+                  (globalVerifier.source match {
+                    case _: InQueryParam =>
+                      globalVerifier.source.asJwtInjection(originalToken, signedToken).right[Result]
+                    case InHeader(n, _)  =>
+                      val inj = globalVerifier.source.asJwtInjection(originalToken, signedToken)
+                      globalVerifier.source match {
+                        case InHeader(nn, _) if nn == n => inj.right[Result]
+                        case _                          => inj.copy(removeHeaders = Seq(n)).right[Result]
+                      }
+                    case InCookie(n)     =>
+                      globalVerifier.source
+                        .asJwtInjection(originalToken, signedToken)
+                        .copy(removeCookies = Seq(n))
+                        .right[Result]
+                  }) match {
+                    case Left(result)    => result.left
+                    case Right(newValue) =>
+                      ctx.otoroshiRequest
+                        .applyOnIf(newValue.removeCookies.nonEmpty) { req =>
+                          req.copy(cookies = req.cookies.filterNot(c => newValue.removeCookies.contains(c.name)))
+                        }
+                        .applyOnIf(newValue.removeHeaders.nonEmpty) { req =>
+                          req.copy(headers =
+                            req.headers.filterNot(tuple =>
+                              newValue.removeHeaders.map(_.toLowerCase).contains(tuple._1.toLowerCase)
                             )
-                          }
-                          .applyOnIf(newValue.additionalHeaders.nonEmpty) { req =>
-                            req.copy(headers = req.headers ++ newValue.additionalHeaders)
-                          }
-                          .applyOnIf(newValue.additionalCookies.nonEmpty) { req =>
-                            req.copy(cookies =
-                              req.cookies ++ newValue.additionalCookies.map(t => DefaultWSCookie(t._1, t._2))
-                            )
-                          }
-                          .right
-                    }
+                          )
+                        }
+                        .applyOnIf(newValue.additionalHeaders.nonEmpty) { req =>
+                          req.copy(headers = req.headers ++ newValue.additionalHeaders)
+                        }
+                        .applyOnIf(newValue.additionalCookies.nonEmpty) { req =>
+                          req.copy(cookies =
+                            req.cookies ++ newValue.additionalCookies.map(t => DefaultWSCookie(t._1, t._2))
+                          )
+                        }
+                        .right
+                  }
               }
             }
         }
@@ -540,9 +544,9 @@ class JweSigner extends NgAccessValidator with NgRequestTransformer {
             val kid = jsonKeypair.select("kid").asOpt[String].orNull
 
             val header = new JWEHeader.Builder(alg, enc)
-                .contentType("JWT")
-                .keyID(kid)
-                .build()
+              .contentType("JWT")
+              .keyID(kid)
+              .build()
 
             val claimsSet = new JWTClaimsSet.Builder()
             claimsSet.issuer(env.Headers.OtoroshiIssuer)

@@ -100,11 +100,11 @@ class NgHasClientCertMatchingApikeyValidator extends NgAccessValidator {
                   case Some(chain) =>
                     chain.headOption match {
                       case Some(cert) =>
-                          if (RegexPool(dn).matches(DN(cert.getIssuerX500Principal.getName).stringify)) {
-                              NgAccess.NgAllowed.vfuture
-                          } else {
-                              forbidden(ctx)
-                          }
+                        if (RegexPool(dn).matches(DN(cert.getIssuerX500Principal.getName).stringify)) {
+                          NgAccess.NgAllowed.vfuture
+                        } else {
+                          forbidden(ctx)
+                        }
                       case None       => forbidden(ctx)
                     }
                   case None        => forbidden(ctx)
@@ -185,25 +185,29 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
     context.request.clientCertificateChain
       .map(
         _.map(cert =>
-          SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectX500Principal.getName), DN(cert.getIssuerX500Principal.getName))
+          SubIss(
+            cert.getSerialNumber.toString(16),
+            DN(cert.getSubjectX500Principal.getName),
+            DN(cert.getIssuerX500Principal.getName)
+          )
         )
       ) match {
       case Some(certs) =>
-          val config = context
-            .cachedConfig(internalName)(NgHasClientCertMatchingValidatorConfig.format)
-            .getOrElse(NgHasClientCertMatchingValidatorConfig())
-          if (
-            certs.exists(cert => config.serialNumbers.contains(cert.sn)) ||
-            certs.exists(cert => config.subjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify))) ||
-            certs.exists(cert => config.issuerDNs.exists(s => RegexPool(s).matches(cert.issuer.stringify))) ||
-            certs
-              .exists(cert => config.regexSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.subject.stringify))) ||
-            certs.exists(cert => config.regexIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.issuer.stringify)))
-          ) {
-            NgAccess.NgAllowed.vfuture
-          } else {
-            forbidden(context)
-          }
+        val config = context
+          .cachedConfig(internalName)(NgHasClientCertMatchingValidatorConfig.format)
+          .getOrElse(NgHasClientCertMatchingValidatorConfig())
+        if (
+          certs.exists(cert => config.serialNumbers.contains(cert.sn)) ||
+          certs.exists(cert => config.subjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify))) ||
+          certs.exists(cert => config.issuerDNs.exists(s => RegexPool(s).matches(cert.issuer.stringify))) ||
+          certs
+            .exists(cert => config.regexSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.subject.stringify))) ||
+          certs.exists(cert => config.regexIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.issuer.stringify)))
+        ) {
+          NgAccess.NgAllowed.vfuture
+        } else {
+          forbidden(context)
+        }
       case _           => forbidden(context)
     }
   }
@@ -289,26 +293,26 @@ class NgClientCertChainHeader extends NgRequestTransformer {
     ctx.request.clientCertificateChain match {
       case None        => Right(ctx.otoroshiRequest).future
       case Some(chain) =>
-          val config   = ctx
-            .cachedConfig(internalName)(NgClientCertChainHeaderConfig.format)
-            .getOrElse(NgClientCertChainHeaderConfig())
-          val pemMap   =
-            if (config.sendPem) Map(config.pemHeaderName -> ctx.request.clientCertChainPemString) else Map.empty
-          val dnsMap   =
-            if (config.sendDns)
-              Map(
-                config.dnsHeaderName -> Json.stringify(
-                  JsArray(chain.map(c => JsString(DN(c.getSubjectX500Principal.getName).stringify)))
-                )
+        val config   = ctx
+          .cachedConfig(internalName)(NgClientCertChainHeaderConfig.format)
+          .getOrElse(NgClientCertChainHeaderConfig())
+        val pemMap   =
+          if (config.sendPem) Map(config.pemHeaderName -> ctx.request.clientCertChainPemString) else Map.empty
+        val dnsMap   =
+          if (config.sendDns)
+            Map(
+              config.dnsHeaderName -> Json.stringify(
+                JsArray(chain.map(c => JsString(DN(c.getSubjectX500Principal.getName).stringify)))
               )
-            else Map.empty
-          val chainMap =
-            if (config.sendChain) Map(config.chainHeaderName -> Json.stringify(jsonChain(chain))) else Map.empty
-          Right(
-            ctx.otoroshiRequest.copy(
-              headers = ctx.otoroshiRequest.headers ++ pemMap ++ dnsMap ++ chainMap
             )
-          ).future
+          else Map.empty
+        val chainMap =
+          if (config.sendChain) Map(config.chainHeaderName -> Json.stringify(jsonChain(chain))) else Map.empty
+        Right(
+          ctx.otoroshiRequest.copy(
+            headers = ctx.otoroshiRequest.headers ++ pemMap ++ dnsMap ++ chainMap
+          )
+        ).future
     }
   }
 }
@@ -375,40 +379,40 @@ class NgCertificateAsApikey extends NgPreRouting {
     ctx.request.clientCertificateChain.flatMap(_.headOption) match {
       case None       => Done.rightf
       case Some(cert) =>
-          val config       =
-            ctx.cachedConfig(internalName)(NgCertificateAsApikeyConfig.format).getOrElse(NgCertificateAsApikeyConfig())
-          val serialNumber = cert.getSerialNumber.toString
-          val subjectDN    = DN(cert.getSubjectX500Principal.getName).stringify
-          val clientId     = JavaBase64.getEncoder.encodeToString((subjectDN + "-" + serialNumber).getBytes)
-          env.datastores.apiKeyDataStore
-            .findById(clientId)
-            .flatMap {
-              case Some(apikey) => apikey.vfuture
-              case None         =>
-                  val apikey = ApiKey(
-                  clientId = clientId,
-                  clientSecret = IdGenerator.token(128),
-                  clientName = s"$subjectDN ($serialNumber)",
-                  authorizedEntities = Seq(RouteIdentifier(ctx.route.id)),
-                  validUntil = Some(new DateTime(cert.getNotAfter)),
-                  readOnly = config.readOnly,
-                  allowClientIdOnly = config.allowClientIdOnly,
-                  throttlingQuota = config.throttlingQuota,
-                  dailyQuota = config.dailyQuota,
-                  monthlyQuota = config.monthlyQuota,
-                  constrainedServicesOnly = config.constrainedServicesOnly,
-                  tags = config.tags,
-                  metadata = config.metadata
-                )
-                  if (env.clusterConfig.mode.isWorker) {
-                  ClusterAgent.clusterSaveApikey(env, apikey)(ec, env.otoroshiMaterializer)
-                }
-                  apikey.save().map(_ => apikey)
-            }
-            .map { apikey =>
-              ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
-              Done.right
-            }
+        val config       =
+          ctx.cachedConfig(internalName)(NgCertificateAsApikeyConfig.format).getOrElse(NgCertificateAsApikeyConfig())
+        val serialNumber = cert.getSerialNumber.toString
+        val subjectDN    = DN(cert.getSubjectX500Principal.getName).stringify
+        val clientId     = JavaBase64.getEncoder.encodeToString((subjectDN + "-" + serialNumber).getBytes)
+        env.datastores.apiKeyDataStore
+          .findById(clientId)
+          .flatMap {
+            case Some(apikey) => apikey.vfuture
+            case None         =>
+              val apikey = ApiKey(
+                clientId = clientId,
+                clientSecret = IdGenerator.token(128),
+                clientName = s"$subjectDN ($serialNumber)",
+                authorizedEntities = Seq(RouteIdentifier(ctx.route.id)),
+                validUntil = Some(new DateTime(cert.getNotAfter)),
+                readOnly = config.readOnly,
+                allowClientIdOnly = config.allowClientIdOnly,
+                throttlingQuota = config.throttlingQuota,
+                dailyQuota = config.dailyQuota,
+                monthlyQuota = config.monthlyQuota,
+                constrainedServicesOnly = config.constrainedServicesOnly,
+                tags = config.tags,
+                metadata = config.metadata
+              )
+              if (env.clusterConfig.mode.isWorker) {
+                ClusterAgent.clusterSaveApikey(env, apikey)(ec, env.otoroshiMaterializer)
+              }
+              apikey.save().map(_ => apikey)
+          }
+          .map { apikey =>
+            ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+            Done.right
+          }
     }
   }
 }
@@ -430,25 +434,26 @@ case class NgHasClientCertMatchingHttpValidatorConfig(
 }
 
 object NgHasClientCertMatchingHttpValidatorConfig {
-  val format: Format[NgHasClientCertMatchingHttpValidatorConfig] = new Format[NgHasClientCertMatchingHttpValidatorConfig] {
-    override def writes(o: NgHasClientCertMatchingHttpValidatorConfig): JsValue             = o.json
-    override def reads(json: JsValue): JsResult[NgHasClientCertMatchingHttpValidatorConfig] = Try {
-      NgHasClientCertMatchingHttpValidatorConfig(
-        url = json.select("url").asString,
-        method = json.select("method").asOpt[String].getOrElse("GET"),
-        timeout = json.select("timeout").asOpt[Long].getOrElse(2000),
-        headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tls = json
-          .select("tls")
-          .asOpt[JsValue]
-          .flatMap(json => NgTlsConfig.format.reads(json).asOpt)
-          .getOrElse(NgTlsConfig.default)
-      )
-    } match {
-      case Failure(e) => JsError(e.getMessage)
-      case Success(c) => JsSuccess(c)
+  val format: Format[NgHasClientCertMatchingHttpValidatorConfig] =
+    new Format[NgHasClientCertMatchingHttpValidatorConfig] {
+      override def writes(o: NgHasClientCertMatchingHttpValidatorConfig): JsValue             = o.json
+      override def reads(json: JsValue): JsResult[NgHasClientCertMatchingHttpValidatorConfig] = Try {
+        NgHasClientCertMatchingHttpValidatorConfig(
+          url = json.select("url").asString,
+          method = json.select("method").asOpt[String].getOrElse("GET"),
+          timeout = json.select("timeout").asOpt[Long].getOrElse(2000),
+          headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tls = json
+            .select("tls")
+            .asOpt[JsValue]
+            .flatMap(json => NgTlsConfig.format.reads(json).asOpt)
+            .getOrElse(NgTlsConfig.default)
+        )
+      } match {
+        case Failure(e) => JsError(e.getMessage)
+        case Success(c) => JsSuccess(c)
+      }
     }
-  }
 }
 
 class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
@@ -497,11 +502,16 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
     if (
       certs.exists(cert => allowedSerialNumbers.contains(cert.getSerialNumber.toString(16))) ||
       certs
-        .exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectX500Principal.getName).stringify))) ||
+        .exists(cert =>
+          allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectX500Principal.getName).stringify))
+        ) ||
       certs
-        .exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerX500Principal.getName).stringify))) ||
+        .exists(cert =>
+          allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerX500Principal.getName).stringify))
+        ) ||
       certs.exists(cert =>
-        regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectX500Principal.getName).stringify))
+        regexAllowedSubjectDNs
+          .exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectX500Principal.getName).stringify))
       ) ||
       certs.exists(cert =>
         regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getIssuerX500Principal.getName).stringify))
@@ -541,21 +551,21 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.request.clientCertificateChain match {
       case Some(certs) =>
-          val config = ctx
-            .cachedConfig(internalName)(NgHasClientCertMatchingHttpValidatorConfig.format)
-            .getOrElse(NgHasClientCertMatchingHttpValidatorConfig())
-          val start  = System.currentTimeMillis()
-          cache.get(config.url) match {
-            case None                                                   =>
-              fetch(config.method, config.url, config.headers, config.timeout, config.tls).flatMap(b =>
-                validate(certs, b, ctx)
-              )
-            case Some((time, values)) if start - time <= config.timeout =>
-              validate(certs, values, ctx)
-            case Some((time, values))  =>
-              fetch(config.method, config.url, config.headers, config.timeout, config.tls)
-              validate(certs, values, ctx)
-          }
+        val config = ctx
+          .cachedConfig(internalName)(NgHasClientCertMatchingHttpValidatorConfig.format)
+          .getOrElse(NgHasClientCertMatchingHttpValidatorConfig())
+        val start  = System.currentTimeMillis()
+        cache.get(config.url) match {
+          case None                                                   =>
+            fetch(config.method, config.url, config.headers, config.timeout, config.tls).flatMap(b =>
+              validate(certs, b, ctx)
+            )
+          case Some((time, values)) if start - time <= config.timeout =>
+            validate(certs, values, ctx)
+          case Some((time, values))                                   =>
+            fetch(config.method, config.url, config.headers, config.timeout, config.tls)
+            validate(certs, values, ctx)
+        }
       case _           => forbidden(ctx)
     }
   }

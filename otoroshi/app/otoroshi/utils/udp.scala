@@ -13,8 +13,8 @@ import scala.concurrent.{Future, Promise}
 
 final class Datagram(val data: ByteString, val remote: InetSocketAddress) {
 
-  def withData(data: ByteString): Datagram                                        = copy(data = data)
-  def withRemote(remote: InetSocketAddress): Datagram                             = copy(remote = remote)
+  def withData(data: ByteString): Datagram                              = copy(data = data)
+  def withRemote(remote: InetSocketAddress): Datagram                   = copy(remote = remote)
   def copy(data: ByteString = data, remote: InetSocketAddress = remote) = new Datagram(data, remote)
 
   override def toString: String =
@@ -103,7 +103,9 @@ private[utils] final class UdpBindFlow(localAddress: InetSocketAddress)(implicit
   val in: Inlet[Datagram]                  = Inlet("UdpBindFlow.in")
   val out: Outlet[Datagram]                = Outlet("UdpBindFlow.in")
   val shape: FlowShape[Datagram, Datagram] = FlowShape.of(in, out)
-  override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Future[InetSocketAddress]) = {
+  override def createLogicAndMaterializedValue(
+      inheritedAttributes: Attributes
+  ): (GraphStageLogic, Future[InetSocketAddress]) = {
     val boundPromise = Promise[InetSocketAddress]()
     (new UdpBindLogic(localAddress, boundPromise)(shape), boundPromise.future)
   }

@@ -50,7 +50,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
   override def asResult()(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    val cookieEncoder = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
+    val cookieEncoder                  = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
     val cl                             = resp.headers.getIgnoreCase("Content-Length").map(_.last).map(_.toLong)
     val ct                             = resp.headers.getIgnoreCase("Content-Type").map(_.last)
     val setCookie                      = resp.headers
@@ -80,7 +80,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
       report: NgExecutionReport
   ): Future[Either[NgProxyEngineError, Done]] = {
     implicit val sched: Scheduler = env.otoroshiScheduler
-    val cookieEncoder = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
+    val cookieEncoder             = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
     Retry.retry(
       times = env.clusterConfig.worker.retries,
       delay = env.clusterConfig.retryDelay,

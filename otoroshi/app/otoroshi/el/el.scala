@@ -9,8 +9,8 @@ import play.api.mvc.RequestHeader
 
 import scala.util.Try
 import otoroshi.utils.http.RequestImplicits._
-import kaleidoscope._
-//import soundness.?
+import kaleidoscope.*
+import anticipation.Text
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
@@ -87,7 +87,7 @@ object GlobalExpressionLanguage {
         lazy val headCert: Option[X509Certificate] = req.flatMap(_.clientCertificateChain).flatMap(_.headOption)
         Try {
           expressionReplacer.replaceOn(value) {
-            case expr if expr.contains("||")      =>
+            case expr if expr.contains("||")     =>
               env.metrics.withTimer(s"el.apply.chain") {
                 val _parts                  = expr.split("\\|\\|").toList
                 val last                    = _parts.lastOption
@@ -106,326 +106,327 @@ object GlobalExpressionLanguage {
                   }
                   .getOrElse(defaultValue)
               }
-            case r"item.$field@(.*)"              =>
+            case r"item.$field(.*)"              =>
               context.getOrElse(s"item.$field", s"no-item-$field")
-            case r"params.$field@(.*)"            =>
+            case r"params.$field(.*)"            =>
               context.getOrElse(s"params.$field", s"no-params-$field")
 
             // legacy notation
-            case "date"                           => DateTime.now().toString()
-            case r"date.format\('$format@(.*)'\)" => DateTime.now().toString(format)
-            case r"date.epoch_ms"                 => DateTime.now().getMillis.toString
-            case r"date.epoch_sec"                => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().getMillis).toString
+            case "date"                          => DateTime.now().toString()
+            case r"date.format\('$format(.*)'\)" => DateTime.now().toString(format.s)
+            case r"date.epoch_ms"                => DateTime.now().getMillis.toString
+            case r"date.epoch_sec"               => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().getMillis).toString
 
             // specific date notation
             case str if str.startsWith("date(")    =>
               str match {
-                case r"date\($date@(.*)\).plus_ms\($field@(.*)\)"                           =>
-                  DateTime.parse(date).plusMillis(field.toInt).toString()
-                case r"date\($date@(.*)\).plus_ms\($field@(.*)\).format\('$format@(.*)'\)"  =>
-                  DateTime.parse(date).plusMillis(field.toInt).toString(format)
-                case r"date\($date@(.*)\).plus_ms\($field@(.*)\).epoch_ms"                  =>
-                  DateTime.parse(date).plusMillis(field.toInt).getMillis.toString
-                case r"date\($date@(.*)\).plus_ms\($field@(.*)\).epoch_sec"                 =>
-                  TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).plusMillis(field.toInt).getMillis).toString
-                case r"date\($date@(.*)\).minus_ms\($field@(.*)\)"                          =>
-                  DateTime.parse(date).minusMillis(field.toInt).toString()
-                case r"date\($date@(.*)\).minus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
-                  DateTime.parse(date).minusMillis(field.toInt).toString(format)
-                case r"date\($date@(.*)\).minus_ms\($field@(.*)\).epoch_ms"                 =>
-                  DateTime.parse(date).minusMillis(field.toInt).getMillis.toString
-                case r"date\($date@(.*)\).minus_ms\($field@(.*)\).epoch_sec"                =>
-                  TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).minusMillis(field.toInt).getMillis).toString
-                case r"date\($date@(.*)\).format\('$format@(.*)'\)"                         => DateTime.parse(date).toString(format)
-                case r"date\($date@(.*)\).epoch_ms"                                         => DateTime.parse(date).getMillis.toString
-                case r"date\($date@(.*)\).epoch_sec"                                        =>
-                  TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).getMillis).toString
+                case r"date\($date(.*)\).plus_ms\($field(.*)\)"                          =>
+                  DateTime.parse(date.s).plusMillis(field.s.toInt).toString()
+                case r"date\($date(.*)\).plus_ms\($field(.*)\).format\('$format(.*)'\)"  =>
+                  DateTime.parse(date.s).plusMillis(field.s.toInt).toString(format.s)
+                case r"date\($date(.*)\).plus_ms\($field(.*)\).epoch_ms"                 =>
+                  DateTime.parse(date.s).plusMillis(field.s.toInt).getMillis.toString
+                case r"date\($date(.*)\).plus_ms\($field(.*)\).epoch_sec"                =>
+                  TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date.s).plusMillis(field.s.toInt).getMillis).toString
+                case r"date\($date(.*)\).minus_ms\($field(.*)\)"                         =>
+                  DateTime.parse(date.s).minusMillis(field.s.toInt).toString()
+                case r"date\($date(.*)\).minus_ms\($field(.*)\).format\('$format(.*)'\)" =>
+                  DateTime.parse(date.s).minusMillis(field.s.toInt).toString(format.s)
+                case r"date\($date(.*)\).minus_ms\($field(.*)\).epoch_ms"                =>
+                  DateTime.parse(date.s).minusMillis(field.s.toInt).getMillis.toString
+                case r"date\($date(.*)\).minus_ms\($field(.*)\).epoch_sec"               =>
+                  TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date.s).minusMillis(field.s.toInt).getMillis).toString
+                case r"date\($date(.*)\).format\('$format(.*)'\)"                        => DateTime.parse(date.s).toString(format.s)
+                case r"date\($date(.*)\).epoch_ms"                                       => DateTime.parse(date.s).getMillis.toString
+                case r"date\($date(.*)\).epoch_sec"                                      =>
+                  TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date.s).getMillis).toString
               }
             // date from EL notation
             case str if str.startsWith("date_el(") =>
               str match {
-                case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\)"                           =>
+                case r"date_el\($date(.*)\).plus_ms\($field(.*)\)"                          =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
-                    .plusMillis(field.toInt)
+                    .parse(apply(s"""$${${date.s.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .plusMillis(field.s.toInt)
                     .toString()
-                case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).format\('$format@(.*)'\)"  =>
+                case r"date_el\($date(.*)\).plus_ms\($field(.*)\).format\('$format(.*)'\)"  =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
-                    .plusMillis(field.toInt)
-                    .toString(format)
-                case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).epoch_ms"                  =>
+                    .parse(apply(s"""$${${date.s.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .plusMillis(field.s.toInt)
+                    .toString(format.s)
+                case r"date_el\($date(.*)\).plus_ms\($field(.*)\).epoch_ms"                 =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
-                    .plusMillis(field.toInt)
+                    .parse(apply(s"""$${${date.s.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .plusMillis(field.s.toInt)
                     .getMillis
                     .toString
-                case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).epoch_sec"                 =>
+                case r"date_el\($date(.*)\).plus_ms\($field(.*)\).epoch_sec"                =>
                   TimeUnit.MILLISECONDS
                     .toSeconds(
                       DateTime
-                        .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
-                        .plusMillis(field.toInt)
+                        .parse(apply(s"""$${${date.s.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                        .plusMillis(field.s.toInt)
                         .getMillis
                     )
                     .toString
-                case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\)"                          =>
+                case r"date_el\($date(.*)\).minus_ms\($field(.*)\)"                         =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
-                    .minusMillis(field.toInt)
+                    .parse(apply(s"""$${${date.s.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .minusMillis(field.s.toInt)
                     .toString()
-                case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
+                case r"date_el\($date(.*)\).minus_ms\($field(.*)\).format\('$format(.*)'\)" =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
-                    .minusMillis(field.toInt)
-                    .toString(format)
-                case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).epoch_ms"                 =>
+                    .parse(apply(s"""$${${date.s.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .minusMillis(field.s.toInt)
+                    .toString(format.s)
+                case r"date_el\($date(.*)\).minus_ms\($field(.*)\).epoch_ms"                =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
-                    .minusMillis(field.toInt)
+                    .parse(apply(s"""$${${date.s.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .minusMillis(field.s.toInt)
                     .getMillis
                     .toString
-                case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).epoch_sec"                =>
+                case r"date_el\($date(.*)\).minus_ms\($field(.*)\).epoch_sec"               =>
                   TimeUnit.MILLISECONDS
                     .toSeconds(
                       DateTime
-                        .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
-                        .minusMillis(field.toInt)
+                        .parse(apply(s"""$${${date.s.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                        .minusMillis(field.s.toInt)
                         .getMillis
                     )
                     .toString
-                case r"date_el\($date@(.*)\).format\('$format@(.*)'\)"                         =>
+                case r"date_el\($date(.*)\).format\('$format(.*)'\)"                        =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
-                    .toString(format)
-                case r"date_el\($date@(.*)\).epoch_ms"                                         =>
+                    .parse(apply(s"""$${${date.s.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .toString(format.s)
+                case r"date_el\($date(.*)\).epoch_ms"                                       =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .parse(apply(s"""$${${date.s.trim}}""", req, service, route, apiKey, user, context, attrs, env))
                     .getMillis
                     .toString
-                case r"date_el\($date@(.*)\).epoch_sec"                                        =>
+                case r"date_el\($date(.*)\).epoch_sec"                                      =>
                   TimeUnit.MILLISECONDS
                     .toSeconds(
                       DateTime
-                        .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                        .parse(apply(s"""$${${date.s.trim}}""", req, service, route, apiKey, user, context, attrs, env))
                         .getMillis
                     )
                     .toString
               }
 
             // relative date notation
-            case r"now.format\('$format@(.*)'\)"   => DateTime.now().toString(format)
+            case r"now.format\('$format(.*)'\)"    => DateTime.now().toString(format.s)
             case r"now.epoch_ms"                   => DateTime.now().getMillis.toString
             case r"now.epoch_sec"                  => TimeUnit.MILLISECONDS.toSeconds(DateTime.now().getMillis).toString
 
-            case r"now.plus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
-              DateTime.now().plusMillis(field.toInt).toString(format)
-            case r"now.plus_ms\($field@(.*)\).epoch_ms"                 => DateTime.now().plusMillis(field.toInt).getMillis.toString
-            case r"now.plus_ms\($field@(.*)\).epoch_sec"                =>
-              TimeUnit.MILLISECONDS.toSeconds(DateTime.now().plusMillis(field.toInt).getMillis).toString
-            case r"now.plus_ms\($field@(.*)\)"                          => DateTime.now().plusMillis(field.toInt).toString()
+            case r"now.plus_ms\($field(.*)\).format\('$format(.*)'\)" =>
+              DateTime.now().plusMillis(field.s.toInt).toString(format.s)
+            case r"now.plus_ms\($field(.*)\).epoch_ms"                => DateTime.now().plusMillis(field.s.toInt).getMillis.toString
+            case r"now.plus_ms\($field(.*)\).epoch_sec"               =>
+              TimeUnit.MILLISECONDS.toSeconds(DateTime.now().plusMillis(field.s.toInt).getMillis).toString
+            case r"now.plus_ms\($field(.*)\)"                         => DateTime.now().plusMillis(field.s.toInt).toString()
 
-            case r"now.minus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
-              DateTime.now().minusMillis(field.toInt).toString(format)
-            case r"now.minus_ms\($field@(.*)\).epoch_ms"                 => DateTime.now().minusMillis(field.toInt).getMillis.toString
-            case r"now.minus_ms\($field@(.*)\).epoch_sec"                =>
-              TimeUnit.MILLISECONDS.toSeconds(DateTime.now().minusMillis(field.toInt).getMillis).toString
-            case r"now.minus_ms\($field@(.*)\)"                          => DateTime.now().minusMillis(field.toInt).toString()
+            case r"now.minus_ms\($field(.*)\).format\('$format(.*)'\)" =>
+              DateTime.now().minusMillis(field.s.toInt).toString(format.s)
+            case r"now.minus_ms\($field(.*)\).epoch_ms"                => DateTime.now().minusMillis(field.s.toInt).getMillis.toString
+            case r"now.minus_ms\($field(.*)\).epoch_sec"               =>
+              TimeUnit.MILLISECONDS.toSeconds(DateTime.now().minusMillis(field.s.toInt).getMillis).toString
+            case r"now.minus_ms\($field(.*)\)"                         => DateTime.now().minusMillis(field.s.toInt).toString()
 
             case "now" => DateTime.now().toString()
 
-            case "service.domain" if service.isDefined                              => service.get._domain
-            case "service.subdomain" if service.isDefined                           => service.get.subdomain
-            case "service.tld" if service.isDefined                                 => service.get.domain
-            case "service.env" if service.isDefined                                 => service.get.env
-            case r"service.groups\['$field@(.*)':'$dv@(.*)'\]" if service.isDefined =>
-              Option(service.get.groups(field.toInt)).getOrElse(dv)
-            case r"service.groups\['$field@(.*)'\]" if service.isDefined            =>
-              Option(service.get.groups(field.toInt)).getOrElse(s"no-group-$field")
-            case "service.id" if service.isDefined                                  => service.get.id
-            case "service.name" if service.isDefined                                => service.get.name
-            case r"service.metadata.$field@(.*):$dv@(.*)" if service.isDefined      =>
-              service.get.metadata.getOrElse(field, dv)
-            case r"service.metadata.$field@(.*)" if service.isDefined               =>
-              service.get.metadata.getOrElse(field, s"no-meta-$field")
+            case "service.domain" if service.isDefined                            => service.get._domain
+            case "service.subdomain" if service.isDefined                         => service.get.subdomain
+            case "service.tld" if service.isDefined                               => service.get.domain
+            case "service.env" if service.isDefined                               => service.get.env
+            case r"service.groups\['$field(.*)':'$dv(.*)'\]" if service.isDefined =>
+              Option(service.get.groups(field.s.toInt)).getOrElse(dv.s)
+            case r"service.groups\['$field(.*)'\]" if service.isDefined           =>
+              Option(service.get.groups(field.s.toInt)).getOrElse(s"no-group-$field")
+            case "service.id" if service.isDefined                                => service.get.id
+            case "service.name" if service.isDefined                              => service.get.name
+            case r"service.metadata.$field(.*):$dv(.*)" if service.isDefined      =>
+              service.get.metadata.getOrElse(field.s, dv.s)
+            case r"service.metadata.$field(.*)" if service.isDefined              =>
+              service.get.metadata.getOrElse(field.s, s"no-meta-${field.s}")
 
-            case r"route.domains\['$field@(.*)':'$dv@(.*)'\]" if route.isDefined =>
-              Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(dv)
-            case r"route.domains\['$field@(.*)'\]" if route.isDefined            =>
-              Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(s"no-domain-$field")
-            case "route.id" if route.isDefined                                   => route.get.id
-            case "route.name" if route.isDefined                                 => route.get.name
-            case r"route.metadata.$field@(.*):$dv@(.*)" if route.isDefined       =>
-              route.get.metadata.getOrElse(field, dv)
-            case r"route.metadata.$field@(.*)" if route.isDefined                =>
-              route.get.metadata.getOrElse(field, s"no-meta-$field")
+            case r"route.domains\['$field(.*)':'$dv(.*)'\]" if route.isDefined =>
+              Option(route.get.frontend.domains(field.s.toInt)).map(_.raw).getOrElse(dv.s)
+            case r"route.domains\['$field(.*)'\]" if route.isDefined           =>
+              Option(route.get.frontend.domains(field.s.toInt)).map(_.raw).getOrElse(s"no-domain-$field")
+            case "route.id" if route.isDefined                                 => route.get.id
+            case "route.name" if route.isDefined                               => route.get.name
+            case r"route.metadata.$field(.*):$dv(.*)" if route.isDefined       =>
+              route.get.metadata.getOrElse(field.s, dv.s)
+            case r"route.metadata.$field(.*)" if route.isDefined               =>
+              route.get.metadata.getOrElse(field.s, s"no-meta-${field.s}")
 
-            case "req.fullUrl" if req.isDefined                                             =>
+            case "req.fullUrl" if req.isDefined                                           =>
               s"${req.get.theProtocol(env)}://${req.get.theHost(env)}${req.get.relativeUri}"
-            case "req.listener" if req.isDefined                                            =>
+            case "req.listener" if req.isDefined                                          =>
               attrs.get(otoroshi.plugins.Keys.CurrentListenerKey).getOrElse(HttpListenerNames.Standard)
-            case "req.id" if req.isDefined                                                  => req.get.id.toString
-            case "req.path" if req.isDefined                                                => req.get.path
-            case "req.uri" if req.isDefined                                                 => req.get.relativeUri
-            case "req.host" if req.isDefined                                                => req.get.theHost(env)
-            case "req.domain" if req.isDefined                                              => req.get.theDomain(env)
-            case "req.method" if req.isDefined                                              => req.get.method
-            case "req.protocol" if req.isDefined                                            => req.get.theProtocol(env)
-            case "req.ip" if req.isDefined                                                  => req.get.theIpAddress(env)
-            case "req.ip_address" if req.isDefined                                          => req.get.theIpAddress(env)
-            case "req.secured" if req.isDefined                                             => req.get.theSecured(env).toString
-            case "req.version" if req.isDefined                                             => req.get.version
-            case r"req.headers.$field@(.*):$defaultValue@(.*)" if req.isDefined             =>
-              req.get.headers.get(field).getOrElse(defaultValue)
-            case r"req.headers.$field@(.*)" if req.isDefined                                =>
-              req.get.headers.get(field).getOrElse(s"no-header-$field")
-            case r"req.query.$field@(.*):$defaultValue@(.*)" if req.isDefined               =>
-              req.get.getQueryString(field).getOrElse(defaultValue)
-            case r"req.query.$field@(.*)" if req.isDefined                                  =>
-              req.get.getQueryString(field).getOrElse(s"no-query-$field")
-            case r"req.cookies.$field@(.*):$defaultValue@(.*)" if req.isDefined             =>
-              req.get.cookies.get(field).map(_.value).getOrElse(defaultValue)
-            case r"req.cookies.$field@(.*)" if req.isDefined                                =>
-              req.get.cookies.get(field).map(_.value).getOrElse(s"no-query-$field")
-            case r"req.pathparams.$field@(.*):$defaultValue@(.*)" if matchedRoute.isDefined =>
-              matchedRoute.get.pathParams.getOrElse(field, defaultValue)
-            case r"req.pathparams.$field@(.*)" if matchedRoute.isDefined                    =>
-              matchedRoute.get.pathParams.getOrElse(field, s"no-path-param-$field")
+            case "req.id" if req.isDefined                                                => req.get.id.toString
+            case "req.path" if req.isDefined                                              => req.get.path
+            case "req.uri" if req.isDefined                                               => req.get.relativeUri
+            case "req.host" if req.isDefined                                              => req.get.theHost(env)
+            case "req.domain" if req.isDefined                                            => req.get.theDomain(env)
+            case "req.method" if req.isDefined                                            => req.get.method
+            case "req.protocol" if req.isDefined                                          => req.get.theProtocol(env)
+            case "req.ip" if req.isDefined                                                => req.get.theIpAddress(env)
+            case "req.ip_address" if req.isDefined                                        => req.get.theIpAddress(env)
+            case "req.secured" if req.isDefined                                           => req.get.theSecured(env).toString
+            case "req.version" if req.isDefined                                           => req.get.version
+            case r"req.headers.$field(.*):$defaultValue(.*)" if req.isDefined             =>
+              req.get.headers.get(field.s).getOrElse(defaultValue.s)
+            case r"req.headers.$field(.*)" if req.isDefined                               =>
+              req.get.headers.get(field.s).getOrElse(s"no-header-${field.s}")
+            case r"req.query.$field(.*):$defaultValue(.*)" if req.isDefined               =>
+              req.get.getQueryString(field.s).getOrElse(defaultValue.s)
+            case r"req.query.$field(.*)" if req.isDefined                                 =>
+              req.get.getQueryString(field.s).getOrElse(s"no-query-${field.s}")
+            case r"req.cookies.$field(.*):$defaultValue(.*)" if req.isDefined             =>
+              req.get.cookies.get(field.s).map(_.value).getOrElse(defaultValue.s)
+            case r"req.cookies.$field(.*)" if req.isDefined                               =>
+              req.get.cookies.get(field.s).map(_.value).getOrElse(s"no-query-${field.s}")
+            case r"req.pathparams.$field(.*):$defaultValue(.*)" if matchedRoute.isDefined =>
+              matchedRoute.get.pathParams.getOrElse(field.s, defaultValue.s)
+            case r"req.pathparams.$field(.*)" if matchedRoute.isDefined                   =>
+              matchedRoute.get.pathParams.getOrElse(field.s, s"no-path-param-${field.s}")
 
-            case "apikey.name" if apiKey.isDefined                              => apiKey.get.clientName
-            case "apikey.id" if apiKey.isDefined                                => apiKey.get.clientId
-            case "apikey.clientId" if apiKey.isDefined                          => apiKey.get.clientId
-            case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined    =>
-              apiKey.get.metadata.getOrElse(field, dv)
-            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined             =>
-              apiKey.get.metadata.getOrElse(field, s"no-meta-$field")
-            case r"apikey.tags\['$field@(.*)':'$dv@(.*)'\]" if apiKey.isDefined =>
-              Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
-            case r"apikey.tags\['$field@(.*)'\]" if apiKey.isDefined            =>
-              Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
-            case r"apikey.json.pretty" if apiKey.isDefined                      =>
+            case "apikey.name" if apiKey.isDefined                            => apiKey.get.clientName
+            case "apikey.id" if apiKey.isDefined                              => apiKey.get.clientId
+            case "apikey.clientId" if apiKey.isDefined                        => apiKey.get.clientId
+            case r"apikey.metadata.$field(.*):$dv(.*)" if apiKey.isDefined    =>
+              apiKey.get.metadata.getOrElse(field.s, dv.s)
+            case r"apikey.metadata.$field(.*)" if apiKey.isDefined            =>
+              apiKey.get.metadata.getOrElse(field.s, s"no-meta-$field")
+            case r"apikey.tags\['$field(.*)':'$dv(.*)'\]" if apiKey.isDefined =>
+              Option(apiKey.get.tags.apply(field.s.toInt)).getOrElse(dv.s)
+            case r"apikey.tags\['$field(.*)'\]" if apiKey.isDefined           =>
+              Option(apiKey.get.tags.apply(field.s.toInt)).getOrElse(s"no-tag-$field")
+            case r"apikey.json.pretty" if apiKey.isDefined                    =>
               apiKey.get.lightJson.prettify
-            case r"apikey.json" if apiKey.isDefined                             =>
+            case r"apikey.json" if apiKey.isDefined                           =>
               apiKey.get.lightJson.stringify
 
             // for jwt comptab only
-            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"           =>
-              context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"            =>
-              context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"         =>
-              context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"         =>
-              context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*)\|token.$field2@(.*):$dv@(.*)"              =>
-              context.get(field).orElse(context.get(field2)).getOrElse(dv)
-            case r"token.$field@(.*)\|token.$field2@(.*)"                       =>
-              context.get(field).orElse(context.get(field2)).getOrElse(s"no-token-$field-$field2")
-            case r"token.$field@(.*):$dv@(.*)"                                  => context.getOrElse(field, dv)
-            case r"token.$field@(.*)"                                           => context.getOrElse(field, s"no-token-$field")
+            case r"token.$field(.*).replace\('$a(.*)', '$b(.*)'\)"            =>
+              context.get(field.s).map(v => v.replace(a.s, b.s)).getOrElse(s"no-token-$field")
+            case r"token.$field(.*).replace\('$a(.*)','$b(.*)'\)"             =>
+              context.get(field.s).map(v => v.replace(a.s, b.s)).getOrElse(s"no-token-$field")
+            case r"token.$field(.*).replaceAll\('$a(.*)','$b(.*)'\)"          =>
+              context.get(field.s).map(v => v.replaceAll(a.s, b.s)).getOrElse(s"no-token-$field")
+            case r"token.$field(.*).replaceAll\('$a(.*)','$b(.*)'\)"          =>
+              context.get(field.s).map(v => v.replaceAll(a.s, b.s)).getOrElse(s"no-token-$field")
+            case r"token.$field(.*)\|token.$field2(.*):$dv(.*)"               =>
+              context.get(field.s).orElse(context.get(field2.s)).getOrElse(dv.s)
+            case r"token.$field(.*)\|token.$field2(.*)"                       =>
+              context.get(field.s).orElse(context.get(field2.s)).getOrElse(s"no-token-$field-$field2")
+            case r"token.$field(.*):$dv(.*)"                                  => context.getOrElse(field.s, dv.s)
+            case r"token.$field(.*)"                                          => context.getOrElse(field.s, s"no-token-$field")
 
-            case r"apikeyjwt.$field@(.*)" if field.contains(".")              =>
+            case r"apikeyjwt.$field(.*)" if field.s.contains(".")           =>
               attrs
                 .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
-                .flatMap(_.at(field).strConvert())
+                .flatMap(_.at(field.s).strConvert())
                 .getOrElse(s"no-path-at-$field")
-            case r"apikeyjwt.$field@(.*)" if field.contains("/")              =>
+            case r"apikeyjwt.$field(.*)" if field.s.contains("/")           =>
               attrs
                 .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
-                .flatMap(_.atPointer(field).strConvert())
+                .flatMap(_.atPointer(field.s).strConvert())
                 .getOrElse(s"no-path-at-$field")
-            case r"apikeyjwt.$field@(.*)" if field.startsWith("$.")           =>
+            case r"apikeyjwt.$field(.*)" if field.s.startsWith("$.")        =>
               attrs
                 .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
-                .flatMap(_.atPath(field).strConvert())
+                .flatMap(_.atPath(field.s).strConvert())
                 .getOrElse(s"no-path-at-$field")
-            case r"apikeyjwt.$field@(.*)"                                     =>
+            case r"apikeyjwt.$field(.*)"                                    =>
               attrs
                 .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
-                .flatMap(_.select(field).strConvert())
+                .flatMap(_.select(field.s).strConvert())
                 .getOrElse(s"no-path-at-$field")
-            case r"env.$field@(.*):$dv@(.*)" if env.elSettings.allowEnvAccess =>
-              Option(System.getenv(field)).getOrElse(dv)
-            case r"env.$field@(.*)" if env.elSettings.allowEnvAccess          =>
-              Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
+            case r"env.$field(.*):$dv(.*)" if env.elSettings.allowEnvAccess =>
+              Option(System.getenv(field.s)).getOrElse(dv.s)
+            case r"env.$field(.*)" if env.elSettings.allowEnvAccess         =>
+              Option(System.getenv(field.s)).getOrElse(s"no-env-var-$field")
 
-            case r"config.$field@(.*):$dv@(.*)" if env.elSettings.allowConfigAccess =>
+            case r"config.$field(.*):$dv(.*)" if env.elSettings.allowConfigAccess =>
               env.configuration
-                .getOptionalWithFileSupport[String](field)
+                .getOptionalWithFileSupport[String](field.s)
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Int](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Int](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Double](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Double](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Long](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Long](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Boolean](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Boolean](field.s).map(_.toString)
                 )
-                .getOrElse(dv)
-            case r"config.$field@(.*)" if env.elSettings.allowConfigAccess          =>
+                .getOrElse(dv.s)
+            case r"config.$field(.*)" if env.elSettings.allowConfigAccess         =>
               env.configuration
-                .getOptionalWithFileSupport[String](field)
+                .getOptionalWithFileSupport[String](field.s)
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Int](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Int](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Double](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Double](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Long](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Long](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Boolean](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Boolean](field.s).map(_.toString)
                 )
                 .getOrElse(s"no-config-$field")
 
-            case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"                              =>
-              context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"                               =>
-              context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"                            =>
-              context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"                            =>
-              context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*)\|ctx.$field2@(.*):$dv@(.*)"                                   =>
-              context.get(field).orElse(context.get(field2)).getOrElse(dv)
-            case r"ctx.$field@(.*)\|ctx.$field2@(.*)"                                            =>
-              context.get(field).orElse(context.get(field2)).getOrElse(s"no-ctx-$field-$field2")
-            case r"ctx.$field@(.*):$dv@(.*)"                                                     => context.getOrElse(field, dv)
-            case r"ctx.$field@(.*)"                                                              => context.getOrElse(field, s"no-ctx-$field")
-            case r"ctx.useragent.$field@(.*)" if userAgentDetails.isDefined                      =>
-              val lookup: JsLookupResult = userAgentDetails.get.\(field)
+            case r"ctx.$field(.*).replace\('$a(.*)', '$b(.*)'\)"                               =>
+              context.get(field.s).map(v => v.replace(a.s, b.s)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field(.*).replace\('$a(.*)','$b(.*)'\)"                                =>
+              context.get(field.s).map(v => v.replace(a.s, b.s)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field(.*).replaceAll\('$a(.*)','$b(.*)'\)"                             =>
+              context.get(field.s).map(v => v.replaceAll(a.s, b.s)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field(.*).replaceAll\('$a(.*)','$b(.*)'\)"                             =>
+              context.get(field.s).map(v => v.replaceAll(a.s, b.s)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field(.*)\|ctx.$field2(.*):$dv(.*)"                                    =>
+              context.get(field.s).orElse(context.get(field2.s)).getOrElse(dv.s)
+            case r"ctx.$field(.*)\|ctx.$field2(.*)"                                            =>
+              context.get(field.s).orElse(context.get(field2.s)).getOrElse(s"no-ctx-$field-$field2")
+            case r"ctx.$field(.*):$dv(.*)"                                                     => context.getOrElse(field.s, dv.s)
+            case r"ctx.$field(.*)"                                                             => context.getOrElse(field.s, s"no-ctx-$field")
+            case r"ctx.useragent.$field(.*)" if userAgentDetails.isDefined                     =>
+              val lookup: JsLookupResult = userAgentDetails.get.\(field.s)
               lookup
                 .asOpt[String]
                 .orElse(lookup.asOpt[Long].map(_.toString))
                 .orElse(lookup.asOpt[Double].map(_.toString))
                 .orElse(lookup.asOpt[Boolean].map(_.toString))
                 .getOrElse(s"no-ctx-$field")
-            case r"ctx.geolocation.$field@(.*)" if geolocDetails.isDefined                       =>
-              val lookup: JsLookupResult = geolocDetails.get.\(field)
+            case r"ctx.geolocation.$field(.*)" if geolocDetails.isDefined                      =>
+              val lookup: JsLookupResult = geolocDetails.get.\(field.s)
               lookup
                 .asOpt[String]
                 .orElse(lookup.asOpt[Long].map(_.toString))
                 .orElse(lookup.asOpt[Double].map(_.toString))
                 .orElse(lookup.asOpt[Boolean].map(_.toString))
                 .getOrElse(s"no-ctx-$field")
-            case r"vault://$path@(.*)"                                                           =>
+            case r"vault://$path(.*)"                                                          =>
               Await.result(
                 env.vaults.fillSecretsAsync("el-exp", s"vault://$path")(env.otoroshiExecutionContext),
                 5.seconds
               )
-            case r"global_config.metadata.$name@(.*)"                                            =>
+            case r"global_config.metadata.$name(.*)"                                           =>
               env.datastores.globalConfigDataStore
-                  .latest()(env.otoroshiExecutionContext, env)
-                  .metadata.getOrElse(name, s"no-metadata-${name}")
-            case r"global_config.env.$path@(.*)"                                                 =>
+                .latest()(env.otoroshiExecutionContext, env)
+                .metadata
+                .getOrElse(name.s, s"no-metadata-${name}")
+            case r"global_config.env.$path(.*)"                                                =>
               env.datastores.globalConfigDataStore
                 .latest()(env.otoroshiExecutionContext, env)
                 .env
-                .at(path)
+                .at(path.s)
                 .asOpt[JsValue]
                 .map {
                   case JsString(str)   => str
@@ -435,41 +436,41 @@ object GlobalExpressionLanguage {
                   case o               => o.stringify
                 }
                 .getOrElse(s"no-global-env-at-$path")
-            case "user.name" if user.isDefined                                                   => user.get.name
-            case "user.email" if user.isDefined                                                  => user.get.email
-            case "user.json.pretty" if user.isDefined                                            => user.get.lightJson.prettify
-            case "user.json" if user.isDefined                                                   => user.get.lightJson.stringify
-            case "user.tokens.id_token" if user.isDefined                                        =>
+            case "user.name" if user.isDefined                                                 => user.get.name
+            case "user.email" if user.isDefined                                                => user.get.email
+            case "user.json.pretty" if user.isDefined                                          => user.get.lightJson.prettify
+            case "user.json" if user.isDefined                                                 => user.get.lightJson.stringify
+            case "user.tokens.id_token" if user.isDefined                                      =>
               user.get.token.select("id_token").asOpt[String].getOrElse("no-id_token")
-            case "user.tokens.access_token" if user.isDefined                                    =>
+            case "user.tokens.access_token" if user.isDefined                                  =>
               user.get.token.select("access_token").asOpt[String].getOrElse("no-access_token")
-            case "user.tokens.refresh_token" if user.isDefined                                   =>
+            case "user.tokens.refresh_token" if user.isDefined                                 =>
               user.get.token.select("refresh_token").asOpt[String].getOrElse("no-refresh_token")
-            case "user.tokens.token_type" if user.isDefined                                      =>
+            case "user.tokens.token_type" if user.isDefined                                    =>
               user.get.token.select("token_type").asOpt[String].getOrElse("no-token_type")
-            case "user.tokens.expires_in" if user.isDefined                                      =>
+            case "user.tokens.expires_in" if user.isDefined                                    =>
               user.get.token.select("expires_in").asOpt[String].getOrElse("no-expires_in")
-            case r"user.tokens.$field@(.*)" if user.isDefined                                    =>
-              user.get.token.select(field).asOpt[String].getOrElse(s"no-$field")
-            case r"user.tokens.$field@(.*):$dv@(.*)" if user.isDefined                           =>
-              user.get.token.select(field).asOpt[String].getOrElse(dv)
-            case r"user.metadata.$field@(.*):$dv@(.*)" if user.isDefined                         =>
+            case r"user.tokens.$field(.*)" if user.isDefined                                   =>
+              user.get.token.select(field.s).asOpt[String].getOrElse(s"no-$field")
+            case r"user.tokens.$field(.*):$dv(.*)" if user.isDefined                           =>
+              user.get.token.select(field.s).asOpt[String].getOrElse(dv.s)
+            case r"user.metadata.$field(.*):$dv(.*)" if user.isDefined                         =>
               user
                 .flatMap(_.otoroshiData)
                 .map(json =>
-                  (json \ field).asOpt[JsValue] match {
+                  (json \ field.s).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
-                    case _                      => dv
+                    case _                      => dv.s
                   }
                 )
-                .getOrElse(dv)
-            case r"user.metadata.$field@(.*)" if user.isDefined                                  =>
+                .getOrElse(dv.s)
+            case r"user.metadata.$field(.*)" if user.isDefined                                 =>
               user
                 .flatMap(_.otoroshiData)
                 .map(json =>
-                  (json \ field).asOpt[JsValue] match {
+                  (json \ field.s).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
@@ -477,23 +478,23 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(s"no-meta-$field")
-            case r"user.profile.$field@(.*):$dv@(.*)" if user.isDefined                          =>
+            case r"user.profile.$field(.*):$dv(.*)" if user.isDefined                          =>
               user
                 .map(_.profile)
                 .map(json =>
-                  (json \ field).asOpt[JsValue] match {
+                  (json \ field.s).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
-                    case _                      => dv
+                    case _                      => dv.s
                   }
                 )
-                .getOrElse(dv)
-            case r"user.profile.$field@(.*)" if user.isDefined                                   =>
+                .getOrElse(dv.s)
+            case r"user.profile.$field(.*)" if user.isDefined                                  =>
               user
                 .map(_.profile)
                 .map(json =>
-                  (json \ field).asOpt[JsValue] match {
+                  (json \ field.s).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
@@ -501,40 +502,46 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(s"no-profile-$field")
-            case "consumer.id" if user.isDefined                                                 => user.get.email
-            case "consumer.id" if apiKey.isDefined                                               => apiKey.get.clientId
-            case "consumer.long_id" if user.isDefined                                            => s"${user.get.realm}-${user.get.email}"
-            case "consumer.long_id" if apiKey.isDefined                                          => apiKey.get.clientId
-            case "consumer.name" if user.isDefined                                               => user.get.name
-            case "consumer.name" if apiKey.isDefined                                             => apiKey.get.clientName
-            case "consumer.kind" if user.isDefined                                               => "user"
-            case "consumer.kind" if apiKey.isDefined                                             => "apikey"
-            case "consumer.kind" if apiKey.isEmpty && user.isEmpty                               => "public"
-            case "consumer.json.pretty" if apiKey.isEmpty && user.isEmpty                        => Json.obj("kind" -> "public", "consumer" -> JsNull).prettify
-            case "consumer.json.pretty" if apiKey.isDefined                                      => Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).prettify
-            case "consumer.json.pretty" if user.isDefined                                        => Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).prettify
-            case "consumer.json" if apiKey.isEmpty && user.isEmpty                               => Json.obj("kind" -> "public", "consumer" -> JsNull).stringify
-            case "consumer.json" if apiKey.isDefined                                             => Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).stringify
-            case "consumer.json" if user.isDefined                                               => Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).stringify
-            case r"consumer.metadata.$field@(.*):$dv@(.*)" if user.isDefined || apiKey.isDefined =>
+            case "consumer.id" if user.isDefined                                               => user.get.email
+            case "consumer.id" if apiKey.isDefined                                             => apiKey.get.clientId
+            case "consumer.long_id" if user.isDefined                                          => s"${user.get.realm}-${user.get.email}"
+            case "consumer.long_id" if apiKey.isDefined                                        => apiKey.get.clientId
+            case "consumer.name" if user.isDefined                                             => user.get.name
+            case "consumer.name" if apiKey.isDefined                                           => apiKey.get.clientName
+            case "consumer.kind" if user.isDefined                                             => "user"
+            case "consumer.kind" if apiKey.isDefined                                           => "apikey"
+            case "consumer.kind" if apiKey.isEmpty && user.isEmpty                             => "public"
+            case "consumer.json.pretty" if apiKey.isEmpty && user.isEmpty                      =>
+              Json.obj("kind" -> "public", "consumer" -> JsNull).prettify
+            case "consumer.json.pretty" if apiKey.isDefined                                    =>
+              Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).prettify
+            case "consumer.json.pretty" if user.isDefined                                      =>
+              Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).prettify
+            case "consumer.json" if apiKey.isEmpty && user.isEmpty                             =>
+              Json.obj("kind" -> "public", "consumer" -> JsNull).stringify
+            case "consumer.json" if apiKey.isDefined                                           =>
+              Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).stringify
+            case "consumer.json" if user.isDefined                                             =>
+              Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).stringify
+            case r"consumer.metadata.$field(.*):$dv(.*)" if user.isDefined || apiKey.isDefined =>
               user
                 .flatMap(_.otoroshiData)
                 .orElse(apiKey.map(v => JsObject(v.metadata.view.mapValues(_.json).toMap)))
                 .map(json =>
-                  (json \ field).asOpt[JsValue] match {
+                  (json \ field.s).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
-                    case _                      => dv
+                    case _                      => dv.s
                   }
                 )
-                .getOrElse(dv)
-            case r"consumer.metadata.$field@(.*)" if user.isDefined || apiKey.isDefined          =>
+                .getOrElse(dv.s)
+            case r"consumer.metadata.$field(.*)" if user.isDefined || apiKey.isDefined         =>
               user
                 .flatMap(_.otoroshiData)
                 .orElse(apiKey.map(v => JsObject(v.metadata.view.mapValues(_.json).toMap)))
                 .map(json =>
-                  (json \ field).asOpt[JsValue] match {
+                  (json \ field.s).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
@@ -542,9 +549,9 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(s"no-meta-$field")
-            case r"nbf"                                                                          => "{nbf}"
-            case r"iat"                                                                          => "{iat}"
-            case r"exp"                                                                          => "{exp}"
+            case r"nbf"                                                                        => "{nbf}"
+            case r"iat"                                                                        => "{iat}"
+            case r"exp"                                                                        => "{exp}"
 
             case "req.client_cert.dn" if req.isDefined && headCert.isDefined                                         =>
               DN(headCert.get.getSubjectX500Principal.getName).stringify
@@ -707,12 +714,12 @@ object JwtExpressionLanguage {
         })
       case JsString(str)   =>
         apply(str, req, service, route, apiKey, user, context, attrs, env) match {
-          case "true"               => JsBoolean(true)
-          case "false"              => JsBoolean(false)
-          case r"$nbr@([0-9\\.,]+)" => JsNumber(nbr.toDouble)
-          case r"$nbr@([0-9]+)"     => JsNumber(nbr.toInt)
-          case "null"               => JsNull
-          case s                    => JsString(s)
+          case "true"              => JsBoolean(true)
+          case "false"             => JsBoolean(false)
+          case r"$nbr([0-9\\.,]+)" => JsNumber(nbr.s.toDouble)
+          case r"$nbr([0-9]+)"     => JsNumber(nbr.s.toInt)
+          case "null"              => JsNull
+          case s                   => JsString(s)
 
         }
       case _               => value

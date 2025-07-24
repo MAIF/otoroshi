@@ -99,7 +99,7 @@ object OtoroshiLoaderHelper {
 
     implicit val ec: ExecutionContext = components.env.otoroshiExecutionContext
     implicit val scheduler: Scheduler = components.env.otoroshiScheduler
-    implicit val mat: Materializer = components.env.otoroshiMaterializer
+    implicit val mat: Materializer    = components.env.otoroshiMaterializer
 
     val failOnTimeout                        =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.failOnTimeout").getOrElse(false)
@@ -110,8 +110,8 @@ object OtoroshiLoaderHelper {
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForPluginsSearch").getOrElse(true)
     val waitForScriptsCompilation            =
       components.env.scriptingEnabled && components.env.configuration
-          .betterGetOptional[Boolean]("app.boot.waitForScriptsCompilation")
-          .getOrElse(true)
+        .betterGetOptional[Boolean]("app.boot.waitForScriptsCompilation")
+        .getOrElse(true)
     val waitForFirstClusterFetchEnabled      =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
     val waitForFirstClusterStateCacheEnabled =
@@ -131,8 +131,8 @@ object OtoroshiLoaderHelper {
       components.env.configuration.betterGetOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
     val waitForFirstClusterStateCacheTimeout: Long =
       components.env.configuration
-          .betterGetOptional[Long]("app.boot.waitForFirstClusterStateCacheTimeout")
-          .getOrElse(10000)
+        .betterGetOptional[Long]("app.boot.waitForFirstClusterStateCacheTimeout")
+        .getOrElse(10000)
     val waitProxyStateSyncTimeout: Long            =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
 
@@ -155,21 +155,21 @@ object OtoroshiLoaderHelper {
           Seq(
             timeout(task, waitForFirstClusterStateCacheTimeout.millis),
             Source
-                .tick(1.second, 1.second, ())
-                .map { _ =>
-                  if (
-                    components.env.clusterConfig.mode == ClusterMode.Leader /* && components.env.clusterConfig.autoUpdateState*/
-                  )
-                    components.env.clusterLeaderAgent.cachedTimestamp > 0L
-                  else true
-                }
-                .filter(identity)
-                .take(1)
-                .runWith(Sink.head)(mat)
-                .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
-                .recover { case e: Throwable =>
-                  SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
-                }
+              .tick(1.second, 1.second, ())
+              .map { _ =>
+                if (
+                  components.env.clusterConfig.mode == ClusterMode.Leader /* && components.env.clusterConfig.autoUpdateState*/
+                )
+                  components.env.clusterLeaderAgent.cachedTimestamp > 0L
+                else true
+              }
+              .filter(identity)
+              .take(1)
+              .runWith(Sink.head)(mat)
+              .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+              .recover { case e: Throwable =>
+                SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+              }
           )
         )
       } else {
@@ -183,55 +183,55 @@ object OtoroshiLoaderHelper {
       if (components.env.clusterConfig.mode == ClusterMode.Worker && waitForFirstClusterFetchEnabled) {
         logger.info("waiting for first cluster fetch ...")
         Future
-            .firstCompletedOf(
-              Seq(
-                timeout(task, waitForFirstClusterFetchTimeout.millis),
-                Source
-                    .tick(1.second, 1.second, ())
-                    .map { _ =>
-                      if (components.env.clusterConfig.mode == ClusterMode.Worker)
-                        !components.env.clusterAgent.cannotServeRequests()
-                      else true
-                    }
-                    .filter(identity)
-                    .take(1)
-                    .runWith(Sink.head)(mat)
-                    .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
-                    .recover { case e: Throwable =>
-                      SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
-                    }
-              )
+          .firstCompletedOf(
+            Seq(
+              timeout(task, waitForFirstClusterFetchTimeout.millis),
+              Source
+                .tick(1.second, 1.second, ())
+                .map { _ =>
+                  if (components.env.clusterConfig.mode == ClusterMode.Worker)
+                    !components.env.clusterAgent.cannotServeRequests()
+                  else true
+                }
+                .filter(identity)
+                .take(1)
+                .runWith(Sink.head)(mat)
+                .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+                .recover { case e: Throwable =>
+                  SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+                }
             )
-            .flatMap {
-              case SubSystemInitializationState.Failed(_, er, _) =>
-                components.env.clusterAgent.loadStateFromBackup() map {
-                  case true  => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start)
-                  case false =>
-                    SubSystemInitializationState.Failed(
-                      task,
-                      new RuntimeException(
-                        s"failed to fetch cluster state (${er.getMessage}) and failed to load state from backup"
-                      ),
-                      System.currentTimeMillis() - start
-                    )
-                }
-              case SubSystemInitializationState.Timeout(_, _)    =>
-                components.env.clusterAgent.loadStateFromBackup() map {
-                  case true  => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start)
-                  case false =>
-                    SubSystemInitializationState.Failed(
-                      task,
-                      new RuntimeException(
-                        "failed to fetch cluster state (timeout) and failed to load state from backup"
-                      ),
-                      System.currentTimeMillis() - start
-                    )
-                }
-              case r                                             =>
-                components.env.proxyState.sync().map { _ =>
-                  r
-                }
-            }
+          )
+          .flatMap {
+            case SubSystemInitializationState.Failed(_, er, _) =>
+              components.env.clusterAgent.loadStateFromBackup() map {
+                case true  => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start)
+                case false =>
+                  SubSystemInitializationState.Failed(
+                    task,
+                    new RuntimeException(
+                      s"failed to fetch cluster state (${er.getMessage}) and failed to load state from backup"
+                    ),
+                    System.currentTimeMillis() - start
+                  )
+              }
+            case SubSystemInitializationState.Timeout(_, _)    =>
+              components.env.clusterAgent.loadStateFromBackup() map {
+                case true  => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start)
+                case false =>
+                  SubSystemInitializationState.Failed(
+                    task,
+                    new RuntimeException(
+                      "failed to fetch cluster state (timeout) and failed to load state from backup"
+                    ),
+                    System.currentTimeMillis() - start
+                  )
+              }
+            case r                                             =>
+              components.env.proxyState.sync().map { _ =>
+                r
+              }
+          }
       } else {
         FastFuture.successful(SubSystemInitializationState.NoWait(task))
       }
@@ -246,17 +246,17 @@ object OtoroshiLoaderHelper {
           Seq(
             timeout(task, waitForPluginsSearchTimeout.millis),
             Source
-                .tick(1.second, 1.second, ())
-                .map { _ =>
-                  components.env.scriptManager.firstPluginsSearchDone()
-                }
-                .filter(identity)
-                .take(1)
-                .runWith(Sink.head)(mat)
-                .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
-                .recover { case e: Throwable =>
-                  SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
-                }
+              .tick(1.second, 1.second, ())
+              .map { _ =>
+                components.env.scriptManager.firstPluginsSearchDone()
+              }
+              .filter(identity)
+              .take(1)
+              .runWith(Sink.head)(mat)
+              .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+              .recover { case e: Throwable =>
+                SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+              }
           )
         )
       } else {
@@ -273,18 +273,18 @@ object OtoroshiLoaderHelper {
           Seq(
             timeout(task, waitForTlsInitTimeout.millis),
             Source
-                .tick(1.second, 1.second, ())
-                .map { _ =>
-                  DynamicSSLEngineProvider.isFirstSetupDone &&
-                      DynamicSSLEngineProvider.getCurrentEnv() != null
-                }
-                .filter(identity)
-                .take(1)
-                .runWith(Sink.head)(mat)
-                .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
-                .recover { case e: Throwable =>
-                  SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
-                }
+              .tick(1.second, 1.second, ())
+              .map { _ =>
+                DynamicSSLEngineProvider.isFirstSetupDone &&
+                DynamicSSLEngineProvider.getCurrentEnv() != null
+              }
+              .filter(identity)
+              .take(1)
+              .runWith(Sink.head)(mat)
+              .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+              .recover { case e: Throwable =>
+                SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+              }
           )
         )
       } else {
@@ -301,18 +301,18 @@ object OtoroshiLoaderHelper {
           Seq(
             timeout(task, waitForScriptsCompilationTimeout.millis),
             Source
-                .tick(1.second, 1.second, ())
-                .mapAsync(1) { _ =>
-                  components.env.scriptManager.state()
-                }
-                .map(_.initialized)
-                .filter(identity)
-                .take(1)
-                .runWith(Sink.head)(mat)
-                .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
-                .recover { case e: Throwable =>
-                  SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
-                }
+              .tick(1.second, 1.second, ())
+              .mapAsync(1) { _ =>
+                components.env.scriptManager.state()
+              }
+              .map(_.initialized)
+              .filter(identity)
+              .take(1)
+              .runWith(Sink.head)(mat)
+              .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+              .recover { case e: Throwable =>
+                SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+              }
           )
         )
       } else {
@@ -329,17 +329,17 @@ object OtoroshiLoaderHelper {
           Seq(
             timeout(task, waitProxyStateSyncTimeout.millis),
             Source
-                .tick(1.second, 1.second, ())
-                .map { _ =>
-                  NgProxyStateLoaderJob.firstSync.get()
-                }
-                .filter(identity)
-                .take(1)
-                .runWith(Sink.head)(mat)
-                .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
-                .recover { case e: Throwable =>
-                  SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
-                }
+              .tick(1.second, 1.second, ())
+              .map { _ =>
+                NgProxyStateLoaderJob.firstSync.get()
+              }
+              .filter(identity)
+              .take(1)
+              .runWith(Sink.head)(mat)
+              .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+              .recover { case e: Throwable =>
+                SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+              }
           )
         )
       } else {
@@ -360,7 +360,7 @@ object OtoroshiLoaderHelper {
       } yield Seq(task1, task2, task3, task4, task5, task6)
       // AWAIT: valid
       val tasks     = Try(Await.result(waiting, globalWaitTimeout.millis))
-          .getOrElse(Seq(SubSystemInitializationState.Timeout("global-timeout", globalWaitTimeout)))
+        .getOrElse(Seq(SubSystemInitializationState.Timeout("global-timeout", globalWaitTimeout)))
       logger.info(s"subsystems initialization done in ${System.currentTimeMillis() - start} ms.")
       val errors    = tasks.filter(!_.isSuccessful)
       val successes = tasks.filter(_.isSuccessful)
@@ -413,29 +413,29 @@ object OtoroshiEnvHolder {
 
 class ProgrammaticOtoroshiComponents(_serverConfig: ServerConfig, _configuration: Config)
     extends PekkoHttpServerComponents
-        with BuiltInComponents
-        with AssetsComponents
-        with AhcWSComponents
-        with HttpFiltersComponents
-        with EnvContainer {
+    with BuiltInComponents
+    with AssetsComponents
+    with AhcWSComponents
+    with HttpFiltersComponents
+    with EnvContainer {
 
   override lazy val configuration: Configuration = {
     val sslConfig  = serverConfig.sslPort
-        .map { sslPort =>
-          s"""
+      .map { sslPort =>
+        s"""
              |https.port=$sslPort
              |play.server.https.port=$sslPort
       """.stripMargin
-        }
-        .getOrElse("")
+      }
+      .getOrElse("")
     val httpConfig = serverConfig.port
-        .map { httpPort =>
-          s"""
+      .map { httpPort =>
+        s"""
              |http.port=$httpPort
              |play.server.http.port=$httpPort
       """.stripMargin
-        }
-        .getOrElse("")
+      }
+      .getOrElse("")
 
     // Configuration(ConfigFactory.load()) ++ Configuration(_configuration) ++ Configuration(
     //   ConfigFactory.parseString(httpConfig + sslConfig)
@@ -462,20 +462,20 @@ class ProgrammaticOtoroshiComponents(_serverConfig: ServerConfig, _configuration
   lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
   implicit lazy val env: Env = OtoroshiEnvHolder
-      .set(
-        new Env(
-          _configuration = configuration,
-          environment = environment,
-          lifecycle = applicationLifecycle,
-          httpConfiguration = httpConfiguration,
-          wsClient = wsClient,
-          circuitBeakersHolder = circuitBreakersHolder,
-          getHttpPort = None,
-          getHttpsPort = None,
-          testing = false
-        )
+    .set(
+      new Env(
+        _configuration = configuration,
+        environment = environment,
+        lifecycle = applicationLifecycle,
+        httpConfiguration = httpConfiguration,
+        wsClient = wsClient,
+        circuitBeakersHolder = circuitBreakersHolder,
+        getHttpPort = None,
+        getHttpsPort = None,
+        testing = false
       )
-      .seffectOn(ev => OtoroshiLoaderHelper.initOpenTelemetryLogger(configuration, ev))
+    )
+    .seffectOn(ev => OtoroshiLoaderHelper.initOpenTelemetryLogger(configuration, ev))
 
   override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 
@@ -491,60 +491,60 @@ class ProgrammaticOtoroshiComponents(_serverConfig: ServerConfig, _configuration
 
   lazy val handlerRef = new AtomicReference[HttpRequestHandler]()
 
-  lazy val metrics: Metrics              = wire[Metrics]
-  lazy val snowMonkey: SnowMonkey           = wire[SnowMonkey]
-  lazy val unAuthApiAction: UnAuthApiAction      = wire[UnAuthApiAction]
-  lazy val apiAction: ApiAction            = wire[ApiAction]
-  lazy val backOfficeAction: BackOfficeAction     = wire[BackOfficeAction]
+  lazy val metrics: Metrics                           = wire[Metrics]
+  lazy val snowMonkey: SnowMonkey                     = wire[SnowMonkey]
+  lazy val unAuthApiAction: UnAuthApiAction           = wire[UnAuthApiAction]
+  lazy val apiAction: ApiAction                       = wire[ApiAction]
+  lazy val backOfficeAction: BackOfficeAction         = wire[BackOfficeAction]
   lazy val backOfficeAuthAction: BackOfficeActionAuth = wire[BackOfficeActionAuth]
-  lazy val privateAppsAction: PrivateAppsAction    = wire[PrivateAppsAction]
+  lazy val privateAppsAction: PrivateAppsAction       = wire[PrivateAppsAction]
 
-  lazy val swaggerController: SwaggerController         = wire[SwaggerController]
-  lazy val apiController: ApiController             = wire[ApiController]
-  lazy val analyticsController: AnalyticsController       = wire[AnalyticsController]
-  lazy val auth0Controller: AuthController           = wire[AuthController]
-  lazy val backOfficeController: BackOfficeController      = wire[BackOfficeController]
-  lazy val privateAppsController: PrivateAppsController     = wire[PrivateAppsController]
-  lazy val u2fController: U2FController             = wire[U2FController]
-  lazy val clusterController: ClusterController         = wire[ClusterController]
+  lazy val swaggerController: SwaggerController                  = wire[SwaggerController]
+  lazy val apiController: ApiController                          = wire[ApiController]
+  lazy val analyticsController: AnalyticsController              = wire[AnalyticsController]
+  lazy val auth0Controller: AuthController                       = wire[AuthController]
+  lazy val backOfficeController: BackOfficeController            = wire[BackOfficeController]
+  lazy val privateAppsController: PrivateAppsController          = wire[PrivateAppsController]
+  lazy val u2fController: U2FController                          = wire[U2FController]
+  lazy val clusterController: ClusterController                  = wire[ClusterController]
   lazy val clientValidatorController: ClientValidatorsController = wire[ClientValidatorsController]
-  lazy val scriptApiController: ScriptApiController       = wire[ScriptApiController]
-  lazy val tcpServiceApiController: TcpServiceApiController   = wire[TcpServiceApiController]
-  lazy val pkiController: PkiController             = wire[PkiController]
-  lazy val usersController: UsersController           = wire[UsersController]
-  lazy val templatesController: TemplatesController       = wire[TemplatesController]
+  lazy val scriptApiController: ScriptApiController              = wire[ScriptApiController]
+  lazy val tcpServiceApiController: TcpServiceApiController      = wire[TcpServiceApiController]
+  lazy val pkiController: PkiController                          = wire[PkiController]
+  lazy val usersController: UsersController                      = wire[UsersController]
+  lazy val templatesController: TemplatesController              = wire[TemplatesController]
 
   lazy val healthController: HealthController = wire[HealthController]
   lazy val eventsController: EventsController = wire[EventsController]
-  lazy val statsController: StatsController  = wire[StatsController]
+  lazy val statsController: StatsController   = wire[StatsController]
 
-  lazy val servicesController: ServicesController            = wire[ServicesController]
-  lazy val serviceGroupController: ServiceGroupController        = wire[ServiceGroupController]
-  lazy val apiKeysController: ApiKeysController             = wire[ApiKeysController]
-  lazy val ApiKeysFromGroupController: ApiKeysFromGroupController    = wire[ApiKeysFromGroupController]
-  lazy val ApiKeysFromServiceController: ApiKeysFromServiceController  = wire[ApiKeysFromServiceController]
-  lazy val ApiKeysFromRouteController: ApiKeysFromRouteController    = wire[ApiKeysFromRouteController]
-  lazy val jwtVerifierController: JwtVerifierController         = wire[JwtVerifierController]
-  lazy val authModulesController: AuthModulesController         = wire[AuthModulesController]
-  lazy val importExportController: ImportExportController        = wire[ImportExportController]
-  lazy val snowMonkeyController: SnowMonkeyController          = wire[SnowMonkeyController]
-  lazy val canaryController: CanaryController              = wire[CanaryController]
-  lazy val certificatesController: CertificatesController        = wire[CertificatesController]
-  lazy val globalConfigController: GlobalConfigController        = wire[GlobalConfigController]
-  lazy val teamsController: TeamsController               = wire[TeamsController]
-  lazy val tenantsController: TenantsController             = wire[TenantsController]
-  lazy val dataExporterConfigController: DataExporterConfigController  = wire[DataExporterConfigController]
-  lazy val routesController: NgRoutesController              = wire[NgRoutesController]
+  lazy val servicesController: ServicesController                       = wire[ServicesController]
+  lazy val serviceGroupController: ServiceGroupController               = wire[ServiceGroupController]
+  lazy val apiKeysController: ApiKeysController                         = wire[ApiKeysController]
+  lazy val ApiKeysFromGroupController: ApiKeysFromGroupController       = wire[ApiKeysFromGroupController]
+  lazy val ApiKeysFromServiceController: ApiKeysFromServiceController   = wire[ApiKeysFromServiceController]
+  lazy val ApiKeysFromRouteController: ApiKeysFromRouteController       = wire[ApiKeysFromRouteController]
+  lazy val jwtVerifierController: JwtVerifierController                 = wire[JwtVerifierController]
+  lazy val authModulesController: AuthModulesController                 = wire[AuthModulesController]
+  lazy val importExportController: ImportExportController               = wire[ImportExportController]
+  lazy val snowMonkeyController: SnowMonkeyController                   = wire[SnowMonkeyController]
+  lazy val canaryController: CanaryController                           = wire[CanaryController]
+  lazy val certificatesController: CertificatesController               = wire[CertificatesController]
+  lazy val globalConfigController: GlobalConfigController               = wire[GlobalConfigController]
+  lazy val teamsController: TeamsController                             = wire[TeamsController]
+  lazy val tenantsController: TenantsController                         = wire[TenantsController]
+  lazy val dataExporterConfigController: DataExporterConfigController   = wire[DataExporterConfigController]
+  lazy val routesController: NgRoutesController                         = wire[NgRoutesController]
   lazy val ngRouteCompositionsController: NgRouteCompositionsController = wire[NgRouteCompositionsController]
-  lazy val backendsController: NgBackendsController            = wire[NgBackendsController]
-  lazy val pluginsController: NgPluginsController             = wire[NgPluginsController]
-  lazy val tryItController: TryItController               = wire[TryItController]
-  lazy val tunnelController: TunnelController              = wire[TunnelController]
-  lazy val entitiesController: EntitiesController            = wire[EntitiesController]
-  lazy val errorTemplatesController: ErrorTemplatesController      = wire[ErrorTemplatesController]
-  lazy val genericApiController: GenericApiController          = wire[GenericApiController]
-  lazy val infosApiController: InfosApiController            = wire[InfosApiController]
-  lazy val apisController: ApisController                = wire[ApisController]
+  lazy val backendsController: NgBackendsController                     = wire[NgBackendsController]
+  lazy val pluginsController: NgPluginsController                       = wire[NgPluginsController]
+  lazy val tryItController: TryItController                             = wire[TryItController]
+  lazy val tunnelController: TunnelController                           = wire[TunnelController]
+  lazy val entitiesController: EntitiesController                       = wire[EntitiesController]
+  lazy val errorTemplatesController: ErrorTemplatesController           = wire[ErrorTemplatesController]
+  lazy val genericApiController: GenericApiController                   = wire[GenericApiController]
+  lazy val infosApiController: InfosApiController                       = wire[InfosApiController]
+  lazy val apisController: ApisController                               = wire[ApisController]
 
   override lazy val assets: Assets = wire[Assets]
 
@@ -618,7 +618,6 @@ object Main {
     ).start().stopOnShutdown()
   }
 }
-
 
 case class TweakedGlobalConfig(config: GlobalConfig) extends EntityLocationSupport {
   override def location: EntityLocation         = EntityLocation.default
@@ -699,7 +698,7 @@ case class Resource(
     access: ResourceAccessApi[_]
 ) {
   lazy val groupKind: String = s"$group/$kind"
-  def json: JsValue  = Json.obj(
+  def json: JsValue          = Json.obj(
     "kind"          -> kind,
     "plural_name"   -> pluralName,
     "singular_name" -> singularName,
@@ -1054,7 +1053,7 @@ case class GenericResourceAccessApiWithStateAndWriteValidation[T <: EntityLocati
     stateOne: (String) => Option[T],
     stateUpdate: (Seq[T]) => Unit,
     writeValidator: (T, JsValue, Option[(T, JsValue)], String, Option[String], WriteAction, Env) => Future[
-        Either[JsValue, T]
+      Either[JsValue, T]
     ] = (ent: T, _: JsValue, _: Option[(T, JsValue)], _: String, _: Option[String], _: WriteAction, _: Env) =>
       ent.rightf,
     deleteValidator: (T, JsValue, String, String, DeleteAction, Env) => Future[Either[JsValue, Unit]] =
@@ -2026,7 +2025,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       enabled = true,
       whiteList =
         Seq("application/json", "application/yaml", "application/yml", "application/yaml+k8s", "application/yml+k8s"),
-      blackList = Seq("application/x-ndjson"))
+      blackList = Seq("application/x-ndjson")
+    )
     val entity     = if (request.method == "GET") {
       EntityFiltering.process(_entity, request)
 //      (for {
@@ -2282,8 +2282,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // PATCH /apis/:group/:version/:entity/_bulk
-  def bulkPatch(group: String, version: String, entity: String): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) {
-    (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def bulkPatch(group: String, version: String, entity: String): Action[Source[ByteString, _]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
       import otoroshi.utils.json.JsonPatchHelpers.patchJson
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
@@ -2376,7 +2376,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             None
           )
       }
-  }
+    }
 
   // POST /apis/:group/:version/:entity/_bulk
   def bulkCreate(group: String, version: String, entity: String): Action[Source[ByteString, _]] =
@@ -2738,8 +2738,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // POST /apis/:group/:version/:entity
-  def create(group: String, version: String, entity: String): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) {
-    (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def create(group: String, version: String, entity: String): Action[Source[ByteString, _]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -2794,7 +2794,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             }
         }
       }
-  }
+    }
 
   // DELETE /apis/:group/:version/:entity
   def deleteAll(group: String, version: String, entity: String): Action[AnyContent] = ApiAction.async { ctx =>
@@ -2893,8 +2893,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // POST /apis/:group/:version/:entity/:id
-  def upsert(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) {
-    (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def upsert(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -2973,11 +2973,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             }
         }
       }
-  }
+    }
 
   // PUT /apis/:group/:version/:entity/:id
-  def update(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) {
-    (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def update(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -3032,11 +3032,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             }
         }
       }
-  }
+    }
 
   // PATCH /apis/:group/:version/:entity/:id
-  def patch(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) {
-    (ctx: ApiActionContext[Source[ByteString, _]]) =>
+  def patch(group: String, version: String, entity: String, id: String): Action[Source[ByteString, _]] =
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
       import otoroshi.utils.json.JsonPatchHelpers.patchJson
       withResource(group, version, entity, ctx.request) { resource =>
         resource.access.findOne(version, id).flatMap {
@@ -3088,7 +3088,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             }
         }
       }
-  }
+    }
 
   def openapiJson(): Action[AnyContent] = Action { req =>
     val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))

@@ -111,18 +111,19 @@ object GreenScoreEntity {
           .select("routes")
           .asOpt[JsArray]
           .map(routes => {
-            routes.value.map(route => {
-              route
-                .asOpt[JsObject]
-                .map(v => {
-                  RouteRules(
-                    v.select("routeId").as[String],
-                    v.select("rulesConfig").asOpt[JsObject].map(RulesRouteConfiguration.format.reads(_)).get.get
-                  )
-                })
-                .get
-            })
-            .toSeq
+            routes.value
+              .map(route => {
+                route
+                  .asOpt[JsObject]
+                  .map(v => {
+                    RouteRules(
+                      v.select("routeId").as[String],
+                      v.select("rulesConfig").asOpt[JsObject].map(RulesRouteConfiguration.format.reads(_)).get.get
+                    )
+                  })
+                  .get
+              })
+              .toSeq
           })
           .getOrElse(Seq.empty[RouteRules]),
         efficiency = json.select("efficiency").asOpt(Efficiency.reads(_)).getOrElse(Efficiency())
@@ -187,7 +188,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
 
   override def syncStates(): Future[Unit] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val ev: Env = env
+    implicit val ev: Env              = env
     for {
       scores <- datastores.greenscoresDatastore.findAll()
     } yield {
@@ -203,7 +204,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       wantsBody = false,
       (ctx, request, apk, _) => {
         implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-        implicit val ev: Env = env
+        implicit val ev: Env              = env
 
         for {
           groups <- datastores.greenscoresDatastore.findAll()
@@ -225,7 +226,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       wantsBody = true,
       (ctx, request, apk, body) => {
         implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-        implicit val ev: Env = env
+        implicit val ev: Env              = env
 
         body
           .map(
@@ -266,7 +267,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       "/api/extensions/green-score/efficiency/:group/:route",
       wantsBody = false,
       (routerCtx, request, _, _) => {
-        implicit val e: Env = env
+        implicit val e: Env                = env
         implicit val ctx: ExecutionContext = env.analyticsExecutionContext
 
         val fromAndTo = request

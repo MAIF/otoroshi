@@ -30,13 +30,13 @@ case class NgHttpClientCacheConfig(maxAgeSeconds: Long, methods: Seq[String], st
 }
 
 object NgHttpClientCacheConfig {
-  val default: NgHttpClientCacheConfig = NgHttpClientCacheConfig(
+  val default: NgHttpClientCacheConfig        = NgHttpClientCacheConfig(
     maxAgeSeconds = 86400,
     methods = Seq("GET"),
     status = Seq(200),
     mimeTypes = Seq("text/html")
   )
-  val format: Format[NgHttpClientCacheConfig]  = new Format[NgHttpClientCacheConfig] {
+  val format: Format[NgHttpClientCacheConfig] = new Format[NgHttpClientCacheConfig] {
     override def reads(json: JsValue): JsResult[NgHttpClientCacheConfig] = Try {
       NgHttpClientCacheConfig(
         maxAgeSeconds = json.select("max_age_seconds").asOpt[Long].getOrElse(default.maxAgeSeconds),
@@ -216,9 +216,9 @@ object NgResponseCacheConfig {
 }
 
 object NgResponseCache {
-  val base64Encoder = java.util.Base64.getEncoder
-  val base64Decoder = java.util.Base64.getDecoder
-  val logger: Logger        = Logger("otoroshi-plugins-response-cache")
+  val base64Encoder  = java.util.Base64.getEncoder
+  val base64Decoder  = java.util.Base64.getDecoder
+  val logger: Logger = Logger("otoroshi-plugins-response-cache")
 }
 
 class NgResponseCache extends NgRequestTransformer {
@@ -248,7 +248,7 @@ class NgResponseCache extends NgRequestTransformer {
   private val jobRef = new AtomicReference[Cancellable]()
 
   override def start(env: Env): Future[Unit] = {
-    val actorSystem = ActorSystem("cache-redis")
+    val actorSystem                           = ActorSystem("cache-redis")
     implicit val ec: ExecutionContextExecutor = actorSystem.dispatcher
     env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "ResponseCache").isDefined) {
@@ -305,31 +305,31 @@ class NgResponseCache extends NgRequestTransformer {
     config.filter match {
       case None         => true
       case Some(filter) =>
-          val matchPath      =
-            if (filter.paths.isEmpty) true else filter.paths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
-          val matchNotPath   =
-            if (filter.notPaths.isEmpty) false
-            else filter.notPaths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
-          val methodMatch    =
-            if (filter.methods.isEmpty) true else filter.methods.map(_.toLowerCase()).contains(req.method.toLowerCase())
-          val methodNotMatch =
-            if (filter.notMethods.isEmpty) false
-            else filter.notMethods.map(_.toLowerCase()).contains(req.method.toLowerCase())
-          val statusMatch    =
-            if (filter.statuses.isEmpty) true
-            else
-              statusOpt match {
-                case None         => true
-                case Some(status) => filter.statuses.contains(status)
-              }
-          val statusNotMatch =
-            if (filter.notStatuses.isEmpty) false
-            else
-              statusOpt match {
-                case None         => true
-                case Some(status) => filter.notStatuses.contains(status)
-              }
-          matchPath && methodMatch && statusMatch && !matchNotPath && !methodNotMatch && !statusNotMatch
+        val matchPath      =
+          if (filter.paths.isEmpty) true else filter.paths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
+        val matchNotPath   =
+          if (filter.notPaths.isEmpty) false
+          else filter.notPaths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
+        val methodMatch    =
+          if (filter.methods.isEmpty) true else filter.methods.map(_.toLowerCase()).contains(req.method.toLowerCase())
+        val methodNotMatch =
+          if (filter.notMethods.isEmpty) false
+          else filter.notMethods.map(_.toLowerCase()).contains(req.method.toLowerCase())
+        val statusMatch    =
+          if (filter.statuses.isEmpty) true
+          else
+            statusOpt match {
+              case None         => true
+              case Some(status) => filter.statuses.contains(status)
+            }
+        val statusNotMatch =
+          if (filter.notStatuses.isEmpty) false
+          else
+            statusOpt match {
+              case None         => true
+              case Some(status) => filter.notStatuses.contains(status)
+            }
+        matchPath && methodMatch && statusMatch && !matchNotPath && !methodNotMatch && !statusNotMatch
     }
   }
 
@@ -378,15 +378,15 @@ class NgResponseCache extends NgRequestTransformer {
           )
         )
       case Right(Some(res)) =>
-          val status  = (res \ "status").as[Int]
-          val body    = ByteString(NgResponseCache.base64Decoder.decode((res \ "body").as[String]))
-          val headers = (res \ "headers").as[Map[String, String]] ++ Map("X-Otoroshi-Cache" -> "HIT")
-          val ctype   = (res \ "ctype").as[String]
-          if (NgResponseCache.logger.isDebugEnabled)
-            NgResponseCache.logger.debug(
-              s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache"
-            )
-          Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
+        val status  = (res \ "status").as[Int]
+        val body    = ByteString(NgResponseCache.base64Decoder.decode((res \ "body").as[String]))
+        val headers = (res \ "headers").as[Map[String, String]] ++ Map("X-Otoroshi-Cache" -> "HIT")
+        val ctype   = (res \ "ctype").as[String]
+        if (NgResponseCache.logger.isDebugEnabled)
+          NgResponseCache.logger.debug(
+            s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache"
+          )
+        Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
     }
   }
 
@@ -475,15 +475,15 @@ class NgResponseCacheCleanupJob extends Job {
   }
 
   private def cleanCache(env: Env): Future[Unit] = {
-    implicit val ev: Env = env
+    implicit val ev: Env              = env
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
-    val functions    = env.proxyState.allRoutes().map { route =>
+    implicit val mat: Materializer    = env.otoroshiMaterializer
+    val functions                     = env.proxyState.allRoutes().map { route =>
       (route, route.plugins.getPluginByClass[NgResponseCache])
     } collect { case (route, Some(plugin)) =>
       (route, plugin)
-    } map {
-      case (route, plugin) => () =>
+    } map { case (route, plugin) =>
+      () =>
         val config  = NgResponseCacheConfig.format.reads(plugin.config.raw.asValue).get
         val maxSize = config.maxSize
         if (config.autoClean) {

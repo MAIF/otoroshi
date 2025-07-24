@@ -40,7 +40,7 @@ case class KubernetesService(raw: JsValue)   extends KubernetesEntity {
   lazy val clusterIP: String = (raw \ "spec" \ "clusterIP").as[String]
 }
 case class KubernetesConfigMap(raw: JsValue) extends KubernetesEntity {
-  lazy val rawObj: JsObject                      = raw.as[JsObject]
+  lazy val rawObj: JsObject            = raw.as[JsObject]
   //lazy val corefile: String      = (raw \ "data" \ "Corefile").as[String]
   def corefile(azure: Boolean): String =
     (if (azure) (raw \ "data" \ "otoroshi.server").asOpt[String] else (raw \ "data" \ "Corefile").asOpt[String])
@@ -120,9 +120,9 @@ case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
     } else {
       client.config.ingressEndpointPublishedService match {
         case None             =>
-            // TODO: update with ingressEndpointHostname and ingressEndpointIp
+        // TODO: update with ingressEndpointHostname and ingressEndpointIp
         case Some(pubService) =>
-            // TODO: update with pubService
+        // TODO: update with pubService
       }
     }
     ().future
@@ -169,7 +169,7 @@ case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
 case class KubernetesSecret(raw: JsValue) extends KubernetesEntity {
   lazy val theType: String                         = (raw \ "type").as[String]
   lazy val base64Data: Map[String, String]         = (raw \ "data").asOpt[Map[String, String]].getOrElse(Map.empty)
-  lazy val data: MapView[String,String]                                    = base64Data.view.mapValues(v => new String(OtoroshiClaim.decoder.decode(v)))
+  lazy val data: MapView[String, String]           = base64Data.view.mapValues(v => new String(OtoroshiClaim.decoder.decode(v)))
   lazy val stringData: Option[Map[String, String]] = (raw \ "stringData").asOpt[Map[String, String]]
   lazy val hasStringData: Boolean                  = stringData.isDefined
   def cert: KubernetesCertSecret                   = KubernetesCertSecret(raw)

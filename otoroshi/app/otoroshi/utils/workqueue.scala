@@ -21,11 +21,10 @@ final class WorkQueue[A](buffer: Int)(implicit mat: Materializer) {
 
   private val queue = Source
     .queue[(Task[A], Promise[A])](buffer, OverflowStrategy.dropHead)
-    .mapAsync(1) {
-      case (task, promise) =>
-          val rf: Future[A] = task()
-          promise.completeWith(rf)
-          rf
+    .mapAsync(1) { case (task, promise) =>
+      val rf: Future[A] = task()
+      promise.completeWith(rf)
+      rf
     }
     .recover { case _: Exception =>
       () // keep processing tasks

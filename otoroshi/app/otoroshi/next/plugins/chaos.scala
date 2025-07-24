@@ -273,15 +273,15 @@ class SnowMonkeyChaos extends NgRequestTransformer {
     ctx.attrs.get(SnowMonkeyChaos.ContextKey) match {
       case None                => ctx.otoroshiResponse.right
       case Some(snowMonkeyCtx) =>
-          ctx.otoroshiResponse
-            .copy(
-              headers = ctx.otoroshiResponse.headers + ("Content-Length" -> (ctx.otoroshiResponse
-                .header("Content-Length")
-                .getOrElse("0")
-                .toInt + snowMonkeyCtx.trailingResponseBodySize).toString),
-              body = ctx.otoroshiResponse.body.concat(snowMonkeyCtx.trailingResponseBodyStream)
-            )
-            .right
+        ctx.otoroshiResponse
+          .copy(
+            headers = ctx.otoroshiResponse.headers + ("Content-Length" -> (ctx.otoroshiResponse
+              .header("Content-Length")
+              .getOrElse("0")
+              .toInt + snowMonkeyCtx.trailingResponseBodySize).toString),
+            body = ctx.otoroshiResponse.body.concat(snowMonkeyCtx.trailingResponseBodyStream)
+          )
+          .right
     }
   }
 }

@@ -157,7 +157,7 @@ case class GenCertResponse(
       entityMetadata = Map(
         "csr" -> csrQuery.map(_.json.stringify).getOrElse("--")
       ),
-        revoked = false
+      revoked = false
     ).enrich()
   }
 }

@@ -232,11 +232,11 @@ class ExternalHttpValidator extends AccessValidator {
         case Some(true)  => FastFuture.successful(true)
         case Some(false) => FastFuture.successful(false)
         case None        =>
-            validateCertificateChain(chain, desc, apikey, user, valCfg).flatMap {
-              case Some(false) => setBadLocalValidation(key, valCfg.badTtl).map(_ => false)
-              case Some(true)  => setGoodLocalValidation(key, valCfg.goodTtl).map(_ => true)
-              case None        => setBadLocalValidation(key, valCfg.badTtl).map(_ => false)
-            }
+          validateCertificateChain(chain, desc, apikey, user, valCfg).flatMap {
+            case Some(false) => setBadLocalValidation(key, valCfg.badTtl).map(_ => false)
+            case Some(true)  => setGoodLocalValidation(key, valCfg.goodTtl).map(_ => true)
+            case None        => setBadLocalValidation(key, valCfg.badTtl).map(_ => false)
+          }
       }
     }
   }
@@ -249,11 +249,11 @@ class ExternalHttpValidator extends AccessValidator {
     val valCfg = ExternalHttpValidatorConfig(config)
     context.request.clientCertificateChain match {
       case None if !valCfg.allowNoClientCert => FastFuture.successful(false)
-      case None =>
-          val chain: Seq[X509Certificate] = Seq.empty
-          canAccessWithClientCertChain(chain, context, valCfg)
+      case None                              =>
+        val chain: Seq[X509Certificate] = Seq.empty
+        canAccessWithClientCertChain(chain, context, valCfg)
       case Some(chain)                       =>
-          canAccessWithClientCertChain(chain, context, valCfg)
+        canAccessWithClientCertChain(chain, context, valCfg)
     }
   }
 }

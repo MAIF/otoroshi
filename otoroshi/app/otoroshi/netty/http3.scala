@@ -51,7 +51,7 @@ class Http1RequestHandler(
 ) extends ChannelInboundHandlerAdapter {
 
   private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  private implicit val mat: Materializer = env.otoroshiMaterializer
+  private implicit val mat: Materializer    = env.otoroshiMaterializer
 
   private val NOT_HANDLED          =
     Unpooled.wrappedBuffer(s"${Json.obj("error" -> "not handled")}\r\n".getBytes(CharsetUtil.US_ASCII))
@@ -483,10 +483,9 @@ class Http1RequestHandler(
                   .map(_ => ())
             }
           }
-          .andThen {
-            case Failure(exception) =>
-              logger.error("error while handling http3 request", exception)
-              directResponse(ctx, msg, HttpResponseStatus.INTERNAL_SERVER_ERROR, ERROR.retainedDuplicate())
+          .andThen { case Failure(exception) =>
+            logger.error("error while handling http3 request", exception)
+            directResponse(ctx, msg, HttpResponseStatus.INTERNAL_SERVER_ERROR, ERROR.retainedDuplicate())
           }
           .andThen { case _ =>
             accessLog()
@@ -520,7 +519,7 @@ class Http1RequestHandler(
         } else {
           keepAlive = HttpUtil.isKeepAlive(request)
           msg match {
-            case _: LastHttpContent =>
+            case _: LastHttpContent      =>
               hotSource.tryEmitComplete()
               runOtoroshiRequest(request, keepAlive, ctx, msg)
             case contentMsg: HttpContent =>
@@ -532,7 +531,7 @@ class Http1RequestHandler(
                 hotSource.tryEmitComplete()
                 runOtoroshiRequest(request, keepAlive, ctx, msg)
               }
-            case _ =>
+            case _                       =>
           }
         }
       case _req: HttpRequest           =>
@@ -545,7 +544,7 @@ class Http1RequestHandler(
         } else {
           keepAlive = HttpUtil.isKeepAlive(request)
           msg match {
-            case _: LastHttpContent =>
+            case _: LastHttpContent      =>
               hotSource.tryEmitComplete()
               runOtoroshiRequest(request, keepAlive, ctx, msg)
             case contentMsg: HttpContent =>
@@ -557,7 +556,7 @@ class Http1RequestHandler(
                 hotSource.tryEmitComplete()
                 runOtoroshiRequest(request, keepAlive, ctx, msg)
               }
-            case _ =>
+            case _                       =>
           }
         }
       case contentMsg: LastHttpContent =>
@@ -591,14 +590,14 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
     // Generate key pair
     val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
     keyPairGenerator.initialize(2048)
-    val keyPair = keyPairGenerator.generateKeyPair()
+    val keyPair          = keyPairGenerator.generateKeyPair()
 
     // Certificate details
-    val issuer = new X500Name("CN=localhost, O=Otoroshi Fallback, L=Unknown, ST=Unknown, C=XX")
-    val subject = issuer // self-signed, so issuer = subject
-    val serial = new BigInteger(64, new java.security.SecureRandom())
+    val issuer    = new X500Name("CN=localhost, O=Otoroshi Fallback, L=Unknown, ST=Unknown, C=XX")
+    val subject   = issuer                                                   // self-signed, so issuer = subject
+    val serial    = new BigInteger(64, new java.security.SecureRandom())
     val notBefore = new Date()
-    val notAfter = new Date(notBefore.getTime + 365L * 24 * 60 * 60 * 1000) // 1 year
+    val notAfter  = new Date(notBefore.getTime + 365L * 24 * 60 * 60 * 1000) // 1 year
 
     // Build certificate
     val certBuilder = new JcaX509v3CertificateBuilder(
@@ -612,13 +611,13 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
 
     // Sign certificate
     val signer = new JcaContentSignerBuilder("SHA256WithRSA")
-        .setProvider("BC")
-        .build(keyPair.getPrivate)
+      .setProvider("BC")
+      .build(keyPair.getPrivate)
 
     val certificateHolder = certBuilder.build(signer)
-    val certificate = new JcaX509CertificateConverter()
-        .setProvider("BC")
-        .getCertificate(certificateHolder)
+    val certificate       = new JcaX509CertificateConverter()
+      .setProvider("BC")
+      .getCertificate(certificateHolder)
 
     (keyPair, certificate)
   }
@@ -626,12 +625,11 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
   private lazy val fallbackContext: QuicSslContext = {
     val (keyPair, certificate) = fallbackCert
     QuicSslContextBuilder
-        .forServer(keyPair.getPrivate, null, certificate)
-        .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
-        .earlyData(true)
-        .build()
+      .forServer(keyPair.getPrivate, null, certificate)
+      .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
+      .earlyData(true)
+      .build()
   }
-
 
   def start(
       handler: HttpRequestHandler,
@@ -641,16 +639,15 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
 
     if (config.http3.enabled && config.http3.port != -1) {
 
-
       @tailrec
       def mapDomain(domain: String): QuicSslContext = {
         if (logger.isDebugEnabled) logger.debug(s"sni domain: $domain")
         if (domain == null) {
           env.datastores.globalConfigDataStore
-              .latest()(env.otoroshiExecutionContext, env)
-              .tlsSettings
-              .defaultDomain match {
-            case None => fallbackContext  // Use the BouncyCastle-generated context
+            .latest()(env.otoroshiExecutionContext, env)
+            .tlsSettings
+            .defaultDomain match {
+            case None      => fallbackContext // Use the BouncyCastle-generated context
             case Some(dom) => mapDomain(dom)  // Recursive call with the default domain
           }
         } else {
@@ -660,23 +657,23 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
               val (validCerts, byDomain) =
                 DynamicKeyManager.validCertificatesByDomains(env.proxyState.allCertificates())
               DynamicKeyManager.getServerCertificateForDomain(domain, validCerts, byDomain, env, logger) match {
-                case None => fallbackContext  // Use the BouncyCastle-generated context
+                case None       => fallbackContext // Use the BouncyCastle-generated context
                 case Some(cert) =>
                   // logger.debug(s"found cert for domain: ${domain}: ${cert.name}")
                   val keypair = cert.cryptoKeyPair
-                  val chain = cert.certificatesChain
+                  val chain   = cert.certificatesChain
                   if (logger.isDebugEnabled) logger.debug(s"for domain: $domain, found ${cert.name} / ${cert.id}")
                   QuicSslContextBuilder
-                      .forServer(keypair.getPrivate, cert.password.orNull, chain: _*)
-                      .clientAuth(config.clientAuth match {
-                        case otoroshi.ssl.ClientAuth.None => io.netty.handler.ssl.ClientAuth.NONE
-                        case otoroshi.ssl.ClientAuth.Want => io.netty.handler.ssl.ClientAuth.OPTIONAL
-                        case otoroshi.ssl.ClientAuth.Need => io.netty.handler.ssl.ClientAuth.REQUIRE
-                      })
-                      .trustManager(DynamicSSLEngineProvider.currentServerTrustManager)
-                      .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
-                      .earlyData(true)
-                      .build()
+                    .forServer(keypair.getPrivate, cert.password.orNull, chain: _*)
+                    .clientAuth(config.clientAuth match {
+                      case otoroshi.ssl.ClientAuth.None => io.netty.handler.ssl.ClientAuth.NONE
+                      case otoroshi.ssl.ClientAuth.Want => io.netty.handler.ssl.ClientAuth.OPTIONAL
+                      case otoroshi.ssl.ClientAuth.Need => io.netty.handler.ssl.ClientAuth.REQUIRE
+                    })
+                    .trustManager(DynamicSSLEngineProvider.currentServerTrustManager)
+                    .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
+                    .earlyData(true)
+                    .build()
               }
             }
           )
@@ -702,7 +699,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
           val address                 = new AtomicReference[String]("0.0.0.0")
           def addressAccess(): String = address.get()
           override def initChannel(ch: QuicChannel): Unit = {
-            ch.collectPathStats(0).addListener { fu: io.netty.util.concurrent.Future[QuicConnectionPathStats] =>
+            ch.collectPathStats(0).addListener { (fu: io.netty.util.concurrent.Future[QuicConnectionPathStats]) =>
               Option(fu.get())
                 .flatMap(v => Try(v.toString).toOption)
                 .flatMap(v => Try(v.split("/").last).toOption)
@@ -738,7 +735,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
           }
         })
         .build()
-      val group = new MultiThreadIoEventLoopGroup(config.nThread, NioIoHandler.newFactory())
+      val group            = new MultiThreadIoEventLoopGroup(config.nThread, NioIoHandler.newFactory())
       val bs               = new Bootstrap()
       val channel          = bs
         .group(group)

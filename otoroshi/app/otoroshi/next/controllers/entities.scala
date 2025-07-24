@@ -14,7 +14,7 @@ class EntitiesController(ApiAction: ApiAction, cc: ControllerComponents)(implici
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-entities-controller")
 

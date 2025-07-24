@@ -450,13 +450,12 @@ class EcoMetrics {
         states = rules.states
           .sortBy(_.date)(Ordering.Long)
           .flatMap(r => r.states.map(state => (r.date, state)))
-          .foldLeft(RulesManager.rules.map(r => RuleState(r.id, enabled = false))) {
-            case (acc, (recordState, state)) =>
-                if (recordState <= date) {
-                  acc.map(p => if (p.id == state.id) state else p)
-                } else {
-                  acc
-                }
+          .foldLeft(RulesManager.rules.map(r => RuleState(r.id, enabled = false))) { case (acc, (recordState, state)) =>
+            if (recordState <= date) {
+              acc.map(p => if (p.id == state.id) state else p)
+            } else {
+              acc
+            }
           }
       )
 

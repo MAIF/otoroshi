@@ -68,18 +68,18 @@ class NgMaxMindGeolocationInfoExtractor extends NgPreRouting {
             c.geolocationSettings.find(from).map {
               case None           => Done.right
               case Some(location) =>
-                  if (config.log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
-                  ctx.attrs.putIfAbsent(otoroshi.plugins.Keys.GeolocationInfoKey -> location)
-                  Done.right
+                if (config.log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
+                ctx.attrs.putIfAbsent(otoroshi.plugins.Keys.GeolocationInfoKey -> location)
+                Done.right
             }
         }
       case path     =>
         MaxMindGeolocationHelper.find(from, path).map {
           case None           => Done.right
           case Some(location) =>
-              if (config.log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
-              ctx.attrs.putIfAbsent(otoroshi.plugins.Keys.GeolocationInfoKey -> location)
-              Done.right
+            if (config.log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
+            ctx.attrs.putIfAbsent(otoroshi.plugins.Keys.GeolocationInfoKey -> location)
+            Done.right
         }
     }
   }
@@ -139,9 +139,9 @@ class NgIpStackGeolocationInfoExtractor extends NgPreRouting {
         IpStackGeolocationHelper.find(from, apiKey, config.timeout).map {
           case None           => Done.right
           case Some(location) =>
-              if (config.log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
-              ctx.attrs.putIfAbsent(otoroshi.plugins.Keys.GeolocationInfoKey -> location)
-              Done.right
+            if (config.log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
+            ctx.attrs.putIfAbsent(otoroshi.plugins.Keys.GeolocationInfoKey -> location)
+            Done.right
         }
     }
   }
@@ -189,13 +189,13 @@ class NgGeolocationInfoHeader extends NgRequestTransformer {
     ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
       case None           => Right(ctx.otoroshiRequest).future
       case Some(location) =>
-          Right(
-            ctx.otoroshiRequest.copy(
-              headers = ctx.otoroshiRequest.headers ++ Map(
-                config.headerName -> Json.stringify(location)
-              )
+        Right(
+          ctx.otoroshiRequest.copy(
+            headers = ctx.otoroshiRequest.headers ++ Map(
+              config.headerName -> Json.stringify(location)
             )
-          ).future
+          )
+        ).future
     }
   }
 }

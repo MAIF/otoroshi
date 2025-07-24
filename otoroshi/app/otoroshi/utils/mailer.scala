@@ -324,9 +324,9 @@ class MailgunMailer(env: Env, config: GlobalConfig, settings: MailgunSettings) e
   ): Future[Unit] = {
     val fu = env.Ws // no need for mtls here
       .url(if (settings.eu) {
-          s"https://api.eu.mailgun.net/v3/${settings.domain}/messages"
+        s"https://api.eu.mailgun.net/v3/${settings.domain}/messages"
       } else {
-          s"https://api.mailgun.net/v3/${settings.domain}/messages"
+        s"https://api.mailgun.net/v3/${settings.domain}/messages"
       })
       .withAuth("api", settings.apiKey, WSAuthScheme.BASIC)
       .withMaybeProxyServer(config.proxies.alertEmails)

@@ -55,32 +55,32 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
             case None                                        => NotFound(Json.obj("error" -> "Session not found !")).future
             case Some(session) if !ctx.canUserWrite(session) => ctx.fforbidden
             case Some(_)                                     =>
-                env.datastores.backOfficeUserDataStore.discardSession(id) map { _ =>
-                  val event = AdminApiEvent(
-                    env.snowflakeGenerator.nextIdStr(),
-                    env.env,
-                    Some(ctx.apiKey),
-                    None,
-                    "DISCARD_SESSION",
-                    s"Admin discarded an Admin session",
-                    ctx.from,
-                    ctx.ua,
-                    Json.obj("sessionId" -> id)
-                  )
-                  Audit.send(event)
-                  Alerts
-                    .send(
-                      SessionDiscardedAlert(
-                        env.snowflakeGenerator.nextIdStr(),
-                        env.env,
-                        fakeBackOfficeUser,
-                        event,
-                        ctx.from,
-                        ctx.ua
-                      )
+              env.datastores.backOfficeUserDataStore.discardSession(id) map { _ =>
+                val event = AdminApiEvent(
+                  env.snowflakeGenerator.nextIdStr(),
+                  env.env,
+                  Some(ctx.apiKey),
+                  None,
+                  "DISCARD_SESSION",
+                  s"Admin discarded an Admin session",
+                  ctx.from,
+                  ctx.ua,
+                  Json.obj("sessionId" -> id)
+                )
+                Audit.send(event)
+                Alerts
+                  .send(
+                    SessionDiscardedAlert(
+                      env.snowflakeGenerator.nextIdStr(),
+                      env.env,
+                      fakeBackOfficeUser,
+                      event,
+                      ctx.from,
+                      ctx.ua
                     )
-                  Ok(Json.obj("done" -> true))
-                }
+                  )
+                Ok(Json.obj("done" -> true))
+              }
           }
         } recover { case _ =>
           Ok(Json.obj("done" -> false))
@@ -148,32 +148,32 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
             case None                                        => Results.NotFound(Json.obj("error" -> "Session not found")).future
             case Some(session) if !ctx.canUserWrite(session) => ctx.fforbidden
             case Some(_)                                     =>
-                env.datastores.privateAppsUserDataStore.delete(id) map { _ =>
-                  val event = AdminApiEvent(
-                    env.snowflakeGenerator.nextIdStr(),
-                    env.env,
-                    Some(ctx.apiKey),
-                    None,
-                    "DISCARD_PRIVATE_APPS_SESSION",
-                    s"Admin discarded a private app session",
-                    ctx.from,
-                    ctx.ua,
-                    Json.obj("sessionId" -> id)
-                  )
-                  Audit.send(event)
-                  Alerts
-                    .send(
-                      SessionDiscardedAlert(
-                        env.snowflakeGenerator.nextIdStr(),
-                        env.env,
-                        fakeBackOfficeUser,
-                        event,
-                        ctx.from,
-                        ctx.ua
-                      )
+              env.datastores.privateAppsUserDataStore.delete(id) map { _ =>
+                val event = AdminApiEvent(
+                  env.snowflakeGenerator.nextIdStr(),
+                  env.env,
+                  Some(ctx.apiKey),
+                  None,
+                  "DISCARD_PRIVATE_APPS_SESSION",
+                  s"Admin discarded a private app session",
+                  ctx.from,
+                  ctx.ua,
+                  Json.obj("sessionId" -> id)
+                )
+                Audit.send(event)
+                Alerts
+                  .send(
+                    SessionDiscardedAlert(
+                      env.snowflakeGenerator.nextIdStr(),
+                      env.env,
+                      fakeBackOfficeUser,
+                      event,
+                      ctx.from,
+                      ctx.ua
                     )
-                  Ok(Json.obj("done" -> true))
-                }
+                  )
+                Ok(Json.obj("done" -> true))
+              }
           }
         } recover { case _ =>
           Ok(Json.obj("done" -> false))
@@ -227,33 +227,33 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
         case Right(None)       =>
           true
         case Right(Some(user)) =>
-            //           println(s"right some ${user.json}")
-                      val tenantAccesses    = user.rights.rights.map(_.tenant)
-            val newTenantAccesses = rights.rights.map(_.tenant)
+          //           println(s"right some ${user.json}")
+          val tenantAccesses    = user.rights.rights.map(_.tenant)
+          val newTenantAccesses = rights.rights.map(_.tenant)
 
-            val hasAccessToTenant = tenantAccesses.map(_.value).contains("*")
-            val badTenantAccess   = newTenantAccesses.exists(v => !tenantAccesses.contains(v))
+          val hasAccessToTenant = tenantAccesses.map(_.value).contains("*")
+          val badTenantAccess   = newTenantAccesses.exists(v => !tenantAccesses.contains(v))
 
-            val badTeamAccess = user.rights.rights.exists { right =>
-              user.rights.rights.find(_.tenant.value == right.tenant.value) match {
-                case None    => false
-                case Some(r) =>
-                  val teams    = r.teams
-                  val newTeams = right.teams
+          val badTeamAccess = user.rights.rights.exists { right =>
+            user.rights.rights.find(_.tenant.value == right.tenant.value) match {
+              case None    => false
+              case Some(r) =>
+                val teams    = r.teams
+                val newTeams = right.teams
 
-                  if (r.teams.map(_.value).contains("*")) {
-                    false
-                  } else {
-                    newTeams.exists(v => !teams.contains(v))
-                  }
-              }
+                if (r.teams.map(_.value).contains("*")) {
+                  false
+                } else {
+                  newTeams.exists(v => !teams.contains(v))
+                }
             }
+          }
 
-            if (hasAccessToTenant) {
-              !badTeamAccess
-            } else {
-              !(badTenantAccess || badTeamAccess)
-            }
+          if (hasAccessToTenant) {
+            !badTeamAccess
+          } else {
+            !(badTenantAccess || badTeamAccess)
+          }
       }
       if (pass) {
         f
@@ -281,33 +281,33 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
         checkNewUserRights(ctx, rights) {
           (usernameOpt, passwordOpt, labelOpt) match {
             case (Some(username), Some(password), Some(label)) =>
-                val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-                val user           = SimpleOtoroshiAdmin(
-                  username = username,
-                  password = saltedPassword,
-                  label = label,
-                  createdAt = DateTime.now(),
-                  typ = OtoroshiAdminType.SimpleAdmin,
-                  metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-                  rights = rights,
-                  adminEntityValidators = Map.empty,
-                  location =
-                    EntityLocation(ctx.currentTenant, Seq(TeamId.all)) // EntityLocation.readFromKey(ctx.request.body)
-                )
+              val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
+              val user           = SimpleOtoroshiAdmin(
+                username = username,
+                password = saltedPassword,
+                label = label,
+                createdAt = DateTime.now(),
+                typ = OtoroshiAdminType.SimpleAdmin,
+                metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+                rights = rights,
+                adminEntityValidators = Map.empty,
+                location =
+                  EntityLocation(ctx.currentTenant, Seq(TeamId.all)) // EntityLocation.readFromKey(ctx.request.body)
+              )
 
-                env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
-                  case Some(_) => FastFuture.successful(BadRequest(Json.obj("error" -> "user already exists")))
-                  case None    =>
-                      ctx.validateEntity(user.json, "simple-admin-user") match {
-                      case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
-                      case Right(_)   =>
-                        env.datastores.simpleAdminDataStore
-                          .registerUser(user)
-                          .map { _ =>
-                            Ok(Json.obj("username" -> username))
-                          }
-                    }
-                }
+              env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
+                case Some(_) => FastFuture.successful(BadRequest(Json.obj("error" -> "user already exists")))
+                case None    =>
+                  ctx.validateEntity(user.json, "simple-admin-user") match {
+                    case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
+                    case Right(_)   =>
+                      env.datastores.simpleAdminDataStore
+                        .registerUser(user)
+                        .map { _ =>
+                          Ok(Json.obj("username" -> username))
+                        }
+                  }
+              }
             case _                                             => FastFuture.successful(BadRequest(Json.obj("error" -> "no username or token provided")))
           }
         }
@@ -331,31 +331,31 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           case None                                  => NotFound(Json.obj("error" -> "User not found !")).future
           case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
           case Some(_)                               =>
-              env.datastores.simpleAdminDataStore.deleteUser(username).map { d =>
-                val event = AdminApiEvent(
+            env.datastores.simpleAdminDataStore.deleteUser(username).map { d =>
+              val event = AdminApiEvent(
+                env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                Some(ctx.apiKey),
+                None,
+                "DELETE_ADMIN",
+                s"Admin deleted an Admin",
+                ctx.from,
+                ctx.ua,
+                Json.obj("username" -> username)
+              )
+              Audit.send(event)
+              Alerts.send(
+                U2FAdminDeletedAlert(
                   env.snowflakeGenerator.nextIdStr(),
                   env.env,
-                  Some(ctx.apiKey),
-                  None,
-                  "DELETE_ADMIN",
-                  s"Admin deleted an Admin",
+                  fakeBackOfficeUser,
+                  event,
                   ctx.from,
-                  ctx.ua,
-                  Json.obj("username" -> username)
+                  ctx.ua
                 )
-                Audit.send(event)
-                Alerts.send(
-                  U2FAdminDeletedAlert(
-                    env.snowflakeGenerator.nextIdStr(),
-                    env.env,
-                    fakeBackOfficeUser,
-                    event,
-                    ctx.from,
-                    ctx.ua
-                  )
-                )
-                Ok(Json.obj("done" -> true))
-              }
+              )
+              Ok(Json.obj("done" -> true))
+            }
         }
       }
     }
@@ -378,18 +378,18 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           case None                                  => NotFound(Json.obj("error" -> "user not found")).future
           case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
           case Some(_)                               =>
-              val body = ctx.request.body
-              ctx.validateEntity(body, "simple-admin-user") match {
-                case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
-                case Right(_)   =>
-                  val _newUser = SimpleOtoroshiAdmin.fmt.reads(body).get
-                  checkNewUserRights(ctx, _newUser.rights) {
-                    val newUser = _newUser.copy(username = username)
-                    env.datastores.simpleAdminDataStore.registerUser(newUser).map { _ =>
-                      Ok(newUser.json)
-                    }
+            val body = ctx.request.body
+            ctx.validateEntity(body, "simple-admin-user") match {
+              case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
+              case Right(_)   =>
+                val _newUser = SimpleOtoroshiAdmin.fmt.reads(body).get
+                checkNewUserRights(ctx, _newUser.rights) {
+                  val newUser = _newUser.copy(username = username)
+                  env.datastores.simpleAdminDataStore.registerUser(newUser).map { _ =>
+                    Ok(newUser.json)
                   }
-              }
+                }
+            }
         }
       }
     }
@@ -412,18 +412,18 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           case None                                  => NotFound(Json.obj("error" -> "user not found")).future
           case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
           case Some(_)                               =>
-              val body = ctx.request.body
-              ctx.validateEntity(body, "simple-admin-user") match {
-                case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
-                case Right(_)   =>
-                  val _newUser = WebAuthnOtoroshiAdmin.fmt.reads(body).get
-                  checkNewUserRights(ctx, _newUser.rights) {
-                    val newUser = _newUser.copy(username = username)
-                    env.datastores.webAuthnAdminDataStore.registerUser(newUser).map { _ =>
-                      Ok(newUser.json)
-                    }
+            val body = ctx.request.body
+            ctx.validateEntity(body, "simple-admin-user") match {
+              case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
+              case Right(_)   =>
+                val _newUser = WebAuthnOtoroshiAdmin.fmt.reads(body).get
+                checkNewUserRights(ctx, _newUser.rights) {
+                  val newUser = _newUser.copy(username = username)
+                  env.datastores.webAuthnAdminDataStore.registerUser(newUser).map { _ =>
+                    Ok(newUser.json)
                   }
-              }
+                }
+            }
         }
       }
     }
@@ -454,34 +454,34 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
         checkNewUserRights(ctx, rights) {
           (usernameOpt, passwordOpt, labelOpt, handleOpt) match {
             case (Some(username), Some(password), Some(label), Some(handle)) =>
-                val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-                val user           = WebAuthnOtoroshiAdmin(
-                  username = username,
-                  password = saltedPassword,
-                  label = label,
-                  handle = handle,
-                  credentials = credentialOpt.map(v => Map((v \ "keyId" \ "id").as[String] -> v)).getOrElse(Map.empty),
-                  createdAt = DateTime.now(),
-                  typ = OtoroshiAdminType.WebAuthnAdmin,
-                  metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-                  rights = rights,
-                  adminEntityValidators = Map.empty,
-                  location =
-                    EntityLocation(ctx.currentTenant, Seq(TeamId.all)) // EntityLocation.readFromKey(ctx.request.body)
-                )
-                env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
-                  case Some(_) => FastFuture.successful(BadRequest(Json.obj("error" -> "user already exists")))
-                  case None    =>
-                      ctx.validateEntity(user.json, "simple-admin-user") match {
-                      case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
-                      case Right(_)   =>
-                        env.datastores.webAuthnAdminDataStore
-                          .registerUser(user)
-                          .map { _ =>
-                            Ok(Json.obj("username" -> username))
-                          }
-                    }
-                }
+              val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
+              val user           = WebAuthnOtoroshiAdmin(
+                username = username,
+                password = saltedPassword,
+                label = label,
+                handle = handle,
+                credentials = credentialOpt.map(v => Map((v \ "keyId" \ "id").as[String] -> v)).getOrElse(Map.empty),
+                createdAt = DateTime.now(),
+                typ = OtoroshiAdminType.WebAuthnAdmin,
+                metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+                rights = rights,
+                adminEntityValidators = Map.empty,
+                location =
+                  EntityLocation(ctx.currentTenant, Seq(TeamId.all)) // EntityLocation.readFromKey(ctx.request.body)
+              )
+              env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
+                case Some(_) => FastFuture.successful(BadRequest(Json.obj("error" -> "user already exists")))
+                case None    =>
+                  ctx.validateEntity(user.json, "simple-admin-user") match {
+                    case Left(errs) => FastFuture.successful(BadRequest(Json.obj("error" -> errs)))
+                    case Right(_)   =>
+                      env.datastores.webAuthnAdminDataStore
+                        .registerUser(user)
+                        .map { _ =>
+                          Ok(Json.obj("username" -> username))
+                        }
+                  }
+              }
             case _                                                           => FastFuture.successful(BadRequest(Json.obj("error" -> "no username or token provided")))
           }
         }
@@ -495,32 +495,32 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           case None                                  => NotFound(Json.obj("error" -> "User not found !")).future
           case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
           case Some(_)                               =>
-              env.datastores.webAuthnAdminDataStore.deleteUser(username).map { d =>
-                val event = AdminApiEvent(
-                  env.snowflakeGenerator.nextIdStr(),
-                  env.env,
-                  Some(ctx.apiKey),
-                  None,
-                  "DELETE_WEBAUTHN_ADMIN",
-                  s"Admin deleted a WebAuthn Admin",
-                  ctx.from,
-                  ctx.ua,
-                  Json.obj("username" -> username, "id" -> id)
-                )
-                Audit.send(event)
-                Alerts
-                  .send(
-                    WebAuthnAdminDeletedAlert(
-                      env.snowflakeGenerator.nextIdStr(),
-                      env.env,
-                      fakeBackOfficeUser,
-                      event,
-                      ctx.from,
-                      ctx.ua
-                    )
+            env.datastores.webAuthnAdminDataStore.deleteUser(username).map { d =>
+              val event = AdminApiEvent(
+                env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                Some(ctx.apiKey),
+                None,
+                "DELETE_WEBAUTHN_ADMIN",
+                s"Admin deleted a WebAuthn Admin",
+                ctx.from,
+                ctx.ua,
+                Json.obj("username" -> username, "id" -> id)
+              )
+              Audit.send(event)
+              Alerts
+                .send(
+                  WebAuthnAdminDeletedAlert(
+                    env.snowflakeGenerator.nextIdStr(),
+                    env.env,
+                    fakeBackOfficeUser,
+                    event,
+                    ctx.from,
+                    ctx.ua
                   )
-                Ok(Json.obj("done" -> true))
-              }
+                )
+              Ok(Json.obj("done" -> true))
+            }
         }
       }
     }

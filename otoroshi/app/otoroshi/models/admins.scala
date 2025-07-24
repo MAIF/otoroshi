@@ -116,7 +116,8 @@ object SimpleOtoroshiAdmin {
                 }
                 .collect { case JsSuccess(v, _) =>
                   v
-                }.toSeq
+                }
+                .toSeq
             }.toMap
           }
           .getOrElse(Map.empty)
@@ -199,7 +200,8 @@ object WebAuthnOtoroshiAdmin {
                 }
                 .collect { case JsSuccess(v, _) =>
                   v
-                }.toSeq
+                }
+                .toSeq
             }.toMap
           }
           .getOrElse(Map.empty)

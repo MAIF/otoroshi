@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
+import io.netty.channel.unix.DomainSocketAddress
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import io.netty.channel.unix.DomainSocketAddress
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.script._
@@ -148,7 +148,7 @@ class TailscaleLocalApiClient(env: Env) {
   }
 
   private def callGet(uri: String): Future[ReactorResponse] = {
-    val rec = client
+    val request = client
       .responseTimeout(java.time.Duration.ofMillis(2000))
       .headers(h =>
         h
@@ -158,9 +158,11 @@ class TailscaleLocalApiClient(env: Env) {
       )
       .get()
       .uri(uri)
+      .asInstanceOf[HttpClient.ResponseReceiver[_]]
+    
     (for {
-      resp    <- ReactiveStreamUtils.MonoUtils.toFuture(rec.response())
-      content <- ReactiveStreamUtils.MonoUtils.toFuture(rec.responseContent().aggregate().asString())
+      resp    <- ReactiveStreamUtils.MonoUtils.toFuture(request.response())
+      content <- ReactiveStreamUtils.MonoUtils.toFuture(request.responseContent().aggregate().asString())
     } yield {
       ReactorResponse(resp, content)
     }).andThen {
@@ -296,7 +298,8 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
   override def name: String                                = "Tailscale select target by name"
   override def description: Option[String]                 =
     "This plugin selects a machine instance on Tailscale network based on its name".some
-  override def defaultConfigObject: Option[NgPluginConfig] = TailscaleSelectTargetByNameConfig("my-machine", useIpAddress = false).some
+  override def defaultConfigObject: Option[NgPluginConfig] =
+    TailscaleSelectTargetByNameConfig("my-machine", useIpAddress = false).some
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
@@ -411,7 +414,7 @@ class TailscaleCertificatesFetcherJob extends Job {
       ec: ExecutionContext
   ): Future[Unit] = {
     implicit val mat: Materializer = env.otoroshiMaterializer
-    val domains      = env.proxyState
+    val domains                    = env.proxyState
       .allRoutes()
       .filter(_.frontend.domains.exists(_.domainLowerCase.endsWith(s".${magicDNSSuffix.toLowerCase()}")))
       .flatMap(_.frontend.domains.map(_.domainLowerCase))

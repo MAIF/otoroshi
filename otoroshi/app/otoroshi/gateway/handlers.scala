@@ -301,7 +301,7 @@ class GatewayRequestHandler(
   lazy val logger: Logger = Logger("otoroshi-http-handler")
   // lazy val debugLogger = Logger("otoroshi-http-handler-debug")
 
-  lazy val ipRegex: Regex         = RegexPool.regex(
+  lazy val ipRegex: Regex               = RegexPool.regex(
     "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:\\d{2,5})?$"
   )
   lazy val monitoringPaths: Seq[String] = Seq("/health", "/metrics", "/live", "/ready", "/startup")
@@ -407,7 +407,9 @@ class GatewayRequestHandler(
         case Some(key) =>
           KeyManagerCompatibility.session(key) match {
             case Some((_, _, chain))
-                if chain.headOption.exists(_.getSubjectX500Principal.getName.contains(SSLSessionJavaHelper.NotAllowed)) =>
+                if chain.headOption.exists(
+                  _.getSubjectX500Principal.getName.contains(SSLSessionJavaHelper.NotAllowed)
+                ) =>
               Some(badCertReply(request))
             case a => internalRouteRequest(request, config)
           }

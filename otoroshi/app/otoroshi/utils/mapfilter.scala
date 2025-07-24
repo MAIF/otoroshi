@@ -229,37 +229,35 @@ object Projection {
               dest = dest ++ Json.obj(key -> header)
             case ("$includeAllKeysMatching", JsArray(values)) =>
               val strValues = values.map(_.asString)
-              dest = JsObject(dest.value.filter {
-                case (k, _) =>
-                  strValues.exists {
-                    case str if str.startsWith("StartsWith(") =>
-                      val searching = str.substring(11).init
-                      k.startsWith(searching)
-                    case str if str.startsWith("Regex(")      =>
-                      val searching = str.substring(6).init
-                      RegexPool.regex(searching).matches(k)
-                    case str if str.startsWith("Wildcard(")   =>
-                      val searching = str.substring(9).init
-                      RegexPool(searching).matches(k)
-                    case str                                  => str == k
-                  }
+              dest = JsObject(dest.value.filter { case (k, _) =>
+                strValues.exists {
+                  case str if str.startsWith("StartsWith(") =>
+                    val searching = str.substring(11).init
+                    k.startsWith(searching)
+                  case str if str.startsWith("Regex(")      =>
+                    val searching = str.substring(6).init
+                    RegexPool.regex(searching).matches(k)
+                  case str if str.startsWith("Wildcard(")   =>
+                    val searching = str.substring(9).init
+                    RegexPool(searching).matches(k)
+                  case str                                  => str == k
+                }
               })
             case ("$excludeAllKeysMatching", JsArray(values)) =>
               val strValues = values.map(_.asString)
-              dest = JsObject(dest.value.filterNot {
-                case (k, _) =>
-                  strValues.exists {
-                    case str if str.startsWith("StartsWith(") =>
-                      val searching = str.substring(11).init
-                      k.startsWith(searching)
-                    case str if str.startsWith("Regex(")      =>
-                      val searching = str.substring(6).init
-                      RegexPool.regex(searching).matches(k)
-                    case str if str.startsWith("Wildcard(")   =>
-                      val searching = str.substring(9).init
-                      RegexPool(searching).matches(k)
-                    case str                                  => str == k
-                  }
+              dest = JsObject(dest.value.filterNot { case (k, _) =>
+                strValues.exists {
+                  case str if str.startsWith("StartsWith(") =>
+                    val searching = str.substring(11).init
+                    k.startsWith(searching)
+                  case str if str.startsWith("Regex(")      =>
+                    val searching = str.substring(6).init
+                    RegexPool.regex(searching).matches(k)
+                  case str if str.startsWith("Wildcard(")   =>
+                    val searching = str.substring(9).init
+                    RegexPool(searching).matches(k)
+                  case str                                  => str == k
+                }
               })
             case _                                            => ()
           }

@@ -164,11 +164,10 @@ trait Node {
               .map(v => Right(v))
               .getOrElse(Right(res)) // TODO: el like
         }
-        .recover {
-          case t: Throwable =>
-            val error = WorkflowError(s"caught exception on task: '$id'", None, Some(t))
-            wfr.log(s"ending with exception '$id'", this, error.some)
-            Left(error)
+        .recover { case t: Throwable =>
+          val error = WorkflowError(s"caught exception on task: '$id'", None, Some(t))
+          wfr.log(s"ending with exception '$id'", this, error.some)
+          Left(error)
         }
     }
   }
@@ -210,7 +209,7 @@ object Node {
       )
     )
   )
-  val nodes           = new TrieMap[String, (JsObject) => Node]()
+  val nodes                     = new TrieMap[String, (JsObject) => Node]()
   def registerNode(name: String, f: (JsObject) => Node): Unit = {
     nodes.put(name, f)
   }

@@ -5,7 +5,16 @@ import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.ServiceGroup
-import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
@@ -20,7 +29,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
     with CrudControllerHelper[ServiceGroup, JsValue] {
 
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit val mat: Materializer = env.otoroshiMaterializer
+  implicit val mat: Materializer    = env.otoroshiMaterializer
 
   override def singularName: String = "service-group"
 
@@ -76,22 +85,22 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceGroup]]] = {
     entity.save().map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_SERVICE_GROUP",
-              message = "User created a service group",
-              metadata = entity.toJson.as[JsObject],
-              alert = "ServiceGroupCreatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_SERVICE_GROUP",
+            message = "User created a service group",
+            metadata = entity.toJson.as[JsObject],
+            alert = "ServiceGroupCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Service group not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Service group not stored ...")
           )
+        )
     }
   }
 
@@ -101,22 +110,22 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceGroup]]] = {
     entity.save().map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_SERVICE_GROUP",
-              message = "User updated a service group",
-              metadata = entity.toJson.as[JsObject],
-              alert = "ServiceGroupUpdatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_SERVICE_GROUP",
+            message = "User updated a service group",
+            metadata = entity.toJson.as[JsObject],
+            alert = "ServiceGroupUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Service group not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Service group not stored ...")
           )
+        )
     }
   }
 
@@ -126,21 +135,21 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ServiceGroup]]] = {
     env.datastores.serviceGroupDataStore.delete(id).map {
       case true  =>
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_SERVICE_GROUP",
-              message = "User deleted a service group",
-              metadata = Json.obj("serviceGroupId" -> id),
-              alert = "ServiceGroupDeletedAlert"
-            )
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_SERVICE_GROUP",
+            message = "User deleted a service group",
+            metadata = Json.obj("serviceGroupId" -> id),
+            alert = "ServiceGroupDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Service group not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Service group not deleted ...")
           )
+        )
     }
   }
 
@@ -154,22 +163,22 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
         case None                                   => NotFound(Json.obj("error" -> s"ServiceGroup with id: '$serviceGroupId' not found")).future
         case Some(group) if !ctx.canUserRead(group) => ctx.fforbidden
         case Some(group)                            =>
-            Audit.send(
-              AdminApiEvent(
-                env.snowflakeGenerator.nextIdStr(),
-                env.env,
-                Some(ctx.apiKey),
-                ctx.user,
-                "ACCESS_SERVICES_FROM_SERVICES_GROUP",
-                s"User accessed all services from a services group",
-                ctx.from,
-                ctx.ua,
-                Json.obj("serviceGroupId" -> serviceGroupId)
-              )
+          Audit.send(
+            AdminApiEvent(
+              env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              Some(ctx.apiKey),
+              ctx.user,
+              "ACCESS_SERVICES_FROM_SERVICES_GROUP",
+              s"User accessed all services from a services group",
+              ctx.from,
+              ctx.ua,
+              Json.obj("serviceGroupId" -> serviceGroupId)
             )
-            group.services
-              .map(_.filter(ctx.canUserRead))
-              .map(services => Ok(JsArray(services.drop(paginationPosition).take(paginationPageSize).map(_.toJson))))
+          )
+          group.services
+            .map(_.filter(ctx.canUserRead))
+            .map(services => Ok(JsArray(services.drop(paginationPosition).take(paginationPageSize).map(_.toJson))))
       }
     }
 }

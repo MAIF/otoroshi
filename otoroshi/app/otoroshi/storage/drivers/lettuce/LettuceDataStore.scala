@@ -58,12 +58,12 @@ class LettuceDataStores(
 
   lazy val redisDispatcher = redisActorSystem.dispatcher
 
-  lazy val redisConnection: String        =
+  lazy val redisConnection: String =
     configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.connection").getOrElse("default")
-  lazy val redisReadFrom: String          =
+  lazy val redisReadFrom: String   =
     configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.readFrom").getOrElse("MASTER_PREFERRED")
-  lazy val readFrom: ReadFrom               = ReadFrom.valueOf(redisReadFrom)
-  lazy val redisUris: Seq[String] = configuration
+  lazy val readFrom: ReadFrom      = ReadFrom.valueOf(redisReadFrom)
+  lazy val redisUris: Seq[String]  = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.redis.lettuce.uris")
     .filter(_.nonEmpty)
     .map(_.map(_.trim))
@@ -75,16 +75,17 @@ class LettuceDataStores(
       configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.uri").map(v => Seq(v.trim))
     )
     .getOrElse(Seq.empty[String])
-  lazy val startTLS: Boolean               = configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.startTLS").getOrElse(false)
-  lazy val verifyPeers: Boolean            =
+  lazy val startTLS: Boolean       =
+    configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.startTLS").getOrElse(false)
+  lazy val verifyPeers: Boolean    =
     configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.verifyPeers").getOrElse(true)
-  lazy val nodesRaw: Seq[RedisURI]               = redisUris.map { v =>
+  lazy val nodesRaw: Seq[RedisURI] = redisUris.map { v =>
     val uri = RedisURI.create(v)
     uri.setStartTls(startTLS)
     uri.setVerifyPeer(verifyPeers)
     uri
   }
-  lazy val nodes                  = nodesRaw.asJava
+  lazy val nodes                   = nodesRaw.asJava
   lazy val resources: ClientResources = {
     val default                   = DefaultClientResources.builder().build()
     val computationThreadPoolSize = configuration
@@ -115,25 +116,25 @@ class LettuceDataStores(
       case "standalone"                     => standardConnection()
       case "sentinels"                      => standardConnection()
       case "default" if redisUris.size > 1  =>
-          val redisClient = RedisClient.create(resources)
-          val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
-          connection.setReadFrom(readFrom)
-          clientRef.set(redisClient)
-          connectionRef.set(connection)
-          new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
+        val redisClient = RedisClient.create(resources)
+        val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
+        connection.setReadFrom(readFrom)
+        clientRef.set(redisClient)
+        connectionRef.set(connection)
+        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
       case "master-replicas"                =>
-          val redisClient = RedisClient.create(resources)
-          val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
-          connection.setReadFrom(readFrom)
-          clientRef.set(redisClient)
-          connectionRef.set(connection)
-          new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
+        val redisClient = RedisClient.create(resources)
+        val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
+        connection.setReadFrom(readFrom)
+        clientRef.set(redisClient)
+        connectionRef.set(connection)
+        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
       case "cluster"                        =>
-          // docker run -p '7000-7050:7000-7050' -e "IP=0.0.0.0" grokzen/redis-cluster:latest
-          // -Dapp.redis.lettuce.connection=cluster -Dapp.redis.lettuce.uris.0=redis://localhost:7000/0 -Dapp.redis.lettuce.uris.1=redis://localhost:7001/0 -Dapp.redis.lettuce.uris.2=redis://localhost:7002/0
-          val redisClient = RedisClusterClient.create(resources, nodes)
-          clientRef.set(redisClient)
-          new LettuceRedisCluster(redisActorSystem, redisClient)
+        // docker run -p '7000-7050:7000-7050' -e "IP=0.0.0.0" grokzen/redis-cluster:latest
+        // -Dapp.redis.lettuce.connection=cluster -Dapp.redis.lettuce.uris.0=redis://localhost:7000/0 -Dapp.redis.lettuce.uris.1=redis://localhost:7001/0 -Dapp.redis.lettuce.uris.2=redis://localhost:7002/0
+        val redisClient = RedisClusterClient.create(resources, nodes)
+        clientRef.set(redisClient)
+        new LettuceRedisCluster(redisActorSystem, redisClient)
       case _                                => throw new RuntimeException(s"Bad redis connection type '$redisConnection'")
     }
   }
@@ -269,42 +270,42 @@ class LettuceDataStores(
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
         case keys                 =>
-            Future.sequence(
-              keys
-                .filterNot { key =>
-                  Cluster.filteredKey(key, env)
-                //key == s"${env.storageRoot}:cluster:" ||
-                //key == s"${env.storageRoot}:events:audit" ||
-                //key == s"${env.storageRoot}:events:alerts" ||
-                //key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                //key.startsWith(s"${env.storageRoot}:admins:") ||
-                //key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                //// key.startsWith(s"${env.storageRoot}:users:") ||
-                //key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
-                //key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                //key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                //key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                //key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                //(key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                //(key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+          Future.sequence(
+            keys
+              .filterNot { key =>
+                Cluster.filteredKey(key, env)
+              //key == s"${env.storageRoot}:cluster:" ||
+              //key == s"${env.storageRoot}:events:audit" ||
+              //key == s"${env.storageRoot}:events:alerts" ||
+              //key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+              //key.startsWith(s"${env.storageRoot}:admins:") ||
+              //key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+              //// key.startsWith(s"${env.storageRoot}:users:") ||
+              //key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
+              //key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+              //key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+              //key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+              //key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+              //(key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+              //(key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+              }
+              .map { key =>
+                for {
+                  w     <- redis.typ(key)
+                  ttl   <- redis.pttl(key)
+                  value <- fetchValueForType(w, key)
+                } yield value match {
+                  case JsNull => JsNull
+                  case _      =>
+                    Json.obj(
+                      "k" -> key,
+                      "v" -> value,
+                      "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                      "w" -> w
+                    )
                 }
-                .map { key =>
-                  for {
-                    w     <- redis.typ(key)
-                    ttl   <- redis.pttl(key)
-                    value <- fetchValueForType(w, key)
-                  } yield value match {
-                    case JsNull => JsNull
-                    case _      =>
-                      Json.obj(
-                        "k" -> key,
-                        "v" -> value,
-                        "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                        "w" -> w
-                      )
-                  }
-                }
-            )
+              }
+          )
       }
       .map(_.filterNot(_ == JsNull))
       .mapConcat(_.toList)
@@ -312,9 +313,9 @@ class LettuceDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -324,25 +325,25 @@ class LettuceDataStores(
         .mapAsync(1) {
           case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
           case keys                 =>
-              Source(keys.toList)
-                .mapAsync(1) { key =>
-                  for {
-                    w     <- redis.typ(key)
-                    ttl   <- redis.pttl(key)
-                    value <- fetchValueForType(w, key)
-                  } yield value match {
-                    case JsNull => JsNull
-                    case _      =>
-                      Json.obj(
-                        "k" -> key,
-                        "v" -> value,
-                        "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                        "w" -> w
-                      )
-                  }
+            Source(keys.toList)
+              .mapAsync(1) { key =>
+                for {
+                  w     <- redis.typ(key)
+                  ttl   <- redis.pttl(key)
+                  value <- fetchValueForType(w, key)
+                } yield value match {
+                  case JsNull => JsNull
+                  case _      =>
+                    Json.obj(
+                      "k" -> key,
+                      "v" -> value,
+                      "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                      "w" -> w
+                    )
                 }
-                .runWith(Sink.seq)
-                .map(_.filterNot(_ == JsNull))
+              }
+              .runWith(Sink.seq)
+              .map(_.filterNot(_ == JsNull))
         }
         .mapConcat(_.toList)
     )
@@ -350,9 +351,9 @@ class LettuceDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")

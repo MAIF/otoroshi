@@ -18,8 +18,8 @@ case class EchoBackendConfig(limit: Long = 512L * 1024L) extends NgPluginConfig 
 }
 
 object EchoBackendConfig {
-  val default: EchoBackendConfig                        = EchoBackendConfig()
-  val format: Format[EchoBackendConfig]                         = new Format[EchoBackendConfig] {
+  val default: EchoBackendConfig        = EchoBackendConfig()
+  val format: Format[EchoBackendConfig] = new Format[EchoBackendConfig] {
     override def reads(json: JsValue): JsResult[EchoBackendConfig] = Try {
       EchoBackendConfig(
         limit = json.select("limit").asOptLong.getOrElse(512L * 1024L)
@@ -32,8 +32,8 @@ object EchoBackendConfig {
       "limit" -> o.limit
     )
   }
-  val configFlow: Seq[String]        = Seq("limit")
-  val configSchema: Option[JsObject] = Some(
+  val configFlow: Seq[String]           = Seq("limit")
+  val configSchema: Option[JsObject]    = Some(
     Json.obj(
       "limit" -> Json.obj(
         "type"  -> "number",

@@ -15,7 +15,7 @@ class CanaryController(ApiAction: ApiAction, cc: ControllerComponents)(implicit 
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-canary-api")
 

@@ -51,18 +51,18 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
             }
             .mapAsync(1) {
               case (_, Some(user))                                            =>
-                  user.withAuthModuleConfig(a => GenericOauth2Module.handleTokenRefresh(a, user))
-                  user.some.vfuture
+                user.withAuthModuleConfig(a => GenericOauth2Module.handleTokenRefresh(a, user))
+                user.some.vfuture
               case (id, None) if env.clusterConfig.mode == ClusterMode.Worker =>
-                  if (Cluster.logger.isDebugEnabled)
-                    Cluster.logger.debug(s"private apps session $id not found locally - from action")
-                  env.clusterAgent.isSessionValid(id, Some(request)).flatMap {
-                    case Some(user) =>
-                      user
-                        .save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
-                        .map(_.some)
-                    case None       => None.vfuture
-                  }
+                if (Cluster.logger.isDebugEnabled)
+                  Cluster.logger.debug(s"private apps session $id not found locally - from action")
+                env.clusterAgent.isSessionValid(id, Some(request)).flatMap {
+                  case Some(user) =>
+                    user
+                      .save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
+                      .map(_.some)
+                  case None       => None.vfuture
+                }
               case (_, None)                                                  => None.vfuture
             }
             .collect { case Some(user) =>
@@ -92,8 +92,8 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
       case env.privateAppsHost                     => perform()
       case h if env.privateAppsDomains.contains(h) => perform()
       case _                                       =>
-          // TODO : based on Accept header
-          FastFuture.successful(Results.NotFound(otoroshi.views.html.oto.error("Not found", env)))
+        // TODO : based on Accept header
+        FastFuture.successful(Results.NotFound(otoroshi.views.html.oto.error("Not found", env)))
     }
   }
 

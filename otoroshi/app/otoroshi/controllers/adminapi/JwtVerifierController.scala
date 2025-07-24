@@ -4,7 +4,16 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.GlobalJwtVerifier
-import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
@@ -16,7 +25,7 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
     with CrudControllerHelper[GlobalJwtVerifier, JsValue] {
 
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit val mat: Materializer = env.otoroshiMaterializer
+  implicit val mat: Materializer    = env.otoroshiMaterializer
 
   override def singularName: String = "jwt-verifier"
 
@@ -73,22 +82,22 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[GlobalJwtVerifier]]] = {
     env.datastores.globalJwtVerifierDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_GLOBAL_JWT_VERIFIER",
-              message = "User created a global jwt verifier",
-              metadata = entity.asJson.as[JsObject],
-              alert = "GlobalJwtVerifierCreatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_GLOBAL_JWT_VERIFIER",
+            message = "User created a global jwt verifier",
+            metadata = entity.asJson.as[JsObject],
+            alert = "GlobalJwtVerifierCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Global jwt verifier not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Global jwt verifier not stored ...")
           )
+        )
     }
   }
 
@@ -98,22 +107,22 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[GlobalJwtVerifier]]] = {
     env.datastores.globalJwtVerifierDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_GLOBAL_JWT_VERIFIER",
-              message = "User updated a global jwt verifier",
-              metadata = entity.asJson.as[JsObject],
-              alert = "GlobalJwtVerifierUpdatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_GLOBAL_JWT_VERIFIER",
+            message = "User updated a global jwt verifier",
+            metadata = entity.asJson.as[JsObject],
+            alert = "GlobalJwtVerifierUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Global jwt verifier not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Global jwt verifier not stored ...")
           )
+        )
     }
   }
 
@@ -123,21 +132,21 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[GlobalJwtVerifier]]] = {
     env.datastores.globalJwtVerifierDataStore.delete(id).map {
       case true  =>
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_GLOBAL_JWT_VERIFIER",
-              message = "User deleted a global jwt verifier",
-              metadata = Json.obj("GlobalJwtVerifierId" -> id),
-              alert = "GlobalJwtVerifierDeletedAlert"
-            )
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_GLOBAL_JWT_VERIFIER",
+            message = "User deleted a global jwt verifier",
+            metadata = Json.obj("GlobalJwtVerifierId" -> id),
+            alert = "GlobalJwtVerifierDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Global jwt verifier not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Global jwt verifier not deleted ...")
           )
+        )
     }
   }
 }

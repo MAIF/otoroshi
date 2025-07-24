@@ -13,7 +13,14 @@ import org.apache.pekko.actor.{Actor, Props}
 import org.apache.pekko.http.scaladsl.model.{ContentType, ContentTypes}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
-import org.apache.pekko.stream.connectors.s3.{ApiVersion, ListBucketResultContents, MemoryBufferType, MetaHeaders, S3Attributes, S3Settings}
+import org.apache.pekko.stream.connectors.s3.{
+  ApiVersion,
+  ListBucketResultContents,
+  MemoryBufferType,
+  MetaHeaders,
+  S3Attributes,
+  S3Settings
+}
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import org.apache.pekko.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
 import org.joda.time.DateTime
@@ -69,7 +76,7 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 
   lazy val logger: Logger = Logger("otoroshi-events-actor-supervizer")
 
-  implicit val e: Env = env
+  implicit val e: Env               = env
   implicit val ec: ExecutionContext = env.analyticsExecutionContext
 
   val dataExporters: TrieMap[String, DataExporter] = new UnboundedTrieMap[String, DataExporter]()
@@ -424,7 +431,11 @@ object Exporters {
                 }
                 .build()
               client
-                .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+                .secure(new java.util.function.Consumer[SslProvider.SslContextSpec] {
+                  override def accept(spec: SslProvider.SslContextSpec): Unit = {
+                    spec.sslContext(ctx)
+                  }
+                })
             } else {
               client.secure()
             }
@@ -706,7 +717,11 @@ object Exporters {
                   }
                   .build()
                 client
-                  .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+                  .secure(new java.util.function.Consumer[SslProvider.SslContextSpec] {
+                    override def accept(spec: SslProvider.SslContextSpec): Unit = {
+                      spec.sslContext(ctx)
+                    }
+                  })
               } else {
                 client.secure()
               }
@@ -1222,41 +1237,43 @@ object Exporters {
                 )) // getStringOrJsObject(event, primitiveLabel._1.trim.replace("$at", "@")))
               })
 
-              incGlobalOtoroshiMetrics(duration, overheadWoCb, cbDuration, overhead, dataIn, dataOut)
-              env.metrics.counterInc(MetricId.build(s"otoroshi.service.requests.count").tagged(tags.asJava))
-              env.metrics
-                .histogramUpdate(
-                  MetricId.build(s"otoroshi.service.requests.duration.millis").tagged(tags.asJava),
-                  duration
-                )
-              env.metrics
-                .histogramUpdate(
-                  MetricId.build(s"otoroshi.service.requests.overheadWoCb.millis").tagged(tags.asJava),
-                  overheadWoCb
-                )
-              env.metrics
-                .histogramUpdate(
-                  MetricId.build(s"otoroshi.service.requests.cbDuration.millis").tagged(tags.asJava),
-                  cbDuration
-                )
-              env.metrics
-                .histogramUpdate(
-                  MetricId.build(s"otoroshi.service.requests.overhead.millis").tagged(tags.asJava),
-                  overhead
-                )
-              env.metrics
-                .histogramUpdate(MetricId.build(s"otoroshi.service.requests.data.in.bytes").tagged(tags.asJava), dataIn)
-              env.metrics
-                .histogramUpdate(
-                  MetricId.build(s"otoroshi.service.requests.data.out.bytes").tagged(tags.asJava),
-                  dataOut
-                )
-              val perSec = env.metrics.getMeanCallsOf(s"otoroshi.service.requests.per.sec.$serviceId")
-              env.metrics
-                .histogramUpdate(MetricId.build(s"otoroshi.service.requests.per.sec").tagged(tags.asJava), perSec.toInt)
-            } match {
-              case Failure(e) => logger.error("error while collection tags", e)
-              case _          =>
+              Try {
+                incGlobalOtoroshiMetrics(duration, overheadWoCb, cbDuration, overhead, dataIn, dataOut)
+                env.metrics.counterInc(MetricId.build(s"otoroshi.service.requests.count").tagged(tags.asJava))
+                env.metrics
+                  .histogramUpdate(
+                    MetricId.build(s"otoroshi.service.requests.duration.millis").tagged(tags.asJava),
+                    duration
+                  )
+                env.metrics
+                  .histogramUpdate(
+                    MetricId.build(s"otoroshi.service.requests.overheadWoCb.millis").tagged(tags.asJava),
+                    overheadWoCb
+                  )
+                env.metrics
+                  .histogramUpdate(
+                    MetricId.build(s"otoroshi.service.requests.cbDuration.millis").tagged(tags.asJava),
+                    cbDuration
+                  )
+                env.metrics
+                  .histogramUpdate(
+                    MetricId.build(s"otoroshi.service.requests.overhead.millis").tagged(tags.asJava),
+                    overhead
+                  )
+                env.metrics
+                  .histogramUpdate(MetricId.build(s"otoroshi.service.requests.data.in.bytes").tagged(tags.asJava), dataIn)
+                env.metrics
+                  .histogramUpdate(
+                    MetricId.build(s"otoroshi.service.requests.data.out.bytes").tagged(tags.asJava),
+                    dataOut
+                  )
+                val perSec = env.metrics.getMeanCallsOf(s"otoroshi.service.requests.per.sec.$serviceId")
+                env.metrics
+                  .histogramUpdate(MetricId.build(s"otoroshi.service.requests.per.sec").tagged(tags.asJava), perSec.toInt)
+              } match {
+                case Failure(e) => logger.error("error while collection tags", e)
+                case _          =>
+              }
             }
           }
         }
@@ -1514,7 +1531,7 @@ object Exporters {
 
     def writeToS3AndDelete(conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
       implicit val ec: ExecutionContextExecutor = FileWriting.blockingEc
-      val (key, path) = computeKeyAndPath(conf)
+      val (key, path)                           = computeKeyAndPath(conf)
       writeToS3WithKeyAndPath(key, path, maxNumberOfFile, conf).map { _ =>
         path.toFile.delete()
         path.toFile.deleteOnExit()
@@ -1529,13 +1546,13 @@ object Exporters {
         conf: S3Configuration
     ): Future[Unit] = {
       implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-      implicit val mat: Materializer = env.otoroshiMaterializer
-      val url          =
+      implicit val mat: Materializer    = env.otoroshiMaterializer
+      val url                           =
         s"${conf.endpoint}/$key?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
-      val wholeContent = Files.readString(path).byteString
-      val ctype        = ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`)
-      val meta         = MetaHeaders(Map("content-type" -> contentType, "lastUpdated" -> DateTime.now().toString()))
-      val sink         = S3
+      val wholeContent                  = Files.readString(path).byteString
+      val ctype                         = ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`)
+      val meta                          = MetaHeaders(Map("content-type" -> contentType, "lastUpdated" -> DateTime.now().toString()))
+      val sink                          = S3
         .multipartUpload(
           bucket = conf.bucket,
           key = key,
@@ -1578,8 +1595,8 @@ object Exporters {
 
     def ensureFileCreationAndRolling(conf: S3Configuration, maxFileSize: Long, maxNumberOfFile: Option[Int]): File = {
       implicit val ec: ExecutionContextExecutor = FileWriting.blockingEc
-      val (key, path) = computeKeyAndPath(conf)
-      val file        = path.toFile
+      val (key, path)                           = computeKeyAndPath(conf)
+      val file                                  = path.toFile
       if (!file.exists()) {
         file.getParentFile.mkdirs()
         file.createNewFile()
@@ -1607,7 +1624,7 @@ object Exporters {
 
     def appendToCurrentFile(content: String, conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
       implicit val ec: ExecutionContextExecutor = FileWriting.blockingEc
-      val (_, path)   = computeKeyAndPath(conf)
+      val (_, path)                             = computeKeyAndPath(conf)
       debug(s"appending events to file '$path'")
       if (shouldWriteToS3(conf)) {
         Future
@@ -1818,21 +1835,23 @@ object Exporters {
           exporterConfig.metrics.map { metric =>
             val id                   =
               MetricId.build(metric.id).tagged((exporterConfig.tags ++ extractLabels(metric.labels, event)).asJava)
-            val shouldTriggerOnType  = metric.eventType.forall(typeSelector => (event \ "@type").asOpt[String].contains(typeSelector))
-            val shouldTriggerOnAlert = metric.eventType.forall(typeSelector => (event \ "alert").asOpt[String].contains(typeSelector))
+            val shouldTriggerOnType  =
+              metric.eventType.forall(typeSelector => (event \ "@type").asOpt[String].contains(typeSelector))
+            val shouldTriggerOnAlert =
+              metric.eventType.forall(typeSelector => (event \ "alert").asOpt[String].contains(typeSelector))
             if (shouldTriggerOnType || shouldTriggerOnAlert) {
               metric.kind match {
-                case MetricSettingsKind.Counter if metric.selector.isEmpty   =>
+                case MetricSettingsKind.Counter if metric.selector.isEmpty =>
                   env.metrics.counterInc(id)
-                case MetricSettingsKind.Counter                              =>
+                case MetricSettingsKind.Counter                            =>
                   withEventLongValue(event, metric.selector) { v =>
                     env.metrics.counterIncOf(id, v)
                   }
-                case MetricSettingsKind.Histogram                            =>
+                case MetricSettingsKind.Histogram                          =>
                   withEventLongValue(event, metric.selector) { v =>
                     env.metrics.histogramUpdate(id, v)
                   }
-                case MetricSettingsKind.Timer                                =>
+                case MetricSettingsKind.Timer                              =>
                   withEventLongValue(event, metric.selector) { v =>
                     env.metrics.timerUpdate(id, v, TimeUnit.MILLISECONDS)
                   }
@@ -2030,17 +2049,17 @@ object Exporters {
                 .getOrElse(true)
               if (shouldTriggerOnType || shouldTriggerOnAlert) {
                 metric.kind match {
-                  case MetricSettingsKind.Counter if metric.selector.isEmpty   =>
+                  case MetricSettingsKind.Counter if metric.selector.isEmpty =>
                     meter.withLongCounter(id).add(1L, attributes)
-                  case MetricSettingsKind.Counter                              =>
+                  case MetricSettingsKind.Counter                            =>
                     withEventLongValue(event, metric.selector) { v =>
                       meter.withLongCounter(id).add(Math.abs(v), attributes)
                     }
-                  case MetricSettingsKind.Histogram                            =>
+                  case MetricSettingsKind.Histogram                          =>
                     withEventLongValue(event, metric.selector) { v =>
                       meter.withLongHistogram(id).record(Math.abs(v), attributes)
                     }
-                  case MetricSettingsKind.Timer                                =>
+                  case MetricSettingsKind.Timer                              =>
                     withEventLongValue(event, metric.selector) { v =>
                       meter.withTimer(id).record(Math.abs(FiniteDuration(v, TimeUnit.MILLISECONDS).toNanos), attributes)
                     }

@@ -79,13 +79,13 @@ case class TcpService(
     // healthCheck
     // snowMonkey
 ) extends otoroshi.models.EntityLocationSupport {
-  def internalId: String                              = id
-  def json: JsValue                                   = TcpService.fmt.writes(this)
+  def internalId: String                                               = id
+  def json: JsValue                                                    = TcpService.fmt.writes(this)
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.tcpServiceDataStore.set(this)
-  def theDescription: String                          = description
-  def theMetadata: Map[String, String]                = metadata
-  def theName: String                                 = name
-  def theTags: Seq[String]                            = tags
+  def theDescription: String                                           = description
+  def theMetadata: Map[String, String]                                 = metadata
+  def theName: String                                                  = name
+  def theTags: Seq[String]                                             = tags
 }
 case class SniSettings(
     enabled: Boolean,
@@ -234,7 +234,8 @@ object TcpService {
             interface = (json \ "interface").asOpt[String].getOrElse("0.0.0.0"),
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             tls = (json \ "tls").asOpt[String].flatMap(TlsMode.apply).getOrElse(TlsMode.Disabled),
-            sni = (json \ "sni").asOpt(SniSettings.fmt).getOrElse(SniSettings(enabled = false, forwardIfNoMatch = false)),
+            sni =
+              (json \ "sni").asOpt(SniSettings.fmt).getOrElse(SniSettings(enabled = false, forwardIfNoMatch = false)),
             clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
             rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
@@ -692,9 +693,9 @@ class TcpProxy(
     mat: Materializer
 ) {
 
-  private val log         = Logger("otoroshi-tcp-proxy")
+  private val log                                   = Logger("otoroshi-tcp-proxy")
   private implicit val ec: ExecutionContextExecutor = system.dispatcher
-  private val provider    = new TcpEngineProvider()
+  private val provider                              = new TcpEngineProvider()
 
   private def debugger(title: String): Sink[ByteString, Future[Done]] =
     if (debug) {
@@ -878,15 +879,15 @@ class RunningServers(env: Env) {
 
   import scala.concurrent.duration._
 
-  private implicit val system: ActorSystem = env.otoroshiActorSystem
+  private implicit val system: ActorSystem  = env.otoroshiActorSystem
   private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  private implicit val mat: Materializer = env.otoroshiMaterializer
-  private implicit val ev: Env = env
-  private val ref             = new AtomicReference[Cancellable]()
-  private val running         = new AtomicBoolean(false)
-  private val syncing         = new AtomicBoolean(false)
-  private val runningServers  = new AtomicReference[Seq[RunningServer]](Seq.empty)
-  private val log             = Logger("otoroshi-tcp-proxy")
+  private implicit val mat: Materializer    = env.otoroshiMaterializer
+  private implicit val ev: Env              = env
+  private val ref                           = new AtomicReference[Cancellable]()
+  private val running                       = new AtomicBoolean(false)
+  private val syncing                       = new AtomicBoolean(false)
+  private val runningServers                = new AtomicReference[Seq[RunningServer]](Seq.empty)
+  private val log                           = Logger("otoroshi-tcp-proxy")
 
   private def updateRunningServers(): Unit = {
     if (running.get() && syncing.compareAndSet(false, true)) {

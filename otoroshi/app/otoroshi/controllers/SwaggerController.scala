@@ -81,9 +81,10 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
 
   def SimpleDateType: JsObject = Json.obj("type" -> "string", "format" -> "date", "example" -> "2017-07-21")
 
-  def SimpleDateTimeType: JsObject = Json.obj("type" -> "string", "format" -> "date-time", "example" -> "2017-07-21T17:32:28Z")
+  def SimpleDateTimeType: JsObject =
+    Json.obj("type" -> "string", "format" -> "date-time", "example" -> "2017-07-21T17:32:28Z")
 
-  def SimpleTimeType: JsObject = Json.obj("type" -> "string", "format" -> "time", "example" -> "17:32:28.000")
+  def SimpleTimeType: JsObject     = Json.obj("type" -> "string", "format" -> "time", "example" -> "17:32:28.000")
 
   def SimpleLongType: JsObject = Json.obj("type" -> "integer", "format" -> "int64", "example" -> 123)
 
@@ -97,7 +98,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
 
   def SimpleEmailType: JsObject = Json.obj("type" -> "string", "format" -> "email", "example" -> "admin@otoroshi.io")
 
-  def SimpleUuidType: JsObject              =
+  def SimpleUuidType: JsObject    =
     Json.obj("type" -> "string", "format" -> "uuid", "example" -> "110e8400-e29b-11d4-a716-446655440000")
 
   def Ref(name: String): JsObject = Json.obj("$ref" -> s"#/components/schemas/$name")

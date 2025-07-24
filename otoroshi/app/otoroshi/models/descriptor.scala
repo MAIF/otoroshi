@@ -181,7 +181,7 @@ case class BaseQuotas(
 
 object BaseQuotas {
   implicit val format: OFormat[BaseQuotas] = Json.format[BaseQuotas]
-  val MaxValue: Long  = RemainingQuotas.MaxValue
+  val MaxValue: Long                       = RemainingQuotas.MaxValue
 }
 
 trait LoadBalancing {
@@ -620,11 +620,11 @@ case class NetworkLocationMatch(
 }
 
 case class HttpProtocol(value: String) {
-  def isHttp1: Boolean                              = value.toLowerCase().startsWith("http/1")
-  def isHttp2: Boolean                              = value.toLowerCase().startsWith("http/2")
-  def isHttp3: Boolean                              = value.toLowerCase().startsWith("http/3")
-  def isHttp2OrHttp3: Boolean                       = isHttp2 || isHttp3
-  def json: JsValue                                 = JsString(value)
+  def isHttp1: Boolean                                          = value.toLowerCase().startsWith("http/1")
+  def isHttp2: Boolean                                          = value.toLowerCase().startsWith("http/2")
+  def isHttp3: Boolean                                          = value.toLowerCase().startsWith("http/3")
+  def isHttp2OrHttp3: Boolean                                   = isHttp2 || isHttp3
+  def json: JsValue                                             = JsString(value)
   def asAkka: org.apache.pekko.http.scaladsl.model.HttpProtocol = value.toLowerCase().trim() match {
     case "http/1.0" => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/1.0`
     case "http/1.1" => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
@@ -635,10 +635,10 @@ case class HttpProtocol(value: String) {
 }
 
 object HttpProtocols {
-  val HTTP_1_0: HttpProtocol                                       = HttpProtocol("HTTP/1.0")
-  val HTTP_1_1: HttpProtocol                                       = HttpProtocol("HTTP/1.1")
-  val HTTP_2_0: HttpProtocol                                       = HttpProtocol("HTTP/2.0")
-  val HTTP_3_0: HttpProtocol                                       = HttpProtocol("HTTP/3.0")
+  val HTTP_1_0: HttpProtocol                         = HttpProtocol("HTTP/1.0")
+  val HTTP_1_1: HttpProtocol                         = HttpProtocol("HTTP/1.1")
+  val HTTP_2_0: HttpProtocol                         = HttpProtocol("HTTP/2.0")
+  val HTTP_3_0: HttpProtocol                         = HttpProtocol("HTTP/3.0")
   def parse(value: String): HttpProtocol             = parseSafe(value).getOrElse(HTTP_1_1)
   def parseSafe(value: String): Option[HttpProtocol] = value.toLowerCase().trim() match {
     case "http/1.0" => HTTP_1_0.some
@@ -662,14 +662,14 @@ case class Target(
     metadata: Map[String, String] = Map.empty
 ) {
 
-  def toJson: JsValue               = Target.format.writes(this)
-  def json                 = toJson
-  def asUrl: String                = s"$scheme://$host"
-  def asKey: String                = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
-  def asTargetStr: String          = s"$scheme://$host@${ipAddress.getOrElse(host)}"
-  def asCleanTarget: String        = s"$scheme://$host${ipAddress.map(v => s"@$v").getOrElse("")}"
-  def isPrimary: Boolean   = !backup
-  def isSecondary: Boolean = backup
+  def toJson: JsValue       = Target.format.writes(this)
+  def json                  = toJson
+  def asUrl: String         = s"$scheme://$host"
+  def asKey: String         = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
+  def asTargetStr: String   = s"$scheme://$host@${ipAddress.getOrElse(host)}"
+  def asCleanTarget: String = s"$scheme://$host${ipAddress.map(v => s"@$v").getOrElse("")}"
+  def isPrimary: Boolean    = !backup
+  def isSecondary: Boolean  = backup
 
   lazy val lkey = asKey
 
@@ -796,8 +796,8 @@ class CidrOfString(cdr: String) {
 
 object IpFiltering {
   implicit val format: OFormat[IpFiltering] = Json.format[IpFiltering]
-  private val cidrCache           = Caches.bounded[String, CidrOfString](10000)
-  private[models] val ipaddrCache = Caches.bounded[String, Option[IpAddress]](10000)
+  private val cidrCache                     = Caches.bounded[String, CidrOfString](10000)
+  private[models] val ipaddrCache           = Caches.bounded[String, Option[IpAddress]](10000)
   def cidr(cdr: String): CidrOfString = {
     cidrCache.get(cdr, _ => new CidrOfString(cdr))
   }
@@ -836,7 +836,7 @@ object HealthCheck {
 
     override def writes(o: HealthCheck): JsValue = o.toJson
   }
-  val empty: HealthCheck           = HealthCheck(enabled = false, "/")
+  val empty: HealthCheck                   = HealthCheck(enabled = false, "/")
 }
 
 case class CustomTimeouts(
@@ -904,7 +904,7 @@ case class ClientConfig(
     customTimeouts: Seq[CustomTimeouts] = Seq.empty[CustomTimeouts],
     cacheConnectionSettings: CacheConnectionSettings = CacheConnectionSettings()
 ) {
-  def toJson: JsValue                                                                                            = ClientConfig.format.writes(this)
+  def toJson: JsValue                                                                                   = ClientConfig.format.writes(this)
   def timeouts(path: String): Option[CustomTimeouts] = {
     if (customTimeouts.isEmpty) None
     else customTimeouts.find(c => otoroshi.utils.RegexPool(c.path).matches(path))
@@ -1093,7 +1093,7 @@ case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: St
       ctx: Map[String, String],
       attrs: TypedMap,
       env: Env
-  ): String        =
+  ): String                 =
     RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, None, ctx, attrs, env)
 }
 
@@ -1323,7 +1323,7 @@ case class ApiKeyRouteMatcher(
     noneMetaKeysIn: Seq[String] = Seq.empty,
     oneMetaKeyIn: Seq[String] = Seq.empty,
     allMetaKeysIn: Seq[String] = Seq.empty
-) extends {
+) {
   def json: JsValue                         = ApiKeyRouteMatcher.format.writes(this)
   def gentleJson: JsValue                   = Json
     .obj()
@@ -1749,21 +1749,36 @@ object Restrictions {
             allowLast = (json \ "allowLast").asOpt[Boolean].getOrElse(true),
             allowed = (json \ "allowed")
               .asOpt[JsArray]
-              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
-                rp
-              }.toSeq)
+              .map(
+                _.value
+                  .map(p => RestrictionPath.format.reads(p))
+                  .collect { case JsSuccess(rp, _) =>
+                    rp
+                  }
+                  .toSeq
+              )
               .getOrElse(Seq.empty),
             forbidden = (json \ "forbidden")
               .asOpt[JsArray]
-              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
-                rp
-              }.toSeq)
+              .map(
+                _.value
+                  .map(p => RestrictionPath.format.reads(p))
+                  .collect { case JsSuccess(rp, _) =>
+                    rp
+                  }
+                  .toSeq
+              )
               .getOrElse(Seq.empty),
             notFound = (json \ "notFound")
               .asOpt[JsArray]
-              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
-                rp
-              }.toSeq)
+              .map(
+                _.value
+                  .map(p => RestrictionPath.format.reads(p))
+                  .collect { case JsSuccess(rp, _) =>
+                    rp
+                  }
+                  .toSeq
+              )
               .getOrElse(Seq.empty)
           )
         )
@@ -1774,97 +1789,95 @@ object Restrictions {
 }
 
 case class ServiceDescriptor(
-                                id: String,
-                                groups: Seq[String] = Seq("default"),
-                                name: String,
-                                description: String = "",
-                                env: String,
-                                domain: String,
-                                subdomain: String,
-                                targetsLoadBalancing: LoadBalancing = RoundRobin,
-                                targets: Seq[Target] = Seq.empty[Target],
-                                root: String = "/",
-                                matchingRoot: Option[String] = None,
-                                stripPath: Boolean = true,
-                                localHost: String = "localhost:8080",
-                                localScheme: String = "http",
-                                redirectToLocal: Boolean = false,
-                                enabled: Boolean = true,
-                                userFacing: Boolean = false,
-                                privateApp: Boolean = false,
-                                forceHttps: Boolean = true,
-                                maintenanceMode: Boolean = false,
-                                buildMode: Boolean = false,
-                                strictlyPrivate: Boolean = false,
-                                sendOtoroshiHeadersBack: Boolean = true,
-                                readOnly: Boolean = false,
-                                xForwardedHeaders: Boolean = false,
-                                overrideHost: Boolean = true,
-                                allowHttp10: Boolean = true,
-                                logAnalyticsOnServer: Boolean = false,
-                                useAkkaHttpClient: Boolean = false,
-                                useNewWSClient: Boolean = false,
-                                tcpUdpTunneling: Boolean = false,
-                                detectApiKeySooner: Boolean = false,
-                                letsEncrypt: Boolean = false,
-                                // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
-                                enforceSecureCommunication: Boolean = true,
-                                sendInfoToken: Boolean = true,
-                                sendStateChallenge: Boolean = true,
-                                secComHeaders: SecComHeaders = SecComHeaders(),
-                                secComTtl: FiniteDuration = 30.seconds,
-                                secComVersion: SecComVersion = SecComVersion.V1,
-                                secComInfoTokenVersion: SecComInfoTokenVersion = SecComInfoTokenVersion.Legacy,
-                                secComExcludedPatterns: Seq[String] = Seq.empty[String],
-                                secComSettings: AlgoSettings = HSAlgoSettings(
-      512,
-      "${config.app.claim.sharedKey}"),
-                                secComUseSameAlgo: Boolean = true,
-                                secComAlgoChallengeOtoToBack: AlgoSettings = HSAlgoSettings(512, "secret"),
-                                secComAlgoChallengeBackToOto: AlgoSettings = HSAlgoSettings(512, "secret"),
-                                secComAlgoInfoToken: AlgoSettings = HSAlgoSettings(512, "secret"),
-                                ///////////////////////////////////////////////////////////
-                                securityExcludedPatterns: Seq[String] = Seq.empty[String],
-                                publicPatterns: Seq[String] = Seq.empty[String],
-                                privatePatterns: Seq[String] = Seq.empty[String],
-                                additionalHeaders: Map[String, String] = Map.empty[String, String],
-                                additionalHeadersOut: Map[String, String] = Map.empty[String, String],
-                                missingOnlyHeadersIn: Map[String, String] = Map.empty[String, String],
-                                missingOnlyHeadersOut: Map[String, String] = Map.empty[String, String],
-                                removeHeadersIn: Seq[String] = Seq.empty[String],
-                                removeHeadersOut: Seq[String] = Seq.empty[String],
-                                headersVerification: Map[String, String] = Map.empty[String, String],
-                                matchingHeaders: Map[String, String] = Map.empty[String, String],
-                                ipFiltering: IpFiltering = IpFiltering(),
-                                api: ApiDescriptor = ApiDescriptor(exposeApi = false, None),
-                                healthCheck: HealthCheck = HealthCheck(enabled = false, "/"),
-                                clientConfig: ClientConfig = ClientConfig(),
-                                canary: Canary = Canary(),
-                                metadata: Map[String, String] = Map.empty[String, String],
-                                tags: Seq[String] = Seq.empty,
-                                chaosConfig: ChaosConfig = ChaosConfig(),
-                                jwtVerifier: JwtVerifier = RefJwtVerifier(),
-                                authConfigRef: Option[String] = None,
-                                cors: CorsSettings = CorsSettings(),
-                                redirection: RedirectionSettings = RedirectionSettings(),
-                                clientValidatorRef: Option[String] = None,
-                                ///////////////////////////////////////////////////////////
-                                transformerRefs: Seq[String] = Seq.empty,
-                                transformerConfig: JsValue = Json.obj(),
-                                accessValidator: AccessValidatorRef = AccessValidatorRef(),
-                                preRouting: PreRoutingRef = PreRoutingRef(),
-                                plugins: Plugins = Plugins(),
-                                ///////////////////////////////////////////////////////////
-                                gzip: GzipConfig = GzipConfig(),
-                                // thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
-                                apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
-                                restrictions: Restrictions = Restrictions(),
-                                hosts: Seq[String] = Seq.empty[String],
-                                paths: Seq[String] = Seq.empty[String],
-                                handleLegacyDomain: Boolean = true,
-                                issueCert: Boolean = false,
-                                issueCertCA: Option[String] = None,
-                                location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+    id: String,
+    groups: Seq[String] = Seq("default"),
+    name: String,
+    description: String = "",
+    env: String,
+    domain: String,
+    subdomain: String,
+    targetsLoadBalancing: LoadBalancing = RoundRobin,
+    targets: Seq[Target] = Seq.empty[Target],
+    root: String = "/",
+    matchingRoot: Option[String] = None,
+    stripPath: Boolean = true,
+    localHost: String = "localhost:8080",
+    localScheme: String = "http",
+    redirectToLocal: Boolean = false,
+    enabled: Boolean = true,
+    userFacing: Boolean = false,
+    privateApp: Boolean = false,
+    forceHttps: Boolean = true,
+    maintenanceMode: Boolean = false,
+    buildMode: Boolean = false,
+    strictlyPrivate: Boolean = false,
+    sendOtoroshiHeadersBack: Boolean = true,
+    readOnly: Boolean = false,
+    xForwardedHeaders: Boolean = false,
+    overrideHost: Boolean = true,
+    allowHttp10: Boolean = true,
+    logAnalyticsOnServer: Boolean = false,
+    useAkkaHttpClient: Boolean = false,
+    useNewWSClient: Boolean = false,
+    tcpUdpTunneling: Boolean = false,
+    detectApiKeySooner: Boolean = false,
+    letsEncrypt: Boolean = false,
+    // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
+    enforceSecureCommunication: Boolean = true,
+    sendInfoToken: Boolean = true,
+    sendStateChallenge: Boolean = true,
+    secComHeaders: SecComHeaders = SecComHeaders(),
+    secComTtl: FiniteDuration = 30.seconds,
+    secComVersion: SecComVersion = SecComVersion.V1,
+    secComInfoTokenVersion: SecComInfoTokenVersion = SecComInfoTokenVersion.Legacy,
+    secComExcludedPatterns: Seq[String] = Seq.empty[String],
+    secComSettings: AlgoSettings = HSAlgoSettings(512, "${config.app.claim.sharedKey}"),
+    secComUseSameAlgo: Boolean = true,
+    secComAlgoChallengeOtoToBack: AlgoSettings = HSAlgoSettings(512, "secret"),
+    secComAlgoChallengeBackToOto: AlgoSettings = HSAlgoSettings(512, "secret"),
+    secComAlgoInfoToken: AlgoSettings = HSAlgoSettings(512, "secret"),
+    ///////////////////////////////////////////////////////////
+    securityExcludedPatterns: Seq[String] = Seq.empty[String],
+    publicPatterns: Seq[String] = Seq.empty[String],
+    privatePatterns: Seq[String] = Seq.empty[String],
+    additionalHeaders: Map[String, String] = Map.empty[String, String],
+    additionalHeadersOut: Map[String, String] = Map.empty[String, String],
+    missingOnlyHeadersIn: Map[String, String] = Map.empty[String, String],
+    missingOnlyHeadersOut: Map[String, String] = Map.empty[String, String],
+    removeHeadersIn: Seq[String] = Seq.empty[String],
+    removeHeadersOut: Seq[String] = Seq.empty[String],
+    headersVerification: Map[String, String] = Map.empty[String, String],
+    matchingHeaders: Map[String, String] = Map.empty[String, String],
+    ipFiltering: IpFiltering = IpFiltering(),
+    api: ApiDescriptor = ApiDescriptor(exposeApi = false, None),
+    healthCheck: HealthCheck = HealthCheck(enabled = false, "/"),
+    clientConfig: ClientConfig = ClientConfig(),
+    canary: Canary = Canary(),
+    metadata: Map[String, String] = Map.empty[String, String],
+    tags: Seq[String] = Seq.empty,
+    chaosConfig: ChaosConfig = ChaosConfig(),
+    jwtVerifier: JwtVerifier = RefJwtVerifier(),
+    authConfigRef: Option[String] = None,
+    cors: CorsSettings = CorsSettings(),
+    redirection: RedirectionSettings = RedirectionSettings(),
+    clientValidatorRef: Option[String] = None,
+    ///////////////////////////////////////////////////////////
+    transformerRefs: Seq[String] = Seq.empty,
+    transformerConfig: JsValue = Json.obj(),
+    accessValidator: AccessValidatorRef = AccessValidatorRef(),
+    preRouting: PreRoutingRef = PreRoutingRef(),
+    plugins: Plugins = Plugins(),
+    ///////////////////////////////////////////////////////////
+    gzip: GzipConfig = GzipConfig(),
+    // thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
+    apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
+    restrictions: Restrictions = Restrictions(),
+    hosts: Seq[String] = Seq.empty[String],
+    paths: Seq[String] = Seq.empty[String],
+    handleLegacyDomain: Boolean = true,
+    issueCert: Boolean = false,
+    issueCertCA: Option[String] = None,
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
 
   def json: JsValue      = toJson
@@ -1901,17 +1914,20 @@ case class ServiceDescriptor(
       .getOrElse(rawUri)
   }
 
-  def target: Target                                                 = targets.headOption.getOrElse(NgTarget.default.legacy)
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                = env.datastores.serviceDescriptorDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean]              = env.datastores.serviceDescriptorDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean]              = env.datastores.serviceDescriptorDataStore.exists(this)
-  def toJson: JsValue                                                         = ServiceDescriptor.toJson(this)
-  def isUp(implicit ec: ExecutionContext, env: Env): Future[Boolean] = FastFuture.successful(true)
+  def target: Target                                                     = targets.headOption.getOrElse(NgTarget.default.legacy)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]   =
+    env.datastores.serviceDescriptorDataStore.set(this)
+  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    env.datastores.serviceDescriptorDataStore.delete(this)
+  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    env.datastores.serviceDescriptorDataStore.exists(this)
+  def toJson: JsValue                                                    = ServiceDescriptor.toJson(this)
+  def isUp(implicit ec: ExecutionContext, env: Env): Future[Boolean]     = FastFuture.successful(true)
   // not useful anymore as circuit breakers should do the work
   // env.datastores.healthCheckDataStore.findLast(this).map(_.map(_.isUp).getOrElse(true))
   // TODO : check perfs
   // def isUriPublic(uri: String): Boolean = !privatePatterns.exists(p => uri.matches(p)) && publicPatterns.exists(p => uri.matches(p))
-  def authorizedOnGroup(id: String): Boolean                         = groups.contains(id)
+  def authorizedOnGroup(id: String): Boolean                             = groups.contains(id)
 
   lazy val hasNoRoutingConstraints: Boolean = apiKeyConstraints.hasNoRoutingConstraints
 
@@ -1949,7 +1965,7 @@ case class ServiceDescriptor(
     )
   def theScheme: String                                           = if (forceHttps) "https://" else "http://"
   def theLine: String                                             = if (env == "prod") "" else s".$env"
-  def theDomain: String                                                   = if (s"$subdomain$theLine".isEmpty) domain else s".$subdomain$theLine"
+  def theDomain: String                                           = if (s"$subdomain$theLine".isEmpty) domain else s".$subdomain$theLine"
   def exposedDomain: String                                       = s"$theScheme://$subdomain$theLine.$domain"
   lazy val _domain: String                                        = s"$subdomain$theLine.$domain"
 
@@ -2481,9 +2497,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       domain = domain,
       subdomain = subdomain,
       targets = Seq(
-        Target(
-          host = "changeme.cleverapps.io",
-          mtlsConfig = MtlsConfig())
+        Target(host = "changeme.cleverapps.io", mtlsConfig = MtlsConfig())
       ),
       sendOtoroshiHeadersBack = false,    // try to hide otoroshi as much as possible
       enforceSecureCommunication = false, // try to hide otoroshi as much as possible
@@ -2492,7 +2506,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       removeHeadersOut = Seq.empty,
       accessValidator = AccessValidatorRef(),
       missingOnlyHeadersIn = Map.empty,
-      missingOnlyHeadersOut = Map.empty)
+      missingOnlyHeadersOut = Map.empty
+    )
       .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)

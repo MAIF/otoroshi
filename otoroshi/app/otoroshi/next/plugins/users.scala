@@ -87,28 +87,28 @@ class NgHasAllowedUsersValidator extends NgAccessValidator {
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.user match {
       case Some(user) =>
-          val config      = ctx
-            .cachedConfig(internalName)(NgHasAllowedUsersValidatorConfig.format)
-            .getOrElse(NgHasAllowedUsersValidatorConfig())
-          val userMetaRaw = user.otoroshiData.getOrElse(Json.obj())
-          if (
-            config.usernames.contains(user.name) ||
-            config.emails.contains(user.email) ||
-            config.emailDomains.exists(domain => user.email.endsWith(domain)) ||
-            (config.metadataMatch.exists(
-              JsonPathUtils.matchWith(userMetaRaw, "user metadata")
-            ) && !config.metadataNotMatch.exists(
-              JsonPathUtils.matchWith(userMetaRaw, "user metadata")
-            )) ||
-            (config.profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !config.profileNotMatch
-              .exists(
-                JsonPathUtils.matchWith(user.profile, "user profile")
-              ))
-          ) {
-            NgAccess.NgAllowed.vfuture
-          } else {
-            forbidden(ctx)
-          }
+        val config      = ctx
+          .cachedConfig(internalName)(NgHasAllowedUsersValidatorConfig.format)
+          .getOrElse(NgHasAllowedUsersValidatorConfig())
+        val userMetaRaw = user.otoroshiData.getOrElse(Json.obj())
+        if (
+          config.usernames.contains(user.name) ||
+          config.emails.contains(user.email) ||
+          config.emailDomains.exists(domain => user.email.endsWith(domain)) ||
+          (config.metadataMatch.exists(
+            JsonPathUtils.matchWith(userMetaRaw, "user metadata")
+          ) && !config.metadataNotMatch.exists(
+            JsonPathUtils.matchWith(userMetaRaw, "user metadata")
+          )) ||
+          (config.profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !config.profileNotMatch
+            .exists(
+              JsonPathUtils.matchWith(user.profile, "user profile")
+            ))
+        ) {
+          NgAccess.NgAllowed.vfuture
+        } else {
+          forbidden(ctx)
+        }
       case _          => forbidden(ctx)
     }
   }
@@ -180,76 +180,76 @@ class NgJwtUserExtractor extends NgPreRouting {
     env.datastores.globalJwtVerifierDataStore.findById(config.verifier).flatMap {
       case None if !config.strict =>
         Done.rightf
-      case None =>
+      case None                   =>
         NgPreRoutingErrorWithResult(
           Results.Unauthorized(
             Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user")
           )
         ).leftf
       case Some(verifier)         =>
-          verifier
-            .verify(
-              ctx.request,
-              ctx.route.legacy,
-              None,
-              None,
-              ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
-              ctx.attrs
-            ) { jwtInjection =>
-              jwtInjection.decodedToken match {
-                case None if !config.strict => Results.Unauthorized(Json.obj()).future
-                case None => Results.Ok(Json.obj()).future
-                case Some(token)            =>
-                    val jsonToken                         = new String(OtoroshiClaim.decoder.decode(token.getPayload))
-                    val parsedJsonToken                   = Json.parse(jsonToken).as[JsObject]
-                    val strippedJsonToken                 = JsObject(parsedJsonToken.value.filter {
-                    case (key, _) if registeredClaims.contains(key) => false
-                    case _                                          => true
-                  })
-                    val tokenMap: Map[String, String]     = parsedJsonToken.value.collect {
-                    case (key, JsNumber(number)) => (key, number.toString())
-                    case (key, JsString(value))  => (key, value)
-                    case (key, JsBoolean(value)) => (key, value.toString)
-                  }.toMap
-                    val meta: Option[JsValue]             =
-                    config.metaPath.flatMap(path => Try(JsonPathUtils.getAt[JsObject](jsonToken, path)).toOption.flatten)
-                    val user: PrivateAppsUser             = PrivateAppsUser(
-                    randomId = IdGenerator.uuid,
-                    name = JsonPathUtils.getAt[String](jsonToken, config.namePath.getOrElse("name")).getOrElse("--"),
-                    email = JsonPathUtils.getAt[String](jsonToken, config.emailPath.getOrElse("email")).getOrElse("--"),
-                    profile = if (config.strip) strippedJsonToken else parsedJsonToken,
-                    token = Json.obj("jwt" -> token.getToken, "payload" -> parsedJsonToken),
-                    realm = s"JwtUserExtractor@${ctx.route.id}",
-                    authConfigId = s"JwtUserExtractor@${ctx.route.id}",
-                    otoroshiData = meta,
-                    createdAt = DateTime.now(),
-                    expiredAt = DateTime.now().plusHours(1),
-                    lastRefresh = DateTime.now(),
-                    tags = Seq.empty,
-                    metadata = Map.empty,
-                    location = ctx.route.location
+        verifier
+          .verify(
+            ctx.request,
+            ctx.route.legacy,
+            None,
+            None,
+            ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
+            ctx.attrs
+          ) { jwtInjection =>
+            jwtInjection.decodedToken match {
+              case None if !config.strict => Results.Unauthorized(Json.obj()).future
+              case None                   => Results.Ok(Json.obj()).future
+              case Some(token)            =>
+                val jsonToken                         = new String(OtoroshiClaim.decoder.decode(token.getPayload))
+                val parsedJsonToken                   = Json.parse(jsonToken).as[JsObject]
+                val strippedJsonToken                 = JsObject(parsedJsonToken.value.filter {
+                  case (key, _) if registeredClaims.contains(key) => false
+                  case _                                          => true
+                })
+                val tokenMap: Map[String, String]     = parsedJsonToken.value.collect {
+                  case (key, JsNumber(number)) => (key, number.toString())
+                  case (key, JsString(value))  => (key, value)
+                  case (key, JsBoolean(value)) => (key, value.toString)
+                }.toMap
+                val meta: Option[JsValue]             =
+                  config.metaPath.flatMap(path => Try(JsonPathUtils.getAt[JsObject](jsonToken, path)).toOption.flatten)
+                val user: PrivateAppsUser             = PrivateAppsUser(
+                  randomId = IdGenerator.uuid,
+                  name = JsonPathUtils.getAt[String](jsonToken, config.namePath.getOrElse("name")).getOrElse("--"),
+                  email = JsonPathUtils.getAt[String](jsonToken, config.emailPath.getOrElse("email")).getOrElse("--"),
+                  profile = if (config.strip) strippedJsonToken else parsedJsonToken,
+                  token = Json.obj("jwt" -> token.getToken, "payload" -> parsedJsonToken),
+                  realm = s"JwtUserExtractor@${ctx.route.id}",
+                  authConfigId = s"JwtUserExtractor@${ctx.route.id}",
+                  otoroshiData = meta,
+                  createdAt = DateTime.now(),
+                  expiredAt = DateTime.now().plusHours(1),
+                  lastRefresh = DateTime.now(),
+                  tags = Seq.empty,
+                  metadata = Map.empty,
+                  location = ctx.route.location
+                )
+                ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+                val newElContext: Map[String, String] = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get ++ tokenMap
+                ctx.attrs.put(otoroshi.plugins.Keys.ElCtxKey -> newElContext)
+                Results.Ok(Json.obj()).future
+            }
+          }
+          .recover { case e: Throwable =>
+            Results.Unauthorized(Json.obj())
+          }
+          .flatMap { result =>
+            result.header.status match {
+              case 200 =>
+                Done.rightf
+              case _   =>
+                NgPreRoutingErrorWithResult(
+                  Results.Unauthorized(
+                    Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user")
                   )
-                    ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
-                    val newElContext: Map[String, String] = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get ++ tokenMap
-                    ctx.attrs.put(otoroshi.plugins.Keys.ElCtxKey -> newElContext)
-                    Results.Ok(Json.obj()).future
-              }
+                ).leftf
             }
-            .recover { case e: Throwable =>
-              Results.Unauthorized(Json.obj())
-            }
-            .flatMap { result =>
-              result.header.status match {
-                case 200 =>
-                  Done.rightf
-                case _   =>
-                  NgPreRoutingErrorWithResult(
-                    Results.Unauthorized(
-                      Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user")
-                    )
-                  ).leftf
-              }
-            }
+          }
     }
   }
 }

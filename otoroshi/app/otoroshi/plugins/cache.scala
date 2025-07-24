@@ -46,9 +46,9 @@ case class ResponseCacheConfig(json: JsValue) {
 }
 
 object ResponseCache {
-  val base64Encoder = java.util.Base64.getEncoder
-  val base64Decoder = java.util.Base64.getDecoder
-  val logger: Logger        = Logger("otoroshi-plugins-response-cache")
+  val base64Encoder  = java.util.Base64.getEncoder
+  val base64Decoder  = java.util.Base64.getDecoder
+  val logger: Logger = Logger("otoroshi-plugins-response-cache")
 }
 
 // MIGRATED
@@ -114,7 +114,7 @@ class ResponseCache extends RequestTransformer {
   private val jobRef = new AtomicReference[Cancellable]()
 
   override def start(env: Env): Future[Unit] = {
-    val actorSystem = ActorSystem("cache-redis")
+    val actorSystem                           = ActorSystem("cache-redis")
     implicit val ec: ExecutionContextExecutor = actorSystem.dispatcher
     jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(1.minute, 10.minutes) {
       //jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 10.seconds) {
@@ -162,9 +162,9 @@ class ResponseCache extends RequestTransformer {
   }
 
   private def cleanCache(env: Env): Future[Unit] = {
-    implicit val ev: Env = env
+    implicit val ev: Env              = env
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer    = env.otoroshiMaterializer
     env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
       val possibleServices = services.filter(s =>
         s.transformerRefs.nonEmpty && s.transformerRefs.contains("cp:otoroshi.plugins.cache.ResponseCache")
@@ -350,33 +350,32 @@ class ResponseCache extends RequestTransformer {
             }
           }
         )
-        .alsoTo(Sink.onComplete {
-          case _ =>
-            if (size.get() < config.maxSize) {
-              val ctype: String                = ctx.rawResponse.headers
-                .get("Content-Type")
-                .orElse(ctx.rawResponse.headers.get("content-type"))
-                .getOrElse("text/plain")
-              val headers: Map[String, String] = ctx.rawResponse.headers.filterNot { tuple =>
-                val name = tuple._1.toLowerCase()
-                name == "content-type" || name == "transfer-encoding" || name == "content-length"
-              }
-              val event                        = Json.obj(
-                "status"  -> ctx.rawResponse.status,
-                "headers" -> headers,
-                "ctype"   -> ctype,
-                "body"    -> ResponseCache.base64Encoder.encodeToString(ref.get().toArray)
-              )
-              if (ResponseCache.logger.isDebugEnabled)
-                ResponseCache.logger.debug(
-                  s"Storing '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' in cache for the next ${config.ttl} ms."
-                )
-              set(
-                s"${env.storageRoot}:noclustersync:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}",
-                ByteString(Json.stringify(event)),
-                Some(config.ttl)
-              )
+        .alsoTo(Sink.onComplete { case _ =>
+          if (size.get() < config.maxSize) {
+            val ctype: String                = ctx.rawResponse.headers
+              .get("Content-Type")
+              .orElse(ctx.rawResponse.headers.get("content-type"))
+              .getOrElse("text/plain")
+            val headers: Map[String, String] = ctx.rawResponse.headers.filterNot { tuple =>
+              val name = tuple._1.toLowerCase()
+              name == "content-type" || name == "transfer-encoding" || name == "content-length"
             }
+            val event                        = Json.obj(
+              "status"  -> ctx.rawResponse.status,
+              "headers" -> headers,
+              "ctype"   -> ctype,
+              "body"    -> ResponseCache.base64Encoder.encodeToString(ref.get().toArray)
+            )
+            if (ResponseCache.logger.isDebugEnabled)
+              ResponseCache.logger.debug(
+                s"Storing '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' in cache for the next ${config.ttl} ms."
+              )
+            set(
+              s"${env.storageRoot}:noclustersync:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}",
+              ByteString(Json.stringify(event)),
+              Some(config.ttl)
+            )
+          }
         })
     } else {
       ctx.body

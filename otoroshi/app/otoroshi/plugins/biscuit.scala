@@ -394,7 +394,7 @@ class BiscuitValidator extends AccessValidator {
                 }
             }
         }
-      case _ => (!config.enforce).future
+      case _                               => (!config.enforce).future
     }
   }
 }

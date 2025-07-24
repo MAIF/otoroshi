@@ -37,7 +37,8 @@ class NgPluginDocumentationGenerator(docPath: String) {
         val plugins: Seq[String] = (scanResult.getSubclasses(classOf[NgNamedPlugin].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgNamedPlugin].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName).toSeq
+          .map(_.getName)
+          .toSeq
 
         plugins
       } catch {

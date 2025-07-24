@@ -179,8 +179,7 @@ class IzanamiProxy extends RequestTransformer {
           Results
             .Status(resp.status)(resp.json)
             .withHeaders(
-              resp.headers
-                .view
+              resp.headers.view
                 .mapValues(_.last)
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
@@ -202,8 +201,8 @@ class IzanamiProxy extends RequestTransformer {
           Results
             .Status(resp.status)(resp.json)
             .withHeaders(
-              resp.headers
-                .view.mapValues(_.last)
+              resp.headers.view
+                .mapValues(_.last)
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -240,8 +239,7 @@ class IzanamiProxy extends RequestTransformer {
               Results
                 .Status(resp.status)(resp.json)
                 .withHeaders(
-                  resp.headers
-                    .view
+                  resp.headers.view
                     .mapValues(_.last)
                     .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                     .toSeq: _*
@@ -274,8 +272,8 @@ class IzanamiProxy extends RequestTransformer {
         Results
           .Status(resp.status)(resp.json)
           .withHeaders(
-            resp.headers
-              .view.mapValues(_.last)
+            resp.headers.view
+              .mapValues(_.last)
               .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
               .toSeq: _*
           )
@@ -320,16 +318,21 @@ case class IzanamiCanaryRoutingConfig(
 object IzanamiCanaryRoutingConfig {
   def fromJson(json: JsValue): IzanamiCanaryRoutingConfig = {
     IzanamiCanaryRoutingConfig(
-      routes = json.select("routes").asArray.value.map { item =>
-        IzanamiCanaryRoutingConfigRoute(
-          route = item.select("route").asString,
-          default = item.select("default").asString,
-          variants = item.select("variants").asOpt[Map[String, String]].getOrElse(Map.empty),
-          wildcard = item.select("wildcard").asOpt[Boolean].getOrElse(false),
-          exact = item.select("exact").asOpt[Boolean].getOrElse(false),
-          regex = item.select("regex").asOpt[Boolean].getOrElse(false)
-        )
-      }.toSeq
+      routes = json
+        .select("routes")
+        .asArray
+        .value
+        .map { item =>
+          IzanamiCanaryRoutingConfigRoute(
+            route = item.select("route").asString,
+            default = item.select("default").asString,
+            variants = item.select("variants").asOpt[Map[String, String]].getOrElse(Map.empty),
+            wildcard = item.select("wildcard").asOpt[Boolean].getOrElse(false),
+            exact = item.select("exact").asOpt[Boolean].getOrElse(false),
+            regex = item.select("regex").asOpt[Boolean].getOrElse(false)
+          )
+        }
+        .toSeq
     )
   }
 }

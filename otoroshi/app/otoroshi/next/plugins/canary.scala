@@ -40,7 +40,7 @@ object NgCanarySettings {
     targets = settings.targets.map(t => NgTarget.fromLegacy(t)),
     root = settings.root
   )
-  val format: Format[NgCanarySettings]                                         = new Format[NgCanarySettings] {
+  val format: Format[NgCanarySettings]               = new Format[NgCanarySettings] {
     override def reads(json: JsValue): JsResult[NgCanarySettings] =
       Try {
         NgCanarySettings(
@@ -142,15 +142,15 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
     ctx.attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey) match {
       case None           => ctx.otoroshiResponse.right
       case Some(canaryId) =>
-          val cookie = DefaultWSCookie(
-            name = "otoroshi-canary",
-            value = s"${env.sign(canaryId)}::$canaryId",
-            maxAge = Some(2592000),
-            path = "/".some,
-            domain = ctx.request.theDomain.some,
-            httpOnly = false
-          )
-          ctx.otoroshiResponse.copy(cookies = ctx.otoroshiResponse.cookies ++ Seq(cookie)).right
+        val cookie = DefaultWSCookie(
+          name = "otoroshi-canary",
+          value = s"${env.sign(canaryId)}::$canaryId",
+          maxAge = Some(2592000),
+          path = "/".some,
+          domain = ctx.request.theDomain.some,
+          httpOnly = false
+        )
+        ctx.otoroshiResponse.copy(cookies = ctx.otoroshiResponse.cookies ++ Seq(cookie)).right
     }
   }
 }
@@ -306,15 +306,15 @@ class TimeControlledCanaryMode extends NgPreRouting with NgRequestTransformer {
     ctx.attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey) match {
       case None           => ctx.otoroshiResponse.right
       case Some(canaryId) =>
-          val cookie = DefaultWSCookie(
-            name = "otoroshi-tc-canary",
-            value = s"${env.sign(canaryId)}::$canaryId",
-            maxAge = Some(2592000),
-            path = "/".some,
-            domain = ctx.request.theDomain.some,
-            httpOnly = false
-          )
-          ctx.otoroshiResponse.copy(cookies = ctx.otoroshiResponse.cookies ++ Seq(cookie)).right
+        val cookie = DefaultWSCookie(
+          name = "otoroshi-tc-canary",
+          value = s"${env.sign(canaryId)}::$canaryId",
+          maxAge = Some(2592000),
+          path = "/".some,
+          domain = ctx.request.theDomain.some,
+          httpOnly = false
+        )
+        ctx.otoroshiResponse.copy(cookies = ctx.otoroshiResponse.cookies ++ Seq(cookie)).right
     }
   }
 }

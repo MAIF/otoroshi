@@ -24,7 +24,7 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
   lazy val fields_rename: JsObject = raw.select("fields_rename").asOpt[JsObject].getOrElse(Json.obj())
   lazy val add_fields: JsObject    = raw.select("add_fields").asOpt[JsObject].getOrElse(Json.obj())
 
-  lazy val bulkControllerMethods: Seq[String]             = raw
+  lazy val bulkControllerMethods: Seq[String] = raw
     .select("bulkControllerMethods")
     .asOpt[Seq[String]]
     .getOrElse(
@@ -35,7 +35,7 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
         "bulkDeleteAction"
       )
     )
-  lazy val crudControllerMethods: Seq[String]             = raw
+  lazy val crudControllerMethods: Seq[String] = raw
     .select("crudControllerMethods")
     .asOpt[Seq[String]]
     .getOrElse(
@@ -49,7 +49,7 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
         "deleteEntitiesAction"
       )
     )
-  lazy val banned: Seq[String]               = raw
+  lazy val banned: Seq[String]                = raw
     .select("banned")
     .asOpt[Seq[String]]
     .getOrElse(
@@ -85,7 +85,7 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
         "otoroshi.next.plugins.api.*"
       )
     )
-  lazy val descriptions: Map[String, String] =
+  lazy val descriptions: Map[String, String]  =
     raw.select("descriptions").asOpt[Map[String, String]].getOrElse(Map.empty)
   // lazy val old_descriptions: Map[String, String] = raw.select("old_descriptions").asOpt[Map[String, String]].getOrElse(Map.empty)
   // lazy val old_examples: Map[String, String] = raw.select("old_examples").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -107,8 +107,8 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
       f.createNewFile()
     }
 
-    val descs       = descriptions
-      .view.mapValues(JsString.apply)
+    val descs       = descriptions.view
+      .mapValues(JsString.apply)
       .toSeq
       .sortWith((a, b) => a._1.compareTo(b._1) < 0)
       .map(t => s"    ${JsString(t._1).stringify}: ${t._2.stringify}")
@@ -148,7 +148,7 @@ class OpenApiGenerator(
     // Json.obj("$ref" -> s"#/components/schemas/Null") // Json.obj("type" -> "null") needs openapi 3.1.0 support :(
     Json.obj("type" -> "string", "nullable" -> true, "description" -> "null type")
   val openApiVersion: JsString = JsString("3.0.3")
-  val unknownValue   = "???"
+  val unknownValue             = "???"
 
   val world = scanResult.getAllClassesAsMap.asScala
 
@@ -172,14 +172,14 @@ class OpenApiGenerator(
       )
       .values).toSeq.distinct
 
-  var adts: Seq[JsObject]              = Nil
-  val foundDescriptions = new UnboundedTrieMap[String, String]()
-  val found             = new AtomicLong(0L)
-  val notFound          = new AtomicLong(0L)
-  val resFound          = new AtomicLong(0L)
-  val resNotFound       = new AtomicLong(0L)
-  val inFound           = new AtomicLong(0L)
-  val inNotFound        = new AtomicLong(0L)
+  var adts: Seq[JsObject] = Nil
+  val foundDescriptions   = new UnboundedTrieMap[String, String]()
+  val found               = new AtomicLong(0L)
+  val notFound            = new AtomicLong(0L)
+  val resFound            = new AtomicLong(0L)
+  val resNotFound         = new AtomicLong(0L)
+  val inFound             = new AtomicLong(0L)
+  val inNotFound          = new AtomicLong(0L)
 
   def getFieldDescription(
       clazz: ClassInfo,
@@ -388,17 +388,17 @@ class OpenApiGenerator(
           case "scala.Double"          => Json.obj("type" -> "number", "format" -> "double").some
           case "scala.Float"           => Json.obj("type" -> "number", "format" -> "float").some
 
-          case "boolean"                                          => Json.obj("type" -> "boolean").some
-          case "java.lang.Boolean"                                => Json.obj("type" -> "boolean").some
-          case "scala.Boolean"                                    => Json.obj("type" -> "boolean").some
-          case "java.lang.String"                                 => Json.obj("type" -> "string").some
-          case "org.joda.time.DateTime"                           => Json.obj("type" -> "number").some
-          case "scala.concurrent.duration.FiniteDuration"         => Json.obj("type" -> "number").some
-          case "org.joda.time.LocalTime"                          => Json.obj("type" -> "string").some
-          case "play.api.libs.json.JsValue"                       => Json.obj("type" -> "object").some
-          case "play.api.libs.json.JsObject"                      => Json.obj("type" -> "object").some
-          case "play.api.libs.json.JsArray"                       => Json.obj("type" -> "array").some
-          case "org.apache.pekko.http.scaladsl.model.HttpProtocol"            =>
+          case "boolean"                                           => Json.obj("type" -> "boolean").some
+          case "java.lang.Boolean"                                 => Json.obj("type" -> "boolean").some
+          case "scala.Boolean"                                     => Json.obj("type" -> "boolean").some
+          case "java.lang.String"                                  => Json.obj("type" -> "string").some
+          case "org.joda.time.DateTime"                            => Json.obj("type" -> "number").some
+          case "scala.concurrent.duration.FiniteDuration"          => Json.obj("type" -> "number").some
+          case "org.joda.time.LocalTime"                           => Json.obj("type" -> "string").some
+          case "play.api.libs.json.JsValue"                        => Json.obj("type" -> "object").some
+          case "play.api.libs.json.JsObject"                       => Json.obj("type" -> "object").some
+          case "play.api.libs.json.JsArray"                        => Json.obj("type" -> "array").some
+          case "org.apache.pekko.http.scaladsl.model.HttpProtocol" =>
             Json
               .obj(
                 "type" -> "string",
@@ -406,7 +406,7 @@ class OpenApiGenerator(
                   .arr(HttpProtocols.`HTTP/1.0`.value, HttpProtocols.`HTTP/1.1`.value, HttpProtocols.`HTTP/2.0`.value)
               )
               .some
-          case "otoroshi.models.HttpProtocol"                     =>
+          case "otoroshi.models.HttpProtocol"                      =>
             Json
               .obj(
                 "type" -> "string",
@@ -418,16 +418,16 @@ class OpenApiGenerator(
                 )
               )
               .some
-          case "java.security.cert.X509Certificate"               =>
+          case "java.security.cert.X509Certificate"                =>
             Json.obj("type" -> "string", "description" -> "pem encoded X509 certificate").some
-          case "java.security.PrivateKey"                         =>
+          case "java.security.PrivateKey"                          =>
             Json.obj("type" -> "string", "description" -> "pem encoded private key").some
-          case "java.security.PublicKey"                          =>
+          case "java.security.PublicKey"                           =>
             Json.obj("type" -> "string", "description" -> "pem encoded private key").some
-          case "org.bouncycastle.pkcs.PKCS10CertificationRequest" =>
+          case "org.bouncycastle.pkcs.PKCS10CertificationRequest"  =>
             Json.obj("type" -> "string", "description" -> "pem encoded csr").some
-          case "com.nimbusds.jose.jwk.KeyType"                    => Json.obj("type" -> "string", "description" -> "key type").some
-          case _ if typ.toString.startsWith("scala.Option<")      =>
+          case "com.nimbusds.jose.jwk.KeyType"                     => Json.obj("type" -> "string", "description" -> "key type").some
+          case _ if typ.toString.startsWith("scala.Option<")       =>
             world.get(valueName).map(cl => visitEntity(cl, None, result, config))
             result.get(valueName) match {
               case None
@@ -438,10 +438,10 @@ class OpenApiGenerator(
                 logger.debug(s"fuuuuu opt, $name, $valueName")
                 None
             }
-          case vn if valueName.startsWith("otoroshi")             =>
+          case vn if valueName.startsWith("otoroshi")              =>
             world.get(valueName).map(cl => visitEntity(cl, None, result, config))
             Json.obj("$ref" -> s"#/components/schemas/$valueName").some
-          case _                                                  =>
+          case _                                                   =>
             logger.debug(s"${clazz.getName}.$name: $typ (unexpected 1)")
             None
         }
@@ -1249,19 +1249,17 @@ class OpenApiGenerator(
       val oldSpec      = Json.parse(Files.readAllLines(f.toPath).asScala.mkString("\n"))
       val descriptions = new UnboundedTrieMap[String, String]()
       val examples     = new UnboundedTrieMap[String, String]()
-      oldSpec.select("components").select("schemas").asObject.value.map {
-        case (key, value) =>
-          val path = s"old.$key"
-          value
-            .select("properties")
-            .asOpt[JsObject]
-            .map(_.value.map {
-              case (field, component) =>
-                val example     = component.select("example").asOpt[String]
-                val description = component.select("description").asOpt[String]
-                example.foreach(v => examples.put(s"$path.$field", v))
-                description.foreach(v => descriptions.put(s"$path.$field", v))
-            })
+      oldSpec.select("components").select("schemas").asObject.value.map { case (key, value) =>
+        val path = s"old.$key"
+        value
+          .select("properties")
+          .asOpt[JsObject]
+          .map(_.value.map { case (field, component) =>
+            val example     = component.select("example").asOpt[String]
+            val description = component.select("description").asOpt[String]
+            example.foreach(v => examples.put(s"$path.$field", v))
+            description.foreach(v => descriptions.put(s"$path.$field", v))
+          })
       }
       OpenApiGeneratorConfig(
         config.filePath,

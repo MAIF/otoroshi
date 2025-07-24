@@ -58,58 +58,58 @@ class U2FController(
   def simpleLogin: Action[JsValue] =
     BackOfficeAction.async(parse.json) { ctx =>
       implicit val req: Request[JsValue] = ctx.request
-      val usernameOpt  = (ctx.request.body \ "username").asOpt[String]
-      val passwordOpt  = (ctx.request.body \ "password").asOpt[String]
+      val usernameOpt                    = (ctx.request.body \ "username").asOpt[String]
+      val passwordOpt                    = (ctx.request.body \ "password").asOpt[String]
       (usernameOpt, passwordOpt) match {
         case (Some(username), Some(pass)) =>
-            env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
-              case Some(user) =>
-                  val password = user.password
-                  val label    = user.label
-                  if (BCrypt.checkpw(pass, password)) {
-                  if (logger.isDebugEnabled) logger.debug(s"Login successful for simple admin '$username'")
-                  BackOfficeUser(
-                    randomId = IdGenerator.token(64),
-                    name = username,
-                    email = username,
-                    profile = Json.obj(
-                      "name"  -> label,
-                      "email" -> username
-                    ),
-                    token = Json.obj(),
-                    authConfigId = "none",
-                    simpleLogin = true,
-                    tags = Seq.empty,
-                    metadata = Map.empty,
-                    rights = user.rights,
-                    location = user.location,
-                    adminEntityValidators = user.adminEntityValidators
-                  ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
-                    env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
-                      case false =>
-                          env.datastores.simpleAdminDataStore.alreadyLoggedIn(username)
-                          Alerts
-                          .send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
-                      case true  =>
-                          Alerts
-                          .send(
-                            AdminLoggedInAlert(
-                              env.snowflakeGenerator.nextIdStr(),
-                              env.env,
-                              boUser,
-                              ctx.from,
-                              ctx.ua,
-                              "local"
-                            )
+          env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
+            case Some(user) =>
+              val password = user.password
+              val label    = user.label
+              if (BCrypt.checkpw(pass, password)) {
+                if (logger.isDebugEnabled) logger.debug(s"Login successful for simple admin '$username'")
+                BackOfficeUser(
+                  randomId = IdGenerator.token(64),
+                  name = username,
+                  email = username,
+                  profile = Json.obj(
+                    "name"  -> label,
+                    "email" -> username
+                  ),
+                  token = Json.obj(),
+                  authConfigId = "none",
+                  simpleLogin = true,
+                  tags = Seq.empty,
+                  metadata = Map.empty,
+                  rights = user.rights,
+                  location = user.location,
+                  adminEntityValidators = user.adminEntityValidators
+                ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
+                  env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
+                    case false =>
+                      env.datastores.simpleAdminDataStore.alreadyLoggedIn(username)
+                      Alerts
+                        .send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
+                    case true  =>
+                      Alerts
+                        .send(
+                          AdminLoggedInAlert(
+                            env.snowflakeGenerator.nextIdStr(),
+                            env.env,
+                            boUser,
+                            ctx.from,
+                            ctx.ua,
+                            "local"
                           )
-                    }
-                    Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
+                        )
                   }
-                } else {
-                  Unauthorized(Json.obj("error" -> "not authorized")).future
+                  Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
                 }
-              case None       => Unauthorized(Json.obj("error" -> "not authorized")).future
-            }
+              } else {
+                Unauthorized(Json.obj("error" -> "not authorized")).future
+              }
+            case None       => Unauthorized(Json.obj("error" -> "not authorized")).future
+          }
         case _                            => Unauthorized(Json.obj("error" -> "not authorized")).future
       }
     }
@@ -299,42 +299,44 @@ class U2FController(
           env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
             case None             => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
             case Some(rawRequest) =>
-                Try {
-                  val request                          = jsonMapper.readValue(
-                    Json.stringify((rawRequest \ "request").as[JsValue]),
-                    classOf[PublicKeyCredentialCreationOptions]
-                  )
-                  val rpIdentity: RelyingPartyIdentity =
-                    RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-                  val rp: RelyingParty                 = RelyingParty.builder
-                    .identity(rpIdentity)
-                    .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
-                    .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
-                    .build
-                  val pkc                              = PublicKeyCredential.parseRegistrationResponseJson(responseJson)
+              Try {
+                val request                          = jsonMapper.readValue(
+                  Json.stringify((rawRequest \ "request").as[JsValue]),
+                  classOf[PublicKeyCredentialCreationOptions]
+                )
+                val rpIdentity: RelyingPartyIdentity =
+                  RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+                val rp: RelyingParty                 = RelyingParty.builder
+                  .identity(rpIdentity)
+                  .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+                  .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+                  .build
+                val pkc                              = PublicKeyCredential.parseRegistrationResponseJson(responseJson)
 
-                  rp.finishRegistration(
-                    FinishRegistrationOptions
-                      .builder()
-                      .request(request)
-                      .response(pkc)
-                      .build()
-                  )
-                } match {
-                  case Failure(e)      =>
-                    e.printStackTrace()
-                    FastFuture.successful(BadRequest(Json.obj("error" -> "bad request 111")))
-                  case Success(result) =>
-                    val username = (otoroshi \ "username").as[String]
-                    val password = (otoroshi \ "password").as[String]
-                    val label    = (otoroshi \ "label").as[String]
-                    val rights   = UserRights(Seq(UserRight(TenantAccess(ctx.currentTenant.value), Seq(TeamAccess("*"))))) // UserRights.readFromObject(otoroshi)
-                    val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-                    val credential     = Json.parse(jsonMapper.writeValueAsString(result))
+                rp.finishRegistration(
+                  FinishRegistrationOptions
+                    .builder()
+                    .request(request)
+                    .response(pkc)
+                    .build()
+                )
+              } match {
+                case Failure(e)      =>
+                  e.printStackTrace()
+                  FastFuture.successful(BadRequest(Json.obj("error" -> "bad request 111")))
+                case Success(result) =>
+                  val username = (otoroshi \ "username").as[String]
+                  val password = (otoroshi \ "password").as[String]
+                  val label    = (otoroshi \ "label").as[String]
+                  val rights   = UserRights(
+                    Seq(UserRight(TenantAccess(ctx.currentTenant.value), Seq(TeamAccess("*"))))
+                  ) // UserRights.readFromObject(otoroshi)
+                  val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
+                  val credential     = Json.parse(jsonMapper.writeValueAsString(result))
 
-                    env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
+                  env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
                     case None                                                  =>
-                        env.datastores.webAuthnAdminDataStore
+                      env.datastores.webAuthnAdminDataStore
                         .registerUser(
                           WebAuthnOtoroshiAdmin(
                             username = username,
@@ -356,22 +358,22 @@ class U2FController(
                         .map { _ =>
                           Ok(Json.obj("username" -> username))
                         }
-                      case Some(user) if BCrypt.checkpw(password, user.password) =>
-                          // update usrer
-                          env.datastores.webAuthnAdminDataStore
-                          .registerUser(
-                            user.copy(
-                              credentials = user.credentials + (
-                                (credential \ "keyId" \ "id").as[String] -> credential
-                              )
+                    case Some(user) if BCrypt.checkpw(password, user.password) =>
+                      // update usrer
+                      env.datastores.webAuthnAdminDataStore
+                        .registerUser(
+                          user.copy(
+                            credentials = user.credentials + (
+                              (credential \ "keyId" \ "id").as[String] -> credential
                             )
                           )
-                          .map { _ =>
-                            Ok(Json.obj("username" -> username))
-                          }
-                      case Some(user)                                            => Unauthorized(Json.obj("error" -> "bad credentials")).future
-                    }
-                }
+                        )
+                        .map { _ =>
+                          Ok(Json.obj("username" -> username))
+                        }
+                    case Some(user)                                            => Unauthorized(Json.obj("error" -> "bad credentials")).future
+                  }
+              }
           }
         }
       }
@@ -392,39 +394,38 @@ class U2FController(
 
       (usernameOpt, passwordOpt) match {
         case (Some(username), Some(password)) =>
-            env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
-              users.find(u => u.username == username) match {
-                case Some(user) if BCrypt.checkpw(password, user.password) =>
+          env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
+            users.find(u => u.username == username) match {
+              case Some(user) if BCrypt.checkpw(password, user.password) =>
+                val rpIdentity: RelyingPartyIdentity =
+                  RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+                val rp: RelyingParty                 = RelyingParty.builder
+                  .identity(rpIdentity)
+                  .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+                  .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+                  .build
+                val request: AssertionRequest        =
+                  rp.startAssertion(StartAssertionOptions.builder.username(Optional.of(username)).build)
 
-                    val rpIdentity: RelyingPartyIdentity =
-                    RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-                    val rp: RelyingParty                 = RelyingParty.builder
-                    .identity(rpIdentity)
-                    .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
-                    .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
-                    .build
-                    val request: AssertionRequest        =
-                    rp.startAssertion(StartAssertionOptions.builder.username(Optional.of(username)).build)
+                val registrationRequestId = IdGenerator.token(32)
+                val jsonRequest: String   = jsonMapper.writeValueAsString(request)
+                val finalRequest          = Json.obj(
+                  "requestId" -> registrationRequestId,
+                  "request"   -> Json.parse(jsonRequest),
+                  "username"  -> username,
+                  "label"     -> "--"
+                )
 
-                    val registrationRequestId = IdGenerator.token(32)
-                    val jsonRequest: String   = jsonMapper.writeValueAsString(request)
-                    val finalRequest          = Json.obj(
-                    "requestId" -> registrationRequestId,
-                    "request"   -> Json.parse(jsonRequest),
-                    "username"  -> username,
-                    "label"     -> "--"
-                  )
-
-                    env.datastores.webAuthnRegistrationsDataStore
-                    .setRegistrationRequest(registrationRequestId, finalRequest)
-                    .map { _ =>
-                      Ok(finalRequest)
-                    }
-                case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
-              }
+                env.datastores.webAuthnRegistrationsDataStore
+                  .setRegistrationRequest(registrationRequestId, finalRequest)
+                  .map { _ =>
+                    Ok(finalRequest)
+                  }
+              case _                                                     => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
             }
+          }
         case (_, _)                           =>
-            FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
+          FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
       }
     }
 
@@ -449,90 +450,96 @@ class U2FController(
       val passwordOpt = (otoroshi \ "password").asOpt[String]
       (usernameOpt, passwordOpt) match {
         case (Some(username), Some(pass)) =>
-            env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
-              users.find(u => u.username == username) match {
-                case None       => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad user")))
-                case Some(user) =>
-                    env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
-                    case None             => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
-                    case Some(rawRequest) =>
-                        val request  = jsonMapper
-                        .readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
-                        val password = user.password
-                        val label    = user.label
+          env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
+            users.find(u => u.username == username) match {
+              case None       => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad user")))
+              case Some(user) =>
+                env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
+                  case None             => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
+                  case Some(rawRequest) =>
+                    val request  = jsonMapper
+                      .readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
+                    val password = user.password
+                    val label    = user.label
 
-                        if (BCrypt.checkpw(pass, password)) {
-                        Try {
-                          val rpIdentity: RelyingPartyIdentity =
-                            RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-                          val rp: RelyingParty                 = RelyingParty.builder
-                            .identity(rpIdentity)
-                            .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
-                            .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
-                            .build
-                          val pkc                              = PublicKeyCredential.parseAssertionResponseJson(Json.stringify(webauthn))
-                          rp.finishAssertion(
-                            FinishAssertionOptions
-                              .builder()
-                              .request(request)
-                              .response(pkc)
-                              .build()
-                          )
-                        } match {
-                          case Failure(e)                           =>
+                    if (BCrypt.checkpw(pass, password)) {
+                      Try {
+                        val rpIdentity: RelyingPartyIdentity =
+                          RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+                        val rp: RelyingParty                 = RelyingParty.builder
+                          .identity(rpIdentity)
+                          .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+                          .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+                          .build
+                        val pkc                              = PublicKeyCredential.parseAssertionResponseJson(Json.stringify(webauthn))
+                        rp.finishAssertion(
+                          FinishAssertionOptions
+                            .builder()
+                            .request(request)
+                            .response(pkc)
+                            .build()
+                        )
+                      } match {
+                        case Failure(e)      =>
+                          FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
+                        case Success(result) =>
+                          if (!result.isSuccess) {
                             FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
-                          case Success(result) =>
-                              if (!result.isSuccess) {
-                                  FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
-                              } else {
-                                  logger.debug(s"Login successful for user '$username'")
-                                  BackOfficeUser(
-                                      randomId = IdGenerator.token(64),
-                                      name = username,
-                                      email = username,
-                                      profile = Json.obj(
-                                          "name" -> label,
-                                          "email" -> username
-                                      ),
-                                      token = Json.obj(),
-                                      authConfigId = "none",
-                                      simpleLogin = false,
-                                      tags = Seq.empty,
-                                      metadata = Map.empty,
-                                      rights = user.rights,
-                                      location = user.location,
-                                      adminEntityValidators = user.adminEntityValidators
-                                  ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
-                                      env.datastores.webAuthnAdminDataStore.hasAlreadyLoggedIn(username).map {
-                                          case false =>
-                                              env.datastores.webAuthnAdminDataStore.alreadyLoggedIn(username)
-                                              Alerts.send(
-                                                  AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua)
-                                              )
-                                          case true =>
-                                              Alerts.send(
-                                                  AdminLoggedInAlert(
-                                                      env.snowflakeGenerator.nextIdStr(),
-                                                      env.env,
-                                                      boUser,
-                                                      ctx.from,
-                                                      ctx.ua,
-                                                      "local"
-                                                  )
-                                              )
-                                      }
-                                      Ok(
-                                          Json.obj("username" -> username)
-                                      ).addingToSession("bousr" -> boUser.randomId)
-                                  }
+                          } else {
+                            logger.debug(s"Login successful for user '$username'")
+                            BackOfficeUser(
+                              randomId = IdGenerator.token(64),
+                              name = username,
+                              email = username,
+                              profile = Json.obj(
+                                "name"  -> label,
+                                "email" -> username
+                              ),
+                              token = Json.obj(),
+                              authConfigId = "none",
+                              simpleLogin = false,
+                              tags = Seq.empty,
+                              metadata = Map.empty,
+                              rights = user.rights,
+                              location = user.location,
+                              adminEntityValidators = user.adminEntityValidators
+                            ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
+                              env.datastores.webAuthnAdminDataStore.hasAlreadyLoggedIn(username).map {
+                                case false =>
+                                  env.datastores.webAuthnAdminDataStore.alreadyLoggedIn(username)
+                                  Alerts.send(
+                                    AdminFirstLogin(
+                                      env.snowflakeGenerator.nextIdStr(),
+                                      env.env,
+                                      boUser,
+                                      ctx.from,
+                                      ctx.ua
+                                    )
+                                  )
+                                case true  =>
+                                  Alerts.send(
+                                    AdminLoggedInAlert(
+                                      env.snowflakeGenerator.nextIdStr(),
+                                      env.env,
+                                      boUser,
+                                      ctx.from,
+                                      ctx.ua,
+                                      "local"
+                                    )
+                                  )
                               }
-                        }
-                      } else {
-                        FastFuture.successful(Unauthorized(Json.obj("error" -> "Not Authorized")))
+                              Ok(
+                                Json.obj("username" -> username)
+                              ).addingToSession("bousr" -> boUser.randomId)
+                            }
+                          }
                       }
+                    } else {
+                      FastFuture.successful(Unauthorized(Json.obj("error" -> "Not Authorized")))
                     }
-              }
+                }
             }
+          }
         case (_, _)                       => FastFuture.successful(Unauthorized(Json.obj("error" -> "Not Authorized")))
       }
     }

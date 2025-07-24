@@ -111,9 +111,9 @@ object ReverseProxyActionHelper {
       service.jwtVerifier.shouldBeVerified(req.path).flatMap {
         case false => f(JwtInjection())
         case true  =>
-            if (logger.isDebugEnabled)
-              logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
-            service.jwtVerifier.verifyGen[A](req, service, apiKey, paUsr, elContext, attrs)(f)
+          if (logger.isDebugEnabled)
+            logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
+          service.jwtVerifier.verifyGen[A](req, service, apiKey, paUsr, elContext, attrs)(f)
       }
     } else {
       f(JwtInjection())
@@ -154,36 +154,36 @@ object ReverseProxyActionHelper {
       // when local service wants to access protected services from other containers
       case Some(config @ SidecarConfig(_, _, _, Some(akid), strict))
           if chooseRemoteAddress(config) == config.from && config.serviceId != service.id =>
-          if (logger.isDebugEnabled)
-            logger.debug(
-              s"Local service (${config.from}) wants to access protected service (${config.serviceId}) from other container (${chooseRemoteAddress(config)}) with apikey $akid"
-            )
-          env.datastores.apiKeyDataStore.findById(akid) flatMap {
-            case Some(ak) =>
-              f(
-                service.copy(
-                  publicPatterns = Seq("/.*"),
-                  privatePatterns = Seq.empty,
-                  additionalHeaders = service.additionalHeaders ++ Map(
-                    "Host"                           -> req.headers.get("Host").get,
-                    env.Headers.OtoroshiClientId     -> ak.clientId,
-                    env.Headers.OtoroshiClientSecret -> ak.clientSecret
-                  )
+        if (logger.isDebugEnabled)
+          logger.debug(
+            s"Local service (${config.from}) wants to access protected service (${config.serviceId}) from other container (${chooseRemoteAddress(config)}) with apikey $akid"
+          )
+        env.datastores.apiKeyDataStore.findById(akid) flatMap {
+          case Some(ak) =>
+            f(
+              service.copy(
+                publicPatterns = Seq("/.*"),
+                privatePatterns = Seq.empty,
+                additionalHeaders = service.additionalHeaders ++ Map(
+                  "Host"                           -> req.headers.get("Host").get,
+                  env.Headers.OtoroshiClientId     -> ak.clientId,
+                  env.Headers.OtoroshiClientSecret -> ak.clientSecret
                 )
               )
-            case None     =>
-              // TODO: auto find ?
-              Errors
-                .craftResponseResult(
-                  "sidecar.bad.apikey.clientid",
-                  Results.InternalServerError,
-                  req,
-                  Some(service),
-                  None,
-                  attrs = attrs
-                )
-                .map(Left.apply)
-          }
+            )
+          case None     =>
+            // TODO: auto find ?
+            Errors
+              .craftResponseResult(
+                "sidecar.bad.apikey.clientid",
+                Results.InternalServerError,
+                req,
+                Some(service),
+                None,
+                attrs = attrs
+              )
+              .map(Left.apply)
+        }
       // when local service wants to access unprotected services from other containers
       case Some(config @ SidecarConfig(_, _, _, None, strict))
           if chooseRemoteAddress(config) == config.from && config.serviceId != service.id =>
@@ -243,26 +243,26 @@ object ReverseProxyActionHelper {
   def passWithReadOnly[A](readOnly: Boolean, req: RequestHeader, attrs: TypedMap)(
       f: => Future[Either[Result, A]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
-      if (readOnly) {
-          req.method.toLowerCase match {
-              case "get" => f
-              case "head" => f
-              case "options" => f
-              case _ =>
-                  Errors
-                      .craftResponseResult(
-                          s"Method not allowed. Can only handle GET, HEAD, OPTIONS",
-                          MethodNotAllowed,
-                          req,
-                          None,
-                          Some("errors.method.not.allowed"),
-                          attrs = attrs
-                      )
-                      .map(Left.apply)
-          }
-      } else {
-          f
+    if (readOnly) {
+      req.method.toLowerCase match {
+        case "get"     => f
+        case "head"    => f
+        case "options" => f
+        case _         =>
+          Errors
+            .craftResponseResult(
+              s"Method not allowed. Can only handle GET, HEAD, OPTIONS",
+              MethodNotAllowed,
+              req,
+              None,
+              Some("errors.method.not.allowed"),
+              attrs = attrs
+            )
+            .map(Left.apply)
       }
+    } else {
+      f
+    }
   }
 
   def stateRespValidM(
@@ -297,62 +297,82 @@ object ReverseProxyActionHelper {
             env
           ).left
         case Some(resp) =>
-            descriptor.secComVersion match {
-              case SecComVersion.V1 if stateValue == resp => Done.right
-              case SecComVersion.V1                       =>
-                StateRespInvalid(
-                  at,
-                  s"V1 - state from response does not match request one ($stateValue != $resp)",
-                  -1,
-                  -1,
-                  -1,
-                  stateValue,
-                  stateResp,
-                  None,
-                  descriptor,
-                  req,
-                  env
-                ).left
-              case SecComVersion.V2                       =>
-                  descriptor.algoChallengeFromBackToOto.asAlgorithm(otoroshi.models.OutputMode)(env) match {
-                  case None       =>
-                    StateRespInvalid(
-                      at,
-                      s"V2 - bad challenge algorithm",
-                      -1,
-                      -1,
-                      -1,
-                      stateValue,
-                      stateResp,
-                      None,
-                      descriptor,
-                      req,
-                      env
-                    ).left
-                  case Some(algo) =>
-                      Try {
-                      val jwt = JWT
-                        .require(algo)
-                        .withAudience(env.Headers.OtoroshiIssuer)
-                        .withClaim("state-resp", stateValue)
-                        .acceptLeeway(10) // TODO: customize ???
-                        .build()
-                        .verify(resp)
-                      val extractedState: Option[String] =
-                        Option(jwt.getClaim("state-resp")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asString())
-                      val exp: Option[Long]              =
-                        Option(jwt.getClaim("exp")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
-                      val iat: Option[Long]              =
-                        Option(jwt.getClaim("iat")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
-                      val nbf: Option[Long]              =
-                        Option(jwt.getClaim("nbf")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
-                      if (exp.isEmpty || iat.isEmpty) {
+          descriptor.secComVersion match {
+            case SecComVersion.V1 if stateValue == resp => Done.right
+            case SecComVersion.V1                       =>
+              StateRespInvalid(
+                at,
+                s"V1 - state from response does not match request one ($stateValue != $resp)",
+                -1,
+                -1,
+                -1,
+                stateValue,
+                stateResp,
+                None,
+                descriptor,
+                req,
+                env
+              ).left
+            case SecComVersion.V2                       =>
+              descriptor.algoChallengeFromBackToOto.asAlgorithm(otoroshi.models.OutputMode)(env) match {
+                case None       =>
+                  StateRespInvalid(
+                    at,
+                    s"V2 - bad challenge algorithm",
+                    -1,
+                    -1,
+                    -1,
+                    stateValue,
+                    stateResp,
+                    None,
+                    descriptor,
+                    req,
+                    env
+                  ).left
+                case Some(algo) =>
+                  Try {
+                    val jwt = JWT
+                      .require(algo)
+                      .withAudience(env.Headers.OtoroshiIssuer)
+                      .withClaim("state-resp", stateValue)
+                      .acceptLeeway(10) // TODO: customize ???
+                      .build()
+                      .verify(resp)
+                    val extractedState: Option[String] =
+                      Option(jwt.getClaim("state-resp")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asString())
+                    val exp: Option[Long]              =
+                      Option(jwt.getClaim("exp")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
+                    val iat: Option[Long]              =
+                      Option(jwt.getClaim("iat")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
+                    val nbf: Option[Long]              =
+                      Option(jwt.getClaim("nbf")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
+                    if (exp.isEmpty || iat.isEmpty) {
+                      StateRespInvalid(
+                        at,
+                        s"V2 - exp / iat is empty",
+                        exp.getOrElse(-1L),
+                        iat.getOrElse(-1L),
+                        nbf.getOrElse(-1L),
+                        stateValue,
+                        stateResp,
+                        extractedState,
+                        descriptor,
+                        req,
+                        env
+                      ).left
+                    } else {
+                      val expValue = exp.get
+                      val iatValue = iat.get
+                      val nbfValue = nbf.getOrElse(-1L)
+                      if ((exp.get - iat.get) <= descriptor.secComTtl.toSeconds) { // seconds
+                        Done.right
+                      } else {
                         StateRespInvalid(
                           at,
-                          s"V2 - exp / iat is empty",
-                          exp.getOrElse(-1L),
-                          iat.getOrElse(-1L),
-                          nbf.getOrElse(-1L),
+                          s"V2 - response token ttl too big - ${expValue - iatValue} seconds (($expValue - $iatValue) > ${descriptor.secComTtl.toSeconds})",
+                          expValue,
+                          iatValue,
+                          nbfValue,
                           stateValue,
                           stateResp,
                           extractedState,
@@ -360,47 +380,27 @@ object ReverseProxyActionHelper {
                           req,
                           env
                         ).left
-                      } else {
-                        val expValue = exp.get
-                        val iatValue = iat.get
-                        val nbfValue = nbf.getOrElse(-1L)
-                        if ((exp.get - iat.get) <= descriptor.secComTtl.toSeconds) { // seconds
-                          Done.right
-                        } else {
-                          StateRespInvalid(
-                            at,
-                            s"V2 - response token ttl too big - ${expValue - iatValue} seconds (($expValue - $iatValue) > ${descriptor.secComTtl.toSeconds})",
-                            expValue,
-                            iatValue,
-                            nbfValue,
-                            stateValue,
-                            stateResp,
-                            extractedState,
-                            descriptor,
-                            req,
-                            env
-                          ).left
-                        }
                       }
-                    } match {
-                      case Success(v) => v
-                      case Failure(e) =>
-                          StateRespInvalid(
-                          at,
-                          s"V2 - error while decoding token - ${e.getMessage}",
-                          -1,
-                          -1,
-                          -1,
-                          stateValue,
-                          stateResp,
-                          None,
-                          descriptor,
-                          req,
-                          env
-                        ).left
-                      }
+                    }
+                  } match {
+                    case Success(v) => v
+                    case Failure(e) =>
+                      StateRespInvalid(
+                        at,
+                        s"V2 - error while decoding token - ${e.getMessage}",
+                        -1,
+                        -1,
+                        -1,
+                        stateValue,
+                        stateResp,
+                        None,
+                        descriptor,
+                        req,
+                        env
+                      ).left
                   }
-            }
+              }
+          }
       }
     } else {
       Done.right
@@ -478,27 +478,27 @@ object ReverseProxyActionHelper {
         PrivateAppsUserHelper.isPrivateAppsSessionValid(req, desc, attrs).flatMap {
           case None       => f
           case Some(user) =>
-              if (desc.tcpUdpTunneling) {
-                req.getQueryString("redirect") match {
-                  case Some("urn:ietf:wg:oauth:2.0:oob") =>
-                    FastFuture
-                      .successful(Ok(otoroshi.views.html.oto.token(env.signPrivateSessionId(user.randomId), env)))
-                      .map(Left.apply)
-                  case _                                 =>
-                    Errors
-                      .craftResponseResult(
-                        s"Resource not found",
-                        NotFound,
-                        req,
-                        None,
-                        Some("errors.resource.not.found"),
-                        attrs = attrs
-                      )
-                      .map(Left.apply)
-                }
-              } else {
-                f
+            if (desc.tcpUdpTunneling) {
+              req.getQueryString("redirect") match {
+                case Some("urn:ietf:wg:oauth:2.0:oob") =>
+                  FastFuture
+                    .successful(Ok(otoroshi.views.html.oto.token(env.signPrivateSessionId(user.randomId), env)))
+                    .map(Left.apply)
+                case _                                 =>
+                  Errors
+                    .craftResponseResult(
+                      s"Resource not found",
+                      NotFound,
+                      req,
+                      None,
+                      Some("errors.resource.not.found"),
+                      attrs = attrs
+                    )
+                    .map(Left.apply)
               }
+            } else {
+              f
+            }
         }
       } else {
         if (desc.tcpUdpTunneling) {
@@ -680,98 +680,516 @@ class ReverseProxyAction(env: Env) {
               .map(Left.apply)
 
           case Some(ServiceLocation(domain, serviceEnv, subdomain)) =>
-              val uriParts = req.relativeUri.split("/").toSeq
+            val uriParts = req.relativeUri.split("/").toSeq
 
-              env.datastores.serviceDescriptorDataStore
-                .find(
-                  ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap),
-                  req,
-                  attrs
-                )
-                .fast
-                .flatMap {
-                  case None                                                                             =>
-                    val err = Errors
-                      .craftResponseResult(
-                        s"Service not found",
-                        NotFound,
-                        req,
-                        None,
-                        Some("errors.service.not.found"),
-                        attrs = attrs
-                      )
-                    RequestSink
-                      .maybeSinkRequest(
-                        snowflake,
-                        req,
-                        ctx.requestBody,
-                        attrs,
-                        RequestOrigin.ReverseProxy,
-                        404,
-                        s"Service not found",
-                        err
-                      )
-                      .map(Left.apply)
-                  case Some(desc) if !desc.enabled                                                      =>
-                    val err = Errors
-                      .craftResponseResult(
-                        s"Service unavailable",
-                        ServiceUnavailable,
-                        req,
-                        None,
-                        Some("errors.service.unavailable"),
-                        attrs = attrs
-                      )
-                    RequestSink
-                      .maybeSinkRequest(
-                        snowflake,
-                        req,
-                        ctx.requestBody,
-                        attrs,
-                        RequestOrigin.ReverseProxy,
-                        503,
-                        "Service unavailable",
-                        err
-                      )
-                      .map(Left.apply)
-                  case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode =>
-                      // TODO: event here
-                      FastFuture
-                      .successful(
-                        Results
-                          .Status(rawDesc.redirection.code)
-                          .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx, attrs, env))
-                      )
-                      .map(Left.apply)
-                  case Some(rawDesc)
-                      if env.clusterConfig.mode.isWorker && env.clusterConfig.worker.tenants.nonEmpty && !env.clusterConfig.worker.tenants
-                        .contains(rawDesc.location.tenant) =>
+            env.datastores.serviceDescriptorDataStore
+              .find(
+                ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap),
+                req,
+                attrs
+              )
+              .fast
+              .flatMap {
+                case None                                                                             =>
+                  val err = Errors
+                    .craftResponseResult(
+                      s"Service not found",
+                      NotFound,
+                      req,
+                      None,
+                      Some("errors.service.not.found"),
+                      attrs = attrs
+                    )
+                  RequestSink
+                    .maybeSinkRequest(
+                      snowflake,
+                      req,
+                      ctx.requestBody,
+                      attrs,
+                      RequestOrigin.ReverseProxy,
+                      404,
+                      s"Service not found",
+                      err
+                    )
+                    .map(Left.apply)
+                case Some(desc) if !desc.enabled                                                      =>
+                  val err = Errors
+                    .craftResponseResult(
+                      s"Service unavailable",
+                      ServiceUnavailable,
+                      req,
+                      None,
+                      Some("errors.service.unavailable"),
+                      attrs = attrs
+                    )
+                  RequestSink
+                    .maybeSinkRequest(
+                      snowflake,
+                      req,
+                      ctx.requestBody,
+                      attrs,
+                      RequestOrigin.ReverseProxy,
+                      503,
+                      "Service unavailable",
+                      err
+                    )
+                    .map(Left.apply)
+                case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode =>
+                  // TODO: event here
+                  FastFuture
+                    .successful(
+                      Results
+                        .Status(rawDesc.redirection.code)
+                        .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx, attrs, env))
+                    )
+                    .map(Left.apply)
+                case Some(rawDesc)
+                    if env.clusterConfig.mode.isWorker && env.clusterConfig.worker.tenants.nonEmpty && !env.clusterConfig.worker.tenants
+                      .contains(rawDesc.location.tenant) =>
+                  Errors
+                    .craftResponseResult(
+                      s"Service not found",
+                      NotFound,
+                      req,
+                      None,
+                      Some("errors.service.not.found"),
+                      attrs = attrs
+                    )
+                    .map(Left.apply)
+                case Some(rawDesc)                                                                    =>
+                  if (rawDesc.id != env.backOfficeServiceId && globalConfig.maintenanceMode) {
                     Errors
                       .craftResponseResult(
-                        s"Service not found",
-                        NotFound,
+                        "Service in maintenance mode",
+                        ServiceUnavailable,
                         req,
-                        None,
-                        Some("errors.service.not.found"),
+                        Some(rawDesc),
+                        Some("errors.service.in.maintenance"),
                         attrs = attrs
                       )
                       .map(Left.apply)
-                  case Some(rawDesc)                                                                    =>
-                      if (rawDesc.id != env.backOfficeServiceId && globalConfig.maintenanceMode) {
-                      Errors
-                        .craftResponseResult(
-                          "Service in maintenance mode",
-                          ServiceUnavailable,
-                          req,
-                          Some(rawDesc),
-                          Some("errors.service.in.maintenance"),
+                  } else {
+                    rawDesc
+                      .beforeRequest(
+                        BeforeRequestContext(
+                          index = -1,
+                          snowflake = snowflake,
+                          descriptor = rawDesc,
+                          request = req,
+                          config = rawDesc.transformerConfig,
                           attrs = attrs
                         )
-                        .map(Left.apply)
-                    } else {
-                      rawDesc
-                        .beforeRequest(
-                          BeforeRequestContext(
+                      )
+                      .flatMap { _ =>
+                        rawDesc.preRouteGen[A](snowflake, req, attrs) {
+                          ReverseProxyActionHelper.passWithTcpUdpTunneling(req, rawDesc, attrs, ws) {
+                            ReverseProxyActionHelper.passWithHeadersVerification(
+                              rawDesc,
+                              req,
+                              None,
+                              None,
+                              elCtx,
+                              attrs
+                            ) {
+                              ReverseProxyActionHelper.passWithReadOnly(rawDesc.readOnly, req, attrs) {
+                                ReverseProxyActionHelper.applySidecar(rawDesc, remoteAddress, req, attrs, logger) {
+                                  desc =>
+                                    val firstOverhead = System.currentTimeMillis() - start
+                                    snowMonkey.introduceChaosGen[A](reqNumber, globalConfig, desc, req.theHasBody) {
+                                      snowMonkeyContext =>
+                                        val secondStart                   = System.currentTimeMillis()
+                                        val maybeCanaryId: Option[String] = req.cookies
+                                          .get("otoroshi-canary")
+                                          .map(_.value)
+                                          .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
+                                          .filter { value =>
+                                            if (value.contains("::")) {
+                                              value.split("::").toList match {
+                                                case signed :: id :: Nil if env.sign(id) == signed => true
+                                                case _                                             => false
+                                              }
+                                            } else {
+                                              false
+                                            }
+                                          } map (value => value.split("::")(1))
+                                        val canaryId: String              =
+                                          maybeCanaryId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
+                                        attrs.put(otoroshi.plugins.Keys.RequestCanaryIdKey -> canaryId)
+
+                                        val trackingId: String = req.cookies
+                                          .get("otoroshi-tracking")
+                                          .map(_.value)
+                                          .getOrElse(IdGenerator.uuid + "-" + reqNumber)
+
+                                        attrs.put(otoroshi.plugins.Keys.RequestTrackingIdKey -> trackingId)
+
+                                        if (maybeCanaryId.isDefined) {
+                                          if (logger.isDebugEnabled)
+                                            logger.debug(s"request already has canary id : $canaryId")
+                                        } else {
+                                          if (logger.isDebugEnabled)
+                                            logger.debug(s"request has a new canary id : $canaryId")
+                                        }
+
+                                        val withTrackingCookies: Seq[Cookie] = {
+                                          if (!desc.canary.enabled)
+                                            Seq.empty[play.api.mvc.Cookie]
+                                          else if (maybeCanaryId.isDefined)
+                                            Seq.empty[play.api.mvc.Cookie]
+                                          else
+                                            Seq(
+                                              play.api.mvc.Cookie(
+                                                name = "otoroshi-canary",
+                                                value = s"${env.sign(canaryId)}::$canaryId",
+                                                maxAge = Some(2592000),
+                                                path = "/",
+                                                domain = Some(req.theDomain),
+                                                httpOnly = false
+                                              )
+                                            )
+                                        } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
+                                                Seq(
+                                                  play.api.mvc.Cookie(
+                                                    name = "otoroshi-tracking",
+                                                    value = trackingId,
+                                                    maxAge = Some(2592000),
+                                                    path = "/",
+                                                    domain = Some(req.theDomain),
+                                                    httpOnly = false
+                                                  )
+                                                )
+                                              } else {
+                                                Seq.empty[Cookie]
+                                              })
+
+                                        ReverseProxyActionHelper
+                                          .splitToCanary(desc, canaryId, reqNumber, globalConfig)
+                                          .fast
+                                          .flatMap { _desc =>
+                                            val isUp = true
+
+                                            val descriptor = _desc
+
+                                            def actuallyCallDownstream(
+                                                t: Target,
+                                                apiKey: Option[ApiKey],
+                                                paUsr: Option[PrivateAppsUser],
+                                                cbDuration: Long,
+                                                callAttempts: Int,
+                                                attempts: Int,
+                                                alreadyFailed: AtomicBoolean
+                                            ): Future[Either[Result, A]] = {
+                                              ReverseProxyActionHelper.applyJwtVerifier(
+                                                rawDesc,
+                                                req,
+                                                apiKey,
+                                                paUsr,
+                                                elCtx,
+                                                attrs,
+                                                logger
+                                              ) { jwtInjection =>
+                                                _actuallyCallDownstream(
+                                                  ActualCallContext(
+                                                    req = req,
+                                                    descriptor = descriptor,
+                                                    _target = t,
+                                                    apiKey = apiKey,
+                                                    paUsr = paUsr,
+                                                    jwtInjection = jwtInjection,
+                                                    snowMonkeyContext = snowMonkeyContext,
+                                                    snowflake = snowflake,
+                                                    attrs = attrs,
+                                                    elCtx = elCtx,
+                                                    globalConfig = globalConfig,
+                                                    cbDuration = cbDuration,
+                                                    callAttempts = callAttempts,
+                                                    withTrackingCookies = withTrackingCookies,
+                                                    firstOverhead = firstOverhead,
+                                                    secondStart = secondStart,
+                                                    bodyAlreadyConsumed = bodyAlreadyConsumed,
+                                                    requestBody = requestBody,
+                                                    attempts = attempts,
+                                                    alreadyFailed = alreadyFailed
+                                                  )
+                                                )
+                                              }
+                                            }
+
+                                            def callDownstream(
+                                                config: GlobalConfig,
+                                                _apiKey: Option[ApiKey] = None,
+                                                _paUsr: Option[PrivateAppsUser] = None
+                                            ): Future[Either[Result, A]] = {
+
+                                              val apiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).orElse(_apiKey)
+                                              val paUsr  = attrs.get(otoroshi.plugins.Keys.UserKey).orElse(_paUsr)
+
+                                              apiKey
+                                                .foreach(apk =>
+                                                  attrs.putIfAbsent(otoroshi.plugins.Keys.ApiKeyKey -> apk)
+                                                )
+                                              paUsr
+                                                .foreach(usr => attrs.putIfAbsent(otoroshi.plugins.Keys.UserKey -> usr))
+
+                                              desc
+                                                .validateClientCertificatesGen[A](
+                                                  snowflake,
+                                                  req,
+                                                  apiKey,
+                                                  paUsr,
+                                                  config,
+                                                  attrs
+                                                ) {
+                                                  ReverseProxyActionHelper.passWithReadOnly(
+                                                    apiKey.map(_.readOnly).getOrElse(false),
+                                                    req,
+                                                    attrs
+                                                  ) {
+                                                    if (
+                                                      config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker
+                                                    ) {
+                                                      val cbStart            = System.currentTimeMillis()
+                                                      val counter            = new AtomicInteger(0)
+                                                      val relUri             = req.relativeUri
+                                                      val cachedPath: String =
+                                                        descriptor.clientConfig
+                                                          .timeouts(relUri)
+                                                          .map(_ => relUri)
+                                                          .getOrElse("")
+
+                                                      def callF(t: Target, attemps: Int, alreadyFailed: AtomicBoolean)
+                                                          : Future[Either[Result, A]] = {
+                                                        actuallyCallDownstream(
+                                                          t,
+                                                          apiKey,
+                                                          paUsr,
+                                                          System.currentTimeMillis - cbStart,
+                                                          counter.get(),
+                                                          attemps,
+                                                          alreadyFailed
+                                                        )
+                                                      }
+
+                                                      env.circuitBeakersHolder
+                                                        .get(
+                                                          desc.id + cachedPath,
+                                                          () => new ServiceDescriptorCircuitBreaker()
+                                                        )
+                                                        .callGen[A](
+                                                          descriptor,
+                                                          reqNumber.toString,
+                                                          trackingId,
+                                                          req.relativeUri,
+                                                          req,
+                                                          bodyAlreadyConsumed,
+                                                          s"${req.method} ${req.relativeUri}",
+                                                          counter,
+                                                          attrs,
+                                                          callF
+                                                        ) recoverWith {
+                                                        case BodyAlreadyConsumedException                       =>
+                                                          Errors
+                                                            .craftResponseResult(
+                                                              s"Something went wrong, the backend service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
+                                                              GatewayTimeout,
+                                                              req,
+                                                              Some(descriptor),
+                                                              Some("errors.request.timeout"),
+                                                              duration = System.currentTimeMillis - start,
+                                                              overhead = (System
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
+                                                              cbDuration = System.currentTimeMillis - cbStart,
+                                                              callAttempts = counter.get(),
+                                                              attrs = attrs
+                                                            )
+                                                            .map(Left.apply)
+                                                        case RequestTimeoutException                            =>
+                                                          Errors
+                                                            .craftResponseResult(
+                                                              s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                                              GatewayTimeout,
+                                                              req,
+                                                              Some(descriptor),
+                                                              Some("errors.request.timeout"),
+                                                              duration = System.currentTimeMillis - start,
+                                                              overhead = (System
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
+                                                              cbDuration = System.currentTimeMillis - cbStart,
+                                                              callAttempts = counter.get(),
+                                                              attrs = attrs
+                                                            )
+                                                            .map(Left.apply)
+                                                        case _: scala.concurrent.TimeoutException               =>
+                                                          Errors
+                                                            .craftResponseResult(
+                                                              s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                                              GatewayTimeout,
+                                                              req,
+                                                              Some(descriptor),
+                                                              Some("errors.request.timeout"),
+                                                              duration = System.currentTimeMillis - start,
+                                                              overhead = (System
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
+                                                              cbDuration = System.currentTimeMillis - cbStart,
+                                                              callAttempts = counter.get(),
+                                                              attrs = attrs
+                                                            )
+                                                            .map(Left.apply)
+                                                        case AllCircuitBreakersOpenException                    =>
+                                                          Errors
+                                                            .craftResponseResult(
+                                                              s"Something went wrong, the backend service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
+                                                              ServiceUnavailable,
+                                                              req,
+                                                              Some(descriptor),
+                                                              Some("errors.circuit.breaker.open"),
+                                                              duration = System.currentTimeMillis - start,
+                                                              overhead = (System
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
+                                                              cbDuration = System.currentTimeMillis - cbStart,
+                                                              callAttempts = counter.get(),
+                                                              attrs = attrs
+                                                            )
+                                                            .map(Left.apply)
+                                                        case error
+                                                            if error != null && error.getMessage != null && error.getMessage
+                                                              .toLowerCase()
+                                                              .contains("connection refused") =>
+                                                          Errors
+                                                            .craftResponseResult(
+                                                              s"Something went wrong, the connection to backend service was refused, you should try later. Thanks for your understanding",
+                                                              BadGateway,
+                                                              req,
+                                                              Some(descriptor),
+                                                              Some("errors.connection.refused"),
+                                                              duration = System.currentTimeMillis - start,
+                                                              overhead = (System
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
+                                                              cbDuration = System.currentTimeMillis - cbStart,
+                                                              callAttempts = counter.get(),
+                                                              attrs = attrs
+                                                            )
+                                                            .map(Left.apply)
+                                                        case error if error != null && error.getMessage != null =>
+                                                          logger.error(
+                                                            s"Something went wrong, you should try later",
+                                                            error
+                                                          )
+                                                          Errors
+                                                            .craftResponseResult(
+                                                              s"Something went wrong, you should try later. Thanks for your understanding.",
+                                                              BadGateway,
+                                                              req,
+                                                              Some(descriptor),
+                                                              Some("errors.proxy.error"),
+                                                              duration = System.currentTimeMillis - start,
+                                                              overhead = (System
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
+                                                              cbDuration = System.currentTimeMillis - cbStart,
+                                                              callAttempts = counter.get(),
+                                                              attrs = attrs
+                                                            )
+                                                            .map(Left.apply)
+                                                        case error                                              =>
+                                                          logger.error(
+                                                            s"Something went wrong, you should try later",
+                                                            error
+                                                          )
+                                                          Errors
+                                                            .craftResponseResult(
+                                                              s"Something went wrong, you should try later. Thanks for your understanding",
+                                                              BadGateway,
+                                                              req,
+                                                              Some(descriptor),
+                                                              Some("errors.proxy.error"),
+                                                              duration = System.currentTimeMillis - start,
+                                                              overhead = (System
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
+                                                              cbDuration = System.currentTimeMillis - cbStart,
+                                                              callAttempts = counter.get(),
+                                                              attrs = attrs
+                                                            )
+                                                            .map(Left.apply)
+                                                      }
+                                                    } else {
+
+                                                      val target = attrs
+                                                        .get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey)
+                                                        .getOrElse {
+
+                                                          val targets: Seq[Target] = descriptor.targets
+                                                            .filter(_.predicate.matches(reqNumber.toString, req, attrs))
+                                                            .flatMap(t => Seq.fill(t.weight)(t))
+                                                          descriptor.targetsLoadBalancing
+                                                            .select(
+                                                              reqNumber.toString,
+                                                              trackingId,
+                                                              req,
+                                                              targets,
+                                                              descriptor.id,
+                                                              1
+                                                            )
+                                                        }
+
+                                                      //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
+                                                      // Round robin loadbalancing is happening here !!!!!
+                                                      //val target = targets.apply(index.toInt)
+                                                      actuallyCallDownstream(
+                                                        target,
+                                                        apiKey,
+                                                        paUsr,
+                                                        0L,
+                                                        1,
+                                                        1,
+                                                        atomicFalse
+                                                      )
+                                                    }
+                                                  }
+                                                }
+                                            }
+
+                                            def errorResult(status: Results.Status, message: String, code: String)
+                                                : Future[Either[Result, A]] = {
+                                              Errors
+                                                .craftResponseResult(
+                                                  message,
+                                                  status,
+                                                  req,
+                                                  Some(descriptor),
+                                                  Some(code),
+                                                  duration = System.currentTimeMillis - start,
+                                                  overhead = (System
+                                                    .currentTimeMillis() - secondStart) + firstOverhead,
+                                                  attrs = attrs
+                                                )
+                                                .map(Left.apply)
+                                            }
+
+                                            val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/")
+                                            ReverseProxyHelper.handleRequest[A](
+                                              ReverseProxyHelper.HandleRequestContext(
+                                                req,
+                                                query,
+                                                descriptor,
+                                                isUp,
+                                                attrs,
+                                                globalConfig,
+                                                logger
+                                              ),
+                                              callDownstream,
+                                              errorResult
+                                            )
+                                          }
+                                    }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                      .andThen { case _ =>
+                        rawDesc.afterRequest(
+                          AfterRequestContext(
                             index = -1,
                             snowflake = snowflake,
                             descriptor = rawDesc,
@@ -780,427 +1198,9 @@ class ReverseProxyAction(env: Env) {
                             attrs = attrs
                           )
                         )
-                        .flatMap { _ =>
-                          rawDesc.preRouteGen[A](snowflake, req, attrs) {
-                            ReverseProxyActionHelper.passWithTcpUdpTunneling(req, rawDesc, attrs, ws) {
-                              ReverseProxyActionHelper.passWithHeadersVerification(
-                                rawDesc,
-                                req,
-                                None,
-                                None,
-                                elCtx,
-                                attrs
-                              ) {
-                                ReverseProxyActionHelper.passWithReadOnly(rawDesc.readOnly, req, attrs) {
-                                  ReverseProxyActionHelper.applySidecar(rawDesc, remoteAddress, req, attrs, logger) {
-                                    desc =>
-                                      val firstOverhead = System.currentTimeMillis() - start
-                                      snowMonkey.introduceChaosGen[A](reqNumber, globalConfig, desc, req.theHasBody) {
-                                        snowMonkeyContext =>
-                                          val secondStart                   = System.currentTimeMillis()
-                                          val maybeCanaryId: Option[String] = req.cookies
-                                            .get("otoroshi-canary")
-                                            .map(_.value)
-                                            .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
-                                            .filter { value =>
-                                              if (value.contains("::")) {
-                                                value.split("::").toList match {
-                                                  case signed :: id :: Nil if env.sign(id) == signed => true
-                                                  case _                                             => false
-                                                }
-                                              } else {
-                                                false
-                                              }
-                                            } map (value => value.split("::")(1))
-                                          val canaryId: String              =
-                                            maybeCanaryId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
-                                          attrs.put(otoroshi.plugins.Keys.RequestCanaryIdKey -> canaryId)
-
-                                          val trackingId: String = req.cookies
-                                            .get("otoroshi-tracking")
-                                            .map(_.value)
-                                            .getOrElse(IdGenerator.uuid + "-" + reqNumber)
-
-                                          attrs.put(otoroshi.plugins.Keys.RequestTrackingIdKey -> trackingId)
-
-                                          if (maybeCanaryId.isDefined) {
-                                            if (logger.isDebugEnabled)
-                                              logger.debug(s"request already has canary id : $canaryId")
-                                          } else {
-                                            if (logger.isDebugEnabled)
-                                              logger.debug(s"request has a new canary id : $canaryId")
-                                          }
-
-                                          val withTrackingCookies: Seq[Cookie] = {
-                                            if (!desc.canary.enabled)
-                                              Seq.empty[play.api.mvc.Cookie]
-                                            else if (maybeCanaryId.isDefined)
-                                              Seq.empty[play.api.mvc.Cookie]
-                                            else
-                                              Seq(
-                                                play.api.mvc.Cookie(
-                                                  name = "otoroshi-canary",
-                                                  value = s"${env.sign(canaryId)}::$canaryId",
-                                                  maxAge = Some(2592000),
-                                                  path = "/",
-                                                  domain = Some(req.theDomain),
-                                                  httpOnly = false
-                                                )
-                                              )
-                                          } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
-                                                  Seq(
-                                                    play.api.mvc.Cookie(
-                                                      name = "otoroshi-tracking",
-                                                      value = trackingId,
-                                                      maxAge = Some(2592000),
-                                                      path = "/",
-                                                      domain = Some(req.theDomain),
-                                                      httpOnly = false
-                                                    )
-                                                  )
-                                                } else {
-                                                  Seq.empty[Cookie]
-                                                })
-
-                                          ReverseProxyActionHelper
-                                            .splitToCanary(desc, canaryId, reqNumber, globalConfig)
-                                            .fast
-                                            .flatMap { _desc =>
-                                              val isUp = true
-
-                                              val descriptor = _desc
-
-                                              def actuallyCallDownstream(
-                                                  t: Target,
-                                                  apiKey: Option[ApiKey],
-                                                  paUsr: Option[PrivateAppsUser],
-                                                  cbDuration: Long,
-                                                  callAttempts: Int,
-                                                  attempts: Int,
-                                                  alreadyFailed: AtomicBoolean
-                                              ): Future[Either[Result, A]] = {
-                                                ReverseProxyActionHelper.applyJwtVerifier(
-                                                  rawDesc,
-                                                  req,
-                                                  apiKey,
-                                                  paUsr,
-                                                  elCtx,
-                                                  attrs,
-                                                  logger
-                                                ) { jwtInjection =>
-                                                  _actuallyCallDownstream(
-                                                    ActualCallContext(
-                                                      req = req,
-                                                      descriptor = descriptor,
-                                                      _target = t,
-                                                      apiKey = apiKey,
-                                                      paUsr = paUsr,
-                                                      jwtInjection = jwtInjection,
-                                                      snowMonkeyContext = snowMonkeyContext,
-                                                      snowflake = snowflake,
-                                                      attrs = attrs,
-                                                      elCtx = elCtx,
-                                                      globalConfig = globalConfig,
-                                                      cbDuration = cbDuration,
-                                                      callAttempts = callAttempts,
-                                                      withTrackingCookies = withTrackingCookies,
-                                                      firstOverhead = firstOverhead,
-                                                      secondStart = secondStart,
-                                                      bodyAlreadyConsumed = bodyAlreadyConsumed,
-                                                      requestBody = requestBody,
-                                                      attempts = attempts,
-                                                      alreadyFailed = alreadyFailed
-                                                    )
-                                                  )
-                                                }
-                                              }
-
-                                              def callDownstream(
-                                                  config: GlobalConfig,
-                                                  _apiKey: Option[ApiKey] = None,
-                                                  _paUsr: Option[PrivateAppsUser] = None
-                                              ): Future[Either[Result, A]] = {
-
-                                                val apiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).orElse(_apiKey)
-                                                val paUsr  = attrs.get(otoroshi.plugins.Keys.UserKey).orElse(_paUsr)
-
-                                                apiKey
-                                                  .foreach(apk =>
-                                                    attrs.putIfAbsent(otoroshi.plugins.Keys.ApiKeyKey -> apk)
-                                                  )
-                                                paUsr
-                                                  .foreach(usr => attrs.putIfAbsent(otoroshi.plugins.Keys.UserKey -> usr))
-
-                                                desc
-                                                  .validateClientCertificatesGen[A](
-                                                    snowflake,
-                                                    req,
-                                                    apiKey,
-                                                    paUsr,
-                                                    config,
-                                                    attrs
-                                                  ) {
-                                                    ReverseProxyActionHelper.passWithReadOnly(
-                                                      apiKey.map(_.readOnly).getOrElse(false),
-                                                      req,
-                                                      attrs
-                                                    ) {
-                                                      if (
-                                                        config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker
-                                                      ) {
-                                                        val cbStart            = System.currentTimeMillis()
-                                                        val counter            = new AtomicInteger(0)
-                                                        val relUri             = req.relativeUri
-                                                        val cachedPath: String =
-                                                          descriptor.clientConfig
-                                                            .timeouts(relUri)
-                                                            .map(_ => relUri)
-                                                            .getOrElse("")
-
-                                                        def callF(t: Target, attemps: Int, alreadyFailed: AtomicBoolean)
-                                                            : Future[Either[Result, A]] = {
-                                                          actuallyCallDownstream(
-                                                            t,
-                                                            apiKey,
-                                                            paUsr,
-                                                            System.currentTimeMillis - cbStart,
-                                                            counter.get(),
-                                                            attemps,
-                                                            alreadyFailed
-                                                          )
-                                                        }
-
-                                                        env.circuitBeakersHolder
-                                                          .get(
-                                                            desc.id + cachedPath,
-                                                            () => new ServiceDescriptorCircuitBreaker()
-                                                          )
-                                                          .callGen[A](
-                                                            descriptor,
-                                                            reqNumber.toString,
-                                                            trackingId,
-                                                            req.relativeUri,
-                                                            req,
-                                                            bodyAlreadyConsumed,
-                                                            s"${req.method} ${req.relativeUri}",
-                                                            counter,
-                                                            attrs,
-                                                            callF
-                                                          ) recoverWith {
-                                                          case BodyAlreadyConsumedException                       =>
-                                                            Errors
-                                                              .craftResponseResult(
-                                                                s"Something went wrong, the backend service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
-                                                                GatewayTimeout,
-                                                                req,
-                                                                Some(descriptor),
-                                                                Some("errors.request.timeout"),
-                                                                duration = System.currentTimeMillis - start,
-                                                                overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
-                                                                cbDuration = System.currentTimeMillis - cbStart,
-                                                                callAttempts = counter.get(),
-                                                                attrs = attrs
-                                                              )
-                                                              .map(Left.apply)
-                                                          case RequestTimeoutException                            =>
-                                                            Errors
-                                                              .craftResponseResult(
-                                                                s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                                                GatewayTimeout,
-                                                                req,
-                                                                Some(descriptor),
-                                                                Some("errors.request.timeout"),
-                                                                duration = System.currentTimeMillis - start,
-                                                                overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
-                                                                cbDuration = System.currentTimeMillis - cbStart,
-                                                                callAttempts = counter.get(),
-                                                                attrs = attrs
-                                                              )
-                                                              .map(Left.apply)
-                                                          case _: scala.concurrent.TimeoutException               =>
-                                                            Errors
-                                                              .craftResponseResult(
-                                                                s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                                                GatewayTimeout,
-                                                                req,
-                                                                Some(descriptor),
-                                                                Some("errors.request.timeout"),
-                                                                duration = System.currentTimeMillis - start,
-                                                                overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
-                                                                cbDuration = System.currentTimeMillis - cbStart,
-                                                                callAttempts = counter.get(),
-                                                                attrs = attrs
-                                                              )
-                                                              .map(Left.apply)
-                                                          case AllCircuitBreakersOpenException                    =>
-                                                            Errors
-                                                              .craftResponseResult(
-                                                                s"Something went wrong, the backend service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
-                                                                ServiceUnavailable,
-                                                                req,
-                                                                Some(descriptor),
-                                                                Some("errors.circuit.breaker.open"),
-                                                                duration = System.currentTimeMillis - start,
-                                                                overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
-                                                                cbDuration = System.currentTimeMillis - cbStart,
-                                                                callAttempts = counter.get(),
-                                                                attrs = attrs
-                                                              )
-                                                              .map(Left.apply)
-                                                          case error
-                                                              if error != null && error.getMessage != null && error.getMessage
-                                                                .toLowerCase()
-                                                                .contains("connection refused") =>
-                                                            Errors
-                                                              .craftResponseResult(
-                                                                s"Something went wrong, the connection to backend service was refused, you should try later. Thanks for your understanding",
-                                                                BadGateway,
-                                                                req,
-                                                                Some(descriptor),
-                                                                Some("errors.connection.refused"),
-                                                                duration = System.currentTimeMillis - start,
-                                                                overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
-                                                                cbDuration = System.currentTimeMillis - cbStart,
-                                                                callAttempts = counter.get(),
-                                                                attrs = attrs
-                                                              )
-                                                              .map(Left.apply)
-                                                          case error if error != null && error.getMessage != null =>
-                                                            logger.error(
-                                                              s"Something went wrong, you should try later",
-                                                              error
-                                                            )
-                                                            Errors
-                                                              .craftResponseResult(
-                                                                s"Something went wrong, you should try later. Thanks for your understanding.",
-                                                                BadGateway,
-                                                                req,
-                                                                Some(descriptor),
-                                                                Some("errors.proxy.error"),
-                                                                duration = System.currentTimeMillis - start,
-                                                                overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
-                                                                cbDuration = System.currentTimeMillis - cbStart,
-                                                                callAttempts = counter.get(),
-                                                                attrs = attrs
-                                                              )
-                                                              .map(Left.apply)
-                                                          case error                                              =>
-                                                            logger.error(
-                                                              s"Something went wrong, you should try later",
-                                                              error
-                                                            )
-                                                            Errors
-                                                              .craftResponseResult(
-                                                                s"Something went wrong, you should try later. Thanks for your understanding",
-                                                                BadGateway,
-                                                                req,
-                                                                Some(descriptor),
-                                                                Some("errors.proxy.error"),
-                                                                duration = System.currentTimeMillis - start,
-                                                                overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
-                                                                cbDuration = System.currentTimeMillis - cbStart,
-                                                                callAttempts = counter.get(),
-                                                                attrs = attrs
-                                                              )
-                                                              .map(Left.apply)
-                                                        }
-                                                      } else {
-
-                                                        val target = attrs
-                                                          .get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey)
-                                                          .getOrElse {
-
-                                                            val targets: Seq[Target] = descriptor.targets
-                                                              .filter(_.predicate.matches(reqNumber.toString, req, attrs))
-                                                              .flatMap(t => Seq.fill(t.weight)(t))
-                                                            descriptor.targetsLoadBalancing
-                                                              .select(
-                                                                reqNumber.toString,
-                                                                trackingId,
-                                                                req,
-                                                                targets,
-                                                                descriptor.id,
-                                                                1
-                                                              )
-                                                          }
-
-                                                        //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
-                                                        // Round robin loadbalancing is happening here !!!!!
-                                                        //val target = targets.apply(index.toInt)
-                                                        actuallyCallDownstream(
-                                                          target,
-                                                          apiKey,
-                                                          paUsr,
-                                                          0L,
-                                                          1,
-                                                          1,
-                                                          atomicFalse
-                                                        )
-                                                      }
-                                                    }
-                                                  }
-                                              }
-
-                                              def errorResult(status: Results.Status, message: String, code: String)
-                                                  : Future[Either[Result, A]] = {
-                                                Errors
-                                                  .craftResponseResult(
-                                                    message,
-                                                    status,
-                                                    req,
-                                                    Some(descriptor),
-                                                    Some(code),
-                                                    duration = System.currentTimeMillis - start,
-                                                    overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead,
-                                                    attrs = attrs
-                                                  )
-                                                  .map(Left.apply)
-                                              }
-
-                                              val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/")
-                                              ReverseProxyHelper.handleRequest[A](
-                                                ReverseProxyHelper.HandleRequestContext(
-                                                  req,
-                                                  query,
-                                                  descriptor,
-                                                  isUp,
-                                                  attrs,
-                                                  globalConfig,
-                                                  logger
-                                                ),
-                                                callDownstream,
-                                                errorResult
-                                              )
-                                            }
-                                      }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                        .andThen { case _ =>
-                          rawDesc.afterRequest(
-                            AfterRequestContext(
-                              index = -1,
-                              snowflake = snowflake,
-                              descriptor = rawDesc,
-                              request = req,
-                              config = rawDesc.transformerConfig,
-                              attrs = attrs
-                            )
-                          )
-                        }
-                    }
-                }
+                      }
+                  }
+              }
         }
       }
     }

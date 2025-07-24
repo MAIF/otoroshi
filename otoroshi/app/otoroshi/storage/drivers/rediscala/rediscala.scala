@@ -96,7 +96,7 @@ class RedisCPDataStores(
 ) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: RedisClientPool = {
     implicit val ec: ExecutionContextExecutor = redisDispatcher
-    val members              = configuration
+    val members                               = configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.pool.members")
       .map(_.map { config =>
         RedisServer(
@@ -113,7 +113,7 @@ class RedisCPDataStores(
           .map(_.map(_.toRedisServer))
       }
       .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisClientPool = RedisClientPool(
+    val cli: RedisClientPool                  = RedisClientPool(
       members
     )(redisActorSystem)
     cli
@@ -135,7 +135,7 @@ class RedisMCPDataStores(
 ) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: RedisClientMutablePool = {
     implicit val ec: ExecutionContextExecutor = redisDispatcher
-    val members                     = configuration
+    val members                               = configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.mpool.members")
       .map(_.map { config =>
         RedisServer(
@@ -152,7 +152,7 @@ class RedisMCPDataStores(
           .map(_.map(_.toRedisServer))
       }
       .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisClientMutablePool = RedisClientMutablePool(
+    val cli: RedisClientMutablePool           = RedisClientMutablePool(
       members
     )(redisActorSystem)
     cli
@@ -174,7 +174,7 @@ class RedisLFDataStores(
 ) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: RedisClientMasterSlaves = {
     implicit val ec: ExecutionContextExecutor = redisDispatcher
-    val master                       = RedisServer(
+    val master                                = RedisServer(
       host = configuration
         .getOptionalWithFileSupport[String]("app.redis.host")
         .orElse(configuration.getOptionalWithFileSupport[String]("app.redis.lf.master.host"))
@@ -187,7 +187,7 @@ class RedisLFDataStores(
         .getOptionalWithFileSupport[String]("app.redis.password")
         .orElse(configuration.getOptionalWithFileSupport[String]("app.redis.lf.master.password"))
     )
-    val slaves                       = configuration
+    val slaves                                = configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.slaves")
       .orElse(configuration.getOptionalWithFileSupport[Seq[Configuration]]("app.redis.lf.slaves"))
       .map(_.map { config =>
@@ -212,7 +212,7 @@ class RedisLFDataStores(
           .map(_.map(_.toRedisServer))
       }
       .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisClientMasterSlaves = RedisClientMasterSlaves(
+    val cli: RedisClientMasterSlaves          = RedisClientMasterSlaves(
       master,
       slaves
     )(redisActorSystem)
@@ -235,7 +235,7 @@ class RedisSentinelDataStores(
 ) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: SentinelMonitoredRedisClient = {
     implicit val ec: ExecutionContextExecutor = redisDispatcher
-    val members: Seq[(String, Int)]       = configuration
+    val members: Seq[(String, Int)]           = configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.sentinels.members")
       .map(_.map { config =>
         (
@@ -251,11 +251,11 @@ class RedisSentinelDataStores(
           .map(_.map(m => (m.host, m.port)))
       }
       .getOrElse(Seq.empty[(String, Int)])
-    val master                            = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.master").get
-    val password                          = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.password")
-    val db                                = configuration.getOptionalWithFileSupport[Int]("app.redis.sentinels.db")
-    val name                              = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.name")
-    val cli: SentinelMonitoredRedisClient = SentinelMonitoredRedisClient(
+    val master                                = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.master").get
+    val password                              = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.password")
+    val db                                    = configuration.getOptionalWithFileSupport[Int]("app.redis.sentinels.db")
+    val name                                  = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.name")
+    val cli: SentinelMonitoredRedisClient     = SentinelMonitoredRedisClient(
       members,
       master,
       password,
@@ -280,7 +280,7 @@ class RedisSentinelLFDataStores(
     env: Env
 ) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: SentinelMonitoredRedisClientMasterSlaves = {
-    implicit val ec: ExecutionContextExecutor = redisDispatcher
+    implicit val ec: ExecutionContextExecutor         = redisDispatcher
     val members: Seq[(String, Int)]                   = configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.sentinels.lf.members")
       .map(_.map { config =>
@@ -322,7 +322,7 @@ class RedisClusterDataStores(
 
   lazy val redisCluster: RedisCluster = {
     implicit val ec: ExecutionContextExecutor = redisDispatcher
-    val members           = configuration
+    val members                               = configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.cluster.members")
       .map(_.map { config =>
         RedisServer(
@@ -339,7 +339,7 @@ class RedisClusterDataStores(
           .map(_.map(_.toRedisServer))
       }
       .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisCluster = RedisCluster(
+    val cli: RedisCluster                     = RedisCluster(
       members
     )(redisActorSystem)
     cli
@@ -370,8 +370,8 @@ abstract class AbstractRedisDataStores(
 
   lazy val logger: Logger = Logger(loggerName)
 
-  lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.redis.windowSize").getOrElse(99)
-  lazy val redisActorSystem: ActorSystem     =
+  lazy val redisStatsItems: Int          = configuration.getOptionalWithFileSupport[Int]("app.redis.windowSize").getOrElse(99)
+  lazy val redisActorSystem: ActorSystem =
     ActorSystem(
       "otoroshi-redis-system",
       configuration
@@ -379,7 +379,7 @@ abstract class AbstractRedisDataStores(
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  lazy val redisDispatcher      = redisActorSystem.dispatcher
+  lazy val redisDispatcher               = redisActorSystem.dispatcher
 
   override def before(
       configuration: Configuration,
@@ -556,9 +556,9 @@ abstract class AbstractRedisDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -594,9 +594,9 @@ abstract class AbstractRedisDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")

@@ -170,7 +170,7 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-health-api")
 

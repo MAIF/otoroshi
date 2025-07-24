@@ -491,27 +491,27 @@ object ElasticUtils {
               }
           }
 
-        //url(urlFromPath("", config), config, env)
-        //  .get()
-        //  .map(_.json)
-        //  .map(json => (json \ "version" \ "number").asOpt[String].orElse(config.version).getOrElse(ElasticVersion.defaultStr))
-        //  // .map(v => v.split("\\.").headOption.map(_.toInt).getOrElse(6))
-        //  .map { _v =>
-        //    Version(_v) match {
-        //      case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(_v)
-        //      case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(_v)
-        //      case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(_v)
-        //      case _                                  => ElasticVersion.AboveSeven(_v)
-        //    }
-        // _v.split("\\.").headOption.map(_.toInt).getOrElse(6) match {
-        //   case v if v <= 6 => ElasticVersion.UnderSeven
-        //   case v if v > 6 => {
-        //     _v.split("\\.").drop(1).headOption.map(_.toInt).getOrElse(1) match {
-        //       case v if v >= 8 => ElasticVersion.AboveSevenEight
-        //       case v if v < 8 => ElasticVersion.AboveSeven
-        //     }
-        //   }
-        // }
+      //url(urlFromPath("", config), config, env)
+      //  .get()
+      //  .map(_.json)
+      //  .map(json => (json \ "version" \ "number").asOpt[String].orElse(config.version).getOrElse(ElasticVersion.defaultStr))
+      //  // .map(v => v.split("\\.").headOption.map(_.toInt).getOrElse(6))
+      //  .map { _v =>
+      //    Version(_v) match {
+      //      case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(_v)
+      //      case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(_v)
+      //      case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(_v)
+      //      case _                                  => ElasticVersion.AboveSeven(_v)
+      //    }
+      // _v.split("\\.").headOption.map(_.toInt).getOrElse(6) match {
+      //   case v if v <= 6 => ElasticVersion.UnderSeven
+      //   case v if v > 6 => {
+      //     _v.split("\\.").drop(1).headOption.map(_.toInt).getOrElse(1) match {
+      //       case v if v >= 8 => ElasticVersion.AboveSevenEight
+      //       case v if v < 8 => ElasticVersion.AboveSeven
+      //     }
+      //   }
+      // }
       //}
     }
   }
@@ -662,7 +662,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   private def urlFromPath(path: String): String = ElasticUtils.urlFromPath(path, config)
   private val index: String                     = config.index.getOrElse("otoroshi-events")
   private val `type`: String                    = config.`type`.getOrElse("event")
-  private implicit val mat: Materializer = Materializer(system)
+  private implicit val mat: Materializer        = Materializer(system)
 
   if (config.applyTemplate) {
     init()
@@ -822,7 +822,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_search") else urlFromPath(s"/$index/_search")
   private val countUri                          =
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_count") else urlFromPath(s"/$index/_count")
-  private implicit val mat: Materializer = Materializer(system)
+  private implicit val mat: Materializer        = Materializer(system)
 
   lazy val logger: Logger = Logger("otoroshi-analytics-reads-elastic")
 
@@ -1677,17 +1677,16 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     }
 
     filterable match {
-      case None                                =>
+      case None                                       =>
         basicQuery(basicFilters)
-        // Json.obj(
-        //   "must" -> (
-        //     dateFilters(mayBeFrom, mayBeTo) ++
-        //     eventFilter ++
-        //     additionalMust
-        //   )
-        // )
-      case Some(ServiceGroupFilterable(group)) =>
-
+      // Json.obj(
+      //   "must" -> (
+      //     dateFilters(mayBeFrom, mayBeTo) ++
+      //     eventFilter ++
+      //     additionalMust
+      //   )
+      // )
+      case Some(ServiceGroupFilterable(group))        =>
         val filters = Json.arr(
           Json.obj(
             "bool" -> Json.obj(
@@ -1723,21 +1722,21 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
 
         basicQuery(filters)
 
-        // Json.obj(
-        //   "should"               -> (
-        //     Seq(
-        //       if (!raw) Json.obj("term" -> Json.obj("descriptor.groups" -> group.id)) else Json.obj("term" -> Json.obj("descriptor.groups.raw" -> group.id))
-        //     ) ++
-        //     additionalShould
-        //   ),
-        //   "must"                 -> (
-        //     dateFilters(mayBeFrom, mayBeTo) ++
-        //     eventFilter ++
-        //     additionalMust
-        //   )
-        // ).applyOnIf(additionalShould.nonEmpty) { obj =>
-        //   obj ++ Json.obj("minimum_should_match" -> 1)
-        // }
+      // Json.obj(
+      //   "should"               -> (
+      //     Seq(
+      //       if (!raw) Json.obj("term" -> Json.obj("descriptor.groups" -> group.id)) else Json.obj("term" -> Json.obj("descriptor.groups.raw" -> group.id))
+      //     ) ++
+      //     additionalShould
+      //   ),
+      //   "must"                 -> (
+      //     dateFilters(mayBeFrom, mayBeTo) ++
+      //     eventFilter ++
+      //     additionalMust
+      //   )
+      // ).applyOnIf(additionalShould.nonEmpty) { obj =>
+      //   obj ++ Json.obj("minimum_should_match" -> 1)
+      // }
       case Some(ApiKeyFilterable(apiKey))             =>
         val filters = Json.arr(
           Json.obj(
@@ -1774,25 +1773,24 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
 
         basicQuery(filters)
 
-        // Json.obj(
-        //   "should"               -> (
-        //     Seq(
-        //       // Json.obj("term" -> Json.obj("identity.identityType.raw"     -> "APIKEY")),
-        //       if (!raw) Json.obj("term" -> Json.obj("identity.identity" -> apiKey.clientId)) else Json.obj("term" -> Json.obj("identity.identity.raw" -> apiKey.clientId))
-        //       // if (raw) Json.obj("term" -> Json.obj("identity.identity.raw" -> apiKey.clientId)) else Json.obj("term" -> Json.obj("identity.identity" -> apiKey.clientId))
-        //     ) ++
-        //     additionalShould
-        //   ),
-        //   "must"                 -> (
-        //     dateFilters(mayBeFrom, mayBeTo) ++
-        //     eventFilter ++
-        //     additionalMust
-        //   )
-        // ).applyOnIf(additionalShould.nonEmpty) { obj =>
-        //   obj ++ Json.obj("minimum_should_match" -> 1)
-        // }
+      // Json.obj(
+      //   "should"               -> (
+      //     Seq(
+      //       // Json.obj("term" -> Json.obj("identity.identityType.raw"     -> "APIKEY")),
+      //       if (!raw) Json.obj("term" -> Json.obj("identity.identity" -> apiKey.clientId)) else Json.obj("term" -> Json.obj("identity.identity.raw" -> apiKey.clientId))
+      //       // if (raw) Json.obj("term" -> Json.obj("identity.identity.raw" -> apiKey.clientId)) else Json.obj("term" -> Json.obj("identity.identity" -> apiKey.clientId))
+      //     ) ++
+      //     additionalShould
+      //   ),
+      //   "must"                 -> (
+      //     dateFilters(mayBeFrom, mayBeTo) ++
+      //     eventFilter ++
+      //     additionalMust
+      //   )
+      // ).applyOnIf(additionalShould.nonEmpty) { obj =>
+      //   obj ++ Json.obj("minimum_should_match" -> 1)
+      // }
       case Some(ServiceDescriptorFilterable(service)) =>
-
         val filters = Json.arr(
           Json.obj(
             "bool" -> Json.obj(
@@ -1828,21 +1826,21 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
 
         basicQuery(filters)
 
-        // Json.obj(
-        //   "should"               -> (
-        //     Seq(
-        //       if (!raw) Json.obj("term" -> Json.obj("@serviceId" -> service.id)) else Json.obj("term" -> Json.obj("@serviceId.raw" -> service.id))
-        //     ) ++
-        //     additionalShould
-        //   ),
-        //   "must"                 -> (
-        //     dateFilters(mayBeFrom, mayBeTo) ++
-        //     eventFilter ++
-        //     additionalMust
-        //   )
-        // ).applyOnIf(additionalShould.nonEmpty) { obj =>
-        //   obj ++ Json.obj("minimum_should_match" -> 1)
-        // }
+      // Json.obj(
+      //   "should"               -> (
+      //     Seq(
+      //       if (!raw) Json.obj("term" -> Json.obj("@serviceId" -> service.id)) else Json.obj("term" -> Json.obj("@serviceId.raw" -> service.id))
+      //     ) ++
+      //     additionalShould
+      //   ),
+      //   "must"                 -> (
+      //     dateFilters(mayBeFrom, mayBeTo) ++
+      //     eventFilter ++
+      //     additionalMust
+      //   )
+      // ).applyOnIf(additionalShould.nonEmpty) { obj =>
+      //   obj ++ Json.obj("minimum_should_match" -> 1)
+      // }
     }
   }
 

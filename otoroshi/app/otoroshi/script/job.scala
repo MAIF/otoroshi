@@ -19,7 +19,7 @@ import otoroshi.next.plugins.WasmJob
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils
-import otoroshi.utils.{JsonPathValidator, JsonValidator, SchedulerHelper, TypedMap, future}
+import otoroshi.utils.{future, JsonPathValidator, JsonValidator, SchedulerHelper, TypedMap}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -264,7 +264,7 @@ case class RegisteredJobContext(
 ) {
 
   private implicit val ec: ExecutionContextExecutor = actorSystem.dispatcher
-  private implicit val ev: Env = env
+  private implicit val ev: Env                      = env
 
   private lazy val attrs = TypedMap.empty
   private lazy val randomLock = {
@@ -408,7 +408,6 @@ case class RegisteredJobContext(
         job.cronExpression(ctx, env) match {
           case None             => ()
           case Some(expression) =>
-
             import java.time.ZonedDateTime
 
             import com.cronutils.parser.CronParser
@@ -461,7 +460,7 @@ case class RegisteredJobContext(
                 if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"$header failed to acquire lock - 2")
                 env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
                 ()
-              case Some(value) =>
+              case Some(value)                                         =>
                 if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"$header successfully acquired lock")
                 env.jobManager.registerLock(job.uniqueId, randomLock.get())
                 func
@@ -478,7 +477,7 @@ case class RegisteredJobContext(
           if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"$header already acquired lock")
           env.jobManager.registerLock(job.uniqueId, randomLock.get())
           func
-        case Some(v) =>
+        case Some(v)                                     =>
           if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"$header failed to acquire lock - 0")
           env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
           ()
@@ -583,7 +582,7 @@ class JobManager(env: Env) {
   private val lockRef                = new AtomicReference[Cancellable]()
 
   private[script] implicit val jobExecutor: ExecutionContextExecutor = jobActorSystem.dispatcher
-  private implicit val ev: Env = env
+  private implicit val ev: Env                                       = env
 
   private[script] def registerLock(jobId: JobId, value: String): Unit = {
     val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"

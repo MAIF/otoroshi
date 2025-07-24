@@ -61,9 +61,9 @@ case class OtoroshiClaim(
 
 object OtoroshiClaim {
 
-  val encoder = Base64.getUrlEncoder
-  val decoder = Base64.getUrlDecoder
-  val format: OFormat[OtoroshiClaim]  = Json.format[OtoroshiClaim]
+  val encoder                        = Base64.getUrlEncoder
+  val decoder                        = Base64.getUrlDecoder
+  val format: OFormat[OtoroshiClaim] = Json.format[OtoroshiClaim]
 
   lazy val logger: Logger = Logger("otoroshi-claim")
 

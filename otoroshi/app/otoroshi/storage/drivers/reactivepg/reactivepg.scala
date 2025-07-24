@@ -144,102 +144,104 @@ class ReactivePgDataStores(
 
     // Extract TCP-level options from configuration even when using URI
     val netOpts = new NetClientOptions()
-        .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
-        .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
-        .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
+      .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
+      .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
+      .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
 
     (pgOpts, netOpts)
   } else {
-    val ssl = configuration.betterGetOptional[Configuration]("app.pg.ssl").getOrElse(Configuration.empty)
+    val ssl        = configuration.betterGetOptional[Configuration]("app.pg.ssl").getOrElse(Configuration.empty)
     val sslEnabled = ssl.betterGetOptional[Boolean]("enabled").getOrElse(false)
 
     // Database-specific options stay in PgConnectOptions
     val pgOpts = new PgConnectOptions()
-        .applyOnWithOpt(configuration.betterGetOptional[Int]("pipelining-limit"))((p, v) => p.setPipeliningLimit(v))
-        .setPort(configuration.getOptionalWithFileSupport[Int]("app.pg.port").getOrElse(5432))
-        .setHost(configuration.getOptionalWithFileSupport[String]("app.pg.host").getOrElse("localhost"))
-        .setDatabase(configuration.getOptionalWithFileSupport[String]("app.pg.database").getOrElse("otoroshi"))
-        .setUser(configuration.getOptionalWithFileSupport[String]("app.pg.user").getOrElse("otoroshi"))
-        .setPassword(configuration.getOptionalWithFileSupport[String]("app.pg.password").getOrElse("otoroshi"))
-        .applyOnIf(sslEnabled) { pgopt =>
-          val mode = SslMode.of(ssl.betterGetOptional[String]("mode").getOrElse("verify_ca"))
-          pgopt.setSslMode(mode)
-          pgopt
-        }
+      .applyOnWithOpt(configuration.betterGetOptional[Int]("pipelining-limit"))((p, v) => p.setPipeliningLimit(v))
+      .setPort(configuration.getOptionalWithFileSupport[Int]("app.pg.port").getOrElse(5432))
+      .setHost(configuration.getOptionalWithFileSupport[String]("app.pg.host").getOrElse("localhost"))
+      .setDatabase(configuration.getOptionalWithFileSupport[String]("app.pg.database").getOrElse("otoroshi"))
+      .setUser(configuration.getOptionalWithFileSupport[String]("app.pg.user").getOrElse("otoroshi"))
+      .setPassword(configuration.getOptionalWithFileSupport[String]("app.pg.password").getOrElse("otoroshi"))
+      .applyOnIf(sslEnabled) { pgopt =>
+        val mode = SslMode.of(ssl.betterGetOptional[String]("mode").getOrElse("verify_ca"))
+        pgopt.setSslMode(mode)
+        pgopt
+      }
 
     // TCP-level options INCLUDING ALL SSL configuration now go in NetClientOptions
     val netOpts = new NetClientOptions()
-        .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
-        .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
-        .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
-        .applyOnIf(sslEnabled) { netopt =>
-          val pemTrustOptions = new PemTrustOptions()
-          val pemKeyCertOptions = new PemKeyCertOptions()
+      .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
+      .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
+      .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
+      .applyOnIf(sslEnabled) { netopt =>
+        val pemTrustOptions   = new PemTrustOptions()
+        val pemKeyCertOptions = new PemKeyCertOptions()
 
-          // SSL handshake timeout
-          netopt.applyOnWithOpt(ssl.betterGetOptional[Int]("ssl-handshake-timeout"))((p, v) => p.setSslHandshakeTimeout(v))
+        // SSL handshake timeout
+        netopt.applyOnWithOpt(ssl.betterGetOptional[Int]("ssl-handshake-timeout"))((p, v) =>
+          p.setSslHandshakeTimeout(v)
+        )
 
-          // Trust options
-          ssl.betterGetOptional[Seq[String]]("trusted-certs-path").map { pathes =>
-            pathes.foreach(p => pemTrustOptions.addCertPath(p))
-            netopt.setTrustOptions(pemTrustOptions)
-          }
-          ssl.betterGetOptional[String]("trusted-cert-path").map { path =>
-            pemTrustOptions.addCertPath(path)
-            netopt.setTrustOptions(pemTrustOptions)
-          }
-          ssl.betterGetOptional[Seq[String]]("trusted-certs").map { certs =>
-            certs.foreach(p => pemTrustOptions.addCertValue(Buffer.buffer(p)))
-            netopt.setTrustOptions(pemTrustOptions)
-          }
-          ssl.betterGetOptional[String]("trusted-cert").map { path =>
-            pemTrustOptions.addCertValue(Buffer.buffer(path))
-            netopt.setTrustOptions(pemTrustOptions)
-          }
-
-          // Key/cert options
-          ssl.betterGetOptional[Seq[String]]("client-certs-path").map { pathes =>
-            pathes.foreach(p => pemKeyCertOptions.addCertPath(p))
-            netopt.setKeyCertOptions(pemKeyCertOptions)
-          }
-          ssl.betterGetOptional[Seq[String]]("client-certs").map { certs =>
-            certs.foreach(p => pemKeyCertOptions.addCertValue(Buffer.buffer(p)))
-            netopt.setKeyCertOptions(pemKeyCertOptions)
-          }
-          ssl.betterGetOptional[String]("client-cert-path").map { path =>
-            pemKeyCertOptions.addCertPath(path)
-            netopt.setKeyCertOptions(pemKeyCertOptions)
-          }
-          ssl.betterGetOptional[String]("client-cert").map { path =>
-            pemKeyCertOptions.addCertValue(Buffer.buffer(path))
-            netopt.setKeyCertOptions(pemKeyCertOptions)
-          }
-          ssl.betterGetOptional[Seq[String]]("client-keys-path").map { pathes =>
-            pathes.foreach(p => pemKeyCertOptions.addKeyPath(p))
-            netopt.setKeyCertOptions(pemKeyCertOptions)
-          }
-          ssl.betterGetOptional[Seq[String]]("client-keys").map { certs =>
-            certs.foreach(p => pemKeyCertOptions.addKeyValue(Buffer.buffer(p)))
-            netopt.setKeyCertOptions(pemKeyCertOptions)
-          }
-          ssl.betterGetOptional[String]("client-key-path").map { path =>
-            pemKeyCertOptions.addKeyPath(path)
-            netopt.setKeyCertOptions(pemKeyCertOptions)
-          }
-          ssl.betterGetOptional[String]("client-key").map { path =>
-            pemKeyCertOptions.addKeyValue(Buffer.buffer(path))
-            netopt.setKeyCertOptions(pemKeyCertOptions)
-          }
-
-          // Trust all
-          ssl.betterGetOptional[Boolean]("trust-all").map { v =>
-            netopt.setTrustAll(v)
-          }
-
-          // Enable SSL
-          netopt.setSsl(true)
-          netopt
+        // Trust options
+        ssl.betterGetOptional[Seq[String]]("trusted-certs-path").map { pathes =>
+          pathes.foreach(p => pemTrustOptions.addCertPath(p))
+          netopt.setTrustOptions(pemTrustOptions)
         }
+        ssl.betterGetOptional[String]("trusted-cert-path").map { path =>
+          pemTrustOptions.addCertPath(path)
+          netopt.setTrustOptions(pemTrustOptions)
+        }
+        ssl.betterGetOptional[Seq[String]]("trusted-certs").map { certs =>
+          certs.foreach(p => pemTrustOptions.addCertValue(Buffer.buffer(p)))
+          netopt.setTrustOptions(pemTrustOptions)
+        }
+        ssl.betterGetOptional[String]("trusted-cert").map { path =>
+          pemTrustOptions.addCertValue(Buffer.buffer(path))
+          netopt.setTrustOptions(pemTrustOptions)
+        }
+
+        // Key/cert options
+        ssl.betterGetOptional[Seq[String]]("client-certs-path").map { pathes =>
+          pathes.foreach(p => pemKeyCertOptions.addCertPath(p))
+          netopt.setKeyCertOptions(pemKeyCertOptions)
+        }
+        ssl.betterGetOptional[Seq[String]]("client-certs").map { certs =>
+          certs.foreach(p => pemKeyCertOptions.addCertValue(Buffer.buffer(p)))
+          netopt.setKeyCertOptions(pemKeyCertOptions)
+        }
+        ssl.betterGetOptional[String]("client-cert-path").map { path =>
+          pemKeyCertOptions.addCertPath(path)
+          netopt.setKeyCertOptions(pemKeyCertOptions)
+        }
+        ssl.betterGetOptional[String]("client-cert").map { path =>
+          pemKeyCertOptions.addCertValue(Buffer.buffer(path))
+          netopt.setKeyCertOptions(pemKeyCertOptions)
+        }
+        ssl.betterGetOptional[Seq[String]]("client-keys-path").map { pathes =>
+          pathes.foreach(p => pemKeyCertOptions.addKeyPath(p))
+          netopt.setKeyCertOptions(pemKeyCertOptions)
+        }
+        ssl.betterGetOptional[Seq[String]]("client-keys").map { certs =>
+          certs.foreach(p => pemKeyCertOptions.addKeyValue(Buffer.buffer(p)))
+          netopt.setKeyCertOptions(pemKeyCertOptions)
+        }
+        ssl.betterGetOptional[String]("client-key-path").map { path =>
+          pemKeyCertOptions.addKeyPath(path)
+          netopt.setKeyCertOptions(pemKeyCertOptions)
+        }
+        ssl.betterGetOptional[String]("client-key").map { path =>
+          pemKeyCertOptions.addKeyValue(Buffer.buffer(path))
+          netopt.setKeyCertOptions(pemKeyCertOptions)
+        }
+
+        // Trust all
+        ssl.betterGetOptional[Boolean]("trust-all").map { v =>
+          netopt.setTrustAll(v)
+        }
+
+        // Enable SSL
+        netopt.setSsl(true)
+        netopt
+      }
 
     (pgOpts, netOpts)
   }
@@ -251,13 +253,13 @@ class ReactivePgDataStores(
   private lazy val schema         = configuration.getOptionalWithFileSupport[String]("app.pg.schema").getOrElse("otoroshi")
   private lazy val table          = configuration.getOptionalWithFileSupport[String]("app.pg.table").getOrElse("entities")
   private lazy val schemaDotTable = s"$schema.$table"
-  private lazy val client = PgBuilder
-      .pool()
-      .`with`(poolOptions)
-      .`with`(netClientOptions)
-      .connectingTo(connectOptions)
-      .using(vertx)
-      .build()
+  private lazy val client         = PgBuilder
+    .pool()
+    .`with`(poolOptions)
+    .`with`(netClientOptions)
+    .connectingTo(connectOptions)
+    .using(vertx)
+    .build()
 
   lazy val redis = new ReactivePgRedis(
     client,
@@ -271,7 +273,7 @@ class ReactivePgDataStores(
   private val cancel = new AtomicReference[Cancellable]()
 
   def setMissingEntityKind(): Future[Unit] = {
-    redis.setMissingEntityKind()
+    redis.asInstanceOf[ReactivePgRedis].setMissingEntityKind()
   }
 
   def runSchemaCreation(): Unit = {
@@ -282,7 +284,7 @@ class ReactivePgDataStores(
     Await.result(
       (for {
         _ <- client.query(s"CREATE SCHEMA IF NOT EXISTS $schema;").executeAsync()
-        _ <- if (testMode) redis.drop() else FastFuture.successful(())
+        _ <- if (testMode) redis.asInstanceOf[ReactivePgRedis].drop().map(_ => ()) else FastFuture.successful(())
         _ <- client
                .query(s"""
            |create table if not exists $schemaDotTable (
@@ -475,7 +477,7 @@ class ReactivePgDataStores(
   override def authConfigsDataStore: AuthConfigsDataStore             = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore            = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
-    redis.info().map(_ => Healthy).recover { case _ =>
+    redis.asInstanceOf[ReactivePgRedis].info().map(_ => Healthy).recover { case _ =>
       Unreachable
     }
   }
@@ -537,7 +539,7 @@ class ReactivePgDataStores(
                   raw <- redis.rawGet(key)
                 } yield raw match {
                   case None    => JsNull
-                  case Some(v) => fromRawGetToExport(v)
+                  case Some(v) => fromRawGetToExport(v.asInstanceOf[JsValue])
                 }
               }
           )
@@ -548,9 +550,9 @@ class ReactivePgDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -566,7 +568,7 @@ class ReactivePgDataStores(
                   raw <- redis.rawGet(key)
                 } yield raw match {
                   case None    => JsNull
-                  case Some(v) => fromRawGetToExport(v)
+                  case Some(v) => fromRawGetToExport(v.asInstanceOf[JsValue])
                 }
               }
               .runWith(Sink.seq)
@@ -578,9 +580,9 @@ class ReactivePgDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
     redis
       .keys(s"${env.storageRoot}:*")
       .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
@@ -592,11 +594,11 @@ class ReactivePgDataStores(
             val pttl  = (json \ "t").as[Long]
             val what  = (json \ "w").as[String]
             (what match {
-              case "counter" => redis.setCounter(key, value.as[Long])
+              case "counter" => redis.asInstanceOf[ReactivePgRedis].setCounter(key, value.as[Long])
               case "string"  =>
                 Try(value.as[String].toLong) match {
                   case Failure(_) => redis.set(key, value.as[String])
-                  case Success(l) => redis.setCounter(key, l)
+                  case Success(l) => redis.asInstanceOf[ReactivePgRedis].setCounter(key, l)
                 }
               case "hash"    =>
                 Source(value.as[JsObject].value.toList)
@@ -645,20 +647,22 @@ class ReactivePgRedis(
     if (debug || debugQueries) logger.info(s"""query: "$query", params: "${params.mkString(", ")}"""")
     val isRead = query.toLowerCase().trim.startsWith("select")
     (if (isRead) {
-      pool.withConnection(c => c.preparedQuery(query).execute(io.vertx.sqlclient.Tuple.from(params.toArray))).scala
-    } else {
-      pool.preparedQuery(query).execute(io.vertx.sqlclient.Tuple.from(params.toArray)).scala
-    }).flatMap { _rows =>
-      Try {
-        val rows = _rows.asScala.toSeq
-        f(rows)
-      } match {
-        case Success(value) => FastFuture.successful(value)
-        case Failure(e)     => FastFuture.failed(e)
+       pool.withConnection(c => c.preparedQuery(query).execute(io.vertx.sqlclient.Tuple.from(params.toArray))).scala
+     } else {
+       pool.preparedQuery(query).execute(io.vertx.sqlclient.Tuple.from(params.toArray)).scala
+     })
+      .flatMap { _rows =>
+        Try {
+          val rows = _rows.asScala.toSeq
+          f(rows)
+        } match {
+          case Success(value) => FastFuture.successful(value)
+          case Failure(e)     => FastFuture.failed(e)
+        }
       }
-    }.andThen { case Failure(e) =>
-      logger.error(s"""Failed to apply query: "$query" with params: "${params.mkString(", ")}"""", e)
-    }
+      .andThen { case Failure(e) =>
+        logger.error(s"""Failed to apply query: "$query" with params: "${params.mkString(", ")}"""", e)
+      }
   }
 
   private def querySeq[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(

@@ -110,7 +110,7 @@ object InQueryParam                                    extends FromJson[InQueryP
 case class InQueryParam(name: String)                  extends JwtTokenLocation           {
   def token(request: RequestHeader): Option[String]                             = request.getQueryString(name)
   def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection = JwtInjection()
-  override def asJson: JsValue                                                           = Json.obj("type" -> "InQueryParam", "name" -> this.name)
+  override def asJson: JsValue                                                  = Json.obj("type" -> "InQueryParam", "name" -> this.name)
 }
 object InHeader                                        extends FromJson[InHeader]         {
   override def fromJson(json: JsValue): Either[Throwable, InHeader] =
@@ -133,7 +133,7 @@ case class InHeader(name: String, remove: String = "") extends JwtTokenLocation 
   }
   def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection =
     JwtInjection(originalToken.some, additionalHeaders = Map(name -> (remove + newToken)))
-  override def asJson: JsValue                                                           = Json.obj("type" -> "InHeader", "name" -> this.name, "remove" -> this.remove)
+  override def asJson: JsValue                                                  = Json.obj("type" -> "InHeader", "name" -> this.name, "remove" -> this.remove)
 }
 object InCookie                                        extends FromJson[InCookie]         {
   override def fromJson(json: JsValue): Either[Throwable, InCookie] =
@@ -151,7 +151,7 @@ case class InCookie(name: String)                      extends JwtTokenLocation 
   def token(request: RequestHeader): Option[String]                             = request.cookies.get(name).map(_.value)
   def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection =
     JwtInjection(originalToken.some, additionalCookies = Map(name -> newToken))
-  override def asJson: JsValue                                                           = Json.obj("type" -> "InCookie", "name" -> this.name)
+  override def asJson: JsValue                                                  = Json.obj("type" -> "InCookie", "name" -> this.name)
 }
 
 sealed trait AlgoMode
@@ -431,7 +431,8 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
 }
 object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
 
-  val cache: Cache[String,(Long, Map[String,JWK], Boolean)] = Caches.bounded[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK], Boolean)](1000)
+  val cache: Cache[String, (Long, Map[String, JWK], Boolean)] =
+    Caches.bounded[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK], Boolean)](1000)
 
   override def fromJson(json: JsValue): Either[Throwable, JWKSAlgoSettings] = {
     Try {
@@ -478,10 +479,10 @@ case class JWKSAlgoSettings(
 
   def isAsync: Boolean = {
     JWKSAlgoSettings.cache.getIfPresent(url) match {
-      case Some((stop, keys, false)) if stop > System.currentTimeMillis()  => false
-      case Some((stop, keys, false))                                       => true
-      case Some((_, keys, true))                                           => false
-      case None                                                            => true
+      case Some((stop, keys, false)) if stop > System.currentTimeMillis() => false
+      case Some((stop, keys, false))                                      => true
+      case Some((_, keys, true))                                          => false
+      case None                                                           => true
     }
   }
 
@@ -564,18 +565,18 @@ case class JWKSAlgoSettings(
     mode match {
       case InputMode(alg, Some(kid)) =>
         JWKSAlgoSettings.cache.getIfPresent(url) match {
-          case Some((stop, keys, false)) if stop > System.currentTimeMillis()  =>
+          case Some((stop, keys, false)) if stop > System.currentTimeMillis() =>
             keys.get(kid) match {
               case Some(jwk) => FastFuture.successful(algoFromJwk(alg, jwk))
               case None      => FastFuture.successful(None)
             }
-          case Some((stop, keys, false))                                       => fetchJWKS(alg, kid, stop, keys)
-          case Some((_, keys, true))                                           =>
+          case Some((stop, keys, false))                                      => fetchJWKS(alg, kid, stop, keys)
+          case Some((_, keys, true))                                          =>
             keys.get(kid) match {
               case Some(jwk) => FastFuture.successful(algoFromJwk(alg, jwk))
               case None      => FastFuture.successful(None)
             }
-          case None                                                            => fetchJWKS(alg, kid, System.currentTimeMillis() + ttl.toMillis, Map.empty)
+          case None                                                           => fetchJWKS(alg, kid, System.currentTimeMillis() + ttl.toMillis, Map.empty)
         }
       case _                         => FastFuture.successful(None)
     }
@@ -829,7 +830,8 @@ object VerificationSettings extends FromJson[VerificationSettings] {
 case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFields: Map[String, String] = Map.empty)
     extends AsJson {
   def additionalVerification(jwt: DecodedJWT): DecodedJWT = {
-    val token: JsObject = Try(Json.parse(JavaBase64.getDecoder.decode(jwt.getPayload)).as[JsObject]).getOrElse(Json.obj())
+    val token: JsObject =
+      Try(Json.parse(JavaBase64.getDecoder.decode(jwt.getPayload)).as[JsObject]).getOrElse(Json.obj())
     arrayFields.foldLeft(jwt)((a, b) => {
       val values: Set[String]         = (token \ b._1)
         .as[JsArray]
@@ -920,7 +922,7 @@ case class DefaultToken(
     token: JsValue, // TODO.next: we need to use a string here !
     verificationSettings: VerificationSettings = VerificationSettings()
 ) extends VerifierStrategy {
-  def name: String    = "default_token"
+  def name: String             = "default_token"
   override def asJson: JsValue =
     Json.obj(
       "type"                 -> "DefaultToken",
@@ -942,7 +944,7 @@ object PassThrough extends FromJson[VerifierStrategy] {
 }
 
 case class PassThrough(verificationSettings: VerificationSettings) extends VerifierStrategy {
-  def name: String    = "pass_through"
+  def name: String             = "pass_through"
   override def asJson: JsValue =
     Json.obj(
       "type"                 -> "PassThrough",
@@ -963,7 +965,7 @@ object Sign extends FromJson[VerifierStrategy] {
 }
 
 case class Sign(verificationSettings: VerificationSettings, algoSettings: AlgoSettings) extends VerifierStrategy {
-  def name: String    = "sign"
+  def name: String             = "sign"
   override def asJson: JsValue =
     Json.obj(
       "type"                 -> "Sign",
@@ -990,7 +992,7 @@ case class Transform(
     transformSettings: TransformSettings,
     algoSettings: AlgoSettings
 ) extends VerifierStrategy {
-  def name: String    = "transform"
+  def name: String             = "transform"
   override def asJson: JsValue =
     Json.obj(
       "type"                 -> "Transform",
@@ -1024,8 +1026,11 @@ sealed trait JwtVerifier extends AsJson {
     val headerJson     = Json
       .obj("alg" -> algorithm.getName, "typ" -> "JWT")
       .applyOnWithOpt(kid)((h, id) => h ++ Json.obj("kid" -> id))
-    val header         = JavaBase64.getUrlEncoder.withoutPadding().encodeToString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
-    val payload        = JavaBase64.getUrlEncoder.withoutPadding().encodeToString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
+    val header         = JavaBase64.getUrlEncoder
+      .withoutPadding()
+      .encodeToString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
+    val payload        =
+      JavaBase64.getUrlEncoder.withoutPadding().encodeToString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
     val content        = String.format("%s.%s", header, payload)
     val signatureBytes =
       algorithm.sign(header.getBytes(StandardCharsets.UTF_8), payload.getBytes(StandardCharsets.UTF_8))
@@ -1744,12 +1749,12 @@ sealed trait JwtVerifier extends AsJson {
 }
 
 case class LocalJwtVerifier(
-                               enabled: Boolean = false,
-                               strict: Boolean = true,
-                               excludedPatterns: Seq[String] = Seq.empty[String],
-                               source: JwtTokenLocation = InHeader("X-JWT-Token"),
-                               algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
-                               strategy: VerifierStrategy = PassThrough(VerificationSettings(Map.empty))
+    enabled: Boolean = false,
+    strict: Boolean = true,
+    excludedPatterns: Seq[String] = Seq.empty[String],
+    source: JwtTokenLocation = InHeader("X-JWT-Token"),
+    algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
+    strategy: VerifierStrategy = PassThrough(VerificationSettings(Map.empty))
 ) extends JwtVerifier
     with AsJson {
 
@@ -1786,9 +1791,9 @@ case class RefJwtVerifier(
       "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply))
     )
 
-  override def isRef        = true
-  override def strict: Boolean = throw new RuntimeException("Should never be called ...")
-  override def source: JwtTokenLocation = throw new RuntimeException("Should never be called ...")
+  override def isRef                      = true
+  override def strict: Boolean            = throw new RuntimeException("Should never be called ...")
+  override def source: JwtTokenLocation   = throw new RuntimeException("Should never be called ...")
   override def algoSettings: AlgoSettings = throw new RuntimeException("Should never be called ...")
   override def strategy: VerifierStrategy = throw new RuntimeException("Should never be called ...")
 
@@ -1843,7 +1848,6 @@ case class RefJwtVerifier(
     ids match {
       case s if s.isEmpty => f(JwtInjection())
       case _              =>
-
         val promise                                       = Promise[Either[Result, A]]()
         val last                                          = new AtomicReference[Either[Result, A]](
           Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id")))
@@ -2019,7 +2023,6 @@ case class RefJwtVerifier(
     ids match {
       case s if s.isEmpty => JwtInjection().right
       case _              =>
-
         def dequeueNext(all: Seq[String], last: Either[Result, JwtInjection]): Either[Result, JwtInjection] = {
           all.headOption match {
             case None      => last
@@ -2141,16 +2144,16 @@ object LocalJwtVerifier extends FromJson[LocalJwtVerifier] {
 }
 
 case class GlobalJwtVerifier(
-                                id: String,
-                                name: String,
-                                desc: String,
-                                strict: Boolean = true,
-                                source: JwtTokenLocation = InHeader("X-JWT-Token"),
-                                algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
-                                strategy: VerifierStrategy = PassThrough(VerificationSettings(Map.empty)),
-                                tags: Seq[String] = Seq.empty,
-                                metadata: Map[String, String] = Map.empty,
-                                location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+    id: String,
+    name: String,
+    desc: String,
+    strict: Boolean = true,
+    source: JwtTokenLocation = InHeader("X-JWT-Token"),
+    algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
+    strategy: VerifierStrategy = PassThrough(VerificationSettings(Map.empty)),
+    tags: Seq[String] = Seq.empty,
+    metadata: Map[String, String] = Map.empty,
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends JwtVerifier
     with AsJson
     with otoroshi.models.EntityLocationSupport {
@@ -2243,12 +2246,12 @@ object JwtVerificationResult {
 
 object JwtVerifier extends FromJson[JwtVerifier] {
 
-  val verificationCache: Cache[String,JwtVerificationResult] = Scaffeine()
+  val verificationCache: Cache[String, JwtVerificationResult] = Scaffeine()
     .expireAfterWrite(5.seconds)
     .maximumSize(500)
     .build[String, JwtVerificationResult]()
 
-  val signatureCache: Cache[String,Try[DecodedJWT]] = Scaffeine()
+  val signatureCache: Cache[String, Try[DecodedJWT]] = Scaffeine()
     .expireAfterWrite(5.seconds)
     .maximumSize(500)
     .build[String, Try[DecodedJWT]]()

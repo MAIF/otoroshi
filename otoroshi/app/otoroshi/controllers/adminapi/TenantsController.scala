@@ -4,7 +4,16 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.Tenant
-import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import play.api.Logger
 import play.api.libs.json.{JsError, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
@@ -17,7 +26,7 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
     with CrudControllerHelper[Tenant, JsValue] {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-tenants-api")
 
@@ -75,22 +84,22 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_TENANT",
-              message = "User created a tenant",
-              metadata = entity.json.as[JsObject],
-              alert = "TenantCreatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_TENANT",
+            message = "User created a tenant",
+            metadata = entity.json.as[JsObject],
+            alert = "TenantCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "tenant not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "tenant not stored ...")
           )
+        )
     }
   }
 
@@ -100,22 +109,22 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_TENANT",
-              message = "User updated a tenant",
-              metadata = entity.json.as[JsObject],
-              alert = "TenantUpdatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_TENANT",
+            message = "User updated a tenant",
+            metadata = entity.json.as[JsObject],
+            alert = "TenantUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "tenant not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "tenant not stored ...")
           )
+        )
     }
   }
 
@@ -125,21 +134,21 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.delete(id).map {
       case true  =>
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_TENANT",
-              message = "User deleted a tenant",
-              metadata = Json.obj("TenantId" -> id),
-              alert = "TenantDeletedAlert"
-            )
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_TENANT",
+            message = "User deleted a tenant",
+            metadata = Json.obj("TenantId" -> id),
+            alert = "TenantDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "tenant not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "tenant not deleted ...")
           )
+        )
     }
   }
 }

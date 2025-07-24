@@ -192,7 +192,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   override def onStart(): Future[Unit] = {
     implicit val ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
-    implicit val mat: Materializer = ds.materializer
+    implicit val mat: Materializer            = ds.materializer
     readStateFromHttp().map { _ =>
       cancelRef.set(
         Source
@@ -215,10 +215,10 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   private def readStateFromHttp(): Future[Unit] = {
     if (logger.isDebugEnabled) logger.debug("Reading state from http db ...")
     implicit val ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
-    implicit val mat: Materializer = ds.materializer
-    val store        = new UnboundedConcurrentHashMap[String, Any]()
-    val expirations  = new UnboundedConcurrentHashMap[String, Long]()
-    val headers      = stateHeaders.toSeq ++ Seq(
+    implicit val mat: Materializer            = ds.materializer
+    val store                                 = new UnboundedConcurrentHashMap[String, Any]()
+    val expirations                           = new UnboundedConcurrentHashMap[String, Long]()
+    val headers                               = stateHeaders.toSeq ++ Seq(
       "Accept" -> "application/x-ndjson"
     )
     env.Ws // no need for mtls here
@@ -233,7 +233,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
           resp.ignore()
           FastFuture.successful(())
         case resp if resp.status == 200 =>
-          val source = resp.bodyAsSource.via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, allowTruncation = false))
+          val source =
+            resp.bodyAsSource.via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, allowTruncation = false))
           source
             .runForeach { raw =>
               val item  = Json.parse(raw.utf8String)
@@ -289,12 +290,12 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def writeStateToHttp(): Future[Unit] = {
     implicit val ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
-    implicit val mat: Materializer = ds.materializer
-    val source       = Source.futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4)).map { item =>
+    implicit val mat: Materializer            = ds.materializer
+    val source                                = Source.futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4)).map { item =>
       ByteString(Json.stringify(item) + "\n")
     }
     if (logger.isDebugEnabled) logger.debug("Writing state to http db ...")
-    val headers      = stateHeaders.toSeq ++ Seq(
+    val headers                               = stateHeaders.toSeq ++ Seq(
       "Content-Type" -> "application/x-ndjson"
     )
     env.Ws // no need for mtls here
@@ -341,7 +342,7 @@ case class S3Configuration(
 }
 
 object S3Configuration {
-  val default: S3Configuration = S3Configuration(
+  val default: S3Configuration        = S3Configuration(
     bucket = "",
     endpoint = "",
     region = "eu-west-1",
@@ -352,7 +353,7 @@ object S3Configuration {
     writeEvery = 1.minute,
     acl = CannedAcl.Private
   )
-  val format: Format[S3Configuration]  = new Format[S3Configuration] {
+  val format: Format[S3Configuration] = new Format[S3Configuration] {
     override def reads(json: JsValue): JsResult[S3Configuration] = Try {
       S3Configuration(
         bucket = json.select("bucket").asOpt[String].getOrElse(""),
@@ -390,7 +391,7 @@ object S3Configuration {
 class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private implicit val ec: ExecutionContextExecutor = ds.actorSystem.dispatcher
-  private implicit val mat: Materializer = ds.materializer
+  private implicit val mat: Materializer            = ds.materializer
 
   private val logger    = Logger("otoroshi-s3-datastores")
   private val cancelRef = new AtomicReference[Cancellable]()
@@ -467,36 +468,35 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def readStateFromS3(): Future[Unit] = {
     if (logger.isDebugEnabled) logger.debug(s"Reading state from $url")
-    val store = new UnboundedConcurrentHashMap[String, Any]()
+    val store       = new UnboundedConcurrentHashMap[String, Any]()
     val expirations = new UnboundedConcurrentHashMap[String, Long]()
 
     S3.getObject(conf.bucket, conf.key)
-        .withAttributes(s3ClientSettingsAttrs)
-        .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, allowTruncation = true))
-        .map(_.utf8String.trim)
-        .filterNot(_.isEmpty)
-        .map { raw =>
-          val item = Json.parse(raw)
-          val key = (item \ "k").as[String]
-          val value = (item \ "v").as[JsValue]
-          val what = (item \ "w").as[String]
-          val ttl = (item \ "t").asOpt[Long].getOrElse(-1L)
-          fromJson(what, value, ds._modern)
-              .map(v => store.put(key, v))
-              .getOrElse(println(s"file read error for: ${item.prettify} "))
-          if (ttl > -1L) {
-            expirations.put(key, ttl)
-          }
+      .withAttributes(s3ClientSettingsAttrs)
+      .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, allowTruncation = true))
+      .map(_.utf8String.trim)
+      .filterNot(_.isEmpty)
+      .map { raw =>
+        val item  = Json.parse(raw)
+        val key   = (item \ "k").as[String]
+        val value = (item \ "v").as[JsValue]
+        val what  = (item \ "w").as[String]
+        val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
+        fromJson(what, value, ds._modern)
+          .map(v => store.put(key, v))
+          .getOrElse(println(s"file read error for: ${item.prettify} "))
+        if (ttl > -1L) {
+          expirations.put(key, ttl)
         }
-        .runWith(Sink.ignore)
-        .map { _ =>
-          ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
-        }
-        .recover {
-          case _: S3Exception =>
-            logger.warn(s"asset at $url does not exists yet ...")
-            ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
-        }
+      }
+      .runWith(Sink.ignore)
+      .map { _ =>
+        ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
+      }
+      .recover { case _: S3Exception =>
+        logger.warn(s"asset at $url does not exists yet ...")
+        ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
+      }
   }
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {

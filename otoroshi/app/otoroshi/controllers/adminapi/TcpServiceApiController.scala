@@ -4,7 +4,16 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.tcp.TcpService
-import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import play.api.Logger
 import play.api.libs.json.{JsError, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
@@ -17,7 +26,7 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
     with CrudControllerHelper[TcpService, JsValue] {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   val logger: Logger = Logger("otoroshi-tcp-service-api")
 
@@ -75,22 +84,22 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[TcpService]]] = {
     env.datastores.tcpServiceDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_TCP_SERVICE",
-              message = "User created a tcp service",
-              metadata = entity.json.as[JsObject],
-              alert = "TcpServiceCreatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_TCP_SERVICE",
+            message = "User created a tcp service",
+            metadata = entity.json.as[JsObject],
+            alert = "TcpServiceCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Tcp service not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Tcp service not stored ...")
           )
+        )
     }
   }
 
@@ -100,22 +109,22 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[TcpService]]] = {
     env.datastores.tcpServiceDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_TCP_SERVICE",
-              message = "User updated a tcp service",
-              metadata = entity.json.as[JsObject],
-              alert = "TcpServiceUpdatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_TCP_SERVICE",
+            message = "User updated a tcp service",
+            metadata = entity.json.as[JsObject],
+            alert = "TcpServiceUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Tcp service not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Tcp service not stored ...")
           )
+        )
     }
   }
 
@@ -125,21 +134,21 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[TcpService]]] = {
     env.datastores.tcpServiceDataStore.delete(id).map {
       case true  =>
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_TCP_SERVICE",
-              message = "User deleted a tcp service",
-              metadata = Json.obj("TcpServiceId" -> id),
-              alert = "TcpServiceDeletedAlert"
-            )
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_TCP_SERVICE",
+            message = "User deleted a tcp service",
+            metadata = Json.obj("TcpServiceId" -> id),
+            alert = "TcpServiceDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Tcp service not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Tcp service not deleted ...")
           )
+        )
     }
   }
 }

@@ -10,7 +10,16 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
+import otoroshi.events.{
+  Alerts,
+  ApiKeyQuotasAlmostExceededAlert,
+  ApiKeyQuotasAlmostExceededReason,
+  ApiKeyQuotasExceededAlert,
+  ApiKeyQuotasExceededReason,
+  ApiKeySecretHasRotated,
+  ApiKeySecretWillRotate,
+  RevokedApiKeyUsageAlert
+}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
@@ -23,7 +32,13 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{
+  BetterDecodedJWT,
+  BetterJsLookupResult,
+  BetterJsReadable,
+  BetterJsValue,
+  BetterSyntax
+}
 
 import java.nio.charset.StandardCharsets
 import java.security.Signature
@@ -46,7 +61,7 @@ case class RemainingQuotas(
 }
 
 object RemainingQuotas {
-  val MaxValue: Long = 10000000L
+  val MaxValue: Long                        = 10000000L
   implicit val fmt: Format[RemainingQuotas] = new Format[RemainingQuotas] {
 
     override def reads(json: JsValue): JsResult[RemainingQuotas] = Try {
@@ -192,20 +207,20 @@ case class ApiKey(
   def theName: String                  = clientName
   def theTags: Seq[String]             = tags
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]     = env.datastores.apiKeyDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean]   = env.datastores.apiKeyDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean]   = env.datastores.apiKeyDataStore.exists(this)
-  def toJson: JsValue                                              = ApiKey.toJson(this)
-  def isActive(): Boolean                                 = enabled && validUntil.forall(date => date.isBeforeNow)
-  def isInactive(): Boolean                               = !isActive()
-  def isValid(value: String): Boolean                     =
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]   = env.datastores.apiKeyDataStore.set(this)
+  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.apiKeyDataStore.delete(this)
+  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.apiKeyDataStore.exists(this)
+  def toJson: JsValue                                                    = ApiKey.toJson(this)
+  def isActive(): Boolean                                                = enabled && validUntil.forall(date => date.isBeforeNow)
+  def isInactive(): Boolean                                              = !isActive()
+  def isValid(value: String): Boolean                                    =
     enabled && ((value == clientSecret) || (rotation.enabled && rotation.nextSecret.contains(value)))
-  def isInvalid(value: String): Boolean                   = !isValid(value)
-  def authorizedOn(identifier: EntityIdentifier): Boolean = authorizedEntities.contains(identifier)
-  def authorizedOnService(id: String): Boolean            = authorizedEntities.contains(ServiceDescriptorIdentifier(id))
-  def authorizedOnGroup(id: String): Boolean              = authorizedEntities.contains(ServiceGroupIdentifier(id))
-  def authorizedOnRoute(id: String): Boolean              = authorizedEntities.contains(RouteIdentifier(id))
-  def authorizedOnRouteComposition(id: String): Boolean   = authorizedEntities.contains(RouteCompositionIdentifier(id))
+  def isInvalid(value: String): Boolean                                  = !isValid(value)
+  def authorizedOn(identifier: EntityIdentifier): Boolean                = authorizedEntities.contains(identifier)
+  def authorizedOnService(id: String): Boolean                           = authorizedEntities.contains(ServiceDescriptorIdentifier(id))
+  def authorizedOnGroup(id: String): Boolean                             = authorizedEntities.contains(ServiceGroupIdentifier(id))
+  def authorizedOnRoute(id: String): Boolean                             = authorizedEntities.contains(RouteIdentifier(id))
+  def authorizedOnRouteComposition(id: String): Boolean                  = authorizedEntities.contains(RouteCompositionIdentifier(id))
   def authorizedOnOneGroupFrom(ids: Seq[String]): Boolean = {
     val identifiers = ids.map(ServiceGroupIdentifier.apply)
     authorizedEntities.exists(e => identifiers.contains(e))
@@ -1426,7 +1441,7 @@ object ApiKeyHelper {
             .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
             ._2
             .map(v => Left(v))
-        case Some(key) =>
+        case Some(key)                                    =>
           key.withinQuotasAndRotationQuotas().flatMap {
             case (true, rotationInfos, quotas) =>
               rotationInfos.foreach { i =>
@@ -1455,12 +1470,13 @@ object ApiKeyHelper {
               if key.restrictions.enabled && key.restrictions
                 .isNotFound(req.method, req.theDomain, req.relativeUri) =>
             errorResult(NotFound, "Not Found", "errors.not.found")
-          case Some(key) if key.restrictions.handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)._1 =>
+          case Some(key)
+              if key.restrictions.handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)._1 =>
             key.restrictions
               .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
               ._2
               .map(v => Left(v))
-          case Some(key) =>
+          case Some(key)                                  =>
             key.withinQuotasAndRotationQuotas().flatMap {
               case (true, rotationInfos, quotas) =>
                 rotationInfos.foreach { i =>
@@ -1504,7 +1520,7 @@ object ApiKeyHelper {
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
-          case Some(key) =>
+          case Some(key)                                  =>
             sendRevokedApiKeyAlert(key)
             errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
         }
@@ -1742,7 +1758,7 @@ object ApiKeyHelper {
                     sendQuotasExceededError(key, quotas)
                     errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                 }
-              case Some(key) =>
+              case Some(key)                                  =>
                 sendRevokedApiKeyAlert(key)
                 errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
             }

@@ -71,22 +71,22 @@ class HtmlPatcher extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     ctx.rawResponse.headers.get("Content-Type").orElse(ctx.rawResponse.headers.get("content-type")) match {
       case Some(ctype) if ctype.contains("text/html") =>
-          Source.future(
-            ctx.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-              val body       = bodyRaw.utf8String
-              val doc        = Jsoup.parse(body)
-              val config     = ctx.configFor("HtmlPatcher")
-              val appendHead = config.select("appendHead").asOpt[Seq[String]].getOrElse(Seq.empty)
-              val appendBody = config.select("appendBody").asOpt[Seq[String]].getOrElse(Seq.empty)
-              parseElement(appendHead.mkString("\n")).map { elementHead =>
-                doc.head().insertChildren(-1, elementHead)
-              }
-              parseElement(appendBody.mkString("\n")).map { elementBody =>
-                doc.body().insertChildren(-1, elementBody)
-              }
-              ByteString(doc.toString)
+        Source.future(
+          ctx.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
+            val body       = bodyRaw.utf8String
+            val doc        = Jsoup.parse(body)
+            val config     = ctx.configFor("HtmlPatcher")
+            val appendHead = config.select("appendHead").asOpt[Seq[String]].getOrElse(Seq.empty)
+            val appendBody = config.select("appendBody").asOpt[Seq[String]].getOrElse(Seq.empty)
+            parseElement(appendHead.mkString("\n")).map { elementHead =>
+              doc.head().insertChildren(-1, elementHead)
             }
-          )
+            parseElement(appendBody.mkString("\n")).map { elementBody =>
+              doc.body().insertChildren(-1, elementBody)
+            }
+            ByteString(doc.toString)
+          }
+        )
       case _                                          => ctx.body
     }
   }

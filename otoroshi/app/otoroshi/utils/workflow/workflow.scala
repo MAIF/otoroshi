@@ -28,8 +28,8 @@ sealed trait WorkFlowSpec                                                       
 object WorkFlowSpec                                                                                   {
   def inline(spec: JsValue): WorkFlowSpec = InlineWorkFlowSpec(spec)
   case class InlineWorkFlowSpec(spec: JsValue) extends WorkFlowSpec {
-    lazy val name: String             = spec.select("name").asString
-    lazy val description: String      = spec.select("description").asString
+    lazy val name: String        = spec.select("name").asString
+    lazy val description: String = spec.select("description").asString
     lazy val tasks: Seq[WorkFlowTask] = {
       val result: Seq[WorkFlowTask] = spec
         .select("tasks")
@@ -39,7 +39,8 @@ object WorkFlowSpec                                                             
             .map(WorkFlowTask.format.reads(_))
             .collect { case JsSuccess(value, _) =>
               value
-            }.toSeq
+            }
+            .toSeq
         )
         .getOrElse(Seq.empty[WorkFlowTask])
       result
@@ -155,12 +156,12 @@ object WorkFlowTask {
 
 object WorkFlowEl {
 
-  import kaleidoscope._
-//import soundness.*
+  import kaleidoscope.*
+  import anticipation.Text
 
   import scala.jdk.CollectionConverters._
 
-  val logger: Logger             = Logger("workflow-el")
+  val logger: Logger                     = Logger("workflow-el")
   val expressionReplacer: ReplaceAllWith = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
   def apply(value: String, ctx: WorkFlowTaskContext, env: Env): String = {
@@ -169,51 +170,51 @@ object WorkFlowEl {
         Try {
           expressionReplacer.replaceOn(value) {
 
-            case r"input.$path@(.*)"                    => JsonPathUtils.getAtPolyJsonStr(ctx.input, path)
-            case r"cache.$field@(.*)\[$path@(.*)\]"     =>
-              ctx.cache.get(field).map(f => JsonPathUtils.getAtPolyJsonStr(f, path)).getOrElse("null")
-            case r"responses.$field@(.*)\[$path@(.*)\]" =>
-              ctx.responses.get(field).map(f => JsonPathUtils.getAtPolyJsonStr(f, path)).getOrElse("null")
+            case r"input.$path(.*)"                   => JsonPathUtils.getAtPolyJsonStr(ctx.input, path.s)
+            case r"cache.$field(.*)\[$path(.*)\]"     =>
+              ctx.cache.get(field.s).map(f => JsonPathUtils.getAtPolyJsonStr(f, path.s)).getOrElse("null")
+            case r"responses.$field(.*)\[$path(.*)\]" =>
+              ctx.responses.get(field.s).map(f => JsonPathUtils.getAtPolyJsonStr(f, path.s)).getOrElse("null")
 
-            case r"file://$path@(.*)"        =>
-              Try(Files.readAllLines(new File(path).toPath).asScala.mkString("\n").trim()).getOrElse("null")
-            case r"file:$path@(.*)"          =>
-              Try(Files.readAllLines(new File(path).toPath).asScala.mkString("\n").trim()).getOrElse("null")
-            case r"env.$field@(.*):$dv@(.*)" => Option(System.getenv(field)).getOrElse(dv)
-            case r"env.$field@(.*)"          => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
+            case r"file://$path(.*)"       =>
+              Try(Files.readAllLines(new File(path.s).toPath).asScala.mkString("\n").trim()).getOrElse("null")
+            case r"file:$path(.*)"         =>
+              Try(Files.readAllLines(new File(path.s).toPath).asScala.mkString("\n").trim()).getOrElse("null")
+            case r"env.$field(.*):$dv(.*)" => Option(System.getenv(field.s)).getOrElse(dv.s)
+            case r"env.$field(.*)"         => Option(System.getenv(field.s)).getOrElse(s"no-env-var-$field")
 
-            case r"config.$field@(.*):$dv@(.*)" =>
+            case r"config.$field(.*):$dv(.*)" =>
               env.configuration
-                .getOptionalWithFileSupport[String](field)
+                .getOptionalWithFileSupport[String](field.s)
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Int](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Int](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Double](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Double](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Long](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Long](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Boolean](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Boolean](field.s).map(_.toString)
                 )
-                .getOrElse(dv)
-            case r"config.$field@(.*)"          =>
+                .getOrElse(dv.s)
+            case r"config.$field(.*)"         =>
               env.configuration
-                .getOptionalWithFileSupport[String](field)
+                .getOptionalWithFileSupport[String](field.s)
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Int](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Int](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Double](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Double](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Long](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Long](field.s).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptionalWithFileSupport[Boolean](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Boolean](field.s).map(_.toString)
                 )
-                .getOrElse(s"no-config-$field")
+                .getOrElse(s"no-config-${field.s}")
           }
         } recover { case e =>
           logger.error(s"Error while parsing expression, returning raw value: $value", e)
@@ -240,7 +241,7 @@ case class WorkFlowTaskContext(
 }
 
 object WorkFlow {
-  val logger: Logger                              = Logger(s"otoroshi-workflow")
+  val logger: Logger                      = Logger(s"otoroshi-workflow")
   def apply(spec: WorkFlowSpec): WorkFlow = new WorkFlow(spec)
 }
 
@@ -336,8 +337,8 @@ case class WorkFlowPredicateOperator(operator: String) {
 
 case class WorkFlowPredicate(spec: JsValue) {
 
-  lazy val left: WorkFlowPredicatePart     = WorkFlowPredicatePart(spec.select("left").as[JsValue])
-  lazy val right: WorkFlowPredicatePart    = WorkFlowPredicatePart(spec.select("right").as[JsValue])
+  lazy val left: WorkFlowPredicatePart         = WorkFlowPredicatePart(spec.select("left").as[JsValue])
+  lazy val right: WorkFlowPredicatePart        = WorkFlowPredicatePart(spec.select("right").as[JsValue])
   lazy val operator: WorkFlowPredicateOperator = WorkFlowPredicateOperator(spec.select("operator").as[String])
 
   def check(payload: JsValue): Boolean = {
@@ -364,7 +365,7 @@ object ComposeResponseWorkFlowTask {
 
 case class ComposeResponseWorkFlowTask(spec: JsValue) extends WorkFlowTask {
 
-  lazy val name: String                          = spec.select("name").as[String]
+  lazy val name: String                  = spec.select("name").as[String]
   override def theType: WorkFlowTaskType = WorkFlowTaskType.ComposeResponse
   override def json: JsValue             = ComposeResponseWorkFlowTask.format.writes(this)
 
@@ -399,14 +400,20 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
   override def theType: WorkFlowTaskType = WorkFlowTaskType.HTTP
   override def json: JsValue             = HttpWorkFlowTask.format.writes(this)
 
-  lazy val name: String                                                        = spec.select("name").as[String]
-  lazy val requestSpec: JsObject                                                 = spec.select("request").as[JsObject]
+  lazy val name: String                                                = spec.select("name").as[String]
+  lazy val requestSpec: JsObject                                       = spec.select("request").as[JsObject]
   lazy val method: String                                              = requestSpec.select("method").asOpt[String].map(_.toUpperCase()).getOrElse("GET")
   def url(ctx: WorkFlowTaskContext, env: Env): String                  =
     applyEl(applyTransformation(requestSpec.select("url").as[JsValue], ctx, env).as[String], ctx, env)
   lazy val timeout: FiniteDuration                                     = requestSpec.select("timeout").asOpt[Long].getOrElse(10000L).millis
   def headers(ctx: WorkFlowTaskContext, env: Env): Map[String, String] =
-    requestSpec.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty).view.mapValues(v => applyEl(v, ctx, env)).toMap
+    requestSpec
+      .select("headers")
+      .asOpt[Map[String, String]]
+      .getOrElse(Map.empty)
+      .view
+      .mapValues(v => applyEl(v, ctx, env))
+      .toMap
   lazy val tls: MtlsConfig                                             = requestSpec.select("tls").asOpt(MtlsConfig.format).getOrElse(MtlsConfig())
   def bodyOpt(ctx: WorkFlowTaskContext, env: Env): Option[ByteString]  =
     requestSpec.select("body").asOpt[JsValue].map { body =>
@@ -418,9 +425,12 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
         case _                => ByteString(applyEl(Json.stringify(body), ctx, env))
       }
     }
-  lazy val successSpec: JsObject                                                 = spec.select("success").as[JsObject]
-  lazy val successStatuses: scala.collection.Seq[Int]                                             = successSpec.select("statuses").asOpt[JsArray].map(_.value.map(_.asInt)).getOrElse(Seq(200))
-  lazy val successPredicate: WorkFlowPredicate                                            = WorkFlowPredicate(successSpec.select("predicate").asOpt[JsObject].getOrElse(Json.obj()))
+  lazy val successSpec: JsObject                                       = spec.select("success").as[JsObject]
+  lazy val successStatuses: scala.collection.Seq[Int]                  =
+    successSpec.select("statuses").asOpt[JsArray].map(_.value.map(_.asInt)).getOrElse(Seq(200))
+  lazy val successPredicate: WorkFlowPredicate                         = WorkFlowPredicate(
+    successSpec.select("predicate").asOpt[JsObject].getOrElse(Json.obj())
+  )
 
   override def run(
       ctx: WorkFlowTaskContext

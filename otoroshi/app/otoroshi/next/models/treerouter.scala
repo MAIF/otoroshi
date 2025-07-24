@@ -198,12 +198,12 @@ case class NgTreeNodePath(
     routes: ListBuffer[NgRoute],
     tree: TrieMap[String, NgTreeNodePath]
 ) {
-  lazy val wildcardCache: Cache[String,Option[NgTreeNodePath]]                         =
+  lazy val wildcardCache: Cache[String, Option[NgTreeNodePath]]           =
     Scaffeine().maximumSize(100).expireAfterWrite(10.seconds).build[String, Option[NgTreeNodePath]]()
-  lazy val segmentStartsWithCache: Cache[String,Option[NgMatchedRoutes]]                =
+  lazy val segmentStartsWithCache: Cache[String, Option[NgMatchedRoutes]] =
     Scaffeine().maximumSize(100).expireAfterWrite(10.seconds).build[String, Option[NgMatchedRoutes]]()
-  lazy val isLeaf: Boolean                       = tree.isEmpty
-  lazy val wildcardEntry: Option[NgTreeNodePath] =
+  lazy val isLeaf: Boolean                                                = tree.isEmpty
+  lazy val wildcardEntry: Option[NgTreeNodePath]                          =
     tree.get("*") // lazy should be good as once built the mutable map is never mutated again
   lazy val hasWildcardKeys: Boolean                                    = wildcardKeys.nonEmpty
   lazy val wildcardKeys: scala.collection.Set[String]                  = tree.keySet.filter(_.contains("*"))
@@ -211,7 +211,7 @@ case class NgTreeNodePath(
   lazy val namedKeys: scala.collection.Set[String]                     = tree.keySet.filter(_.startsWith(":"))
   lazy val hasRegexKeys: Boolean                                       = regexKeys.nonEmpty
   lazy val regexKeys: scala.collection.Set[String]                     = tree.keySet.filter(v => v.startsWith("$") && v.endsWith(">"))
-  lazy val isEmpty: Boolean                                                     = routes.isEmpty && isLeaf
+  lazy val isEmpty: Boolean                                            = routes.isEmpty && isLeaf
   def wildcardEntriesMatching(segment: String): Option[NgTreeNodePath] = wildcardCache.get(
     segment,
     _ => wildcardKeys.find(str => RegexPool(str).matches(segment)).flatMap(key => tree.get(key))
@@ -299,13 +299,14 @@ case class NgTreeNodePath(
                       }
                       .find(segments.tail, endsWithSlash, s"$path/$head", pathParams) match {
                       case None if routes.isEmpty => None
-                      case None                   => NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = false).some
+                      case None                   =>
+                        NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = false).some
                       case s                      => s
                     }
                 }
               }
             )
-          case None                                             =>
+          case None                                                 =>
             // Catch-all case for any other None scenarios
             None
           case Some(ptree) if ptree.isEmpty && routes.isEmpty       => None
@@ -441,7 +442,7 @@ object NgTreeRouter_Test {
       sum.addAndGet(duration_ns)
       if (print) {
         val found = f_route.isDefined && f_route.map(_.route.name).contains(idx)
-        println(path, found, s"$duration_ns nanos", s"${duration_ns.nanos.toMillis}  ms")
+        println(s"$path $found $duration_ns nanos ${duration_ns.nanos.toMillis} ms")
       }
     }
 
@@ -497,7 +498,7 @@ object NgTreeRouter_Test {
       if (print) {
         val found =
           f_routes.isDefined && f_routes.exists(_.routes.size == 1) && f_routes.map(_.routes.head.name).contains(idx)
-        println(path, found, s"$duration_ns nanos", s"${duration_ns.nanos.toMillis}  ms")
+        println(s"$path $found $duration_ns nanos ${duration_ns.nanos.toMillis} ms")
       }
     }
 
@@ -576,7 +577,7 @@ object NgTreeRouter_Test {
         if (print) {
           val found = f_routes.isDefined && f_routes
             .exists(_.routes.size == 1) && f_routes.map(_.routes.head.name).contains(rpath)
-          println(path, found, s"$duration_ns nanos", s"${duration_ns.nanos.toMillis}  ms")
+          println(s"$path $found $duration_ns nanos ${duration_ns.nanos.toMillis} ms")
         }
       }
     }

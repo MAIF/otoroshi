@@ -20,7 +20,7 @@ class EventsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit 
     with AdminApiHelper {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-events-api")
 

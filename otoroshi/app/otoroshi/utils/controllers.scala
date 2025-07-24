@@ -147,8 +147,9 @@ trait AdminApiHelper {
 
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     val prefix             = filterPrefix
-    val filters            = ctx.request.queryString
-      .view.mapValues(_.last).toMap
+    val filters            = ctx.request.queryString.view
+      .mapValues(_.last)
+      .toMap
       .collect {
         case v if prefix.isEmpty                                  => v
         case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
@@ -282,9 +283,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkCreate(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv: Env = env
+    implicit val implEnv: Env             = env
     implicit val implEc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val implMat: Materializer = env.otoroshiMaterializer
+    implicit val implMat: Materializer    = env.otoroshiMaterializer
 
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") =>
@@ -363,9 +364,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkUpdate(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv: Env = env
+    implicit val implEnv: Env             = env
     implicit val implEc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val implMat: Materializer = env.otoroshiMaterializer
+    implicit val implMat: Materializer    = env.otoroshiMaterializer
 
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") =>
@@ -444,9 +445,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkPatch(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv: Env = env
+    implicit val implEnv: Env             = env
     implicit val implEc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val implMat: Materializer = env.otoroshiMaterializer
+    implicit val implMat: Materializer    = env.otoroshiMaterializer
 
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") =>
@@ -565,9 +566,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkDelete(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv: Env = env
+    implicit val implEnv: Env             = env
     implicit val implEc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val implMat: Materializer = env.otoroshiMaterializer
+    implicit val implMat: Materializer    = env.otoroshiMaterializer
 
     def actualDelete() = {
       val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
@@ -605,7 +606,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                   .future
               case Right(optent) if optent.entity.isDefined && !ctx.canUserWrite(optent.entity.get) =>
                 ByteString.empty.future
-              case Right(_) =>
+              case Right(_)                                                                         =>
                 deleteEntityOps(id, ctx.request).map {
                   case Left(error)                                             =>
                     Json
@@ -686,9 +687,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def create(ctx: ApiActionContext[JsValue]): Future[Result] = {
 
-    implicit val implEnv: Env = env
+    implicit val implEnv: Env             = env
     implicit val implEc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val implMat: Materializer = env.otoroshiMaterializer
+    implicit val implMat: Materializer    = env.otoroshiMaterializer
 
     val rawBody        = ctx.request.body.asObject
     val dev            = if (env.isDev) "_dev" else ""
@@ -756,9 +757,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def findAllEntities(ctx: ApiActionContext[AnyContent]): Future[Result] = {
 
-    implicit val implEnv: Env = env
+    implicit val implEnv: Env             = env
     implicit val implEc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val implMat: Materializer = env.otoroshiMaterializer
+    implicit val implMat: Materializer    = env.otoroshiMaterializer
 
     val paginationPage: Int     = ctx.request.queryString
       .get("page")
@@ -774,8 +775,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     val prefix             = filterPrefix
-    val filters            = ctx.request.queryString
-      .view.mapValues(_.last).toMap
+    val filters            = ctx.request.queryString.view
+      .mapValues(_.last)
+      .toMap
       .collect {
         case v if prefix.isEmpty                                  => v
         case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
@@ -936,9 +938,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def findEntityById(id: String, ctx: ApiActionContext[AnyContent]): Future[Result] = {
 
-    implicit val implEnv: Env = env
+    implicit val implEnv: Env             = env
     implicit val implEc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val implMat: Materializer = env.otoroshiMaterializer
+    implicit val implMat: Materializer    = env.otoroshiMaterializer
 
     findByIdOps(processId(id, ctx), ctx.request).map {
       case Left(error)                                                               =>
@@ -977,9 +979,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def updateEntity(id: String, ctx: ApiActionContext[JsValue]): Future[Result] = {
 
-    implicit val implEnv: Env = env
+    implicit val implEnv: Env             = env
     implicit val implEc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val implMat: Materializer = env.otoroshiMaterializer
+    implicit val implMat: Materializer    = env.otoroshiMaterializer
 
     val body: JsObject = if (isApikey) {
       ctx.request.body.asObject ++ Json.obj("client_id" -> id, "clientId" -> id)
@@ -1043,9 +1045,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def patchEntity(id: String, ctx: ApiActionContext[JsValue]): Future[Result] = {
 
-    implicit val implEnv: Env = env
+    implicit val implEnv: Env             = env
     implicit val implEc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val implMat: Materializer = env.otoroshiMaterializer
+    implicit val implMat: Materializer    = env.otoroshiMaterializer
 
     findByIdOps(processId(id, ctx), ctx.request).flatMap {
       case Left(error)                                         =>
@@ -1110,9 +1112,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def deleteEntities(ids: Seq[String], ctx: ApiActionContext[_]): Future[Result] = {
 
-    implicit val implEnv: Env = env
+    implicit val implEnv: Env             = env
     implicit val implEc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val implMat: Materializer = env.otoroshiMaterializer
+    implicit val implMat: Materializer    = env.otoroshiMaterializer
 
     Source(ids.toList)
       .mapAsync(1) { _id =>
@@ -1122,7 +1124,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           case Right(optent) if optent.entity.isEmpty                                           => (id, buildError(404, "Entity not found").some).future
           case Right(optent) if optent.entity.isDefined && !ctx.canUserWrite(optent.entity.get) =>
             (id, buildError(401, "You're not allowed").some).future
-          case Right(optent) =>
+          case Right(optent)                                                                    =>
             deleteEntityOps(id, ctx.request).map {
               case Left(error)                                             =>
                 (id, Some(error))

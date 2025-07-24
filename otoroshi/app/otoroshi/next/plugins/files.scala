@@ -3,7 +3,14 @@ package otoroshi.next.plugins
 import org.apache.pekko.http.scaladsl.model.headers.`Last-Modified`
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
 import org.apache.pekko.stream.{Attributes, Materializer}
-import org.apache.pekko.stream.connectors.s3.{ApiVersion, MemoryBufferType, ObjectMetadata, S3Attributes, S3Exception, S3Settings}
+import org.apache.pekko.stream.connectors.s3.{
+  ApiVersion,
+  MemoryBufferType,
+  ObjectMetadata,
+  S3Attributes,
+  S3Exception,
+  S3Settings
+}
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
@@ -191,22 +198,23 @@ class S3Backend extends NgBackendCall {
   }
 
   private def fileContent(key: String, config: S3Configuration)(implicit
-                                                                ec: ExecutionContext,
-                                                                mat: Materializer
+      ec: ExecutionContext,
+      mat: Materializer
   ): Future[Option[(ObjectMetadata, ByteString)]] = {
-    val (metadataFuture, contentFuture) = S3.getObject(config.bucket, key)
-        .withAttributes(s3ClientSettingsAttrs(config))
-        .toMat(Sink.fold(ByteString.empty)(_ ++ _))(Keep.both)
-        .run()
+    val (metadataFuture, contentFuture) = S3
+      .getObject(config.bucket, key)
+      .withAttributes(s3ClientSettingsAttrs(config))
+      .toMat(Sink.fold(ByteString.empty)(_ ++ _))(Keep.both)
+      .run()
 
     for {
       metadata <- metadataFuture
-      content <- contentFuture
+      content  <- contentFuture
     } yield {
       Some((metadata, content))
     }
-  }.recover {
-    case _: S3Exception => None
+  }.recover { case _: S3Exception =>
+    None
   }
 
   private def normalizeKey(key: String, config: S3Configuration)(implicit

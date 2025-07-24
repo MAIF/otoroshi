@@ -118,8 +118,8 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
           Results
             .Status(resp.status)(resp.json)
             .withHeaders(
-              resp.headers
-                .view.mapValues(_.last)
+              resp.headers.view
+                .mapValues(_.last)
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -140,8 +140,8 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
           Results
             .Status(resp.status)(resp.json)
             .withHeaders(
-              resp.headers
-                .view.mapValues(_.last)
+              resp.headers.view
+                .mapValues(_.last)
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -171,8 +171,8 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
           Results
             .Status(resp.status)(resp.json)
             .withHeaders(
-              resp.headers
-                .view.mapValues(_.last)
+              resp.headers.view
+                .mapValues(_.last)
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -200,8 +200,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
         Results
           .Status(resp.status)(resp.json)
           .withHeaders(
-            resp.headers
-              .view
+            resp.headers.view
               .mapValues(_.last)
               .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
               .toSeq: _*
@@ -417,16 +416,16 @@ class NgIzanamiV1Canary extends NgRequestTransformer {
       config.routeConfig match {
         case Some(c) => c.future
         case None    =>
-            env.MtlsWs
-              .url(url, config.tls.legacy)
-              .withRequestTimeout(config.timeout)
-              .withHttpHeaders(
-                "Izanami-Client-Id"     -> config.clientId,
-                "Izanami-Client-Secret" -> config.clientSecret
-              )
-              .withAuth(config.clientId, config.clientSecret, WSAuthScheme.BASIC)
-              .get()
-              .map(_.json)
+          env.MtlsWs
+            .url(url, config.tls.legacy)
+            .withRequestTimeout(config.timeout)
+            .withHttpHeaders(
+              "Izanami-Client-Id"     -> config.clientId,
+              "Izanami-Client-Secret" -> config.clientSecret
+            )
+            .withAuth(config.clientId, config.clientSecret, WSAuthScheme.BASIC)
+            .get()
+            .map(_.json)
       }
     }.map { json =>
       val routing = json.asObject.select("value").as[JsObject]

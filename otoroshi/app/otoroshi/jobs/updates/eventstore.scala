@@ -53,21 +53,21 @@ class EventstoreCheckerJob extends Job {
         case None           =>
           ().future
         case Some(esConfig) =>
-            val read = new ElasticReadsAnalytics(esConfig, env)
-            read
-              .checkAvailability()
-              .map {
-                case Left(_)  =>
-                    EventstoreCheckerJob.initialized.set(true)
-                    EventstoreCheckerJob.works.set(false)
-                case Right(_) =>
-                    EventstoreCheckerJob.initialized.set(true)
-                    EventstoreCheckerJob.works.set(true)
-              }
-              .recover { case t: Throwable =>
+          val read = new ElasticReadsAnalytics(esConfig, env)
+          read
+            .checkAvailability()
+            .map {
+              case Left(_)  =>
                 EventstoreCheckerJob.initialized.set(true)
                 EventstoreCheckerJob.works.set(false)
-              }
+              case Right(_) =>
+                EventstoreCheckerJob.initialized.set(true)
+                EventstoreCheckerJob.works.set(true)
+            }
+            .recover { case t: Throwable =>
+              EventstoreCheckerJob.initialized.set(true)
+              EventstoreCheckerJob.works.set(false)
+            }
       }
     }
   }

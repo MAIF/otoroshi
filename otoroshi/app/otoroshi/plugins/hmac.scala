@@ -16,7 +16,7 @@ import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 
 object HMACUtils {
-  val Algo: Map[String,String] = Map(
+  val Algo: Map[String, String] = Map(
     "HMAC-SHA1"   -> "HmacSHA1",
     "HMAC-SHA256" -> "HmacSHA256",
     "HMAC-SHA384" -> "HmacSHA384",

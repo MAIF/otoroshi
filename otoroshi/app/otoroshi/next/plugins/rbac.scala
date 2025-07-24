@@ -117,18 +117,18 @@ class RBAC extends NgAccessValidator {
     injection.decodedToken match {
       case None        => false
       case Some(token) =>
-          val jsonToken = token.getPayload.fromBase64.parseJson
-          val roles     = jsonToken.select(config.roles).asOpt[Seq[String]].getOrElse(Seq.empty)
-          matches(roles, config) || (config.jwtPath.flatMap(p => jsonToken.atPath(p).asOpt[JsValue]) match {
-            case Some(JsString(value)) =>
-                if (matches(Seq(value), config)) {
-                true
-              } else {
-                matches(tryParse(value), config)
-              }
-            case Some(JsArray(value))  => matches(value.map(_.asString).toSeq, config)
-            case _                     => false
-          })
+        val jsonToken = token.getPayload.fromBase64.parseJson
+        val roles     = jsonToken.select(config.roles).asOpt[Seq[String]].getOrElse(Seq.empty)
+        matches(roles, config) || (config.jwtPath.flatMap(p => jsonToken.atPath(p).asOpt[JsValue]) match {
+          case Some(JsString(value)) =>
+            if (matches(Seq(value), config)) {
+              true
+            } else {
+              matches(tryParse(value), config)
+            }
+          case Some(JsArray(value))  => matches(value.map(_.asString).toSeq, config)
+          case _                     => false
+        })
     }
   }
 
@@ -138,11 +138,11 @@ class RBAC extends NgAccessValidator {
       apikey.metadata.get(config.roles).map(str => Json.parse(str).asArray.value.map(_.asString)).getOrElse(Seq.empty)
     val pathMatch = config.apikeyPath.flatMap(p => apikey.json.atPath(p).asOpt[JsValue]) match {
       case Some(JsString(value)) =>
-          if (matches(Seq(value), config)) {
-            true
-          } else {
-            matches(tryParse(value), config)
-          }
+        if (matches(Seq(value), config)) {
+          true
+        } else {
+          matches(tryParse(value), config)
+        }
       case Some(JsArray(value))  => matches(value.map(_.asString).toSeq, config)
       case _                     => false
     }
@@ -156,22 +156,22 @@ class RBAC extends NgAccessValidator {
     val dataMatch = user.otoroshiData.exists { otodata =>
       otodata.select(config.roles).asOpt[JsValue] match {
         case Some(JsString(value)) =>
-            if (matches(Seq(value), config)) {
-              true
-            } else {
-              matches(tryParse(value), config)
-            }
+          if (matches(Seq(value), config)) {
+            true
+          } else {
+            matches(tryParse(value), config)
+          }
         case Some(JsArray(value))  => matches(value.map(_.asString).toSeq, config)
         case _                     => false
       }
     }
     val pathMatch = config.userPath.flatMap(p => user.json.atPath(p).asOpt[JsValue]) match {
       case Some(JsString(value)) =>
-          if (matches(Seq(value), config)) {
-            true
-          } else {
-            matches(tryParse(value), config)
-          }
+        if (matches(Seq(value), config)) {
+          true
+        } else {
+          matches(tryParse(value), config)
+        }
       case Some(JsArray(value))  => matches(value.map(_.asString).toSeq, config)
       case _                     => false
     }

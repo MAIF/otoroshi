@@ -51,27 +51,27 @@ object JsonHelpers {
   def clientCertChainToJson(chain: Option[Seq[X509Certificate]]): JsValue = chain match {
     case None      => JsNull
     case Some(seq) =>
-        JsArray(
-          seq.map(c =>
-            Json.obj(
-              "subjectDN"    -> DN(c.getSubjectX500Principal.getName).stringify,
-              "issuerDN"     -> DN(c.getIssuerX500Principal.getName).stringify,
-              "notAfter"     -> c.getNotAfter.getTime,
-              "notBefore"    -> c.getNotBefore.getTime,
-              "serialNumber" -> c.getSerialNumber.toString(16),
-              "subjectCN"    -> Option(DN(c.getSubjectX500Principal.getName).stringify)
-                .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
-                .map(_.replace("CN=", "").replace("cn=", ""))
-                .getOrElse(DN(c.getSubjectX500Principal.getName).stringify)
-                .asInstanceOf[String],
-              "issuerCN"     -> Option(DN(c.getIssuerX500Principal.getName).stringify)
-                .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
-                .map(_.replace("CN=", "").replace("cn=", ""))
-                .getOrElse(DN(c.getIssuerX500Principal.getName).stringify)
-                .asInstanceOf[String]
-            )
+      JsArray(
+        seq.map(c =>
+          Json.obj(
+            "subjectDN"    -> DN(c.getSubjectX500Principal.getName).stringify,
+            "issuerDN"     -> DN(c.getIssuerX500Principal.getName).stringify,
+            "notAfter"     -> c.getNotAfter.getTime,
+            "notBefore"    -> c.getNotBefore.getTime,
+            "serialNumber" -> c.getSerialNumber.toString(16),
+            "subjectCN"    -> Option(DN(c.getSubjectX500Principal.getName).stringify)
+              .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
+              .map(_.replace("CN=", "").replace("cn=", ""))
+              .getOrElse(DN(c.getSubjectX500Principal.getName).stringify)
+              .asInstanceOf[String],
+            "issuerCN"     -> Option(DN(c.getIssuerX500Principal.getName).stringify)
+              .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
+              .map(_.replace("CN=", "").replace("cn=", ""))
+              .getOrElse(DN(c.getIssuerX500Principal.getName).stringify)
+              .asInstanceOf[String]
           )
         )
+      )
   }
   def requestToJson(request: RequestHeader, attrs: TypedMap): JsValue = {
     val pathparams: JsObject = JsObject(

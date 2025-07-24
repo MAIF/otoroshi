@@ -42,12 +42,12 @@ case class HttpListenerConfig(
 }
 
 object HttpListenerConfig {
-  val default: HttpListenerConfig = HttpListenerConfig(
+  val default: HttpListenerConfig        = HttpListenerConfig(
     enabled = true,
     port = 7890,
     exposedPort = 7890
   )
-  val format: Format[HttpListenerConfig]  = new Format[HttpListenerConfig] {
+  val format: Format[HttpListenerConfig] = new Format[HttpListenerConfig] {
     override def reads(json: JsValue): JsResult[HttpListenerConfig] = Try {
       HttpListenerConfig(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
@@ -150,7 +150,7 @@ case class HttpListener(
 }
 
 object HttpListener {
-  val logger: Logger                                                              = Logger("otoroshi-http-listeners")
+  val logger: Logger                                                                    = Logger("otoroshi-http-listeners")
   def default(ctx: Option[ApiActionContext[_]] = None)(implicit env: Env): HttpListener = HttpListener(
     location = EntityLocation.ownEntityLocation(ctx)(env),
     id = "http-listener_" + UUID.randomUUID().toString,
@@ -160,7 +160,7 @@ object HttpListener {
     config = HttpListenerConfig.default,
     metadata = Map.empty
   )
-  val format: Format[HttpListener]                                                              = new Format[HttpListener] {
+  val format: Format[HttpListener]                                                      = new Format[HttpListener] {
     override def writes(o: HttpListener): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,
@@ -308,21 +308,20 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
           listener.start("dynamic", env, server => dynamicListeners.put(listener.id, (listener, server)))
         }
       }
-      dynamicListeners.values.map {
-        case (listener, server) =>
-          newOnes.get(listener.id) match {
-            case None    =>
-              server.stop()
-              dynamicListeners.remove(listener.id)
-            case Some(_) => ()
-          }
+      dynamicListeners.values.map { case (listener, server) =>
+        newOnes.get(listener.id) match {
+          case None    =>
+            server.stop()
+            dynamicListeners.remove(listener.id)
+          case Some(_) => ()
+        }
       }
     }(env.analyticsExecutionContext)
   }
 
   override def syncStates(): Future[Unit] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val ev: Env = env
+    implicit val ev: Env              = env
     for {
       listeners <- datastores.httpListenerDatastore.findAll()
     } yield {

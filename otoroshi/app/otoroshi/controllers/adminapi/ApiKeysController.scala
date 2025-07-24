@@ -22,7 +22,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
     with AdminApiHelper {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-apikeys-fs-api")
 
@@ -33,9 +33,9 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
         case Some(desc) if !ctx.canUserRead(desc) => ctx.fforbidden
         case Some(desc)                           =>
           env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-            case None                                                 => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
-            case Some(apiKey) if !ctx.canUserRead(apiKey)             => ctx.fforbidden
-            case Some(apiKey) =>
+            case None                                     => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
+            case Some(apiKey) if !ctx.canUserRead(apiKey) => ctx.fforbidden
+            case Some(apiKey)                             =>
               if (!apiKey.authorizedOnService(desc.id)) {
                 NotFound(
                   Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$serviceId'")
@@ -60,9 +60,9 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
         case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
         case Some(desc)                            =>
           env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-            case None                                                                      => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
-            case Some(apiKey) if !ctx.canUserWrite(apiKey)                                 => ctx.fforbidden
-            case Some(apiKey) =>
+            case None                                      => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
+            case Some(apiKey) if !ctx.canUserWrite(apiKey) => ctx.fforbidden
+            case Some(apiKey)                              =>
               if (!apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)) {
                 NotFound(
                   Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$serviceId'")
@@ -96,11 +96,11 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
           val oldGroup   = (body \ "authorizedGroup").asOpt[String].map(g => "group_" + g).toSeq
           val entities   = (Seq("service_" + serviceId) ++ oldGroup).distinct
           val apiKeyJson = ((body \ "authorizedEntities").asOpt[Seq[String]] match {
-            case None                                                => body ++ Json.obj("authorizedEntities" -> Json.arr("service_" + serviceId))
+            case None                                              => body ++ Json.obj("authorizedEntities" -> Json.arr("service_" + serviceId))
             case Some(sid) if !sid.contains(s"service_$serviceId") =>
               body ++ Json.obj("authorizedEntities" -> (entities ++ sid).distinct)
             case Some(sid) if sid.contains(s"service_$serviceId")  => body
-            case Some(_)                                             => body
+            case Some(_)                                           => body
           }) - "authorizedGroup"
           ApiKey.fromJsonSafe(apiKeyJson) match {
             case JsError(_)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
@@ -141,30 +141,30 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
           case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
           case Some(desc)                            =>
             env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-              case None                                                                      => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
-              case Some(apiKey) if !ctx.canUserWrite(apiKey)                                 => ctx.fforbidden
-              case Some(apiKey) =>
+              case None                                      => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
+              case Some(apiKey) if !ctx.canUserWrite(apiKey) => ctx.fforbidden
+              case Some(apiKey)                              =>
                 if (!apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)) {
                   NotFound(
                     Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$serviceId'")
                   ).asFuture
                 } else {
                   ApiKey.fromJsonSafe(ctx.request.body) match {
-                    case JsError(_) => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                    case JsError(_)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                     case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                       BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
-                    case JsSuccess(newApiKey, _) =>
+                    case JsSuccess(newApiKey, _)                                   =>
                       env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-                        case None => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
+                        case None                                        => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
                         case Some(oldApik) if !ctx.canUserWrite(oldApik) =>
                           BadRequest(Json.obj("error" -> "you cannot access this resource")).asFuture
-                        case Some(_) =>
+                        case Some(_)                                     =>
                           sendAuditAndAlert(
                             "UPDATE_APIKEY",
                             s"User updated an ApiKey",
                             "ApiKeyUpdatedAlert",
                             Json.obj(
-                              "desc" -> desc.toJson,
+                              "desc"   -> desc.toJson,
                               "apikey" -> apiKey.toJson
                             ),
                             ctx
@@ -268,14 +268,15 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
             Ok(
               JsArray(
                 apiKeys
-                    .filter(ctx.canUserRead)
-                    .filter {
-                      case keys if group.isDefined && keys.authorizedOnGroup(group.get) => true
-                      case keys if clientId.isDefined && keys.clientId == clientId.get => true
-                      case keys if name.isDefined && keys.clientName == name.get => true
-                      case keys if enabled.isDefined && keys.enabled == enabled.get.toBoolean => true
-                      case _ => false
-                    }.slice(paginationPosition, paginationPosition + paginationPageSize)
+                  .filter(ctx.canUserRead)
+                  .filter {
+                    case keys if group.isDefined && keys.authorizedOnGroup(group.get)       => true
+                    case keys if clientId.isDefined && keys.clientId == clientId.get        => true
+                    case keys if name.isDefined && keys.clientName == name.get              => true
+                    case keys if enabled.isDefined && keys.enabled == enabled.get.toBoolean => true
+                    case _                                                                  => false
+                  }
+                  .slice(paginationPosition, paginationPosition + paginationPageSize)
                   .map(_.toJson)
               )
             )
@@ -354,7 +355,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
     with AdminApiHelper {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-apikeys-fg-api")
 
@@ -432,14 +433,15 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
             Ok(
               JsArray(
                 apiKeys
-                    .filter(ctx.canUserRead)
-                    .filter {
-                      case keys if group.isDefined && keys.authorizedOnGroup(group.get) => true
-                      case keys if clientId.isDefined && keys.clientId == clientId.get => true
-                      case keys if name.isDefined && keys.clientName == name.get => true
-                      case keys if enabled.isDefined && keys.enabled == enabled.get.toBoolean => true
-                      case _ => false
-                    }.slice(paginationPosition, paginationPosition + paginationPageSize)
+                  .filter(ctx.canUserRead)
+                  .filter {
+                    case keys if group.isDefined && keys.authorizedOnGroup(group.get)       => true
+                    case keys if clientId.isDefined && keys.clientId == clientId.get        => true
+                    case keys if name.isDefined && keys.clientName == name.get              => true
+                    case keys if enabled.isDefined && keys.enabled == enabled.get.toBoolean => true
+                    case _                                                                  => false
+                  }
+                  .slice(paginationPosition, paginationPosition + paginationPageSize)
                   .map(_.toJson)
               )
             )
@@ -639,7 +641,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
     with AdminApiHelper {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-apikeys-api")
 

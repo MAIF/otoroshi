@@ -52,27 +52,27 @@ case class RequestContext(
   def runMirrorRequest(env: Env): Unit = {
     started.compareAndSet(false, true)
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val ev: Env = env
-    implicit val mat: Materializer = env.otoroshiMaterializer
-    val req                 = request
-    val currentReqHasBody   = req.theHasBody
-    val httpRequest         = otoRequest.get()
-    val uri                 = Uri(config.to)
-    val url                 = httpRequest.uri.copy(
+    implicit val ev: Env              = env
+    implicit val mat: Materializer    = env.otoroshiMaterializer
+    val req                           = request
+    val currentReqHasBody             = req.theHasBody
+    val httpRequest                   = otoRequest.get()
+    val uri                           = Uri(config.to)
+    val url                           = httpRequest.uri.copy(
       scheme = uri.scheme,
       authority = uri.authority.copy(
         host = uri.authority.host,
         port = uri.authority.port
       )
     )
-    val mReq                = httpRequest.copy(
+    val mReq                          = httpRequest.copy(
       url = url.toString(),
       headers = httpRequest.headers.filterNot(_._1 == "Host") ++ Seq("Host" -> url.authority.host.toString())
     )
     mirroredRequest.set(mReq)
-    val finalTarget: Target = Target(host = url.authority.host.toString(), scheme = url.scheme)
-    val globalConfig        = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
-    val clientReq           = descriptor.useAkkaHttpClient match {
+    val finalTarget: Target           = Target(host = url.authority.host.toString(), scheme = url.scheme)
+    val globalConfig                  = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
+    val clientReq                     = descriptor.useAkkaHttpClient match {
       case _ if finalTarget.mtlsConfig.mtls =>
         env.gatewayClient.akkaUrlWithTarget(
           UrlSanitizer.sanitize(url.toString()),
@@ -92,10 +92,10 @@ case class RequestContext(
           descriptor.clientConfig
         )
     }
-    val body                =
+    val body                          =
       if (currentReqHasBody) InMemoryBody(input.get())
       else EmptyBody
-    val builder: WSRequest  = clientReq
+    val builder: WSRequest            = clientReq
       .withRequestTimeout(
         descriptor.clientConfig.extractTimeout(req.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
       )
@@ -111,7 +111,7 @@ case class RequestContext(
       .withMaybeProxyServer(
         descriptor.clientConfig.proxy.orElse(globalConfig.proxies.services)
       )
-    val builderWithBody     = if (currentReqHasBody) {
+    val builderWithBody               = if (currentReqHasBody) {
       builder.withBody(body)
     } else {
       builder
@@ -290,12 +290,10 @@ class MirroringPlugin extends RequestTransformer {
         config = cfg
       )
       inFlightRequests.putIfAbsent(ctx.snowflake, context)
-      done.future.andThen {
-        case Success(_) =>
-            mirrorDone.future.andThen {
-              case Success(_) =>
-                  context.generateEvent(env)
-            }
+      done.future.andThen { case Success(_) =>
+        mirrorDone.future.andThen { case Success(_) =>
+          context.generateEvent(env)
+        }
       }
     }
     ().future

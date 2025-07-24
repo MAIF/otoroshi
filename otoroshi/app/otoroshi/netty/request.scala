@@ -27,11 +27,11 @@ import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 object NettyRequestKeys {
-  val TlsSessionKey: TypedKey[Option[SSLSession]]        = TypedKey[Option[SSLSession]]("Tls-Session")
-  val TlsVersionKey: TypedKey[Option[TlsVersion]]        = TypedKey[Option[TlsVersion]]("Tls-Version")
-  val TrailerHeadersIdKey: TypedKey[String]  = TypedKey[String]("Trailer-Headers-Id")
-  val ListenerIdKey: TypedKey[String]        = TypedKey[String]("Listener-Id")
-  val ListenerExclusiveKey: TypedKey[Boolean] = TypedKey[Boolean]("Listener-Exclusive")
+  val TlsSessionKey: TypedKey[Option[SSLSession]] = TypedKey[Option[SSLSession]]("Tls-Session")
+  val TlsVersionKey: TypedKey[Option[TlsVersion]] = TypedKey[Option[TlsVersion]]("Tls-Version")
+  val TrailerHeadersIdKey: TypedKey[String]       = TypedKey[String]("Trailer-Headers-Id")
+  val ListenerIdKey: TypedKey[String]             = TypedKey[String]("Listener-Id")
+  val ListenerExclusiveKey: TypedKey[Boolean]     = TypedKey[Boolean]("Listener-Exclusive")
 }
 
 object NettyRequestAwaitingTrailers {
@@ -103,7 +103,7 @@ class ReactorNettyRemoteConnection(req: HttpServerRequest, val secure: Boolean, 
 }
 
 class ReactorNettyRequestTarget(req: HttpServerRequest) extends RequestTarget {
-  lazy val kUri: Uri                               = org.apache.pekko.http.scaladsl.model.Uri(uriString)
+  lazy val kUri: Uri                          = org.apache.pekko.http.scaladsl.model.Uri(uriString)
   lazy val uri: URI                           = new URI(uriString)
   lazy val uriString: String                  = req.uri()
   lazy val path: String                       = req.fullPath()
@@ -167,8 +167,8 @@ class ReactorNettyRequestHeader(
       }
       .getOrElse(Flash())
   }
-  val count: Long                             = ReactorNettyRequest.counter.incrementAndGet()
-  lazy val attrs: TypedMap                        = TypedMap
+  val count: Long                       = ReactorNettyRequest.counter.incrementAndGet()
+  lazy val attrs: TypedMap              = TypedMap
     .apply(
       RequestAttrKey.Id                    -> count,
       RequestAttrKey.Session               -> Cell(zeSession),
@@ -224,7 +224,8 @@ class ReactorNettyRequestHeader(
       .entries()
       .asScala
       .map(e => (e.getKey, e.getValue))
-      .filterNot(_._1.toLowerCase == "otoroshi-tls-version").toSeq ++ sessionOpt.toSeq.flatMap(s =>
+      .filterNot(_._1.toLowerCase == "otoroshi-tls-version")
+      .toSeq ++ sessionOpt.toSeq.flatMap(s =>
       Seq(
         ("Tls-Session-Info", s.toString)
       )
@@ -288,7 +289,7 @@ class NettyRemoteConnection(
 }
 
 class NettyRequestTarget(req: HttpRequest) extends RequestTarget {
-  lazy val kUri: Uri                               = org.apache.pekko.http.scaladsl.model.Uri(uriString)
+  lazy val kUri: Uri                          = org.apache.pekko.http.scaladsl.model.Uri(uriString)
   lazy val uri: URI                           = new URI(uriString)
   lazy val uriString: String                  = req.uri()
   lazy val path: String                       = kUri.path.toString()
@@ -335,10 +336,10 @@ class NettyRequestHeader(
     addressGet: () => String
 ) extends RequestHeader {
 
-  lazy val _cookies: Map[String, Seq[NettyCookie]]                     = Option(req.headers().get("Cookie"))
+  lazy val _cookies: Map[String, Seq[NettyCookie]] = Option(req.headers().get("Cookie"))
     .map(c => ServerCookieDecoder.LAX.decode(c).asScala.groupBy(_.name()).view.mapValues(_.toSeq))
     .getOrElse(Map.empty[String, Seq[DefaultCookie]])
-      .toMap
+    .toMap
 
   lazy val zeSession: Session = {
     _cookies
@@ -358,8 +359,8 @@ class NettyRequestHeader(
       }
       .getOrElse(Flash())
   }
-  val count: Long                             = NettyRequest.counter.incrementAndGet()
-  lazy val attrs: TypedMap                        = TypedMap.apply(
+  val count: Long                                  = NettyRequest.counter.incrementAndGet()
+  lazy val attrs: TypedMap                         = TypedMap.apply(
     RequestAttrKey.Id                    -> count,
     RequestAttrKey.Session               -> Cell(zeSession),
     RequestAttrKey.Flash                 -> Cell(zeFlash),
@@ -403,22 +404,23 @@ class NettyRequestHeader(
       }
     }))
   )
-  lazy val method: String               = req.method().toString
-  lazy val version: String              = req.protocolVersion().toString
-  lazy val headers: Headers             = Headers(
+  lazy val method: String                          = req.method().toString
+  lazy val version: String                         = req.protocolVersion().toString
+  lazy val headers: Headers                        = Headers(
     (req
       .headers()
       .entries()
       .asScala
       .map(e => (e.getKey, e.getValue))
-      .filterNot(_._1.toLowerCase == "otoroshi-tls-version").toSeq ++ sessionOpt.toSeq.flatMap(s =>
+      .filterNot(_._1.toLowerCase == "otoroshi-tls-version")
+      .toSeq ++ sessionOpt.toSeq.flatMap(s =>
       Seq(
         ("Tls-Session-Info", s.toString)
       )
     )): _*
   )
-  lazy val connection: RemoteConnection = new NettyRemoteConnection(req, ctx, secure, sessionOpt, addressGet)
-  lazy val target: RequestTarget        = new NettyRequestTarget(req)
+  lazy val connection: RemoteConnection            = new NettyRemoteConnection(req, ctx, secure, sessionOpt, addressGet)
+  lazy val target: RequestTarget                   = new NettyRequestTarget(req)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

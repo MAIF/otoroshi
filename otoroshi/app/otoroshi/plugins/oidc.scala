@@ -126,7 +126,6 @@ class OIDCHeaders extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     ctx.user match {
       case Some(user) if user.token.asOpt[JsObject].exists(_.value.nonEmpty) =>
-
         val config = ctx.configFor("OIDCHeaders")
 
         val sendProfile       = (config \ "profile" \ "send").asOpt[Boolean].getOrElse(true)
@@ -155,7 +154,7 @@ class OIDCHeaders extends RequestTransformer {
             headers = ctx.otoroshiRequest.headers ++ profileMap ++ idTokenMap ++ accessTokenMap
           )
         ).future
-      case _ => Right(ctx.otoroshiRequest).future
+      case _                                                                 => Right(ctx.otoroshiRequest).future
     }
   }
 }
@@ -223,9 +222,12 @@ class OIDCAccessTokenValidator extends AccessValidator {
               .map(o => Seq(o))
               .orElse((conf \ "config").asOpt[JsArray].map(_.value))
               .map(seq =>
-                seq.map(v => ThirdPartyApiKeyConfig.format.reads(v)).collect { case JsSuccess(c, _) =>
-                  c
-                }.toSeq
+                seq
+                  .map(v => ThirdPartyApiKeyConfig.format.reads(v))
+                  .collect { case JsSuccess(c, _) =>
+                    c
+                  }
+                  .toSeq
               )
               .getOrElse(Seq.empty)
         }
@@ -326,9 +328,12 @@ class OIDCAccessTokenAsApikey extends PreRouting {
               .map(o => Seq(o))
               .orElse((conf \ "config").asOpt[JsArray].map(_.value))
               .map(seq =>
-                seq.map(v => ThirdPartyApiKeyConfig.format.reads(v)).collect { case JsSuccess(c, _) =>
-                  c
-                }.toSeq
+                seq
+                  .map(v => ThirdPartyApiKeyConfig.format.reads(v))
+                  .collect { case JsSuccess(c, _) =>
+                    c
+                  }
+                  .toSeq
               )
               .getOrElse(Seq.empty)
         }
@@ -478,123 +483,124 @@ case class OIDCThirdPartyApiKeyConfig(
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     if (shouldBeVerified(req.path)) {
       oidcConfigRef match {
-        case None =>
+        case None      =>
           Errors
-              .craftResponseResult(
-                message = "No OIDC configuration ref found",
-                status = Results.InternalServerError,
-                req = req,
-                maybeDescriptor = Some(descriptor),
-                maybeCauseId = Some("oidc.no.config.ref.found"),
-                attrs = attrs
-              )
-              .fleft[A]
+            .craftResponseResult(
+              message = "No OIDC configuration ref found",
+              status = Results.InternalServerError,
+              req = req,
+              maybeDescriptor = Some(descriptor),
+              maybeCauseId = Some("oidc.no.config.ref.found"),
+              attrs = attrs
+            )
+            .fleft[A]
         case Some(ref) =>
           // env.datastores.authConfigsDataStore.findById(ref).flatMap {
           env.proxyState.authModuleAsync(ref).flatMap {
-            case None =>
+            case None       =>
               Errors
-                  .craftResponseResult(
-                    message = "No OIDC configuration found",
-                    status = Results.InternalServerError,
-                    req = req,
-                    maybeDescriptor = Some(descriptor),
-                    maybeCauseId = Some("oidc.no.config.found"),
-                    attrs = attrs
-                  )
-                  .fleft[A]
+                .craftResponseResult(
+                  message = "No OIDC configuration found",
+                  status = Results.InternalServerError,
+                  req = req,
+                  maybeDescriptor = Some(descriptor),
+                  maybeCauseId = Some("oidc.no.config.found"),
+                  attrs = attrs
+                )
+                .fleft[A]
             case Some(auth) =>
               val oidcAuth = auth.asInstanceOf[GenericOauth2ModuleConfig]
               oidcAuth.jwtVerifier match {
-                case None =>
+                case None              =>
                   Errors
-                      .craftResponseResult(
-                        message = "No JWT verifier found",
-                        status = Results.BadRequest,
-                        req = req,
-                        maybeDescriptor = Some(descriptor),
-                        maybeCauseId = Some("oidc.no.jwt.verifier.found"),
-                        attrs = attrs
-                      )
-                      .fleft[A]
+                    .craftResponseResult(
+                      message = "No JWT verifier found",
+                      status = Results.BadRequest,
+                      req = req,
+                      maybeDescriptor = Some(descriptor),
+                      maybeCauseId = Some("oidc.no.jwt.verifier.found"),
+                      attrs = attrs
+                    )
+                    .fleft[A]
                 case Some(jwtVerifier) =>
                   req.headers.get(headerName) match {
-                    case None =>
+                    case None            =>
                       Errors
-                          .craftResponseResult(
-                            message = "No bearer header found",
-                            status = Results.BadRequest,
-                            req = req,
-                            maybeDescriptor = Some(descriptor),
-                            maybeCauseId = Some("oidc.no.bearer.found"),
-                            attrs = attrs
-                          )
-                          .fleft[A]
+                        .craftResponseResult(
+                          message = "No bearer header found",
+                          status = Results.BadRequest,
+                          req = req,
+                          maybeDescriptor = Some(descriptor),
+                          maybeCauseId = Some("oidc.no.bearer.found"),
+                          attrs = attrs
+                        )
+                        .fleft[A]
                     case Some(rawHeader) =>
-                      val header = rawHeader.replace("Bearer ", "").replace("bearer ", "").trim()
+                      val header      = rawHeader.replace("Bearer ", "").replace("bearer ", "").trim()
                       val tokenHeader =
                         Try(Json.parse(JavaBase64.getDecoder.decode(header.split("\\.")(0)))).getOrElse(Json.obj())
-                      val tokenBody =
+                      val tokenBody   =
                         Try(Json.parse(JavaBase64.getDecoder.decode(header.split("\\.")(1)))).getOrElse(Json.obj())
-                      val kid = (tokenHeader \ "kid").asOpt[String].filterNot(_.trim.isEmpty)
-                      val alg = (tokenHeader \ "alg").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("RS256")
+                      val kid         = (tokenHeader \ "kid").asOpt[String].filterNot(_.trim.isEmpty)
+                      val alg         = (tokenHeader \ "alg").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("RS256")
                       jwtVerifier.asAlgorithmF(InputMode(alg, kid)) flatMap {
-                        case None =>
+                        case None            =>
                           Errors
-                              .craftResponseResult(
-                                "Bad input algorithm",
-                                Results.BadRequest,
-                                req,
-                                Some(descriptor),
-                                maybeCauseId = Some("oidc.bad.input.algorithm.name"),
-                                attrs = attrs
-                              )
-                              .fleft[A]
+                            .craftResponseResult(
+                              "Bad input algorithm",
+                              Results.BadRequest,
+                              req,
+                              Some(descriptor),
+                              maybeCauseId = Some("oidc.bad.input.algorithm.name"),
+                              attrs = attrs
+                            )
+                            .fleft[A]
                         case Some(algorithm) =>
                           val verifier = JWT.require(algorithm).acceptLeeway(10).build()
                           Try(verifier.verify(header)) match {
                             case Failure(e) =>
                               Errors
-                                  .craftResponseResult(
-                                    "Bad token",
-                                    Results.Unauthorized,
-                                    req,
-                                    Some(descriptor),
-                                    maybeCauseId = Some("oidc.bad.token"),
-                                    attrs = attrs
-                                  )
-                                  .fleft[A]
+                                .craftResponseResult(
+                                  "Bad token",
+                                  Results.Unauthorized,
+                                  req,
+                                  Some(descriptor),
+                                  maybeCauseId = Some("oidc.bad.token"),
+                                  attrs = attrs
+                                )
+                                .fleft[A]
                             case Success(_) =>
-                              val iss = (tokenBody \ "iss").as[String]
-                              val subject = (tokenBody \ "sub").as[String]
+                              val iss                                     = (tokenBody \ "iss").as[String]
+                              val subject                                 = (tokenBody \ "sub").as[String]
                               val possibleMoreMeta: Seq[(String, String)] = (tokenBody \ oidcAuth.apiKeyMetaField)
-                                  .asOpt[JsObject]
-                                  .getOrElse(Json.obj())
-                                  .value
-                                  .toSeq
-                                  .collect {
-                                    case (key, JsString(str)) => (key, str)
-                                    case (key, JsNumber(nbr)) => (key, nbr.toString())
-                                    case (key, JsBoolean(b)) => (key, b.toString())
-                                    case (key, arr@JsArray(_)) => (key, Json.stringify(arr))
-                                    case (key, obj@JsObject(_)) => (key, Json.stringify(obj))
-                                    case (key, JsNull) => (key, "null")
-                                  }
-                              val possibleMoreTags: Seq[String] = (tokenBody \ oidcAuth.apiKeyTagsField)
-                                  .asOpt[JsArray]
-                                  .getOrElse(JsArray())
-                                  .value
-                                  .collect {
-                                    case JsString(str) => str
-                                    case JsNumber(nbr) => nbr.toString()
-                                    case JsBoolean(b) => b.toString()
-                                    case arr@JsArray(_) => Json.stringify(arr)
-                                    case obj@JsObject(_) => Json.stringify(obj)
-                                    case JsNull => "null"
-                                  }.toSeq
-                              val _apiKey = ApiKey(
+                                .asOpt[JsObject]
+                                .getOrElse(Json.obj())
+                                .value
+                                .toSeq
+                                .collect {
+                                  case (key, JsString(str))     => (key, str)
+                                  case (key, JsNumber(nbr))     => (key, nbr.toString())
+                                  case (key, JsBoolean(b))      => (key, b.toString())
+                                  case (key, arr @ JsArray(_))  => (key, Json.stringify(arr))
+                                  case (key, obj @ JsObject(_)) => (key, Json.stringify(obj))
+                                  case (key, JsNull)            => (key, "null")
+                                }
+                              val possibleMoreTags: Seq[String]           = (tokenBody \ oidcAuth.apiKeyTagsField)
+                                .asOpt[JsArray]
+                                .getOrElse(JsArray())
+                                .value
+                                .collect {
+                                  case JsString(str)     => str
+                                  case JsNumber(nbr)     => nbr.toString()
+                                  case JsBoolean(b)      => b.toString()
+                                  case arr @ JsArray(_)  => Json.stringify(arr)
+                                  case obj @ JsObject(_) => Json.stringify(obj)
+                                  case JsNull            => "null"
+                                }
+                                .toSeq
+                              val _apiKey                                 = ApiKey(
                                 clientId = uniqueApiKey match {
-                                  case true => s"${descriptor.id}-${oidcAuth.id}"
+                                  case true  => s"${descriptor.id}-${oidcAuth.id}"
                                   case false => s"${descriptor.id}-${oidcAuth.id}-$subject"
                                 },
                                 clientSecret = IdGenerator.token(128),
@@ -610,39 +616,39 @@ case class OIDCThirdPartyApiKeyConfig(
                                 validUntil = None,
                                 tags = possibleMoreTags,
                                 metadata = Map(
-                                  "type" -> "Auto generated apikey corresponding to an OIDC JWT token. Please do not enable it !",
-                                  "iss" -> iss,
-                                  "sub" -> subject,
-                                  "desc" -> descriptor.id,
+                                  "type"     -> "Auto generated apikey corresponding to an OIDC JWT token. Please do not enable it !",
+                                  "iss"      -> iss,
+                                  "sub"      -> subject,
+                                  "desc"     -> descriptor.id,
                                   "descName" -> descriptor.name,
-                                  "auth" -> oidcAuth.id,
+                                  "auth"     -> oidcAuth.id,
                                   "authName" -> oidcAuth.name
                                 ) ++ possibleMoreMeta
                               )
-                              val tokenScopes = (tokenBody \ "scope")
-                                  .asOpt[String]
-                                  .filterNot(_.trim.isEmpty)
-                                  .map(_.split(" ").toSeq)
-                                  .getOrElse(Seq.empty[String])
-                              val tokenRoles: Seq[String] = rolesPath
-                                  .flatMap(p => findAt(tokenBody, p))
-                                  .collect {
-                                    case JsString(str) => Seq(str)
-                                    case JsArray(v) => v.flatMap(_.asOpt[String].filterNot(_.trim.isEmpty))
-                                  }
-                                  .flatten
+                              val tokenScopes                             = (tokenBody \ "scope")
+                                .asOpt[String]
+                                .filterNot(_.trim.isEmpty)
+                                .map(_.split(" ").toSeq)
+                                .getOrElse(Seq.empty[String])
+                              val tokenRoles: Seq[String]                 = rolesPath
+                                .flatMap(p => findAt(tokenBody, p))
+                                .collect {
+                                  case JsString(str) => Seq(str)
+                                  case JsArray(v)    => v.flatMap(_.asOpt[String].filterNot(_.trim.isEmpty))
+                                }
+                                .flatten
                               if (tokenScopes.intersect(scopes) == scopes && tokenRoles.intersect(roles) == roles) {
                                 (mode match {
-                                  case OIDCThirdPartyApiKeyConfigMode.Tmp => FastFuture.successful(_apiKey)
-                                  case OIDCThirdPartyApiKeyConfigMode.Hybrid =>
+                                  case OIDCThirdPartyApiKeyConfigMode.Tmp        => FastFuture.successful(_apiKey)
+                                  case OIDCThirdPartyApiKeyConfigMode.Hybrid     =>
                                     env.datastores.apiKeyDataStore.findById(_apiKey.clientId).map {
                                       case Some(apk) => apk
-                                      case None => _apiKey
+                                      case None      => _apiKey
                                     }
                                   case OIDCThirdPartyApiKeyConfigMode.Persistent =>
                                     env.datastores.apiKeyDataStore.findById(_apiKey.clientId).flatMap {
                                       case Some(apk) => FastFuture.successful(apk)
-                                      case None =>
+                                      case None      =>
                                         if (env.clusterConfig.mode.isWorker) {
                                           ClusterAgent.clusterSaveApikey(env, _apiKey)(ec, env.otoroshiMaterializer)
                                         }
@@ -652,10 +658,10 @@ case class OIDCThirdPartyApiKeyConfig(
                                     }
                                 }) flatMap { apiKey =>
                                   (quotasEnabled match {
-                                    case true => apiKey.withinQuotasAndRotation()
+                                    case true  => apiKey.withinQuotasAndRotation()
                                     case false => FastFuture.successful(true)
                                   }).flatMap {
-                                    case true =>
+                                    case true  =>
                                       if (localVerificationOnly) {
                                         f(Some(apiKey)).fright[Result]
                                       } else {
@@ -665,83 +671,83 @@ case class OIDCThirdPartyApiKeyConfig(
                                               f(Some(apiKey)).fright[Result]
                                             } else {
                                               Errors
-                                                  .craftResponseResult(
-                                                    "Invalid api key",
-                                                    Results.Unauthorized,
-                                                    req,
-                                                    Some(descriptor),
-                                                    maybeCauseId = Some("oidc.invalid.token"),
-                                                    attrs = attrs
-                                                  )
-                                                  .fleft[A]
+                                                .craftResponseResult(
+                                                  "Invalid api key",
+                                                  Results.Unauthorized,
+                                                  req,
+                                                  Some(descriptor),
+                                                  maybeCauseId = Some("oidc.invalid.token"),
+                                                  attrs = attrs
+                                                )
+                                                .fleft[A]
                                             }
-                                          case _ =>
+                                          case _                                                         =>
                                             val clientSecret = Option(oidcAuth.clientSecret).filterNot(_.trim.isEmpty)
-                                            val builder =
+                                            val builder      =
                                               env.MtlsWs.url(oidcAuth.introspectionUrl, oidcAuth.mtlsConfig)
-                                            val future1 = if (oidcAuth.useJson) {
+                                            val future1      = if (oidcAuth.useJson) {
                                               builder.post(
                                                 Json.obj(
-                                                  "token" -> header,
+                                                  "token"     -> header,
                                                   "client_id" -> oidcAuth.clientId
                                                 ) ++ clientSecret
-                                                    .map(s => Json.obj("client_secret" -> s))
-                                                    .getOrElse(Json.obj())
+                                                  .map(s => Json.obj("client_secret" -> s))
+                                                  .getOrElse(Json.obj())
                                               )
                                             } else {
                                               builder.post(
                                                 Map(
-                                                  "token" -> header,
+                                                  "token"     -> header,
                                                   "client_id" -> oidcAuth.clientId
                                                 ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
                                               )(writeableOf_urlEncodedSimpleForm)
                                             }
                                             future1
-                                                .flatMap { resp =>
-                                                  val active = (resp.json \ "active").asOpt[Boolean].getOrElse(false)
-                                                  OIDCThirdPartyApiKeyConfig.cache
-                                                      .put(apiKey.clientId, (System.currentTimeMillis() + ttl, active))
-                                                  if (active) {
-                                                    f(Some(apiKey)).fright[Result]
-                                                  } else {
-                                                    Errors
-                                                        .craftResponseResult(
-                                                          "Invalid api key",
-                                                          Results.Unauthorized,
-                                                          req,
-                                                          Some(descriptor),
-                                                          maybeCauseId = Some("oidc.invalid.token"),
-                                                          attrs = attrs
-                                                        )
-                                                        .fleft[A]
-                                                  }
+                                              .flatMap { resp =>
+                                                val active = (resp.json \ "active").asOpt[Boolean].getOrElse(false)
+                                                OIDCThirdPartyApiKeyConfig.cache
+                                                  .put(apiKey.clientId, (System.currentTimeMillis() + ttl, active))
+                                                if (active) {
+                                                  f(Some(apiKey)).fright[Result]
+                                                } else {
+                                                  Errors
+                                                    .craftResponseResult(
+                                                      "Invalid api key",
+                                                      Results.Unauthorized,
+                                                      req,
+                                                      Some(descriptor),
+                                                      maybeCauseId = Some("oidc.invalid.token"),
+                                                      attrs = attrs
+                                                    )
+                                                    .fleft[A]
                                                 }
+                                              }
                                         }
                                       }
                                     case false =>
                                       Errors
-                                          .craftResponseResult(
-                                            "You performed too much requests",
-                                            TooManyRequests,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.too.much.requests"),
-                                            attrs = attrs
-                                          )
-                                          .fleft[A]
+                                        .craftResponseResult(
+                                          "You performed too much requests",
+                                          TooManyRequests,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.too.much.requests"),
+                                          attrs = attrs
+                                        )
+                                        .fleft[A]
                                   }
                                 }
                               } else {
                                 Errors
-                                    .craftResponseResult(
-                                      "Invalid token",
-                                      Results.Unauthorized,
-                                      req,
-                                      Some(descriptor),
-                                      maybeCauseId = Some("oidc.invalid.token"),
-                                      attrs = attrs
-                                    )
-                                    .fleft[A]
+                                  .craftResponseResult(
+                                    "Invalid token",
+                                    Results.Unauthorized,
+                                    req,
+                                    Some(descriptor),
+                                    maybeCauseId = Some("oidc.invalid.token"),
+                                    attrs = attrs
+                                  )
+                                  .fleft[A]
                               }
                           }
                       }

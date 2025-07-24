@@ -70,7 +70,7 @@ case class Thresholds(
 
 case class Efficiency(excludedPaths: Seq[String] = Seq.empty) {
   def json(): JsObject = Json.obj(
-    "paths" -> JsArray(excludedPaths.map(JsString))
+    "paths" -> JsArray(excludedPaths.map(JsString.apply))
   )
 }
 
@@ -153,7 +153,8 @@ object Rule {
               weight = item.select("weight").as[Double],
               sectionWeight = item.select("section_weight").as[Double]
             )
-          ).toSeq
+          )
+          .toSeq
       )
     } recover { case e =>
       JsError(e.getMessage)
@@ -194,7 +195,8 @@ object RuleState {
               id = RuleId(item.select("id").as[String]),
               enabled = item.select("enabled").asOpt[Boolean].getOrElse(true)
             )
-          ).toSeq
+          )
+          .toSeq
       )
     } recover { case e =>
       JsError(e.getMessage)

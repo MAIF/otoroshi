@@ -28,8 +28,8 @@ case class NgLegacyApikeyCallConfig(
   override def json: JsValue = NgLegacyApikeyCallConfig.format.writes(this)
 }
 object NgLegacyApikeyCallConfig {
-  val default: NgLegacyApikeyCallConfig = NgLegacyApikeyCallConfig(Seq.empty, Seq.empty, NgApikeyCallsConfig())
-  val format: Format[NgLegacyApikeyCallConfig]  = new Format[NgLegacyApikeyCallConfig] {
+  val default: NgLegacyApikeyCallConfig        = NgLegacyApikeyCallConfig(Seq.empty, Seq.empty, NgApikeyCallsConfig())
+  val format: Format[NgLegacyApikeyCallConfig] = new Format[NgLegacyApikeyCallConfig] {
     override def writes(o: NgLegacyApikeyCallConfig): JsValue             = Json.obj(
       "public_patterns"  -> o.publicPatterns,
       "private_patterns" -> o.privatePatterns
@@ -78,7 +78,7 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
     val plugin = env.scriptManager
       .getAnyScript[NgRouteMatcher](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext) match {
       case Right(matcher) => matcher
-      case Left(error) => throw new RuntimeException(s"Failed to load ApikeyCalls plugin: $error")
+      case Left(error)    => throw new RuntimeException(s"Failed to load ApikeyCalls plugin: $error")
     }
     plugin.matches(ctx)(env)
   }
@@ -88,7 +88,7 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
     val plugin = env.scriptManager
       .getAnyScript[NgRequestTransformer](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext) match {
       case Right(transformer) => transformer
-      case Left(error) => throw new RuntimeException(s"Failed to load ApikeyCalls plugin: $error")
+      case Left(error)        => throw new RuntimeException(s"Failed to load ApikeyCalls plugin: $error")
     }
     plugin.transformRequestSync(ctx)(env, ec, mat)
   }
@@ -96,7 +96,7 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
     val plugin     = env.scriptManager
       .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext) match {
       case Right(validator) => validator
-      case Left(error) => throw new RuntimeException(s"Failed to load ApikeyCalls plugin: $error")
+      case Left(error)      => throw new RuntimeException(s"Failed to load ApikeyCalls plugin: $error")
     }
     val config     = configCache.get(
       ctx.route.cacheableId,
@@ -179,19 +179,19 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
       configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     val maybeUser = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
     (if (config.passWithUser) {
-      maybeUser match {
-        case Some(_) => true.future
-        case None =>
-          PrivateAppsUserHelper.isPrivateAppsSessionValid(ctx.request, ctx.route.legacy, ctx.attrs).map {
-            case Some(user) =>
-              ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
-              true
-            case None => false
-          }
-      }
-    } else {
-      false.future
-    }).flatMap { pass =>
+       maybeUser match {
+         case Some(_) => true.future
+         case None    =>
+           PrivateAppsUserHelper.isPrivateAppsSessionValid(ctx.request, ctx.route.legacy, ctx.attrs).map {
+             case Some(user) =>
+               ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+               true
+             case None       => false
+           }
+       }
+     } else {
+       false.future
+     }).flatMap { pass =>
       ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
         case None if config.validate && config.mandatory && !pass   =>
           // Here are 2 + 12 datastore calls to handle quotas
@@ -318,7 +318,7 @@ case class NgApikeyExtractorBasic(
 }
 
 object NgApikeyExtractorBasic {
-  val format: Format[NgApikeyExtractorBasic]                                                      = new Format[NgApikeyExtractorBasic] {
+  val format: Format[NgApikeyExtractorBasic]                      = new Format[NgApikeyExtractorBasic] {
     override def writes(o: NgApikeyExtractorBasic): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorBasic] = JsonHelpers.reader {
       NgApikeyExtractorBasic(
@@ -363,7 +363,7 @@ case class NgApikeyExtractorClientId(
 }
 
 object NgApikeyExtractorClientId {
-  val format: Format[NgApikeyExtractorClientId]                                                            = new Format[NgApikeyExtractorClientId] {
+  val format: Format[NgApikeyExtractorClientId]                         = new Format[NgApikeyExtractorClientId] {
     override def writes(o: NgApikeyExtractorClientId): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorClientId] = JsonHelpers.reader {
       NgApikeyExtractorClientId(
@@ -402,7 +402,7 @@ case class NgApikeyExtractorCustomHeaders(
 }
 
 object NgApikeyExtractorCustomHeaders {
-  val format: Format[NgApikeyExtractorCustomHeaders]                                                                      = new Format[NgApikeyExtractorCustomHeaders] {
+  val format: Format[NgApikeyExtractorCustomHeaders]                              = new Format[NgApikeyExtractorCustomHeaders] {
     override def writes(o: NgApikeyExtractorCustomHeaders): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorCustomHeaders] = JsonHelpers.reader {
       NgApikeyExtractorCustomHeaders(
@@ -452,7 +452,7 @@ object NgApikeyExtractorOtoBearer {
     cookieName = s.cookieName,
     pathName = s.pathName
   )
-  val format: Format[NgApikeyExtractorOtoBearer]                                                          = new Format[NgApikeyExtractorOtoBearer] {
+  val format: Format[NgApikeyExtractorOtoBearer]                      = new Format[NgApikeyExtractorOtoBearer] {
     override def writes(o: NgApikeyExtractorOtoBearer): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorOtoBearer] =
       Try {
@@ -507,7 +507,7 @@ case class NgApikeyExtractorJwt(
 }
 
 object NgApikeyExtractorJwt {
-  val format: Format[NgApikeyExtractorJwt]                                                  = new Format[NgApikeyExtractorJwt] {
+  val format: Format[NgApikeyExtractorJwt]                    = new Format[NgApikeyExtractorJwt] {
     override def writes(o: NgApikeyExtractorJwt): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorJwt] = JsonHelpers.reader {
       NgApikeyExtractorJwt(
@@ -548,7 +548,7 @@ case class NgApikeyMatcher(
     noneMetaKeysIn: Seq[String] = Seq.empty,
     oneMetaKeyIn: Seq[String] = Seq.empty,
     allMetaKeysIn: Seq[String] = Seq.empty
-) extends {
+) {
   lazy val legacy: ApiKeyRouteMatcher       = ApiKeyRouteMatcher(
     noneTagIn = noneTagIn,
     oneTagIn = oneTagIn,
@@ -586,7 +586,7 @@ case class NgApikeyMatcher(
 }
 
 object NgApikeyMatcher {
-  val format: Format[NgApikeyMatcher]                                             = new Format[NgApikeyMatcher] {
+  val format: Format[NgApikeyMatcher]                    = new Format[NgApikeyMatcher] {
     override def writes(o: NgApikeyMatcher): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyMatcher] = JsonHelpers.reader {
       NgApikeyMatcher(
@@ -679,7 +679,7 @@ case class NgApikeyCallsConfig(
 }
 
 object NgApikeyCallsConfig {
-  val format: Format[NgApikeyCallsConfig]                                                = new Format[NgApikeyCallsConfig] {
+  val format: Format[NgApikeyCallsConfig]                   = new Format[NgApikeyCallsConfig] {
     override def writes(o: NgApikeyCallsConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyCallsConfig] = Try {
       NgApikeyCallsConfig(
@@ -710,7 +710,8 @@ object NgApikeyCallsConfig {
       jwt = NgApikeyExtractorJwt.fromLegacy(o.jwtAuth),
       otoBearer = NgApikeyExtractorOtoBearer.fromLegacy(o.otoBearerAuth)
     ),
-    routing = NgApikeyMatcher.fromLegacy(o.routing))
+    routing = NgApikeyMatcher.fromLegacy(o.routing)
+  )
 }
 
 case class ApikeyAuthModuleConfig(

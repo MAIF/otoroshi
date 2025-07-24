@@ -533,7 +533,7 @@ object ApiConsumerSubscription {
   ): Future[Either[JsValue, ApiConsumerSubscription]] = {
 
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val e: Env = env
+    implicit val e: Env               = env
 
     def onError(error: String): Either[JsValue, ApiConsumerSubscription] = Json
       .obj(
@@ -960,7 +960,8 @@ case class Api(
           NgRoute(
             location = location,
             id = apiRoute.id,
-            name = s"${apiRoute.name} - ${apiRoute.frontend.methods.mkString(", ")} - ${apiRoute.frontend.domains.map(_.path).mkString(", ")}",
+            name = s"${apiRoute.name} - ${apiRoute.frontend.methods
+              .mkString(", ")} - ${apiRoute.frontend.domains.map(_.path).mkString(", ")}",
             description = description,
             tags = tags,
             metadata = metadata,

@@ -104,30 +104,33 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
         val client = new ClientSupport(new KubernetesClient(KubernetesConfig.theConfig(ctx), env), logger)
         kind match {
           case "ServiceGroup"      =>
-              env.datastores.serviceGroupDataStore.findAll().flatMap { groups =>
-                val res  = KubernetesOtoroshiResource(obj)
-                val json = client.customizeServiceGroup(res.spec, res, groups)
-                ServiceGroup._fmt.reads(json) match {
-                  case JsSuccess(_, _) => success(uid)
-                  case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
-                }
+            env.datastores.serviceGroupDataStore.findAll().flatMap { groups =>
+              val res  = KubernetesOtoroshiResource(obj)
+              val json = client.customizeServiceGroup(res.spec, res, groups)
+              ServiceGroup._fmt.reads(json) match {
+                case JsSuccess(_, _) => success(uid)
+                case JsError(errors) =>
+                  error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
               }
+            }
           case "Organization"      =>
-              env.datastores.tenantDataStore.findAll().flatMap { tenants =>
-                val res  = KubernetesOtoroshiResource(obj)
-                val json = client.customizeTenant(res.spec, res, tenants)
-                Tenant.format.reads(json) match {
-                  case JsSuccess(_, _) => success(uid)
-                  case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
-                }
+            env.datastores.tenantDataStore.findAll().flatMap { tenants =>
+              val res  = KubernetesOtoroshiResource(obj)
+              val json = client.customizeTenant(res.spec, res, tenants)
+              Tenant.format.reads(json) match {
+                case JsSuccess(_, _) => success(uid)
+                case JsError(errors) =>
+                  error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
               }
+            }
           case "Team"              =>
             env.datastores.teamDataStore.findAll().flatMap { teams =>
               val res  = KubernetesOtoroshiResource(obj)
               val json = client.customizeTeam(res.spec, res, teams)
               Team.format.reads(json) match {
                 case JsSuccess(_, _) => success(uid)
-                case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
+                case JsError(errors) =>
+                  error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
               }
             }
           case "ServiceDescriptor" =>
@@ -145,7 +148,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
                   )
                   ServiceDescriptor._fmt.reads(json) match {
                     case JsSuccess(_, _) => success(uid)
-                    case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
+                    case JsError(errors) =>
+                      error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
                   }
                 }
               }
@@ -157,7 +161,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
                 val json = client.customizeApiKey(res.spec, res, secrets, entities, regApk)
                 ApiKey._fmt.reads(json) match {
                   case JsSuccess(_, _) => success(uid)
-                  case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
+                  case JsError(errors) =>
+                    error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
                 }
               }
             }
@@ -167,7 +172,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
               val json = client.customizeGlobalConfig(res.spec, res, entities)
               GlobalConfig._fmt.reads(json) match {
                 case JsSuccess(_, _) => success(uid)
-                case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
+                case JsError(errors) =>
+                  error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
               }
             }
           case "Certificate"       =>
@@ -176,7 +182,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
               val json = client.customizeCert(res.spec, res, entities, regCert)
               Cert._fmt.reads(json) match {
                 case JsSuccess(_, _) => success(uid)
-                case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
+                case JsError(errors) =>
+                  error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
               }
             }
           case "JwtVerifier"       =>
@@ -185,7 +192,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
               val json = client.customizeJwtVerifier(res.spec, res, entities)
               GlobalJwtVerifier._fmt.reads(json) match {
                 case JsSuccess(_, _) => success(uid)
-                case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
+                case JsError(errors) =>
+                  error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
               }
             }
           case "AuthModule"        =>
@@ -194,7 +202,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
               val json = client.customizeAuthModule(res.spec, res, entities)
               AuthModuleConfig._fmt(env).reads(json) match {
                 case JsSuccess(_, _) => success(uid)
-                case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
+                case JsError(errors) =>
+                  error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
               }
             }
           case "Script"            =>
@@ -203,7 +212,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
               val json = client.customizeScripts(res.spec, res, entities)
               Script._fmt.reads(json) match {
                 case JsSuccess(_, _) => success(uid)
-                case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
+                case JsError(errors) =>
+                  error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
               }
             }
           case "TcpService"        =>
@@ -212,7 +222,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
               val json = client.customizeTcpService(res.spec, res, entities)
               TcpService.fmt.reads(json) match {
                 case JsSuccess(_, _) => success(uid)
-                case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
+                case JsError(errors) =>
+                  error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
               }
             }
           case "DataExporter"      =>
@@ -221,7 +232,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
               val json = client.customizeDataExporter(res.spec, res, entities)
               DataExporterConfig.format.reads(json) match {
                 case JsSuccess(_, _) => success(uid)
-                case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
+                case JsError(errors) =>
+                  error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
               }
             }
           case "Admin"             =>
@@ -230,7 +242,8 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
               val json = client.customizeAdmin(res.spec, res, admins)
               SimpleOtoroshiAdmin.fmt.reads(json) match {
                 case JsSuccess(_, _) => success(uid)
-                case JsError(errors) => error(uid, errors.map{ case (path, validationError) => (path, validationError.toSeq)}.toSeq)
+                case JsError(errors) =>
+                  error(uid, errors.map { case (path, validationError) => (path, validationError.toSeq) }.toSeq)
               }
             }
           case _                   =>

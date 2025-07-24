@@ -65,8 +65,8 @@ case class WasmPluginValidator(ref: String, error: Option[String] = None) extend
       vm.callExtismFunction("validate", ctx.prettify)(env.otoroshiExecutionContext)
         .map {
           case Right(rawResult) =>
-              val result = Json.parse(rawResult)
-              (result \ "result").asOpt[Boolean].getOrElse(false)
+            val result = Json.parse(rawResult)
+            (result \ "result").asOpt[Boolean].getOrElse(false)
           case Left(_)          => false
         }(env.otoroshiExecutionContext)
     }
@@ -107,9 +107,9 @@ case class OpaPluginValidator(ref: String, error: Option[String] = None) extends
       vm.callOpa("execute", ctx.prettify)(env.otoroshiExecutionContext)
         .map {
           case Right((rawResult, _)) =>
-              val response = Json.parse(rawResult)
-              val result   = response.asOpt[JsArray].getOrElse(Json.arr())
-              (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
+            val response = Json.parse(rawResult)
+            val result   = response.asOpt[JsArray].getOrElse(Json.arr())
+            (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
           case Left(_)               => false
         }(env.otoroshiExecutionContext)
     }

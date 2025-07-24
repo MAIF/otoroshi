@@ -21,7 +21,7 @@ class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-snow-monkey-api")
 
@@ -111,31 +111,31 @@ class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         SnowMonkeyConfig.fromJsonSafe(ctx.request.body) match {
           case JsError(e)           => BadRequest(Json.obj("error" -> "Bad SnowMonkeyConfig format")).future
           case JsSuccess(config, _) =>
-              config.save().map { _ =>
-                val event = AdminApiEvent(
+            config.save().map { _ =>
+              val event = AdminApiEvent(
+                env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                Some(ctx.apiKey),
+                ctx.user,
+                "UPDATED_SNOWMONKEY_CONFIG",
+                s"User updated snowmonkey config",
+                ctx.from,
+                ctx.ua,
+                config.asJson
+              )
+              Audit.send(event)
+              Alerts.send(
+                SnowMonkeyConfigUpdatedAlert(
                   env.snowflakeGenerator.nextIdStr(),
                   env.env,
-                  Some(ctx.apiKey),
-                  ctx.user,
-                  "UPDATED_SNOWMONKEY_CONFIG",
-                  s"User updated snowmonkey config",
+                  ctx.user.getOrElse(ctx.apiKey.toJson),
+                  event,
                   ctx.from,
-                  ctx.ua,
-                  config.asJson
+                  ctx.ua
                 )
-                Audit.send(event)
-                Alerts.send(
-                  SnowMonkeyConfigUpdatedAlert(
-                    env.snowflakeGenerator.nextIdStr(),
-                    env.env,
-                    ctx.user.getOrElse(ctx.apiKey.toJson),
-                    event,
-                    ctx.from,
-                    ctx.ua
-                  )
-                )
-                Ok(config.asJson)
-              }
+              )
+              Ok(config.asJson)
+            }
         }
       }
     }
@@ -149,29 +149,29 @@ class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           SnowMonkeyConfig.fromJsonSafe(newSnowMonkeyConfigJson) match {
             case JsError(e)                        => BadRequest(Json.obj("error" -> "Bad SnowMonkeyConfig format")).future
             case JsSuccess(newSnowMonkeyConfig, _) =>
-                val event: AdminApiEvent = AdminApiEvent(
+              val event: AdminApiEvent = AdminApiEvent(
+                env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                Some(ctx.apiKey),
+                ctx.user,
+                "PATCH_SNOWMONKEY_CONFIG",
+                s"User patched snowmonkey config",
+                ctx.from,
+                ctx.ua,
+                newSnowMonkeyConfigJson
+              )
+              Audit.send(event)
+              Alerts.send(
+                SnowMonkeyConfigUpdatedAlert(
                   env.snowflakeGenerator.nextIdStr(),
                   env.env,
-                  Some(ctx.apiKey),
-                  ctx.user,
-                  "PATCH_SNOWMONKEY_CONFIG",
-                  s"User patched snowmonkey config",
+                  ctx.user.getOrElse(ctx.apiKey.toJson),
+                  event,
                   ctx.from,
-                  ctx.ua,
-                  newSnowMonkeyConfigJson
+                  ctx.ua
                 )
-                Audit.send(event)
-                Alerts.send(
-                  SnowMonkeyConfigUpdatedAlert(
-                    env.snowflakeGenerator.nextIdStr(),
-                    env.env,
-                    ctx.user.getOrElse(ctx.apiKey.toJson),
-                    event,
-                    ctx.from,
-                    ctx.ua
-                  )
-                )
-                newSnowMonkeyConfig.save().map(_ => Ok(newSnowMonkeyConfig.asJson))
+              )
+              newSnowMonkeyConfig.save().map(_ => Ok(newSnowMonkeyConfig.asJson))
           }
         }
       }

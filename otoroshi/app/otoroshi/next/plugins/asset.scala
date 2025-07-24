@@ -17,8 +17,8 @@ case class StaticAssetEndpointConfiguration(url: Option[String] = None) extends 
 }
 
 object StaticAssetEndpointConfiguration {
-  val default: StaticAssetEndpointConfiguration                        = StaticAssetEndpointConfiguration()
-  val format: Format[StaticAssetEndpointConfiguration]                         = new Format[StaticAssetEndpointConfiguration] {
+  val default: StaticAssetEndpointConfiguration        = StaticAssetEndpointConfiguration()
+  val format: Format[StaticAssetEndpointConfiguration] = new Format[StaticAssetEndpointConfiguration] {
     override def reads(json: JsValue): JsResult[StaticAssetEndpointConfiguration] = Try {
       StaticAssetEndpointConfiguration(
         url = json.select("url").asOpt[String].filter(_.nonEmpty)
@@ -31,8 +31,8 @@ object StaticAssetEndpointConfiguration {
       "url" -> o.url.map(_.json).getOrElse(JsNull).asValue
     )
   }
-  val configFlow: Seq[String]        = Seq("url")
-  val configSchema: Option[JsObject] = Some(
+  val configFlow: Seq[String]                          = Seq("url")
+  val configSchema: Option[JsObject]                   = Some(
     Json.obj(
       "url" -> Json.obj(
         "type"  -> "string",
@@ -71,21 +71,21 @@ class StaticAssetEndpoint extends NgRequestTransformer {
     config.url match {
       case None      => ctx.otoroshiRequest.rightf
       case Some(url) =>
-          val uri    = Uri(url)
-          val target = NgTarget(
-            id = uri.authority.host.toString(),
-            hostname = uri.authority.host.toString(),
-            port = uri.effectivePort,
-            tls = url.startsWith("https://"),
-            backup = false
+        val uri    = Uri(url)
+        val target = NgTarget(
+          id = uri.authority.host.toString(),
+          hostname = uri.authority.host.toString(),
+          port = uri.effectivePort,
+          tls = url.startsWith("https://"),
+          backup = false
+        )
+        ctx.otoroshiRequest
+          .copy(
+            backend = target.some,
+            url = url,
+            headers = ctx.otoroshiRequest.headers.removeIgnoreCase("Host").put("Host", uri.authority.host.toString())
           )
-          ctx.otoroshiRequest
-            .copy(
-              backend = target.some,
-              url = url,
-              headers = ctx.otoroshiRequest.headers.removeIgnoreCase("Host").put("Host", uri.authority.host.toString())
-            )
-            .rightf
+          .rightf
     }
   }
 }

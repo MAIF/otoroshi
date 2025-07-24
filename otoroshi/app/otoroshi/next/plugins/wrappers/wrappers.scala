@@ -41,27 +41,27 @@ class PreRoutingWrapper extends NgPreRouting {
           Results.InternalServerError(Json.obj("error" -> "plugin not found", "plugin" -> pluginId))
         ).left.vfuture
       case Right(plugin) =>
-          val octx = PreRoutingContext(
-            ctx.snowflake,
-            0,
-            ctx.request,
-            ctx.route.serviceDescriptor,
-            ctx.config,
-            ctx.attrs,
-            ctx.globalConfig
-          )
-          plugin
-            .preRoute(octx)
-            .map(_ => Done.right)
-            .recover {
-              case PreRoutingError(body, code, contentType, headers) =>
-                NgPreRoutingErrorWithResult(
-                  Results.Status(code)(body).as(contentType).withHeaders(headers.toSeq: _*)
-                ).left
-              case PreRoutingErrorWithResult(r)                      => NgPreRoutingErrorWithResult(r).left
-              case t: Throwable                                      =>
-                NgPreRoutingErrorWithResult(Results.InternalServerError(Json.obj("error" -> t.getMessage()))).left
-            }
+        val octx = PreRoutingContext(
+          ctx.snowflake,
+          0,
+          ctx.request,
+          ctx.route.serviceDescriptor,
+          ctx.config,
+          ctx.attrs,
+          ctx.globalConfig
+        )
+        plugin
+          .preRoute(octx)
+          .map(_ => Done.right)
+          .recover {
+            case PreRoutingError(body, code, contentType, headers) =>
+              NgPreRoutingErrorWithResult(
+                Results.Status(code)(body).as(contentType).withHeaders(headers.toSeq: _*)
+              ).left
+            case PreRoutingErrorWithResult(r)                      => NgPreRoutingErrorWithResult(r).left
+            case t: Throwable                                      =>
+              NgPreRoutingErrorWithResult(Results.InternalServerError(Json.obj("error" -> t.getMessage()))).left
+          }
     }
   }
 }
@@ -101,11 +101,11 @@ class AccessValidatorWrapper extends NgAccessValidator {
           .NgDenied(Results.InternalServerError(Json.obj("error" -> "plugin not found", "plugin" -> pluginId)))
           .vfuture
       case Right(plugin) =>
-          val octx = newContextToOld(ctx, plugin)
-          plugin.access(octx).map {
-            case Allowed   => NgAccess.NgAllowed
-            case Denied(r) => NgAccess.NgDenied(r)
-          }
+        val octx = newContextToOld(ctx, plugin)
+        plugin.access(octx).map {
+          case Allowed   => NgAccess.NgAllowed
+          case Denied(r) => NgAccess.NgDenied(r)
+        }
     }
   }
 }
@@ -144,8 +144,8 @@ class RequestSinkWrapper extends NgRequestSink {
     env.scriptManager.getAnyScript[RequestSink](pluginId) match {
       case Left(err)     => false
       case Right(plugin) =>
-          val octx = newContextToOld(ctx, plugin)
-          plugin.matches(octx)
+        val octx = newContextToOld(ctx, plugin)
+        plugin.matches(octx)
     }
   }
   override def handle(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
@@ -154,8 +154,8 @@ class RequestSinkWrapper extends NgRequestSink {
       case Left(err)     =>
         Results.InternalServerError(Json.obj("error" -> "plugin not found", "plugin" -> pluginId)).vfuture
       case Right(plugin) =>
-          val octx = newContextToOld(ctx, plugin)
-          plugin.handle(octx)
+        val octx = newContextToOld(ctx, plugin)
+        plugin.handle(octx)
     }
   }
 }
@@ -185,16 +185,16 @@ class RequestTransformerWrapper extends NgRequestTransformer {
     env.scriptManager.getAnyScript[RequestTransformer](pluginId) match {
       case Left(err)     => ().vfuture
       case Right(plugin) =>
-          val octx = BeforeRequestContext(
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          plugin.beforeRequest(octx)
+        val octx = BeforeRequestContext(
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        plugin.beforeRequest(octx)
     }
   }
 
@@ -205,16 +205,16 @@ class RequestTransformerWrapper extends NgRequestTransformer {
     env.scriptManager.getAnyScript[RequestTransformer](pluginId) match {
       case Left(err)     => ().vfuture
       case Right(plugin) =>
-          val octx = AfterRequestContext(
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          plugin.afterRequest(octx)
+        val octx = AfterRequestContext(
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        plugin.afterRequest(octx)
     }
   }
 
@@ -226,138 +226,138 @@ class RequestTransformerWrapper extends NgRequestTransformer {
       case Left(err)     =>
         Results.InternalServerError(Json.obj("error" -> "plugin not found", "plugin" -> pluginId)).left.vfuture
       case Right(plugin) =>
-          val bctx    = TransformerRequestBodyContext(
-            rawRequest = HttpRequest(
-              url = ctx.rawRequest.url,
-              method = ctx.rawRequest.method,
-              headers = ctx.rawRequest.headers,
-              cookies = ctx.rawRequest.cookies,
-              version = ctx.rawRequest.version,
-              clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
-              target =
-                ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
-              claims = ctx.attrs
-                .get(NgOtoroshiChallengeKeys.ClaimKey)
-                .getOrElse(
-                  OtoroshiClaim(
-                    iss = env.Headers.OtoroshiIssuer,
-                    sub = env.Headers.OtoroshiIssuer,
-                    aud = ctx.route.name,
-                    exp = DateTime.now().plus(30000).toDate.getTime,
-                    iat = DateTime.now().toDate.getTime,
-                    jti = IdGenerator.uuid
-                  )
-                ),
-              body = () => ctx.rawRequest.body
-            ),
-            otoroshiRequest = HttpRequest(
-              url = ctx.otoroshiRequest.url,
-              method = ctx.otoroshiRequest.method,
-              headers = ctx.otoroshiRequest.headers,
-              cookies = ctx.otoroshiRequest.cookies,
-              version = ctx.otoroshiRequest.version,
-              clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
-              target =
-                ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
-              claims = ctx.attrs
-                .get(NgOtoroshiChallengeKeys.ClaimKey)
-                .getOrElse(
-                  OtoroshiClaim(
-                    iss = env.Headers.OtoroshiIssuer,
-                    sub = env.Headers.OtoroshiIssuer,
-                    aud = ctx.route.name,
-                    exp = DateTime.now().plus(30000).toDate.getTime,
-                    iat = DateTime.now().toDate.getTime,
-                    jti = IdGenerator.uuid
-                  )
-                ),
-              body = () => ctx.otoroshiRequest.body
-            ),
-            body = ctx.rawRequest.body,
-            apikey = ctx.apikey,
-            user = ctx.user,
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          val newBody = plugin.transformRequestBodyWithCtx(bctx)
-          val octx    = TransformerRequestContext(
-            rawRequest = HttpRequest(
-              url = ctx.rawRequest.url,
-              method = ctx.rawRequest.method,
-              headers = ctx.rawRequest.headers,
-              cookies = ctx.rawRequest.cookies,
-              version = ctx.rawRequest.version,
-              clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
-              target =
-                ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
-              claims = ctx.attrs
-                .get(NgOtoroshiChallengeKeys.ClaimKey)
-                .getOrElse(
-                  OtoroshiClaim(
-                    iss = env.Headers.OtoroshiIssuer,
-                    sub = env.Headers.OtoroshiIssuer,
-                    aud = ctx.route.name,
-                    exp = DateTime.now().plus(30000).toDate.getTime,
-                    iat = DateTime.now().toDate.getTime,
-                    jti = IdGenerator.uuid
-                  )
-                ),
-              body = () => newBody
-            ),
-            otoroshiRequest = HttpRequest(
-              url = ctx.otoroshiRequest.url,
-              method = ctx.otoroshiRequest.method,
-              headers = ctx.otoroshiRequest.headers,
-              cookies = ctx.otoroshiRequest.cookies,
-              version = ctx.otoroshiRequest.version,
-              clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
-              target =
-                ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
-              claims = ctx.attrs
-                .get(NgOtoroshiChallengeKeys.ClaimKey)
-                .getOrElse(
-                  OtoroshiClaim(
-                    iss = env.Headers.OtoroshiIssuer,
-                    sub = env.Headers.OtoroshiIssuer,
-                    aud = ctx.route.name,
-                    exp = DateTime.now().plus(30000).toDate.getTime,
-                    iat = DateTime.now().toDate.getTime,
-                    jti = IdGenerator.uuid
-                  )
-                ),
-              body = () => newBody
-            ),
-            apikey = ctx.apikey,
-            user = ctx.user,
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          plugin.transformRequestWithCtx(octx).map {
-            case Left(r)    => Left(r)
-            case Right(req) =>
-              Right(
-                NgPluginHttpRequest(
-                  url = req.url,
-                  method = req.method,
-                  headers = req.headers,
-                  cookies = req.cookies,
-                  version = req.version,
-                  clientCertificateChain = () => req.clientCertificateChain,
-                  body = newBody,
-                  backend = req.target.map(t => NgTarget.fromTarget(t))
+        val bctx    = TransformerRequestBodyContext(
+          rawRequest = HttpRequest(
+            url = ctx.rawRequest.url,
+            method = ctx.rawRequest.method,
+            headers = ctx.rawRequest.headers,
+            cookies = ctx.rawRequest.cookies,
+            version = ctx.rawRequest.version,
+            clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
+            target =
+              ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
+            claims = ctx.attrs
+              .get(NgOtoroshiChallengeKeys.ClaimKey)
+              .getOrElse(
+                OtoroshiClaim(
+                  iss = env.Headers.OtoroshiIssuer,
+                  sub = env.Headers.OtoroshiIssuer,
+                  aud = ctx.route.name,
+                  exp = DateTime.now().plus(30000).toDate.getTime,
+                  iat = DateTime.now().toDate.getTime,
+                  jti = IdGenerator.uuid
                 )
+              ),
+            body = () => ctx.rawRequest.body
+          ),
+          otoroshiRequest = HttpRequest(
+            url = ctx.otoroshiRequest.url,
+            method = ctx.otoroshiRequest.method,
+            headers = ctx.otoroshiRequest.headers,
+            cookies = ctx.otoroshiRequest.cookies,
+            version = ctx.otoroshiRequest.version,
+            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
+            target =
+              ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
+            claims = ctx.attrs
+              .get(NgOtoroshiChallengeKeys.ClaimKey)
+              .getOrElse(
+                OtoroshiClaim(
+                  iss = env.Headers.OtoroshiIssuer,
+                  sub = env.Headers.OtoroshiIssuer,
+                  aud = ctx.route.name,
+                  exp = DateTime.now().plus(30000).toDate.getTime,
+                  iat = DateTime.now().toDate.getTime,
+                  jti = IdGenerator.uuid
+                )
+              ),
+            body = () => ctx.otoroshiRequest.body
+          ),
+          body = ctx.rawRequest.body,
+          apikey = ctx.apikey,
+          user = ctx.user,
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        val newBody = plugin.transformRequestBodyWithCtx(bctx)
+        val octx    = TransformerRequestContext(
+          rawRequest = HttpRequest(
+            url = ctx.rawRequest.url,
+            method = ctx.rawRequest.method,
+            headers = ctx.rawRequest.headers,
+            cookies = ctx.rawRequest.cookies,
+            version = ctx.rawRequest.version,
+            clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
+            target =
+              ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
+            claims = ctx.attrs
+              .get(NgOtoroshiChallengeKeys.ClaimKey)
+              .getOrElse(
+                OtoroshiClaim(
+                  iss = env.Headers.OtoroshiIssuer,
+                  sub = env.Headers.OtoroshiIssuer,
+                  aud = ctx.route.name,
+                  exp = DateTime.now().plus(30000).toDate.getTime,
+                  iat = DateTime.now().toDate.getTime,
+                  jti = IdGenerator.uuid
+                )
+              ),
+            body = () => newBody
+          ),
+          otoroshiRequest = HttpRequest(
+            url = ctx.otoroshiRequest.url,
+            method = ctx.otoroshiRequest.method,
+            headers = ctx.otoroshiRequest.headers,
+            cookies = ctx.otoroshiRequest.cookies,
+            version = ctx.otoroshiRequest.version,
+            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
+            target =
+              ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
+            claims = ctx.attrs
+              .get(NgOtoroshiChallengeKeys.ClaimKey)
+              .getOrElse(
+                OtoroshiClaim(
+                  iss = env.Headers.OtoroshiIssuer,
+                  sub = env.Headers.OtoroshiIssuer,
+                  aud = ctx.route.name,
+                  exp = DateTime.now().plus(30000).toDate.getTime,
+                  iat = DateTime.now().toDate.getTime,
+                  jti = IdGenerator.uuid
+                )
+              ),
+            body = () => newBody
+          ),
+          apikey = ctx.apikey,
+          user = ctx.user,
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        plugin.transformRequestWithCtx(octx).map {
+          case Left(r)    => Left(r)
+          case Right(req) =>
+            Right(
+              NgPluginHttpRequest(
+                url = req.url,
+                method = req.method,
+                headers = req.headers,
+                cookies = req.cookies,
+                version = req.version,
+                clientCertificateChain = () => req.clientCertificateChain,
+                body = newBody,
+                backend = req.target.map(t => NgTarget.fromTarget(t))
               )
-          }
+            )
+        }
     }
   }
 
@@ -369,64 +369,64 @@ class RequestTransformerWrapper extends NgRequestTransformer {
       case Left(err)     =>
         Results.InternalServerError(Json.obj("error" -> "plugin not found", "plugin" -> pluginId)).left.vfuture
       case Right(plugin) =>
-          val bctx    = TransformerResponseBodyContext(
-            rawResponse = HttpResponse(
-              status = ctx.rawResponse.status,
-              headers = ctx.rawResponse.headers,
-              cookies = ctx.rawResponse.cookies,
-              body = () => ctx.rawResponse.body
-            ),
-            otoroshiResponse = HttpResponse(
-              status = ctx.otoroshiResponse.status,
-              headers = ctx.otoroshiResponse.headers,
-              cookies = ctx.otoroshiResponse.cookies,
-              body = () => ctx.otoroshiResponse.body
-            ),
-            body = ctx.rawResponse.body,
-            apikey = ctx.apikey,
-            user = ctx.user,
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          val newBody = plugin.transformResponseBodyWithCtx(bctx)
-          val octx    = TransformerResponseContext(
-            rawResponse = HttpResponse(
-              status = ctx.rawResponse.status,
-              headers = ctx.rawResponse.headers,
-              cookies = ctx.rawResponse.cookies,
-              body = () => newBody
-            ),
-            otoroshiResponse = HttpResponse(
-              status = ctx.otoroshiResponse.status,
-              headers = ctx.otoroshiResponse.headers,
-              cookies = ctx.otoroshiResponse.cookies,
-              body = () => newBody
-            ),
-            apikey = ctx.apikey,
-            user = ctx.user,
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          plugin.transformResponseWithCtx(octx).map {
-            case Left(r)     => Left(r)
-            case Right(resp) =>
-              NgPluginHttpResponse(
-                status = resp.status,
-                headers = resp.headers,
-                cookies = resp.cookies,
-                body = newBody
-              ).right
-          }
+        val bctx    = TransformerResponseBodyContext(
+          rawResponse = HttpResponse(
+            status = ctx.rawResponse.status,
+            headers = ctx.rawResponse.headers,
+            cookies = ctx.rawResponse.cookies,
+            body = () => ctx.rawResponse.body
+          ),
+          otoroshiResponse = HttpResponse(
+            status = ctx.otoroshiResponse.status,
+            headers = ctx.otoroshiResponse.headers,
+            cookies = ctx.otoroshiResponse.cookies,
+            body = () => ctx.otoroshiResponse.body
+          ),
+          body = ctx.rawResponse.body,
+          apikey = ctx.apikey,
+          user = ctx.user,
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        val newBody = plugin.transformResponseBodyWithCtx(bctx)
+        val octx    = TransformerResponseContext(
+          rawResponse = HttpResponse(
+            status = ctx.rawResponse.status,
+            headers = ctx.rawResponse.headers,
+            cookies = ctx.rawResponse.cookies,
+            body = () => newBody
+          ),
+          otoroshiResponse = HttpResponse(
+            status = ctx.otoroshiResponse.status,
+            headers = ctx.otoroshiResponse.headers,
+            cookies = ctx.otoroshiResponse.cookies,
+            body = () => newBody
+          ),
+          apikey = ctx.apikey,
+          user = ctx.user,
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        plugin.transformResponseWithCtx(octx).map {
+          case Left(r)     => Left(r)
+          case Right(resp) =>
+            NgPluginHttpResponse(
+              status = resp.status,
+              headers = resp.headers,
+              cookies = resp.cookies,
+              body = newBody
+            ).right
+        }
     }
   }
 
@@ -443,46 +443,46 @@ class RequestTransformerWrapper extends NgRequestTransformer {
           body = Source.single(ByteString(Json.obj("error" -> "plugin not found", "plugin" -> pluginId).stringify))
         ).vfuture
       case Right(plugin) =>
-          val octx = TransformerErrorContext(
-            index = 0,
-            snowflake = ctx.snowflake,
-            message = ctx.message,
-            otoroshiResult = ctx.otoroshiResponse.asResult,
-            otoroshiResponse = HttpResponse(
-              status = ctx.otoroshiResponse.status,
-              headers = ctx.otoroshiResponse.headers,
-              cookies = ctx.otoroshiResponse.cookies,
-              body = () => ctx.otoroshiResponse.body
-            ),
-            request = ctx.request,
-            maybeCauseId = ctx.maybeCauseId,
-            callAttempts = ctx.callAttempts,
-            descriptor = ctx.route.serviceDescriptor,
-            apikey = ctx.apikey,
-            user = ctx.user,
-            config = ctx.config,
-            globalConfig = ctx.globalConfig,
-            attrs = ctx.attrs
+        val octx = TransformerErrorContext(
+          index = 0,
+          snowflake = ctx.snowflake,
+          message = ctx.message,
+          otoroshiResult = ctx.otoroshiResponse.asResult,
+          otoroshiResponse = HttpResponse(
+            status = ctx.otoroshiResponse.status,
+            headers = ctx.otoroshiResponse.headers,
+            cookies = ctx.otoroshiResponse.cookies,
+            body = () => ctx.otoroshiResponse.body
+          ),
+          request = ctx.request,
+          maybeCauseId = ctx.maybeCauseId,
+          callAttempts = ctx.callAttempts,
+          descriptor = ctx.route.serviceDescriptor,
+          apikey = ctx.apikey,
+          user = ctx.user,
+          config = ctx.config,
+          globalConfig = ctx.globalConfig,
+          attrs = ctx.attrs
+        )
+        plugin.transformErrorWithCtx(octx).map { result =>
+          NgPluginHttpResponse(
+            status = result.header.status,
+            headers = result.header.headers,
+            cookies = result.newCookies.map { c =>
+              WSCookieWithSameSite(
+                name = c.name,
+                value = c.value,
+                domain = c.domain,
+                path = Option(c.path),
+                maxAge = c.maxAge.map(_.toLong),
+                secure = c.secure,
+                httpOnly = c.httpOnly,
+                sameSite = c.sameSite
+              )
+            },
+            body = result.body.dataStream
           )
-          plugin.transformErrorWithCtx(octx).map { result =>
-            NgPluginHttpResponse(
-              status = result.header.status,
-              headers = result.header.headers,
-              cookies = result.newCookies.map { c =>
-                WSCookieWithSameSite(
-                  name = c.name,
-                  value = c.value,
-                  domain = c.domain,
-                  path = Option(c.path),
-                  maxAge = c.maxAge.map(_.toLong),
-                  secure = c.secure,
-                  httpOnly = c.httpOnly,
-                  sameSite = c.sameSite
-                )
-              },
-              body = result.body.dataStream
-            )
-          }
+        }
     }
   }
 }
@@ -518,28 +518,28 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           Results.InternalServerError(Json.obj("error" -> "plugin not found", "plugin" -> pluginId))
         ).left.vfuture
       case Right(plugin)    =>
-          val octx = PreRoutingContext(
-            ctx.snowflake,
-            0,
-            ctx.request,
-            ctx.route.serviceDescriptor,
-            ctx.config,
-            ctx.attrs,
-            ctx.globalConfig
-          )
-          plugin
-            .asInstanceOf[PreRouting]
-            .preRoute(octx)
-            .map(_ => Done.right)
-            .recover {
-              case PreRoutingError(body, code, contentType, headers) =>
-                NgPreRoutingErrorWithResult(
-                  Results.Status(code)(body).as(contentType).withHeaders(headers.toSeq: _*)
-                ).left
-              case PreRoutingErrorWithResult(r)                      => NgPreRoutingErrorWithResult(r).left
-              case t: Throwable                                      =>
-                NgPreRoutingErrorWithResult(Results.InternalServerError(Json.obj("error" -> t.getMessage()))).left
-            }
+        val octx = PreRoutingContext(
+          ctx.snowflake,
+          0,
+          ctx.request,
+          ctx.route.serviceDescriptor,
+          ctx.config,
+          ctx.attrs,
+          ctx.globalConfig
+        )
+        plugin
+          .asInstanceOf[PreRouting]
+          .preRoute(octx)
+          .map(_ => Done.right)
+          .recover {
+            case PreRoutingError(body, code, contentType, headers) =>
+              NgPreRoutingErrorWithResult(
+                Results.Status(code)(body).as(contentType).withHeaders(headers.toSeq: _*)
+              ).left
+            case PreRoutingErrorWithResult(r)                      => NgPreRoutingErrorWithResult(r).left
+            case t: Throwable                                      =>
+              NgPreRoutingErrorWithResult(Results.InternalServerError(Json.obj("error" -> t.getMessage()))).left
+          }
     }
   }
 
@@ -554,21 +554,21 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           .NgDenied(Results.InternalServerError(Json.obj("error" -> "plugin not found", "plugin" -> pluginId)))
           .vfuture
       case Right(plugin)    =>
-          val octx = AccessContext(
-            snowflake = ctx.snowflake,
-            index = 0,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            descriptor = ctx.route.serviceDescriptor,
-            user = ctx.user,
-            apikey = ctx.apikey,
-            globalConfig = ctx.globalConfig
-          )
-          plugin.asInstanceOf[AccessValidator].access(octx).map {
-            case Allowed   => NgAccess.NgAllowed
-            case Denied(r) => NgAccess.NgDenied(r)
-          }
+        val octx = AccessContext(
+          snowflake = ctx.snowflake,
+          index = 0,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          descriptor = ctx.route.serviceDescriptor,
+          user = ctx.user,
+          apikey = ctx.apikey,
+          globalConfig = ctx.globalConfig
+        )
+        plugin.asInstanceOf[AccessValidator].access(octx).map {
+          case Allowed   => NgAccess.NgAllowed
+          case Denied(r) => NgAccess.NgDenied(r)
+        }
     }
   }
 
@@ -581,16 +581,16 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
       .filterOrElse(_.isInstanceOf[RequestTransformer], Left("bad-type")) match {
       case Left(err)     => ().vfuture
       case Right(plugin) =>
-          val octx = BeforeRequestContext(
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          plugin.asInstanceOf[RequestTransformer].beforeRequest(octx)
+        val octx = BeforeRequestContext(
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        plugin.asInstanceOf[RequestTransformer].beforeRequest(octx)
     }
   }
 
@@ -603,16 +603,16 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
       .filterOrElse(_.isInstanceOf[RequestTransformer], Left("bad-type")) match {
       case Left(err)     => ().vfuture
       case Right(plugin) =>
-          val octx = AfterRequestContext(
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          plugin.asInstanceOf[RequestTransformer].afterRequest(octx)
+        val octx = AfterRequestContext(
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        plugin.asInstanceOf[RequestTransformer].afterRequest(octx)
     }
   }
 
@@ -627,138 +627,138 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
       case Left(err)        =>
         Results.InternalServerError(Json.obj("error" -> "plugin not found", "plugin" -> pluginId)).left.vfuture
       case Right(plugin)    =>
-          val bctx    = TransformerRequestBodyContext(
-            rawRequest = HttpRequest(
-              url = ctx.rawRequest.url,
-              method = ctx.rawRequest.method,
-              headers = ctx.rawRequest.headers,
-              cookies = ctx.rawRequest.cookies,
-              version = ctx.rawRequest.version,
-              clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
-              target =
-                ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
-              claims = ctx.attrs
-                .get(NgOtoroshiChallengeKeys.ClaimKey)
-                .getOrElse(
-                  OtoroshiClaim(
-                    iss = env.Headers.OtoroshiIssuer,
-                    sub = env.Headers.OtoroshiIssuer,
-                    aud = ctx.route.name,
-                    exp = DateTime.now().plus(30000).toDate.getTime,
-                    iat = DateTime.now().toDate.getTime,
-                    jti = IdGenerator.uuid
-                  )
-                ),
-              body = () => ctx.rawRequest.body
-            ),
-            otoroshiRequest = HttpRequest(
-              url = ctx.otoroshiRequest.url,
-              method = ctx.otoroshiRequest.method,
-              headers = ctx.otoroshiRequest.headers,
-              cookies = ctx.otoroshiRequest.cookies,
-              version = ctx.otoroshiRequest.version,
-              clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
-              target =
-                ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
-              claims = ctx.attrs
-                .get(NgOtoroshiChallengeKeys.ClaimKey)
-                .getOrElse(
-                  OtoroshiClaim(
-                    iss = env.Headers.OtoroshiIssuer,
-                    sub = env.Headers.OtoroshiIssuer,
-                    aud = ctx.route.name,
-                    exp = DateTime.now().plus(30000).toDate.getTime,
-                    iat = DateTime.now().toDate.getTime,
-                    jti = IdGenerator.uuid
-                  )
-                ),
-              body = () => ctx.otoroshiRequest.body
-            ),
-            body = ctx.rawRequest.body,
-            apikey = ctx.apikey,
-            user = ctx.user,
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          val newBody = plugin.asInstanceOf[RequestTransformer].transformRequestBodyWithCtx(bctx)
-          val octx    = TransformerRequestContext(
-            rawRequest = HttpRequest(
-              url = ctx.rawRequest.url,
-              method = ctx.rawRequest.method,
-              headers = ctx.rawRequest.headers,
-              cookies = ctx.rawRequest.cookies,
-              version = ctx.rawRequest.version,
-              clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
-              target =
-                ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
-              claims = ctx.attrs
-                .get(NgOtoroshiChallengeKeys.ClaimKey)
-                .getOrElse(
-                  OtoroshiClaim(
-                    iss = env.Headers.OtoroshiIssuer,
-                    sub = env.Headers.OtoroshiIssuer,
-                    aud = ctx.route.name,
-                    exp = DateTime.now().plus(30000).toDate.getTime,
-                    iat = DateTime.now().toDate.getTime,
-                    jti = IdGenerator.uuid
-                  )
-                ),
-              body = () => newBody
-            ),
-            otoroshiRequest = HttpRequest(
-              url = ctx.otoroshiRequest.url,
-              method = ctx.otoroshiRequest.method,
-              headers = ctx.otoroshiRequest.headers,
-              cookies = ctx.otoroshiRequest.cookies,
-              version = ctx.otoroshiRequest.version,
-              clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
-              target =
-                ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
-              claims = ctx.attrs
-                .get(NgOtoroshiChallengeKeys.ClaimKey)
-                .getOrElse(
-                  OtoroshiClaim(
-                    iss = env.Headers.OtoroshiIssuer,
-                    sub = env.Headers.OtoroshiIssuer,
-                    aud = ctx.route.name,
-                    exp = DateTime.now().plus(30000).toDate.getTime,
-                    iat = DateTime.now().toDate.getTime,
-                    jti = IdGenerator.uuid
-                  )
-                ),
-              body = () => newBody
-            ),
-            apikey = ctx.apikey,
-            user = ctx.user,
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          plugin.asInstanceOf[RequestTransformer].transformRequestWithCtx(octx).map {
-            case Left(r)    => Left(r)
-            case Right(req) =>
-              Right(
-                NgPluginHttpRequest(
-                  url = req.url,
-                  method = req.method,
-                  headers = req.headers,
-                  cookies = req.cookies,
-                  version = req.version,
-                  clientCertificateChain = () => req.clientCertificateChain,
-                  body = newBody,
-                  backend = req.target.map(t => NgTarget.fromTarget(t))
+        val bctx    = TransformerRequestBodyContext(
+          rawRequest = HttpRequest(
+            url = ctx.rawRequest.url,
+            method = ctx.rawRequest.method,
+            headers = ctx.rawRequest.headers,
+            cookies = ctx.rawRequest.cookies,
+            version = ctx.rawRequest.version,
+            clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
+            target =
+              ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
+            claims = ctx.attrs
+              .get(NgOtoroshiChallengeKeys.ClaimKey)
+              .getOrElse(
+                OtoroshiClaim(
+                  iss = env.Headers.OtoroshiIssuer,
+                  sub = env.Headers.OtoroshiIssuer,
+                  aud = ctx.route.name,
+                  exp = DateTime.now().plus(30000).toDate.getTime,
+                  iat = DateTime.now().toDate.getTime,
+                  jti = IdGenerator.uuid
                 )
+              ),
+            body = () => ctx.rawRequest.body
+          ),
+          otoroshiRequest = HttpRequest(
+            url = ctx.otoroshiRequest.url,
+            method = ctx.otoroshiRequest.method,
+            headers = ctx.otoroshiRequest.headers,
+            cookies = ctx.otoroshiRequest.cookies,
+            version = ctx.otoroshiRequest.version,
+            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
+            target =
+              ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
+            claims = ctx.attrs
+              .get(NgOtoroshiChallengeKeys.ClaimKey)
+              .getOrElse(
+                OtoroshiClaim(
+                  iss = env.Headers.OtoroshiIssuer,
+                  sub = env.Headers.OtoroshiIssuer,
+                  aud = ctx.route.name,
+                  exp = DateTime.now().plus(30000).toDate.getTime,
+                  iat = DateTime.now().toDate.getTime,
+                  jti = IdGenerator.uuid
+                )
+              ),
+            body = () => ctx.otoroshiRequest.body
+          ),
+          body = ctx.rawRequest.body,
+          apikey = ctx.apikey,
+          user = ctx.user,
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        val newBody = plugin.asInstanceOf[RequestTransformer].transformRequestBodyWithCtx(bctx)
+        val octx    = TransformerRequestContext(
+          rawRequest = HttpRequest(
+            url = ctx.rawRequest.url,
+            method = ctx.rawRequest.method,
+            headers = ctx.rawRequest.headers,
+            cookies = ctx.rawRequest.cookies,
+            version = ctx.rawRequest.version,
+            clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
+            target =
+              ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
+            claims = ctx.attrs
+              .get(NgOtoroshiChallengeKeys.ClaimKey)
+              .getOrElse(
+                OtoroshiClaim(
+                  iss = env.Headers.OtoroshiIssuer,
+                  sub = env.Headers.OtoroshiIssuer,
+                  aud = ctx.route.name,
+                  exp = DateTime.now().plus(30000).toDate.getTime,
+                  iat = DateTime.now().toDate.getTime,
+                  jti = IdGenerator.uuid
+                )
+              ),
+            body = () => newBody
+          ),
+          otoroshiRequest = HttpRequest(
+            url = ctx.otoroshiRequest.url,
+            method = ctx.otoroshiRequest.method,
+            headers = ctx.otoroshiRequest.headers,
+            cookies = ctx.otoroshiRequest.cookies,
+            version = ctx.otoroshiRequest.version,
+            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
+            target =
+              ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
+            claims = ctx.attrs
+              .get(NgOtoroshiChallengeKeys.ClaimKey)
+              .getOrElse(
+                OtoroshiClaim(
+                  iss = env.Headers.OtoroshiIssuer,
+                  sub = env.Headers.OtoroshiIssuer,
+                  aud = ctx.route.name,
+                  exp = DateTime.now().plus(30000).toDate.getTime,
+                  iat = DateTime.now().toDate.getTime,
+                  jti = IdGenerator.uuid
+                )
+              ),
+            body = () => newBody
+          ),
+          apikey = ctx.apikey,
+          user = ctx.user,
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        plugin.asInstanceOf[RequestTransformer].transformRequestWithCtx(octx).map {
+          case Left(r)    => Left(r)
+          case Right(req) =>
+            Right(
+              NgPluginHttpRequest(
+                url = req.url,
+                method = req.method,
+                headers = req.headers,
+                cookies = req.cookies,
+                version = req.version,
+                clientCertificateChain = () => req.clientCertificateChain,
+                body = newBody,
+                backend = req.target.map(t => NgTarget.fromTarget(t))
               )
-          }
+            )
+        }
     }
   }
 
@@ -778,46 +778,46 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           body = Source.single(ByteString(Json.obj("error" -> "plugin not found", "plugin" -> pluginId).stringify))
         ).vfuture
       case Right(plugin)    =>
-          val octx = TransformerErrorContext(
-            index = 0,
-            snowflake = ctx.snowflake,
-            message = ctx.message,
-            otoroshiResult = ctx.otoroshiResponse.asResult,
-            otoroshiResponse = HttpResponse(
-              status = ctx.otoroshiResponse.status,
-              headers = ctx.otoroshiResponse.headers,
-              cookies = ctx.otoroshiResponse.cookies,
-              body = () => ctx.otoroshiResponse.body
-            ),
-            request = ctx.request,
-            maybeCauseId = ctx.maybeCauseId,
-            callAttempts = ctx.callAttempts,
-            descriptor = ctx.route.serviceDescriptor,
-            apikey = ctx.apikey,
-            user = ctx.user,
-            config = ctx.config,
-            globalConfig = ctx.globalConfig,
-            attrs = ctx.attrs
+        val octx = TransformerErrorContext(
+          index = 0,
+          snowflake = ctx.snowflake,
+          message = ctx.message,
+          otoroshiResult = ctx.otoroshiResponse.asResult,
+          otoroshiResponse = HttpResponse(
+            status = ctx.otoroshiResponse.status,
+            headers = ctx.otoroshiResponse.headers,
+            cookies = ctx.otoroshiResponse.cookies,
+            body = () => ctx.otoroshiResponse.body
+          ),
+          request = ctx.request,
+          maybeCauseId = ctx.maybeCauseId,
+          callAttempts = ctx.callAttempts,
+          descriptor = ctx.route.serviceDescriptor,
+          apikey = ctx.apikey,
+          user = ctx.user,
+          config = ctx.config,
+          globalConfig = ctx.globalConfig,
+          attrs = ctx.attrs
+        )
+        plugin.asInstanceOf[RequestTransformer].transformErrorWithCtx(octx).map { result =>
+          NgPluginHttpResponse(
+            status = result.header.status,
+            headers = result.header.headers,
+            cookies = result.newCookies.map { c =>
+              WSCookieWithSameSite(
+                name = c.name,
+                value = c.value,
+                domain = c.domain,
+                path = Option(c.path),
+                maxAge = c.maxAge.map(_.toLong),
+                secure = c.secure,
+                httpOnly = c.httpOnly,
+                sameSite = c.sameSite
+              )
+            },
+            body = result.body.dataStream
           )
-          plugin.asInstanceOf[RequestTransformer].transformErrorWithCtx(octx).map { result =>
-            NgPluginHttpResponse(
-              status = result.header.status,
-              headers = result.header.headers,
-              cookies = result.newCookies.map { c =>
-                WSCookieWithSameSite(
-                  name = c.name,
-                  value = c.value,
-                  domain = c.domain,
-                  path = Option(c.path),
-                  maxAge = c.maxAge.map(_.toLong),
-                  secure = c.secure,
-                  httpOnly = c.httpOnly,
-                  sameSite = c.sameSite
-                )
-              },
-              body = result.body.dataStream
-            )
-          }
+        }
     }
   }
 
@@ -832,64 +832,64 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
       case Left(err)        =>
         Results.InternalServerError(Json.obj("error" -> "plugin not found", "plugin" -> pluginId)).left.vfuture
       case Right(plugin)    =>
-          val bctx    = TransformerResponseBodyContext(
-            rawResponse = HttpResponse(
-              status = ctx.rawResponse.status,
-              headers = ctx.rawResponse.headers,
-              cookies = ctx.rawResponse.cookies,
-              body = () => ctx.rawResponse.body
-            ),
-            otoroshiResponse = HttpResponse(
-              status = ctx.otoroshiResponse.status,
-              headers = ctx.otoroshiResponse.headers,
-              cookies = ctx.otoroshiResponse.cookies,
-              body = () => ctx.otoroshiResponse.body
-            ),
-            body = ctx.rawResponse.body,
-            apikey = ctx.apikey,
-            user = ctx.user,
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          val newBody = plugin.asInstanceOf[RequestTransformer].transformResponseBodyWithCtx(bctx)
-          val octx    = TransformerResponseContext(
-            rawResponse = HttpResponse(
-              status = ctx.rawResponse.status,
-              headers = ctx.rawResponse.headers,
-              cookies = ctx.rawResponse.cookies,
-              body = () => newBody
-            ),
-            otoroshiResponse = HttpResponse(
-              status = ctx.otoroshiResponse.status,
-              headers = ctx.otoroshiResponse.headers,
-              cookies = ctx.otoroshiResponse.cookies,
-              body = () => newBody
-            ),
-            apikey = ctx.apikey,
-            user = ctx.user,
-            index = 0,
-            snowflake = ctx.snowflake,
-            descriptor = ctx.route.serviceDescriptor,
-            request = ctx.request,
-            config = ctx.config,
-            attrs = ctx.attrs,
-            globalConfig = ctx.globalConfig
-          )
-          plugin.asInstanceOf[RequestTransformer].transformResponseWithCtx(octx).map {
-            case Left(r)     => Left(r)
-            case Right(resp) =>
-              NgPluginHttpResponse(
-                status = resp.status,
-                headers = resp.headers,
-                cookies = resp.cookies,
-                body = newBody
-              ).right
-          }
+        val bctx    = TransformerResponseBodyContext(
+          rawResponse = HttpResponse(
+            status = ctx.rawResponse.status,
+            headers = ctx.rawResponse.headers,
+            cookies = ctx.rawResponse.cookies,
+            body = () => ctx.rawResponse.body
+          ),
+          otoroshiResponse = HttpResponse(
+            status = ctx.otoroshiResponse.status,
+            headers = ctx.otoroshiResponse.headers,
+            cookies = ctx.otoroshiResponse.cookies,
+            body = () => ctx.otoroshiResponse.body
+          ),
+          body = ctx.rawResponse.body,
+          apikey = ctx.apikey,
+          user = ctx.user,
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        val newBody = plugin.asInstanceOf[RequestTransformer].transformResponseBodyWithCtx(bctx)
+        val octx    = TransformerResponseContext(
+          rawResponse = HttpResponse(
+            status = ctx.rawResponse.status,
+            headers = ctx.rawResponse.headers,
+            cookies = ctx.rawResponse.cookies,
+            body = () => newBody
+          ),
+          otoroshiResponse = HttpResponse(
+            status = ctx.otoroshiResponse.status,
+            headers = ctx.otoroshiResponse.headers,
+            cookies = ctx.otoroshiResponse.cookies,
+            body = () => newBody
+          ),
+          apikey = ctx.apikey,
+          user = ctx.user,
+          index = 0,
+          snowflake = ctx.snowflake,
+          descriptor = ctx.route.serviceDescriptor,
+          request = ctx.request,
+          config = ctx.config,
+          attrs = ctx.attrs,
+          globalConfig = ctx.globalConfig
+        )
+        plugin.asInstanceOf[RequestTransformer].transformResponseWithCtx(octx).map {
+          case Left(r)     => Left(r)
+          case Right(resp) =>
+            NgPluginHttpResponse(
+              status = resp.status,
+              headers = resp.headers,
+              cookies = resp.cookies,
+              body = newBody
+            ).right
+        }
     }
   }
 }

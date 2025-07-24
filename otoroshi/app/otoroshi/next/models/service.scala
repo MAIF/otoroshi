@@ -141,7 +141,7 @@ object NgRouteComposition {
     } catch {
       case e: Throwable => throw e
     }
-  val fmt: Format[NgRouteComposition]                                           = new Format[NgRouteComposition] {
+  val fmt: Format[NgRouteComposition]               = new Format[NgRouteComposition] {
     override def writes(o: NgRouteComposition): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgRouteComposition] = Try {
       NgRouteComposition(
@@ -190,11 +190,7 @@ object NgRouteComposition {
         val serverDomain = serverUri.authority.host.toString()
         val tls          = serverUri.scheme.toLowerCase().contains("https")
         val port         = if (serverUri.authority.port == 0) (if (tls) 443 else 80) else serverUri.authority.port
-        NgTarget(
-          id = serverUrl,
-          hostname = serverDomain,
-          port = port,
-          tls = tls)
+        NgTarget(id = serverUrl, hostname = serverDomain, port = port, tls = tls)
       }
       val paths                       = json.select("paths").asOpt[JsObject].getOrElse(Json.obj())
       val routes: Seq[NgMinimalRoute] = paths.value.toSeq.map { case (path, obj) =>

@@ -121,40 +121,40 @@ class NgClientCredentials extends NgRequestSink {
       ctx: NgRequestSinkContext
   )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     implicit val mat: Materializer = env.otoroshiMaterializer
-    val charset      = ctx.request.charset.getOrElse("UTF-8")
+    val charset                    = ctx.request.charset.getOrElse("UTF-8")
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {
         case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") =>
-            val urlEncodedString         = bodyRaw.utf8String
-            val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).view.mapValues(_.head).toMap
-            val map: Map[String, String] = body ++ ctx.request.headers
-              .get("Authorization")
-              .filter(_.startsWith("Basic "))
-              .map(_.replace("Basic ", ""))
-              .map(v => JavaBase64.getDecoder.decode(v))
-              .map(v => new String(v))
-              .filter(_.contains(":"))
-              .map(_.split(":").toSeq)
-              .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
-              .getOrElse(Map.empty[String, String])
-            f(map)
+          val urlEncodedString         = bodyRaw.utf8String
+          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).view.mapValues(_.head).toMap
+          val map: Map[String, String] = body ++ ctx.request.headers
+            .get("Authorization")
+            .filter(_.startsWith("Basic "))
+            .map(_.replace("Basic ", ""))
+            .map(v => JavaBase64.getDecoder.decode(v))
+            .map(v => new String(v))
+            .filter(_.contains(":"))
+            .map(_.split(":").toSeq)
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
+            .getOrElse(Map.empty[String, String])
+          f(map)
         case Some(ctype) if ctype.toLowerCase().contains("application/json")                  =>
-            val json                     = Json.parse(bodyRaw.utf8String).as[JsObject]
-            val map: Map[String, String] = json.value.toSeq.collect {
-              case (key, JsString(v))  => (key, v)
-              case (key, JsNumber(v))  => (key, v.toString())
-              case (key, JsBoolean(v)) => (key, v.toString)
-            }.toMap ++ ctx.request.headers
-              .get("Authorization")
-              .filter(_.startsWith("Basic "))
-              .map(_.replace("Basic ", ""))
-              .map(v => JavaBase64.getDecoder.decode(v))
-              .map(v => new String(v))
-              .filter(_.contains(":"))
-              .map(_.split(":").toSeq)
-              .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
-              .getOrElse(Map.empty[String, String])
-            f(map)
+          val json                     = Json.parse(bodyRaw.utf8String).as[JsObject]
+          val map: Map[String, String] = json.value.toSeq.collect {
+            case (key, JsString(v))  => (key, v)
+            case (key, JsNumber(v))  => (key, v.toString())
+            case (key, JsBoolean(v)) => (key, v.toString)
+          }.toMap ++ ctx.request.headers
+            .get("Authorization")
+            .filter(_.startsWith("Basic "))
+            .map(_.replace("Basic ", ""))
+            .map(v => JavaBase64.getDecoder.decode(v))
+            .map(v => new String(v))
+            .filter(_.contains(":"))
+            .map(_.split(":").toSeq)
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
+            .getOrElse(Map.empty[String, String])
+          f(map)
         case _                                                                                =>
           // bad content type
           Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
@@ -179,34 +179,34 @@ class NgClientCredentials extends NgRequestSink {
     handleBody(ctx) { body =>
       body.get("token") match {
         case Some(token) =>
-            val decoded        = JWT.decode(token)
-            val clientId       = Try(decoded.getClaim("clientId").asString()).orElse(Try(decoded.getIssuer())).getOrElse("--")
-            val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
-            possibleApiKey.flatMap {
-              case Some(apiKey) =>
-                  val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
-                  val maybeKeyPair: Option[KeyPair] =
-                  env.proxyState.certificate(keyPairId).map(_.cryptoKeyPair)
-                  val algo: Algorithm               = maybeKeyPair.map { kp =>
-                  (kp.getPublic, kp.getPrivate) match {
-                    case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
-                    case (pub: ECPublicKey, priv: ECPrivateKey)   => Algorithm.ECDSA384(pub, priv)
-                    case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
-                  }
-                } getOrElse {
-                  Algorithm.HMAC512(apiKey.clientSecret)
+          val decoded        = JWT.decode(token)
+          val clientId       = Try(decoded.getClaim("clientId").asString()).orElse(Try(decoded.getIssuer())).getOrElse("--")
+          val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
+          possibleApiKey.flatMap {
+            case Some(apiKey) =>
+              val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
+              val maybeKeyPair: Option[KeyPair] =
+                env.proxyState.certificate(keyPairId).map(_.cryptoKeyPair)
+              val algo: Algorithm               = maybeKeyPair.map { kp =>
+                (kp.getPublic, kp.getPrivate) match {
+                  case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
+                  case (pub: ECPublicKey, priv: ECPrivateKey)   => Algorithm.ECDSA384(pub, priv)
+                  case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
                 }
-                  Try(JWT.require(algo).acceptLeeway(10).build().verify(token)) match {
-                  case Failure(e) =>
-                    Results
-                      .Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized"))
-                      .future
-                  case Success(_) => Results.Ok(apiKey.lightJson ++ Json.obj("access_type" -> "apikey")).future
-                }
-              case None         =>
-                // apikey not found
-                Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
-            }
+              } getOrElse {
+                Algorithm.HMAC512(apiKey.clientSecret)
+              }
+              Try(JWT.require(algo).acceptLeeway(10).build().verify(token)) match {
+                case Failure(e) =>
+                  Results
+                    .Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized"))
+                    .future
+                case Success(_) => Results.Ok(apiKey.lightJson ++ Json.obj("access_type" -> "apikey")).future
+              }
+            case None         =>
+              // apikey not found
+              Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
+          }
         case _           =>
           // bad body
           Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
@@ -221,174 +221,173 @@ class NgClientCredentials extends NgRequestSink {
   )(implicit env: Env, ec: ExecutionContext): Future[Result] =
     ccfb match {
       case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope, bearerKind) =>
-          val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
-          possibleApiKey.flatMap {
-            case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() && bearerKind == "biscuit" =>
+        val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
+        possibleApiKey.flatMap {
+          case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() && bearerKind == "biscuit" =>
+            import org.biscuitsec.biscuit.crypto.KeyPair
+            import org.biscuitsec.biscuit.token.Biscuit
+            import org.biscuitsec.biscuit.token.builder.Utils._
 
-                import org.biscuitsec.biscuit.crypto.KeyPair
-                import org.biscuitsec.biscuit.token.Biscuit
-                import org.biscuitsec.biscuit.token.builder.Utils._
+            import scala.jdk.CollectionConverters._
 
-                import scala.jdk.CollectionConverters._
+            val biscuitConf: BiscuitConf = conf.biscuit.getOrElse(BiscuitConf())
 
-                val biscuitConf: BiscuitConf = conf.biscuit.getOrElse(BiscuitConf())
+            val symbols           = new SymbolTable()
+            val authority_builder = new org.biscuitsec.biscuit.token.builder.Block()
 
-                val symbols           = new SymbolTable()
-                val authority_builder = new org.biscuitsec.biscuit.token.builder.Block()
-
-                authority_builder.add_fact(fact("token_id", Seq(s("authority"), string(IdGenerator.uuid)).asJava))
-                authority_builder.add_fact(
-                fact("token_exp", Seq(s("authority"), date(DateTime.now().plus(conf.expiration.toMillis).toDate)).asJava)
+            authority_builder.add_fact(fact("token_id", Seq(s("authority"), string(IdGenerator.uuid)).asJava))
+            authority_builder.add_fact(
+              fact("token_exp", Seq(s("authority"), date(DateTime.now().plus(conf.expiration.toMillis).toDate)).asJava)
+            )
+            authority_builder.add_fact(fact("token_iat", Seq(s("authority"), date(DateTime.now().toDate)).asJava))
+            authority_builder.add_fact(fact("token_nbf", Seq(s("authority"), date(DateTime.now().toDate)).asJava))
+            authority_builder.add_fact(
+              fact("token_iss", Seq(s("authority"), string(ctx.request.theProtocol + "://" + ctx.request.host)).asJava)
+            )
+            authority_builder.add_fact(fact("token_aud", Seq(s("authority"), s("otoroshi")).asJava))
+            authority_builder.add_fact(fact("client_id", Seq(s("authority"), string(apiKey.clientId)).asJava))
+            authority_builder.add_fact(
+              fact(
+                "client_sign",
+                Seq(s("authority"), string(Signatures.hmacSha256Sign(apiKey.clientId, apiKey.clientSecret))).asJava
               )
-                authority_builder.add_fact(fact("token_iat", Seq(s("authority"), date(DateTime.now().toDate)).asJava))
-                authority_builder.add_fact(fact("token_nbf", Seq(s("authority"), date(DateTime.now().toDate)).asJava))
-                authority_builder.add_fact(
-                fact("token_iss", Seq(s("authority"), string(ctx.request.theProtocol + "://" + ctx.request.host)).asJava)
-              )
-                authority_builder.add_fact(fact("token_aud", Seq(s("authority"), s("otoroshi")).asJava))
-                authority_builder.add_fact(fact("client_id", Seq(s("authority"), string(apiKey.clientId)).asJava))
-                authority_builder.add_fact(
-                fact(
-                  "client_sign",
-                  Seq(s("authority"), string(Signatures.hmacSha256Sign(apiKey.clientId, apiKey.clientSecret))).asJava
-                )
-              )
+            )
 
-                biscuitConf.checks
-                .map(Parser.check)
-                .filter(_.isRight)
-                .map(_.get()._2)
-                .foreach(r => authority_builder.add_check(r))
-                biscuitConf.facts
-                .map(Parser.fact)
-                .filter(_.isRight)
-                .map(_.get()._2)
-                .foreach(r => authority_builder.add_fact(r))
-                biscuitConf.rules
-                .map(Parser.rule)
-                .filter(_.isRight)
-                .map(_.get()._2)
-                .foreach(r => authority_builder.add_rule(r))
+            biscuitConf.checks
+              .map(Parser.check)
+              .filter(_.isRight)
+              .map(_.get()._2)
+              .foreach(r => authority_builder.add_check(r))
+            biscuitConf.facts
+              .map(Parser.fact)
+              .filter(_.isRight)
+              .map(_.get()._2)
+              .foreach(r => authority_builder.add_fact(r))
+            biscuitConf.rules
+              .map(Parser.rule)
+              .filter(_.isRight)
+              .map(_.get()._2)
+              .foreach(r => authority_builder.add_rule(r))
 
-                def fromApiKey(name: String): Seq[String] =
-                apiKey.metadata.get(name).map(Json.parse).map(_.asArray.value.map(_.asString).toSeq).getOrElse(Seq.empty)
+            def fromApiKey(name: String): Seq[String] =
+              apiKey.metadata.get(name).map(Json.parse).map(_.asArray.value.map(_.asString).toSeq).getOrElse(Seq.empty)
 
-                fromApiKey("biscuit_checks")
-                .map(Parser.check)
-                .filter(_.isRight)
-                .map(_.get()._2)
-                .foreach(r => authority_builder.add_check(r))
-                fromApiKey("biscuit_facts")
-                .map(Parser.fact)
-                .filter(_.isRight)
-                .map(_.get()._2)
-                .foreach(r => authority_builder.add_fact(r))
-                fromApiKey("biscuit_rules")
-                .map(Parser.rule)
-                .filter(_.isRight)
-                .map(_.get()._2)
-                .foreach(r => authority_builder.add_rule(r))
+            fromApiKey("biscuit_checks")
+              .map(Parser.check)
+              .filter(_.isRight)
+              .map(_.get()._2)
+              .foreach(r => authority_builder.add_check(r))
+            fromApiKey("biscuit_facts")
+              .map(Parser.fact)
+              .filter(_.isRight)
+              .map(_.get()._2)
+              .foreach(r => authority_builder.add_fact(r))
+            fromApiKey("biscuit_rules")
+              .map(Parser.rule)
+              .filter(_.isRight)
+              .map(_.get()._2)
+              .foreach(r => authority_builder.add_rule(r))
 
-                val accessToken: String = {
-                val privKeyValue = apiKey.metadata.get("biscuit_pubkey").orElse(biscuitConf.privkey)
-                val keypair      = new KeyPair(privKeyValue.get)
-                val rng          = new SecureRandom()
-                Biscuit.make(rng, keypair, authority_builder.build(symbols)).serialize_b64url()
-              }
+            val accessToken: String = {
+              val privKeyValue = apiKey.metadata.get("biscuit_pubkey").orElse(biscuitConf.privkey)
+              val keypair      = new KeyPair(privKeyValue.get)
+              val rng          = new SecureRandom()
+              Biscuit.make(rng, keypair, authority_builder.build(symbols)).serialize_b64url()
+            }
 
-                val pass = scope.forall { s =>
-                val scopes     = s.split(" ").toSeq
-                val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
-                scopeInter && apiKey.metadata
-                  .get("scope")
-                  .map(_.split(" ").toSeq.intersect(scopes).size)
-                  .getOrElse(scopes.size) == scopes.size
-              }
-                if (pass) {
-                val scopeObj =
-                  scope.orElse(apiKey.metadata.get("scope")).map(v => Json.obj("scope" -> v)).getOrElse(Json.obj())
-                Results
-                  .Ok(
-                    Json.obj(
-                      "access_token" -> accessToken,
-                      "token_type"   -> "Bearer",
-                      "expires_in"   -> conf.expiration.toSeconds
-                    ) ++ scopeObj
-                  )
-                  .future
-              } else {
-                Results
-                  .Forbidden(
-                    Json.obj(
-                      "error"             -> "access_denied",
-                      "error_description" -> s"Client has not been granted scopes: ${scope.get}"
-                    )
-                  )
-                  .future
-              }
-            case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() =>
-                val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
-                val maybeKeyPair: Option[KeyPair] =
-                DynamicSSLEngineProvider.certificates.get(keyPairId).map(_.cryptoKeyPair)
-                val algo: Algorithm               = maybeKeyPair.map { kp =>
-                (kp.getPublic, kp.getPrivate) match {
-                  case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
-                  case (pub: ECPublicKey, priv: ECPrivateKey)   => Algorithm.ECDSA384(pub, priv)
-                  case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
-                }
-              } getOrElse {
-                Algorithm.HMAC512(apiKey.clientSecret)
-              }
-
-                val accessToken = JWT
-                .create()
-                .withJWTId(IdGenerator.uuid)
-                .withExpiresAt(DateTime.now().plus(conf.expiration.toMillis).toDate)
-                .withIssuedAt(DateTime.now().toDate)
-                .withNotBefore(DateTime.now().toDate)
-                .withClaim("cid", apiKey.clientId)
-                .withIssuer(ctx.request.theProtocol + "://" + ctx.request.host)
-                .withSubject(apiKey.clientId)
-                .withAudience("otoroshi")
-                .withKeyId(keyPairId)
-                .sign(algo)
-                // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
-
-                val pass = scope.forall { s =>
-                val scopes     = s.split(" ").toSeq
-                val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
-                scopeInter && apiKey.metadata
-                  .get("scope")
-                  .map(_.split(" ").toSeq.intersect(scopes).size)
-                  .getOrElse(scopes.size) == scopes.size
-              }
-                if (pass) {
-                val scopeObj =
-                  scope.orElse(apiKey.metadata.get("scope")).map(v => Json.obj("scope" -> v)).getOrElse(Json.obj())
-                Results
-                  .Ok(
-                    Json.obj(
-                      "access_token" -> accessToken,
-                      "token_type"   -> "Bearer",
-                      "expires_in"   -> conf.expiration.toSeconds
-                    ) ++ scopeObj
-                  )
-                  .future
-              } else {
-                Results
-                  .Forbidden(
-                    Json.obj(
-                      "error"             -> "access_denied",
-                      "error_description" -> s"Client has not been granted scopes: ${scope.get}"
-                    )
-                  )
-                  .future
-              }
-            case _                                                                 =>
+            val pass = scope.forall { s =>
+              val scopes     = s.split(" ").toSeq
+              val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
+              scopeInter && apiKey.metadata
+                .get("scope")
+                .map(_.split(" ").toSeq.intersect(scopes).size)
+                .getOrElse(scopes.size) == scopes.size
+            }
+            if (pass) {
+              val scopeObj =
+                scope.orElse(apiKey.metadata.get("scope")).map(v => Json.obj("scope" -> v)).getOrElse(Json.obj())
               Results
-                .Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Bad client credentials"))
+                .Ok(
+                  Json.obj(
+                    "access_token" -> accessToken,
+                    "token_type"   -> "Bearer",
+                    "expires_in"   -> conf.expiration.toSeconds
+                  ) ++ scopeObj
+                )
                 .future
-          }
+            } else {
+              Results
+                .Forbidden(
+                  Json.obj(
+                    "error"             -> "access_denied",
+                    "error_description" -> s"Client has not been granted scopes: ${scope.get}"
+                  )
+                )
+                .future
+            }
+          case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive()                            =>
+            val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
+            val maybeKeyPair: Option[KeyPair] =
+              DynamicSSLEngineProvider.certificates.get(keyPairId).map(_.cryptoKeyPair)
+            val algo: Algorithm               = maybeKeyPair.map { kp =>
+              (kp.getPublic, kp.getPrivate) match {
+                case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
+                case (pub: ECPublicKey, priv: ECPrivateKey)   => Algorithm.ECDSA384(pub, priv)
+                case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
+              }
+            } getOrElse {
+              Algorithm.HMAC512(apiKey.clientSecret)
+            }
+
+            val accessToken = JWT
+              .create()
+              .withJWTId(IdGenerator.uuid)
+              .withExpiresAt(DateTime.now().plus(conf.expiration.toMillis).toDate)
+              .withIssuedAt(DateTime.now().toDate)
+              .withNotBefore(DateTime.now().toDate)
+              .withClaim("cid", apiKey.clientId)
+              .withIssuer(ctx.request.theProtocol + "://" + ctx.request.host)
+              .withSubject(apiKey.clientId)
+              .withAudience("otoroshi")
+              .withKeyId(keyPairId)
+              .sign(algo)
+            // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
+
+            val pass = scope.forall { s =>
+              val scopes     = s.split(" ").toSeq
+              val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
+              scopeInter && apiKey.metadata
+                .get("scope")
+                .map(_.split(" ").toSeq.intersect(scopes).size)
+                .getOrElse(scopes.size) == scopes.size
+            }
+            if (pass) {
+              val scopeObj =
+                scope.orElse(apiKey.metadata.get("scope")).map(v => Json.obj("scope" -> v)).getOrElse(Json.obj())
+              Results
+                .Ok(
+                  Json.obj(
+                    "access_token" -> accessToken,
+                    "token_type"   -> "Bearer",
+                    "expires_in"   -> conf.expiration.toSeconds
+                  ) ++ scopeObj
+                )
+                .future
+            } else {
+              Results
+                .Forbidden(
+                  Json.obj(
+                    "error"             -> "access_denied",
+                    "error_description" -> s"Client has not been granted scopes: ${scope.get}"
+                  )
+                )
+                .future
+            }
+          case _                                                                                            =>
+            Results
+              .Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Bad client credentials"))
+              .future
+        }
       case _                                                                                         =>
         Results
           .BadRequest(
@@ -482,8 +481,9 @@ case class NgClientCredentialTokenEndpointConfig(
   override def json: JsValue = NgClientCredentialTokenEndpointConfig.format.writes(this)
 }
 object NgClientCredentialTokenEndpointConfig {
-  val default: NgClientCredentialTokenEndpointConfig = NgClientCredentialTokenEndpointConfig(1.hour, Cert.OtoroshiJwtSigning, Seq.empty, Seq.empty)
-  val format: Format[NgClientCredentialTokenEndpointConfig]  = new Format[NgClientCredentialTokenEndpointConfig] {
+  val default: NgClientCredentialTokenEndpointConfig        =
+    NgClientCredentialTokenEndpointConfig(1.hour, Cert.OtoroshiJwtSigning, Seq.empty, Seq.empty)
+  val format: Format[NgClientCredentialTokenEndpointConfig] = new Format[NgClientCredentialTokenEndpointConfig] {
     override def reads(json: JsValue): JsResult[NgClientCredentialTokenEndpointConfig] = Try {
       NgClientCredentialTokenEndpointConfig(
         expiration = json.select("expiration").asOpt[Long].map(_.millis).getOrElse(1.hour),
@@ -533,40 +533,40 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
       ctx: NgbBackendCallContext
   )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     implicit val mat: Materializer = env.otoroshiMaterializer
-    val charset      = ctx.rawRequest.charset.getOrElse("UTF-8")
+    val charset                    = ctx.rawRequest.charset.getOrElse("UTF-8")
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {
         case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") =>
-            val urlEncodedString         = bodyRaw.utf8String
-            val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).view.mapValues(_.head).toMap
-            val map: Map[String, String] = body ++ ctx.request.headers
-              .get("Authorization")
-              .filter(_.startsWith("Basic "))
-              .map(_.replace("Basic ", ""))
-              .map(v => JavaBase64.getDecoder.decode(v))
-              .map(v => new String(v))
-              .filter(_.contains(":"))
-              .map(_.split(":").toSeq)
-              .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
-              .getOrElse(Map.empty[String, String])
-            f(map)
+          val urlEncodedString         = bodyRaw.utf8String
+          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).view.mapValues(_.head).toMap
+          val map: Map[String, String] = body ++ ctx.request.headers
+            .get("Authorization")
+            .filter(_.startsWith("Basic "))
+            .map(_.replace("Basic ", ""))
+            .map(v => JavaBase64.getDecoder.decode(v))
+            .map(v => new String(v))
+            .filter(_.contains(":"))
+            .map(_.split(":").toSeq)
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
+            .getOrElse(Map.empty[String, String])
+          f(map)
         case Some(ctype) if ctype.toLowerCase().contains("application/json")                  =>
-            val json                     = Json.parse(bodyRaw.utf8String).as[JsObject]
-            val map: Map[String, String] = json.value.toSeq.collect {
-              case (key, JsString(v))  => (key, v)
-              case (key, JsNumber(v))  => (key, v.toString())
-              case (key, JsBoolean(v)) => (key, v.toString)
-            }.toMap ++ ctx.request.headers
-              .get("Authorization")
-              .filter(_.startsWith("Basic "))
-              .map(_.replace("Basic ", ""))
-              .map(v => JavaBase64.getDecoder.decode(v))
-              .map(v => new String(v))
-              .filter(_.contains(":"))
-              .map(_.split(":").toSeq)
-              .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
-              .getOrElse(Map.empty[String, String])
-            f(map)
+          val json                     = Json.parse(bodyRaw.utf8String).as[JsObject]
+          val map: Map[String, String] = json.value.toSeq.collect {
+            case (key, JsString(v))  => (key, v)
+            case (key, JsNumber(v))  => (key, v.toString())
+            case (key, JsBoolean(v)) => (key, v.toString)
+          }.toMap ++ ctx.request.headers
+            .get("Authorization")
+            .filter(_.startsWith("Basic "))
+            .map(_.replace("Basic ", ""))
+            .map(v => JavaBase64.getDecoder.decode(v))
+            .map(v => new String(v))
+            .filter(_.contains(":"))
+            .map(_.split(":").toSeq)
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
+            .getOrElse(Map.empty[String, String])
+          f(map)
         case _                                                                                =>
           // bad content type
           Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
@@ -607,71 +607,70 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
             bearerKind,
             aud
           ) =>
-          val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
-          possibleApiKey.flatMap {
-            case Some(apiKey)
-                if apiKey.isValid(clientSecret) && apiKey.isActive() && apikeyAllowed(conf, apiKey, ctx) =>
-                val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
-                val maybeKeyPair: Option[KeyPair] = env.proxyState.certificate(keyPairId).map(_.cryptoKeyPair)
-                val algo: Algorithm               = maybeKeyPair.map { kp =>
-                (kp.getPublic, kp.getPrivate) match {
-                  case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
-                  case (pub: ECPublicKey, priv: ECPrivateKey)   => Algorithm.ECDSA384(pub, priv)
-                  case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
-                }
-              } getOrElse {
-                Algorithm.HMAC512(apiKey.clientSecret)
+        val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
+        possibleApiKey.flatMap {
+          case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() && apikeyAllowed(conf, apiKey, ctx) =>
+            val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
+            val maybeKeyPair: Option[KeyPair] = env.proxyState.certificate(keyPairId).map(_.cryptoKeyPair)
+            val algo: Algorithm               = maybeKeyPair.map { kp =>
+              (kp.getPublic, kp.getPrivate) match {
+                case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
+                case (pub: ECPublicKey, priv: ECPrivateKey)   => Algorithm.ECDSA384(pub, priv)
+                case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
               }
+            } getOrElse {
+              Algorithm.HMAC512(apiKey.clientSecret)
+            }
 
-                val accessToken = JWT
-                .create()
-                .withJWTId(IdGenerator.uuid)
-                .withExpiresAt(DateTime.now().plus(conf.expiration.toMillis).toDate)
-                .withIssuedAt(DateTime.now().toDate)
-                .withNotBefore(DateTime.now().toDate)
-                .withClaim("cid", apiKey.clientId)
-                .withIssuer(ctx.rawRequest.theProtocol + "://" + ctx.rawRequest.host)
-                .withSubject(apiKey.clientId)
-                .withAudience(aud.getOrElse("otoroshi"))
-                .withKeyId(keyPairId)
-                .sign(algo)
-                // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
+            val accessToken = JWT
+              .create()
+              .withJWTId(IdGenerator.uuid)
+              .withExpiresAt(DateTime.now().plus(conf.expiration.toMillis).toDate)
+              .withIssuedAt(DateTime.now().toDate)
+              .withNotBefore(DateTime.now().toDate)
+              .withClaim("cid", apiKey.clientId)
+              .withIssuer(ctx.rawRequest.theProtocol + "://" + ctx.rawRequest.host)
+              .withSubject(apiKey.clientId)
+              .withAudience(aud.getOrElse("otoroshi"))
+              .withKeyId(keyPairId)
+              .sign(algo)
+            // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
 
-                val pass = scope.forall { s =>
-                val scopes     = s.split(" ").toSeq
-                val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
-                scopeInter && apiKey.metadata
-                  .get("scope")
-                  .map(_.split(" ").toSeq.intersect(scopes).size)
-                  .getOrElse(scopes.size) == scopes.size
-              }
-                if (pass) {
-                val scopeObj =
-                  scope.orElse(apiKey.metadata.get("scope")).map(v => Json.obj("scope" -> v)).getOrElse(Json.obj())
-                Results
-                  .Ok(
-                    Json.obj(
-                      "access_token" -> accessToken,
-                      "token_type"   -> "Bearer",
-                      "expires_in"   -> conf.expiration.toSeconds
-                    ) ++ scopeObj
-                  )
-                  .future
-              } else {
-                Results
-                  .Forbidden(
-                    Json.obj(
-                      "error"             -> "access_denied",
-                      "error_description" -> s"client has not been granted scopes: ${scope.get}"
-                    )
-                  )
-                  .future
-              }
-            case _ =>
+            val pass = scope.forall { s =>
+              val scopes     = s.split(" ").toSeq
+              val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
+              scopeInter && apiKey.metadata
+                .get("scope")
+                .map(_.split(" ").toSeq.intersect(scopes).size)
+                .getOrElse(scopes.size) == scopes.size
+            }
+            if (pass) {
+              val scopeObj =
+                scope.orElse(apiKey.metadata.get("scope")).map(v => Json.obj("scope" -> v)).getOrElse(Json.obj())
               Results
-                .Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"bad client credentials"))
+                .Ok(
+                  Json.obj(
+                    "access_token" -> accessToken,
+                    "token_type"   -> "Bearer",
+                    "expires_in"   -> conf.expiration.toSeconds
+                  ) ++ scopeObj
+                )
                 .future
-          }
+            } else {
+              Results
+                .Forbidden(
+                  Json.obj(
+                    "error"             -> "access_denied",
+                    "error_description" -> s"client has not been granted scopes: ${scope.get}"
+                  )
+                )
+                .future
+            }
+          case _                                                                                                     =>
+            Results
+              .Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"bad client credentials"))
+              .future
+        }
       case _ =>
         Results
           .BadRequest(

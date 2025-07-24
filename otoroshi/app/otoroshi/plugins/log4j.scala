@@ -56,14 +56,14 @@ object Log4jExpressionParser {
     while (i < value.length) {
       value.apply(i) match {
         case '$' if value.apply(i + 1) == '{' =>
-            if (buffer.nonEmpty) {
-              val texp = Log4jExpressionText(buffer)
-              parts = parts :+ texp
-              buffer = ""
-            }
-            val (exp, size) = parseExpression(value.substring(i + 2))
-            parts = parts :+ exp
-            i = i + size + 1
+          if (buffer.nonEmpty) {
+            val texp = Log4jExpressionText(buffer)
+            parts = parts :+ texp
+            buffer = ""
+          }
+          val (exp, size) = parseExpression(value.substring(i + 2))
+          parts = parts :+ exp
+          i = i + size + 1
         case '}'                              =>
           size = i + 1
           i = value.length
@@ -90,9 +90,9 @@ object Log4jExpressionParser {
     while (i < value.length) {
       value.apply(i) match {
         case '$' if value.apply(i + 1) == '{' =>
-            val (exp, size) = parseExpression(value.substring(i + 2))
-            expressions = expressions :+ exp
-            i = i + size + 1
+          val (exp, size) = parseExpression(value.substring(i + 2))
+          expressions = expressions :+ exp
+          i = i + size + 1
         case c                                => // nothing to do here
       }
       i = i + 1

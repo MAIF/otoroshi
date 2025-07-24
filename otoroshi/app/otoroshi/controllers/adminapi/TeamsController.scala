@@ -4,7 +4,16 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
 import otoroshi.models.Team
-import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import play.api.Logger
 import play.api.libs.json.{JsError, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
@@ -17,7 +26,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
     with CrudControllerHelper[Team, JsValue] {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-teams-api")
 
@@ -79,22 +88,22 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Team]]] = {
     env.datastores.teamDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_TEAM",
-              message = "User created a team",
-              metadata = entity.json.as[JsObject],
-              alert = "TeamCreatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_TEAM",
+            message = "User created a team",
+            metadata = entity.json.as[JsObject],
+            alert = "TeamCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "team not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "team not stored ...")
           )
+        )
     }
   }
 
@@ -104,22 +113,22 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Team]]] = {
     env.datastores.teamDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_TEAM",
-              message = "User updated a team",
-              metadata = entity.json.as[JsObject],
-              alert = "TeamUpdatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_TEAM",
+            message = "User updated a team",
+            metadata = entity.json.as[JsObject],
+            alert = "TeamUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "team not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "team not stored ...")
           )
+        )
     }
   }
 
@@ -129,21 +138,21 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Team]]] = {
     env.datastores.teamDataStore.delete(id).map {
       case true  =>
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_TEAM",
-              message = "User deleted a team",
-              metadata = Json.obj("TeamId" -> id),
-              alert = "TeamDeletedAlert"
-            )
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_TEAM",
+            message = "User deleted a team",
+            metadata = Json.obj("TeamId" -> id),
+            alert = "TeamDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "team not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "team not deleted ...")
           )
+        )
     }
   }
 }

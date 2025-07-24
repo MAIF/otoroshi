@@ -40,7 +40,7 @@ case class NgOtoroshiChallengeConfig(
 
 object NgOtoroshiChallengeConfig {
   def apply(raw: JsValue): NgOtoroshiChallengeConfig = format.reads(raw).get
-  val format: Format[NgOtoroshiChallengeConfig]                                         = new Format[NgOtoroshiChallengeConfig] {
+  val format: Format[NgOtoroshiChallengeConfig]      = new Format[NgOtoroshiChallengeConfig] {
     override def reads(raw: JsValue): JsResult[NgOtoroshiChallengeConfig] = Try {
       lazy val secComVersion: SecComVersion = {
         raw.select("version").asOpt[Int] match {
@@ -98,7 +98,7 @@ case class NgOtoroshiInfoConfig(
 
 object NgOtoroshiInfoConfig {
   def apply(raw: JsValue): NgOtoroshiInfoConfig = NgOtoroshiInfoConfig.format.reads(raw).get
-  val format: Format[NgOtoroshiInfoConfig]                                    = new Format[NgOtoroshiInfoConfig] {
+  val format: Format[NgOtoroshiInfoConfig]      = new Format[NgOtoroshiInfoConfig] {
     override def reads(raw: JsValue): JsResult[NgOtoroshiInfoConfig] = Try {
       lazy val secComVersion: SecComInfoTokenVersion = SecComInfoTokenVersion(
         raw.select("version").asOpt[String].getOrElse("Latest")
@@ -129,7 +129,10 @@ object NgOtoroshiInfoConfig {
       "version"     -> o.secComVersion.json,
       "ttl"         -> o.secComTtl.toSeconds,
       "header_name" -> o.headerName,
-      "add_fields"  -> o.addFields.map(v => JsObject(v.fields.view.mapValues(JsString.apply).toMap)).getOrElse(JsNull).as[JsValue],
+      "add_fields"  -> o.addFields
+        .map(v => JsObject(v.fields.view.mapValues(JsString.apply).toMap))
+        .getOrElse(JsNull)
+        .as[JsValue],
       "projection"  -> o.projection,
       "algo"        -> o.algo.asJson
     )
@@ -137,10 +140,12 @@ object NgOtoroshiInfoConfig {
 }
 
 object NgOtoroshiChallengeKeys {
-  val ClaimKey: TypedKey[OtoroshiClaim]      = TypedKey[OtoroshiClaim]("otoroshi.next.core.plugins.OtoroshiChallenge.OtoroshiClaim")
-  val StateTokenKey: TypedKey[String] = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateToken")
-  val StateValueKey: TypedKey[String] = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateValue")
-  val ConfigKey: TypedKey[NgOtoroshiChallengeConfig]     = TypedKey[NgOtoroshiChallengeConfig]("otoroshi.next.core.plugins.OtoroshiChallenge.Config")
+  val ClaimKey: TypedKey[OtoroshiClaim]              =
+    TypedKey[OtoroshiClaim]("otoroshi.next.core.plugins.OtoroshiChallenge.OtoroshiClaim")
+  val StateTokenKey: TypedKey[String]                = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateToken")
+  val StateValueKey: TypedKey[String]                = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateValue")
+  val ConfigKey: TypedKey[NgOtoroshiChallengeConfig] =
+    TypedKey[NgOtoroshiChallengeConfig]("otoroshi.next.core.plugins.OtoroshiChallenge.Config")
 }
 
 class OtoroshiChallenge extends NgRequestTransformer {
@@ -441,19 +446,21 @@ class OtoroshiInfos extends NgRequestTransformer {
       None,
       config.addFields.map(af =>
         AddFieldsSettings(
-          af.fields.view.mapValues(str =>
-            GlobalExpressionLanguage.apply(
-              value = str,
-              req = ctx.request.some,
-              service = ctx.route.legacy.some,
-              route = ctx.route.some,
-              apiKey = ctx.apikey,
-              user = ctx.user,
-              context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-              attrs = ctx.attrs,
-              env = env
+          af.fields.view
+            .mapValues(str =>
+              GlobalExpressionLanguage.apply(
+                value = str,
+                req = ctx.request.some,
+                service = ctx.route.legacy.some,
+                route = ctx.route.some,
+                apiKey = ctx.apikey,
+                user = ctx.user,
+                context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+                attrs = ctx.attrs,
+                env = env
+              )
             )
-          ).toMap
+            .toMap
         )
       )
     )
@@ -482,8 +489,8 @@ case class PossibleCerts(certIds: Seq[String]) extends NgPluginConfig {
 }
 
 object PossibleCerts {
-  val default: PossibleCerts                        = PossibleCerts(Seq.empty)
-  val format: Format[PossibleCerts]                         = new Format[PossibleCerts] {
+  val default: PossibleCerts         = PossibleCerts(Seq.empty)
+  val format: Format[PossibleCerts]  = new Format[PossibleCerts] {
     override def writes(o: PossibleCerts): JsValue             = Json.obj(
       "cert_ids" -> o.certIds
     )
@@ -667,8 +674,8 @@ case class OtoroshiMetricsEndpointConfig(filter: Option[String]) extends NgPlugi
 }
 
 object OtoroshiMetricsEndpointConfig {
-  val default: OtoroshiMetricsEndpointConfig                        = OtoroshiMetricsEndpointConfig(None)
-  val format: Format[OtoroshiMetricsEndpointConfig]                         = new Format[OtoroshiMetricsEndpointConfig] {
+  val default: OtoroshiMetricsEndpointConfig        = OtoroshiMetricsEndpointConfig(None)
+  val format: Format[OtoroshiMetricsEndpointConfig] = new Format[OtoroshiMetricsEndpointConfig] {
     override def writes(o: OtoroshiMetricsEndpointConfig): JsValue             = Json.obj(
       "filter" -> o.filter.map(_.json).getOrElse(JsNull).asValue
     )
@@ -681,8 +688,8 @@ object OtoroshiMetricsEndpointConfig {
       case Success(e) => JsSuccess(e)
     }
   }
-  val configFlow: Seq[String]        = Seq("filter")
-  val configSchema: Option[JsObject] = Some(
+  val configFlow: Seq[String]                       = Seq("filter")
+  val configSchema: Option[JsObject]                = Some(
     Json.obj(
       "filter" -> Json.obj(
         "type"  -> "string",

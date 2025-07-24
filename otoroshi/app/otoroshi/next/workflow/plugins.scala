@@ -19,9 +19,9 @@ case class WorkflowBackendConfig(json: JsValue = Json.obj()) extends NgPluginCon
 }
 
 object WorkflowBackendConfig {
-  val configFlow: Seq[String]        = Seq("ref", "async")
-  val configFlowNoAsync: Seq[String] = Seq("ref")
-  val configSchema: Option[JsObject] = Some(
+  val configFlow: Seq[String]               = Seq("ref", "async")
+  val configFlowNoAsync: Seq[String]        = Seq("ref")
+  val configSchema: Option[JsObject]        = Some(
     Json.obj(
       "async" -> Json.obj("type" -> "bool", "label" -> "Async"),
       "ref"   -> Json.obj(
@@ -37,7 +37,7 @@ object WorkflowBackendConfig {
       )
     )
   )
-  val format: Format[WorkflowBackendConfig]                         = new Format[WorkflowBackendConfig] {
+  val format: Format[WorkflowBackendConfig] = new Format[WorkflowBackendConfig] {
     override def reads(json: JsValue): JsResult[WorkflowBackendConfig] = JsSuccess(WorkflowBackendConfig(json))
     override def writes(o: WorkflowBackendConfig): JsValue             = o.json
   }
@@ -86,56 +86,56 @@ class WorkflowBackend extends NgBackendCall {
           )
           .map(r => NgProxyEngineError.NgResultProxyEngineError(r).left)
       case Some((extension, workflow)) =>
-          ctx.jsonWithTypedBody
-            .flatMap { input =>
-              val f = extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs)
-              if (config.async) {
-                Right(
-                  BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(Json.obj("ack" -> true))), None)
-                ).vfuture
-              } else {
-                f.map { res =>
-                  if (res.hasError) {
+        ctx.jsonWithTypedBody
+          .flatMap { input =>
+            val f = extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs)
+            if (config.async) {
+              Right(
+                BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(Json.obj("ack" -> true))), None)
+              ).vfuture
+            } else {
+              f.map { res =>
+                if (res.hasError) {
+                  Right(
+                    BackendCallResponse(
+                      NgPluginHttpResponse.fromResult(
+                        Results.InternalServerError(Json.obj("error" -> res.error.get.json))
+                      ),
+                      None
+                    )
+                  )
+                } else {
+                  val respBody = res.returned.getOrElse(Json.obj())
+                  val status   = respBody.select("status").asOpt[Int]
+                  val headers  = respBody.select("headers").asOpt[Map[String, String]]
+                  val body     = BodyHelper.extractBodyFromOpt(respBody)
+                  if (status.isDefined && headers.isDefined && body.isDefined) {
+                    val heads = headers.get.getIgnoreCase("Content-Length") match {
+                      case None    =>
+                        headers.get - "Content-Type" - "content-type" ++ Map("Content-Length" -> s"${body.get.length}")
+                      case Some(_) => headers.get - "Content-Type" - "content-type"
+                    }
+                    val ctype = headers.get.getIgnoreCase("Content-Type").getOrElse("application/json")
                     Right(
                       BackendCallResponse(
                         NgPluginHttpResponse.fromResult(
-                          Results.InternalServerError(Json.obj("error" -> res.error.get.json))
+                          Results.Status(status.get)(body.get).withHeaders(heads.toSeq: _*).as(ctype)
                         ),
                         None
                       )
                     )
                   } else {
-                    val respBody = res.returned.getOrElse(Json.obj())
-                    val status   = respBody.select("status").asOpt[Int]
-                    val headers  = respBody.select("headers").asOpt[Map[String, String]]
-                    val body     = BodyHelper.extractBodyFromOpt(respBody)
-                    if (status.isDefined && headers.isDefined && body.isDefined) {
-                      val heads = headers.get.getIgnoreCase("Content-Length") match {
-                        case None    =>
-                          headers.get - "Content-Type" - "content-type" ++ Map("Content-Length" -> s"${body.get.length}")
-                        case Some(_) => headers.get - "Content-Type" - "content-type"
-                      }
-                      val ctype = headers.get.getIgnoreCase("Content-Type").getOrElse("application/json")
-                      Right(
-                        BackendCallResponse(
-                          NgPluginHttpResponse.fromResult(
-                            Results.Status(status.get)(body.get).withHeaders(heads.toSeq: _*).as(ctype)
-                          ),
-                          None
-                        )
+                    Right(
+                      BackendCallResponse(
+                        NgPluginHttpResponse.fromResult(Results.Ok(body.get).as("application/json")),
+                        None
                       )
-                    } else {
-                      Right(
-                        BackendCallResponse(
-                          NgPluginHttpResponse.fromResult(Results.Ok(body.get).as("application/json")),
-                          None
-                        )
-                      )
-                    }
+                    )
                   }
                 }
               }
             }
+          }
     }
   }
 }
@@ -182,26 +182,26 @@ class WorkflowRequestTransformer extends NgRequestTransformer {
           )
           .map(r => r.left)
       case Some((extension, workflow)) =>
-          ctx.jsonWithTypedBody
-            .flatMap { input =>
-              extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).map { res =>
-                if (res.hasError) {
-                  Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
-                } else {
-                  val response = res.returned.getOrElse(Json.obj())
-                  val body     = BodyHelper.extractBodyFromOpt(response)
-                  Right(
-                    ctx.otoroshiRequest.copy(
-                      method = (response \ "method").asOpt[String].getOrElse(ctx.otoroshiRequest.method),
-                      url = (response \ "url").asOpt[String].getOrElse(ctx.otoroshiRequest.url),
-                      headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiRequest.headers),
-                      cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiRequest.cookies),
-                      body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiRequest.body)
-                    )
+        ctx.jsonWithTypedBody
+          .flatMap { input =>
+            extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).map { res =>
+              if (res.hasError) {
+                Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
+              } else {
+                val response = res.returned.getOrElse(Json.obj())
+                val body     = BodyHelper.extractBodyFromOpt(response)
+                Right(
+                  ctx.otoroshiRequest.copy(
+                    method = (response \ "method").asOpt[String].getOrElse(ctx.otoroshiRequest.method),
+                    url = (response \ "url").asOpt[String].getOrElse(ctx.otoroshiRequest.url),
+                    headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiRequest.headers),
+                    cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiRequest.cookies),
+                    body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiRequest.body)
                   )
-                }
+                )
               }
             }
+          }
     }
   }
 }
@@ -250,25 +250,25 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
           )
           .map(r => r.left)
       case Some((extension, workflow)) =>
-          ctx.jsonWithTypedBody
-            .flatMap { input =>
-              extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).map { res =>
-                if (res.hasError) {
-                  Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
-                } else {
-                  val response = res.returned.getOrElse(Json.obj())
-                  val body     = BodyHelper.extractBodyFromOpt(response)
-                  Right(
-                    ctx.otoroshiResponse.copy(
-                      status = (response \ "status").asOpt[Int].getOrElse(200),
-                      headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiResponse.headers),
-                      cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiResponse.cookies),
-                      body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiResponse.body)
-                    )
+        ctx.jsonWithTypedBody
+          .flatMap { input =>
+            extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).map { res =>
+              if (res.hasError) {
+                Results.InternalServerError(Json.obj("error" -> res.error.get.json)).left
+              } else {
+                val response = res.returned.getOrElse(Json.obj())
+                val body     = BodyHelper.extractBodyFromOpt(response)
+                Right(
+                  ctx.otoroshiResponse.copy(
+                    status = (response \ "status").asOpt[Int].getOrElse(200),
+                    headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiResponse.headers),
+                    cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiResponse.cookies),
+                    body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiResponse.body)
                   )
-                }
+                )
               }
             }
+          }
     }
   }
 }
@@ -310,31 +310,31 @@ class WorkflowAccessValidator extends NgAccessValidator {
           )
           .map(r => NgAccess.NgDenied(r))
       case Some((extension, workflow)) =>
-          val input = ctx.wasmJson
-          extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).flatMap { res =>
-            if (res.hasError) {
-              NgAccess.NgDenied(Results.InternalServerError(Json.obj("error" -> res.error.get.json))).vfuture
+        val input = ctx.wasmJson
+        extension.engine.run(Node.from(workflow.config), input.asObject, ctx.attrs).flatMap { res =>
+          if (res.hasError) {
+            NgAccess.NgDenied(Results.InternalServerError(Json.obj("error" -> res.error.get.json))).vfuture
+          } else {
+            val response = res.returned.getOrElse(Json.obj())
+            val result   = (response \ "result").asOpt[Boolean].getOrElse(false)
+            if (result) {
+              NgAccess.NgAllowed.vfuture
             } else {
-              val response = res.returned.getOrElse(Json.obj())
-              val result   = (response \ "result").asOpt[Boolean].getOrElse(false)
-              if (result) {
-                NgAccess.NgAllowed.vfuture
-              } else {
-                val error = (response \ "error").asOpt[JsObject].getOrElse(Json.obj())
-                Errors
-                  .craftResponseResult(
-                    (error \ "message").asOpt[String].getOrElse("An error occurred"),
-                    Results.Status((error \ "status").asOpt[Int].getOrElse(403)),
-                    ctx.request,
-                    None,
-                    None,
-                    attrs = ctx.attrs,
-                    maybeRoute = ctx.route.some
-                  )
-                  .map(r => NgAccess.NgDenied(r))
-              }
+              val error = (response \ "error").asOpt[JsObject].getOrElse(Json.obj())
+              Errors
+                .craftResponseResult(
+                  (error \ "message").asOpt[String].getOrElse("An error occurred"),
+                  Results.Status((error \ "status").asOpt[Int].getOrElse(403)),
+                  ctx.request,
+                  None,
+                  None,
+                  attrs = ctx.attrs,
+                  maybeRoute = ctx.route.some
+                )
+                .map(r => NgAccess.NgDenied(r))
             }
           }
+        }
     }
   }
 }

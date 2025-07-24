@@ -39,7 +39,7 @@ object OAuth1Caller {
     val tokenSecret     = "oauth_token_secret"
   }
 
-  val Algo: Map[String,String] = Map(
+  val Algo: Map[String, String] = Map(
     "HMAC-SHA1"   -> "HmacSHA1",
     "HMAC-SHA256" -> "HmacSHA256",
     "HMAC-SHA384" -> "HmacSHA384",
@@ -480,25 +480,25 @@ class OAuth2Caller extends NgRequestTransformer {
     env.datastores.rawDataStore.get(key).flatMap {
       case None            => Left("no token found !").vfuture
       case Some(tokenBody) =>
-          val tokenBodyJson = tokenBody.utf8String.parseJson.asObject
-          tokenBodyJson.select("refresh_token").asOpt[String] match {
-            case None               => Left("no refresh_token found !").vfuture
-            case Some(refreshToken) =>
-              fetchRefreshTheToken(refreshToken, config).flatMap { newTokenBody =>
-                val rtok             = newTokenBody.select("refresh_token").asOpt[String].getOrElse(refreshToken)
-                val expires_in: Long =
-                  newTokenBody.select("expires_in").asOpt[Long].getOrElse(config.cacheTokenSeconds.toSeconds)
-                val expiration_date  = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime
-                val newnewTokenBody  =
-                  newTokenBody.as[JsObject] ++ Json.obj("refresh_token" -> rtok, "expiration_date" -> expiration_date)
-                val token            = newnewTokenBody.select("access_token").as[String]
-                env.datastores.rawDataStore
-                  .set(key, ByteString(newnewTokenBody.stringify), expires_in.seconds.toMillis.some)
-                  .map { _ =>
-                    Right(token)
-                  }
-              }
-          }
+        val tokenBodyJson = tokenBody.utf8String.parseJson.asObject
+        tokenBodyJson.select("refresh_token").asOpt[String] match {
+          case None               => Left("no refresh_token found !").vfuture
+          case Some(refreshToken) =>
+            fetchRefreshTheToken(refreshToken, config).flatMap { newTokenBody =>
+              val rtok             = newTokenBody.select("refresh_token").asOpt[String].getOrElse(refreshToken)
+              val expires_in: Long =
+                newTokenBody.select("expires_in").asOpt[Long].getOrElse(config.cacheTokenSeconds.toSeconds)
+              val expiration_date  = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime
+              val newnewTokenBody  =
+                newTokenBody.as[JsObject] ++ Json.obj("refresh_token" -> rtok, "expiration_date" -> expiration_date)
+              val token            = newnewTokenBody.select("access_token").as[String]
+              env.datastores.rawDataStore
+                .set(key, ByteString(newnewTokenBody.stringify), expires_in.seconds.toMillis.some)
+                .map { _ =>
+                  Right(token)
+                }
+            }
+        }
     }
   }
 
@@ -508,9 +508,9 @@ class OAuth2Caller extends NgRequestTransformer {
     tokenBody.select("expiration_date").asOpt[Long] match {
       case None                      => false
       case Some(expiration_date_lng) =>
-          val expiration_date = new DateTime(expiration_date_lng)
-          val dur             = new org.joda.time.Duration(DateTime.now(), expiration_date)
-          dur.toStandardSeconds.getSeconds <= limit
+        val expiration_date = new DateTime(expiration_date_lng)
+        val dur             = new org.joda.time.Duration(DateTime.now(), expiration_date)
+        dur.toStandardSeconds.getSeconds <= limit
     }
   }
 
@@ -571,15 +571,15 @@ class OAuth2Caller extends NgRequestTransformer {
         if (ctx.otoroshiResponse.status == 401) {
           tryRenewToken(key, config).flatMap {
             case Left(_)      =>
-                getToken(key, config).flatMap {
-                  case Left((body, status)) =>
-                    Left(
-                      Results.Unauthorized(
-                        Json.obj("error" -> "unauthorized", "error_description" -> body, "error_status" -> status)
-                      )
-                    ).vfuture
-                  case Right(token)         => Future.failed[Either[Result, NgPluginHttpResponse]](new ForceRetryException(token))
-                }
+              getToken(key, config).flatMap {
+                case Left((body, status)) =>
+                  Left(
+                    Results.Unauthorized(
+                      Json.obj("error" -> "unauthorized", "error_description" -> body, "error_status" -> status)
+                    )
+                  ).vfuture
+                case Right(token)         => Future.failed[Either[Result, NgPluginHttpResponse]](new ForceRetryException(token))
+              }
             case Right(token) => Future.failed[Either[Result, NgPluginHttpResponse]](new ForceRetryException(token))
           }
         } else {

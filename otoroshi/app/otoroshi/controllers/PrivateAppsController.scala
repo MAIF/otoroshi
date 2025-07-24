@@ -26,7 +26,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
   private lazy val secret = new SecretKeySpec(env.secretSession.getBytes, "AES")
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   def home: Action[AnyContent] =
     PrivateAppsAction { ctx =>

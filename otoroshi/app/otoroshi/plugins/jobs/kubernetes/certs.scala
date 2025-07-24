@@ -33,32 +33,32 @@ object KubernetesCertSyncJob {
         cert.cert match {
           case None        => ().future
           case Some(found) =>
-              val certId  = s"kubernetes-certs-import-${cert.namespace}-${cert.name}".slugifyWithSlash
-              val newCert = found.copy(id = certId).enrich()
-              env.datastores.certificatesDataStore.findById(certId).flatMap {
-                case None                                                                  =>
-                  hashs.get(newCert.contentHash) match {
-                    case None if newCert.expired => ().future
-                    case None                    =>
-                      logger.info(s"importing cert. ${cert.namespace} - ${cert.name}")
-                      newCert
-                        .copy(entityMetadata =
-                          newCert.entityMetadata ++ Map(
-                            "otoroshi-provider"    -> "kubernetes-certs",
-                            "kubernetes-name"      -> cert.name,
-                            "kubernetes-namespace" -> cert.namespace,
-                            "kubernetes-path"      -> s"${cert.namespace}/${cert.name}",
-                            "kubernetes-uid"       -> cert.uid
-                          )
+            val certId  = s"kubernetes-certs-import-${cert.namespace}-${cert.name}".slugifyWithSlash
+            val newCert = found.copy(id = certId).enrich()
+            env.datastores.certificatesDataStore.findById(certId).flatMap {
+              case None               =>
+                hashs.get(newCert.contentHash) match {
+                  case None if newCert.expired => ().future
+                  case None                    =>
+                    logger.info(s"importing cert. ${cert.namespace} - ${cert.name}")
+                    newCert
+                      .copy(entityMetadata =
+                        newCert.entityMetadata ++ Map(
+                          "otoroshi-provider"    -> "kubernetes-certs",
+                          "kubernetes-name"      -> cert.name,
+                          "kubernetes-namespace" -> cert.namespace,
+                          "kubernetes-path"      -> s"${cert.namespace}/${cert.name}",
+                          "kubernetes-uid"       -> cert.uid
                         )
-                        .save()
-                        .map(_ => ())
-                    case Some(_)                 => ().future
-                  }
-                case Some(existingCert) =>
-                  if (existingCert.contentHash == newCert.contentHash) {
-                    ().future
-                  } else {
+                      )
+                      .save()
+                      .map(_ => ())
+                  case Some(_)                 => ().future
+                }
+              case Some(existingCert) =>
+                if (existingCert.contentHash == newCert.contentHash) {
+                  ().future
+                } else {
                   hashs.get(newCert.contentHash) match {
                     case None if newCert.expired => ().future
                     case None                    =>
@@ -77,8 +77,8 @@ object KubernetesCertSyncJob {
                         .map(_ => ())
                     case Some(_)                 => ().future
                   }
-                  }
-              }
+                }
+            }
         }
       })
       .map(_ => ())
@@ -310,9 +310,9 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
         watchCommand.set(false)
         lastWatchStopped.set(true)
       }
-      val conf         = KubernetesConfig.theConfig(ctx)
-      val client       = new KubernetesClient(conf, env)
-      val source       = Source
+      val conf                       = KubernetesConfig.theConfig(ctx)
+      val client                     = new KubernetesClient(conf, env)
+      val source                     = Source
         .future(getNamespaces(client, conf))
         .flatMapConcat { nses =>
           client.watchKubeResources(nses, Seq("secrets", "endpoints"), conf.watchTimeoutSeconds, !watchCommand.get())

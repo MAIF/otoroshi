@@ -193,7 +193,7 @@ case class BasicAuthModuleConfig(
   override def form: Option[Form]                                       = None
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def authModule(config: GlobalConfig): AuthModule             = BasicAuthModule(this)
-  override def asJson: JsValue                                                   =
+  override def asJson: JsValue                                          =
     location.jsonWithKey ++ Json.obj(
       "type"                     -> "basic",
       "id"                       -> this.id,
@@ -213,7 +213,7 @@ case class BasicAuthModuleConfig(
       "remoteValidators"         -> JsArray(remoteValidators.map(_.json))
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
-  override def cookieSuffix(desc: ServiceDescriptor): String                    = s"basic-auth-$id"
+  override def cookieSuffix(desc: ServiceDescriptor): String            = s"basic-auth-$id"
   def theDescription: String                                            = desc
   def theMetadata: Map[String, String]                                  = metadata
   def theName: String                                                   = name
@@ -319,7 +319,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       env: Env
   ): Future[Result] = {
     implicit val req: RequestHeader = request
-    val redirect     = request
+    val redirect                    = request
       .getQueryString("redirect")
       .filter(redirect =>
         request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=$redirect"))
@@ -327,7 +327,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       .map(redirectBase64Encoded =>
         new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
       )
-    val hash         = env.sign(s"${authConfig.id}:::${descriptor.id}")
+    val hash                        = env.sign(s"${authConfig.id}:::${descriptor.id}")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       if (authConfig.basicAuth) {
 
@@ -396,7 +396,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   )(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[Result,Option[String]]] = FastFuture.successful(Right(None))
+  ): Future[Either[Result, Option[String]]] = FastFuture.successful(Right(None))
 
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
@@ -469,8 +469,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       env: Env
   ): Future[Result] = {
     implicit val req: RequestHeader = request
-    val redirect     = request.getQueryString("redirect")
-    val hash         = env.sign(s"${authConfig.id}:::backoffice")
+    val redirect                    = request.getQueryString("redirect")
+    val hash                        = env.sign(s"${authConfig.id}:::backoffice")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       if (authConfig.basicAuth) {
 
@@ -518,7 +518,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[Result,Option[String]]] =
+  ): Future[Either[Result, Option[String]]] =
     FastFuture.successful(Right(None))
 
   override def boCallback(
@@ -765,7 +765,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                           .build()
                       )
                     ) match {
-                      case Failure(e)                           =>
+                      case Failure(e)      =>
                         FastFuture.successful(Left(ErrorReason("bad request")))
                       case Success(result) =>
                         if (result.isSuccess)
@@ -846,7 +846,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                           .build()
                       )
                     ) match {
-                      case Failure(e)                           =>
+                      case Failure(e)      =>
                         FastFuture.successful(Left(ErrorReason("bad request")))
                       case Success(result) =>
                         if (result.isSuccess)

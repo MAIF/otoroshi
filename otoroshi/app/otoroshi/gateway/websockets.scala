@@ -18,7 +18,16 @@ import otoroshi.events._
 import otoroshi.models._
 import otoroshi.next.models.{NgContextualPlugins, NgPluginInstance, NgRoute}
 import otoroshi.next.plugins.RejectStrategy
-import otoroshi.next.plugins.api.{NgAccess, NgPluginWrapper, NgWebsocketError, NgWebsocketPlugin, NgWebsocketPluginContext, NgWebsocketResponse, NgWebsocketValidatorPlugin, WebsocketMessage}
+import otoroshi.next.plugins.api.{
+  NgAccess,
+  NgPluginWrapper,
+  NgWebsocketError,
+  NgWebsocketPlugin,
+  NgWebsocketPluginContext,
+  NgWebsocketResponse,
+  NgWebsocketValidatorPlugin,
+  WebsocketMessage
+}
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.utils.FEither
@@ -32,7 +41,14 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.utils.udp._
 import otoroshi.utils.{TypedMap, UrlSanitizer}
 import play.api.Logger
-import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{
+  CloseMessage,
+  PingMessage,
+  PongMessage,
+  BinaryMessage => PlayWSBinaryMessage,
+  Message => PlayWSMessage,
+  TextMessage => PlayWSTextMessage
+}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.NotFound
@@ -48,9 +64,9 @@ class WebSocketHandler()(implicit env: Env) {
 
   type WSFlow = Flow[PlayWSMessage, PlayWSMessage, _]
 
-  implicit lazy val currentEc: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val currentScheduler: Scheduler = env.otoroshiScheduler
-  implicit lazy val currentSystem: ActorSystem = env.otoroshiActorSystem
+  implicit lazy val currentEc: ExecutionContext       = env.otoroshiExecutionContext
+  implicit lazy val currentScheduler: Scheduler       = env.otoroshiScheduler
+  implicit lazy val currentSystem: ActorSystem        = env.otoroshiActorSystem
   implicit lazy val currentMaterializer: Materializer = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-websocket-handler")
@@ -76,7 +92,7 @@ class WebSocketHandler()(implicit env: Env) {
       snowMonkey: SnowMonkey,
       headersInFiltered: Seq[String],
       headersOutFiltered: Seq[String]
-  ): Future[Either[Result,WSFlow]] = {
+  ): Future[Either[Result, WSFlow]] = {
     reverseProxyAction.async[WSFlow](
       ReverseProxyActionContext(req, Source.empty, snowMonkey, logger),
       ws = true,
@@ -204,105 +220,103 @@ class WebSocketHandler()(implicit env: Env) {
     val overhead                         = System.currentTimeMillis() - start
     val quotas: Future[RemainingQuotas]  =
       apiKey.map(_.updateQuotas()).getOrElse(FastFuture.successful(RemainingQuotas()))
-    promise.future.andThen {
-      case Success(resp) =>
-        val duration = System.currentTimeMillis() - start
-        // logger.trace(s"[$snowflake] Call forwarded in $duration ms. with $overhead ms overhead for (${req.version}, ${req.theProtocol}://${req.host}${req.relativeUri} => $url, $from)")
-        descriptor
-          .updateMetrics(duration, overhead, counterIn.get(), counterOut.get(), 0, globalConfig)
-          .andThen { case Failure(e) =>
-            logger.error("Error while updating call metrics reporting", e)
-          }
-        env.datastores.globalConfigDataStore.updateQuotas(globalConfig)
-        quotas.andThen {
-          case Success(q) =>
-            val fromLbl          =
-              req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
-            val viz: OtoroshiViz = OtoroshiViz(
-              to = descriptor.id,
-              toLbl = descriptor.name,
-              from = req.headers.get(env.Headers.OtoroshiVizFrom).getOrElse("internet"),
-              fromLbl = fromLbl,
-              fromTo = s"$fromLbl###${descriptor.name}"
+    promise.future.andThen { case Success(resp) =>
+      val duration = System.currentTimeMillis() - start
+      // logger.trace(s"[$snowflake] Call forwarded in $duration ms. with $overhead ms overhead for (${req.version}, ${req.theProtocol}://${req.host}${req.relativeUri} => $url, $from)")
+      descriptor
+        .updateMetrics(duration, overhead, counterIn.get(), counterOut.get(), 0, globalConfig)
+        .andThen { case Failure(e) =>
+          logger.error("Error while updating call metrics reporting", e)
+        }
+      env.datastores.globalConfigDataStore.updateQuotas(globalConfig)
+      quotas.andThen { case Success(q) =>
+        val fromLbl          =
+          req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
+        val viz: OtoroshiViz = OtoroshiViz(
+          to = descriptor.id,
+          toLbl = descriptor.name,
+          from = req.headers.get(env.Headers.OtoroshiVizFrom).getOrElse("internet"),
+          fromLbl = fromLbl,
+          fromTo = s"$fromLbl###${descriptor.name}"
+        )
+        val evt              = GatewayEvent(
+          `@id` = env.snowflakeGenerator.nextIdStr(),
+          reqId = snowflake,
+          parentReqId = fromOtoroshi,
+          `@timestamp` = DateTime.now(),
+          `@calledAt` = callDate,
+          protocol = req.version,
+          to = Location(
+            scheme = req.theWsProtocol,
+            host = req.theHost,
+            uri = req.relativeUri
+          ),
+          target = Location(
+            scheme = scheme,
+            host = host,
+            uri = req.relativeUri
+          ),
+          backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
+          duration = duration,
+          overhead = overhead,
+          cbDuration = cbDuration,
+          overheadWoCb = Math.abs(overhead - cbDuration),
+          callAttempts = callAttempts,
+          url = url,
+          method = req.method,
+          from = req.theIpAddress,
+          env = descriptor.env,
+          data = DataInOut(
+            dataIn = counterIn.get(),
+            dataOut = counterOut.get()
+          ),
+          status = resp.status,
+          headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
+          headersOut = resp.headersOut,
+          otoroshiHeadersIn = resp.otoroshiHeadersIn,
+          otoroshiHeadersOut = resp.otoroshiHeadersOut,
+          extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
+          identity = apiKey
+            .map(k =>
+              Identity(
+                identityType = "APIKEY",
+                identity = k.clientId,
+                label = k.clientName,
+                tags = k.tags,
+                metadata = k.metadata
+              )
             )
-            val evt              = GatewayEvent(
-              `@id` = env.snowflakeGenerator.nextIdStr(),
-              reqId = snowflake,
-              parentReqId = fromOtoroshi,
-              `@timestamp` = DateTime.now(),
-              `@calledAt` = callDate,
-              protocol = req.version,
-              to = Location(
-                scheme = req.theWsProtocol,
-                host = req.theHost,
-                uri = req.relativeUri
-              ),
-              target = Location(
-                scheme = scheme,
-                host = host,
-                uri = req.relativeUri
-              ),
-              backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
-              duration = duration,
-              overhead = overhead,
-              cbDuration = cbDuration,
-              overheadWoCb = Math.abs(overhead - cbDuration),
-              callAttempts = callAttempts,
-              url = url,
-              method = req.method,
-              from = req.theIpAddress,
-              env = descriptor.env,
-              data = DataInOut(
-                dataIn = counterIn.get(),
-                dataOut = counterOut.get()
-              ),
-              status = resp.status,
-              headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
-              headersOut = resp.headersOut,
-              otoroshiHeadersIn = resp.otoroshiHeadersIn,
-              otoroshiHeadersOut = resp.otoroshiHeadersOut,
-              extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
-              identity = apiKey
-                .map(k =>
-                  Identity(
-                    identityType = "APIKEY",
-                    identity = k.clientId,
-                    label = k.clientName,
-                    tags = k.tags,
-                    metadata = k.metadata
-                  )
+            .orElse(
+              paUsr.map(k =>
+                Identity(
+                  identityType = "PRIVATEAPP",
+                  identity = k.email,
+                  label = k.name,
+                  tags = k.tags,
+                  metadata = k.metadata
                 )
-                .orElse(
-                  paUsr.map(k =>
-                    Identity(
-                      identityType = "PRIVATEAPP",
-                      identity = k.email,
-                      label = k.name,
-                      tags = k.tags,
-                      metadata = k.metadata
-                    )
-                  )
-                ),
-              responseChunked = false,
-              `@serviceId` = descriptor.id,
-              `@service` = descriptor.name,
-              descriptor = Some(descriptor),
-              `@product` = descriptor.metadata.getOrElse("product", "--"),
-              remainingQuotas = q,
-              viz = Some(viz),
-              clientCertChain = req.clientCertChainPem,
-              err = attrs.get(otoroshi.plugins.Keys.GwErrorKey).isDefined,
-              gwError = attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message),
-              userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
-              geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
-              extraAnalyticsData = attrs.get(otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
-              matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey)
-            )
-            evt.toAnalytics()
-            if (descriptor.logAnalyticsOnServer) {
-              evt.log()(env, env.analyticsExecutionContext) // pressure EC
-            }
-        }(env.analyticsExecutionContext) // pressure EC
+              )
+            ),
+          responseChunked = false,
+          `@serviceId` = descriptor.id,
+          `@service` = descriptor.name,
+          descriptor = Some(descriptor),
+          `@product` = descriptor.metadata.getOrElse("product", "--"),
+          remainingQuotas = q,
+          viz = Some(viz),
+          clientCertChain = req.clientCertChainPem,
+          err = attrs.get(otoroshi.plugins.Keys.GwErrorKey).isDefined,
+          gwError = attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message),
+          userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
+          geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
+          extraAnalyticsData = attrs.get(otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
+          matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey)
+        )
+        evt.toAnalytics()
+        if (descriptor.logAnalyticsOnServer) {
+          evt.log()(env, env.analyticsExecutionContext) // pressure EC
+        }
+      }(env.analyticsExecutionContext) // pressure EC
     }(env.analyticsExecutionContext) // pressure EC
 
     val wsCookiesIn     = req.cookies.toSeq.map(c =>
@@ -356,7 +370,7 @@ class WebSocketHandler()(implicit env: Env) {
         )
       )
       .flatMap {
-        case Left(badResult)                                   =>
+        case Left(badResult)                                                                                       =>
           quotas
             .map { remainingQuotas =>
               val _headersOut: Seq[(String, String)] =
@@ -401,7 +415,8 @@ class WebSocketHandler()(implicit env: Env) {
               attrs = attrs
             )
             .asLeft[WSFlow]
-        case Right(_httpReq) if descriptor.tcpUdpTunneling && req.relativeUri.startsWith("/.well-known/otoroshi/tunnel") =>
+        case Right(_httpReq)
+            if descriptor.tcpUdpTunneling && req.relativeUri.startsWith("/.well-known/otoroshi/tunnel") =>
           val target                          = _httpReq.target.getOrElse(_target)
           val (theHost: String, thePort: Int) =
             (
@@ -484,7 +499,6 @@ class WebSocketHandler()(implicit env: Env) {
                   })
               FastFuture.successful(Right(flow))
             case "udp"     =>
-
               import org.apache.pekko.stream.scaladsl.{Flow, GraphDSL, UnzipWith, ZipWith}
               import GraphDSL.Implicits._
 
@@ -552,7 +566,7 @@ class WebSocketHandler()(implicit env: Env) {
                 })
               FastFuture.successful(Right(flow))
           }
-        case Right(httpRequest) =>
+        case Right(httpRequest)                                                                                    =>
           if (descriptor.useNewWSClient) {
             FastFuture.successful(
               Right(
@@ -686,11 +700,11 @@ object WebSocketProxyActor {
                 ClientTransport.httpsProxy(proxyAddress, auth)
               case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
-            a: ClientConnectionSettings =>
+            (a: ClientConnectionSettings) =>
               a.withTransport(httpsProxyTransport)
                 .withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
                 .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
-          } getOrElse { a: ClientConnectionSettings =>
+          } getOrElse { (a: ClientConnectionSettings) =>
           val maybeIpAddress = target.ipAddress.map(addr => InetSocketAddress.createUnresolved(addr, target.thePort))
           if (env.manualDnsResolve && maybeIpAddress.isDefined) {
             a.withTransport(ManualResolveTransport.resolveTo(maybeIpAddress.get))
@@ -737,7 +751,7 @@ object WebSocketProxyActor {
                   source
                     .runFold(ByteString.empty)((concat, str) => concat ++ str)
                     .map(data => PlayWSBinaryMessage(data))
-                case other                                                      => FastFuture.failed(new RuntimeException(s"Unkown message type $other"))
+                case other                                                                  => FastFuture.failed(new RuntimeException(s"Unkown message type $other"))
               }
             )
             FastFuture.successful(f)
@@ -765,15 +779,17 @@ class WebSocketProxyActor(
   import scala.concurrent.duration._
 
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit val mat: Materializer = env.otoroshiMaterializer
-  implicit val e: Env = env
+  implicit val mat: Materializer    = env.otoroshiMaterializer
+  implicit val e: Env               = env
 
-  lazy val source: Source[Message,SourceQueueWithComplete[Message]] = Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](50000, OverflowStrategy.dropTail)
-  lazy val logger: Logger = Logger("otoroshi-websocket-handler-actor")
+  lazy val source: Source[Message, SourceQueueWithComplete[Message]] =
+    Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](50000, OverflowStrategy.dropTail)
+  lazy val logger: Logger                                            = Logger("otoroshi-websocket-handler-actor")
 
   val queueRef = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]
 
-  val avoid: Seq[String] = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
+  val avoid: Seq[String] =
+    Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
   // Seq("Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Host")
 
   val wsEngine: WebsocketEngine = if (route.isDefined && ctxPlugins.isDefined && ctxPlugins.get.hasWebsocketPlugins) {
@@ -850,11 +866,11 @@ class WebSocketProxyActor(
               case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
             // TODO: use proxy transport when akka http will be updated
-            a: ClientConnectionSettings =>
+            (a: ClientConnectionSettings) =>
               //a //.withTransport(httpsProxyTransport)
               a.withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
                 .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
-          } getOrElse { a: ClientConnectionSettings =>
+          } getOrElse { (a: ClientConnectionSettings) =>
           a.withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
             .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
         }
@@ -891,27 +907,26 @@ class WebSocketProxyActor(
     }
   }
 
-  def receive: Receive = {
-    case data: play.api.http.websocket.Message =>
-      wsEngine
-        .handleRequest(data)(closeFunction)
-        .map {
-          case Left(error) =>
-            error.rejectStrategy.foreach {
-              case RejectStrategy.Close =>
-                if (logger.isDebugEnabled)
-                  logger.debug(s"[WEBSOCKET] close message from client: ${error.statusCode} : ${error.reason}")
-                Option(queueRef.get()).foreach(_.complete())
-              case _                    => // TODO - logging ??
+  def receive: Receive = { case data: play.api.http.websocket.Message =>
+    wsEngine
+      .handleRequest(data)(closeFunction)
+      .map {
+        case Left(error) =>
+          error.rejectStrategy.foreach {
+            case RejectStrategy.Close =>
+              if (logger.isDebugEnabled)
+                logger.debug(s"[WEBSOCKET] close message from client: ${error.statusCode} : ${error.reason}")
+              Option(queueRef.get()).foreach(_.complete())
+            case _                    => // TODO - logging ??
+          }
+        case Right(msg)  =>
+          msg.asAkka.map { msg =>
+            if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from client: $msg")
+            Option(queueRef.get()).foreach { q =>
+              q.offer(msg)
             }
-          case Right(msg)  =>
-            msg.asAkka.map { msg =>
-              if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from client: $msg")
-              Option(queueRef.get()).foreach { q =>
-                q.offer(msg)
-              }
-            }
-        }
+          }
+      }
   }
 }
 

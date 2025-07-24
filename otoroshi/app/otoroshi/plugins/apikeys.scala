@@ -402,7 +402,6 @@ class ClientCredentialFlow extends RequestTransformer {
         bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
           ctx.request.headers.get("Content-Type") match {
             case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") =>
-
               val charset                  = ctx.request.charset.getOrElse("UTF-8")
               val urlEncodedString         = bodyRaw.utf8String
               val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).view.mapValues(_.head).toMap
@@ -418,7 +417,7 @@ class ClientCredentialFlow extends RequestTransformer {
                 .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
                 .getOrElse(Map.empty[String, String]))
               f(map)
-            case Some(ctype) if ctype.toLowerCase().contains("application/json") =>
+            case Some(ctype) if ctype.toLowerCase().contains("application/json")                  =>
               val json                     = Json.parse(bodyRaw.utf8String).as[JsObject]
               val map: Map[String, String] = json.value.toSeq.collect {
                 case (key, JsString(v))  => (key, v)
@@ -435,7 +434,7 @@ class ClientCredentialFlow extends RequestTransformer {
                 .map(v => Map("client_id" -> v.head, "client_secret" -> v.tail.mkString(":")))
                 .getOrElse(Map.empty[String, String])
               f(map)
-            case _                                                               =>
+            case _                                                                                =>
               // bad content type
               Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
           }
@@ -479,8 +478,8 @@ class ClientCredentialFlow extends RequestTransformer {
               val revoke  = revokeRaw.map(_.toBoolean).getOrElse(true)
               val decoded = JWT.decode(token)
               Try(decoded.getId).toOption match {
-                case None                 => Results.Ok("").leftf
-                case Some(jti) if revoke  =>
+                case None                => Results.Ok("").leftf
+                case Some(jti) if revoke =>
                   env.datastores.rawDataStore
                     .set(
                       s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$jti",
@@ -488,7 +487,7 @@ class ClientCredentialFlow extends RequestTransformer {
                       None
                     )
                     .map(_ => Results.Ok("").left)
-                case Some(jti) =>
+                case Some(jti)           =>
                   env.datastores.rawDataStore
                     .del(Seq(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$jti"))
                     .map(_ => Results.Ok("").left)
@@ -578,7 +577,6 @@ class ClientCredentialFlow extends RequestTransformer {
           }
         }
       case ("post", path) if path == s"$rootPath/token"                                                 =>
-
         awaitingRequests.get(ctx.snowflake).map { promise =>
           val consumed = new AtomicBoolean(false)
 
@@ -597,7 +595,6 @@ class ClientCredentialFlow extends RequestTransformer {
                   case Some(apiKey)
                       if (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret
                         .contains(clientSecret)) && useJwtToken =>
-
                     val keyPairId       = apiKey.metadata.get("jwt-sign-keypair").orElse(defaultKeyPair)
                     val signWithKeyPair = _signWithKeyPair && keyPairId.isDefined
 
@@ -732,7 +729,6 @@ class ClientCredentialFlow extends RequestTransformer {
           bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
             ctx.request.headers.get("Content-Type") match {
               case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") =>
-
                 val charset          = ctx.request.charset.getOrElse("UTF-8")
                 val urlEncodedString = bodyRaw.utf8String
                 val body             = FormUrlEncodedParser.parse(urlEncodedString, charset).view.mapValues(_.head)
@@ -775,7 +771,7 @@ class ClientCredentialFlow extends RequestTransformer {
                           .leftf
                       }
                 }
-              case Some(ctype) if ctype.toLowerCase().contains("application/json") =>
+              case Some(ctype) if ctype.toLowerCase().contains("application/json")                  =>
                 val json = Json.parse(bodyRaw.utf8String)
                 (
                   (json \ "grant_type").asOpt[String],
@@ -816,7 +812,7 @@ class ClientCredentialFlow extends RequestTransformer {
                           .leftf
                       }
                 }
-              case _                                                               =>
+              case _                                                                                =>
                 // bad content type
                 Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
             }
@@ -827,11 +823,10 @@ class ClientCredentialFlow extends RequestTransformer {
           // no body
           Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
         }
-      case _ if autonomous     =>
+      case _ if autonomous                                                                              =>
         Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> s"Resource not found")).leftf
-      case _ if !supportRevoke => ctx.otoroshiRequest.rightf
-      case _                   =>
-
+      case _ if !supportRevoke                                                                          => ctx.otoroshiRequest.rightf
+      case _                                                                                            =>
         val req            = ctx.request
         val descriptor     = ctx.descriptor
         val authByJwtToken = ctx.request.headers
@@ -861,10 +856,10 @@ class ClientCredentialFlow extends RequestTransformer {
           )
         // .filter(_.split("\\.").length == 3)
         authByJwtToken match {
-          case None                        =>
+          case None                       =>
             // no token, weird, should not happen
             Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
-          case Some(token) if useJwtToken  =>
+          case Some(token) if useJwtToken =>
             val decoded = JWT.decode(token)
             Try(decoded.getId).toOption match {
               case None      =>
@@ -892,7 +887,7 @@ class ClientCredentialFlow extends RequestTransformer {
                       ctx.otoroshiRequest.rightf
                   }
             }
-          case Some(token) =>
+          case Some(token)                =>
             revokedCache
               .getIfPresent(token)
               .map(_.future)
@@ -939,12 +934,12 @@ class ClientCredentialService extends RequestSink {
   import otoroshi.utils.syntax.implicits._
 
   case class ClientCredentialServiceConfig(raw: JsValue) {
-    lazy val expiration: FiniteDuration     = (raw \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
-    lazy val defaultKeyPair: String =
+    lazy val expiration: FiniteDuration = (raw \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
+    lazy val defaultKeyPair: String     =
       (raw \ "defaultKeyPair").asOpt[String].filter(_.trim.nonEmpty).getOrElse(Cert.OtoroshiJwtSigning)
-    lazy val domain: String         = (raw \ "domain").asOpt[String].filter(_.trim.nonEmpty).getOrElse("*")
-    lazy val secure: Boolean         = (raw \ "secure").asOpt[Boolean].getOrElse(true)
-    lazy val biscuit: BiscuitConf        = (raw \ "biscuit")
+    lazy val domain: String             = (raw \ "domain").asOpt[String].filter(_.trim.nonEmpty).getOrElse("*")
+    lazy val secure: Boolean            = (raw \ "secure").asOpt[Boolean].getOrElse(true)
+    lazy val biscuit: BiscuitConf       = (raw \ "biscuit")
       .asOpt[JsObject]
       .map { js =>
         BiscuitConf(
@@ -1002,7 +997,7 @@ class ClientCredentialService extends RequestSink {
       ctx: RequestSinkContext
   )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     implicit val mat: Materializer = env.otoroshiMaterializer
-    val charset      = ctx.request.charset.getOrElse("UTF-8")
+    val charset                    = ctx.request.charset.getOrElse("UTF-8")
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {
         case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") =>
@@ -1109,7 +1104,6 @@ class ClientCredentialService extends RequestSink {
               if (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(
                 clientSecret
               )) && bearerKind == "biscuit" =>
-
             import org.biscuitsec.biscuit.crypto.KeyPair
             import org.biscuitsec.biscuit.token.Biscuit
             import org.biscuitsec.biscuit.token.builder.Utils._

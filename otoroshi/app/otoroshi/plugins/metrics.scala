@@ -62,54 +62,53 @@ class ServiceMetrics extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method, ctx.rawRequest.path) match {
       case ("GET", "/.well-known/otoroshi/plugins/metrics") =>
+        val format = ctx.request.getQueryString("format")
 
-          val format = ctx.request.getQueryString("format")
+        def result(): Future[Either[Result, HttpRequest]] = {
+          val filter = Some(s"*otoroshi.service.requests.*.*.${ctx.descriptor.name.slug}*")
 
-          def result(): Future[Either[Result, HttpRequest]] = {
-            val filter = Some(s"*otoroshi.service.requests.*.*.${ctx.descriptor.name.slug}*")
-
-            def transformToArray(input: String): JsValue = {
-              val metrics = Json.parse(input)
-              metrics.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
-                case (arr, (key, JsObject(value))) =>
-                  arr ++ value.toSeq.foldLeft(Json.arr()) {
-                    case (arr2, (key2, value2 @ JsObject(_))) =>
-                      arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2, "type" -> key))
-                    case (arr2, (key2, value2))               =>
-                      arr2
-                  }
-                case (arr, (key, value))           => arr
-              }
-            }
-
-            if (format.contains("old_json") || format.contains("old")) {
-              Left(Results.Ok(env.metrics.jsonExport(filter)).as("application/json")).future
-            } else if (format.contains("json")) {
-              Left(Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")).future
-            } else if (format.contains("prometheus") || format.contains("prom")) {
-              Left(Results.Ok(env.metrics.prometheusExport(filter)).as("text/plain")).future
-            } else if (ctx.request.accepts("application/json")) {
-              Left(Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")).future
-            } else if (ctx.request.accepts("application/prometheus")) {
-              Left(Results.Ok(env.metrics.prometheusExport(filter)).as("text/plain")).future
-            } else {
-              Left(Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")).future
+          def transformToArray(input: String): JsValue = {
+            val metrics = Json.parse(input)
+            metrics.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
+              case (arr, (key, JsObject(value))) =>
+                arr ++ value.toSeq.foldLeft(Json.arr()) {
+                  case (arr2, (key2, value2 @ JsObject(_))) =>
+                    arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2, "type" -> key))
+                  case (arr2, (key2, value2))               =>
+                    arr2
+                }
+              case (arr, (key, value))           => arr
             }
           }
 
-          val config    = ctx.configFor("ServiceMetrics")
-          val queryName = (config \ "accessKeyQuery").asOpt[String].getOrElse("access_key")
-          (config \ "accessKeyValue").asOpt[String] match {
-            case None                                                                 => result()
-            case Some("${config.app.health.accessKey}")
-                if env.healthAccessKey.isDefined && ctx.request
-                  .getQueryString(queryName)
-                  .contains(env.healthAccessKey.get) =>
-              result()
-            case Some(value) if ctx.request.getQueryString(queryName).contains(value) => result()
-            case _                                                                    => Left(Results.Unauthorized(Json.obj("error" -> "not authorized !"))).future
+          if (format.contains("old_json") || format.contains("old")) {
+            Left(Results.Ok(env.metrics.jsonExport(filter)).as("application/json")).future
+          } else if (format.contains("json")) {
+            Left(Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")).future
+          } else if (format.contains("prometheus") || format.contains("prom")) {
+            Left(Results.Ok(env.metrics.prometheusExport(filter)).as("text/plain")).future
+          } else if (ctx.request.accepts("application/json")) {
+            Left(Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")).future
+          } else if (ctx.request.accepts("application/prometheus")) {
+            Left(Results.Ok(env.metrics.prometheusExport(filter)).as("text/plain")).future
+          } else {
+            Left(Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")).future
           }
-      case _ => Right(ctx.otoroshiRequest).future
+        }
+
+        val config    = ctx.configFor("ServiceMetrics")
+        val queryName = (config \ "accessKeyQuery").asOpt[String].getOrElse("access_key")
+        (config \ "accessKeyValue").asOpt[String] match {
+          case None                                                                 => result()
+          case Some("${config.app.health.accessKey}")
+              if env.healthAccessKey.isDefined && ctx.request
+                .getQueryString(queryName)
+                .contains(env.healthAccessKey.get) =>
+            result()
+          case Some(value) if ctx.request.getQueryString(queryName).contains(value) => result()
+          case _                                                                    => Left(Results.Unauthorized(Json.obj("error" -> "not authorized !"))).future
+        }
+      case _                                                => Right(ctx.otoroshiRequest).future
     }
   }
 
@@ -378,8 +377,8 @@ class PrometheusServiceMetrics extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val start: Double    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L).toDouble
     val duration: Double = System.currentTimeMillis().toDouble - start
-    val config         = ctx.configFor("PrometheusServiceMetrics")
-    val includeUri     = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
+    val config           = ctx.configFor("PrometheusServiceMetrics")
+    val includeUri       = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
 
     requestCounterGlobal.inc()
     reqDurationGlobal.observe(duration)
@@ -429,8 +428,8 @@ class PrometheusServiceMetrics extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     val start: Double    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L).toDouble
     val duration: Double = System.currentTimeMillis().toDouble - start
-    val config         = ctx.configFor("PrometheusServiceMetrics")
-    val includeUri     = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
+    val config           = ctx.configFor("PrometheusServiceMetrics")
+    val includeUri       = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
 
     requestCounterGlobal.inc()
     reqDurationGlobal.observe(duration)

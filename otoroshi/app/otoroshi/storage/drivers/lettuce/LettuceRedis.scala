@@ -42,7 +42,7 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
   import scala.jdk.CollectionConverters._
   import scala.compat.java8.FutureConverters._
 
-  lazy val redis: RedisAsyncCommands[String,ByteString] = client.connect(new ByteStringRedisCodec()).async()
+  lazy val redis: RedisAsyncCommands[String, ByteString] = client.connect(new ByteStringRedisCodec()).async()
 
   lazy val logger: Logger = Logger("otoroshi-lettuce-redis")
 
@@ -184,7 +184,8 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
   import scala.jdk.CollectionConverters._
   import scala.compat.java8.FutureConverters._
 
-  lazy val redis: RedisAdvancedClusterAsyncCommands[String,ByteString] = client.connect(new ByteStringRedisCodec()).async()
+  lazy val redis: RedisAdvancedClusterAsyncCommands[String, ByteString] =
+    client.connect(new ByteStringRedisCodec()).async()
 
   lazy val logger: Logger = Logger("otoroshi-lettuce-redis-cluster")
 

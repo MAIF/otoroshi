@@ -17,7 +17,7 @@ class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   val logger: Logger = Logger("otoroshi-infos-api")
 

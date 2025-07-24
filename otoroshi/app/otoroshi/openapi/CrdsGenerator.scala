@@ -176,16 +176,18 @@ class CrdsGenerator(spec: JsValue = Json.obj()) extends Logging {
     out
   }
 
-  private def writeFiles(entitiesWithSchema: TrieMap[String, JsValue],
-                         data: TrieMap[String, JsValue],
-                         folderPath: String) = {
+  private def writeFiles(
+      entitiesWithSchema: TrieMap[String, JsValue],
+      data: TrieMap[String, JsValue],
+      folderPath: String
+  ) = {
     val withSchemaBytes = crds(entitiesWithSchema, data)
-        .foldLeft("")((acc, curr) => s"$acc${write(curr)}")
-        .getBytes(StandardCharsets.UTF_8)
+      .foldLeft("")((acc, curr) => s"$acc${write(curr)}")
+      .getBytes(StandardCharsets.UTF_8)
 
     val withoutSchemaBytes = crds(entitiesWithSchema, data, withoutSchema = true)
-        .foldLeft("")((acc, curr) => s"$acc${write(curr)}")
-        .getBytes(StandardCharsets.UTF_8)
+      .foldLeft("")((acc, curr) => s"$acc${write(curr)}")
+      .getBytes(StandardCharsets.UTF_8)
 
     val file = new File(s"$folderPath/../crds-with-schema.yaml")
     logger.info(s"write crds-with-schema.yaml file: '${file.getAbsolutePath}'")
@@ -196,7 +198,7 @@ class CrdsGenerator(spec: JsValue = Json.obj()) extends Logging {
     Files.write(defaultFile.toPath, withoutSchemaBytes)
 
     // Calculate kustomize path relative to the provided folderPath
-    val crdsDir = new File(folderPath)
+    val crdsDir       = new File(folderPath)
     val kubernetesDir = crdsDir.getParentFile.getParentFile.getParentFile
     val kustomizeFile = new File(kubernetesDir, "kustomize/base/crds.yaml")
 
@@ -205,7 +207,9 @@ class CrdsGenerator(spec: JsValue = Json.obj()) extends Logging {
       logger.info(s"write kustomize crds.yaml file: '${kustomizeFile.getAbsolutePath}'")
       Files.write(kustomizeFile.toPath, withoutSchemaBytes)
     } else {
-      logger.warn(s"Kustomize directory not found at '${kustomizeFile.getParentFile.getAbsolutePath}', skipping kustomize crds.yaml")
+      logger.warn(
+        s"Kustomize directory not found at '${kustomizeFile.getParentFile.getAbsolutePath}', skipping kustomize crds.yaml"
+      )
     }
   }
 
@@ -309,20 +313,23 @@ class CrdsGenerator(spec: JsValue = Json.obj()) extends Logging {
     )
   )
 
-  def crds(out: TrieMap[String, JsValue], allData: TrieMap[String, JsValue], withoutSchema: Boolean = false): mutable.Iterable[JsObject] = out.map {
-    data =>
-      val crdEntity = crdsEntities(data._1)
-      crdTemplate(
-        name = (crdEntity \ "plural").as[String],
-        kind = data._1,
-        plural = (crdEntity \ "plural").as[String],
-        singular = (crdEntity \ "singular").as[String],
-        versions = Map(
-          "v1alpha1" -> (false, true, preserveUnknownFieldsSchema),
-          "v1"       -> (true, false, if (withoutSchema) preserveUnknownFieldsSchema
-          else patchSchema(allData, data._1, data._2))
-        )
+  def crds(
+      out: TrieMap[String, JsValue],
+      allData: TrieMap[String, JsValue],
+      withoutSchema: Boolean = false
+  ): mutable.Iterable[JsObject] = out.map { data =>
+    val crdEntity = crdsEntities(data._1)
+    crdTemplate(
+      name = (crdEntity \ "plural").as[String],
+      kind = data._1,
+      plural = (crdEntity \ "plural").as[String],
+      singular = (crdEntity \ "singular").as[String],
+      versions = Map(
+        "v1alpha1" -> (false, true, preserveUnknownFieldsSchema),
+        "v1"       -> (true, false, if (withoutSchema) preserveUnknownFieldsSchema
+        else patchSchema(allData, data._1, data._2))
       )
+    )
   }
 
   def overrideGeneratedOpenapiV3Schema(res: JsValue): JsValue = {

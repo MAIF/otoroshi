@@ -139,9 +139,9 @@ object Xml {
         XmlElem(name, v)
       case JsNull           =>
         XmlElem(name, "null")
-      case JsTrue =>
+      case JsTrue           =>
         XmlElem(name, "true")
-      case JsFalse =>
+      case JsFalse          =>
         XmlElem(name, "false")
     }
 
@@ -153,12 +153,12 @@ object Xml {
     }
   }
 
-  private[this] case class XmlNode(name: String, children: Seq[Node], atrributes: MetaData)
+  private[this] class XmlNode(name: String, children: Seq[Node], atrributes: MetaData)
       extends Elem(null, name, attributes1 = atrributes, TopScope, true, children: _*)
 
-  private[this] case class XmlElem(name: String, value: String)
+  private[this] class XmlElem(name: String, value: String)
       extends Elem(null, name, xml.Null, TopScope, true, Text(value))
 
-  private[this] case class XmlElemWithAttributes(name: String, value: String, atrributes: MetaData)
+  private[this] class XmlElemWithAttributes(name: String, value: String, atrributes: MetaData)
       extends Elem(null, name, attributes1 = atrributes, TopScope, true, Text(value))
 }

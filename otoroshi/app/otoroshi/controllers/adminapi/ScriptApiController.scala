@@ -7,7 +7,16 @@ import otoroshi.env.Env
 import otoroshi.models.RightsChecker.Anyone
 import otoroshi.next.plugins.WasmJob
 import otoroshi.script._
-import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
@@ -24,7 +33,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
     with CrudControllerHelper[Script, JsValue] {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   val logger: Logger = Logger("otoroshi-scripts-api")
 
@@ -275,22 +284,22 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Script]]] = {
     env.datastores.scriptDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_SCRIPT",
-              message = "User created a script",
-              metadata = entity.toJson.as[JsObject],
-              alert = "ScriptCreatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_SCRIPT",
+            message = "User created a script",
+            metadata = entity.toJson.as[JsObject],
+            alert = "ScriptCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Script not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Script not stored ...")
           )
+        )
     }
   }
 
@@ -300,22 +309,22 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Script]]] = {
     env.datastores.scriptDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_SCRIPT",
-              message = "User updated a script",
-              metadata = entity.toJson.as[JsObject],
-              alert = "ScriptUpdatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_SCRIPT",
+            message = "User updated a script",
+            metadata = entity.toJson.as[JsObject],
+            alert = "ScriptUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Script not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Script not stored ...")
           )
+        )
     }
   }
 
@@ -325,21 +334,21 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Script]]] = {
     env.datastores.scriptDataStore.delete(id).map {
       case true  =>
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_SCRIPT",
-              message = "User deleted a Script",
-              metadata = Json.obj("ScriptId" -> id),
-              alert = "ScriptDeletedAlert"
-            )
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_SCRIPT",
+            message = "User deleted a Script",
+            metadata = Json.obj("ScriptId" -> id),
+            alert = "ScriptDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "Script not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "Script not deleted ...")
           )
+        )
     }
   }
 }

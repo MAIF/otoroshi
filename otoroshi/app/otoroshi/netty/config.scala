@@ -24,8 +24,8 @@ case class HttpRequestParserConfig(
 }
 
 object HttpRequestParserConfig {
-  lazy val default: HttpRequestParserConfig = format.reads(Json.obj()).get
-  val format: Format[HttpRequestParserConfig]       = new Format[HttpRequestParserConfig] {
+  lazy val default: HttpRequestParserConfig   = format.reads(Json.obj()).get
+  val format: Format[HttpRequestParserConfig] = new Format[HttpRequestParserConfig] {
     override def reads(json: JsValue): JsResult[HttpRequestParserConfig] = Try {
       HttpRequestParserConfig(
         allowDuplicateContentLengths = json
@@ -93,8 +93,8 @@ case class Http3Settings(
   def json: JsValue = Http3Settings.format.writes(this)
 }
 object Http3Settings                                              {
-  lazy val default: Http3Settings = format.reads(Json.obj()).get
-  val format: Format[Http3Settings]       = new Format[Http3Settings] {
+  lazy val default: Http3Settings   = format.reads(Json.obj()).get
+  val format: Format[Http3Settings] = new Format[Http3Settings] {
     override def reads(json: JsValue): JsResult[Http3Settings] = Try {
       Http3Settings(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
@@ -132,8 +132,8 @@ case class Http1Settings(enabled: Boolean)                        {
   def json: JsValue = Http1Settings.format.writes(this)
 }
 object Http1Settings                                              {
-  lazy val default: Http1Settings = format.reads(Json.obj()).get
-  val format: Format[Http1Settings]       = new Format[Http1Settings] {
+  lazy val default: Http1Settings   = format.reads(Json.obj()).get
+  val format: Format[Http1Settings] = new Format[Http1Settings] {
     override def reads(json: JsValue): JsResult[Http1Settings] = Try {
       Http1Settings(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true)
@@ -151,8 +151,8 @@ case class Http2Settings(enabled: Boolean, h2cEnabled: Boolean)   {
   def json: JsValue = Http2Settings.format.writes(this)
 }
 object Http2Settings                                              {
-  lazy val default: Http2Settings = format.reads(Json.obj()).get
-  val format: Format[Http2Settings]       = new Format[Http2Settings] {
+  lazy val default: Http2Settings   = format.reads(Json.obj()).get
+  val format: Format[Http2Settings] = new Format[Http2Settings] {
     override def reads(json: JsValue): JsResult[Http2Settings] = Try {
       Http2Settings(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
@@ -175,8 +175,8 @@ case class NativeSettings(enabled: Boolean, driver: NativeDriver) {
   def json: JsValue      = NativeSettings.format.writes(this)
 }
 object NativeSettings                                             {
-  lazy val default: NativeSettings = format.reads(Json.obj()).get
-  val format: Format[NativeSettings]       = new Format[NativeSettings] {
+  lazy val default: NativeSettings   = format.reads(Json.obj()).get
+  val format: Format[NativeSettings] = new Format[NativeSettings] {
     override def reads(json: JsValue): JsResult[NativeSettings] = Try {
       NativeSettings(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),

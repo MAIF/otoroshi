@@ -38,8 +38,8 @@ case class AdditionalCookieOutConfig(
 }
 
 object AdditionalCookieOutConfig {
-  val default: AdditionalCookieOutConfig = AdditionalCookieOutConfig("cookie", "value")
-  val format: Format[AdditionalCookieOutConfig]  = new Format[AdditionalCookieOutConfig] {
+  val default: AdditionalCookieOutConfig        = AdditionalCookieOutConfig("cookie", "value")
+  val format: Format[AdditionalCookieOutConfig] = new Format[AdditionalCookieOutConfig] {
 
     override def reads(json: JsValue): JsResult[AdditionalCookieOutConfig] = Try {
       AdditionalCookieOutConfig(
@@ -115,8 +115,8 @@ case class AdditionalCookieInConfig(
 }
 
 object AdditionalCookieInConfig {
-  val default: AdditionalCookieInConfig = AdditionalCookieInConfig("cookie", "value")
-  val format: Format[AdditionalCookieInConfig]  = new Format[AdditionalCookieInConfig] {
+  val default: AdditionalCookieInConfig        = AdditionalCookieInConfig("cookie", "value")
+  val format: Format[AdditionalCookieInConfig] = new Format[AdditionalCookieInConfig] {
 
     override def reads(json: JsValue): JsResult[AdditionalCookieInConfig] = Try {
       AdditionalCookieInConfig(
@@ -168,7 +168,9 @@ class AdditionalCookieIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =
-      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format.reads(_)).getOrElse(AdditionalCookieInConfig.default)
+      ctx
+        .cachedConfig(internalName)(AdditionalCookieInConfig.format.reads(_))
+        .getOrElse(AdditionalCookieInConfig.default)
     Right(
       ctx.otoroshiRequest.copy(
         cookies = ctx.otoroshiRequest.cookies :+ config.toCookie(ctx.attrs)
@@ -215,8 +217,8 @@ case class RemoveCookiesInConfig(names: Seq[String]) extends NgPluginConfig {
 }
 
 object RemoveCookiesInConfig {
-  val default: RemoveCookiesInConfig                        = RemoveCookiesInConfig(Seq.empty)
-  val format: Format[RemoveCookiesInConfig]                         = new Format[RemoveCookiesInConfig] {
+  val default: RemoveCookiesInConfig        = RemoveCookiesInConfig(Seq.empty)
+  val format: Format[RemoveCookiesInConfig] = new Format[RemoveCookiesInConfig] {
     override def reads(json: JsValue): JsResult[RemoveCookiesInConfig] = Try {
       RemoveCookiesInConfig(
         names = json.select("names").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -229,10 +231,10 @@ object RemoveCookiesInConfig {
       "names" -> o.names
     )
   }
-  def configFlow: Seq[String]        = Seq(
+  def configFlow: Seq[String]               = Seq(
     "names"
   )
-  def configSchema: Option[JsObject] = Some(
+  def configSchema: Option[JsObject]        = Some(
     Json.obj(
       "names" -> Json.obj("label" -> "name", "type" -> "array", "array" -> true)
     )
@@ -326,7 +328,9 @@ class MissingCookieIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =
-      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format.reads(_)).getOrElse(AdditionalCookieInConfig.default)
+      ctx
+        .cachedConfig(internalName)(AdditionalCookieInConfig.format.reads(_))
+        .getOrElse(AdditionalCookieInConfig.default)
     if (!ctx.otoroshiRequest.cookies.exists(_.name == config.name)) {
       Right(
         ctx.otoroshiRequest.copy(
@@ -381,7 +385,7 @@ case class CookiesValidationConfig(cookies: Map[String, String] = Map.empty) ext
 }
 
 object CookiesValidationConfig {
-  val format: Format[CookiesValidationConfig]                         = new Format[CookiesValidationConfig] {
+  val format: Format[CookiesValidationConfig] = new Format[CookiesValidationConfig] {
     override def reads(json: JsValue): JsResult[CookiesValidationConfig] = Try {
       CookiesValidationConfig(
         cookies = json.select("cookies").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -394,10 +398,10 @@ object CookiesValidationConfig {
       "cookies" -> o.cookies
     )
   }
-  def configFlow: Seq[String]        = Seq(
+  def configFlow: Seq[String]                 = Seq(
     "cookies"
   )
-  def configSchema: Option[JsObject] = Some(
+  def configSchema: Option[JsObject]          = Some(
     Json.obj(
       "cookies" -> Json.obj("label" -> "Cookies", "type" -> "object")
     )

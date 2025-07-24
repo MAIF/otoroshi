@@ -103,7 +103,8 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }.toSeq
+                    }
+                    .toSeq
                 }.toMap
               }.toMap
             }
@@ -378,7 +379,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
   )(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[Result,Option[String]]] = FastFuture.successful(Right(None))
+  ): Future[Either[Result, Option[String]]] = FastFuture.successful(Right(None))
 
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
@@ -436,7 +437,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
   override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[Result,Option[String]]] =
+  ): Future[Either[Result, Option[String]]] =
     FastFuture.successful(Right(None))
 
   override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit

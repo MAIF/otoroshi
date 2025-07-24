@@ -64,7 +64,7 @@ case class ErrorTemplate(
     )
   }
 
-  def toJson: JsValue                                 = ErrorTemplate.format.writes(this)
+  def toJson: JsValue                                                  = ErrorTemplate.format.writes(this)
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.errorTemplateDataStore.set(this)
 
   override def json: JsValue                    = ErrorTemplate.format.writes(this)
@@ -76,8 +76,8 @@ case class ErrorTemplate(
 }
 
 object ErrorTemplate {
-  lazy val logger: Logger                                           = Logger("otoroshi-error-template")
-  val format: Format[ErrorTemplate]                                                = new Format[ErrorTemplate] {
+  lazy val logger: Logger                                   = Logger("otoroshi-error-template")
+  val format: Format[ErrorTemplate]                         = new Format[ErrorTemplate] {
     override def writes(o: ErrorTemplate): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "serviceId"           -> o.serviceId,
       "name"                -> o.name,
@@ -121,8 +121,8 @@ object ErrorTemplate {
       format.reads(value).get
     } catch {
       case e: Throwable =>
-          logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
-          throw e
+        logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        throw e
     }
   def fromJsonSafe(value: JsValue): JsResult[ErrorTemplate] = format.reads(value)
 }

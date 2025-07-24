@@ -271,9 +271,9 @@ case class Cert(
     env.datastores.certificatesDataStore.set(current)
   }
   lazy val notExpired: Boolean = from.isBefore(org.joda.time.DateTime.now()) && to.isAfter(org.joda.time.DateTime.now())
-  def notExpiredAt(date: DateTime): Boolean             = from.isBefore(date) && to.isAfter(date)
-  lazy val notExpiredSoon: Boolean                      = notExpiredAt(to.minusDays(15))
-  lazy val expired: Boolean                             = !notExpired
+  def notExpiredAt(date: DateTime): Boolean                              = from.isBefore(date) && to.isAfter(date)
+  lazy val notExpiredSoon: Boolean                                       = notExpiredAt(to.minusDays(15))
+  lazy val expired: Boolean                                              = !notExpired
   def enrich(): Cert = {
     val meta = this.metadata.get
     this.copy(
@@ -288,11 +288,13 @@ case class Cert(
       sans = (meta \ "subAltNames").asOpt[Seq[String]].getOrElse(Seq.empty)
     )
   }
-  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.certificatesDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.certificatesDataStore.exists(this)
-  def toJson: JsValue                                            = Cert.toJson(this)
-  lazy val isUsable: Boolean                                     = notRevoked && notExpired && isValid
-  lazy val certificatesRaw: Seq[String]                 = Try {
+  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    env.datastores.certificatesDataStore.delete(this)
+  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    env.datastores.certificatesDataStore.exists(this)
+  def toJson: JsValue                                                    = Cert.toJson(this)
+  lazy val isUsable: Boolean                                             = notRevoked && notExpired && isValid
+  lazy val certificatesRaw: Seq[String]                                  = Try {
     cleanChain
       .split(PemHeaders.BeginCertificate)
       .toSeq
@@ -300,7 +302,7 @@ case class Cert(
       .map(_.replace(PemHeaders.EndCertificate, "").trim())
       .map(c => s"${PemHeaders.BeginCertificate}\n$c\n${PemHeaders.EndCertificate}")
   }.toOption.toSeq.flatten
-  lazy val certificates: Seq[X509Certificate]           = certificatesChain.toSeq /*{
+  lazy val certificates: Seq[X509Certificate]                            = certificatesChain.toSeq /*{
     val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
     certificatesRaw
       .map(
@@ -365,8 +367,10 @@ case class Cert(
     Try {
       val keyStore: KeyStore = KeyStore.getInstance("JKS")
       keyStore.load(null, null)
-      DynamicSSLEngineProvider.readPrivateKeyUniversal(this.id, this.privateKey, this.password, log = false).toOption.exists {
-        (key: PrivateKey) =>
+      DynamicSSLEngineProvider
+        .readPrivateKeyUniversal(this.id, this.privateKey, this.password, log = false)
+        .toOption
+        .exists { (key: PrivateKey) =>
           // val key: PrivateKey = DynamicSSLEngineProvider.readPrivateKey(encodedKeySpec) /*Try(KeyFactory.getInstance("RSA")).map(_.generatePrivate(encodedKeySpec))
           //   .orElse(Try(KeyFactory.getInstance("EC")).map(_.generatePrivate(encodedKeySpec)))
           //   .orElse(Try(KeyFactory.getInstance("DSA")).map(_.generatePrivate(encodedKeySpec)))
@@ -386,7 +390,7 @@ case class Cert(
             )
             true
           }
-      }
+        }
     } recover { case e =>
       DynamicSSLEngineProvider.logger.error(s"Error while checking certificate validity ($name)")
       false
@@ -414,7 +418,7 @@ case class Cert(
       csr = Await
         .result(env.pki.genCsr(query, None)(env.otoroshiExecutionContext), 10.seconds) match {
         case Right(response) => response.csr
-        case Left(error) => throw new RuntimeException(s"Failed to generate CSR: $error")
+        case Left(error)     => throw new RuntimeException(s"Failed to generate CSR: $error")
       },
       csrQuery = query.some,
       key = cryptoKeyPair.getPrivate,
@@ -429,15 +433,15 @@ object Cert {
   import SSLImplicits._
 
   val OtoroshiCaDN: String             = s"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi"
-  val OtoroshiCA               = "otoroshi-root-ca"
+  val OtoroshiCA                       = "otoroshi-root-ca"
   val OtoroshiIntermediateCaDN: String =
     s"CN=Otoroshi Default Intermediate CA Certificate, OU=Otoroshi Certificates, O=Otoroshi"
-  val OtoroshiIntermediateCA   = "otoroshi-intermediate-ca"
+  val OtoroshiIntermediateCA           = "otoroshi-intermediate-ca"
   val OtoroshiJwtSigningDn: String     = s"CN=Otoroshi Default Jwt Signing Keypair, OU=Otoroshi Certificates, O=Otoroshi"
-  val OtoroshiJwtSigning       = "otoroshi-jwt-signing"
-  val OtoroshiWildcard         = "otoroshi-wildcard"
+  val OtoroshiJwtSigning               = "otoroshi-jwt-signing"
+  val OtoroshiWildcard                 = "otoroshi-wildcard"
   val OtoroshiClientDn: String         = s"CN=Otoroshi Default Client Certificate, OU=Otoroshi Certificates, O=Otoroshi"
-  val OtoroshiClient           = "otoroshi-client"
+  val OtoroshiClient                   = "otoroshi-client"
 
   lazy val logger: Logger = Logger("otoroshi-cert")
 
@@ -773,9 +777,9 @@ trait CertificateDataStore extends BasicStore[Cert] {
       for {
         _ <- Source(expiredCertificates.toList)
                .mapAsync(1) {
-                 case c if c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")    =>
+                 case c if c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ") =>
                    c.applyOn(d => d.save().map(_ => d))
-                 case c =>
+                 case c                                                                                        =>
                    c.copy(name = "[EXPIRED] " + c.name, entityMetadata = c.entityMetadata ++ Map("expired" -> "true"))
                      .applyOn(d => d.save().map(_ => d))
                }
@@ -1081,7 +1085,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
     Try {
       // TODO: blocking ec
       implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-      implicit val ev: Env = env
+      implicit val ev: Env              = env
       // AWAIT: valid
       Await.result(env.datastores.certificatesDataStore.autoGenerateCertificateForDomain(domain), 10.seconds)
     } match {
@@ -1122,8 +1126,9 @@ object DynamicSSLEngineProvider {
     CASE_INSENSITIVE
   )
 
-  val autogenCerts: Cache[String,Cert]                = Scaffeine().expireAfterWrite(5.minutes).maximumSize(1000).build[String, Cert]()
-  val _ocspProjectionCertificates = new UnboundedTrieMap[java.math.BigInteger, OCSPCertProjection]()
+  val autogenCerts: Cache[String, Cert] =
+    Scaffeine().expireAfterWrite(5.minutes).maximumSize(1000).build[String, Cert]()
+  val _ocspProjectionCertificates       = new UnboundedTrieMap[java.math.BigInteger, OCSPCertProjection]()
 
   private def allUnrevokedCertMap: TrieMap[String, Cert] = {
     val datastoreCerts = getCurrentEnv().proxyState.allCertificatesMap().filter(_._2.notRevoked)
@@ -1137,8 +1142,10 @@ object DynamicSSLEngineProvider {
   private lazy val firstSetupDone            = new AtomicBoolean(false)
   private lazy val currentKeyManagerServer   = new AtomicReference[KeyManager](null)
   private lazy val currentTrustManagerServer = new AtomicReference[TrustManager](null)
-  private lazy val currentContextServer      = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, includeJdkCa = true, Seq.empty))
-  private lazy val currentContextClient      = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, includeJdkCa = true, Seq.empty))
+  private lazy val currentContextServer      =
+    new AtomicReference[SSLContext](setupContext(FakeHasMetrics, includeJdkCa = true, Seq.empty))
+  private lazy val currentContextClient      =
+    new AtomicReference[SSLContext](setupContext(FakeHasMetrics, includeJdkCa = true, Seq.empty))
   private lazy val currentSslConfigSettings  = new AtomicReference[SSLConfigSettings](null)
   private val currentEnv                     = new AtomicReference[Env](null)
   private val defaultSslContext              = SSLContext.getDefault
@@ -1232,9 +1239,9 @@ object DynamicSSLEngineProvider {
             e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
           )
           .map {
-            case true                   => Array[TrustManager](noCATrustManager)
-            case false if includeJdkCa  => createTrustStoreWithJdkCAs(trustedKeyStore, cacertPath, cacertPassword)
-            case false                  => createTrustStore(trustedKeyStore)
+            case true                  => Array[TrustManager](noCATrustManager)
+            case false if includeJdkCa => createTrustStoreWithJdkCAs(trustedKeyStore, cacertPath, cacertPassword)
+            case false                 => createTrustStore(trustedKeyStore)
           } getOrElse {
           if (trustAll) {
             Array[TrustManager](
@@ -1415,9 +1422,9 @@ object DynamicSSLEngineProvider {
             e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
           )
           .map {
-            case true                   => Array[TrustManager](noCATrustManager)
-            case false if includeJdkCa  => createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
-            case false                  => createTrustStore(keyStore2)
+            case true                  => Array[TrustManager](noCATrustManager)
+            case false if includeJdkCa => createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
+            case false                 => createTrustStore(keyStore2)
           } getOrElse {
           if (trustAll) {
             Array[TrustManager](
@@ -1438,10 +1445,10 @@ object DynamicSSLEngineProvider {
       (sslContext, keyManagers.head, tm.head)
     }
 
-  def currentServerKeyManager: KeyManager   = currentKeyManagerServer.get()
+  def currentServerKeyManager: KeyManager     = currentKeyManagerServer.get()
   def currentServerTrustManager: TrustManager = currentTrustManagerServer.get()
-  def currentServer: SSLContext             = currentContextServer.get()
-  def currentClient: SSLContext             = currentContextClient.get()
+  def currentServer: SSLContext               = currentContextServer.get()
+  def currentClient: SSLContext               = currentContextClient.get()
 
   def sslConfigSettings: SSLConfigSettings = currentSslConfigSettings.get()
 
@@ -1884,10 +1891,10 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
 }
 
 object noCATrustManager extends X509TrustManager {
-  val nullArray: Array[X509Certificate]            = Array[X509Certificate]()
+  val nullArray: Array[X509Certificate] = Array[X509Certificate]()
   def checkClientTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = {}
   def checkServerTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = {}
-  def getAcceptedIssuers() = nullArray
+  def getAcceptedIssuers()              = nullArray
 }
 
 object CertificateData {
@@ -1929,7 +1936,11 @@ object CertificateData {
       "sigAlgName"      -> cert.getSigAlgName,
       "sigAlgOID"       -> cert.getSigAlgOID,
       "_signature"      -> new String(encoder.encode(cert.getSignature)),
-      "signature"       -> otoroshi.utils.string.Utils.encodeHexString(java.security.MessageDigest.getInstance("SHA-256").digest(cert.getSignature)).toUpperCase().grouped(2).mkString(":"),
+      "signature"       -> otoroshi.utils.string.Utils
+        .encodeHexString(java.security.MessageDigest.getInstance("SHA-256").digest(cert.getSignature))
+        .toUpperCase()
+        .grouped(2)
+        .mkString(":"),
       "subjectDN"       -> DN(cert.getSubjectX500Principal.getName).stringify,
       "domain"          -> domain,
       "rawDomain"       -> rawDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -2402,9 +2413,9 @@ class KvClientCertificateValidationDataStore(redisCli: RedisLike, env: Env)
 // https://en.wikipedia.org/wiki/Validation_authority
 // https://en.wikipedia.org/wiki/Online_Certificate_Status_Protocol
 object ClientCertificateValidator {
-  val logger: Logger   = Logger("otoroshi-client-cert-validator")
-  val digester: MessageDigest = MessageDigest.getInstance("SHA-1")
-  val fmt: Format[ClientCertificateValidator]      = new Format[ClientCertificateValidator] {
+  val logger: Logger                          = Logger("otoroshi-client-cert-validator")
+  val digester: MessageDigest                 = MessageDigest.getInstance("SHA-1")
+  val fmt: Format[ClientCertificateValidator] = new Format[ClientCertificateValidator] {
 
     override def reads(json: JsValue): JsResult[ClientCertificateValidator] =
       Try {
@@ -2529,7 +2540,8 @@ case class ClientCertificateValidator(
 
   import scala.concurrent.duration._
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.clientCertificateValidationDataStore.set(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    env.datastores.clientCertificateValidationDataStore.set(this)
 
   def asJson: JsValue = ClientCertificateValidator.fmt.writes(this)
 
@@ -2602,7 +2614,9 @@ case class ClientCertificateValidator(
   }
 
   private def computeFingerPrint(cert: X509Certificate): String = {
-    otoroshi.utils.string.Utils.encodeHexString(ClientCertificateValidator.digester.digest(cert.getEncoded())).toLowerCase()
+    otoroshi.utils.string.Utils
+      .encodeHexString(ClientCertificateValidator.digester.digest(cert.getEncoded()))
+      .toLowerCase()
   }
 
   private def computeKeyFromChain(chain: Seq[X509Certificate]): String = {
@@ -2854,8 +2868,8 @@ object SSLImplicits {
 
 object SSLSessionJavaHelper {
 
-  val NotAllowed = "CN=NotAllowedCert"
-  val BadDN: String      = s"$NotAllowed, OU=Auto Generated Certs, OU=Otoroshi Certificates, O=Otoroshi"
+  val NotAllowed    = "CN=NotAllowedCert"
+  val BadDN: String = s"$NotAllowed, OU=Auto Generated Certs, OU=Otoroshi Certificates, O=Otoroshi"
 
   def computeKey(session: SSLSession): Option[String] = {
     computeKey(session.toString)

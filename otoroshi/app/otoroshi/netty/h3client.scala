@@ -14,7 +14,7 @@ import io.netty.incubator.codec.quic._
 import io.netty.util.concurrent.GenericFutureListener
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
-import org.apache.pekko.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
+import org.apache.pekko.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
 import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, StatusCode, Uri}
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
@@ -55,11 +55,11 @@ class NettySniSslContext(sslContext: QuicSslContext, host: String, port: Int) ex
   override def newEngine(alloc: ByteBufAllocator, peerHost: String, peerPort: Int): QuicSslEngine =
     sslContext.newEngine(alloc, peerHost, peerPort)
   override def isClient: Boolean                                                                  = sslContext.isClient
-  override def cipherSuites(): util.List[String] = sslContext.cipherSuites()
+  override def cipherSuites(): util.List[String]                                                  = sslContext.cipherSuites()
   @SuppressWarnings(Array("deprecation")) // todo needs to be removed when the underlying method is also removed
-  override def applicationProtocolNegotiator(): ApplicationProtocolNegotiator                     =
+  override def applicationProtocolNegotiator(): ApplicationProtocolNegotiator =
     sslContext.applicationProtocolNegotiator()
-  override def sessionContext(): QuicSslSessionContext                                            = sslContext.sessionContext()
+  override def sessionContext(): QuicSslSessionContext                        = sslContext.sessionContext()
 }
 
 case class NettyHttp3ClientBody(source: Flux[ByteString], contentType: Option[String], contentLength: Option[Long])
@@ -69,7 +69,7 @@ class NettyHttp3Client(val env: Env) {
   // TODO: support proxy ????
 
   private[netty] val logger = NettyHttp3Client.logger
-  private val group = new MultiThreadIoEventLoopGroup(
+  private val group         = new MultiThreadIoEventLoopGroup(
     Runtime.getRuntime.availableProcessors() + 1,
     NioIoHandler.newFactory()
   )
@@ -416,32 +416,43 @@ case class NettyHttp3ClientWsRequest(
 
   private val _uri = Uri(_url)
 
-  def withProtocol(proto: String): NettyHttp3ClientWsRequest                                             = copy(protocol = proto.some)
-  def withTlsConfig(tlsConfig: MtlsConfig): NettyHttp3ClientWsRequest                                    = copy(tlsConfig = tlsConfig.some)
-  def withTarget(target: Target): NettyHttp3ClientWsRequest                                              = copy(targetOpt = target.some)
-  def withClientConfig(clientConfig: ClientConfig): NettyHttp3ClientWsRequest                            = copy(clientConfig = clientConfig)
+  def withProtocol(proto: String): NettyHttp3ClientWsRequest                         = copy(protocol = proto.some)
+  def withTlsConfig(tlsConfig: MtlsConfig): NettyHttp3ClientWsRequest                = copy(tlsConfig = tlsConfig.some)
+  def withTarget(target: Target): NettyHttp3ClientWsRequest                          = copy(targetOpt = target.some)
+  def withClientConfig(clientConfig: ClientConfig): NettyHttp3ClientWsRequest        = copy(clientConfig = clientConfig)
   //////
-  override def auth: Option[(String, String, WSAuthScheme)]                                              =
+  override def auth: Option[(String, String, WSAuthScheme)]                          =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.auth)")
-  override def calc: Option[WSSignatureCalculator]                                                       =
+  override def calc: Option[WSSignatureCalculator]                                   =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.calc)")
-  override def virtualHost: Option[String]                                                               =
+  override def virtualHost: Option[String]                                           =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.virtualHost)")
-  override def sign(calc: WSSignatureCalculator): WSRequest                                              =
+  override def sign(calc: WSSignatureCalculator): WSRequest                          =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.sign)")
-  override def withRequestFilter(filter: WSRequestFilter): WSRequest                                     =
+  override def withRequestFilter(filter: WSRequestFilter): WSRequest                 =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.withRequestFilter)")
-  override def withVirtualHost(vh: String): WSRequest                                                    =
+  override def withVirtualHost(vh: String): WSRequest                                =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.withVirtualHost)")
   //////
-  override def proxyServer: Option[WSProxyServer]                                                        = proxy
-  override def withFollowRedirects(follow: Boolean): WSRequest                                           = copy(followRedirects = Some(follow))
-  override def withRequestTimeout(timeout: Duration): WSRequest                                          = copy(requestTimeout = Some(timeout))
-  override def withProxyServer(proxyServer: WSProxyServer): WSRequest                                    = copy(proxy = Some(proxyServer))
-  override def withBody[T](body: T)(implicit evidence$1: BodyWritable[T]): WSRequest                     =
+  override def addCookies(cookies: WSCookie*): WSRequest = {
+    if (cookies.nonEmpty) {
+      val oldCookies = headers.getOrElse("Cookie", Seq.empty[String])
+      val newCookieStrings = cookies.toList.map { c =>
+        s"${c.name}=${c.value}"
+      }
+      val allCookies = oldCookies ++ newCookieStrings
+      copy(headers = headers + ("Cookie" -> allCookies))
+    } else this
+  }
+  override def proxyServer: Option[WSProxyServer]                                    = proxy
+  override def withFollowRedirects(follow: Boolean): WSRequest                       = copy(followRedirects = Some(follow))
+  override def withRequestTimeout(timeout: Duration): WSRequest                      = copy(requestTimeout = Some(timeout))
+  override def withProxyServer(proxyServer: WSProxyServer): WSRequest                = copy(proxy = Some(proxyServer))
+  override def withBody[T](body: T)(implicit evidence$1: BodyWritable[T]): WSRequest =
     copy(body = evidence$1.transform(body))
-  override def withMethod(method: String): WSRequest                                                     = copy(method = method)
-  override def withDisableUrlEncoding(disableUrlEncoding: Boolean): WSRequest                            = this // Not implemented for NettyHttp3ClientWsRequest
+  override def withMethod(method: String): WSRequest                                 = copy(method = method)
+  override def withDisableUrlEncoding(disableUrlEncoding: Boolean): WSRequest        =
+    this // Not implemented for NettyHttp3ClientWsRequest
   override def get(): Future[WSResponse]                                                                 = copy(method = "GET").execute()
   override def delete(): Future[WSResponse]                                                              = copy(method = "DELETE").execute()
   override def head(): Future[WSResponse]                                                                = copy(method = "HEAD").execute()
@@ -452,7 +463,8 @@ case class NettyHttp3ClientWsRequest(
     scheme match {
       case WSAuthScheme.BASIC =>
         addHttpHeaders(
-          "Authorization" -> s"Basic ${JavaBase64.getEncoder.encodeToString(s"$username:$password".getBytes(StandardCharsets.UTF_8))}"
+          "Authorization" -> s"Basic ${JavaBase64.getEncoder
+            .encodeToString(s"$username:$password".getBytes(StandardCharsets.UTF_8))}"
         )
       case _                  => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
     }
@@ -597,8 +609,8 @@ case class NettyHttp3ClientWsRequest(
   }
   override def stream(): Future[WSResponse] = {
     implicit val ec: ExecutionContext = client.env.otoroshiExecutionContext
-    val uri         = new URI(url)
-    val thePort     = uri.getPort match {
+    val uri                           = new URI(url)
+    val thePort                       = uri.getPort match {
       case -1 =>
         uri.getScheme match {
           case "https" => 443
@@ -607,12 +619,12 @@ case class NettyHttp3ClientWsRequest(
         }
       case v  => v
     }
-    val promise     = Promise.apply[Http3Response]()
-    val context     = tlsConfig match {
+    val promise                       = Promise.apply[Http3Response]()
+    val context                       = tlsConfig match {
       case None      => client.getStandardSslContext()
       case Some(tls) => client.getSslContextFrom(tls)
     }
-    val codec       = client.codecFor(context, uri.getHost, thePort)
+    val codec                         = client.codecFor(context, uri.getHost, thePort)
     (for {
       channel       <- client.getChannel(codec, uri.getHost, thePort)
       quicChannel   <- client.getQuicChannel(channel, uri.getHost, thePort, targetOpt)
@@ -669,10 +681,9 @@ case class NettyHttp3ClientWsRequest(
           .writeAndFlush(frame)
           .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT)
       }
-      promise.future.andThen {
-        case e =>
-          streamChannel.closeFuture().sync()
-          quicChannel.close().sync()
+      promise.future.andThen { case e =>
+        streamChannel.closeFuture().sync()
+        quicChannel.close().sync()
       }
     }).flatMap(a => a.map(f => NettyHttp3ClientWsResponse(f, _uri, client.env)))
   }

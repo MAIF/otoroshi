@@ -19,7 +19,8 @@ import scala.util.{Failure, Success, Try}
 case class GlobalPerIpAddressThrottlingQuotas(within: Boolean, secCalls: Long, maybeQuota: Option[Long])
 
 object GlobalPerIpAddressThrottlingQuotas {
-  val key: TypedKey[GlobalPerIpAddressThrottlingQuotas] = TypedKey[GlobalPerIpAddressThrottlingQuotas]("otoroshi.next.plugins.GlobalPerIpAddressThrottlingQuotas")
+  val key: TypedKey[GlobalPerIpAddressThrottlingQuotas] =
+    TypedKey[GlobalPerIpAddressThrottlingQuotas]("otoroshi.next.plugins.GlobalPerIpAddressThrottlingQuotas")
 }
 
 class GlobalPerIpAddressThrottling extends NgAccessValidator {

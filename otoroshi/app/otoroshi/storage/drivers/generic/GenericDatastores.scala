@@ -234,26 +234,26 @@ class GenericDataStores(
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
         case keys                 =>
-            Future.sequence(
-              keys
-                .filterNot(key => Cluster.filteredKey(key, env))
-                .map { key =>
-                  for {
-                    w     <- redis.typ(key)
-                    ttl   <- redis.pttl(key)
-                    value <- fetchValueForType(w, key)
-                  } yield value match {
-                    case JsNull => JsNull
-                    case _      =>
-                      Json.obj(
-                        "k" -> key,
-                        "v" -> value,
-                        "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                        "w" -> w
-                      )
-                  }
+          Future.sequence(
+            keys
+              .filterNot(key => Cluster.filteredKey(key, env))
+              .map { key =>
+                for {
+                  w     <- redis.typ(key)
+                  ttl   <- redis.pttl(key)
+                  value <- fetchValueForType(w, key)
+                } yield value match {
+                  case JsNull => JsNull
+                  case _      =>
+                    Json.obj(
+                      "k" -> key,
+                      "v" -> value,
+                      "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                      "w" -> w
+                    )
                 }
-            )
+              }
+          )
       }
       .map(_.filterNot(_ == JsNull))
       .mapConcat(_.toList)
@@ -261,9 +261,9 @@ class GenericDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -273,25 +273,25 @@ class GenericDataStores(
         .mapAsync(1) {
           case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
           case keys                 =>
-              Source(keys.toList)
-                .mapAsync(1) { key =>
-                  for {
-                    w     <- redis.typ(key)
-                    ttl   <- redis.pttl(key)
-                    value <- fetchValueForType(w, key)
-                  } yield value match {
-                    case JsNull => JsNull
-                    case _      =>
-                      Json.obj(
-                        "k" -> key,
-                        "v" -> value,
-                        "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                        "w" -> w
-                      )
-                  }
+            Source(keys.toList)
+              .mapAsync(1) { key =>
+                for {
+                  w     <- redis.typ(key)
+                  ttl   <- redis.pttl(key)
+                  value <- fetchValueForType(w, key)
+                } yield value match {
+                  case JsNull => JsNull
+                  case _      =>
+                    Json.obj(
+                      "k" -> key,
+                      "v" -> value,
+                      "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                      "w" -> w
+                    )
                 }
-                .runWith(Sink.seq)
-                .map(_.filterNot(_ == JsNull))
+              }
+              .runWith(Sink.seq)
+              .map(_.filterNot(_ == JsNull))
         }
         .mapConcat(_.toList)
     )
@@ -299,9 +299,9 @@ class GenericDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")

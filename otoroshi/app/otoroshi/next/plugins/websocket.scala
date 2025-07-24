@@ -64,8 +64,8 @@ case class WebsocketTypeValidatorConfig(
 }
 
 object WebsocketTypeValidatorConfig {
-  val default: WebsocketTypeValidatorConfig = WebsocketTypeValidatorConfig()
-  val format: Format[WebsocketTypeValidatorConfig]  = new Format[WebsocketTypeValidatorConfig] {
+  val default: WebsocketTypeValidatorConfig        = WebsocketTypeValidatorConfig()
+  val format: Format[WebsocketTypeValidatorConfig] = new Format[WebsocketTypeValidatorConfig] {
     override def writes(o: WebsocketTypeValidatorConfig): JsValue = Json.obj(
       "allowed_format"  -> o.allowedFormat.json,
       "reject_strategy" -> o.rejectStrategy.json
@@ -96,8 +96,9 @@ case class FrameFormatValidatorConfig(
 }
 
 object FrameFormatValidatorConfig {
-  val default: FrameFormatValidatorConfig = FrameFormatValidatorConfig(validator = Some(JsonPathValidator("$.message", JsString("foo"), None)))
-  val format: Format[FrameFormatValidatorConfig]  = new Format[FrameFormatValidatorConfig] {
+  val default: FrameFormatValidatorConfig        =
+    FrameFormatValidatorConfig(validator = Some(JsonPathValidator("$.message", JsString("foo"), None)))
+  val format: Format[FrameFormatValidatorConfig] = new Format[FrameFormatValidatorConfig] {
     override def writes(o: FrameFormatValidatorConfig): JsValue = Json.obj(
       "validator"       -> o.validator.map(_.json),
       "reject_strategy" -> o.rejectStrategy.json
@@ -140,7 +141,8 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
     val config                   =
       ctx.cachedConfig(internalName)(FrameFormatValidatorConfig.format).getOrElse(FrameFormatValidatorConfig())
 
-    message.str()
+    message
+      .str()
       .map(message => {
         val json = ctx.json.asObject ++ Json.obj(
           "route"   -> ctx.route.json,
@@ -238,8 +240,9 @@ case class WebsocketJsonFormatValidatorConfig(
 }
 
 object WebsocketJsonFormatValidatorConfig {
-  val default: WebsocketJsonFormatValidatorConfig = WebsocketJsonFormatValidatorConfig(schema = "{ \"type\": \"object\", \"required\": [\"name\"] }".some)
-  val format: Format[WebsocketJsonFormatValidatorConfig]  = new Format[WebsocketJsonFormatValidatorConfig] {
+  val default: WebsocketJsonFormatValidatorConfig        =
+    WebsocketJsonFormatValidatorConfig(schema = "{ \"type\": \"object\", \"required\": [\"name\"] }".some)
+  val format: Format[WebsocketJsonFormatValidatorConfig] = new Format[WebsocketJsonFormatValidatorConfig] {
     override def writes(o: WebsocketJsonFormatValidatorConfig): JsValue = Json.obj(
       "schema"          -> o.schema,
       "specification"   -> o.specification,
@@ -291,10 +294,11 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
 
         val jsonSchemaFactory = JsonSchemaFactory.getInstance(VersionFlag.fromId(config.specification).get())
 
-        val schemaConfig = SchemaValidatorsConfig.builder()
-            .pathType(PathType.JSON_POINTER)
-            .formatAssertionsEnabled(true)
-            .build()
+        val schemaConfig = SchemaValidatorsConfig
+          .builder()
+          .pathType(PathType.JSON_POINTER)
+          .formatAssertionsEnabled(true)
+          .build()
 
         val schema = jsonSchemaFactory.getSchema(userSchema, schemaConfig)
 
@@ -327,8 +331,8 @@ case class WebsocketSizeValidatorConfig(
 }
 
 object WebsocketSizeValidatorConfig {
-  val default: WebsocketSizeValidatorConfig = WebsocketSizeValidatorConfig()
-  val format: Format[WebsocketSizeValidatorConfig]  = new Format[WebsocketSizeValidatorConfig] {
+  val default: WebsocketSizeValidatorConfig        = WebsocketSizeValidatorConfig()
+  val format: Format[WebsocketSizeValidatorConfig] = new Format[WebsocketSizeValidatorConfig] {
     override def writes(o: WebsocketSizeValidatorConfig): JsValue = Json.obj(
       "client_max_payload"   -> o.clientMaxPayload,
       "upstream_max_payload" -> o.upstreamMaxPayload,
@@ -476,24 +480,24 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
         Try(Json.parse(bodyStr)) match {
           case Failure(e) => Left(NgWebsocketError(CloseCodes.PolicyViolated, "message payload is not json")).vfuture
           case Success(_) =>
-              val request  = ImmutableJqRequest
-                .builder()
-                .lib(library)
-                .input(bodyStr)
-                .putArgJson("context", ctx.json.stringify)
-                .filter(filter)
-                .build()
-              val response = request.execute()
-              if (response.hasErrors) {
-                logger.error(
-                  s"error while transforming response body:\n${response.getErrors.asScala.mkString("\n")}"
-                )
-                val errors = JsArray(response.getErrors.asScala.map(err => JsString(err)))
-                Right(WebsocketMessage.PlayMessage(play.api.http.websocket.TextMessage(errors.stringify))).vfuture
-              } else {
-                val rawBody = response.getOutput
-                Right(WebsocketMessage.PlayMessage(play.api.http.websocket.TextMessage(rawBody))).vfuture
-              }
+            val request  = ImmutableJqRequest
+              .builder()
+              .lib(library)
+              .input(bodyStr)
+              .putArgJson("context", ctx.json.stringify)
+              .filter(filter)
+              .build()
+            val response = request.execute()
+            if (response.hasErrors) {
+              logger.error(
+                s"error while transforming response body:\n${response.getErrors.asScala.mkString("\n")}"
+              )
+              val errors = JsArray(response.getErrors.asScala.map(err => JsString(err)))
+              Right(WebsocketMessage.PlayMessage(play.api.http.websocket.TextMessage(errors.stringify))).vfuture
+            } else {
+              val rawBody = response.getOutput
+              Right(WebsocketMessage.PlayMessage(play.api.http.websocket.TextMessage(rawBody))).vfuture
+            }
         }
       }
     } else {
@@ -525,7 +529,7 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
       functionName: Option[String]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val mat: Materializer = env.otoroshiMaterializer
-    val config       = ctx
+    val config                     = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
     (if (message.isText) {
@@ -560,33 +564,33 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
             case Left(err)     =>
               Left(NgWebsocketError(500, err.stringify)).vfuture
             case Right(resStr) =>
-                Try(Json.parse(resStr._1)) match {
-                  case Failure(e)        =>
-                    Left(NgWebsocketError(500, Json.obj("error" -> e.getMessage).stringify)).vfuture
-                  case Success(response) =>
-                      AttrsHelper.updateAttrs(ctx.attrs, response)
-                      val error = response.select("error").asOpt[Boolean].getOrElse(false)
-                      if (error) {
-                      val reason: String  = response.select("reason").asOpt[String].getOrElse("error")
-                      val statusCode: Int = response.select("statusCode").asOpt[Int].getOrElse(500)
-                      Left(NgWebsocketError(statusCode, reason)).vfuture
+              Try(Json.parse(resStr._1)) match {
+                case Failure(e)        =>
+                  Left(NgWebsocketError(500, Json.obj("error" -> e.getMessage).stringify)).vfuture
+                case Success(response) =>
+                  AttrsHelper.updateAttrs(ctx.attrs, response)
+                  val error = response.select("error").asOpt[Boolean].getOrElse(false)
+                  if (error) {
+                    val reason: String  = response.select("reason").asOpt[String].getOrElse("error")
+                    val statusCode: Int = response.select("statusCode").asOpt[Int].getOrElse(500)
+                    Left(NgWebsocketError(statusCode, reason)).vfuture
+                  } else {
+                    val msg                       = response.select("message").asOpt[JsObject].getOrElse(Json.obj())
+                    val kind                      = msg.select("kind").asOpt[String].getOrElse("text")
+                    val message: WebsocketMessage = if (kind == "text") {
+                      val payload = msg.select("payload").asOpt[String].getOrElse("")
+                      WebsocketMessage.PlayMessage(play.api.http.websocket.TextMessage(payload))
                     } else {
-                      val msg                       = response.select("message").asOpt[JsObject].getOrElse(Json.obj())
-                      val kind                      = msg.select("kind").asOpt[String].getOrElse("text")
-                      val message: WebsocketMessage = if (kind == "text") {
-                        val payload = msg.select("payload").asOpt[String].getOrElse("")
-                        WebsocketMessage.PlayMessage(play.api.http.websocket.TextMessage(payload))
-                      } else {
-                        val payload = msg
-                          .select("payload")
-                          .asOpt[Array[Byte]]
-                          .map(bytes => ByteString(bytes))
-                          .getOrElse(ByteString.empty)
-                        WebsocketMessage.PlayMessage(play.api.http.websocket.BinaryMessage(payload))
-                      }
-                      Right(message).vfuture
+                      val payload = msg
+                        .select("payload")
+                        .asOpt[Array[Byte]]
+                        .map(bytes => ByteString(bytes))
+                        .getOrElse(ByteString.empty)
+                      WebsocketMessage.PlayMessage(play.api.http.websocket.BinaryMessage(payload))
                     }
-                }
+                    Right(message).vfuture
+                  }
+              }
           }.andThen { case e =>
             vm.release()
 

@@ -24,8 +24,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 object ApiActionContext {
-  val forbidden: Result  = Results.Forbidden(Json.obj("error" -> "You're not authorized here !"))
-  val fforbidden = forbidden.future
+  val forbidden: Result = Results.Forbidden(Json.obj("error" -> "You're not authorized here !"))
+  val fforbidden        = forbidden.future
 }
 
 trait ApiActionContextCapable {

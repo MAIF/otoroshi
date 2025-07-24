@@ -273,8 +273,8 @@ case class RelayRouting(
 }
 
 object RelayRouting {
-  val logger: Logger                                    = Logger("otoroshi-relay-routing")
-  val default: RelayRouting                                   = RelayRouting(
+  val logger: Logger                            = Logger("otoroshi-relay-routing")
+  val default: RelayRouting                     = RelayRouting(
     enabled = false,
     leaderOnly = false,
     location = InstanceLocation(
@@ -673,17 +673,17 @@ case class ClusterBackup(
       .run()
   }
 
-  private def readFromS3(conf: S3Configuration)
-                        (implicit ec: ExecutionContext, mat: Materializer): Future[Option[ByteString]] = {
+  private def readFromS3(
+      conf: S3Configuration
+  )(implicit ec: ExecutionContext, mat: Materializer): Future[Option[ByteString]] = {
     S3.getObject(conf.bucket, conf.key)
-        .withAttributes(s3ClientSettingsAttrs(conf))
-        .runWith(Sink.fold(ByteString.empty)(_ ++ _))
-        .map(Some(_))
-        .recover {
-          case _: S3Exception =>
-            Cluster.logger.error(s"resource '${url(conf)}' does not exist")
-            None
-        }
+      .withAttributes(s3ClientSettingsAttrs(conf))
+      .runWith(Sink.fold(ByteString.empty)(_ ++ _))
+      .map(Some(_))
+      .recover { case _: S3Exception =>
+        Cluster.logger.error(s"resource '${url(conf)}' does not exist")
+        None
+      }
   }
 }
 
@@ -1265,9 +1265,9 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   import scala.concurrent.duration._
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
-  implicit lazy val sched: Scheduler = env.otoroshiScheduler
-  implicit lazy val _env: Env = env
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
+  implicit lazy val sched: Scheduler     = env.otoroshiScheduler
+  implicit lazy val _env: Env            = env
 
   private val membershipRef   = new AtomicReference[Cancellable]()
   private val stateUpdaterRef = new AtomicReference[Cancellable]()
@@ -1352,9 +1352,9 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     }
   }
 
-  def cachedState: ByteString     = cachedRef.get()
-  def cachedTimestamp: Long = cachedAt.get()
-  def cachedCount: Long     = cacheCount.get()
+  def cachedState: ByteString = cachedRef.get()
+  def cachedTimestamp: Long   = cachedAt.get()
+  def cachedCount: Long       = cacheCount.get()
   def cachedDigest: String    = cacheDigest.get()
 
   private def cacheState(): Future[Unit] = {
@@ -1437,8 +1437,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   import scala.concurrent.duration._
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
-  implicit lazy val sched: Scheduler = env.otoroshiScheduler
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
+  implicit lazy val sched: Scheduler     = env.otoroshiScheduler
 
   private val _modern = env.configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
 
@@ -2394,17 +2394,19 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
 
     debug(s"callLeaderAkka: $attempt")
-    val alreadyReLaunched                                                                                           = new AtomicBoolean(false)
-    val pushCancelSource                                                                                            = new AtomicReference[Cancellable]()
-    val queueRef                                                                                                    = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
-    val pushSource
-        : Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]] =
-      Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](1024 * 10, OverflowStrategy.dropHead).mapMaterializedValue {
-        q =>
+    val alreadyReLaunched                                                  = new AtomicBoolean(false)
+    val pushCancelSource                                                   = new AtomicReference[Cancellable]()
+    val queueRef                                                           = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
+    val pushSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[
+      org.apache.pekko.http.scaladsl.model.ws.Message
+    ]]                                                                     =
+      Source
+        .queue[org.apache.pekko.http.scaladsl.model.ws.Message](1024 * 10, OverflowStrategy.dropHead)
+        .mapMaterializedValue { q =>
           queueRef.set(q)
           q
-      }
-    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                                      = pushSource
+        }
+    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _] = pushSource
 
     def handleOfferFailure(
         key: String,
@@ -2428,7 +2430,6 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       ClusterLeaderStateMessage.format.reads(elem.parseJson) match {
         case JsError(e)        => logger.error(s"ClusterLeaderStateMessage deserialization error: $e")
         case JsSuccess(csm, _) =>
-
           debug(s"got new state of ${elem.byteString.size / 1024} Kb ${if (streamed) "streamed" else "strict"} and ${if (compressed) "compressed" else "uncompressed"}")
 
           val store          = new UnboundedConcurrentHashMap[String, Any]()
@@ -2622,7 +2623,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       clientFlow = Flow
         .fromSinkAndSource(
           Sink.foreach[org.apache.pekko.http.scaladsl.model.ws.Message] {
-            case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(data)       => onClusterState(data, streamed = false, compressed = false)
+            case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(data)       =>
+              onClusterState(data, streamed = false, compressed = false)
             case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
               source.runFold("")(_ + _).map(data => onClusterState(data, streamed = true, compressed = false))
             case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
@@ -2634,7 +2636,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 .map(data => onClusterState(data.utf8String, streamed = false, compressed = true))
             case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
               debug(s"uncompressing streamed at level ${env.clusterConfig.compression}")
-              source.runFold(ByteString.empty)(_ ++ _).map(data => onClusterState(data.utf8String, streamed = true, compressed = true))
+              source
+                .runFold(ByteString.empty)(_ ++ _)
+                .map(data => onClusterState(data.utf8String, streamed = true, compressed = true))
           },
           source
         )
@@ -2710,10 +2714,10 @@ class SwappableInMemoryDataStores(
   import scala.concurrent.duration._
   import scala.util.hashing.MurmurHash3
 
-  lazy val redisStatsItems: Int  = configuration.betterGet[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
-  lazy val experimental: Boolean =
+  lazy val redisStatsItems: Int                                           = configuration.betterGet[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
+  lazy val experimental: Boolean                                          =
     configuration.betterGet[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
-  lazy val actorSystem: ActorSystem           =
+  lazy val actorSystem: ActorSystem                                       =
     ActorSystem(
       "otoroshi-swapinmemory-system",
       configuration
@@ -2721,10 +2725,10 @@ class SwappableInMemoryDataStores(
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  private val materializer       = Materializer(actorSystem)
-  val _optimized: Boolean                 = configuration.betterGetOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
-  val _modern: Boolean                    = configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
-  lazy val swredis: OptimizedRedisLike with RedisLike with SwappableRedis               = if (_modern) {
+  private val materializer                                                = Materializer(actorSystem)
+  val _optimized: Boolean                                                 = configuration.betterGetOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
+  val _modern: Boolean                                                    = configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
+  lazy val swredis: OptimizedRedisLike with RedisLike with SwappableRedis = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {
     new SwappableInMemoryRedis(_optimized, env, actorSystem)
@@ -3004,9 +3008,9 @@ class SwappableInMemoryDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -3044,9 +3048,9 @@ class SwappableInMemoryDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev: Env = env
+    implicit val ev: Env               = env
     implicit val ecc: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
+    implicit val mat: Materializer     = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")
@@ -3124,22 +3128,22 @@ class SwappableInMemoryDataStores(
     import scala.jdk.CollectionConverters._
 
     value match {
-      case str: String                                                     => ("string", JsString(str))
-      case str: ByteString                                                 => ("string", JsString(str.utf8String))
-      case lng: Long                                                       => ("string", JsString(lng.toString))
+      case str: String                                                                => ("string", JsString(str))
+      case str: ByteString                                                            => ("string", JsString(str.utf8String))
+      case lng: Long                                                                  => ("string", JsString(lng.toString))
       case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] @unchecked =>
         ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case map: TrieMap[String, ByteString]                                @unchecked =>
+      case map: TrieMap[String, ByteString] @unchecked                                =>
         ("hash", JsObject(map.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString]     @unchecked =>
+      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString] @unchecked     =>
         ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case list: scala.collection.mutable.ListBuffer[ByteString]           @unchecked =>
+      case list: scala.collection.mutable.ListBuffer[ByteString] @unchecked           =>
         ("list", JsArray(list.toSeq.map(a => JsString(a.utf8String))))
-      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString]       @unchecked =>
+      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString] @unchecked       =>
         ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case set: scala.collection.mutable.HashSet[ByteString]               @unchecked =>
+      case set: scala.collection.mutable.HashSet[ByteString] @unchecked               =>
         ("set", JsArray(set.toSeq.map(a => JsString(a.utf8String))))
-      case _                                                               => ("none", JsNull)
+      case _                                                                          => ("none", JsNull)
     }
   }
 }

@@ -55,7 +55,8 @@ object CleverCloudClient {
       a
     }
 
-    def signString(in: String): String = new String(encoder.encode(sign(in.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8)
+    def signString(in: String): String =
+      new String(encoder.encode(sign(in.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8)
 
     def sign(in: Array[Byte]): Array[Byte] = mac.synchronized { mac.doFinal(in) }
 

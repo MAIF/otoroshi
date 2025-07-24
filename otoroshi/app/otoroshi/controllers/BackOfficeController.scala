@@ -152,11 +152,11 @@ class BackOfficeController(
 ) extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val lat: Materializer = env.otoroshiMaterializer
+  implicit lazy val lat: Materializer    = env.otoroshiMaterializer
 
-  lazy val handler: HttpRequestHandler       = handlerRef.get()
-  lazy val logger: Logger        = Logger("otoroshi-backoffice-api")
-  lazy val commitVersion: String = Option(System.getenv("COMMIT_ID")).getOrElse(env.otoroshiVersion)
+  lazy val handler: HttpRequestHandler = handlerRef.get()
+  lazy val logger: Logger              = Logger("otoroshi-backoffice-api")
+  lazy val commitVersion: String       = Option(System.getenv("COMMIT_ID")).getOrElse(env.otoroshiVersion)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Proxy
@@ -331,8 +331,7 @@ class BackOfficeController(
               )
             )
             .withHeaders(
-              res.headers
-                .view
+              res.headers.view
                 .mapValues(_.head)
                 .toSeq
                 .filter(_._1 != "Content-Type")
@@ -402,8 +401,7 @@ class BackOfficeController(
               )
             )
             .withHeaders(
-              res.headers
-                .view
+              res.headers.view
                 .mapValues(_.head)
                 .toSeq
                 .filter(_._1 != "Content-Type")
@@ -522,11 +520,11 @@ class BackOfficeController(
       env.datastores.globalConfigDataStore.singleton().map { config =>
         val thridPartyLoginEnabled = config.backOfficeAuthRef.nonEmpty
         ctx.user match {
-          case Some(user)                      => Redirect("/bo/dashboard")
-          case None if config.u2fLoginOnly     => Redirect(routes.U2FController.loginPage())
-          case None if thridPartyLoginEnabled  =>
+          case Some(user)                     => Redirect("/bo/dashboard")
+          case None if config.u2fLoginOnly    => Redirect(routes.U2FController.loginPage())
+          case None if thridPartyLoginEnabled =>
             Ok(otoroshi.views.html.backoffice.index(thridPartyLoginEnabled, ctx.user, ctx.request, env))
-          case None                            => Redirect(routes.U2FController.loginPage())
+          case None                           => Redirect(routes.U2FController.loginPage())
         }
       }
     }
@@ -896,7 +894,8 @@ class BackOfficeController(
         val paginationPosition      = (paginationPage - 1) * paginationPageSize
 
         val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
-        val rawLoggers    = loggerContext.getLoggerList.asScala.slice(paginationPosition, paginationPosition + paginationPageSize)
+        val rawLoggers    =
+          loggerContext.getLoggerList.asScala.slice(paginationPosition, paginationPosition + paginationPageSize)
         val loggers       = JsArray(rawLoggers.map(logger => {
           val level: String = Option(logger.getLevel).map(_.levelStr).getOrElse("OFF")
           Json.obj("name" -> logger.getName, "level" -> level)
@@ -1911,7 +1910,7 @@ class BackOfficeController(
 
   def updateUiMode(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     implicit val reqh: Request[JsValue] = ctx.request
-    val mode          = ctx.request.body.select("mode").asOpt[String].getOrElse("dark")
+    val mode                            = ctx.request.body.select("mode").asOpt[String].getOrElse("dark")
     NoContent.addingToSession("ui-mode" -> mode).future
   }
 
@@ -2004,8 +2003,8 @@ class BackOfficeController(
 
           val newDocument = document.copy(
             definitions = document.definitions.flatMap {
-              case _: sangria.ast.TypeDefinition          => None
-              case v                                      => Some(v)
+              case _: sangria.ast.TypeDefinition => None
+              case v                             => Some(v)
             } ++ types
           )
 
@@ -2239,13 +2238,14 @@ class BackOfficeController(
     }
   }
 
-  def setUserPreference(id: String): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
-    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-      env.datastores.adminPreferencesDatastore.setPreference(ctx.user.email, id, bodyRaw.utf8String.parseJson).map {
-        value =>
-          Ok(value)
+  def setUserPreference(id: String): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) {
+    ctx =>
+      ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+        env.datastores.adminPreferencesDatastore.setPreference(ctx.user.email, id, bodyRaw.utf8String.parseJson).map {
+          value =>
+            Ok(value)
+        }
       }
-    }
   }
 
   def clearUserPreferences(): Action[AnyContent] = BackOfficeActionAuth.async { ctx =>

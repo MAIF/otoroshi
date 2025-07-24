@@ -22,7 +22,7 @@ import scala.util.{Failure, Success, Try}
 class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   private val sourceBodyParser = BodyParser("PkiController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -133,19 +133,19 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
           caOpt match {
             case None     =>
-                env.pki.genCsr(body, None).map {
-                  case Left(err) => BadRequest(Json.obj("error" -> err))
-                  case Right(kp) => Ok(kp.json)
-                }
+              env.pki.genCsr(body, None).map {
+                case Left(err) => BadRequest(Json.obj("error" -> err))
+                case Right(kp) => Ok(kp.json)
+              }
             case Some(ca) =>
-                findCertificateByIdOrSerialNumber(ca).flatMap {
-                  case None         => NotFound(Json.obj("error" -> "ca not found !")).future
-                  case Some(cacert) =>
-                    env.pki.genCsr(body, cacert.certificate).map {
-                      case Left(err) => BadRequest(Json.obj("error" -> err))
-                      case Right(kp) => Ok(kp.json)
-                    }
-                }
+              findCertificateByIdOrSerialNumber(ca).flatMap {
+                case None         => NotFound(Json.obj("error" -> "ca not found !")).future
+                case Some(cacert) =>
+                  env.pki.genCsr(body, cacert.certificate).map {
+                    case Left(err) => BadRequest(Json.obj("error" -> err))
+                    case Right(kp) => Ok(kp.json)
+                  }
+              }
           }
         }
       }
@@ -236,9 +236,9 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
               Json.obj("error" -> "error while importing PEM bundle", "error_description" -> e.getMessage)
             ).future
           case Success(otoCert) =>
-              otoCert.save().map { _ =>
-                Created(otoCert.json)
-              }
+            otoCert.save().map { _ =>
+              Created(otoCert.json)
+            }
         }
       }
     }

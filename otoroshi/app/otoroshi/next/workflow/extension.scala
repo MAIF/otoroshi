@@ -39,7 +39,7 @@ case class Workflow(
 }
 
 object Workflow {
-  def template(): Workflow = Workflow(
+  def template(): Workflow     = Workflow(
     location = EntityLocation.default,
     id = s"workflow_${IdGenerator.uuid}",
     name = "New Workflow",
@@ -49,7 +49,7 @@ object Workflow {
     config = Node.default,
     testPayload = Json.obj("name" -> "foo")
   )
-  val format: Format[Workflow]               = new Format[Workflow] {
+  val format: Format[Workflow] = new Format[Workflow] {
     override def writes(o: Workflow): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"           -> o.id,
       "name"         -> o.name,
@@ -130,7 +130,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
 
   override def syncStates(): Future[Unit] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val ev: Env = env
+    implicit val ev: Env              = env
     for {
       configs <- datastores.workflowsDatastore.findAllAndFillSecrets()
     } yield {
@@ -185,8 +185,8 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
       body: Option[Source[ByteString, _]]
   ): Future[Result] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
-    implicit val ev: Env = env
+    implicit val mat: Materializer    = env.otoroshiMaterializer
+    implicit val ev: Env              = env
     (body match {
       case None             => Results.Ok(Json.obj("done" -> false, "error" -> "no body")).vfuture
       case Some(bodySource) =>
@@ -205,9 +205,8 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             }
           }
         }
-    }).recover {
-      case e: Throwable =>
-        Results.Ok(Json.obj("done" -> false, "error" -> e.getMessage))
+    }).recover { case e: Throwable =>
+      Results.Ok(Json.obj("done" -> false, "error" -> e.getMessage))
     }
   }
 }

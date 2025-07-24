@@ -92,7 +92,7 @@ class FooAdminExtensionState(env: Env) {
 
 class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike {
 
-  val redis       = new otoroshi.storage.drivers.inmemory.SwappableInMemoryRedis(false, env, actorSystem)
+  val redis                                 = new otoroshi.storage.drivers.inmemory.SwappableInMemoryRedis(false, env, actorSystem)
   implicit val ec: ExecutionContextExecutor = actorSystem.dispatcher
 
   override def setCounter(key: String, value: Long): Future[Unit]               = redis.set(key, value.toString).map(_ => ())
@@ -145,16 +145,16 @@ class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike 
 
   override def typ(key: String): Future[String] = {
     rawGet(key) map {
-      case Some(_: String)                                                                 => "string"
-      case Some(_: ByteString)                                                             => "string"
-      case Some(_: Long)                                                                   => "string"
-      case Some(_: java.util.concurrent.ConcurrentHashMap[String, ByteString] @unchecked ) => "hash"
-      case Some(_: TrieMap[String, ByteString] @unchecked )                                => "hash"
-      case Some(_: java.util.concurrent.CopyOnWriteArrayList[ByteString] @unchecked )      => "list"
-      case Some(_: scala.collection.mutable.ListBuffer[ByteString] @unchecked )            => "list"
-      case Some(_: java.util.concurrent.CopyOnWriteArraySet[ByteString] @unchecked )       => "set"
-      case Some(_: scala.collection.mutable.HashSet[ByteString] @unchecked )               => "set"
-      case _                                                                               => "none"
+      case Some(_: String)                                                                => "string"
+      case Some(_: ByteString)                                                            => "string"
+      case Some(_: Long)                                                                  => "string"
+      case Some(_: java.util.concurrent.ConcurrentHashMap[String, ByteString] @unchecked) => "hash"
+      case Some(_: TrieMap[String, ByteString] @unchecked)                                => "hash"
+      case Some(_: java.util.concurrent.CopyOnWriteArrayList[ByteString] @unchecked)      => "list"
+      case Some(_: scala.collection.mutable.ListBuffer[ByteString] @unchecked)            => "list"
+      case Some(_: java.util.concurrent.CopyOnWriteArraySet[ByteString] @unchecked)       => "set"
+      case Some(_: scala.collection.mutable.HashSet[ByteString] @unchecked)               => "set"
+      case _                                                                              => "none"
     }
   }
 }
@@ -225,7 +225,7 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
 
   override def syncStates(): Future[Unit] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val ev: Env = env
+    implicit val ev: Env              = env
     for {
       foos <- datastores.fooDatastore.findAll()
     } yield {

@@ -41,10 +41,10 @@ case class IndexSettingsIntervalYear(name: String = "Year")   extends IndexSetti
 
 object IndexSettingsInterval {
 
-  val Day: IndexSettingsIntervalDay   = IndexSettingsIntervalDay()
-  val Week: IndexSettingsIntervalWeek  = IndexSettingsIntervalWeek()
+  val Day: IndexSettingsIntervalDay     = IndexSettingsIntervalDay()
+  val Week: IndexSettingsIntervalWeek   = IndexSettingsIntervalWeek()
   val Month: IndexSettingsIntervalMonth = IndexSettingsIntervalMonth()
-  val Year: IndexSettingsIntervalYear  = IndexSettingsIntervalYear()
+  val Year: IndexSettingsIntervalYear   = IndexSettingsIntervalYear()
 
   def parse(str: String): Option[IndexSettingsInterval] = {
     str.trim.toLowerCase() match {
@@ -115,7 +115,7 @@ case class ElasticAnalyticsConfig(
 
 object ElasticAnalyticsConfig {
   def read(json: JsValue): Option[ElasticAnalyticsConfig] = format.reads(json).asOpt
-  val format: Format[ElasticAnalyticsConfig] = new Format[ElasticAnalyticsConfig] {
+  val format: Format[ElasticAnalyticsConfig]              = new Format[ElasticAnalyticsConfig] {
     override def writes(o: ElasticAnalyticsConfig) =
       Json.obj(
         "clusterUri"    -> o.uris.headOption.map(JsString.apply).getOrElse(JsNull).asValue,
@@ -598,17 +598,17 @@ case class TlsWasmoSettings(settings: WasmoSettings = WasmoSettings(), tlsConfig
       case None if !tlsConfig.mtls  => settings
       case Some(cfg) if cfg.enabled => settings
       case _                        =>
-          settings.copy(
-            tlsConfig = Some(
-              io.otoroshi.wasm4s.scaladsl.security.TlsConfig(
-                certs = tlsConfig.certs,
-                trustedCerts = tlsConfig.trustedCerts,
-                enabled = tlsConfig.mtls,
-                loose = tlsConfig.loose,
-                trustAll = tlsConfig.trustAll
-              )
+        settings.copy(
+          tlsConfig = Some(
+            io.otoroshi.wasm4s.scaladsl.security.TlsConfig(
+              certs = tlsConfig.certs,
+              trustedCerts = tlsConfig.trustedCerts,
+              enabled = tlsConfig.mtls,
+              loose = tlsConfig.loose,
+              trustAll = tlsConfig.trustAll
             )
           )
+        )
     }
   }
 }
@@ -636,57 +636,57 @@ object TlsWasmoSettings {
 }
 
 case class GlobalConfig(
-                           letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
-                           lines: Seq[String] = Seq("prod"),
-                           anonymousReporting: Boolean = false,
-                           initWithNewEngine: Boolean = true,
-                           enableEmbeddedMetrics: Boolean = true,
-                           streamEntityOnly: Boolean = true,
-                           autoLinkToDefaultGroup: Boolean = true,
-                           limitConcurrentRequests: Boolean = false, // TODO : true by default
-                           maxConcurrentRequests: Long = 1000,
-                           maxHttp10ResponseSize: Long = 4 * (1024 * 1024),
-                           useCircuitBreakers: Boolean = true,
-                           apiReadOnly: Boolean = false,
-                           u2fLoginOnly: Boolean = false,
-                           maintenanceMode: Boolean = false,
-                           trustXForwarded: Boolean = true,
-                           ipFiltering: IpFiltering = IpFiltering(),
-                           throttlingQuota: Long = BaseQuotas.MaxValue,
-                           perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
-                           elasticReadsConfig: Option[ElasticAnalyticsConfig] = None,
-                           elasticWritesConfigs: Seq[ElasticAnalyticsConfig] = Seq.empty[ElasticAnalyticsConfig],
-                           analyticsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
-                           logAnalyticsOnServer: Boolean = false,
-                           useAkkaHttpClient: Boolean = false,
-                           // TODO: logBodies: Boolean,
-                           alertsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
-                           alertsEmails: Seq[String] = Seq.empty[String],
-                           endlessIpAddresses: Seq[String] = Seq.empty[String],
-                           kafkaConfig: Option[KafkaConfig] = None,
-                           backOfficeAuthRef: Option[String] = None,
-                           cleverSettings: Option[CleverCloudSettings] = None,
-                           mailerSettings: Option[MailerSettings] = None,
-                           statsdConfig: Option[StatsdConfig] = None,
-                           maxWebhookSize: Int = 100,
-                           middleFingers: Boolean = false,
-                           maxLogsSize: Int = 10000,
-                           otoroshiId: String = IdGenerator.uuid,
-                           snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig(),
-                           proxies: Proxies = Proxies(),
-                           scripts: GlobalScripts = GlobalScripts(),
-                           geolocationSettings: GeolocationSettings = NoneGeolocationSettings,
-                           userAgentSettings: UserAgentSettings = UserAgentSettings(false),
-                           autoCert: AutoCert = AutoCert(),
-                           tlsSettings: TlsSettings = TlsSettings(),
-                           quotasSettings: QuotasAlmostExceededSettings = QuotasAlmostExceededSettings(enabled = false, 0.8, 0.8),
-                           plugins: Plugins = Plugins(),
-                           templates: DefaultTemplates = DefaultTemplates(),
-                           wasmoSettings: Option[TlsWasmoSettings] = None,
-                           tags: Seq[String] = Seq.empty,
-                           metadata: Map[String, String] = Map.empty,
-                           env: JsObject = Json.obj(),
-                           extensions: Map[String, JsValue] = Map.empty
+    letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
+    lines: Seq[String] = Seq("prod"),
+    anonymousReporting: Boolean = false,
+    initWithNewEngine: Boolean = true,
+    enableEmbeddedMetrics: Boolean = true,
+    streamEntityOnly: Boolean = true,
+    autoLinkToDefaultGroup: Boolean = true,
+    limitConcurrentRequests: Boolean = false, // TODO : true by default
+    maxConcurrentRequests: Long = 1000,
+    maxHttp10ResponseSize: Long = 4 * (1024 * 1024),
+    useCircuitBreakers: Boolean = true,
+    apiReadOnly: Boolean = false,
+    u2fLoginOnly: Boolean = false,
+    maintenanceMode: Boolean = false,
+    trustXForwarded: Boolean = true,
+    ipFiltering: IpFiltering = IpFiltering(),
+    throttlingQuota: Long = BaseQuotas.MaxValue,
+    perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
+    elasticReadsConfig: Option[ElasticAnalyticsConfig] = None,
+    elasticWritesConfigs: Seq[ElasticAnalyticsConfig] = Seq.empty[ElasticAnalyticsConfig],
+    analyticsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
+    logAnalyticsOnServer: Boolean = false,
+    useAkkaHttpClient: Boolean = false,
+    // TODO: logBodies: Boolean,
+    alertsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
+    alertsEmails: Seq[String] = Seq.empty[String],
+    endlessIpAddresses: Seq[String] = Seq.empty[String],
+    kafkaConfig: Option[KafkaConfig] = None,
+    backOfficeAuthRef: Option[String] = None,
+    cleverSettings: Option[CleverCloudSettings] = None,
+    mailerSettings: Option[MailerSettings] = None,
+    statsdConfig: Option[StatsdConfig] = None,
+    maxWebhookSize: Int = 100,
+    middleFingers: Boolean = false,
+    maxLogsSize: Int = 10000,
+    otoroshiId: String = IdGenerator.uuid,
+    snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig(),
+    proxies: Proxies = Proxies(),
+    scripts: GlobalScripts = GlobalScripts(),
+    geolocationSettings: GeolocationSettings = NoneGeolocationSettings,
+    userAgentSettings: UserAgentSettings = UserAgentSettings(false),
+    autoCert: AutoCert = AutoCert(),
+    tlsSettings: TlsSettings = TlsSettings(),
+    quotasSettings: QuotasAlmostExceededSettings = QuotasAlmostExceededSettings(enabled = false, 0.8, 0.8),
+    plugins: Plugins = Plugins(),
+    templates: DefaultTemplates = DefaultTemplates(),
+    wasmoSettings: Option[TlsWasmoSettings] = None,
+    tags: Seq[String] = Seq.empty,
+    metadata: Map[String, String] = Map.empty,
+    env: JsObject = Json.obj(),
+    extensions: Map[String, JsValue] = Map.empty
 ) extends Entity {
 
   def internalId: String = "global"
@@ -703,9 +703,11 @@ case class GlobalConfig(
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalConfigDataStore.set(this)
 
-  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalConfigDataStore.delete(this)
+  def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    env.datastores.globalConfigDataStore.delete(this)
 
-  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalConfigDataStore.exists(this)
+  def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    env.datastores.globalConfigDataStore.exists(this)
 
   def toJson: JsValue = GlobalConfig.toJson(this)
 
@@ -716,15 +718,15 @@ case class GlobalConfig(
     cleverSettings match {
       case None           => None
       case Some(settings) =>
-          val cleverSetting = CleverSettings(
-            apiConsumerKey = settings.consumerKey,
-            apiConsumerSecret = settings.consumerSecret,
-            apiAuthToken = UserTokens(
-              token = settings.token,
-              secret = settings.secret
-            )
+        val cleverSetting = CleverSettings(
+          apiConsumerKey = settings.consumerKey,
+          apiConsumerSecret = settings.consumerSecret,
+          apiAuthToken = UserTokens(
+            token = settings.token,
+            secret = settings.secret
           )
-          Some(CleverCloudClient(env, this, cleverSetting, settings.orgaId))
+        )
+        Some(CleverCloudClient(env, this, cleverSetting, settings.orgaId))
     }
 
   def matchesEndlessIpAddresses(ipAddress: String): Boolean = {
@@ -741,7 +743,8 @@ case class GlobalConfig(
     }
   }
 
-  lazy val incomingRequestValidators: NgPlugins = NgPlugins.readFrom(plugins.config.select("incoming_request_validators"))
+  lazy val incomingRequestValidators: NgPlugins =
+    NgPlugins.readFrom(plugins.config.select("incoming_request_validators"))
 }
 
 object GlobalConfig {
@@ -1025,8 +1028,8 @@ object GlobalConfig {
       _fmt.reads(value).get
     } catch {
       case e: Throwable =>
-          logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
-          throw e
+        logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        throw e
     }
   def fromJsonSafe(value: JsValue): JsResult[GlobalConfig] = _fmt.reads(value)
 }

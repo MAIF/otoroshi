@@ -117,9 +117,9 @@ object BackOfficeUser {
               .map { obj =>
                 obj.value.view.mapValues { arr =>
                   arr.asArray.value
-                      .map { item => JsonValidator.format.reads(item)}
-                      .collect { case JsSuccess(v, _) => v }
-                      .toSeq
+                    .map { item => JsonValidator.format.reads(item) }
+                    .collect { case JsSuccess(v, _) => v }
+                    .toSeq
                 }.toMap
               }
               .getOrElse(Map.empty)

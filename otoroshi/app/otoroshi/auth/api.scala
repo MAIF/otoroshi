@@ -410,8 +410,8 @@ object AuthModuleConfig {
       _fmt(env).reads(value).get
     } catch {
       case e: Throwable =>
-          logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
-          throw e
+        logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        throw e
     }
 
   def _fmt(env: Env): Format[AuthModuleConfig] = AuthModuleConfigFormat(env)

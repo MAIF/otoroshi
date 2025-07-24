@@ -43,8 +43,8 @@ case class TunnelPluginConfig(tunnelId: String) extends NgPluginConfig {
 }
 
 object TunnelPluginConfig {
-  val default: TunnelPluginConfig = TunnelPluginConfig("default")
-  def format: Format[TunnelPluginConfig]  = new Format[TunnelPluginConfig] {
+  val default: TunnelPluginConfig        = TunnelPluginConfig("default")
+  def format: Format[TunnelPluginConfig] = new Format[TunnelPluginConfig] {
     override def writes(o: TunnelPluginConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[TunnelPluginConfig] = Try {
       TunnelPluginConfig(
@@ -88,7 +88,7 @@ class TunnelPlugin() extends NgBackendCall {
     env.tunnelManager.sendRequest(tunnelId, ctx.request, ctx.rawRequest.remoteAddress, ctx.rawRequest.theSecured).map {
       result =>
         if (logger.isDebugEnabled) logger.debug(s"response from tunnel '$tunnelId'")
-        val cookieEncoder = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
+        val cookieEncoder                  = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
         val setCookieHeader: Seq[WSCookie] = result.header.headers
           .getIgnoreCase("Set-Cookie")
           .map(cookieEncoder.decodeSetCookieHeader)
@@ -218,13 +218,13 @@ class TunnelAgent(env: Env) {
   ): Future[Unit] = {
 
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
-    implicit val ev: Env = env
+    implicit val mat: Materializer    = env.otoroshiMaterializer
+    implicit val ev: Env              = env
 
     logger.info(s"connecting tunnel '$tunnelId' ...")
 
-    val promise                                                                                                     = Promise[Unit]()
-    val metadataSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                              = Source
+    val promise                                                                    = Promise[Unit]()
+    val metadataSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _] = Source
       .tick(1.seconds, 10.seconds, ())
       .map { _ =>
         Try {
@@ -254,20 +254,24 @@ class TunnelAgent(env: Env) {
       .collect { case Success(value) =>
         value
       }
-    val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                                  = Source
+    val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]     = Source
       .tick(10.seconds, 10.seconds, ())
       .map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString))
       .map { pm =>
         org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
       }
-    val queueRef                                                                                                    = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
-    val pushSource
-        : Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]] =
-      Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
-        queueRef.set(q)
-        q
-      }
-    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                                      = pushSource.merge(pingSource.merge(metadataSource))
+    val queueRef                                                                   = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
+    val pushSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[
+      org.apache.pekko.http.scaladsl.model.ws.Message
+    ]]                                                                             =
+      Source
+        .queue[org.apache.pekko.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead)
+        .mapMaterializedValue { q =>
+          queueRef.set(q)
+          q
+        }
+    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]         =
+      pushSource.merge(pingSource.merge(metadataSource))
 
     def handleRequest(rawRequest: ByteString): Unit = Try {
       val obj = Json.parse(rawRequest.toArray)
@@ -327,7 +331,10 @@ class TunnelAgent(env: Env) {
               logger.debug(s"sending response back to server on tunnel '$tunnelId' - $requestId")
             Option(queueRef.get()).foreach(queue =>
               queue
-                .offer(org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(res.stringify.byteString.chunks(16 * 1024)))
+                .offer(
+                  org.apache.pekko.http.scaladsl.model.ws.BinaryMessage
+                    .Streamed(res.stringify.byteString.chunks(16 * 1024))
+                )
             )
           }
         }
@@ -476,7 +483,7 @@ class TunnelManager(env: Env) {
   private val logger         = Logger(s"otoroshi-tunnel-manager")
 
   private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  private implicit val ev: Env = env
+  private implicit val ev: Env              = env
 
   def currentTunnels: Set[String] = tunnels.asMap().keySet.toSet
 
@@ -629,8 +636,8 @@ class TunnelManager(env: Env) {
       member: MemberView
   ): Future[Result] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val mat: Materializer = env.otoroshiMaterializer
-    implicit val ev: Env = env
+    implicit val mat: Materializer    = env.otoroshiMaterializer
+    implicit val ev: Env              = env
 
     val requestId: String = TunnelActor.genRequestId(env) // legit
     val requestJson       = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
@@ -662,9 +669,9 @@ class LeaderConnection(
     unregister: LeaderConnection => Unit
 ) {
 
-  private val logger           = Logger("otoroshi-tunnel-leader-connection")
+  private val logger                        = Logger("otoroshi-tunnel-leader-connection")
   private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  private implicit val mat: Materializer = env.otoroshiMaterializer
+  private implicit val mat: Materializer    = env.otoroshiMaterializer
   private implicit val factory: ActorSystem = env.otoroshiActorSystem
 
   private val useInternalPorts =
@@ -674,22 +681,24 @@ class LeaderConnection(
 
   def location: String = member.location
 
-  private val ref                                                                                                 = new AtomicLong(0L)
-  private val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                          = Source
+  private val ref                                                                    = new AtomicLong(0L)
+  private val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _] = Source
     .tick(10.seconds, 10.seconds, ())
     .map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString))
     .map { pm =>
       org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
     }
-  private val queueRef                                                                                            = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
-  private val pushSource
-      : Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]] =
-    Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
-      queueRef.set(q)
-      q
+  private val queueRef                                                               = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
+  private val pushSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[
+    org.apache.pekko.http.scaladsl.model.ws.Message
+  ]]                                                                                 =
+    Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue {
+      q =>
+        queueRef.set(q)
+        q
     }
-  private val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                              = pushSource.merge(pingSource)
-  private val awaitingResponse                                                                                    = new UnboundedTrieMap[String, Promise[Result]]()
+  private val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]     = pushSource.merge(pingSource)
+  private val awaitingResponse                                                       = new UnboundedTrieMap[String, Promise[Result]]()
 
   def close(): Unit = {
     unregister(this)
@@ -753,7 +762,7 @@ class LeaderConnection(
               case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleResponse(data)
               case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
                 source.runFold(ByteString.empty)(_ ++ _).map(b => handleResponse(b))
-              case _                                                          =>
+              case _                                                                      =>
             },
             source
           )
@@ -820,7 +829,7 @@ class LeaderConnection(
               case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleResponse(data)
               case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
                 source.runFold(ByteString.empty)(_ ++ _).map(b => handleResponse(b))
-              case _                                                          =>
+              case _                                                                      =>
             },
             source
           )
@@ -891,7 +900,7 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
   implicit lazy val factory: ActorSystem = env.otoroshiActorSystem
 
   private val tunnelsEnabled = env.configuration.getOptional[Boolean]("otoroshi.tunnels.enabled").getOrElse(false)
@@ -1022,9 +1031,9 @@ object TunnelRelayActor {
 
 class TunnelRelayActor(out: ActorRef, tunnelId: String)(implicit env: Env) extends Actor {
 
-  private val logger       = Logger("otoroshi-tunnel-relay-actor")
+  private val logger                        = Logger("otoroshi-tunnel-relay-actor")
   private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  private implicit val mat: Materializer = env.otoroshiMaterializer
+  private implicit val mat: Materializer    = env.otoroshiMaterializer
 
   def handleRequest(data: ByteString): Unit = Try {
     val request = Json.parse(data.toArray)
@@ -1078,12 +1087,15 @@ object TunnelActor {
     }
   }
 
-  def resultToJson(result: Result, requestId: String)
-                  (implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[JsValue] = {
+  def resultToJson(result: Result, requestId: String)(implicit
+      ec: ExecutionContext,
+      mat: Materializer,
+      env: Env
+  ): Future[JsValue] = {
     val cookieEncoder = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
-    val ct      = result.body.contentType
-    val cl      = result.body.contentLength
-    val cookies = result.header.headers
+    val ct            = result.body.contentType
+    val cl            = result.body.contentLength
+    val cookies       = result.header.headers
       .getIgnoreCase("Cookie")
       .map(cookieEncoder.decodeCookieHeader)
       .getOrElse(Seq.empty)

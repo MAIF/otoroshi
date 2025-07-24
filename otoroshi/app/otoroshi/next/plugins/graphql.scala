@@ -342,52 +342,64 @@ class GraphQLBackend extends NgBackendCall {
     sangria.schema.DirectiveLocation.Object
   )
 
-  val urlArg: Argument[String]               = Argument("url", StringType)
-  val methodArg: Argument[Option[String]]            = Argument("method", OptionInputType(StringType))
-  val headersArg: Argument[Option[String]]           = Argument("headers", OptionInputType(StringType))
-  val timeoutArg: Argument[Int]           = Argument("timeout", IntType, defaultValue = 5000)
-  val jsonDataArg: Argument[Option[String]]          = Argument("data", OptionInputType(StringType))
-  val jsonPathArg: Argument[Option[String]]          = Argument("path", OptionInputType(StringType))
-  val queryArg: Argument[Option[String]]             = Argument("query", OptionInputType(StringType))
-  val responsePathArg: Argument[Option[String]]      = Argument("response_path", OptionInputType(StringType))
-  val responseFilterArg: Argument[Option[String]]    = Argument("response_filter", OptionInputType(StringType))
-  val limitArg: Argument[Option[Int]]             = Argument("limit", OptionInputType(IntType))
-  val offsetArg: Argument[Option[Int]]            = Argument("offset", OptionInputType(IntType))
-  val paginateArg: Argument[Boolean]          = Argument("paginate", OptionInputType(BooleanType), defaultValue = false)
-  val valueArg: Argument[String]             = Argument("value", StringType)
-  val valuesArg: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]]            = Argument("values", ListInputType(StringType))
-  val pathArg: Argument[String]              = Argument("path", StringType)
-  val unauthorizedValueArg: Argument[Option[String]] = Argument("unauthorized_value", OptionInputType(StringType))
+  val urlArg: Argument[String]                                                       = Argument("url", StringType)
+  val methodArg: Argument[Option[String]]                                            = Argument("method", OptionInputType(StringType))
+  val headersArg: Argument[Option[String]]                                           = Argument("headers", OptionInputType(StringType))
+  val timeoutArg: Argument[Int]                                                      = Argument("timeout", IntType, defaultValue = 5000)
+  val jsonDataArg: Argument[Option[String]]                                          = Argument("data", OptionInputType(StringType))
+  val jsonPathArg: Argument[Option[String]]                                          = Argument("path", OptionInputType(StringType))
+  val queryArg: Argument[Option[String]]                                             = Argument("query", OptionInputType(StringType))
+  val responsePathArg: Argument[Option[String]]                                      = Argument("response_path", OptionInputType(StringType))
+  val responseFilterArg: Argument[Option[String]]                                    = Argument("response_filter", OptionInputType(StringType))
+  val limitArg: Argument[Option[Int]]                                                = Argument("limit", OptionInputType(IntType))
+  val offsetArg: Argument[Option[Int]]                                               = Argument("offset", OptionInputType(IntType))
+  val paginateArg: Argument[Boolean]                                                 = Argument("paginate", OptionInputType(BooleanType), defaultValue = false)
+  val valueArg: Argument[String]                                                     = Argument("value", StringType)
+  val valuesArg =
+    Argument("values", ListInputType(StringType))
+  val pathArg: Argument[String]                                                      = Argument("path", StringType)
+  val unauthorizedValueArg: Argument[Option[String]]                                 = Argument("unauthorized_value", OptionInputType(StringType))
 
-  val soapEnvelopeArg: Argument[String]                = Argument("envelope", StringType)
-  val soapUrlArg: Argument[Option[String]]                     = Argument("url", OptionInputType(StringType))
-  val soapActionArg: Argument[Option[String]]                  = Argument("action", OptionInputType(StringType))
+  val soapEnvelopeArg: Argument[String]                 = Argument("envelope", StringType)
+  val soapUrlArg: Argument[Option[String]]              = Argument("url", OptionInputType(StringType))
+  val soapActionArg: Argument[Option[String]]           = Argument("action", OptionInputType(StringType))
   val soapPreservereQueryArg: Argument[Boolean]         = Argument("preserve_query", BooleanType, defaultValue = true)
-  val soapCharsetArg: Argument[Option[String]]                 = Argument("charset", OptionInputType(StringType))
-  val soapConvertRequestBodyToXmlArg: Argument[Boolean] = Argument("convert_request_body_to_xml", BooleanType, defaultValue = true)
-  val soapJqRequestFilterArg: Argument[Option[String]]         = Argument("jq_request_filter", OptionInputType(StringType))
-  val soapJqResponseFilterArg: Argument[Option[String]]        = Argument("jq_response_filter", OptionInputType(StringType))
+  val soapCharsetArg: Argument[Option[String]]          = Argument("charset", OptionInputType(StringType))
+  val soapConvertRequestBodyToXmlArg: Argument[Boolean] =
+    Argument("convert_request_body_to_xml", BooleanType, defaultValue = true)
+  val soapJqRequestFilterArg: Argument[Option[String]]  = Argument("jq_request_filter", OptionInputType(StringType))
+  val soapJqResponseFilterArg: Argument[Option[String]] = Argument("jq_response_filter", OptionInputType(StringType))
 
-  val wasmSourceKindArg: Argument[Option[String]]                 = Argument("wasm_source_kind", OptionInputType(StringType))
-  val wasmSourcePathArg: Argument[Option[String]]                 = Argument("wasm_source_path", OptionInputType(StringType))
-  val wasmFunctionNameArg: Argument[String]               = Argument("wasm_function_name", StringType)
-  val wasmMemoryPagesArg: Argument[Option[Int]]                = Argument("wasm_memory_pages", OptionInputType(IntType))
+  val wasmSourceKindArg: Argument[Option[String]]          = Argument("wasm_source_kind", OptionInputType(StringType))
+  val wasmSourcePathArg: Argument[Option[String]]          = Argument("wasm_source_path", OptionInputType(StringType))
+  val wasmFunctionNameArg: Argument[String]                = Argument("wasm_function_name", StringType)
+  val wasmMemoryPagesArg: Argument[Option[Int]]            = Argument("wasm_memory_pages", OptionInputType(IntType))
   // val wasmConfigArg = Argument("wasm_config", StringType)
-  val wasmAllowedHostsArg: Argument[Option[Seq[String]]]               = Argument("wasm_allowed_hosts", OptionInputType(ListInputType(StringType)))
+  val wasmAllowedHostsArg: Argument[Option[Seq[String]]]   =
+    Argument("wasm_allowed_hosts", OptionInputType(ListInputType(StringType)))
   val wasmWasiArg: Argument[Boolean]                       = Argument("wasm_wasi", BooleanType, defaultValue = true)
-  val wasmProxyHttpCallTimeoutArg: Argument[Option[Int]]       = Argument("proxy_http_call_timeout", OptionInputType(IntType))
+  val wasmProxyHttpCallTimeoutArg: Argument[Option[Int]]   = Argument("proxy_http_call_timeout", OptionInputType(IntType))
   val wasmHttpAccessArg: Argument[Boolean]                 = Argument("http_access", BooleanType, defaultValue = false)
-  val wasmGlobalDataStoreAccessReadArg: Argument[Boolean]  = Argument("global_datastore_access_read", BooleanType, defaultValue = false)
-  val wasmGlobalDataStoreAccessWriteArg: Argument[Boolean] = Argument("global_datastore_access_write", BooleanType, defaultValue = false)
-  val wasmPluginDataStoreAccessReadArg: Argument[Boolean]  = Argument("plugin_datastore_access_read", BooleanType, defaultValue = false)
-  val wasmPluginDataStoreAccessWriteArg: Argument[Boolean] = Argument("plugin_datastore_access_write", BooleanType, defaultValue = false)
-  val wasmGlobalMapAccessReadArg: Argument[Boolean]        = Argument("global_map_access_read", BooleanType, defaultValue = false)
-  val wasmGlobalMapAccessWriteArg: Argument[Boolean]       = Argument("global_map_access_write", BooleanType, defaultValue = false)
-  val wasmPluginMapAccessReadArg: Argument[Boolean]        = Argument("plugin_map_access_read", BooleanType, defaultValue = false)
-  val wasmPluginMapAccessWriteArg: Argument[Boolean]       = Argument("plugin_map_access_write", BooleanType, defaultValue = false)
+  val wasmGlobalDataStoreAccessReadArg: Argument[Boolean]  =
+    Argument("global_datastore_access_read", BooleanType, defaultValue = false)
+  val wasmGlobalDataStoreAccessWriteArg: Argument[Boolean] =
+    Argument("global_datastore_access_write", BooleanType, defaultValue = false)
+  val wasmPluginDataStoreAccessReadArg: Argument[Boolean]  =
+    Argument("plugin_datastore_access_read", BooleanType, defaultValue = false)
+  val wasmPluginDataStoreAccessWriteArg: Argument[Boolean] =
+    Argument("plugin_datastore_access_write", BooleanType, defaultValue = false)
+  val wasmGlobalMapAccessReadArg: Argument[Boolean]        =
+    Argument("global_map_access_read", BooleanType, defaultValue = false)
+  val wasmGlobalMapAccessWriteArg: Argument[Boolean]       =
+    Argument("global_map_access_write", BooleanType, defaultValue = false)
+  val wasmPluginMapAccessReadArg: Argument[Boolean]        =
+    Argument("plugin_map_access_read", BooleanType, defaultValue = false)
+  val wasmPluginMapAccessWriteArg: Argument[Boolean]       =
+    Argument("plugin_map_access_write", BooleanType, defaultValue = false)
 
   val wasmProxyStateAccessArg: Argument[Boolean]    = Argument("proxy_state_sccess", BooleanType, defaultValue = false)
-  val wasmConfigurationAccessArg: Argument[Boolean] = Argument("configuration_access", BooleanType, defaultValue = false)
+  val wasmConfigurationAccessArg: Argument[Boolean] =
+    Argument("configuration_access", BooleanType, defaultValue = false)
 
   val arguments: List[Argument[_]] =
     urlArg :: methodArg :: timeoutArg :: headersArg :: queryArg :: responsePathArg :: responseFilterArg :: limitArg :: offsetArg :: paginateArg :: Nil
@@ -470,7 +482,7 @@ class GraphQLBackend extends NgBackendCall {
       case v: Boolean    => Right(JsBoolean(v))
       case v: Int        => Right(JsNumber(v))
       case v: Long       => Right(JsNumber(v))
-      case v: Float      => Right(JsNumber(v))
+      case v: Float      => Right(JsNumber(BigDecimal(v.toDouble)))
       case v: Double     => Right(JsNumber(v))
       case v: BigInt     => Right(JsNumber(v.intValue))
       case v: BigDecimal => Right(JsNumber(v))
@@ -489,31 +501,32 @@ class GraphQLBackend extends NgBackendCall {
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
       body: JsObject
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): ResolverBasedAstSchemaBuilder[Unit] = AstSchemaBuilder.resolverBased[Unit](
-    AdditionalTypes(JsonType),
-    InstanceCheck.field[Unit, JsValue],
-    DirectiveResolver(permissionDirective, resolve = c => permissionDirectiveResolver(c, config, ctx)),
-    DirectiveResolver(permissionsDirective, resolve = c => permissionsDirectiveResolver(c, config, ctx)),
-    DirectiveResolver(
-      onePermissionOfDirective,
-      resolve = c => onePermissionOfDirectiveResolver(c, config, ctx)
-    ),
-    DirectiveResolver(authorizeDirective, resolve = c => authorizeDirectiveResolver(c, ctx)),
-    DirectiveResolver(httpRestDirective, resolve = httpRestDirectiveResolver),
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): ResolverBasedAstSchemaBuilder[Unit] =
+    AstSchemaBuilder.resolverBased[Unit](
+      AdditionalTypes(JsonType),
+      InstanceCheck.field[Unit, JsValue],
+      DirectiveResolver(permissionDirective, resolve = c => permissionDirectiveResolver(c, config, ctx)),
+      DirectiveResolver(permissionsDirective, resolve = c => permissionsDirectiveResolver(c, config, ctx)),
+      DirectiveResolver(
+        onePermissionOfDirective,
+        resolve = c => onePermissionOfDirectiveResolver(c, config, ctx)
+      ),
+      DirectiveResolver(authorizeDirective, resolve = c => authorizeDirectiveResolver(c, ctx)),
+      DirectiveResolver(httpRestDirective, resolve = httpRestDirectiveResolver),
 //    DirectiveResolver(wasmDirective, resolve = c => wasmDirectiveResolver(c, ctx)), // fixme with pekko update
-    DirectiveResolver(
-      graphQLDirective,
-      resolve = c => graphQLDirectiveResolver(c, c.arg(queryArg).getOrElse("{}"), ctx, delegates)
-    ),
-    DirectiveResolver(soapDirective, resolve = c => soapDirectiveResolver(c, ctx, delegates, body)),
-    /*DirectiveResolver(OtoroshiRouteDirective, resolve = OtoroshiRouteDirectiveResolver),*/
-    DirectiveResolver(jsonDirective, resolve = c => jsonDirectiveResolver(c, config)),
-    DirectiveResolver(
-      mockDirective,
-      resolve = c => mockDirectiveResolver(c, ctx.route.plugins.getPluginByClass[MockResponses].map(_.config.raw))
-    ),
-    AnyFieldResolver.defaultInput[Unit, JsValue]
-  )
+      DirectiveResolver(
+        graphQLDirective,
+        resolve = c => graphQLDirectiveResolver(c, c.arg(queryArg).getOrElse("{}"), ctx, delegates)
+      ),
+      DirectiveResolver(soapDirective, resolve = c => soapDirectiveResolver(c, ctx, delegates, body)),
+      /*DirectiveResolver(OtoroshiRouteDirective, resolve = OtoroshiRouteDirectiveResolver),*/
+      DirectiveResolver(jsonDirective, resolve = c => jsonDirectiveResolver(c, config)),
+      DirectiveResolver(
+        mockDirective,
+        resolve = c => mockDirectiveResolver(c, ctx.route.plugins.getPluginByClass[MockResponses].map(_.config.raw))
+      ),
+      AnyFieldResolver.defaultInput[Unit, JsValue]
+    )
 
   def extractLimit(c: AstDirectiveContext[Unit], itemsLength: Option[Int]): Int = {
     val queryParameter              = c.ctx.argOpt(limitArg)
@@ -676,11 +689,11 @@ class GraphQLBackend extends NgBackendCall {
           acc + (curr._1 -> (curr._2 match {
             case s: String        => JsString(s)
             case i: Int           => JsNumber(i)
-            case f: Float         => JsNumber(f)
+            case f: Float         => JsNumber(BigDecimal(f.toDouble))
             case d: Boolean       => JsBoolean(d)
             case Some(s: String)  => JsString(s)
             case Some(i: Int)     => JsNumber(i)
-            case Some(f: Float)   => JsNumber(f)
+            case Some(f: Float)   => JsNumber(BigDecimal(f.toDouble))
             case Some(d: Boolean) => JsBoolean(d)
             case a                => JsString(String.valueOf(a))
           }))
@@ -849,12 +862,14 @@ class GraphQLBackend extends NgBackendCall {
               Json.parse(c.arg(jsonDataArg).getOrElse("[]")).as[JsArray].value.toIndexedSeq,
               c
             )
-          case _               => c.arg(jsonDataArg)
+          case _               => Json.parse(c.arg(jsonDataArg).getOrElse("{}")).asInstanceOf[JsObject]
         }
     }
   }
 
-  private def mockDirectiveResolver(c: AstDirectiveContext[Unit], rawConfig: Option[JsObject])(implicit env: Env): Object = {
+  private def mockDirectiveResolver(c: AstDirectiveContext[Unit], rawConfig: Option[JsObject])(implicit
+      env: Env
+  ): Object = {
     rawConfig match {
       case None         => throw MissingMockResponsesException("Missing mock response plugin")
       case Some(config) =>
@@ -1010,25 +1025,26 @@ class GraphQLBackend extends NgBackendCall {
       }
   }
 
-  def bodyToJson(source: Source[ByteString, _])(implicit mat: Materializer, ec: ExecutionContext): Future[JsObject] = source
-    .runFold(ByteString.empty)(_ ++ _)
-    .map { rawBody =>
-      {
-        val body = rawBody.utf8String
-        val json = Json
-          .parse(if (body.isEmpty) {
-            "{}"
-          } else {
-            body
-          })
-          .as[JsObject]
+  def bodyToJson(source: Source[ByteString, _])(implicit mat: Materializer, ec: ExecutionContext): Future[JsObject] =
+    source
+      .runFold(ByteString.empty)(_ ++ _)
+      .map { rawBody =>
+        {
+          val body = rawBody.utf8String
+          val json = Json
+            .parse(if (body.isEmpty) {
+              "{}"
+            } else {
+              body
+            })
+            .as[JsObject]
 
-        Json.obj(
-          "stringified" -> body,
-          "json"        -> json
-        )
+          Json.obj(
+            "stringified" -> body,
+            "json"        -> json
+          )
+        }
       }
-    }
 
   def manageAutoPagination(document: Document, builder: ResolverBasedAstSchemaBuilder[Unit]): Schema[Unit, Any] = {
     val patchDoc = document.copy(definitions = document.definitions.map {
@@ -1113,7 +1129,7 @@ class GraphQLBackend extends NgBackendCall {
     AstSchemaMaterializer.buildSchema(patchDoc, builder)
   }
 
-  def jsonResponse(status: Int, body: JsValue): Either[NgProxyEngineError,BackendCallResponse] =
+  def jsonResponse(status: Int, body: JsValue): Either[NgProxyEngineError, BackendCallResponse] =
     inMemoryBodyResponse(
       status,
       Map("Content-Type" -> "application/json"),
@@ -1122,7 +1138,7 @@ class GraphQLBackend extends NgBackendCall {
 
   def introspectionResponse(config: GraphQLBackendConfig, builder: ResolverBasedAstSchemaBuilder[Unit])(implicit
       ec: ExecutionContext
-  ): Future[Either[NgProxyEngineError,BackendCallResponse]] = {
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     QueryParser.parse(config.schema) match {
       case Failure(exception)   => jsonResponse(400, Json.obj("error" -> exception.getMessage)).future
       case Success(astDocument) =>
@@ -1204,7 +1220,7 @@ case class GraphQLProxyConfig(
 }
 
 object GraphQLProxyConfig {
-  val format: Format[GraphQLProxyConfig]  = new Format[GraphQLProxyConfig] {
+  val format: Format[GraphQLProxyConfig] = new Format[GraphQLProxyConfig] {
     override def writes(o: GraphQLProxyConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[GraphQLProxyConfig] = Try {
       GraphQLProxyConfig(
@@ -1220,7 +1236,7 @@ object GraphQLProxyConfig {
       case Success(value) => JsSuccess(value)
     }
   }
-  val default: GraphQLProxyConfig = GraphQLProxyConfig(
+  val default: GraphQLProxyConfig        = GraphQLProxyConfig(
     "https://countries.trevorblades.com/graphql",
     None,
     50,
@@ -1255,13 +1271,13 @@ class GraphQLProxy extends NgBackendCall {
   )
 
   private def executeGraphQLCall(
-                                    schema: Schema[Unit, Any],
-                                    query: String,
-                                    initialData: JsValue,
-                                    maxDepth: Int,
-                                    complexityThreshold: Double,
-                                    variables: Map[String, JsValue] = Map.empty
-                                )(implicit env: Env, ec: ExecutionContext): Future[Either[Seq[String], JsValue]] = {
+      schema: Schema[Unit, Any],
+      query: String,
+      initialData: JsValue,
+      maxDepth: Int,
+      complexityThreshold: Double,
+      variables: Map[String, JsValue] = Map.empty
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[Seq[String], JsValue]] = {
     QueryParser.parse(query) match {
       case Failure(error)    => Seq(s"Bad query format: ${error.getMessage}").leftf[JsValue]
       case Success(queryAst) =>
@@ -1269,40 +1285,40 @@ class GraphQLProxy extends NgBackendCall {
         val variablesObject = JsObject(variables)
 
         Executor
-            .execute(
-              schema = schema,
-              queryAst = queryAst,
-              root = initialData,
-              variables = variablesObject,  // Pass as JsObject
-              exceptionHandler = exceptionHandler,
-              queryValidator = new QueryValidator() {
-                override def validateQuery(
-                                              schema: Schema[_, _],
-                                              queryAst: Document,
-                                              variables: Map[String, sangria.execution.VariableValue],
-                                              errorsLimit: Option[Int]
-                                          ): Vector[Violation] = {
-                  val violations = QueryValidator.default.validateQuery(schema, queryAst, variables, errorsLimit)
-                  if (violations.nonEmpty) {
-                    throw ViolationsException(violations.map(_.errorMessage))
-                  }
-                  violations
+          .execute(
+            schema = schema,
+            queryAst = queryAst,
+            root = initialData,
+            variables = variablesObject, // Pass as JsObject
+            exceptionHandler = exceptionHandler,
+            queryValidator = new QueryValidator() {
+              override def validateQuery(
+                  schema: Schema[_, _],
+                  queryAst: Document,
+                  variables: Map[String, sangria.execution.VariableValue],
+                  errorsLimit: Option[Int]
+              ): Vector[Violation] = {
+                val violations = QueryValidator.default.validateQuery(schema, queryAst, variables, errorsLimit)
+                if (violations.nonEmpty) {
+                  throw ViolationsException(violations.map(_.errorMessage))
                 }
-              },
-              deferredResolver = DeferredResolver.empty,
-              queryReducers = List(
-                QueryReducer.rejectMaxDepth[Unit](maxDepth),
-                QueryReducer.rejectComplexQueries[Unit](
-                  complexityThreshold = complexityThreshold,
-                  (_, _) => TooComplexQueryError
-                )
+                violations
+              }
+            },
+            deferredResolver = DeferredResolver.empty,
+            queryReducers = List(
+              QueryReducer.rejectMaxDepth[Unit](maxDepth),
+              QueryReducer.rejectComplexQueries[Unit](
+                complexityThreshold = complexityThreshold,
+                (_, _) => TooComplexQueryError
               )
             )
-            .map((res: JsValue) => Right(res))
-            .recover {
-              case ViolationsException(errors) => errors.left[JsValue]
-              case e: Throwable                => Seq(e.getMessage).left[JsValue]
-            }
+          )
+          .map((res: JsValue) => Right(res))
+          .recover {
+            case ViolationsException(errors) => errors.left[JsValue]
+            case e: Throwable                => Seq(e.getMessage).left[JsValue]
+          }
     }
   }
 
@@ -1315,24 +1331,24 @@ class GraphQLProxy extends NgBackendCall {
         inlinecache.getIfPresent(s) match {
           case Some(schema) => schema.rightf
           case None         =>
-              (if (s.trim.startsWith("{")) {
-                 Try(Schema.buildFromIntrospection(Json.parse(s), IntrospectionSchemaBuilder.default[Unit])) match {
-                   case Failure(exception) => Seq(exception.getMessage).left
-                   case Success(value)     =>
-                     inlinecache.put(s, value)
-                     value.right
-                 }
-               } else {
-                 Try {
-                   val astDocument = QueryParser.parse(s).get
-                   Schema.buildFromAst(astDocument, builder.validateSchemaWithException(astDocument))
-                 } match {
-                   case Failure(exception) => Seq(exception.getMessage).left
-                   case Success(value)     =>
-                     inlinecache.put(s, value)
-                     value.right
-                 }
-               }).vfuture
+            (if (s.trim.startsWith("{")) {
+               Try(Schema.buildFromIntrospection(Json.parse(s), IntrospectionSchemaBuilder.default[Unit])) match {
+                 case Failure(exception) => Seq(exception.getMessage).left
+                 case Success(value)     =>
+                   inlinecache.put(s, value)
+                   value.right
+               }
+             } else {
+               Try {
+                 val astDocument = QueryParser.parse(s).get
+                 Schema.buildFromAst(astDocument, builder.validateSchemaWithException(astDocument))
+               } match {
+                 case Failure(exception) => Seq(exception.getMessage).left
+                 case Success(value)     =>
+                   inlinecache.put(s, value)
+                   value.right
+               }
+             }).vfuture
         }
       }
       .getOrElse {
@@ -1340,30 +1356,30 @@ class GraphQLProxy extends NgBackendCall {
         cache.getIfPresent(config.endpoint) match {
           case Some(schema) => schema.rightf
           case None         =>
-              env.Ws
-                .url(config.endpoint)
-                .withMethod("POST")
-                .withHttpHeaders(headers: _*)
-                .withBody(
-                  s"""{"operationName":"IntrospectionQuery","variables":{},"query":"${sangria.introspection
-                    .introspectionQueryString(true)}"}""".replace("\n", "\\n")
-                )
-                .execute()
-                .map { res =>
-                  if (res.status == 200) {
-                    Try(Schema.buildFromIntrospection(res.json, IntrospectionSchemaBuilder.default[Unit])) match {
-                      case Failure(exception) => Seq(exception.getMessage).left
-                      case Success(value)     =>
-                        cache.put(config.endpoint, value)
-                        value.right
-                    }
-                  } else {
-                    Seq(s"bad server response: ${res.status} - ${res.headers} - ${res.body}").left
+            env.Ws
+              .url(config.endpoint)
+              .withMethod("POST")
+              .withHttpHeaders(headers: _*)
+              .withBody(
+                s"""{"operationName":"IntrospectionQuery","variables":{},"query":"${sangria.introspection
+                  .introspectionQueryString(true)}"}""".replace("\n", "\\n")
+              )
+              .execute()
+              .map { res =>
+                if (res.status == 200) {
+                  Try(Schema.buildFromIntrospection(res.json, IntrospectionSchemaBuilder.default[Unit])) match {
+                    case Failure(exception) => Seq(exception.getMessage).left
+                    case Success(value)     =>
+                      cache.put(config.endpoint, value)
+                      value.right
                   }
+                } else {
+                  Seq(s"bad server response: ${res.status} - ${res.headers} - ${res.body}").left
                 }
-                .recover { case e: Throwable =>
-                  Seq(e.getMessage).left
-                }
+              }
+              .recover { case e: Throwable =>
+                Seq(e.getMessage).left
+              }
         }
       }
   }
@@ -1423,83 +1439,83 @@ class GraphQLProxy extends NgBackendCall {
             sourceBodyResponse(res.status, res.headers.view.mapValues(_.last).toMap, res.bodyAsSource)
           }
         } else {
-          val query = body.select("query").asString
+          val query     = body.select("query").asString
           val variables = body.select("variables").asOpt[Map[String, JsValue]].getOrElse(Map.empty)
           getSchema(builder, config).flatMap {
             case Left(errors)  =>
-                inMemoryBodyResponse(
-                  200,
-                  Map("Content-Type" -> "application/json"),
-                  Json
-                    .obj(
-                      "data"   -> JsNull,
-                      "errors" -> JsArray(
-                        Seq(Json.obj("message" -> s"unable to fetch schema at '${config.endpoint}'")) ++ errors.map(e =>
-                          Json.obj("message" -> e)
-                        )
+              inMemoryBodyResponse(
+                200,
+                Map("Content-Type" -> "application/json"),
+                Json
+                  .obj(
+                    "data"   -> JsNull,
+                    "errors" -> JsArray(
+                      Seq(Json.obj("message" -> s"unable to fetch schema at '${config.endpoint}'")) ++ errors.map(e =>
+                        Json.obj("message" -> e)
                       )
                     )
-                    .stringify
-                    .byteString
-                ).vfuture
+                  )
+                  .stringify
+                  .byteString
+              ).vfuture
             case Right(schema) =>
               executeGraphQLCall(schema, query, Json.obj(), config.maxDepth, config.maxComplexity, variables).flatMap {
-                  case Left(errors) =>
-                      inMemoryBodyResponse(
-                      200,
-                      Map("Content-Type" -> "application/json"),
-                      Json
-                        .obj(
-                          "data"   -> JsNull,
-                          "errors" -> JsArray(errors.map(e => Json.obj("message" -> e)))
-                        )
-                        .stringify
-                        .byteString
-                    ).future
-                  case Right(_)     =>
-                      callBackendApi(bodyRaw, config).flatMap { res =>
-                      if (res.status == 200) {
-                        val sa = schema.toAst
-                        val s2 = Schema
-                          .buildFromAst(sa, builder.validateSchemaWithException(sa)) // don't know how to avoid that !
-                        executeGraphQLCall(
-                          s2,
-                          query,
-                          res.json.select("data").asValue,
-                          config.maxDepth,
-                          config.maxComplexity
-                        ).map {
-                          case Left(errors)    =>
-                              inMemoryBodyResponse(
-                              200,
-                              Map("Content-Type" -> "application/json"),
-                              Json
-                                .obj(
-                                  "data"   -> JsNull,
-                                  "errors" -> JsArray(errors.map(e => Json.obj("message" -> e)))
-                                )
-                                .stringify
-                                .byteString
-                            )
-                          case Right(response) =>
-                              inMemoryBodyResponse(
-                              200,
-                              Map("Content-Type" -> "application/json"),
-                              response.stringify.byteString
-                            )
-                        }
-                      } else {
-                        sourceBodyResponse(
-                          res.status,
-                          res.headers.view.mapValues(_.last).toMap,
-                          res.bodyAsSource
-                        ).vfuture
+                case Left(errors) =>
+                  inMemoryBodyResponse(
+                    200,
+                    Map("Content-Type" -> "application/json"),
+                    Json
+                      .obj(
+                        "data"   -> JsNull,
+                        "errors" -> JsArray(errors.map(e => Json.obj("message" -> e)))
+                      )
+                      .stringify
+                      .byteString
+                  ).future
+                case Right(_)     =>
+                  callBackendApi(bodyRaw, config).flatMap { res =>
+                    if (res.status == 200) {
+                      val sa = schema.toAst
+                      val s2 = Schema
+                        .buildFromAst(sa, builder.validateSchemaWithException(sa)) // don't know how to avoid that !
+                      executeGraphQLCall(
+                        s2,
+                        query,
+                        res.json.select("data").asValue,
+                        config.maxDepth,
+                        config.maxComplexity
+                      ).map {
+                        case Left(errors)    =>
+                          inMemoryBodyResponse(
+                            200,
+                            Map("Content-Type" -> "application/json"),
+                            Json
+                              .obj(
+                                "data"   -> JsNull,
+                                "errors" -> JsArray(errors.map(e => Json.obj("message" -> e)))
+                              )
+                              .stringify
+                              .byteString
+                          )
+                        case Right(response) =>
+                          inMemoryBodyResponse(
+                            200,
+                            Map("Content-Type" -> "application/json"),
+                            response.stringify.byteString
+                          )
                       }
+                    } else {
+                      sourceBodyResponse(
+                        res.status,
+                        res.headers.view.mapValues(_.last).toMap,
+                        res.bodyAsSource
+                      ).vfuture
                     }
-                    //callBackendApi(bodyRaw, config).map { res =>
-                    //  bodyResponse(res.status, res.headers.view.mapValues(_.last), res.bodyAsSource)
-                    //}
-                }
+                  }
+                //callBackendApi(bodyRaw, config).map { res =>
+                //  bodyResponse(res.status, res.headers.view.mapValues(_.last), res.bodyAsSource)
+                //}
+              }
           }
         }
       }

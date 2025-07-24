@@ -278,7 +278,7 @@ class HashicorpVault(name: String, configuration: Configuration, _env: Env) exte
         } else if (response.status == 403) {
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}" )
+          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}")
         }
       }
       .recover { case e: Throwable =>
@@ -385,7 +385,7 @@ class AzureVault(_name: String, configuration: Configuration, _env: Env) extends
           // tokenCache.invalidate(tokenKey) ???
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}" )
+          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}")
         }
       }
       .recover { case e: Throwable =>
@@ -461,7 +461,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
         } else if (response.status == 403) {
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}" )
+          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}")
         }
       }
       .recover { case e: Throwable =>
@@ -531,7 +531,7 @@ class AlibabaCloudSecretManagerVault(name: String, configuration: Configuration,
         } else if (response.status == 403) {
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}" )
+          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}")
         }
       }
       .recover { case e: Throwable =>
@@ -542,8 +542,8 @@ class AlibabaCloudSecretManagerVault(name: String, configuration: Configuration,
 
 class KubernetesVault(name: String, configuration: Configuration, env: Env) extends Vault {
 
-  private val logger        = Logger("otoroshi-kubernetes-vault")
-  private implicit val _env: Env = env
+  private val logger                        = Logger("otoroshi-kubernetes-vault")
+  private implicit val _env: Env            = env
   private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
   private val kubeConfig = {
@@ -700,7 +700,7 @@ class IzanamiVault(name: String, configuration: Configuration, _env: Env) extend
         } else if (response.status == 403) {
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}" )
+          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}")
         }
       }
       .recover { case e: Throwable =>
@@ -765,7 +765,7 @@ class SpringCloudConfigVault(name: String, configuration: Configuration, _env: E
         } else if (response.status == 403) {
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}" )
+          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}")
         }
       }
       .recover { case e: Throwable =>
@@ -823,7 +823,7 @@ class HttpVault(name: String, configuration: Configuration, _env: Env) extends V
         } else if (response.status == 403) {
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}" )
+          CachedVaultSecretStatus.SecretReadError(s"${response.status} - ${response.body}")
         }
       }
       .recover { case e: Throwable =>
@@ -1042,10 +1042,9 @@ class Vaults(env: Env) {
 
   private val logger                                  = Logger("otoroshi-vaults")
   private val envVaultConfig: Seq[(String, JsObject)] =
-    sys.env.filter(_._1.startsWith("OTOROSHI_VAULTS_INSTANCES_")).toSeq.map {
-      case (key, value) =>
-        val name = key.replaceFirst("OTOROSHI_VAULTS_INSTANCES_", "").toLowerCase()
-        (name, Json.parse(value).asObject)
+    sys.env.filter(_._1.startsWith("OTOROSHI_VAULTS_INSTANCES_")).toSeq.map { case (key, value) =>
+      val name = key.replaceFirst("OTOROSHI_VAULTS_INSTANCES_", "").toLowerCase()
+      (name, Json.parse(value).asObject)
     }
   private val vaultConfig: Configuration              =
     env._configuration
@@ -1093,8 +1092,8 @@ class Vaults(env: Env) {
   // Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
   private val expressionReplacer             = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")
   private val vaults: TrieMap[String, Vault] = new UnboundedTrieMap[String, Vault]()
-  private implicit val _env: Env = env
-  private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+  private implicit val _env: Env             = env
+  private implicit val ec: ExecutionContext  = env.otoroshiExecutionContext
 
   val enabled: Boolean =
     vaultConfig.getOptionalWithFileSupport[Boolean]("enabled").getOrElse(false)
@@ -1197,12 +1196,11 @@ class Vaults(env: Env) {
               cache.put(expr, secret)
               theStatus
             }
-            .recover {
-              case e: Throwable =>
-                val secret =
-                  CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.SecretReadError(e.getMessage))
-                cache.put(expr, secret)
-                secret.status
+            .recover { case e: Throwable =>
+              val secret =
+                CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.SecretReadError(e.getMessage))
+              cache.put(expr, secret)
+              secret.status
             }
       }
     }

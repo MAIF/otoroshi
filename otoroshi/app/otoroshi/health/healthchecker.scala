@@ -185,7 +185,7 @@ object HealthCheckerActor {
 class HealthCheckerActor()(implicit env: Env) extends Actor {
 
   implicit lazy val ec: ExecutionContextExecutor = context.dispatcher
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer            = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-health-checker")
 
@@ -275,12 +275,12 @@ class HealthCheckJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat: Materializer = env.otoroshiMaterializer
-    val parallelChecks    = env.healtCheckWorkers
-    val services          = env.proxyState.allServices()
-    val routes            = env.proxyState.allRawRoutes()
-    val routeCompositions = env.proxyState.allRouteCompositions()
-    val descs             = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
-    val targets           = descs
+    val parallelChecks             = env.healtCheckWorkers
+    val services                   = env.proxyState.allServices()
+    val routes                     = env.proxyState.allRawRoutes()
+    val routeCompositions          = env.proxyState.allRouteCompositions()
+    val descs                      = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+    val targets                    = descs
       .filter(_.healthCheck.enabled)
       .flatMap(s => s.targets.map(t => (t, s)))
       .distinct

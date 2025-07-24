@@ -25,17 +25,20 @@ import scala.annotation.implicitNotFound
  */
 object PulsarPlayJsonSchema {
 
-    @implicitNotFound("No Writes or Reads for type ${T} found. Bring an implicit Writes[T] and Reads[T] instance in scope")
-    implicit def playSchema[T](implicit w: Writes[T], r: Reads[T]): Schema[T] = new Schema[T] {
-        override def clone(): Schema[T] = this
-        override def encode(t: T): Array[Byte] = Json.stringify(Json.toJson(t)(w)).getBytes(StandardCharsets.UTF_8)
-        override def decode(bytes: Array[Byte]): T = Json.parse(bytes).as[T]
-        override def getSchemaInfo: SchemaInfo = {
-            SchemaInfoImpl.builder()
-                .name("play-json-schema") // Generic name since we don't need reflection
-                .`type`(SchemaType.BYTES)
-                .schema(Array.empty[Byte])
-                .build()
-        }
+  @implicitNotFound(
+    "No Writes or Reads for type ${T} found. Bring an implicit Writes[T] and Reads[T] instance in scope"
+  )
+  implicit def playSchema[T](implicit w: Writes[T], r: Reads[T]): Schema[T] = new Schema[T] {
+    override def clone(): Schema[T]            = this
+    override def encode(t: T): Array[Byte]     = Json.stringify(Json.toJson(t)(w)).getBytes(StandardCharsets.UTF_8)
+    override def decode(bytes: Array[Byte]): T = Json.parse(bytes).as[T]
+    override def getSchemaInfo: SchemaInfo = {
+      SchemaInfoImpl
+        .builder()
+        .name("play-json-schema") // Generic name since we don't need reflection
+        .`type`(SchemaType.BYTES)
+        .schema(Array.empty[Byte])
+        .build()
     }
+  }
 }

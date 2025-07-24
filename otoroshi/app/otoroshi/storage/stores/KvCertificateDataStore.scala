@@ -36,8 +36,8 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
 
   def startSync(): Unit = {
     implicit val ec: ExecutionContext = _env.otoroshiExecutionContext
-    implicit val mat: Materializer = _env.otoroshiMaterializer
-    implicit val env: Env = _env
+    implicit val mat: Materializer    = _env.otoroshiMaterializer
+    implicit val env: Env             = _env
     importInitialCerts(logger)
     cancelRenewRef.set(
       _env.otoroshiActorSystem.scheduler
@@ -57,9 +57,9 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
           // certs        <- findAll()
           last         <- redisCli.get(lastUpdatedKey).map(_.map(_.utf8String).getOrElse("0"))
           lastIcaServer =
-              env.datastores.globalConfigDataStore.latestSafe.forall(_.tlsSettings.includeJdkCaServer)
+            env.datastores.globalConfigDataStore.latestSafe.forall(_.tlsSettings.includeJdkCaServer)
           lastIcaClient =
-              env.datastores.globalConfigDataStore.latestSafe.forall(_.tlsSettings.includeJdkCaClient)
+            env.datastores.globalConfigDataStore.latestSafe.forall(_.tlsSettings.includeJdkCaClient)
           lastTrustedCA =
             env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
         } yield {

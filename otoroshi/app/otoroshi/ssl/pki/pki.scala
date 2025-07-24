@@ -174,68 +174,68 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
     genKeyPair(query.key).flatMap {
       case Left(e)     => Left(e).future
       case Right(_kpr) =>
-          val kpr = query.existingKeyPair.map(v => GenKeyPairResponse(v.getPublic, v.getPrivate)).getOrElse(_kpr)
-          Try {
-            val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
-            val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
-            val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
-            val signer              = contentSigner(signatureAlgorithm, digestAlgorithm, privateKey)
-            val names               = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
-            val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
-            val extensionsGenerator = new ExtensionsGenerator
-            extensionsGenerator.addExtension(Extension.basicConstraints, true, new BasicConstraints(query.ca))
-            if (!query.ca) {
+        val kpr = query.existingKeyPair.map(v => GenKeyPairResponse(v.getPublic, v.getPrivate)).getOrElse(_kpr)
+        Try {
+          val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
+          val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
+          val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
+          val signer              = contentSigner(signatureAlgorithm, digestAlgorithm, privateKey)
+          val names               = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
+          val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
+          val extensionsGenerator = new ExtensionsGenerator
+          extensionsGenerator.addExtension(Extension.basicConstraints, true, new BasicConstraints(query.ca))
+          if (!query.ca) {
+            extensionsGenerator.addExtension(
+              Extension.keyUsage,
+              true,
+              new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment)
+            )
+            // extensionsGenerator.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_serverAuth, KeyPurposeId.id_kp_clientAuth).toArray))
+            if (query.client && query.hasDnsNameOrCName) {
               extensionsGenerator.addExtension(
-                Extension.keyUsage,
-                true,
-                new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment)
+                Extension.extendedKeyUsage,
+                false,
+                new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth).toArray)
               )
-              // extensionsGenerator.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_serverAuth, KeyPurposeId.id_kp_clientAuth).toArray))
-              if (query.client && query.hasDnsNameOrCName) {
-                extensionsGenerator.addExtension(
-                  Extension.extendedKeyUsage,
-                  false,
-                  new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth).toArray)
-                )
-              } else if (query.client) {
-                extensionsGenerator.addExtension(
-                  Extension.extendedKeyUsage,
-                  false,
-                  new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth).toArray)
-                )
-              } else {
-                extensionsGenerator.addExtension(
-                  Extension.extendedKeyUsage,
-                  false,
-                  new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_serverAuth).toArray)
-                )
-              }
-              caCert.foreach(ca =>
-                extensionsGenerator.addExtension(
-                  Extension.authorityKeyIdentifier,
-                  false,
-                  new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(ca.getPublicKey).getEncoded
-                  // new AuthorityKeyIdentifier(new ASN1Integer(ca.getSerialNumber).getEncoded)
-                )
-              // TODO: subjectkeyidentifier ????
+            } else if (query.client) {
+              extensionsGenerator.addExtension(
+                Extension.extendedKeyUsage,
+                false,
+                new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth).toArray)
               )
-              extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, names)
             } else {
               extensionsGenerator.addExtension(
-                Extension.keyUsage,
-                true,
-                new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign)
+                Extension.extendedKeyUsage,
+                false,
+                new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_serverAuth).toArray)
               )
             }
-            csrBuilder.addAttribute(
-              PKCSObjectIdentifiers.pkcs_9_at_extensionRequest /* x509Certificate */,
-              extensionsGenerator.generate
+            caCert.foreach(ca =>
+              extensionsGenerator.addExtension(
+                Extension.authorityKeyIdentifier,
+                false,
+                new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(ca.getPublicKey).getEncoded
+                // new AuthorityKeyIdentifier(new ASN1Integer(ca.getSerialNumber).getEncoded)
+              )
+            // TODO: subjectkeyidentifier ????
             )
-            csrBuilder.build(signer)
-          } match {
-            case Failure(e)   => Left(e.getMessage).future
-            case Success(csr) => Right(GenCsrResponse(csr, kpr.publicKey, kpr.privateKey)).future
+            extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, names)
+          } else {
+            extensionsGenerator.addExtension(
+              Extension.keyUsage,
+              true,
+              new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign)
+            )
           }
+          csrBuilder.addAttribute(
+            PKCSObjectIdentifiers.pkcs_9_at_extensionRequest /* x509Certificate */,
+            extensionsGenerator.generate
+          )
+          csrBuilder.build(signer)
+        } match {
+          case Failure(e)   => Left(e.getMessage).future
+          case Success(csr) => Right(GenCsrResponse(csr, kpr.publicKey, kpr.privateKey)).future
+        }
     }
   }
 
@@ -468,11 +468,10 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
             val certgen             =
               new X509v3CertificateBuilder(issuer, serial, from, to, csr.getSubject, csr.getSubjectPublicKeyInfo)
             csr.getAttributes.foreach(attr => {
-              attr.getAttributeValues.collect {
-                case exts: Extensions =>
-                    exts.getExtensionOIDs.map(id => exts.getExtension(id)).filter(_ != null).foreach { ext =>
-                      certgen.addExtension(ext.getExtnId, ext.isCritical, ext.getParsedValue)
-                    }
+              attr.getAttributeValues.collect { case exts: Extensions =>
+                exts.getExtensionOIDs.map(id => exts.getExtension(id)).filter(_ != null).foreach { ext =>
+                  certgen.addExtension(ext.getExtnId, ext.isCritical, ext.getParsedValue)
+                }
               }
             })
 
@@ -546,11 +545,10 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
           val certgen             =
             new X509v3CertificateBuilder(issuer, serial, from, to, csr.getSubject, csr.getSubjectPublicKeyInfo)
           csr.getAttributes.foreach(attr => {
-            attr.getAttributeValues.collect {
-              case exts: Extensions =>
-                  exts.getExtensionOIDs.map(id => exts.getExtension(id)).filter(_ != null).foreach { ext =>
-                    certgen.addExtension(ext.getExtnId, ext.isCritical, ext.getParsedValue)
-                  }
+            attr.getAttributeValues.collect { case exts: Extensions =>
+              exts.getExtensionOIDs.map(id => exts.getExtension(id)).filter(_ != null).foreach { ext =>
+                certgen.addExtension(ext.getExtnId, ext.isCritical, ext.getParsedValue)
+              }
             }
           })
 
@@ -626,11 +624,10 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
           val certgen             =
             new X509v3CertificateBuilder(issuer, serial, from, to, csr.getSubject, csr.getSubjectPublicKeyInfo)
           csr.getAttributes.foreach(attr => {
-            attr.getAttributeValues.collect {
-              case exts: Extensions =>
-                  exts.getExtensionOIDs.map(id => exts.getExtension(id)).filter(_ != null).foreach { ext =>
-                    certgen.addExtension(ext.getExtnId, ext.isCritical, ext.getParsedValue)
-                  }
+            attr.getAttributeValues.collect { case exts: Extensions =>
+              exts.getExtensionOIDs.map(id => exts.getExtension(id)).filter(_ != null).foreach { ext =>
+                certgen.addExtension(ext.getExtnId, ext.isCritical, ext.getParsedValue)
+              }
             }
           })
 

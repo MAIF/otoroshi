@@ -38,7 +38,7 @@ class UserProfileEndpoint extends NgBackendCall {
           None
         ).rightf
       case Some(user) =>
-          BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(user.lightJson)), None).rightf
+        BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(user.lightJson)), None).rightf
     }
   }
 }
@@ -73,18 +73,18 @@ class ConsumerEndpoint extends NgBackendCall {
               None
             ).rightf
           case Some(apikey) =>
-              BackendCallResponse(
-                NgPluginHttpResponse.fromResult(
-                  Results.Ok(apikey.lightJson.asObject ++ Json.obj("access_type" -> "apikey"))
-                ),
-                None
-              ).rightf
+            BackendCallResponse(
+              NgPluginHttpResponse.fromResult(
+                Results.Ok(apikey.lightJson.asObject ++ Json.obj("access_type" -> "apikey"))
+              ),
+              None
+            ).rightf
         }
       case Some(user) =>
-          BackendCallResponse(
-            NgPluginHttpResponse.fromResult(Results.Ok(user.lightJson.asObject ++ Json.obj("access_type" -> "session"))),
-            None
-          ).rightf
+        BackendCallResponse(
+          NgPluginHttpResponse.fromResult(Results.Ok(user.lightJson.asObject ++ Json.obj("access_type" -> "session"))),
+          None
+        ).rightf
     }
   }
 }

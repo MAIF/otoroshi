@@ -305,8 +305,8 @@ class ProxyEngine() extends RequestHandler {
       forCurrentListenerOnly: Boolean
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val globalConfig: GlobalConfig = env.datastores.globalConfigDataStore.latest()
-    val config                = getConfig()
-    val shouldNotHandle       =
+    val config                              = getConfig()
+    val shouldNotHandle                     =
       if (config.denyDomains.isEmpty) false
       else config.denyDomains.exists(d => RegexPool.apply(d).matches(request.theDomain))
     if (enabledRef.get() && !shouldNotHandle) {
@@ -322,8 +322,8 @@ class ProxyEngine() extends RequestHandler {
       forCurrentListenerOnly: Boolean
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     implicit val globalConfig: GlobalConfig = env.datastores.globalConfigDataStore.latest()
-    val config                = getConfig()
-    val shouldNotHandle       =
+    val config                              = getConfig()
+    val shouldNotHandle                     =
       if (config.denyDomains.isEmpty) false
       else config.denyDomains.exists(d => RegexPool.apply(d).matches(request.theDomain))
     if (enabledRef.get() && !shouldNotHandle) {
@@ -349,19 +349,19 @@ class ProxyEngine() extends RequestHandler {
     val requestId                                                                                            = IdGenerator.uuid
     val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _, _, _) = _config
     val useTree                                                                                              = _config.useTree
-    implicit val report: NgExecutionReport = NgExecutionReport(requestId, reporting)
+    implicit val report: NgExecutionReport                                                                   = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
 
     implicit val mat: Materializer = env.otoroshiMaterializer
-    val snowflake          = env.snowflakeGenerator.nextIdStr()
-    val callDate           = DateTime.now()
-    val requestTimestamp   = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-    val reqNumber          = reqCounter.incrementAndGet()
-    val counterIn          = new AtomicLong(0L)
-    val counterOut         = new AtomicLong(0L)
-    val responseEndPromise = Promise[Done]()
-    val currentListener    = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
-    implicit val attrs: TypedMap = TypedMap.empty.put(
+    val snowflake                  = env.snowflakeGenerator.nextIdStr()
+    val callDate                   = DateTime.now()
+    val requestTimestamp           = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+    val reqNumber                  = reqCounter.incrementAndGet()
+    val counterIn                  = new AtomicLong(0L)
+    val counterOut                 = new AtomicLong(0L)
+    val responseEndPromise         = Promise[Done]()
+    val currentListener            = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
+    implicit val attrs: TypedMap   = TypedMap.empty.put(
       otoroshi.next.plugins.Keys.ReportKey            -> report,
       otoroshi.plugins.Keys.RequestKey                -> request,
       otoroshi.plugins.Keys.RequestNumberKey          -> reqNumber,
@@ -571,17 +571,17 @@ class ProxyEngine() extends RequestHandler {
     val requestId                                                                             = IdGenerator.uuid
     val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, _, _, _, _, _, _) = _config
     val useTree                                                                               = _config.useTree
-    implicit val report: NgExecutionReport = NgExecutionReport(requestId, reporting)
+    implicit val report: NgExecutionReport                                                    = NgExecutionReport(requestId, reporting)
 
     report.start("start-handling")
     implicit val mat: Materializer = env.otoroshiMaterializer
 
-    val snowflake        = env.snowflakeGenerator.nextIdStr()
-    val callDate         = DateTime.now()
-    val requestTimestamp = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-    val reqNumber        = reqCounter.incrementAndGet()
-    val counterIn        = new AtomicLong(0L)
-    val counterOut       = new AtomicLong(0L)
+    val snowflake                = env.snowflakeGenerator.nextIdStr()
+    val callDate                 = DateTime.now()
+    val requestTimestamp         = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+    val reqNumber                = reqCounter.incrementAndGet()
+    val counterIn                = new AtomicLong(0L)
+    val counterOut               = new AtomicLong(0L)
     implicit val attrs: TypedMap = TypedMap.empty.put(
       otoroshi.next.plugins.Keys.ReportKey            -> report,
       otoroshi.plugins.Keys.RequestKey                -> request,
@@ -3111,31 +3111,29 @@ class ProxyEngine() extends RequestHandler {
         .applyOnIf(isTargetHttp2 && isRequestAboveHttp2) { s =>
           s.filterNot(_._1.toLowerCase().startsWith("x-http3"))
         }
-        .applyOnWithOpt(env.maxHeaderSizeToBackend) {
-          case (hdrs, max) =>
-            hdrs.filter {
-              case (key, value) if key.length > max =>
-                HeaderTooLongAlert(key, value, "", "remove", "backend", "engine", request, route, env).toAnalytics()
-                logger.error(
-                  s"removing header '$key' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '$value'"
-                )
-                false
-              case _                                => true
-            }
+        .applyOnWithOpt(env.maxHeaderSizeToBackend) { case (hdrs, max) =>
+          hdrs.filter {
+            case (key, value) if key.length > max =>
+              HeaderTooLongAlert(key, value, "", "remove", "backend", "engine", request, route, env).toAnalytics()
+              logger.error(
+                s"removing header '$key' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '$value'"
+              )
+              false
+            case _                                => true
+          }
         }
-        .applyOnWithOpt(env.limitHeaderSizeToBackend) {
-          case (hdrs, max) =>
-            hdrs.map {
-              case (key, value) if key.length > max =>
-                val newValue = value.substring(0, max.toInt - 1)
-                HeaderTooLongAlert(key, value, newValue, "limit", "backend", "plugin", request, route, env)
-                  .toAnalytics()
-                logger.error(
-                  s"limiting header '$key' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '$value', new value is '$newValue'"
-                )
-                (key, newValue)
-              case (key, value)                     => (key, value)
-            }
+        .applyOnWithOpt(env.limitHeaderSizeToBackend) { case (hdrs, max) =>
+          hdrs.map {
+            case (key, value) if key.length > max =>
+              val newValue = value.substring(0, max.toInt - 1)
+              HeaderTooLongAlert(key, value, newValue, "limit", "backend", "plugin", request, route, env)
+                .toAnalytics()
+              logger.error(
+                s"limiting header '$key' from request to backend because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '$value', new value is '$newValue'"
+              )
+              (key, newValue)
+            case (key, value)                     => (key, value)
+          }
         }
       val builder                                        = clientReq
         .withRequestTimeout(extractedTimeout)
@@ -3148,7 +3146,7 @@ class ProxyEngine() extends RequestHandler {
           route.backend.client.proxy.orElse(globalConfig.proxies.services)
         )
       val theBody                                        = request.body
-        .applyOnIf(env.dynamicBodySizeCompute && contentLengthIn.isEmpty) { body =>
+        .applyOnIf(env.dynamicBodySizeCompute && contentLengthIn.isEmpty) { (body: Source[ByteString, ?]) =>
           body.map { chunk =>
             counterIn.addAndGet(chunk.size)
             chunk
@@ -3554,35 +3552,33 @@ class ProxyEngine() extends RequestHandler {
         headersOutFiltered.contains(key.toLowerCase())
       }
       .applyOnIf(!isHttp10)(_.filterNot(h => h._1.toLowerCase() == "content-length"))
-      .applyOnWithOpt(env.maxHeaderSizeToClient) {
-        case (hdrs, max) =>
-          hdrs.filter {
-            case (key, value) if key.length > max =>
-              HeaderTooLongAlert(key, value, "", "remove", "client", "engine", request, route, env).toAnalytics()
-              logger.error(
-                s"removing header '$key' from response because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '$value'"
-              )
-              false
-            case _                                => true
-          }
+      .applyOnWithOpt(env.maxHeaderSizeToClient) { case (hdrs, max) =>
+        hdrs.filter {
+          case (key, value) if key.length > max =>
+            HeaderTooLongAlert(key, value, "", "remove", "client", "engine", request, route, env).toAnalytics()
+            logger.error(
+              s"removing header '$key' from response because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '$value'"
+            )
+            false
+          case _                                => true
+        }
       }
-      .applyOnWithOpt(env.limitHeaderSizeToClient) {
-        case (hdrs, max) =>
-          hdrs.map {
-            case (key, value) if key.length > max =>
-              val newValue = value.substring(0, max.toInt - 1)
-              HeaderTooLongAlert(key, value, newValue, "limit", "client", "plugin", request, route, env).toAnalytics()
-              logger.error(
-                s"limiting header '$key' from response to client because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '$value', new value is '$newValue'"
-              )
-              (key, newValue)
-            case (key, value)                     => (key, value)
-          }
+      .applyOnWithOpt(env.limitHeaderSizeToClient) { case (hdrs, max) =>
+        hdrs.map {
+          case (key, value) if key.length > max =>
+            val newValue = value.substring(0, max.toInt - 1)
+            HeaderTooLongAlert(key, value, newValue, "limit", "client", "plugin", request, route, env).toAnalytics()
+            logger.error(
+              s"limiting header '$key' from response to client because it's too long. route is ${route.name} / ${route.id}. header value length is '${value.length}' and value is '$value', new value is '$newValue'"
+            )
+            (key, newValue)
+          case (key, value)                     => (key, value)
+        }
       }
       .toSeq // ++ Seq(("Connection" -> "keep-alive"), ("X-Connection" -> "keep-alive"))
 
     val theBody = response.body
-      .applyOnIf(env.dynamicBodySizeCompute && contentLength.isEmpty) { body =>
+      .applyOnIf(env.dynamicBodySizeCompute && contentLength.isEmpty) { (body: Source[ByteString, ?]) =>
         body.map { chunk =>
           counterOut.addAndGet(chunk.size)
           chunk
@@ -3650,35 +3646,35 @@ class ProxyEngine() extends RequestHandler {
     } else {
       if (isChunked) {
         val res = Results
-            .Status(status)
-            .sendEntity(
-              HttpEntity.Chunked(
-                theBody
-                    .map(bs => HttpChunk.Chunk(bs))
-                    .concat(Source.single(HttpChunk.LastChunk(Headers.create()))),
-                contentType
-              )
+          .Status(status)
+          .sendEntity(
+            HttpEntity.Chunked(
+              theBody
+                .map(bs => HttpChunk.Chunk(bs))
+                .concat(Source.single(HttpChunk.LastChunk(Headers.create()))),
+              contentType
             )
-            .withHeaders(headers: _*)
-            .withCookies(cookies: _*)
+          )
+          .withHeaders(headers: _*)
+          .withCookies(cookies: _*)
         contentType match {
-          case None => FEither.right(res)
+          case None      => FEither.right(res)
           case Some(ctp) => FEither.right(res.as(ctp))
         }
       } else {
         val res = Results
-            .Status(status)
-            .sendEntity(
-              HttpEntity.Streamed(
-                theBody,
-                contentLengthOut,
-                contentType
-              )
+          .Status(status)
+          .sendEntity(
+            HttpEntity.Streamed(
+              theBody,
+              contentLengthOut,
+              contentType
             )
-            .withHeaders(headers: _*)
-            .withCookies(cookies: _*)
+          )
+          .withHeaders(headers: _*)
+          .withCookies(cookies: _*)
         contentType match {
-          case None => FEither.right(res)
+          case None      => FEither.right(res)
           case Some(ctp) => FEither.right(res.as(ctp))
         }
       }

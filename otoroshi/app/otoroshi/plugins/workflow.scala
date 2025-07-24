@@ -99,10 +99,10 @@ class WorkflowJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat: Materializer = env.otoroshiMaterializer
-    val input        = ctx.configFor("WorkflowJob").select("input").asOpt[JsObject].getOrElse(Json.obj())
-    val specJson     = ctx.configFor("WorkflowJob").select("workflow").asOpt[JsObject].getOrElse(Json.obj())
-    val spec         = WorkFlowSpec.inline(specJson)
-    val workflow     = WorkFlow(spec)
+    val input                      = ctx.configFor("WorkflowJob").select("input").asOpt[JsObject].getOrElse(Json.obj())
+    val specJson                   = ctx.configFor("WorkflowJob").select("workflow").asOpt[JsObject].getOrElse(Json.obj())
+    val spec                       = WorkFlowSpec.inline(specJson)
+    val workflow                   = WorkFlow(spec)
     workflow.run(WorkFlowRequest.inline(input)).map(_ => ())
   }
 }

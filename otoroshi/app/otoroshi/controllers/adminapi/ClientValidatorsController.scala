@@ -16,7 +16,7 @@ class ClientValidatorsController(val ApiAction: ApiAction, val cc: ControllerCom
     with CrudControllerHelper[ClientCertificateValidator, JsValue] {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   override def singularName: String = "client-validator"
 

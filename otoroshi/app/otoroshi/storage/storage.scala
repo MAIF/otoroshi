@@ -245,11 +245,11 @@ trait OptimizedRedisLike {
   def apiKeys_findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
     env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
       case Some(group) =>
-          env.datastores.apiKeyDataStore.findAll().map { keys =>
-            keys.filter { key =>
-              key.authorizedOnGroup(group.id)
-            }
+        env.datastores.apiKeyDataStore.findAll().map { keys =>
+          keys.filter { key =>
+            key.authorizedOnGroup(group.id)
           }
+        }
       case None        => FastFuture.failed(new GroupNotFoundException(groupId))
     }
   }
@@ -264,14 +264,14 @@ object KindExtractorHelper {
     cache.get(key) match {
       case Some(value) => value
       case None        =>
-          env.allResources.resources
-            .collectFirst {
-              case res if key.startsWith(res.access.key("")) => res.singularName
-            }
-            .seffectOn { res =>
-              // println(s"for key: '${key}' extracted kind '${res}'")
-              cache.putIfAbsent(key, res)
-            }
+        env.allResources.resources
+          .collectFirst {
+            case res if key.startsWith(res.access.key("")) => res.singularName
+          }
+          .seffectOn { res =>
+            // println(s"for key: '${key}' extracted kind '${res}'")
+            cache.putIfAbsent(key, res)
+          }
     }
   }
 }
@@ -289,8 +289,8 @@ trait RedisLikeStore[T] extends BasicStore[T] {
       reader.reads(value).get
     } catch {
       case e: Throwable =>
-          Logger("otoroshi-redis-like-store").error(s"Try to deserialize ${Json.prettyPrint(value)}")
-          throw e
+        Logger("otoroshi-redis-like-store").error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        throw e
     }
   def fromJsonSafe(value: JsValue): JsResult[T]  = reader.reads(value)
 
@@ -440,9 +440,9 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     ids match {
       case keys if keys.isEmpty                                 => FastFuture.successful(Seq.empty[T])
       case keys if _findAllCached && findAllCache.get() != null =>
-          // TODO: was true, but high impact on perfs, so ...
-          findAll(force) // TODO : update findAllCache ??? FIXME ???
-          FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
+        // TODO: was true, but high impact on perfs, so ...
+        findAll(force) // TODO : update findAllCache ??? FIXME ???
+        FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
       case keys                                                 =>
         redisLike.mget(keys.map(key): _*).map { (values: Seq[Option[ByteString]]) =>
           values.flatMap { opt =>
@@ -457,14 +457,14 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     redisLike.get(key(id)).flatMap {
       case None           => None.vfuture
       case Some(rawValue) =>
-          val value = rawValue.utf8String
-          if (env.vaults.enabled && value.contains("${vault://")) {
-            env.vaults.fillSecretsAsync(id, value).map { filledValue =>
-              fromJsonSafe(Json.parse(filledValue)).asOpt
-            }
-          } else {
-            fromJsonSafe(Json.parse(value)).asOpt.vfuture
+        val value = rawValue.utf8String
+        if (env.vaults.enabled && value.contains("${vault://")) {
+          env.vaults.fillSecretsAsync(id, value).map { filledValue =>
+            fromJsonSafe(Json.parse(filledValue)).asOpt
           }
+        } else {
+          fromJsonSafe(Json.parse(value)).asOpt.vfuture
+        }
     }
   }
 

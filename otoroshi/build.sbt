@@ -54,8 +54,8 @@ inThisBuild(
 enablePlugins(PlayScala)
 disablePlugins(PlayFilters)
 
-//lazy val scalaLangVersion   = "3.7.1"
-lazy val scalaLangVersion  = "2.13.16"
+lazy val scalaLangVersion   = "3.7.1"
+//lazy val scalaLangVersion  = "2.13.16"
 val playVersion             = "3.0.8"
 val metricsVersion          = "4.2.33"
 val acme4jVersion           = "3.5.1" // "2.14"
@@ -90,9 +90,11 @@ scalacOptions ++= Seq(
 //  "-Xsource:3",
 //  "-Wconf:cat=scala3-migration:s",
 //  "-Xmigration",
-  "-deprecation",
+//  "-deprecation",
+  "-experimental",
+  "-explain",
   "-feature",
-//  "-explain-cyclic",
+  "-explain-cyclic",
   "-language:higherKinds",
   "-language:implicitConversions",
   "-language:existentials",
@@ -141,9 +143,6 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.apache.pekko" %% "pekko-http"         % pekkoHttpVersion,
   "org.apache.pekko"                %% "pekko-http-xml"                            % pekkoHttpVersion,
-  "io.circe" %% "circe-core" % circeVersion,
-  "io.circe" %% "circe-generic" % circeVersion,
-  "io.circe" %% "circe-parser" % circeVersion,
   "com.spotify.metrics"              % "semantic-metrics-core"                     % "1.2.0",
   "io.dropwizard.metrics"            % "metrics-jmx"                               % metricsVersion excludeAll (excludesJackson *), // Apache 2.0
   "io.dropwizard.metrics"            % "metrics-json"                              % metricsVersion excludeAll (excludesJackson *), // Apache 2.0
@@ -153,8 +152,7 @@ libraryDependencies ++= Seq(
   "com.auth0"                        % "jwks-rsa"                                  % "0.22.2" excludeAll (excludesJackson *), // https://github.com/auth0/jwks-rsa-java
   "com.nimbusds"                     % "nimbus-jose-jwt"                           % "10.4",
   "de.svenkubiak"                    % "jBCrypt"                                   % "0.4.3",
-  ("com.propensive"                  %% "kaleidoscope-core"                         % "0.5.0").cross(CrossVersion.for3Use2_13),
-//  "dev.soundness"                    % "kaleidoscope-core"                         % "0.39.0",
+  "dev.soundness"                    % "kaleidoscope-core"                         % "0.39.0",
   "io.github.classgraph"             % "classgraph"                                % "4.8.181" excludeAll (excludesJackson *),
   "com.comcast"                     %% "ip4s-core"                                 % "3.7.0",
   "com.yubico"                       % "webauthn-server-core"                      % webAuthnVersion excludeAll (excludesJackson *),

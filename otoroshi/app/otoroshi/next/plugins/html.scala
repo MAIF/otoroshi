@@ -68,10 +68,13 @@ class NgHtmlPatcher extends NgRequestTransformer {
         val newHeaders    =
           ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
         val isGzip        = ctx.otoroshiResponse.headers.getIgnoreCase("Content-Encoding").contains("gzip")
-        val newBodySource = Source.future(
+        val processedBody = if (isGzip) {
+          ctx.otoroshiResponse.body.via(GzipFlow.gunzip())
+        } else {
           ctx.otoroshiResponse.body
-            .applyOnIf(isGzip)(_.via(GzipFlow.gunzip()))
-            .runFold(ByteString.empty)(_ ++ _)
+        }
+        val newBodySource = Source.future(
+          processedBody.runFold(ByteString.empty)(_ ++ _)
             .map { bodyRaw =>
               val body                = bodyRaw.utf8String
               val appendHead          = ctx.config

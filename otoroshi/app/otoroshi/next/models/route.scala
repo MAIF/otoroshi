@@ -398,9 +398,9 @@ case class NgRoute(
             case Some(patterns) => patterns
             case None           =>
               plugins.getPluginByClass[ApikeyCalls] match {
-                case None                                => Seq("/.*")
-                case Some(apkc) if apkc.exclude.isEmpty  => Seq.empty
-                case Some(apkc)                          => apkc.exclude
+                case None                               => Seq("/.*")
+                case Some(apkc) if apkc.exclude.isEmpty => Seq.empty
+                case Some(apkc)                         => apkc.exclude
               }
           }
         } else {
@@ -469,7 +469,9 @@ case class NgRoute(
         } else {
           IpFiltering()
         },
-      api = openapiUrl.map(url => ApiDescriptor(exposeApi = true, url.some)).getOrElse(ApiDescriptor(exposeApi = false, None)),
+      api = openapiUrl
+        .map(url => ApiDescriptor(exposeApi = true, url.some))
+        .getOrElse(ApiDescriptor(exposeApi = false, None)),
       jwtVerifier = plugins
         .getPluginByClass[JwtVerification]
         .flatMap(p =>
@@ -749,11 +751,7 @@ object NgRoute {
     backendRef = None,
     backend = NgBackend(
       targets = Seq(
-        NgTarget(
-          id = "tls://request.otoroshi.io:443",
-          hostname = "request.otoroshi.io",
-          port = 443,
-          tls = true)
+        NgTarget(id = "tls://request.otoroshi.io:443", hostname = "request.otoroshi.io", port = 443, tls = true)
       ),
       root = "/",
       rewrite = false,
@@ -1335,11 +1333,7 @@ trait NgRouteDataStore extends BasicStore[NgRoute] {
       ),
       backend = NgBackend(
         targets = Seq(
-          NgTarget(
-            id = "target_1",
-            hostname = "request.otoroshi.io",
-            port = 443,
-            tls = true)
+          NgTarget(id = "target_1", hostname = "request.otoroshi.io", port = 443, tls = true)
         ),
         root = "/",
         rewrite = false,

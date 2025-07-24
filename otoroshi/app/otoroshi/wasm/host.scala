@@ -117,7 +117,7 @@ object HFunction {
   ): HostFunction[A] = {
     new HostFunction[A](
       fname,
-      Array(params:_*),
+      Array(params: _*),
       Array(returnType),
       new ExtismFunction[A] {
         override def invoke(
@@ -144,7 +144,7 @@ object HFunction {
   ): HostFunction[A] = {
     new HostFunction[A](
       fname,
-      Array(params:_*),
+      Array(params: _*),
       Array(),
       new ExtismFunction[A] {
         override def invoke(
@@ -231,7 +231,9 @@ object Logging extends AwaitCapable {
 
 object Http extends AwaitCapable {
 
-  def proxyHttpCall(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  def proxyHttpCall(
+      config: WasmConfig
+  )(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_http_call", config) {
       (
           plugin: ExtismCurrentPlugin,
@@ -406,7 +408,10 @@ object Http extends AwaitCapable {
       otoroshi.plugins.Keys.PreExtractedRequestTargetsKey,
       json => json.asArray.value.map(v => NgTarget.fmt.reads(v).get)
     ),
-    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.ElCtxKey, json => json.asObject.value.view.mapValues(_.asString).toMap)
+    otoroshi.plugins.AttributeSetter(
+      otoroshi.plugins.Keys.ElCtxKey,
+      json => json.asObject.value.view.mapValues(_.asString).toMap
+    )
   )
     .map(s => (s.key.displayName, s))
     .collect { case (Some(k), s) =>

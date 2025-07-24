@@ -18,7 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 object WasmAuthModuleConfig {
-  val defaultConfig: WasmAuthModuleConfig = WasmAuthModuleConfig(
+  val defaultConfig: WasmAuthModuleConfig  = WasmAuthModuleConfig(
     location = EntityLocation.default,
     id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
     name = "New wasm auth. module",
@@ -31,7 +31,7 @@ object WasmAuthModuleConfig {
     userValidators = Seq.empty,
     wasmRef = None
   )
-  val format: Format[WasmAuthModuleConfig]        = new Format[WasmAuthModuleConfig] {
+  val format: Format[WasmAuthModuleConfig] = new Format[WasmAuthModuleConfig] {
     override def writes(o: WasmAuthModuleConfig): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "type"                     -> "wasm",
       "id"                       -> o.id,
@@ -157,25 +157,25 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             .map {
               case Left(err)     => Results.InternalServerError(err)
               case Right(output) =>
-                  val response    =
-                    try {
-                      Json.parse(output)
-                    } catch {
-                      case e: Exception =>
-                        WasmAuthModule.logger.error("error during json parsing", e)
-                        Json.obj()
-                    }
-                  val body        = BodyHelper.extractBodyFrom(response)
-                  val headers     = response
-                    .select("headers")
-                    .asOpt[Map[String, String]]
-                    .getOrElse(Map("Content-Type" -> "text/html"))
-                  val contentType = headers.getIgnoreCase("Content-Type").getOrElse("text/html")
-                  Results
-                    .Status(response.select("status").asOpt[Int].getOrElse(200))
-                    .apply(body)
-                    .withHeaders(headers.toSeq: _*)
-                    .as(contentType)
+                val response    =
+                  try {
+                    Json.parse(output)
+                  } catch {
+                    case e: Exception =>
+                      WasmAuthModule.logger.error("error during json parsing", e)
+                      Json.obj()
+                  }
+                val body        = BodyHelper.extractBodyFrom(response)
+                val headers     = response
+                  .select("headers")
+                  .asOpt[Map[String, String]]
+                  .getOrElse(Map("Content-Type" -> "text/html"))
+                val contentType = headers.getIgnoreCase("Content-Type").getOrElse("text/html")
+                Results
+                  .Status(response.select("status").asOpt[Int].getOrElse(200))
+                  .apply(body)
+                  .withHeaders(headers.toSeq: _*)
+                  .as(contentType)
             }
             .andThen { case _ =>
               vm.release()
@@ -224,16 +224,16 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             .map {
               case Left(err)     => Results.InternalServerError(err).left
               case Right(output) =>
-                  val response  =
-                    try {
-                      Json.parse(output)
-                    } catch {
-                      case e: Exception =>
-                        WasmAuthModule.logger.error("error during json parsing", e)
-                        Json.obj()
-                    }
-                  val logoutUrl = response.select("logout_url").asOpt[String]
-                  logoutUrl.right
+                val response  =
+                  try {
+                    Json.parse(output)
+                  } catch {
+                    case e: Exception =>
+                      WasmAuthModule.logger.error("error during json parsing", e)
+                      Json.obj()
+                  }
+                val logoutUrl = response.select("logout_url").asOpt[String]
+                logoutUrl.right
             }
             .andThen { case _ =>
               vm.release()
@@ -269,24 +269,24 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             .flatMap {
               case Left(err)     => ErrorReason.format.reads(err).asOpt.getOrElse(ErrorReason(err.stringify)).left.vfuture
               case Right(output) =>
-                  val response = {
-                    try {
-                      Json.parse(output)
-                    } catch {
-                      case e: Exception =>
-                        WasmAuthModule.logger.error("error during json parsing", e)
-                        Json.obj()
-                    }
+                val response = {
+                  try {
+                    Json.parse(output)
+                  } catch {
+                    case e: Exception =>
+                      WasmAuthModule.logger.error("error during json parsing", e)
+                      Json.obj()
                   }
-                  PrivateAppsUser.fmt.reads(response) match {
-                    case JsError(errors)    => ErrorReason(errors.toString()).left.vfuture
-                    case JsSuccess(user, _) =>
-                      user.validate(
-                        descriptor,
-                        isRoute = true,
-                        authConfig
-                      )
-                  }
+                }
+                PrivateAppsUser.fmt.reads(response) match {
+                  case JsError(errors)    => ErrorReason(errors.toString()).left.vfuture
+                  case JsSuccess(user, _) =>
+                    user.validate(
+                      descriptor,
+                      isRoute = true,
+                      authConfig
+                    )
+                }
             }
             .andThen { case _ =>
               vm.release()
@@ -324,25 +324,25 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             .map {
               case Left(err)     => Results.InternalServerError(err)
               case Right(output) =>
-                  val response    =
-                    try {
-                      Json.parse(output)
-                    } catch {
-                      case e: Exception =>
-                        WasmAuthModule.logger.error("error during json parsing", e)
-                        Json.obj()
-                    }
-                  val body        = BodyHelper.extractBodyFrom(response)
-                  val headers     = response
-                    .select("headers")
-                    .asOpt[Map[String, String]]
-                    .getOrElse(Map("Content-Type" -> "text/html"))
-                  val contentType = headers.getIgnoreCase("Content-Type").getOrElse("text/html")
-                  Results
-                    .Status(response.select("status").asOpt[Int].getOrElse(200))
-                    .apply(body)
-                    .withHeaders(headers.toSeq: _*)
-                    .as(contentType)
+                val response    =
+                  try {
+                    Json.parse(output)
+                  } catch {
+                    case e: Exception =>
+                      WasmAuthModule.logger.error("error during json parsing", e)
+                      Json.obj()
+                  }
+                val body        = BodyHelper.extractBodyFrom(response)
+                val headers     = response
+                  .select("headers")
+                  .asOpt[Map[String, String]]
+                  .getOrElse(Map("Content-Type" -> "text/html"))
+                val contentType = headers.getIgnoreCase("Content-Type").getOrElse("text/html")
+                Results
+                  .Status(response.select("status").asOpt[Int].getOrElse(200))
+                  .apply(body)
+                  .withHeaders(headers.toSeq: _*)
+                  .as(contentType)
             }
             .andThen { case _ =>
               vm.release()
@@ -386,16 +386,16 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             .map {
               case Left(err)     => Results.InternalServerError(err).left
               case Right(output) =>
-                  val response  =
-                    try {
-                      Json.parse(output)
-                    } catch {
-                      case e: Exception =>
-                        WasmAuthModule.logger.error("error during json parsing", e)
-                        Json.obj()
-                    }
-                  val logoutUrl = response.select("logout_url").asOpt[String]
-                  logoutUrl.right
+                val response  =
+                  try {
+                    Json.parse(output)
+                  } catch {
+                    case e: Exception =>
+                      WasmAuthModule.logger.error("error during json parsing", e)
+                      Json.obj()
+                  }
+                val logoutUrl = response.select("logout_url").asOpt[String]
+                logoutUrl.right
             }
             .andThen { case _ =>
               vm.release()
@@ -428,24 +428,24 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
             .flatMap {
               case Left(err)     => ErrorReason.format.reads(err).asOpt.getOrElse(ErrorReason(err.stringify)).left.vfuture
               case Right(output) =>
-                  val response = {
-                    try {
-                      Json.parse(output)
-                    } catch {
-                      case e: Exception =>
-                        WasmAuthModule.logger.error("error during json parsing", e)
-                        Json.obj()
-                    }
+                val response = {
+                  try {
+                    Json.parse(output)
+                  } catch {
+                    case e: Exception =>
+                      WasmAuthModule.logger.error("error during json parsing", e)
+                      Json.obj()
                   }
-                  BackOfficeUser.fmt.reads(response) match {
-                    case JsError(errors)    => ErrorReason(errors.toString()).left.vfuture
-                    case JsSuccess(user, _) =>
-                      user.validate(
-                        env.backOfficeServiceDescriptor,
-                        isRoute = false,
-                        authConfig
-                      )
-                  }
+                }
+                BackOfficeUser.fmt.reads(response) match {
+                  case JsError(errors)    => ErrorReason(errors.toString()).left.vfuture
+                  case JsSuccess(user, _) =>
+                    user.validate(
+                      env.backOfficeServiceDescriptor,
+                      isRoute = false,
+                      authConfig
+                    )
+                }
             }
             .andThen { case _ =>
               vm.release()

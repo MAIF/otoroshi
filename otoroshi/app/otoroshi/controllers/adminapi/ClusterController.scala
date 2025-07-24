@@ -32,7 +32,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
   import otoroshi.cluster.ClusterMode.{Leader, Off, Worker}
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   val sourceBodyParser: BodyParser[Source[ByteString, _]] = BodyParser("ClusterController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -363,7 +363,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
               )
             ).future
           case Leader =>
-
             val budget: Long = ctx.request.getQueryString("budget").map(_.toLong).getOrElse(2000L)
             val cachedValue  = cachedRef.get()
 
@@ -448,7 +447,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-
   private val cookieEncoder = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
 
   def relayRouting(): Action[Source[ByteString, _]] = ApiAction.async(sourceBodyParser) { ctx =>
@@ -456,7 +454,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       env.clusterConfig.mode match {
         case Off => NotFound(Json.obj("error" -> "Cluster API not available")).future
         case _   =>
-          val engine     = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").toOption.get
+          val engine     =
+            env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").toOption.get
           val cookies    = ctx.request.headers
             .get("Otoroshi-Relay-Routing-Cookies")
             .map(cookieEncoder.decodeCookieHeader)
@@ -493,18 +492,21 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
     }
   }
 
-  def stateWs(): WebSocket = WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { req =>
-    val action = ApiAction(ctx => if (ctx.userIsSuperAdmin) NoContent else Unauthorized)
-    action.apply(req).run().flatMap { result =>
-      if (result.header.status == 204) {
-        ActorFlow
-          .actorRef(out => ClusterStateActor.props(out, env))(env.otoroshiActorSystem, env.otoroshiMaterializer)
-          .rightf
-      } else {
-        result.leftf
+  def stateWs(): WebSocket =
+    WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { req =>
+      val action: Action[AnyContent] = ApiAction.apply { ctx =>
+        if (ctx.userIsSuperAdmin) NoContent else Unauthorized
+      }
+      action.apply(req).run().flatMap { result =>
+        if (result.header.status == 204) {
+          ActorFlow
+            .actorRef(out => ClusterStateActor.props(out, env))(env.otoroshiActorSystem, env.otoroshiMaterializer)
+            .rightf
+        } else {
+          result.leftf
+        }
       }
     }
-  }
 }
 
 object ClusterStateActor {
@@ -516,7 +518,7 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
   private val ref = new AtomicReference[Cancellable]()
 
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit val mat: Materializer = env.otoroshiMaterializer
+  implicit val mat: Materializer    = env.otoroshiMaterializer
 
   def debug(msg: String): Unit = {
     if (env.isDev) {

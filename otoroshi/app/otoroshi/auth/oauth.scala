@@ -116,7 +116,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }.toSeq
+                    }
+                    .toSeq
                 }.toMap
               }.toMap
             }
@@ -208,7 +209,7 @@ case class GenericOauth2ModuleConfig(
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
   override def form: Option[Form]                                       = None
-  override def asJson: JsValue                                                   =
+  override def asJson: JsValue                                          =
     location.jsonWithKey ++ Json.obj(
       "type"                          -> "oauth2",
       "id"                            -> this.id,
@@ -260,7 +261,7 @@ case class GenericOauth2ModuleConfig(
       }.toMap)
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
-  override def cookieSuffix(desc: ServiceDescriptor): String                    = s"global-oauth-$id"
+  override def cookieSuffix(desc: ServiceDescriptor): String            = s"global-oauth-$id"
 }
 
 case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModule {
@@ -594,15 +595,14 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       def merge(accesses: Seq[TeamAccess]): Seq[TeamAccess] = {
         accesses
           .groupBy(_.value)
-          .map {
-            case (teamName, group) =>
-              if (group.exists(_.canReadWrite)) {
-                TeamAccess(teamName, true, true)
-              } else if (group.exists(_.canWrite)) {
-                TeamAccess(teamName, false, true)
-              } else {
-                TeamAccess(teamName, true, false)
-              }
+          .map { case (teamName, group) =>
+            if (group.exists(_.canReadWrite)) {
+              TeamAccess(teamName, true, true)
+            } else if (group.exists(_.canWrite)) {
+              TeamAccess(teamName, false, true)
+            } else {
+              TeamAccess(teamName, true, false)
+            }
           }
           .toSeq
           .distinct
@@ -610,15 +610,14 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
       val newRights = zeRights
         .groupBy(_.tenant.value)
-        .map {
-          case (tenantName, group) =>
-            if (group.exists(_.tenant.canReadWrite)) {
-              UserRight(TenantAccess(tenantName, true, true), merge(group.flatMap(_.teams)))
-            } else if (group.exists(_.tenant.canWrite)) {
-              UserRight(TenantAccess(tenantName, false, true), merge(group.flatMap(_.teams)))
-            } else {
-              UserRight(TenantAccess(tenantName, true, false), merge(group.flatMap(_.teams)))
-            }
+        .map { case (tenantName, group) =>
+          if (group.exists(_.tenant.canReadWrite)) {
+            UserRight(TenantAccess(tenantName, true, true), merge(group.flatMap(_.teams)))
+          } else if (group.exists(_.tenant.canWrite)) {
+            UserRight(TenantAccess(tenantName, false, true), merge(group.flatMap(_.teams)))
+          } else {
+            UserRight(TenantAccess(tenantName, true, false), merge(group.flatMap(_.teams)))
+          }
         }
         .toSeq
 

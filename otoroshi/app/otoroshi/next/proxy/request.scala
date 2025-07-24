@@ -25,16 +25,16 @@ import scala.concurrent.duration.DurationInt
 class RelayRoutingRequest(req: Request[Source[ByteString, _]], cookies: Cookies, certs: Option[Seq[X509Certificate]])
     extends Request[Source[ByteString, _]] {
 
-  lazy val version         = req.version
-  lazy val reqId: Long           = req.headers.get("Otoroshi-Relay-Routing-Id").get.toLong
-  lazy val method: String          = req.headers.get("Otoroshi-Relay-Routing-Method").get
-  lazy val body            = req.body
-  lazy val _remoteAddr: String     = req.headers.get("Otoroshi-Relay-Routing-Remote-Addr").get
+  lazy val version                      = req.version
+  lazy val reqId: Long                  = req.headers.get("Otoroshi-Relay-Routing-Id").get.toLong
+  lazy val method: String               = req.headers.get("Otoroshi-Relay-Routing-Method").get
+  lazy val body                         = req.body
+  lazy val _remoteAddr: String          = req.headers.get("Otoroshi-Relay-Routing-Remote-Addr").get
   lazy val _remoteAddrInet: InetAddress = InetAddress.getByName(_remoteAddr)
-  lazy val _remoteSecured: Boolean  = req.headers.get("Otoroshi-Relay-Routing-Secured").get.toBoolean
-  lazy val _remoteHasBody: Boolean  = req.headers.get("Otoroshi-Relay-Routing-Has-Body").get.toBoolean
-  lazy val _remoteUriStr: String   = req.headers.get("Otoroshi-Relay-Routing-Uri").get
-  lazy val attrs: TypedMap           = TypedMap.apply(
+  lazy val _remoteSecured: Boolean      = req.headers.get("Otoroshi-Relay-Routing-Secured").get.toBoolean
+  lazy val _remoteHasBody: Boolean      = req.headers.get("Otoroshi-Relay-Routing-Has-Body").get.toBoolean
+  lazy val _remoteUriStr: String        = req.headers.get("Otoroshi-Relay-Routing-Uri").get
+  lazy val attrs: TypedMap              = TypedMap.apply(
     RequestAttrKey.Id      -> reqId,
     RequestAttrKey.Cookies -> Cell(cookies)
   )
@@ -63,9 +63,9 @@ class TunnelRequest(
     certs: Option[Seq[X509Certificate]]
 ) extends Request[Source[ByteString, _]] {
 
-  lazy val _remoteUri: Uri      = Uri(_remoteUriStr)
+  lazy val _remoteUri: Uri              = Uri(_remoteUriStr)
   lazy val _remoteAddrInet: InetAddress = InetAddress.getByName(_remoteAddr)
-  lazy val attrs: TypedMap           = TypedMap.apply(
+  lazy val attrs: TypedMap              = TypedMap.apply(
     RequestAttrKey.Id      -> requestId,
     RequestAttrKey.Cookies -> Cell(cookies)
   )
@@ -113,7 +113,7 @@ class BackOfficeRequest(
       case map                 => path
     }
   }
-  val otoClaim: String           = InfoTokenHelper
+  val otoClaim: String   = InfoTokenHelper
     .generateInfoToken(
       name = "Backoffice",
       secComInfoTokenVersion = SecComInfoTokenVersion.Latest,

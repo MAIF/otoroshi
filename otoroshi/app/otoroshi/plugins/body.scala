@@ -7,6 +7,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.util.ByteString
 import com.google.common.base.Charsets
+import kaleidoscope.*
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.ServiceDescriptor
@@ -19,8 +20,6 @@ import otoroshi.security.OtoroshiClaim
 import otoroshi.utils.json.JsonImplicits._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.future.Implicits._
-import kaleidoscope._
-//import soundness.*
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.RegexPool
 
@@ -202,7 +201,7 @@ class BodyLogger extends RequestTransformer {
   private val ref = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
 
   override def start(env: Env): Future[Unit] = {
-    val actorSystem = ActorSystem("body-logger-redis")
+    val actorSystem                           = ActorSystem("body-logger-redis")
     implicit val ec: ExecutionContextExecutor = actorSystem.dispatcher
     env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "BodyLogger").isDefined) {
@@ -236,7 +235,8 @@ class BodyLogger extends RequestTransformer {
     FastFuture.successful(())
   }
 
-  private def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
+  private def decodeBase64(encoded: String): String =
+    new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   private def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")
@@ -592,7 +592,7 @@ class BodyLogger extends RequestTransformer {
             Left(Results.Ok(JsArray(requests ++ responses)))
           }
         }
-      case ("get", r"/.well-known/otoroshi/plugins/bodylogger/requests/${id}@(.*).json") =>
+      case ("get", r"/.well-known/otoroshi/plugins/bodylogger/requests/$id(.*).json") =>
         passWithAuth(config, ctx) {
           for {
             request  <- getOne(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:$id:request")
@@ -630,34 +630,33 @@ class BodyLogger extends RequestTransformer {
             }
           }
         )
-        .alsoTo(Sink.onComplete {
-          case _ =>
-            val event = RequestBodyEvent(
-              `@id` = env.snowflakeGenerator.nextIdStr(),
-              `@timestamp` = DateTime.now(),
-              `@serviceId` = ctx.descriptor.id,
-              `@service` = ctx.descriptor.name,
-              reqId = ctx.snowflake,
-              method = ctx.rawRequest.method,
-              url = ctx.rawRequest.url,
-              headers = ctx.rawRequest.headers,
-              body = ref.get(),
-              from = ctx.request.theIpAddress,
-              ua = ctx.request.theUserAgent
+        .alsoTo(Sink.onComplete { case _ =>
+          val event = RequestBodyEvent(
+            `@id` = env.snowflakeGenerator.nextIdStr(),
+            `@timestamp` = DateTime.now(),
+            `@serviceId` = ctx.descriptor.id,
+            `@service` = ctx.descriptor.name,
+            reqId = ctx.snowflake,
+            method = ctx.rawRequest.method,
+            url = ctx.rawRequest.url,
+            headers = ctx.rawRequest.headers,
+            body = ref.get(),
+            from = ctx.request.theIpAddress,
+            ua = ctx.request.theUserAgent
+          )
+          if (config.log) {
+            event.log()
+          }
+          if (config.sendToAnalytics) {
+            event.toAnalytics()
+          }
+          if (config.store) {
+            set(
+              s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:request",
+              ByteString(Json.stringify(event.toJson)),
+              Some(config.ttl)
             )
-            if (config.log) {
-              event.log()
-            }
-            if (config.sendToAnalytics) {
-              event.toAnalytics()
-            }
-            if (config.store) {
-              set(
-                s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:request",
-                ByteString(Json.stringify(event.toJson)),
-                Some(config.ttl)
-              )
-            }
+          }
         })
     } else {
       ctx.body
@@ -682,35 +681,34 @@ class BodyLogger extends RequestTransformer {
             }
           }
         )
-        .alsoTo(Sink.onComplete {
-          case _ =>
-            val event = ResponseBodyEvent(
-              `@id` = env.snowflakeGenerator.nextIdStr(),
-              `@timestamp` = DateTime.now(),
-              `@serviceId` = ctx.descriptor.id,
-              `@service` = ctx.descriptor.name,
-              reqId = ctx.snowflake,
-              method = ctx.request.method,
-              url = ctx.request.uri,
-              headers = ctx.rawResponse.headers,
-              status = ctx.rawResponse.status,
-              body = ref.get(),
-              from = ctx.request.theIpAddress,
-              ua = ctx.request.theUserAgent
+        .alsoTo(Sink.onComplete { case _ =>
+          val event = ResponseBodyEvent(
+            `@id` = env.snowflakeGenerator.nextIdStr(),
+            `@timestamp` = DateTime.now(),
+            `@serviceId` = ctx.descriptor.id,
+            `@service` = ctx.descriptor.name,
+            reqId = ctx.snowflake,
+            method = ctx.request.method,
+            url = ctx.request.uri,
+            headers = ctx.rawResponse.headers,
+            status = ctx.rawResponse.status,
+            body = ref.get(),
+            from = ctx.request.theIpAddress,
+            ua = ctx.request.theUserAgent
+          )
+          if (config.log) {
+            event.log()
+          }
+          if (config.sendToAnalytics) {
+            event.toAnalytics()
+          }
+          if (config.store) {
+            set(
+              s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:response",
+              ByteString(Json.stringify(event.toJson)),
+              Some(config.ttl)
             )
-            if (config.log) {
-              event.log()
-            }
-            if (config.sendToAnalytics) {
-              event.toAnalytics()
-            }
-            if (config.store) {
-              set(
-                s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:response",
-                ByteString(Json.stringify(event.toJson)),
-                Some(config.ttl)
-              )
-            }
+          }
         })
     } else {
       ctx.body

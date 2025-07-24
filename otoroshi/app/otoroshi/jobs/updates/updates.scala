@@ -386,7 +386,7 @@ object Version {
         case head :: "rc" :: suffixValue :: Nil                                 =>
           (head, VersionSuffix.ReleaseCandidate.some, Try(suffixValue.replace(".", "").toInt).toOption)
         case head :: _                                                          => (head, None, None)
-        case Nil                                                            => (lower, None, None)
+        case Nil                                                                => (lower, None, None)
       }
     } else {
       splits.find(lower.contains(_)) match {
@@ -412,7 +412,7 @@ object Version {
             case head :: suffixValue :: Nil if split == "rc"     =>
               (head, VersionSuffix.ReleaseCandidate.some, Try(suffixValue.replace(".", "").toInt).toOption)
             case head :: _                                       => (head, None, None)
-            case Nil                                         => (lower, None, None)
+            case Nil                                             => (lower, None, None)
           }
       }
     }

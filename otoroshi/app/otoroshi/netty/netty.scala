@@ -59,15 +59,15 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
   import reactor.netty.http.server._
 
   implicit private val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit private val mat: Materializer = env.otoroshiMaterializer
-  implicit private val ev: Env = env
+  implicit private val mat: Materializer    = env.otoroshiMaterializer
+  implicit private val ev: Env              = env
 
   private val logger = Logger("otoroshi-experimental-netty-server")
 
   private val engine: ProxyEngine = env.scriptManager
     .getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}") match {
     case Right(handler) => handler.asInstanceOf[ProxyEngine]
-    case Left(error) => throw new RuntimeException(s"Failed to load ProxyEngine: $error")
+    case Left(error)    => throw new RuntimeException(s"Failed to load ProxyEngine: $error")
   }
 
   private val cookieSignerProvider = new CookieSignerProvider(env.httpConfiguration.secret)
@@ -81,7 +81,12 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
     val bresponse: HttpServerBodyResponse = result.body match {
       case HttpEntity.NoEntity                                   => HttpServerBodyResponse(Flux.empty[Array[Byte]](), None, None, chunked = false)
       case HttpEntity.Strict(data, contentType)                  =>
-        HttpServerBodyResponse(Flux.just(Seq(data.toArray[Byte]): _*), contentType, Some(data.size.toLong), chunked = false)
+        HttpServerBodyResponse(
+          Flux.just(Seq(data.toArray[Byte]): _*),
+          contentType,
+          Some(data.size.toLong),
+          chunked = false
+        )
       case HttpEntity.Chunked(chunks, contentType)               =>
         val publisher = chunks
           .collect { case HttpChunk.Chunk(data) =>
@@ -464,16 +469,16 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
         case _                          => "-"
       }
       val defaultLogFormat                           = "{} - {} [{}] \"{} {} {}\" {} {} {} {}"
-      val logCustom = new AccessLogFactory {
+      val logCustom                                  = new AccessLogFactory {
         // Define the date format pattern to match the expected format
         private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z")
 
         override def apply(args: AccessLogArgProvider): AccessLog = {
-          val tlsVersion = args.requestHeader("Otoroshi-Tls-Version")
+          val tlsVersion        = args.requestHeader("Otoroshi-Tls-Version")
           // Format the ZonedDateTime to match the expected string format
           val formattedDateTime = Option(args.accessDateTime())
-              .map(_.format(dateTimeFormatter))
-              .orNull
+            .map(_.format(dateTimeFormatter))
+            .orNull
 
           AccessLog.create(
             defaultLogFormat,

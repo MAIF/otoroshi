@@ -267,13 +267,16 @@ object implicits {
     def parseJson: JsValue                                     = Json.parse(obj)
     def encodeBase64: String                                   = JavaBase64.getEncoder.encodeToString(obj.getBytes(StandardCharsets.UTF_8))
     def base64: String                                         = JavaBase64.getEncoder.encodeToString(obj.getBytes(StandardCharsets.UTF_8))
-    def base64UrlSafe: String                                  = JavaBase64.getUrlEncoder.withoutPadding().encodeToString(obj.getBytes(StandardCharsets.UTF_8))
+    def base64UrlSafe: String                                  =
+      JavaBase64.getUrlEncoder.withoutPadding().encodeToString(obj.getBytes(StandardCharsets.UTF_8))
     def fromBase64: String                                     = new String(JavaBase64.getDecoder.decode(obj), StandardCharsets.UTF_8)
     def decodeBase64: String                                   = new String(JavaBase64.getDecoder.decode(obj), StandardCharsets.UTF_8)
     def sha256: String                                         =
-      otoroshi.utils.string.Utils.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.getBytes(StandardCharsets.UTF_8)))
+      otoroshi.utils.string.Utils
+        .encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.getBytes(StandardCharsets.UTF_8)))
     def sha512: String                                         =
-      otoroshi.utils.string.Utils.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.getBytes(StandardCharsets.UTF_8)))
+      otoroshi.utils.string.Utils
+        .encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.getBytes(StandardCharsets.UTF_8)))
     def chunks(size: Int): Source[String, NotUsed]             = Source(obj.grouped(size).toList)
     def camelToSnake: String = {
       obj.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase
@@ -289,8 +292,10 @@ object implicits {
   }
   implicit class BetterByteString(private val obj: ByteString) extends AnyVal {
     def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
-    def sha256: String                                 = otoroshi.utils.string.Utils.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.toArray))
-    def sha512: String                                 = otoroshi.utils.string.Utils.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.toArray))
+    def sha256: String                                 =
+      otoroshi.utils.string.Utils.encodeHexString(MessageDigest.getInstance("SHA-256").digest(obj.toArray))
+    def sha512: String                                 =
+      otoroshi.utils.string.Utils.encodeHexString(MessageDigest.getInstance("SHA-512").digest(obj.toArray))
   }
   implicit class BetterBoolean(private val obj: Boolean)       extends AnyVal {
     def json: JsValue = JsBoolean(obj)
@@ -435,29 +440,27 @@ object implicits {
     def asRight[R](implicit executor: ExecutionContext): Future[Either[R, A]] = obj.map(a => Right[R, A](a))
     def fold[U](pf: PartialFunction[Try[A], U])(implicit executor: ExecutionContext): Future[U] = {
       val promise = Promise[U]()
-      obj.andThen {
-        case underlying: Try[A] =>
-          try {
-            promise.trySuccess(pf(underlying))
-          } catch {
-            case e: Throwable => promise.tryFailure(e)
-          }
+      obj.andThen { case underlying: Try[A] =>
+        try {
+          promise.trySuccess(pf(underlying))
+        } catch {
+          case e: Throwable => promise.tryFailure(e)
+        }
       }
       promise.future
     }
 
     def foldM[U](pf: PartialFunction[Try[A], Future[U]])(implicit executor: ExecutionContext): Future[U] = {
       val promise = Promise[U]()
-      obj.andThen {
-        case underlying: Try[A] =>
-          try {
-            pf(underlying).andThen {
-              case Success(v) => promise.trySuccess(v)
-              case Failure(e) => promise.tryFailure(e)
-            }
-          } catch {
-            case e: Throwable => promise.tryFailure(e)
+      obj.andThen { case underlying: Try[A] =>
+        try {
+          pf(underlying).andThen {
+            case Success(v) => promise.trySuccess(v)
+            case Failure(e) => promise.tryFailure(e)
           }
+        } catch {
+          case e: Throwable => promise.tryFailure(e)
+        }
       }
       promise.future
     }
@@ -679,17 +682,17 @@ object implicits {
     def removeAndPutIgnoreCase(tuple: (String, B)): Map[String, B] = removeIgnoreCase(tuple._1).put(tuple)
   }
   implicit class BetterTrieMapOfStringAndB[B](val theMap: TrieMap[String, B]) extends AnyVal {
-    def add(tuple: (String, B)): TrieMap[String, B]                         = theMap.+=(tuple)
+    def add(tuple: (String, B)): TrieMap[String, B]                      = theMap.+=(tuple)
     def addAll(all: IterableOnce[(String, B)]): TrieMap[String, B]       = theMap.++=(all)
-    def rem(key: String): TrieMap[String, B]                                = theMap.-=(key)
-    def remIgnoreCase(key: String): TrieMap[String, B]                      = theMap.-=(key).-=(key.toLowerCase())
+    def rem(key: String): TrieMap[String, B]                             = theMap.-=(key)
+    def remIgnoreCase(key: String): TrieMap[String, B]                   = theMap.-=(key).-=(key.toLowerCase())
     def remAll(keys: IterableOnce[String]): TrieMap[String, B]           = theMap.--=(keys)
     def remAllIgnoreCase(keys: IterableOnce[String]): TrieMap[String, B] =
       theMap.--=(keys).--=(keys.iterator.map(_.toLowerCase()))
-    def containsIgnoreCase(key: String): Boolean                            = theMap.contains(key) || theMap.contains(key.toLowerCase())
-    def getIgnoreCase(key: String): Option[B]                               = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
-    def remAndAddIgnoreCase(tuple: (String, B)): TrieMap[String, B]         = remIgnoreCase(tuple._1).add(tuple)
-    def getOrUpdate(k: String)(op: => B): B                                 = theMap.getOrElseUpdate(k, op)
+    def containsIgnoreCase(key: String): Boolean                         = theMap.contains(key) || theMap.contains(key.toLowerCase())
+    def getIgnoreCase(key: String): Option[B]                            = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
+    def remAndAddIgnoreCase(tuple: (String, B)): TrieMap[String, B]      = remIgnoreCase(tuple._1).add(tuple)
+    def getOrUpdate(k: String)(op: => B): B                              = theMap.getOrElseUpdate(k, op)
   }
   implicit class BetterSeqOfA[A](val seq: Seq[A])                             extends AnyVal {
     def containsAll(elems: Seq[A]): Boolean = {

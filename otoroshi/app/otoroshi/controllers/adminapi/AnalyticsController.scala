@@ -50,7 +50,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
 ) extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-analytics-api")
 
@@ -123,7 +123,6 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         findServiceById(serviceId).flatMap {
           case None       => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).future
           case Some(desc) =>
-
             val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
             val fromDate = from.map(f => new DateTime(f.toLong))
@@ -422,7 +421,6 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         findServiceById(serviceId).flatMap {
           case None       => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).future
           case Some(desc) =>
-
             val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
             analyticsService
               .events(
@@ -483,7 +481,6 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           futureFilterable.flatMap {
             case None             => NotFound(Json.obj("error" -> s"Service with id: '$entityId' not found")).future
             case Some(filterable) =>
-
               val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
               analyticsService
                 .events("GatewayEvent", Some(filterable), fromDate, toDate, paginationPage, paginationPageSize, order)
@@ -538,7 +535,6 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           futureFilterable.flatMap {
             case None             => NotFound(Json.obj("error" -> s"Entity: '$entityId' not found")).future
             case Some(filterable) =>
-
               val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
               val fromDate = from.map(f => new DateTime(f.toLong))
@@ -624,7 +620,8 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         val toDate   = to.map(f => new DateTime(f.toLong))
 
         val eventualDescriptors: Future[Seq[ServiceDescriptor]] = ctx.request.body.asOpt[JsArray] match {
-          case Some(services) => env.datastores.serviceDescriptorDataStore.findAllById(services.value.map(_.as[String]).toSeq)
+          case Some(services) =>
+            env.datastores.serviceDescriptorDataStore.findAllById(services.value.map(_.as[String]).toSeq)
           case None           => env.datastores.serviceDescriptorDataStore.findAll()
         }
 

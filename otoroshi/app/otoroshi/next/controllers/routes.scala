@@ -23,7 +23,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     with CrudControllerHelper[NgRoute, JsValue] {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-routes-api")
 
@@ -81,22 +81,22 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "CREATE_ROUTE",
-              message = "User created a route",
-              metadata = entity.json.as[JsObject],
-              alert = "RouteCreatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "CREATE_ROUTE",
+            message = "User created a route",
+            metadata = entity.json.as[JsObject],
+            alert = "RouteCreatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "route not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "route not stored ...")
           )
+        )
     }
   }
 
@@ -106,22 +106,22 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.set(entity).map {
       case true  =>
-          Right(
-            EntityAndContext(
-              entity = entity,
-              action = "UPDATE_ROUTE",
-              message = "User updated a route",
-              metadata = entity.json.as[JsObject],
-              alert = "RouteUpdatedAlert"
-            )
+        Right(
+          EntityAndContext(
+            entity = entity,
+            action = "UPDATE_ROUTE",
+            message = "User updated a route",
+            metadata = entity.json.as[JsObject],
+            alert = "RouteUpdatedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "route not stored ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "route not stored ...")
           )
+        )
     }
   }
 
@@ -131,21 +131,21 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.delete(id).map {
       case true  =>
-          Right(
-            NoEntityAndContext(
-              action = "DELETE_ROUTE",
-              message = "User deleted a route",
-              metadata = Json.obj("RouteId" -> id),
-              alert = "RouteDeletedAlert"
-            )
+        Right(
+          NoEntityAndContext(
+            action = "DELETE_ROUTE",
+            message = "User deleted a route",
+            metadata = Json.obj("RouteId" -> id),
+            alert = "RouteDeletedAlert"
           )
+        )
       case false =>
-          Left(
-            JsonApiError(
-              500,
-              Json.obj("error" -> "route not deleted ...")
-            )
+        Left(
+          JsonApiError(
+            500,
+            Json.obj("error" -> "route not deleted ...")
           )
+        )
     }
   }
 
@@ -186,11 +186,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       ),
       backend = NgBackend(
         targets = Seq(
-          NgTarget(
-            id = "target_1",
-            hostname = "request.otoroshi.io",
-            port = 443,
-            tls = true)
+          NgTarget(id = "target_1", hostname = "request.otoroshi.io", port = 443, tls = true)
         ),
         root = "/",
         rewrite = false,
@@ -233,16 +229,16 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       RawCertificate.fromChainAndKey(cert.chain, cert.privateKey) match {
         case None        => None
         case Some(rcert) =>
-            val ecs: Seq[String] = rcert.certificatesChain.map(_.encoded)
-            Json
-              .obj(
-                "id"      -> cert.id,
-                "chain"   -> ecs,
-                "key"     -> rcert.cryptoKeyPair.getPrivate.encoded,
-                "domains" -> domains.filter(d => cert.matchesDomain(d)).distinct,
-                "sans"    -> cert.allDomains
-              )
-              .some
+          val ecs: Seq[String] = rcert.certificatesChain.map(_.encoded)
+          Json
+            .obj(
+              "id"      -> cert.id,
+              "chain"   -> ecs,
+              "key"     -> rcert.cryptoKeyPair.getPrivate.encoded,
+              "domains" -> domains.filter(d => cert.matchesDomain(d)).distinct,
+              "sans"    -> cert.allDomains
+            )
+            .some
       }
     }
     val jsonCerts        =

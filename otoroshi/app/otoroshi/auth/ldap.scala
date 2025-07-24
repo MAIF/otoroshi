@@ -149,9 +149,14 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
           groupRights = (json \ "groupRights")
             .asOpt[Map[String, JsObject]]
-            .map(_.view.mapValues(GroupRights.reads(_)).collect { case (key, Some(v)) =>
-              (key, v)
-            }.toMap)
+            .map(
+              _.view
+                .mapValues(GroupRights.reads(_))
+                .collect { case (key, Some(v)) =>
+                  (key, v)
+                }
+                .toMap
+            )
             .getOrElse(Map.empty),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
@@ -173,7 +178,8 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }.toSeq
+                    }
+                    .toSeq
                 }.toMap
               }.toMap
             }
@@ -745,7 +751,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                         )
                       )
                   }
-                case _                                                   =>
+                case _                                                     =>
                   authConfig.rightsOverride.getOrElse(
                     user.email,
                     UserRights(
@@ -780,7 +786,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       env: Env
   ): Future[Result] = {
     implicit val req: RequestHeader = request
-    val redirect     = request
+    val redirect                    = request
       .getQueryString("redirect")
       .filter(redirect =>
         request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=$redirect"))
@@ -788,7 +794,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       .map(redirectBase64Encoded =>
         new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
       )
-    val hash         = env.sign(s"${authConfig.id}:::${descriptor.id}")
+    val hash                        = env.sign(s"${authConfig.id}:::${descriptor.id}")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       if (authConfig.basicAuth) {
 
@@ -850,7 +856,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   )(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[Result,Option[String]]] = FastFuture.successful(Right(None))
+  ): Future[Either[Result, Option[String]]] = FastFuture.successful(Right(None))
 
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
@@ -896,8 +902,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       env: Env
   ): Future[Result] = {
     implicit val req: RequestHeader = request
-    val redirect     = request.getQueryString("redirect")
-    val hash         = env.sign(s"${authConfig.id}:::backoffice")
+    val redirect                    = request.getQueryString("redirect")
+    val hash                        = env.sign(s"${authConfig.id}:::backoffice")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       if (authConfig.basicAuth) {
 
@@ -929,7 +935,10 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         }
       } else {
         Results
-          .Ok(otoroshi.views.html.oto.login(s"/backoffice/auth0/callback?hash=$hash", "POST", token, webauthn = false, env))
+          .Ok(
+            otoroshi.views.html.oto
+              .login(s"/backoffice/auth0/callback?hash=$hash", "POST", token, webauthn = false, env)
+          )
           .addingToSession(
             "bo-redirect-after-login" -> redirect.getOrElse(
               routes.BackOfficeController.dashboard.absoluteURL(env.exposedRootSchemeIsHttps)
@@ -942,7 +951,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[Result,Option[String]]] =
+  ): Future[Either[Result, Option[String]]] =
     FastFuture.successful(Right(None))
 
   override def boCallback(

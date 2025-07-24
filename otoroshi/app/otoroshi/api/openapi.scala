@@ -857,28 +857,26 @@ object OpenApi {
 
   private def cleanupSchemas(schemas: Map[String, JsValue]): Map[String, JsValue] = {
     var finalSchemas = Map.empty[String, JsValue]
-    schemas.foreach {
-      case (key, schema) =>
-        schema.select("definitions").asOpt[JsObject] match {
-          case None              => ()
-          case Some(definitions) =>
-            definitions.value.foreach {
-              case (dkey, dvalue) =>
-                if (!finalSchemas.contains(dkey)) {
-                  finalSchemas = finalSchemas.put(
-                    dkey,
-                    (dvalue.asObject - "additionalProperties" - "id" - "patternProperties").stringify
-                      .replace("#/definitions/", "#/components/schemas/")
-                      .parseJson
-                  )
-                }
+    schemas.foreach { case (key, schema) =>
+      schema.select("definitions").asOpt[JsObject] match {
+        case None              => ()
+        case Some(definitions) =>
+          definitions.value.foreach { case (dkey, dvalue) =>
+            if (!finalSchemas.contains(dkey)) {
+              finalSchemas = finalSchemas.put(
+                dkey,
+                (dvalue.asObject - "additionalProperties" - "id" - "patternProperties").stringify
+                  .replace("#/definitions/", "#/components/schemas/")
+                  .parseJson
+              )
             }
-        }
-        val finalSchema: JsValue =
-          (schema.asObject - "definitions" - "additionalProperties" - "id" - "patternProperties").stringify
-            .replace("#/definitions/", "#/components/schemas/")
-            .parseJson
-        finalSchemas = finalSchemas.put(key, finalSchema)
+          }
+      }
+      val finalSchema: JsValue =
+        (schema.asObject - "definitions" - "additionalProperties" - "id" - "patternProperties").stringify
+          .replace("#/definitions/", "#/components/schemas/")
+          .parseJson
+      finalSchemas = finalSchemas.put(key, finalSchema)
     }
     finalSchemas
   }

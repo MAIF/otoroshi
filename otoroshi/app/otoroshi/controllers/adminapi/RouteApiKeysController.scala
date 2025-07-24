@@ -4,7 +4,17 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.ApiKey
-import otoroshi.utils.controllers.{AdminApiHelper, ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  AdminApiHelper,
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -22,7 +32,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
     with AdminApiHelper {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-apikeys-fs-api")
 
@@ -92,11 +102,11 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
           val oldGroup   = (body \ "authorizedGroup").asOpt[String].map(g => "group_" + g).toSeq
           val entities   = (Seq("service_" + routeId) ++ oldGroup).distinct
           val apiKeyJson = ((body \ "authorizedEntities").asOpt[Seq[String]] match {
-            case None                                              => body ++ Json.obj("authorizedEntities" -> Json.arr("service_" + routeId))
+            case None                                            => body ++ Json.obj("authorizedEntities" -> Json.arr("service_" + routeId))
             case Some(sid) if !sid.contains(s"service_$routeId") =>
               body ++ Json.obj("authorizedEntities" -> (entities ++ sid).distinct)
             case Some(sid) if sid.contains(s"service_$routeId")  => body
-            case Some(_)                                           => body
+            case Some(_)                                         => body
           }) - "authorizedGroup"
           ApiKey.fromJsonSafe(apiKeyJson) match {
             case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture

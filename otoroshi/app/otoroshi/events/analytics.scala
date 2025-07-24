@@ -307,7 +307,7 @@ object Location {
 case class Header(key: String, value: String)
 
 object Header {
-  implicit val format: OFormat[Header] = Json.format[Header]
+  implicit val format: OFormat[Header]       = Json.format[Header]
   def apply(tuple: (String, String)): Header = Header(tuple._1, tuple._2)
 }
 

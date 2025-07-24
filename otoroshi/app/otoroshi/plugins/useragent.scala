@@ -47,16 +47,16 @@ object UserAgentHelper {
       cache.getIfPresent(ua) match {
         case details @ Some(_)                      => details.flatten
         case None if parserInitializationDone.get() =>
-            Try(parserRef.get().parse(ua)) match {
-              case Failure(e)            =>
-                cache.put(ua, None)
-              case Success(capabilities) =>
-                  val details = Some(JsObject(capabilities.getValues.asScala.map { case (field, value) =>
-                  (field.name().toLowerCase(), JsString(value))
-                }.toMap))
-                  cache.put(ua, details)
-            }
-            cache.getIfPresent(ua).flatten
+          Try(parserRef.get().parse(ua)) match {
+            case Failure(e)            =>
+              cache.put(ua, None)
+            case Success(capabilities) =>
+              val details = Some(JsObject(capabilities.getValues.asScala.map { case (field, value) =>
+                (field.name().toLowerCase(), JsString(value))
+              }.toMap))
+              cache.put(ua, details)
+          }
+          cache.getIfPresent(ua).flatten
         case _                                      => None // initialization in progress
       }
     }
@@ -107,9 +107,9 @@ class UserAgentExtractor extends PreRouting {
         UserAgentHelper.userAgentDetails(ua) match {
           case None       => funit
           case Some(info) =>
-              if (log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
-              ctx.attrs.putIfAbsent(Keys.UserAgentInfoKey -> info)
-              funit
+            if (log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
+            ctx.attrs.putIfAbsent(Keys.UserAgentInfoKey -> info)
+            funit
         }
     }
   }
@@ -190,13 +190,13 @@ class UserAgentInfoHeader extends RequestTransformer {
     ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
       case None       => Right(ctx.otoroshiRequest).future
       case Some(info) =>
-          Right(
-            ctx.otoroshiRequest.copy(
-              headers = ctx.otoroshiRequest.headers ++ Map(
-                headerName -> Json.stringify(info)
-              )
+        Right(
+          ctx.otoroshiRequest.copy(
+            headers = ctx.otoroshiRequest.headers ++ Map(
+              headerName -> Json.stringify(info)
             )
-          ).future
+          )
+        ).future
     }
   }
 }

@@ -71,11 +71,11 @@ case class Plugins(
         .map(_.replace("only:", ""))
         .map {
           case excl if excl.startsWith("cp:") =>
-              val parts = excl.replace("cp:", "").split(":")
-              ("cp:" + parts(0), parts(1))
+            val parts = excl.replace("cp:", "").split(":")
+            ("cp:" + parts(0), parts(1))
           case excl                           =>
-              val parts = excl.split(":")
-              (parts(0), parts(1))
+            val parts = excl.split(":")
+            (parts(0), parts(1))
         }
         .filter { case (_, pattern) =>
           utils.RegexPool.regex(pattern).matches(req.thePath)

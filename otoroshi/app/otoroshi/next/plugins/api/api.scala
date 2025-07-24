@@ -86,7 +86,7 @@ case class NgPluginHttpRequest(
       transferEncoding
     )
   lazy val hasBody: Boolean                         = hasBodyWithoutLength._1
-  lazy val queryParams: Map[String,String]                              = uri.query().toMap
+  lazy val queryParams: Map[String, String]         = uri.query().toMap
   // val ctype = contentType
   // (method.toUpperCase(), header("Content-Length")) match {
   //   case ("GET", Some(_))    => true
@@ -444,16 +444,16 @@ trait NgCachedConfigContext {
 trait NgPlugin extends StartableAndStoppable with NgNamedPlugin with InternalEventListener
 
 case class NgPreRoutingContext(
-                                  snowflake: String,
-                                  request: RequestHeader,
-                                  route: NgRoute,
-                                  config: JsValue,
-                                  globalConfig: JsValue,
-                                  attrs: TypedMap,
-                                  report: NgExecutionReport,
-                                  sequence: NgReportPluginSequence,
-                                  markPluginItem: (NgReportPluginSequenceItem, NgPreRoutingContext, Boolean, JsValue) => Unit,
-                                  idx: Int = 0
+    snowflake: String,
+    request: RequestHeader,
+    route: NgRoute,
+    config: JsValue,
+    globalConfig: JsValue,
+    attrs: TypedMap,
+    report: NgExecutionReport,
+    sequence: NgReportPluginSequence,
+    markPluginItem: (NgReportPluginSequenceItem, NgPreRoutingContext, Boolean, JsValue) => Unit,
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def wasmJson: JsValue = json.asObject ++ Json.obj("route" -> route.json)
   def json: JsValue     = Json.obj(
@@ -586,20 +586,20 @@ case class NgAfterRequestContext(
 }
 
 case class NgTransformerRequestContext(
-                                          rawRequest: NgPluginHttpRequest,
-                                          otoroshiRequest: NgPluginHttpRequest,
-                                          snowflake: String,
-                                          route: NgRoute,
-                                          apikey: Option[ApiKey],
-                                          user: Option[PrivateAppsUser],
-                                          request: RequestHeader,
-                                          config: JsValue,
-                                          attrs: TypedMap,
-                                          globalConfig: JsValue = Json.obj(),
-                                          report: NgExecutionReport,
-                                          sequence: NgReportPluginSequence,
-                                          markPluginItem: (NgReportPluginSequenceItem, NgTransformerRequestContext, Boolean, JsValue) => Unit,
-                                          idx: Int = 0
+    rawRequest: NgPluginHttpRequest,
+    otoroshiRequest: NgPluginHttpRequest,
+    snowflake: String,
+    route: NgRoute,
+    apikey: Option[ApiKey],
+    user: Option[PrivateAppsUser],
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
+    globalConfig: JsValue = Json.obj(),
+    report: NgExecutionReport,
+    sequence: NgReportPluginSequence,
+    markPluginItem: (NgReportPluginSequenceItem, NgTransformerRequestContext, Boolean, JsValue) => Unit,
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"        -> snowflake,
@@ -634,21 +634,21 @@ case class NgTransformerRequestContext(
 }
 
 case class NgTransformerResponseContext(
-                                           response: Option[WSResponse],
-                                           rawResponse: NgPluginHttpResponse,
-                                           otoroshiResponse: NgPluginHttpResponse,
-                                           snowflake: String,
-                                           route: NgRoute,
-                                           apikey: Option[ApiKey],
-                                           user: Option[PrivateAppsUser],
-                                           request: RequestHeader,
-                                           config: JsValue,
-                                           attrs: TypedMap,
-                                           globalConfig: JsValue = Json.obj(),
-                                           report: NgExecutionReport,
-                                           sequence: NgReportPluginSequence,
-                                           markPluginItem: (NgReportPluginSequenceItem, NgTransformerResponseContext, Boolean, JsValue) => Unit,
-                                           idx: Int = 0
+    response: Option[WSResponse],
+    rawResponse: NgPluginHttpResponse,
+    otoroshiResponse: NgPluginHttpResponse,
+    snowflake: String,
+    route: NgRoute,
+    apikey: Option[ApiKey],
+    user: Option[PrivateAppsUser],
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
+    globalConfig: JsValue = Json.obj(),
+    report: NgExecutionReport,
+    sequence: NgReportPluginSequence,
+    markPluginItem: (NgReportPluginSequenceItem, NgTransformerResponseContext, Boolean, JsValue) => Unit,
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"         -> snowflake,
@@ -776,18 +776,18 @@ trait NgRequestTransformer extends NgPlugin {
 }
 
 case class NgAccessContext(
-                              snowflake: String,
-                              request: RequestHeader,
-                              route: NgRoute,
-                              user: Option[PrivateAppsUser],
-                              apikey: Option[ApiKey],
-                              config: JsValue,
-                              attrs: TypedMap,
-                              globalConfig: JsValue,
-                              report: NgExecutionReport,
-                              sequence: NgReportPluginSequence,
-                              markPluginItem: (NgReportPluginSequenceItem, NgAccessContext, Boolean, JsValue) => Unit,
-                              idx: Int = 0
+    snowflake: String,
+    request: RequestHeader,
+    route: NgRoute,
+    user: Option[PrivateAppsUser],
+    apikey: Option[ApiKey],
+    config: JsValue,
+    attrs: TypedMap,
+    globalConfig: JsValue,
+    report: NgExecutionReport,
+    sequence: NgReportPluginSequence,
+    markPluginItem: (NgReportPluginSequenceItem, NgAccessContext, Boolean, JsValue) => Unit,
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
@@ -968,7 +968,9 @@ case class BackendCallResponse(response: NgPluginHttpResponse, rawResponse: Opti
   def status: Int                          = rawResponse.map(_.status).getOrElse(response.status)
   def contentLengthStr: Option[String]     = rawResponse.flatMap(_.contentLengthStr).orElse(response.contentLengthStr)
   def contentLength: Option[Long]          = rawResponse.map(_.contentLength).getOrElse(response.contentLength)
-  def headers: Map[String, Seq[String]]    = rawResponse.map(_.headers.map { case (k, v) => k -> v.toSeq}).getOrElse(response.headers.map { case (k, v) => k -> Seq(v) })
+  def headers: Map[String, Seq[String]]    = rawResponse
+    .map(_.headers.map { case (k, v) => k -> v.toSeq })
+    .getOrElse(response.headers.map { case (k, v) => k -> Seq(v) })
   def header(name: String): Option[String] =
     rawResponse.map(_.header(name)).getOrElse(response.headers.getIgnoreCase(name))
   def isChunked(): Option[Boolean]         = rawResponse.map(_.isChunked).getOrElse(response.isChunked.some)
@@ -1390,7 +1392,7 @@ object WebsocketMessage {
       case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
-      case _                                                          => ByteString.empty.future
+      case _                                                                      => ByteString.empty.future
     }
     override def str()(implicit m: Materializer, ec: ExecutionContext): Future[String]       = data match {
       case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.future
@@ -1401,7 +1403,7 @@ object WebsocketMessage {
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
           .map(_.utf8String)
-      case _                                                          => "".future
+      case _                                                                      => "".future
     }
 
     override def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int] = data match {
@@ -1413,14 +1415,14 @@ object WebsocketMessage {
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
           .map(_.size)
-      case _                                                          => 0.future
+      case _                                                                      => 0.future
     }
 
     override def isBinary: Boolean = !data.isText
 
     override def asPlay(implicit env: Env): Future[play.api.http.websocket.Message] = {
       implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-      implicit val mat: Materializer = env.otoroshiMaterializer
+      implicit val mat: Materializer    = env.otoroshiMaterializer
       data match {
         case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => PlayWSTextMessage(text).vfuture
         case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
@@ -1430,14 +1432,14 @@ object WebsocketMessage {
           source
             .runFold(ByteString.empty)((concat, str) => concat ++ str)
             .map(data => PlayWSBinaryMessage(data))
-        case other                                                      => throw new RuntimeException(s"Unkown message type $other")
+        case other                                                                  => throw new RuntimeException(s"Unkown message type $other")
       }
     }
     override def asAkka(implicit env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message] = {
       data.vfuture
     }
   }
-  case class PlayMessage(data: play.api.http.websocket.Message)     extends WebsocketMessage {
+  case class PlayMessage(data: play.api.http.websocket.Message)                 extends WebsocketMessage {
 
     override def bytes()(implicit m: Materializer, ec: ExecutionContext): Future[ByteString] = data match {
       case PlayWSTextMessage(data)   => data.byteString.vfuture
@@ -1606,15 +1608,15 @@ trait NgIncomingRequestValidator extends NgPlugin {
 }
 
 case class NgIncomingRequestValidatorContext(
-                                                snowflake: String,
-                                                request: RequestHeader,
-                                                config: JsValue,
-                                                attrs: TypedMap,
-                                                globalConfig: JsValue,
-                                                report: NgExecutionReport,
-                                                sequence: NgReportPluginSequence,
-                                                markPluginItem: (NgReportPluginSequenceItem, NgIncomingRequestValidatorContext, Boolean, JsValue) => Unit,
-                                                idx: Int = 0
+    snowflake: String,
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
+    globalConfig: JsValue,
+    report: NgExecutionReport,
+    sequence: NgReportPluginSequence,
+    markPluginItem: (NgReportPluginSequenceItem, NgIncomingRequestValidatorContext, Boolean, JsValue) => Unit,
+    idx: Int = 0
 ) {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,

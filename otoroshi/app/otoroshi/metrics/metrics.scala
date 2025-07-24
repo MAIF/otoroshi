@@ -58,7 +58,7 @@ object FakeHasMetrics extends HasMetrics {
 
 class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends TimerMetrics {
 
-  private implicit val ev: Env = env
+  private implicit val ev: Env              = env
   private implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
   private val logger = Logger("otoroshi-metrics")
@@ -307,12 +307,12 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     filter match {
       case None       =>
         val writer = new StringWriter()
-        TextFormat.write004(writer, new SimpleEnum(prometheus.collect()))
+        TextFormat.write004(writer, new SimpleEnum(prometheus.collect(_ => true)))
         writer.toString
       case Some(path) =>
         val processedPath = path.replace(".", "_")
         val writer        = new StringWriter()
-        TextFormat.write004(writer, new SimpleEnum(prometheus.collect()))
+        TextFormat.write004(writer, new SimpleEnum(prometheus.collect(_ => true)))
         writer.toString.split("\n").toSeq.filter(line => RegexPool(processedPath).matches(line)).mkString("\n")
     }
   }

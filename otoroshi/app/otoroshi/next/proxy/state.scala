@@ -180,7 +180,9 @@ class NgProxyState(env: Env) {
       .flatMap(r => r.frontend.domains.map(d => NgRouteDomainAndPathWrapper(r, d.domainLowerCase, d.path)))
       .filterNot(_.domain.contains("*"))
       .groupBy(_.domain)
-      .view.mapValues(_.sortWith((r1, r2) => r1.path.length.compareTo(r2.path.length) > 0).map(_.route)).toMap
+      .view
+      .mapValues(_.sortWith((r1, r2) => r1.path.length.compareTo(r2.path.length) > 0).map(_.route))
+      .toMap
     routesByDomain.addAll(routesByDomainRaw).remAll(routesByDomain.keySet.toSeq.diff(routesByDomainRaw.keySet.toSeq))
     val s                                            = System.currentTimeMillis()
     domainPathTreeRef.set(NgTreeRouter.build(values))
@@ -323,11 +325,7 @@ class NgProxyState(env: Env) {
           ),
           backend = NgBackend(
             targets = Seq(
-              NgTarget(
-                id = "mirror-1",
-                hostname = "request.otoroshi.io",
-                port = 443,
-                tls = true)
+              NgTarget(id = "mirror-1", hostname = "request.otoroshi.io", port = 443, tls = true)
             ),
             root = s"/gen-$idx",
             rewrite = false,
@@ -389,11 +387,7 @@ class NgProxyState(env: Env) {
           ),
           backend = NgBackend(
             targets = Seq(
-              NgTarget(
-                id = "mirror-1",
-                hostname = "request.otoroshi.io",
-                port = 443,
-                tls = true)
+              NgTarget(id = "mirror-1", hostname = "request.otoroshi.io", port = 443, tls = true)
             ),
             root = s"/path-$idx",
             rewrite = false,
@@ -451,11 +445,7 @@ class NgProxyState(env: Env) {
           ),
           backend = NgBackend(
             targets = Seq(
-              NgTarget(
-                id = "mirror-1",
-                hostname = "request.otoroshi.io",
-                port = 443,
-                tls = true)
+              NgTarget(id = "mirror-1", hostname = "request.otoroshi.io", port = 443, tls = true)
             ),
             root = s"/path-$idx",
             rewrite = false,
@@ -512,11 +502,7 @@ class NgProxyState(env: Env) {
           ),
           backend = NgBackend(
             targets = Seq(
-              NgTarget(
-                id = "www.dataaccess.com",
-                hostname = "www.dataaccess.com",
-                port = 443,
-                tls = true)
+              NgTarget(id = "www.dataaccess.com", hostname = "www.dataaccess.com", port = 443, tls = true)
             ),
             root = s"/webservicesserver/numberconversion.wso",
             rewrite = true,
@@ -554,15 +540,15 @@ class NgProxyState(env: Env) {
 
   def sync()(implicit ec: ExecutionContext): Future[Unit] = {
     implicit val ev: Env = env
-    val start        = System.currentTimeMillis()
-    val gc           = env.datastores.globalConfigDataStore.latest()
-    val config       = gc.plugins.config
+    val start            = System.currentTimeMillis()
+    val gc               = env.datastores.globalConfigDataStore.latest()
+    val config           = gc.plugins.config
       .select(ProxyEngine.configRoot)
       .asOpt[JsObject]
       .map(v => ProxyEngineConfig.parse(v, env))
       .getOrElse(ProxyEngineConfig.default)
-    val debug        = config.debug
-    val debugHeaders = config.debugHeaders
+    val debug            = config.debug
+    val debugHeaders     = config.debugHeaders
     for {
       _                        <- env.vaults.renewSecretsInCache()
       routes                   <- env.datastores.routeDataStore.findAllAndFillSecrets() // secrets OK

@@ -251,7 +251,8 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
         env.Headers.OtoroshiGatewayParentRequest
       )
       .appendAll(additionalHeaders)
-      .view.mapValues(v =>
+      .view
+      .mapValues(v =>
         otoroshi.el.GlobalExpressionLanguage(
           value = v,
           req = ctx.request.some,
@@ -263,7 +264,8 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
           attrs = ctx.attrs,
           env = env
         )
-      ).toMap
+      )
+      .toMap
     Right(ctx.otoroshiRequest.copy(headers = newHeaders))
   }
 }
@@ -383,7 +385,8 @@ class MissingHeadersIn extends NgRequestTransformer {
       .filter { case (key, _) =>
         !ctx.otoroshiRequest.headers.contains(key) && !ctx.otoroshiRequest.headers.contains(key.toLowerCase)
       }
-      .view.mapValues { value =>
+      .view
+      .mapValues { value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -430,7 +433,8 @@ class MissingHeadersOut extends NgRequestTransformer {
       .filter { case (key, _) =>
         !ctx.otoroshiResponse.headers.contains(key) && !ctx.otoroshiResponse.headers.contains(key.toLowerCase)
       }
-      .view.mapValues { value =>
+      .view
+      .mapValues { value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -695,9 +699,9 @@ case class RejectHeaderConfig(value: Long = 8 * 1024) extends NgPluginConfig {
 }
 
 object RejectHeaderConfig {
-  val default: RejectHeaderConfig                        = RejectHeaderConfig()
-  val configFlow: Seq[String]        = Seq("value")
-  val configSchema: Option[JsObject] = Some(
+  val default: RejectHeaderConfig        = RejectHeaderConfig()
+  val configFlow: Seq[String]            = Seq("value")
+  val configSchema: Option[JsObject]     = Some(
     Json.obj(
       "value" -> Json.obj(
         "type"  -> "number",
@@ -709,7 +713,7 @@ object RejectHeaderConfig {
       )
     )
   )
-  val format: Format[RejectHeaderConfig]                         = new Format[RejectHeaderConfig] {
+  val format: Format[RejectHeaderConfig] = new Format[RejectHeaderConfig] {
 
     override def reads(json: JsValue): JsResult[RejectHeaderConfig] = Try {
       RejectHeaderConfig(

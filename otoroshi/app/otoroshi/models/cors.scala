@@ -62,9 +62,7 @@ case class CorsSettings(
       } else {
         headersOpt
           .map(h => h.split(",").map(_.trim.toLowerCase()))
-          .map(headers =>
-              headers.map(h => allowHeaders.map(n => n.trim.toLowerCase()).contains(h)).forall(identity)
-          )
+          .map(headers => headers.map(h => allowHeaders.map(n => n.trim.toLowerCase()).contains(h)).forall(identity))
           .getOrElse(headersOpt.isEmpty)
       }
     val passAllowedRequestMethod: Boolean  = methodOpt
@@ -92,7 +90,7 @@ case class CorsSettings(
 }
 
 object CorsSettings extends FromJson[CorsSettings] {
-  val format: Format[CorsSettings]                                                            = new Format[CorsSettings] {
+  val format: Format[CorsSettings]                                      = new Format[CorsSettings] {
     override def reads(json: JsValue): JsResult[CorsSettings] = fromJson(json) match {
       case Left(err)   => JsError(err.getMessage)
       case Right(cors) => JsSuccess(cors)

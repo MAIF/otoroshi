@@ -427,7 +427,8 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }.toSeq
+                    }
+                    .toSeq
                 }.toMap
               }.toMap
             }
@@ -446,11 +447,12 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
     parser.initialize()
 
     val metadataDocument = parser.parse(
-      BOMInputStream.builder()
-          .setInputStream(IOUtils.toInputStream(metadata, StandardCharsets.UTF_8))
-          .get()
+      BOMInputStream
+        .builder()
+        .setInputStream(IOUtils.toInputStream(metadata, StandardCharsets.UTF_8))
+        .get()
     )
-    val resolver = new DOMMetadataResolver(metadataDocument.getDocumentElement)
+    val resolver         = new DOMMetadataResolver(metadataDocument.getDocumentElement)
     resolver.setId("componentId")
     resolver.initialize()
 
@@ -800,8 +802,8 @@ case class SamlAuthModuleConfig(
   override def authModule(config: GlobalConfig): AuthModule             = new SAMLModule(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
-  override def cookieSuffix(desc: ServiceDescriptor): String                    = s"saml-auth-$id"
-  override def asJson: JsValue                                                   = location.jsonWithKey ++ Json.obj(
+  override def cookieSuffix(desc: ServiceDescriptor): String            = s"saml-auth-$id"
+  override def asJson: JsValue                                          = location.jsonWithKey ++ Json.obj(
     "type"                          -> "saml",
     "id"                            -> this.id,
     "name"                          -> this.name,

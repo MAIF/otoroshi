@@ -21,7 +21,7 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
     extends AbstractController(cc) {
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer = env.otoroshiMaterializer
+  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-global-config-api")
 
@@ -33,24 +33,24 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
         env.datastores.globalConfigDataStore.findById("global").map {
           case None     => NotFound(Json.obj("error" -> "GlobalConfig not found"))
           case Some(ak) =>
-              Audit.send(
-                AdminApiEvent(
-                  env.snowflakeGenerator.nextIdStr(),
-                  env.env,
-                  Some(ctx.apiKey),
-                  ctx.user,
-                  "ACCESS_GLOBAL_CONFIG",
-                  s"User accessed global Otoroshi config",
-                  ctx.from,
-                  ctx.ua
-                )
+            Audit.send(
+              AdminApiEvent(
+                env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                Some(ctx.apiKey),
+                ctx.user,
+                "ACCESS_GLOBAL_CONFIG",
+                s"User accessed global Otoroshi config",
+                ctx.from,
+                ctx.ua
               )
+            )
 
-              if (hasFields) {
-                Ok(JsonOperationsHelper.filterJson(ak.toJson.as[JsObject], expectedFields))
-              } else {
-                Ok(ak.toJson)
-              }
+            if (hasFields) {
+              Ok(JsonOperationsHelper.filterJson(ak.toJson.as[JsObject], expectedFields))
+            } else {
+              Ok(ak.toJson)
+            }
         }
       }
     }
@@ -64,38 +64,38 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
         GlobalConfig.fromJsonSafe(body) match {
           case JsError(e)       => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format")))
           case JsSuccess(ak, _) =>
-              ctx.validateEntity(body, "global-config") match {
-                case Left(errs) =>
-                  FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format", "details" -> errs)))
-                case Right(_)   =>
-                    env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { conf =>
-                    val admEvt = AdminApiEvent(
+            ctx.validateEntity(body, "global-config") match {
+              case Left(errs) =>
+                FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format", "details" -> errs)))
+              case Right(_)   =>
+                env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { conf =>
+                  val admEvt = AdminApiEvent(
+                    env.snowflakeGenerator.nextIdStr(),
+                    env.env,
+                    Some(ctx.apiKey),
+                    ctx.user,
+                    "UPDATE_GLOBAL_CONFIG",
+                    s"User updated global Otoroshi config",
+                    ctx.from,
+                    ctx.ua,
+                    ctx.request.body
+                  )
+                  Audit.send(admEvt)
+                  Alerts.send(
+                    GlobalConfigModification(
                       env.snowflakeGenerator.nextIdStr(),
                       env.env,
-                      Some(ctx.apiKey),
-                      ctx.user,
-                      "UPDATE_GLOBAL_CONFIG",
-                      s"User updated global Otoroshi config",
+                      user,
+                      conf.toJson,
+                      ak.toJson,
+                      admEvt,
                       ctx.from,
-                      ctx.ua,
-                      ctx.request.body
+                      ctx.ua
                     )
-                    Audit.send(admEvt)
-                    Alerts.send(
-                      GlobalConfigModification(
-                        env.snowflakeGenerator.nextIdStr(),
-                        env.env,
-                        user,
-                        conf.toJson,
-                        ak.toJson,
-                        admEvt,
-                        ctx.from,
-                        ctx.ua
-                      )
-                    )
-                    ak.save().map(_ => Ok(ak.json))
-                  }
-              }
+                  )
+                  ak.save().map(_ => Ok(ak.json))
+                }
+            }
         }
       }
     }
@@ -111,35 +111,35 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
             case Left(errs) =>
               FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format", "details" -> errs)))
             case Right(_)   =>
-                GlobalConfig.fromJsonSafe(newConfigJson) match {
-                  case JsError(e)       => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format")))
-                  case JsSuccess(ak, _) =>
-                      val admEvt = AdminApiEvent(
+              GlobalConfig.fromJsonSafe(newConfigJson) match {
+                case JsError(e)       => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format")))
+                case JsSuccess(ak, _) =>
+                  val admEvt = AdminApiEvent(
+                    env.snowflakeGenerator.nextIdStr(),
+                    env.env,
+                    Some(ctx.apiKey),
+                    ctx.user,
+                    "UPDATE_GLOBAL_CONFIG",
+                    s"User updated global Otoroshi config",
+                    ctx.from,
+                    ctx.ua,
+                    ctx.request.body
+                  )
+                  Audit.send(admEvt)
+                  Alerts.send(
+                    GlobalConfigModification(
                       env.snowflakeGenerator.nextIdStr(),
                       env.env,
-                      Some(ctx.apiKey),
-                      ctx.user,
-                      "UPDATE_GLOBAL_CONFIG",
-                      s"User updated global Otoroshi config",
+                      user,
+                      conf.toJson,
+                      ak.toJson,
+                      admEvt,
                       ctx.from,
-                      ctx.ua,
-                      ctx.request.body
+                      ctx.ua
                     )
-                      Audit.send(admEvt)
-                      Alerts.send(
-                      GlobalConfigModification(
-                        env.snowflakeGenerator.nextIdStr(),
-                        env.env,
-                        user,
-                        conf.toJson,
-                        ak.toJson,
-                        admEvt,
-                        ctx.from,
-                        ctx.ua
-                      )
-                    )
-                      ak.save().map(_ => Ok(ak.json))
-                }
+                  )
+                  ak.save().map(_ => Ok(ak.json))
+              }
           }
         }
       }

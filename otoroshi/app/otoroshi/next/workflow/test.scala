@@ -13,10 +13,11 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 object WorkflowTest {
 
   def test1(): Unit = {
-    implicit val executorContext: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
-    val env: Env                 = ???
-    val engine                   = new WorkflowEngine(env)
-    val workflow                 = Json
+    implicit val executorContext: ExecutionContextExecutorService =
+      ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+    val env: Env                                                  = ???
+    val engine                                                    = new WorkflowEngine(env)
+    val workflow                                                  = Json
       .parse("""
          |{
          |  "id": "main",
@@ -123,7 +124,7 @@ object WorkflowTest {
          |}
          |""".stripMargin)
       .asObject
-    val node                     = Node.from(workflow)
+    val node                                                      = Node.from(workflow)
     Files.writeString(new File("./workflow_test_1.json").toPath, workflow.prettify)
     engine.run(node, Json.obj("name" -> "foo"), TypedMap.empty).map { res =>
       println(s"result: ${res.lightJson.prettify}")
@@ -131,10 +132,11 @@ object WorkflowTest {
   }
 
   def main(args: Array[String]): Unit = {
-    implicit val executorContext: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
-    val env: Env                 = ???
-    val engine                   = new WorkflowEngine(env)
-    val workflow                 = Json.obj(
+    implicit val executorContext: ExecutionContextExecutorService =
+      ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+    val env: Env                                                  = ???
+    val engine                                                    = new WorkflowEngine(env)
+    val workflow                                                  = Json.obj(
       "id"       -> "main",
       "kind"     -> "workflow",
       "steps"    -> Json.arr(
@@ -163,7 +165,7 @@ object WorkflowTest {
       ),
       "returned" -> Json.obj("$mem_ref" -> Json.obj("name" -> "call_3"))
     )
-    val node                     = Node.from(workflow)
+    val node                                                      = Node.from(workflow)
     Files.writeString(new File("./workflow_test.json").toPath, workflow.prettify)
     engine.run(node, Json.obj("foo" -> Json.obj("bar" -> "qix")), TypedMap.empty).map { res =>
       println(s"result: ${res.lightJson.prettify}")

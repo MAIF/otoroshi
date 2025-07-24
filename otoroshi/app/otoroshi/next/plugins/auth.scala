@@ -33,8 +33,8 @@ case class NgLegacyAuthModuleCallConfig(
   override def json: JsValue = NgLegacyAuthModuleCallConfig.format.writes(this)
 }
 object NgLegacyAuthModuleCallConfig {
-  val default: NgLegacyAuthModuleCallConfig = NgLegacyAuthModuleCallConfig(Seq.empty, Seq.empty, NgAuthModuleConfig())
-  val format: Format[NgLegacyAuthModuleCallConfig]  = new Format[NgLegacyAuthModuleCallConfig] {
+  val default: NgLegacyAuthModuleCallConfig        = NgLegacyAuthModuleCallConfig(Seq.empty, Seq.empty, NgAuthModuleConfig())
+  val format: Format[NgLegacyAuthModuleCallConfig] = new Format[NgLegacyAuthModuleCallConfig] {
     override def writes(o: NgLegacyAuthModuleCallConfig): JsValue             = Json.obj(
       "public_patterns"  -> o.publicPatterns,
       "private_patterns" -> o.privatePatterns
@@ -72,12 +72,14 @@ class NgLegacyAuthModuleCall extends NgAccessValidator {
     val authPlugin   = env.scriptManager
       .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[AuthModule])(env.otoroshiExecutionContext) match {
       case Right(validator) => validator
-      case Left(error) => throw new RuntimeException(s"Failed to load AuthModule plugin: $error")
+      case Left(error)      => throw new RuntimeException(s"Failed to load AuthModule plugin: $error")
     }
     val apikeyPlugin = env.scriptManager
-      .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[NgLegacyApikeyCall])(env.otoroshiExecutionContext) match {
+      .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[NgLegacyApikeyCall])(
+        env.otoroshiExecutionContext
+      ) match {
       case Right(validator) => validator
-      case Left(error) => throw new RuntimeException(s"Failed to load NgLegacyApikeyCall plugin: $error")
+      case Left(error)      => throw new RuntimeException(s"Failed to load NgLegacyApikeyCall plugin: $error")
     }
     val config       = ctx.cachedConfig(internalName)(configReads).getOrElse(NgLegacyAuthModuleCallConfig.default)
     val apikeyConfig = NgLegacyApikeyCallConfig(
@@ -624,7 +626,8 @@ class BasicAuthCaller extends NgRequestTransformer {
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val config = ctx.cachedConfig(internalName)(BasicAuthCallerConfig.format.reads(_)).getOrElse(BasicAuthCallerConfig())
+    val config =
+      ctx.cachedConfig(internalName)(BasicAuthCallerConfig.format.reads(_)).getOrElse(BasicAuthCallerConfig())
 
     (config.username, config.password) match {
       case (Some(username), Some(password)) if username.nonEmpty && password.nonEmpty =>
@@ -645,7 +648,7 @@ case class SimpleBasicAuthConfig(realm: String = "authentication", users: Map[St
   override def json: JsValue = SimpleBasicAuthConfig.format.writes(this)
 }
 object SimpleBasicAuthConfig {
-  val format: Format[SimpleBasicAuthConfig]                         = new Format[SimpleBasicAuthConfig] {
+  val format: Format[SimpleBasicAuthConfig] = new Format[SimpleBasicAuthConfig] {
     override def reads(json: JsValue): JsResult[SimpleBasicAuthConfig] = Try {
       SimpleBasicAuthConfig(
         realm = json.select("realm").asOptString.getOrElse("authentication"),
@@ -660,8 +663,8 @@ object SimpleBasicAuthConfig {
       "users" -> o.users
     )
   }
-  val configFlow: Seq[String]        = Seq("realm", "users")
-  def configSchema: Option[JsObject] = Some(
+  val configFlow: Seq[String]               = Seq("realm", "users")
+  def configSchema: Option[JsObject]        = Some(
     Json.obj(
       "realm" -> Json.obj(
         "type"  -> "string",
@@ -700,7 +703,8 @@ class SimpleBasicAuth extends NgAccessValidator {
   override def configSchema: Option[JsObject] = SimpleBasicAuthConfig.configSchema
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config                = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads(_)).getOrElse(SimpleBasicAuthConfig())
+    val config                =
+      ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads(_)).getOrElse(SimpleBasicAuthConfig())
     val globalUsers           = env.datastores.globalConfigDataStore
       .latest()
       .plugins
@@ -874,7 +878,8 @@ class BasicAuthWithAuthModule extends NgAccessValidator {
         }
     }
 
-    def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
+    def decodeBase64(encoded: String): String =
+      new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
     def extractUsernamePassword(header: String): Option[(String, String)] = {
       val base64 = header.replace("Basic ", "").replace("basic ", "")

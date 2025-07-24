@@ -15,7 +15,15 @@ import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import otoroshi.models._
 import org.joda.time.DateTime
-import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgRoute, NgTarget}
+import otoroshi.next.models.{
+  NgBackend,
+  NgClientConfig,
+  NgDomainAndPath,
+  NgFrontend,
+  NgPluginInstance,
+  NgRoute,
+  NgTarget
+}
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
@@ -145,9 +153,9 @@ class KubernetesIngressControllerJob extends Job {
     // TODO: should be dynamic
     if (config.watch) {
       implicit val mat: Materializer = env.otoroshiMaterializer
-      val conf         = KubernetesConfig.theConfig(ctx)
-      val client       = new KubernetesClient(conf, env)
-      val source       =
+      val conf                       = KubernetesConfig.theConfig(ctx)
+      val client                     = new KubernetesClient(conf, env)
+      val source                     =
         client
           .watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, stopCommand.get())
           .merge(client.watchNetResources(conf.namespaces, Seq("ingresses"), 30, stopCommand.get()))
@@ -211,9 +219,9 @@ class KubernetesIngressControllerJob extends Job {
         watchCommand.set(false)
         lastWatchStopped.set(true)
       }
-      val conf         = KubernetesConfig.theConfig(ctx)
-      val client       = new KubernetesClient(conf, env)
-      val source       = Source
+      val conf                       = KubernetesConfig.theConfig(ctx)
+      val client                     = new KubernetesClient(conf, env)
+      val source                     = Source
         .future(getNamespaces(client, conf))
         .flatMapConcat { nses =>
           client
@@ -626,8 +634,8 @@ object KubernetesIngressSyncJob {
   def syncIngresses(_conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] =
     env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.ingresses.sync") {
       implicit val mat: Materializer = env.otoroshiMaterializer
-      val syncedServiceDescriptors = new AtomicLong(0L)
-      val _client                  = new KubernetesClient(_conf, env)
+      val syncedServiceDescriptors   = new AtomicLong(0L)
+      val _client                    = new KubernetesClient(_conf, env)
       if (running.compareAndSet(false, true)) {
         shouldRunNext.set(false)
         KubernetesCRDsJob
@@ -847,134 +855,133 @@ object KubernetesIngressToDescriptor {
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
     implicit val mat: Materializer = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
-      .mapAsync(1) {
-        case (rule, path) =>
-          client.fetchService(namespace, path.backend.serviceName).flatMap {
-            case None              =>
-              logger.info(s"Service ${path.backend.serviceName} not found on namespace $namespace")
-              None.future
-            case Some(kubeService) =>
-              client.fetchEndpoint(namespace, path.backend.serviceName).flatMap { kubeEndpointOpt =>
-                val id = ("kubernetes-service-" + namespace + "-" + name + "-" + rule.host.getOrElse(
-                  "wildcard"
-                ) + path.path.filterNot(_ == "/").map(v => "-" + v).getOrElse("")).slugifyWithSlash
+      .mapAsync(1) { case (rule, path) =>
+        client.fetchService(namespace, path.backend.serviceName).flatMap {
+          case None              =>
+            logger.info(s"Service ${path.backend.serviceName} not found on namespace $namespace")
+            None.future
+          case Some(kubeService) =>
+            client.fetchEndpoint(namespace, path.backend.serviceName).flatMap { kubeEndpointOpt =>
+              val id = ("kubernetes-service-" + namespace + "-" + name + "-" + rule.host.getOrElse(
+                "wildcard"
+              ) + path.path.filterNot(_ == "/").map(v => "-" + v).getOrElse("")).slugifyWithSlash
 
-                val serviceName                    = kubeService.name
-                val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
-                val maybePortSpec: Option[JsValue] =
-                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
-                    path.backend.servicePort match {
-                      case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
-                      case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
-                      case _                       => false
-                    }
+              val serviceName                    = kubeService.name
+              val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
+              val maybePortSpec: Option[JsValue] =
+                (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+                  path.backend.servicePort match {
+                    case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
+                    case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
+                    case _                       => false
                   }
-                maybePortSpec match {
-                  case None           =>
-                    logger.info(s"Service port not found")
-                    None.future
-                  case Some(portSpec) =>
-                    val portName             = (portSpec \ "name").as[String]
-                    val portValue            = (portSpec \ "port").as[Int]
-                    val protocol             = if (portValue == 443 || portName == "https") "https" else "http"
-                    val targets: Seq[Target] = serviceType match {
-                      case "ExternalName" =>
-                        val serviceExternalName = (kubeService.raw \ "spec" \ "externalName").as[String]
-                        Seq(Target(s"$serviceExternalName:$portValue", protocol))
-                      case _              =>
-                        kubeEndpointOpt match {
-                          case None               =>
-                            serviceType match {
-                              case "ClusterIP"    =>
-                                val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
-                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
-                              case "NodePort"     =>
-                                val serviceIp =
-                                  (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
-                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
-                              case "LoadBalancer" =>
-                                val serviceIp =
-                                  (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
-                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
-                              case _              => Seq.empty
-                            }
-                          case Some(kubeEndpoint) =>
-                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
-                            if (subsets.isEmpty) {
-                              Seq.empty
-                            } else {
-                              subsets.toSeq.flatMap { subset =>
-                                val endpointPort: Int = (subset \ "ports")
-                                  .as[JsArray]
-                                  .value
-                                  .find { port =>
-                                    (port \ "name").as[String] == portName
-                                  }
-                                  .map(v => (v \ "port").as[Int])
-                                  .getOrElse(80)
-                                val endpointProtocol  =
-                                  if (endpointPort == 443 || portName == "https") "https" else "http"
-                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
-                                addresses.map { address =>
-                                  val serviceIp = (address \ "ip").as[String]
-                                  Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
+                }
+              maybePortSpec match {
+                case None           =>
+                  logger.info(s"Service port not found")
+                  None.future
+                case Some(portSpec) =>
+                  val portName             = (portSpec \ "name").as[String]
+                  val portValue            = (portSpec \ "port").as[Int]
+                  val protocol             = if (portValue == 443 || portName == "https") "https" else "http"
+                  val targets: Seq[Target] = serviceType match {
+                    case "ExternalName" =>
+                      val serviceExternalName = (kubeService.raw \ "spec" \ "externalName").as[String]
+                      Seq(Target(s"$serviceExternalName:$portValue", protocol))
+                    case _              =>
+                      kubeEndpointOpt match {
+                        case None               =>
+                          serviceType match {
+                            case "ClusterIP"    =>
+                              val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
+                              Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                            case "NodePort"     =>
+                              val serviceIp =
+                                (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+                              Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                            case "LoadBalancer" =>
+                              val serviceIp =
+                                (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+                              Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                            case _              => Seq.empty
+                          }
+                        case Some(kubeEndpoint) =>
+                          val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                          if (subsets.isEmpty) {
+                            Seq.empty
+                          } else {
+                            subsets.toSeq.flatMap { subset =>
+                              val endpointPort: Int = (subset \ "ports")
+                                .as[JsArray]
+                                .value
+                                .find { port =>
+                                  (port \ "name").as[String] == portName
                                 }
+                                .map(v => (v \ "port").as[Int])
+                                .getOrElse(80)
+                              val endpointProtocol  =
+                                if (endpointPort == 443 || portName == "https") "https" else "http"
+                              val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                              addresses.map { address =>
+                                val serviceIp = (address \ "ip").as[String]
+                                Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
                               }
                             }
-                        }
+                          }
+                      }
+                  }
+                  env.datastores.serviceDescriptorDataStore
+                    .findById(id)
+                    .map {
+                      case None       => ("create", env.datastores.serviceDescriptorDataStore.initiateNewDescriptor())
+                      case Some(desc) => ("update", desc)
                     }
-                    env.datastores.serviceDescriptorDataStore
-                      .findById(id)
-                      .map {
-                        case None       => ("create", env.datastores.serviceDescriptorDataStore.initiateNewDescriptor())
-                        case Some(desc) => ("update", desc)
-                      }
-                      .map { case (action, desc) =>
-                        val creationDate: String =
-                          if (action == "create") DateTime.now().toString
-                          else desc.metadata.getOrElse("created-at", DateTime.now().toString)
-                        val newDesc              = desc.copy(
-                          id = id,
-                          groups = Seq(conf.defaultGroup),
-                          name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path
-                            .getOrElse("/"),
-                          env = "prod",
-                          domain = "otoroshi.internal.kube.cluster",
-                          subdomain = id,
-                          targets = targets,
-                          root = path.path.getOrElse("/"),
-                          matchingRoot = path.path,
-                          hosts = Seq(rule.host.getOrElse("*")),
-                          paths = path.path.toSeq,
-                          publicPatterns = Seq("/.*"),
-                          useAkkaHttpClient = true,
-                          metadata = Map(
-                            "otoroshi-provider"     -> "kubernetes-ingress",
-                            "created-at"            -> creationDate,
-                            "updated-at"            -> DateTime.now().toString,
-                            "kubernetes-name"       -> name,
-                            "kubernetes-namespace"  -> namespace,
-                            "kubernetes-path"       -> s"$namespace/$name",
-                            "kubernetes-ingress-id" -> s"$namespace-$name-${rule.host.getOrElse("*")}-${path.path
-                              .getOrElse("/")}".slugifyWithSlash,
-                            "kubernetes-uid"        -> uid
-                          )
+                    .map { case (action, desc) =>
+                      val creationDate: String =
+                        if (action == "create") DateTime.now().toString
+                        else desc.metadata.getOrElse("created-at", DateTime.now().toString)
+                      val newDesc              = desc.copy(
+                        id = id,
+                        groups = Seq(conf.defaultGroup),
+                        name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path
+                          .getOrElse("/"),
+                        env = "prod",
+                        domain = "otoroshi.internal.kube.cluster",
+                        subdomain = id,
+                        targets = targets,
+                        root = path.path.getOrElse("/"),
+                        matchingRoot = path.path,
+                        hosts = Seq(rule.host.getOrElse("*")),
+                        paths = path.path.toSeq,
+                        publicPatterns = Seq("/.*"),
+                        useAkkaHttpClient = true,
+                        metadata = Map(
+                          "otoroshi-provider"     -> "kubernetes-ingress",
+                          "created-at"            -> creationDate,
+                          "updated-at"            -> DateTime.now().toString,
+                          "kubernetes-name"       -> name,
+                          "kubernetes-namespace"  -> namespace,
+                          "kubernetes-path"       -> s"$namespace/$name",
+                          "kubernetes-ingress-id" -> s"$namespace-$name-${rule.host.getOrElse("*")}-${path.path
+                            .getOrElse("/")}".slugifyWithSlash,
+                          "kubernetes-uid"        -> uid
                         )
-                        action match {
-                          case "create" =>
-                            logger.info(s"""Creating service "${newDesc.name}" from "$namespace/$name"""")
-                          case "update" =>
-                            logger.info(s"""Updating service "${newDesc.name}" from "$namespace/$name"""")
-                          case _        =>
-                        }
-                        newDesc
+                      )
+                      action match {
+                        case "create" =>
+                          logger.info(s"""Creating service "${newDesc.name}" from "$namespace/$name"""")
+                        case "update" =>
+                          logger.info(s"""Updating service "${newDesc.name}" from "$namespace/$name"""")
+                        case _        =>
                       }
-                      .map { desc =>
-                        otoConfig.apply(desc).some
-                      }
-                }
+                      newDesc
+                    }
+                    .map { desc =>
+                      otoConfig.apply(desc).some
+                    }
               }
-          }
+            }
+        }
       }
       .runWith(Sink.seq)
       .map(_.flatten)
@@ -992,141 +999,140 @@ object KubernetesIngressToDescriptor {
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
     implicit val mat: Materializer = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
-      .mapAsync(1) {
-        case (rule, path) =>
-          client.fetchService(namespace, path.backend.serviceName).flatMap {
-            case None              =>
-              logger.info(s"Service ${path.backend.serviceName} not found on namespace $namespace")
-              None.future
-            case Some(kubeService) =>
-              client.fetchEndpoint(namespace, path.backend.serviceName).flatMap { kubeEndpointOpt =>
-                val id = ("kubernetes-service-" + namespace + "-" + name + "-" + rule.host.getOrElse(
-                  "wildcard"
-                ) + path.path.filterNot(_ == "/").map(v => "-" + v).getOrElse("")).slugifyWithSlash
+      .mapAsync(1) { case (rule, path) =>
+        client.fetchService(namespace, path.backend.serviceName).flatMap {
+          case None              =>
+            logger.info(s"Service ${path.backend.serviceName} not found on namespace $namespace")
+            None.future
+          case Some(kubeService) =>
+            client.fetchEndpoint(namespace, path.backend.serviceName).flatMap { kubeEndpointOpt =>
+              val id = ("kubernetes-service-" + namespace + "-" + name + "-" + rule.host.getOrElse(
+                "wildcard"
+              ) + path.path.filterNot(_ == "/").map(v => "-" + v).getOrElse("")).slugifyWithSlash
 
-                val serviceName                    = kubeService.name
-                val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
-                val maybePortSpec: Option[JsValue] =
-                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
-                    path.backend.servicePort match {
-                      case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
-                      case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
-                      case _                       => false
-                    }
+              val serviceName                    = kubeService.name
+              val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
+              val maybePortSpec: Option[JsValue] =
+                (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+                  path.backend.servicePort match {
+                    case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
+                    case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
+                    case _                       => false
                   }
-                maybePortSpec match {
-                  case None           =>
-                    logger.info(s"Service port not found")
-                    None.future
-                  case Some(portSpec) =>
-                    val portName             = (portSpec \ "name").as[String]
-                    val portValue            = (portSpec \ "port").as[Int]
-                    val protocol             = if (portValue == 443 || portName == "https") "https" else "http"
-                    val targets: Seq[Target] = serviceType match {
-                      case "ExternalName" =>
-                        val serviceExternalName = (kubeService.raw \ "spec" \ "externalName").as[String]
-                        Seq(Target(s"$serviceExternalName:$portValue", protocol))
-                      case _              =>
-                        kubeEndpointOpt match {
-                          case None               =>
-                            serviceType match {
-                              case "ClusterIP"    =>
-                                val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
-                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
-                              case "NodePort"     =>
-                                val serviceIp =
-                                  (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
-                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
-                              case "LoadBalancer" =>
-                                val serviceIp =
-                                  (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
-                                Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
-                              case _              => Seq.empty
-                            }
-                          case Some(kubeEndpoint) =>
-                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
-                            if (subsets.isEmpty) {
-                              Seq.empty
-                            } else {
-                              subsets.toSeq.flatMap { subset =>
-                                val endpointPort: Int = (subset \ "ports")
-                                  .as[JsArray]
-                                  .value
-                                  .find { port =>
-                                    (port \ "name").as[String] == portName
-                                  }
-                                  .map(v => (v \ "port").as[Int])
-                                  .getOrElse(80)
-                                val endpointProtocol  =
-                                  if (endpointPort == 443 || portName == "https") "https" else "http"
-                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
-                                addresses.map { address =>
-                                  val serviceIp = (address \ "ip").as[String]
-                                  Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
+                }
+              maybePortSpec match {
+                case None           =>
+                  logger.info(s"Service port not found")
+                  None.future
+                case Some(portSpec) =>
+                  val portName             = (portSpec \ "name").as[String]
+                  val portValue            = (portSpec \ "port").as[Int]
+                  val protocol             = if (portValue == 443 || portName == "https") "https" else "http"
+                  val targets: Seq[Target] = serviceType match {
+                    case "ExternalName" =>
+                      val serviceExternalName = (kubeService.raw \ "spec" \ "externalName").as[String]
+                      Seq(Target(s"$serviceExternalName:$portValue", protocol))
+                    case _              =>
+                      kubeEndpointOpt match {
+                        case None               =>
+                          serviceType match {
+                            case "ClusterIP"    =>
+                              val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
+                              Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                            case "NodePort"     =>
+                              val serviceIp =
+                                (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+                              Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                            case "LoadBalancer" =>
+                              val serviceIp =
+                                (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+                              Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                            case _              => Seq.empty
+                          }
+                        case Some(kubeEndpoint) =>
+                          val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                          if (subsets.isEmpty) {
+                            Seq.empty
+                          } else {
+                            subsets.toSeq.flatMap { subset =>
+                              val endpointPort: Int = (subset \ "ports")
+                                .as[JsArray]
+                                .value
+                                .find { port =>
+                                  (port \ "name").as[String] == portName
                                 }
+                                .map(v => (v \ "port").as[Int])
+                                .getOrElse(80)
+                              val endpointProtocol  =
+                                if (endpointPort == 443 || portName == "https") "https" else "http"
+                              val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                              addresses.map { address =>
+                                val serviceIp = (address \ "ip").as[String]
+                                Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
                               }
                             }
-                        }
+                          }
+                      }
+                  }
+                  env.datastores.routeDataStore
+                    .findById(id)
+                    .map {
+                      case None        => ("create", env.datastores.routeDataStore.template())
+                      case Some(route) => ("update", route)
                     }
-                    env.datastores.routeDataStore
-                      .findById(id)
-                      .map {
-                        case None        => ("create", env.datastores.routeDataStore.template())
-                        case Some(route) => ("update", route)
-                      }
-                      .map { case (action, route) =>
-                        val creationDate: String =
-                          if (action == "create") DateTime.now().toString
-                          else route.metadata.getOrElse("created-at", DateTime.now().toString)
-                        val newRoute             = route.copy(
-                          id = id,
-                          groups = Seq(conf.defaultGroup),
-                          name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path
-                            .getOrElse("/"),
-                          frontend = NgFrontend(
-                            domains = Seq(NgDomainAndPath(rule.host.getOrElse("*") + path.path.getOrElse(""))),
-                            headers = Map.empty,
-                            cookies = Map.empty,
-                            query = Map.empty,
-                            methods = Seq.empty,
-                            stripPath = true,
-                            exact = false
-                          ),
-                          backend = NgBackend(
-                            targets = targets.map(t => NgTarget.fromTarget(t)),
-                            root = path.path.getOrElse("/"),
-                            rewrite = false,
-                            loadBalancing = RoundRobin,
-                            healthCheck = None,
-                            client = NgClientConfig()
-                          ),
-                          metadata = Map(
-                            "otoroshi-provider"     -> "kubernetes-ingress",
-                            "created-at"            -> creationDate,
-                            "updated-at"            -> DateTime.now().toString,
-                            "kubernetes-name"       -> name,
-                            "kubernetes-namespace"  -> namespace,
-                            "kubernetes-path"       -> s"$namespace/$name",
-                            "kubernetes-ingress-id" -> s"$namespace-$name-${rule.host.getOrElse("*")}-${path.path
-                              .getOrElse("/")}".slugifyWithSlash,
-                            "kubernetes-uid"        -> uid
-                          )
+                    .map { case (action, route) =>
+                      val creationDate: String =
+                        if (action == "create") DateTime.now().toString
+                        else route.metadata.getOrElse("created-at", DateTime.now().toString)
+                      val newRoute             = route.copy(
+                        id = id,
+                        groups = Seq(conf.defaultGroup),
+                        name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path
+                          .getOrElse("/"),
+                        frontend = NgFrontend(
+                          domains = Seq(NgDomainAndPath(rule.host.getOrElse("*") + path.path.getOrElse(""))),
+                          headers = Map.empty,
+                          cookies = Map.empty,
+                          query = Map.empty,
+                          methods = Seq.empty,
+                          stripPath = true,
+                          exact = false
+                        ),
+                        backend = NgBackend(
+                          targets = targets.map(t => NgTarget.fromTarget(t)),
+                          root = path.path.getOrElse("/"),
+                          rewrite = false,
+                          loadBalancing = RoundRobin,
+                          healthCheck = None,
+                          client = NgClientConfig()
+                        ),
+                        metadata = Map(
+                          "otoroshi-provider"     -> "kubernetes-ingress",
+                          "created-at"            -> creationDate,
+                          "updated-at"            -> DateTime.now().toString,
+                          "kubernetes-name"       -> name,
+                          "kubernetes-namespace"  -> namespace,
+                          "kubernetes-path"       -> s"$namespace/$name",
+                          "kubernetes-ingress-id" -> s"$namespace-$name-${rule.host.getOrElse("*")}-${path.path
+                            .getOrElse("/")}".slugifyWithSlash,
+                          "kubernetes-uid"        -> uid
                         )
-                        action match {
-                          case "create" =>
-                            logger.info(s"""Creating route "${newRoute.name}" from "$namespace/$name"""")
-                          case "update" =>
-                            logger.info(s"""Updating route "${newRoute.name}" from "$namespace/$name"""")
-                          case _        =>
-                        }
-                        newRoute
+                      )
+                      action match {
+                        case "create" =>
+                          logger.info(s"""Creating route "${newRoute.name}" from "$namespace/$name"""")
+                        case "update" =>
+                          logger.info(s"""Updating route "${newRoute.name}" from "$namespace/$name"""")
+                        case _        =>
                       }
-                      .map { desc =>
-                        otoConfig.applyRoute(desc).some
-                      }
-                }
+                      newRoute
+                    }
+                    .map { desc =>
+                      otoConfig.applyRoute(desc).some
+                    }
               }
-          }
+            }
+        }
       }
       .runWith(Sink.seq)
       .map(_.flatten)

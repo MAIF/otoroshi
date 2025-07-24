@@ -8,7 +8,7 @@ import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import play.api.Logger
 
 object InternalEventListenerActor {
-  val logger: Logger                                           = Logger("otoroshi-plugins-internal-eventlistener-actor")
+  val logger: Logger                                          = Logger("otoroshi-plugins-internal-eventlistener-actor")
   def props(listener: InternalEventListener, env: Env): Props = Props(new InternalEventListenerActor(listener, env))
 }
 

@@ -21,7 +21,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 
 object AccessLog {
-  val statusNames: Map[Int,String] = Map(
+  val statusNames: Map[Int, String] = Map(
     100 -> "Continue",
     101 -> "Switching Protocols",
     102 -> "Processing",
@@ -536,7 +536,6 @@ class KafkaAccessLog extends RequestTransformer {
         globalConfig.kafkaConfig match {
           case None              => Right(ctx.otoroshiResponse).future
           case Some(kafkaConfig) =>
-
             val snowflake = ctx.snowflake
             val status    = ctx.rawResponse.status
             val statusTxt = AccessLog.statusNames.getOrElse(status, "-")
@@ -662,7 +661,6 @@ class KafkaAccessLog extends RequestTransformer {
         globalConfig.kafkaConfig match {
           case None              => ctx.otoroshiResult.future
           case Some(kafkaConfig) =>
-
             val snowflake = ctx.snowflake
             val status    = ctx.otoroshiResponse.status
             val statusTxt = AccessLog.statusNames.getOrElse(status, "-")

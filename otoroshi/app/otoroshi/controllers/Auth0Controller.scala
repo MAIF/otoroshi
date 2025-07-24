@@ -338,9 +338,11 @@ class AuthController(
                                 val encodedRedirectTo =
                                   Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
                                 val url               =
-                                  java.net.URI.create(
-                                    redirectTo
-                                  ).toURL //s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
+                                  java.net.URI
+                                    .create(
+                                      redirectTo
+                                    )
+                                    .toURL //s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
                                 val host               = url.getHost
                                 val scheme             = url.getProtocol
                                 val setCookiesRedirect = url.getPort match {
@@ -451,9 +453,11 @@ class AuthController(
                                 val encodedRedirectTo =
                                   Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
                                 val url               =
-                                  java.net.URI.create(
-                                    redirectTo
-                                  ).toURL // new java.net.URL(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
+                                  java.net.URI
+                                    .create(
+                                      redirectTo
+                                    )
+                                    .toURL // new java.net.URL(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
                                 val host               = url.getHost
                                 val scheme             = url.getProtocol
                                 val setCookiesRedirect = url.getPort match {
@@ -511,9 +515,9 @@ class AuthController(
   def confidentialAppLogout(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
       implicit val req: Request[AnyContent] = ctx.request
-      val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
-      val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
-      val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
+      val redirectToOpt: Option[String]     = req.queryString.get("redirectTo").map(_.last)
+      val hostOpt: Option[String]           = req.queryString.get("host").map(_.last)
+      val cookiePrefOpt: Option[String]     = req.queryString.get("cp").map(_.last)
       (redirectToOpt, hostOpt, cookiePrefOpt) match {
         case (Some(redirectTo), Some(host), Some(cp)) =>
           FastFuture.successful(
@@ -881,19 +885,18 @@ class AuthController(
         case (_, _)                           =>
           NotFound(otoroshi.views.html.oto.error(s"${if (isRoute) "Route" else "service"} not found", env)).vfuture
       })
-        .recover {
-          case t: Throwable =>
-            val errorId = IdGenerator.uuid
-            logger.error(s"An error occurred during the authentication callback with error id: '$errorId'", t)
-            InternalServerError(
-              otoroshi.views.html.oto
-                .error(
-                  message =
-                    s"An error occurred during the authentication callback. Please contact your administrator with error id: $errorId",
-                  _env = env,
-                  title = "Authorization error"
-                )
-            )
+        .recover { case t: Throwable =>
+          val errorId = IdGenerator.uuid
+          logger.error(s"An error occurred during the authentication callback with error id: '$errorId'", t)
+          InternalServerError(
+            otoroshi.views.html.oto
+              .error(
+                message =
+                  s"An error occurred during the authentication callback. Please contact your administrator with error id: $errorId",
+                _env = env,
+                title = "Authorization error"
+              )
+          )
         }
     }
 
@@ -912,13 +915,13 @@ class AuthController(
       env.datastores.globalConfigDataStore.singleton().flatMap { (config: GlobalConfig) =>
         if (!(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty)) {
           config.backOfficeAuthRef match {
-            case None => FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
+            case None        => FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
             case Some(aconf) =>
               //env.datastores.authConfigsDataStore.findById(aconf).flatMap {
               env.proxyState.authModuleAsync(aconf).flatMap {
-                case None =>
+                case None        =>
                   FastFuture
-                      .successful(NotFound(otoroshi.views.html.oto.error("BackOffice Oauth is not configured", env)))
+                    .successful(NotFound(otoroshi.views.html.oto.error("BackOffice Oauth is not configured", env)))
                 case Some(oauth) => oauth.authModule(config).boLoginPage(ctx.request, config)
               }
           }
@@ -932,7 +935,7 @@ class AuthController(
     BackOfficeActionAuth.async { ctx =>
       import otoroshi.utils.http.RequestImplicits._
       implicit val request: Request[AnyContent] = ctx.request
-      val redirect         = request.getQueryString("redirect")
+      val redirect                              = request.getQueryString("redirect")
       if (ctx.user.simpleLogin) {
         ctx.user.delete().map { _ =>
           Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
@@ -942,24 +945,24 @@ class AuthController(
       } else {
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
           config.backOfficeAuthRef match {
-            case None =>
+            case None        =>
               ctx.user.delete().map { _ =>
                 Alerts
-                    .send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
+                  .send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
                 val userRedirect = redirect.getOrElse(routes.BackOfficeController.index.url)
                 Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
               }
             case Some(aconf) =>
               //env.datastores.authConfigsDataStore.findById(aconf).flatMap {
               env.proxyState.authModuleAsync(aconf).flatMap {
-                case None =>
+                case None        =>
                   FastFuture.successful(
                     NotFound(otoroshi.views.html.oto.error("BackOffice auth is not configured", env))
-                        .removingFromSession("bousr", "bo-redirect-after-login")
+                      .removingFromSession("bousr", "bo-redirect-after-login")
                   )
                 case Some(oauth) =>
                   oauth.authModule(config).boLogout(ctx.request, ctx.user, config).flatMap {
-                    case Left(body) =>
+                    case Left(body)   =>
                       ctx.user.delete().map { _ =>
                         Alerts.send(
                           AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua)
@@ -968,7 +971,7 @@ class AuthController(
                       }
                     case Right(value) =>
                       value match {
-                        case None =>
+                        case None            =>
                           ctx.user.delete().map { _ =>
                             Alerts.send(
                               AdminLoggedOutAlert(
@@ -983,7 +986,7 @@ class AuthController(
                             Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
                           }
                         case Some(logoutUrl) =>
-                          val userRedirect = redirect.getOrElse(s"${request.theProtocol}://${request.theHost}/")
+                          val userRedirect      = redirect.getOrElse(s"${request.theProtocol}://${request.theHost}/")
                           val actualRedirectUrl =
                             logoutUrl.replace("${redirect}", URLEncoder.encode(userRedirect, "UTF-8"))
                           ctx.user.delete().map { _ =>
@@ -1044,25 +1047,25 @@ class AuthController(
               FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
             } else {
               config.backOfficeAuthRef match {
-                case None =>
+                case None                        =>
                   FastFuture
-                      .successful(NotFound(otoroshi.views.html.oto.error("BackOffice OAuth is not configured", env)))
+                    .successful(NotFound(otoroshi.views.html.oto.error("BackOffice OAuth is not configured", env)))
                 case Some(backOfficeAuth0Config) =>
                   // env.datastores.authConfigsDataStore.findById(backOfficeAuth0Config).flatMap {
                   env.proxyState.authModuleAsync(backOfficeAuth0Config).flatMap {
-                    case None =>
+                    case None        =>
                       FastFuture
-                          .successful(NotFound(otoroshi.views.html.oto.error("BackOffice OAuth is not found", env)))
+                        .successful(NotFound(otoroshi.views.html.oto.error("BackOffice OAuth is not found", env)))
                     case Some(oauth) =>
                       verifyHash("backoffice", oauth, ctx.request) {
 
                         case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn =>
                           val authModule = auth.authModule(config).asInstanceOf[BasicAuthModule]
                           request.headers.get("WebAuthn-Login-Step") match {
-                            case Some("start") =>
+                            case Some("start")  =>
                               authModule.webAuthnAdminLoginStart(ctx.request.body.asJson.get).map {
                                 case Left(error) => BadRequest(Json.obj("error" -> error))
-                                case Right(reg) => Ok(reg)
+                                case Right(reg)  => Ok(reg)
                               }
                             case Some("finish") =>
                               authModule.webAuthnAdminLoginFinish(ctx.request.body.asJson.get).flatMap {
@@ -1073,23 +1076,23 @@ class AuthController(
                                   BadRequest(Json.obj("error" -> error.display)).future
                                 case Right(user) => saveUser(user, auth, true)(ctx.request)
                               }
-                            case _ =>
+                            case _              =>
                               BadRequest(
                                 otoroshi.views.html.oto
-                                    .error(message = s"Missing step", _env = env, title = "Authorization error")
+                                  .error(message = s"Missing step", _env = env, title = "Authorization error")
                               ).asFuture
                           }
-                        case auth =>
+                        case auth                                                                                =>
                           oauth.authModule(config).boCallback(ctx.request, config).flatMap {
-                            case Left(err) =>
+                            case Left(err)   =>
                               FastFuture.successful(
                                 BadRequest(
                                   otoroshi.views.html.oto
-                                      .error(
-                                        message = s"You're not authorized here: $err",
-                                        _env = env,
-                                        title = "Authorization error"
-                                      )
+                                    .error(
+                                      message = s"You're not authorized here: $err",
+                                      _env = env,
+                                      title = "Authorization error"
+                                    )
                                 )
                               )
                             case Right(user) =>

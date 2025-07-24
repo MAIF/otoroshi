@@ -97,19 +97,21 @@ class StaticResponse extends NgBackendCall {
     inMemoryBodyResponse(
       config.status,
       config.headers.applyOnIf(config.applyEl)(
-        _.view.mapValues(str =>
-          GlobalExpressionLanguage.apply(
-            value = str.debugPrintln,
-            req = ctx.rawRequest.some,
-            service = None,
-            route = ctx.route.some,
-            apiKey = ctx.apikey,
-            user = ctx.user,
-            context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-            attrs = ctx.attrs,
-            env = env
+        _.view
+          .mapValues(str =>
+            GlobalExpressionLanguage.apply(
+              value = str.debugPrintln,
+              req = ctx.rawRequest.some,
+              service = None,
+              route = ctx.route.some,
+              apiKey = ctx.apikey,
+              user = ctx.user,
+              context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+              attrs = ctx.attrs,
+              env = env
+            )
           )
-        ).toMap
+          .toMap
       ),
       body
     ).future
@@ -342,18 +344,19 @@ class MockResponses extends NgBackendCall {
         else
           None
       }
-      .map(r => {
-        import kaleidoscope._
+      .map(result => {
+        import kaleidoscope.*
+        import anticipation.Text
 
-        val route    = r.routes.headOption.get
+        val route    = result.routes.headOption.get
         val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
 
         def replaceOn(value: String) = {
           val newValue = Try {
             expressionReplacer.replaceOn(value) {
-              case r"req.pathparams.$field@(.*):$defaultValue@(.*)" => r.pathParams.getOrElse(field, defaultValue)
-              case r"req.pathparams.$field@(.*)"                    => r.pathParams.getOrElse(field, s"no-path-param-$field")
-              case r                                                => r
+              case r"req.pathparams.$field(.*):$defaultValue(.*)" => result.pathParams.getOrElse(field.s, defaultValue.s)
+              case r"req.pathparams.$field(.*)"                   => result.pathParams.getOrElse(field.s, s"no-path-param-${field.s}")
+              case r                                              => r
             }
           } recover { case _ => value } get
 
@@ -433,7 +436,9 @@ object NgErrorRewriterConfig {
         ranges = json
           .select("ranges")
           .asOpt[JsArray]
-          .map(arr => arr.value.map(item => ResponseStatusRange(item.select("from").asInt, item.select("to").asInt)).toSeq)
+          .map(arr =>
+            arr.value.map(item => ResponseStatusRange(item.select("from").asInt, item.select("to").asInt)).toSeq
+          )
           .getOrElse(Seq.empty[ResponseStatusRange])
       )
     } match {
