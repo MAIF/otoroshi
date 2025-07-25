@@ -105,9 +105,7 @@ export default ({ route }) => {
                     : `${to}?version=${draft.version}`
                 }
                 {...(tooltip || {})}
-                className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                  openedSidebar ? 'ms-3' : ''
-                } m-0 ${isActive(tab)}`}
+                className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-3' : ''} m-0 ${isActive(tab)}`}
               >
                 <div style={{ width: '20px' }} className="d-flex justify-content-center">
                   <i className={`fas ${icon}`} />
@@ -128,9 +126,8 @@ export default ({ route }) => {
               <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={item.id}>
                 <Link
                   to={to}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                    openedSidebar ? 'ms-3' : ''
-                  } m-0 ${isActive(tab)}`}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                    } m-0 ${isActive(tab)}`}
                 >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className={`fas ${item.icon}`} />

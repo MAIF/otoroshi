@@ -4,6 +4,7 @@ import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
 import CodeInput from '../../components/inputs/CodeInput';
 import { WorkflowsContainer as WorkflowsDesigner } from './WorkflowsContainer';
+import { WorkflowSidebar } from './WorkflowSidebar';
 
 const extensionId = 'otoroshi.extensions.Workflows';
 
@@ -190,19 +191,28 @@ export function setupWorkflowsExtension(registerExtension) {
         'tester',
       ];
 
-      componentDidMount() {
-        this.props.setTitle(`All Workflows`);
-      }
-
       client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
 
+      componentDidMount() {
+        this.props.setTitle('Workflows');
+
+        if (this.props.location.pathname === '/extensions/workflows/workflows')
+          this.props.setSidebarContent(null)
+        else {
+          this.client
+            .findById(this.props.match.params.titem)
+            .then(workflow => this.props.setSidebarContent(<WorkflowSidebar {...this.props} workflow={workflow} />))
+            .catch(console.log)
+        }
+      }
+    
       render() {
         return React.createElement(
           Table,
           {
             parentProps: this.props,
             selfUrl: 'extensions/workflows/workflows',
-            defaultTitle: 'All Workflows',
+            defaultTitle: 'Workflows',
             defaultValue: () => ({
               id: 'workflow_' + uuid(),
               name: 'New Workflow',
@@ -239,14 +249,9 @@ export function setupWorkflowsExtension(registerExtension) {
             updateItem: (content) => this.client.update(content),
             createItem: (content) => this.client.create(content),
             deleteItem: this.client.delete,
-            // navigateTo: (item) => {
-            //   window.location = `/bo/dashboard/extensions/workflows/workflows/edit/${item.id}`;
-            // },
-            // itemUrl: (item) => `/bo/dashboard/extensions/workflows/workflows/edit/${item.id}`,
-            navigateTo: (item) => {
-              window.location = `/bo/dashboard/extensions/workflows/workflows/${item.id}/designer`;
-            },
-            itemUrl: (item) => `/bo/dashboard/extensions/workflows/workflows/e${item.id}/designer`,
+            navigateTo: (item) => this.props.history.push(`/extensions/workflows/workflows/${item.id}/designer`),
+            navigateOnEdit: (item) => this.props.history.push(`/extensions/workflows/workflows/edit/${item.id}`),
+            itemUrl: (item) => `/bo/dashboard/extensions/workflows/workflows/${item.id}/designer`,
             showActions: true,
             showLink: true,
             rowNavigation: true,

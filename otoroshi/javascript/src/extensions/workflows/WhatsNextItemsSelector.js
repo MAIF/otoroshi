@@ -54,6 +54,7 @@ import { DecrOperator } from './operators/DecrOperator'
 import { IncrOperator } from './operators/IncrOperator'
 import { ReturnedNode } from './nodes/ReturnedNode'
 import { PredicateNode } from './nodes/PredicateNode'
+import { WasmNode } from './nodes/WasmNode'
 
 
 const ITEMS_BY_CATEGORY = [
@@ -80,7 +81,8 @@ const ITEMS_BY_CATEGORY = [
             "error": ErrorNode(),
             "value": ValueNode(),
             "predicate": PredicateNode(),
-            "returned": ReturnedNode()
+            "returned": ReturnedNode(),
+            "wasm": WasmNode()
         }
     },
     {

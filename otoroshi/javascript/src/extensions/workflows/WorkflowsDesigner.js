@@ -38,10 +38,15 @@ export function createSimpleNode(nodes, node) {
         data = {
             ...data,
             workflow: {
-                [data.kind]: node
+                [data.kind]: {
+                    ...node.workflow,
+                    description: node.description
+                }
             }
         }
     }
+
+    console.log(data, node)
 
     // maybe try catch here and create a node Value with raw value
     return {
@@ -1045,12 +1050,15 @@ export function WorkflowsDesigner(props) {
             })
     }
 
+    const closeAllModals = () => {
+        setActiveNode(false)
+        setReportStatus(false)
+        openTagModal(false)
+    }
+
     const handleFlowClick = useCallback(() => {
-        if (!activeNode.handle) {
-            setActiveNode(false)
-            setReportStatus(false)
-            openTagModal(false)
-        }
+        if (!activeNode.handle)
+            closeAllModals()
     }, [activeNode])
 
     const handleGroupNodeClick = useCallback(groupNode => {
@@ -1058,6 +1066,7 @@ export function WorkflowsDesigner(props) {
     }, [])
 
     const manageTags = useCallback(() => {
+        closeAllModals(false)
         openTagModal(true)
     }, [])
 

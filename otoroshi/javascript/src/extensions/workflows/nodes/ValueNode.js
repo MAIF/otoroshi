@@ -1,5 +1,6 @@
 import React from 'react'
 import { ValueToCheck } from '../operators/ValueToCheck'
+import { NgCodeRenderer } from '../../../components/nginputs'
 
 export const ValueNode = (_workflow) => ({
     label: <i className='fas fa-cube' />,
@@ -13,9 +14,6 @@ export const ValueNode = (_workflow) => ({
     },
     flow: ['value'],
     nodeRenderer: props => {
-        // return <div className='assign-node'>
-        //     {JSON.stringify(props.data.workflow?.value, null, 4)}
-        // </div>
         return <div style={{
             position: 'absolute',
             top: 30,
@@ -40,13 +38,7 @@ export const ValueNode = (_workflow) => ({
                         mode: 'json',
                     },
                 }}
-                value={props.data.workflow?.returned}
-                onChange={(e) => {
-                    props.data.functions.handleWorkflowChange(props.id, {
-                        ...props.workflow,
-                        returned: JSON.parse(e)
-                    })
-                }}
+                value={props.data.workflow?.value}
             />
         </div>
     }

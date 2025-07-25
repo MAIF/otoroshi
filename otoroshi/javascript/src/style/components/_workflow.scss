@@ -474,4 +474,15 @@
     min-width: 3rem;
     text-align: center;
   }
+
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  
+  .node-description {
+    position: fixed;
+    top: 100%;
+    font-size: .75rem;
+    font-style: italic;
+  }
 }

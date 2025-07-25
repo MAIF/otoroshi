@@ -2,7 +2,6 @@ import React, { useEffect, useLayoutEffect } from 'react'
 
 import Handles from './Handles'
 import NodeTrashButton from './NodeTrashButton'
-// import { NodeResizer } from '@xyflow/react'
 
 export function Node(props) {
     const { data } = props
@@ -18,13 +17,6 @@ export function Node(props) {
         <>
             <Handles {...props} />
 
-            {/* {data.kind !== 'start' && !data.operator && <NodeResizer
-                color="#ff0071"
-                isVisible={props.selected}
-                minWidth={200}
-                minHeight={100}
-            />} */}
-
             <button
                 className="d-flex-center m-0 node"
                 onDoubleClick={e => {
@@ -38,6 +30,8 @@ export function Node(props) {
                 {data.nodeRenderer && data.nodeRenderer(props)}
 
                 {data.kind !== 'returned' && <NodeTrashButton {...props} />}
+
+                <div className='node-description'>{props.data.description}</div>
             </button>
         </>
     );

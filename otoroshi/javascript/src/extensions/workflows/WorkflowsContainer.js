@@ -7,6 +7,7 @@ import Loader from '../../components/Loader'
 
 import { ReactFlowProvider } from '@xyflow/react'
 import { WorkflowsDesigner } from './WorkflowsDesigner'
+import { WorkflowSidebar } from './WorkflowSidebar'
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -52,6 +53,11 @@ function Container(props) {
     const workflow = useQuery(
         ['getWorkflow', params.workflowId],
         () => client.findById(params.workflowId))
+
+    useEffect(() => {
+        if (workflow.data)
+            props.setSidebarContent(<WorkflowSidebar {...props} workflow={workflow.data} />);
+    }, [workflow.isLoading])
 
     return <Loader loading={workflow.isLoading}>
         <ReactFlowProvider>

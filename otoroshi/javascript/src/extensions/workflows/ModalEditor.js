@@ -11,10 +11,23 @@ function getWorkflow(node) {
     return workflow
 }
 
+function setEnabled(state) {
+    if (state?.enabled === undefined)
+        return {
+            ...state,
+            enabled: true
+        }
+    return state
+}
+
 export function ModalEditor({ node }) {
 
     if (!node)
         return null
+
+    const isAnOperator = node.data.operator
+
+    console.log(node.data)
 
     const schema = {
         description: {
@@ -39,18 +52,20 @@ export function ModalEditor({ node }) {
             type: 'group',
             name: 'Informations',
             // collapsed: true,
-            fields: ['enabled', 'description'],
+            fields: [!isAnOperator ? 'enabled' : '', 'description'].filter(field => field.length > 0),
         },
         {
             type: 'group',
             name: 'Configuration',
-            fields: [...(node.data.flow || []), 'result']
+            fields: [...(node.data.flow || []), !isAnOperator ? 'result' : ''].filter(field => field.length > 0)
         }
     ]
 
-    const value = getWorkflow(node)
+    const value = setEnabled(getWorkflow(node))
 
     const [state, setState] = useState(value ? Object.fromEntries(Object.entries(value).filter(([key, _]) => Object.keys(schema).includes(key))) : {})
+
+    console.log('state', state)
 
     return <div className='modal-editor'>
         <p className='p-3 m-0 whats-next-title'>{node.data.name}</p>

@@ -53,6 +53,7 @@ import { IncrOperator } from '../operators/IncrOperator'
 import { ReturnedNode } from "../nodes/ReturnedNode"
 import { StartNode } from "../nodes/StartNode"
 import { PredicateNode } from "../nodes/PredicateNode"
+import { WasmNode } from "../nodes/WasmNode"
 
 export const NODES = {
     "assign": AssignNode,
@@ -69,7 +70,8 @@ export const NODES = {
     "value": ValueNode,
     "returned": ReturnedNode,
     "start": StartNode,
-    "predicate": PredicateNode
+    "predicate": PredicateNode,
+    "wasm": WasmNode
 }
 
 export const OPERATORS = {

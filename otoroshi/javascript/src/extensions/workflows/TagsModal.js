@@ -19,8 +19,6 @@ export function TagsModal({ isOpen, tags, setTags }) {
 
     const flow = ['tags']
 
-    console.log(tags)
-
     return <div className={`nodes-explorer ${isOpen ? 'nodes-explorer--opened' : ''}`}>
         <div className="p-3 whats-next-title">
             Manage tags

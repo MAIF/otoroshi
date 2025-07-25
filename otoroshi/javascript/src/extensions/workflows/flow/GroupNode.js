@@ -1,10 +1,10 @@
-import React, { forwardRef, useLayoutEffect, useRef } from "react"
+import React, { useLayoutEffect, useRef } from "react"
 import { Panel } from "@xyflow/react";
 import NodeTrashButton from './NodeTrashButton';
 import Handles from "./Handles";
 
-export const GroupNode = forwardRef((props, ref) => {
-    const { selected, position, data } = props
+export const GroupNode = (props) => {
+    const { position, data } = props
 
     useLayoutEffect(() => {
         const height = props.data.height
@@ -26,5 +26,7 @@ export const GroupNode = forwardRef((props, ref) => {
         </Panel>
 
         <NodeTrashButton {...props} />
+
+        <div className='node-description'>{props.data.description}</div>
     </>
-})
+}
