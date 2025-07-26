@@ -56,8 +56,8 @@ import play.core.parsers.FormUrlEncodedParser
 import play.core.server.{PekkoHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
-import utils.EntityFiltering
-import utils.EntityFiltering.PaginatedContent
+import otoroshi.utils.EntityFiltering
+import otoroshi.utils.EntityFiltering.PaginatedContent
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.DurationInt

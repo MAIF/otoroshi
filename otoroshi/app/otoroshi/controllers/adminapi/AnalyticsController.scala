@@ -23,7 +23,7 @@ import play.api.mvc.{
   Results
 }
 import otoroshi.jobs.updates._
-import utils.EntityFiltering
+import otoroshi.utils.EntityFiltering
 
 import scala.concurrent.{ExecutionContext, Future}
 

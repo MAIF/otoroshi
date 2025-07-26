@@ -1,4 +1,4 @@
-package utils
+package otoroshi.utils
 
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
