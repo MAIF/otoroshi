@@ -57,8 +57,10 @@ export class GroupsPage extends Component {
         <button
           type="button"
           className="btn btn-sm btn-success"
-          onClick={(e) => (window.location = `/bo/dashboard/groups/edit/${item.id}/stats`)}
-        >
+          onClick={(e) => {
+            e.stopPropagation()
+            window.location = `/bo/dashboard/groups/edit/${item.id}/stats`
+          }}>
           <i className="fas fa-chart-bar" />
         </button>
       ),
@@ -93,13 +95,10 @@ export class GroupsPage extends Component {
         deleteItem={BackOfficeServices.deleteGroup}
         createItem={BackOfficeServices.createGroup}
         navigateTo={(item) => {
-          window.location = `/bo/dashboard/services?group=${item.id}&groupName=${item.name}`;
-          // this.props.history.push({
-          //   pathname: `/services?group=${item.id}&groupName=${item.name}`,
-          //   // query: { group: item.id, groupName: item.name },
-          // });
+          window.location = `/bo/dashboard/groups/edit/${item.id}`
         }}
-        itemUrl={(i) => `/bo/dashboard/services?group=${i.id}&groupName=${i.name}`}
+        linkUrl={(item) => `/bo/dashboard/groups/edit/${item.id}`}
+        itemUrl={(item) => `/bo/dashboard/routes?search=${btoa(JSON.stringify({ groups: item.id }))}`}
         displayTrash={(item) => this.props.env && this.props.env.adminGroupId === item.id}
         showActions={true}
         showLink={true}

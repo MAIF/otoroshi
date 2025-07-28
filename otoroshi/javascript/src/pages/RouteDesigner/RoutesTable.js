@@ -27,6 +27,8 @@ export function RoutesTable(props) {
   const params = useParams();
   const history = useHistory();
 
+  const [queryFilters, setQueryFilters] = useState(undefined)
+
   const [loading, setLoading] = useState(true);
   const [fields, setFields] = useState({
     name: true,
@@ -280,8 +282,22 @@ export function RoutesTable(props) {
   };
 
   useEffect(() => {
+    loadSearchParamsFromQuery()
     loadFields();
   }, []);
+
+  const loadSearchParamsFromQuery = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const rawSearch = urlParams.get('search')
+
+    if (rawSearch) {
+      try {
+        setQueryFilters(Object.entries(JSON.parse(atob(rawSearch))).map(([id, value]) => ({ id, value })))
+      } catch (_) { }
+
+    }
+  }
 
   const loadFields = () => {
     try {
@@ -309,13 +325,16 @@ export function RoutesTable(props) {
     } catch (e) {
       // console.log(e);
     }
-  };
+  }
+
+  console.log(queryFilters)
 
   return (
     <Loader loading={loading}>
       <div className="designer">
         <Table
           ref={ref}
+          defaultFiltered={queryFilters}
           parentProps={{ params }}
           navigateTo={(item) => history.push(`/routes/${item.id}?tab=flow`)}
           navigateOnEdit={(item) => history.push(`/routes/${item.id}?tab=informations`)}
