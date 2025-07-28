@@ -305,7 +305,6 @@ export function RoutesTable(props) {
 
       if (values.routes) setFields(values.routes);
     } catch (e) {
-      // console.log(e);
     } finally {
       setLoading(false);
     }
