@@ -841,7 +841,7 @@ class TableComponent extends Component {
                   className="btn btn-sm btn-primary me-2"
                   {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
                   href={`${this.props.itemUrl(item)}`}
-                  onClick={(e) => this.gotoItem(e, item)}
+                  onClick={(e) => this.props.linkUrl ? (this.props.history.push(this.props.linkUrl)) : this.gotoItem(e, item)}
                 >
                   <i className="fas fa-link" />
                 </a>
@@ -971,9 +971,10 @@ class TableComponent extends Component {
                   },
                 ]}
                 defaultFiltered={
-                  this.props.search
-                    ? [{ id: this.props.columns[0]?.title, value: this.props.search }]
-                    : []
+                  this.props.defaultFiltered ? this.props.defaultFiltered :
+                    (this.props.search
+                      ? [{ id: this.props.columns[0]?.title, value: this.props.search }]
+                      : [])
                 }
                 onFetchData={(state, instance) => {
                   this.update(state);
