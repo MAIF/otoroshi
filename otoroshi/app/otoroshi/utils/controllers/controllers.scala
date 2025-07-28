@@ -171,7 +171,13 @@ trait AdminApiHelper {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
-                  case JsArray(values) => values.contains(JsString(value))
+                  case JsArray(values) => values.exists {
+                    case JsString(v) => v.contains(value)
+                    case JsBoolean(v) => v == value.toBoolean
+                    case JsNumber(v) => v.toDouble == value.toDouble
+                    case JsArray(values) => values.contains(JsString(value))
+                    case _ => false
+                  }
                   case _               => false
                 }
               }
@@ -859,7 +865,13 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 case JsString(v)     => v == value
                 case JsBoolean(v)    => v == value.toBoolean
                 case JsNumber(v)     => v.toDouble == value.toDouble
-                case JsArray(values) => values.contains(JsString(value))
+                case JsArray(values) => values.exists {
+                  case JsString(v) => v == value
+                  case JsBoolean(v) => v == value.toBoolean
+                  case JsNumber(v) => v.toDouble == value.toDouble
+                  case JsArray(values) => values.contains(JsString(value))
+                  case _ => false
+                }
                 case _               => false
               }
             }
@@ -877,7 +889,13 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                     case JsString(v)              => v.toLowerCase().indexOf(value) != -1
                     case JsBoolean(v)             => v == value.toBoolean
                     case JsNumber(v)              => v.toDouble == value.toDouble
-                    case JsArray(values)          => values.contains(JsString(value))
+                    case JsArray(values)          => values.exists {
+                      case JsString(v) => v == value
+                      case JsBoolean(v) => v == value.toBoolean
+                      case JsNumber(v) => v.toDouble == value.toDouble
+                      case JsArray(values) => values.contains(JsString(value))
+                      case _ => false
+                    }
                     case JsObject(v) if v.isEmpty =>
                       JsonOperationsHelper.getValueAtPath(key, elem)._2.asOpt[JsValue] match {
                         case Some(v) =>
@@ -885,7 +903,13 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                             case JsString(v)     => v.toLowerCase().indexOf(value) != -1
                             case JsBoolean(v)    => v == value.toBoolean
                             case JsNumber(v)     => v.toDouble == value.toDouble
-                            case JsArray(values) => values.contains(JsString(value))
+                            case JsArray(values) => values.exists {
+                              case JsString(v) => v == value
+                              case JsBoolean(v) => v == value.toBoolean
+                              case JsNumber(v) => v.toDouble == value.toDouble
+                              case JsArray(values) => values.contains(JsString(value))
+                              case _ => false
+                            }
                             case _               => false
                           }
                         case _       => false
