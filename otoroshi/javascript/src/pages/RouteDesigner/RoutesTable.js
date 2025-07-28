@@ -29,18 +29,19 @@ export function RoutesTable(props) {
 
   const [loading, setLoading] = useState(true);
   const [fields, setFields] = useState({
-    id: false,
     name: true,
     description: true,
-    tags: false,
-    metadata: false,
     enabled: true,
-    groups: false,
     frontend: true,
     backend: true,
+    groups: true,
+    'metadata.updated_at': true,
+
+    id: false,
+    tags: false,
+    metadata: false,
     plugins: false,
     'created at': false,
-    'metadata.updated_at': true,
     'metadata.created_at': false,
   });
 
@@ -162,9 +163,8 @@ export function RoutesTable(props) {
 
   const groupsColumn = {
     title: 'Groups',
-    content: (item) => (item.groups || []).join(','),
-    notSortable: true,
-    notFilterable: true,
+    filterId: 'groups',
+    content: (item) => (Array.isArray(item.groups) ? item.groups : []).join(',')
   };
 
   const pluginsColumn = {
@@ -272,6 +272,7 @@ export function RoutesTable(props) {
 
   const onFieldsChange = (fields) => {
     if (ref.current) {
+      console.log('update table')
       ref.current.update();
     }
 
