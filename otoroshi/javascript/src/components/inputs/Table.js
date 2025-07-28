@@ -331,10 +331,6 @@ class TableComponent extends Component {
         this.showAddForm();
       } else if (action === 'edit') {
         this.props.fetchItems().then((res) => {
-          //console.log(this.props.parentProps.params);
-          // console.log(res)
-          // console.log('here')
-
           let row = [];
           if (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
             row = res.data.filter((d) => this.props.extractKey(d) === item)[0];
