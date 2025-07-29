@@ -593,6 +593,7 @@ class WasmCallFunction extends WorkflowFunction {
     val wasmSource   = args.select("wasm_plugin").asString
     val functionName = args.select("function").asOptString.getOrElse("call")
     val params       = args.select("params").asValue.stringify
+
     env.wasmIntegration
       .wasmVmFor(
         WasmConfig(

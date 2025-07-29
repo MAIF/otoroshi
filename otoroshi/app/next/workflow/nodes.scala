@@ -1,11 +1,9 @@
 package otoroshi.next.workflow
 
 import akka.stream.scaladsl.{Sink, Source}
-import io.otoroshi.wasm4s.scaladsl.WasmFunctionParameters
+import io.azam.ulidj.ULID
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm
-import otoroshi.wasm.WasmConfig
 import play.api.libs.json._
 
 import scala.concurrent.duration.DurationLong
@@ -31,31 +29,28 @@ object NodesInitializer {
 }
 
 case class WasmNode(json: JsObject) extends Node {
-  override def documentationName: String = "wasm"
-  override def documentationDescription: String = "This node executes an exported function from a WASM plugin"
+    override def documentationName: String = "wasm"
+    override def documentationDescription: String = "This node executes an exported function from a WASM plugin"
 
-  override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val functionName: String = "core.wasm_call"
 
-    val config: WasmConfig = json.select("wasm").asOpt(WasmConfig.format).getOrElse(WasmConfig())
-
-    env.wasmIntegration.wasmVmFor(config).flatMap {
-      case None => WorkflowError("Missing wasm plugin", None, None).leftf
-      case Some((vm, localConfig)) =>
-        vm.call(
-          WasmFunctionParameters.ExtismFuntionCall(
-            config.functionName.orElse(localConfig.functionName).getOrElse("access"),
-            wfr.memory.json.stringify
-          ),
-          None
-        ).map {
-          case Right(res) =>
-            Json.parse(res._1).right
-          case Left(err) => WorkflowError("Something went wrong while executing the WASM module", None, None).left
-        }.andThen { case _ =>
-          vm.release()
-        }
+    override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+      CallNode(Json.obj(
+        "function" -> functionName,
+        "args" -> Json.obj(
+          "wasm_plugin" -> json.select("source").select("path").as[String],
+          "function" -> json.select("functionName").as[String],
+          "params" -> WorkflowOperator.processOperators(Json.parse(json.select("params").as[String]), wfr, env)
+        ),
+        "id" -> id,
+        "description" -> description,
+        "enabled"-> enabled,
+        "kind"-> kind,
+        "result"-> result,
+        "returned"-> returned,
+      ))
+        .run(wfr)
     }
-  }
 }
 
 case class ValueNode(json: JsObject) extends Node {

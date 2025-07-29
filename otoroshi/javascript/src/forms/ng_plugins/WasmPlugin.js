@@ -13,10 +13,10 @@ const schema = {
       [
         'kind',
         'path',
-        v.kind.toLowerCase() === 'http' && 'opts.headers',
-        v.kind.toLowerCase() === 'http' && 'opts.timeout',
-        v.kind.toLowerCase() === 'http' && 'opts.method',
-        v.kind.toLowerCase() === 'http' && 'opts.followRedirect',
+        v?.kind.toLowerCase() === 'http' && 'opts.headers',
+        v?.kind.toLowerCase() === 'http' && 'opts.timeout',
+        v?.kind.toLowerCase() === 'http' && 'opts.method',
+        v?.kind.toLowerCase() === 'http' && 'opts.followRedirect',
       ].filter((v) => !!v),
     schema: {
       kind: {
@@ -263,11 +263,11 @@ export default {
     [
       'source',
       'functionName',
-      v.source.kind.toLowerCase() !== 'local' && 'wasi',
+      v.source?.kind.toLowerCase() !== 'local' && 'wasi',
       // v.source.kind.toLowerCase() !== 'local' && 'lifetime',
-      v.source.kind.toLowerCase() !== 'local' && 'authorizations',
-      v.source.kind.toLowerCase() !== 'local' && 'killOptions',
-      v.source.kind.toLowerCase() !== 'local' && {
+      v.source?.kind.toLowerCase() !== 'local' && 'authorizations',
+      v.source?.kind.toLowerCase() !== 'local' && 'killOptions',
+      v.source?.kind.toLowerCase() !== 'local' && {
         type: 'group',
         name: 'Advanced settings',
         fields: ['memoryPages', 'config', 'allowedHosts', 'allowedPaths'],
