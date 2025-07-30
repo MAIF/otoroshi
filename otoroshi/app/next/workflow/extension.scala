@@ -19,17 +19,17 @@ import java.nio.file.Files
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-case class Orphans(nodes: Seq[JsObject] = Seq.empty, edges: Seq[JsObject] = Seq.empty)
+case class Orphans(nodes: Seq[Node] = Seq.empty, edges: Seq[JsObject] = Seq.empty)
 
 object Orphans {
   val format               = new Format[Orphans] {
     override def writes(o: Orphans): JsValue             = Json.obj(
-      "nodes"         -> o.nodes,
+      "nodes"         -> o.nodes.map(_.json),
       "edges"         -> o.edges
     )
     override def reads(json: JsValue): JsResult[Orphans] = Try {
       Orphans(
-        nodes = (json \ "nodes").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
+        nodes = json.select("nodes").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => Node.from(o)),
         edges = (json \ "edges").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
       )
     } match {

@@ -14,7 +14,6 @@ import {
     useEdgesState,
 } from '@xyflow/react';
 import { NewTask } from './flow/NewTask';
-import { findNonOverlappingPosition } from './NewNodeSpawn';
 import { NODES, OPERATORS } from './models/Functions';
 import ReportExplorer from './ReportExplorer';
 import { onLayout } from './ElkOptions';
@@ -46,12 +45,10 @@ export function createSimpleNode(nodes, node) {
         }
     }
 
-    console.log(data, node)
-
     // maybe try catch here and create a node Value with raw value
     return {
         id: uuid(),
-        position: findNonOverlappingPosition([nodes[nodes.length - 1]].filter(f => f)),
+        position: { x: 0, y: 0 },
         type: node.type || data.type || 'simple',
         data: {
             ...data
@@ -415,26 +412,29 @@ const initializeGraph = (config, orphans, addInformationsToNode) => {
         }
     }
 
-    // const orphansNodes = orphans.nodes
-    //     .map(orphan => {
-    //         const node = createNode(orphan.id, [], orphan.data, addInformationsToNode)
-    //         return {
-    //             ...setupTargetsAndSources(node),
-    //             position: orphan.position
-    //         }
-    //     })
+    console.log(orphans)
+
+    const orphansNodes = orphans.nodes
+        .filter(f => f.kind)
+        .map(orphan => {
+            const node = createNode(orphan.id, [], orphan.data, addInformationsToNode)
+            return {
+                ...setupTargetsAndSources(node),
+                position: orphan.position
+            }
+        })
 
 
     return {
         nodes: [
             startingNode,
             ...subGraph.nodes,
-            // ...orphansNodes,
+            ...orphansNodes,
             returnedNode
         ],
         edges: [
             ...subGraph.edges,
-            // ...orphans.edges,
+            ...orphans.edges,
             startingEdge
         ]
     }
@@ -758,6 +758,8 @@ export function WorkflowsDesigner(props) {
 
         const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
 
+        console.log(orphans)
+
         client.update({
             ...workflow,
             config,
@@ -765,6 +767,7 @@ export function WorkflowsDesigner(props) {
                 nodes: orphans.map(r => ({
                     id: r.id,
                     position: r.position,
+                    kind: r.data.kind,
                     data: r.data.workflow
                 })),
                 edges: orphansEdges
