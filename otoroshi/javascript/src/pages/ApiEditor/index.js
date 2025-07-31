@@ -4190,13 +4190,13 @@ function ObjectiveCard({ title, description, icon, to, onClick }) {
       <div className="objective-card-icon">{icon}</div>
       <div className="objective-card-body">
         <p>{title}</p>
-        <p
+        <div
           onClick={() => {
             onClick ? onClick() : historyPush(history, location, to);
           }}
         >
           {description}
-        </p>
+        </div>
       </div>
     </div>
   );

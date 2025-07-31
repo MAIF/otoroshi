@@ -1,5 +1,5 @@
 const { test, expect, describe } = require('@playwright/test');
-const { SECTIONS } = require('../../utils');
+const { SECTIONS, validAnonymousModal } = require('../../utils');
 
 
 let context;
@@ -15,6 +15,8 @@ test.afterAll(async () => {
 async function showTableOfEntity(section, tab, expected) {
     const page = await context.newPage();
     await page.goto('/');
+    await validAnonymousModal(page)
+
 
     await page.getByText(section).click();
     await page

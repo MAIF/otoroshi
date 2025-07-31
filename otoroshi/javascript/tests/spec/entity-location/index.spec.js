@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { validAnonymousModal } = require('../../utils');
 
 let context;
 
@@ -12,6 +13,7 @@ test.afterAll(async () => {
 
 async function shouldDefaultTeamsAndTenant(path, action = 'add item') {
     const page = await context.newPage();
+    await validAnonymousModal(page)
     await page.goto(`/bo/dashboard/${path}`);
 
     await page.getByRole('button', { name: action, exact: false }).click();
@@ -22,6 +24,7 @@ async function shouldDefaultTeamsAndTenant(path, action = 'add item') {
 
 async function shouldDefaultTenantOnTeam() {
     const page = await context.newPage();
+    await validAnonymousModal(page)
     await page.goto(`/bo/dashboard/teams`);
 
     await page.getByRole('button', { name: 'add item', exact: false }).click();
@@ -32,6 +35,7 @@ async function shouldDefaultTenantOnTeam() {
 async function shouldDefaultTeamsAndTenantOnRoutes() {
     const page = await context.newPage();
     await page.goto('/');
+    await validAnonymousModal(page)
 
     await page.locator('#navbar').click();
 

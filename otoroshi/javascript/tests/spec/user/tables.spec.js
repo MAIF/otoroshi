@@ -1,5 +1,5 @@
 const { test, expect, describe } = require('@playwright/test');
-const { SECTIONS } = require('../../utils');
+const { SECTIONS, validAnonymousModal } = require('../../utils');
 
 
 let context;
@@ -15,6 +15,7 @@ test.afterAll(async () => {
 async function showTableOfEntity(section, tab, expected) {
     const page = await context.newPage()
     await page.goto('/');
+    await validAnonymousModal(page)
 
     await page.getByText(section).click();
     await page
@@ -37,3 +38,5 @@ test('Show Service Groups', async () => showTableOfEntity(SECTIONS.MANAGE_RESOUR
 test('Show TCP Services', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'TCP services', 'Tcp services'));
 test('Show Teams', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Teams'));
 test('Show Wasm Plugins', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Wasm Plugins', 'Wasm plugins'));
+test('Show APIs', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'APIs'));
+test('Show Workflows', async () => showTableOfEntity(SECTIONS.EXTENSIONS, 'Workflows'));
