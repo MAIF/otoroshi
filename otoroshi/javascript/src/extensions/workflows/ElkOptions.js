@@ -107,7 +107,13 @@ export const onLayout = ({ direction, nodes, edges, setNodes, setEdges }) => {
         ...elkOptions
     }
 
-    const filteredEdges = edges.filter(f => f.target && f.source)
+    console.log(nodes)
+    const filteredEdges = edges
+        .filter(f => f.target && f.source)
+        .filter(edge => {
+            return nodes.find(node => node.id === edge.target) &&
+                nodes.find(node => node.id === edge.source)
+        })
 
     if (edges.length > filteredEdges.length)
         console.error("got an edge with an empty source or an empty target")

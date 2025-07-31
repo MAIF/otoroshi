@@ -13,7 +13,6 @@ export function WasmNode(_workflow) {
         label: <i className='fa fa-plug' />,
         name: 'Wasm',
         kind: 'wasm',
-        parent: 'call',
         description: 'This node executes an exported function from a WASM plugin',
         workflow: {
             ..._workflow,

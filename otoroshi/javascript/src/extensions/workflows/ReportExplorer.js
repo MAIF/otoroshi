@@ -1,14 +1,36 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { ReportView } from '../../components/ReportView'
 import { Button } from '../../components/Button'
+import { NgCodeRenderer } from '../../components/nginputs'
+import { SidebarContext } from '../../apps/BackOfficeApp'
 
 export default function ReportExplorer({ report, handleClose, isOpen }) {
+
+    const sidebar = useContext(SidebarContext)
+    const [unit, setUnit] = useState('ms');
 
     if (!report || !isOpen)
         return null
 
-    if(report.done === false) {
-        return <div>{report.error}</div>
+    if (report.done === false || report.error) {
+        return <div className="report-explorer">
+            <h3 className='pt-3 ps-2'>Report</h3>
+            <NgCodeRenderer
+                ngOptions={{ spread: true }}
+                rawSchema={{
+                    props: {
+                        showGutter: false,
+                        ace_config: {
+                            fontSize: 14,
+                            readOnly: true
+                        },
+                        editorOnly: true,
+                        height: '100%',
+                    },
+                }}
+                value={report.error}
+            />
+        </div>
     }
 
     const steps = report.run.log.reduce((acc, log) => {
@@ -69,7 +91,7 @@ export default function ReportExplorer({ report, handleClose, isOpen }) {
             }
         }
     }, {})
-    const [unit, setUnit] = useState('ms');
+
 
     const start = report.run.log[0]?.timestamp
     const end = report.run.log[report.run.log.length - 1]?.timestamp
@@ -89,9 +111,12 @@ export default function ReportExplorer({ report, handleClose, isOpen }) {
                     setUnit={setUnit}
                 />
             </div>
-            <Button type="primaryColor" className='p-2 px-4 report-explorer-action' onClick={handleClose}>
+            <Button type="primaryColor"
+                className='p-2 px-4 report-explorer-action'
+                style={{ left: sidebar.openedSidebar ? 250 : 48 }}
+                onClick={handleClose}>
                 <i className='fas fa-check me-1' />Close
             </Button>
         </div>
-    </div>
+    </div >
 }

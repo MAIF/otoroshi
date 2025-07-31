@@ -45,11 +45,9 @@
     position: fixed;
     bottom: 1rem;
     right: 0;
-    left: 0;
     margin: auto;
     display: flex;
     justify-content: center;
-    gap: .5rem;
     z-index: 2;
     width: fit-content;
   }
@@ -431,10 +429,9 @@
   }
 
   .report-explorer-action {
-    position: absolute;
-    bottom: 56px;
+    position: fixed;
+    bottom: 1rem;
     right: 0;
-    left: 0;
     margin: auto;
     width: fit-content;
     z-index: 10001;

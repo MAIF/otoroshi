@@ -54,6 +54,7 @@ import { ReturnedNode } from "../nodes/ReturnedNode"
 import { StartNode } from "../nodes/StartNode"
 import { PredicateNode } from "../nodes/PredicateNode"
 import { WasmNode } from "../nodes/WasmNode"
+import { LogNode } from "../nodes/LogNode"
 
 export const NODES = {
     "assign": AssignNode,
@@ -71,7 +72,8 @@ export const NODES = {
     "returned": ReturnedNode,
     "start": StartNode,
     "predicate": PredicateNode,
-    "wasm": WasmNode
+    "wasm": WasmNode,
+    "log": LogNode
 }
 
 export const OPERATORS = {

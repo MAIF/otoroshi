@@ -980,6 +980,10 @@ class ArrayAppendOperator extends WorkflowOperator {
     )
   ))
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+
+    if (opts.select("value").isEmpty)
+      throw new Exception("ArrayAppendOperator : Missing value field")
+
     val v              = opts.select("value").asValue
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v

@@ -21,8 +21,8 @@ import { TagsModal } from './TagsModal';
 
 const GROUP_NODES = ['if', 'switch', 'parallel', 'foreach', 'map', 'filter', 'flatmap']
 
-export function createSimpleNode(nodes, node) {
-    // console.log('createSimpleNode', node.kind || node.data?.kind, node)
+export function createSimpleNode(node) {
+    console.log('createSimpleNode', node.kind || node.data?.kind, node)
 
     let data = NODES[(node.kind || node.data.kind).toLowerCase()]
 
@@ -57,7 +57,7 @@ export function createSimpleNode(nodes, node) {
 }
 
 function createNode(id, existingNodes, child, addInformationsToNode) {
-    const newNode = addInformationsToNode(createSimpleNode(existingNodes, child))
+    const newNode = addInformationsToNode(createSimpleNode(child))
     return {
         ...newNode,
         id,
@@ -76,6 +76,9 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
     }
 
     const [workflow, ...rest] = workflows
+
+    if (!workflow || Object.keys(workflow).length === 0)
+        return { edges: [], nodes: [] }
 
     const me = uuid()
 
@@ -165,8 +168,6 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
         const hasElseGraph = elseGraph && elseGraph.nodes.length > 0
         const hasPredicate = predicate && predicate.nodes.length > 0
 
-        console.log(predicate)
-
         if (hasThenSubGraph) {
             nodes = nodes.concat(thensubGraph.nodes)
             edges = edges.concat(thensubGraph.edges)
@@ -219,24 +220,26 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
         workflow.kind === 'foreach' ||
         workflow.kind === 'flatmap' ||
         workflow.kind === 'map') {
-        const subGraph = buildGraph([workflow.node], addInformationsToNode)
+        if (workflow.node) {
+            const subGraph = buildGraph([workflow.node], addInformationsToNode)
 
-        if (subGraph.nodes.length > 0) {
+            if (subGraph.nodes.length > 0) {
 
-            nodes = nodes.concat(subGraph.nodes)
-            edges = edges.concat(subGraph.edges)
+                nodes = nodes.concat(subGraph.nodes)
+                edges = edges.concat(subGraph.edges)
 
-            const handle = current.data.sources[0]
+                const handle = current.data.sources[0]
 
-            edges.push({
-                id: `${me}-${handle}`,
-                source: me,
-                sourceHandle: `${handle}-${me}`,
-                target: subGraph.nodes[0].id,
-                targetHandle: `input-${subGraph.nodes[0].id}`,
-                type: 'customEdge',
-                animated: true,
-            })
+                edges.push({
+                    id: `${me}-${handle}`,
+                    source: me,
+                    sourceHandle: `${handle}-${me}`,
+                    target: subGraph.nodes[0].id,
+                    targetHandle: `input-${subGraph.nodes[0].id}`,
+                    type: 'customEdge',
+                    animated: true,
+                })
+            }
         }
     } else if (workflow.kind === 'switch' || workflow.kind === 'parallel') {
         let paths = []
@@ -412,8 +415,6 @@ const initializeGraph = (config, orphans, addInformationsToNode) => {
         }
     }
 
-    console.log(orphans)
-
     const orphansNodes = orphans.nodes
         .filter(f => f.kind)
         .map(orphan => {
@@ -423,7 +424,6 @@ const initializeGraph = (config, orphans, addInformationsToNode) => {
                 position: orphan.position
             }
         })
-
 
     return {
         nodes: [
@@ -758,8 +758,6 @@ export function WorkflowsDesigner(props) {
 
         const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
 
-        console.log(orphans)
-
         client.update({
             ...workflow,
             config,
@@ -916,7 +914,7 @@ export function WorkflowsDesigner(props) {
     const handleSelectNode = item => {
         let targetId = uuid()
 
-        let position = activeNode.fromOrigin ? activeNode.fromOrigin : findNonOverlappingPosition(nodes.map(n => n.position))
+        let position = activeNode.fromOrigin ? activeNode.fromOrigin : { x: 0, y: 0 }
         if (activeNode.event) {
             const { clientX, clientY } = 'changedTouches' in activeNode.event ? activeNode.event.changedTouches[0] : activeNode.event
             position = { x: clientX, y: clientY }
@@ -926,7 +924,7 @@ export function WorkflowsDesigner(props) {
             targetId = `${targetId}-operator`
 
         let newNode = addInformationsToNode({
-            ...createSimpleNode([], item),
+            ...createSimpleNode(item),
             id: targetId,
             type: item.type || 'simple',
             position: screenToFlowPosition(position),
@@ -944,7 +942,7 @@ export function WorkflowsDesigner(props) {
             if (item.kind !== 'predicate' &&
                 parent &&
                 (/*parent.data.kind === 'parallel' ||*/ parent.data.kind === 'switch')) {
-                predicateNode = addInformationsToNode(createSimpleNode([], {
+                predicateNode = addInformationsToNode(createSimpleNode({
                     kind: 'predicate',
                 }))
 
@@ -1079,6 +1077,8 @@ export function WorkflowsDesigner(props) {
             tags: newTags
         }))
     }, [workflow])
+
+    console.log(nodes)
 
     return <div className='workflow'>
         <DesignerActions run={run} />

@@ -57,7 +57,7 @@ case class WorkflowResult(returned: Option[JsValue], error: Option[WorkflowError
   )
 }
 
-case class WorkflowError(message: String, details: Option[JsObject], exception: Option[Throwable]) {
+case class WorkflowError(message: String, details: Option[JsObject] = None, exception: Option[Throwable] = None) {
   def json: JsValue = Json.obj(
     "message"   -> message,
     "details"   -> details,
@@ -76,14 +76,14 @@ case class WorkflowLogItem(
     timestamp: DateTime,
     message: String,
     node: Node,
-    memory: WorkflowMemory,
+    memory: JsValue,
     error: Option[WorkflowError] = None
 )                 {
   def json: JsValue = Json.obj(
     "timestamp" -> timestamp.toDate.getTime,
     "message"   -> message,
     "node"      -> node.json,
-    "memory"    -> memory.json,
+    "memory"    -> memory,
     "error"     -> error.map(_.json).getOrElse(JsNull).asValue
   )
 }
@@ -98,7 +98,7 @@ case class WorkflowRun(id: String, attrs: TypedMap, env: Env) {
   val runlog             = new WorkflowLog()
   def log(message: String, node: Node, error: Option[WorkflowError] = None): Unit = {
     // println(s"[LOG] ${id} - ${message}")
-    runlog.log(WorkflowLogItem(DateTime.now(), message, node, memory, error))
+    runlog.log(WorkflowLogItem(DateTime.now(), message, node, memory.json, error))
   }
   def json: JsValue      = Json.obj(
     "id"     -> id,

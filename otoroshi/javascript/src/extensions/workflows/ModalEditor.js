@@ -27,8 +27,6 @@ export function ModalEditor({ node }) {
 
     const isAnOperator = node.data.operator
 
-    console.log(node.data)
-
     const schema = {
         description: {
             type: 'string',
@@ -64,8 +62,6 @@ export function ModalEditor({ node }) {
     const value = setEnabled(getWorkflow(node))
 
     const [state, setState] = useState(value ? Object.fromEntries(Object.entries(value).filter(([key, _]) => Object.keys(schema).includes(key))) : {})
-
-    console.log('state', state)
 
     return <div className='modal-editor'>
         <p className='p-3 m-0 whats-next-title'>{node.data.name}</p>

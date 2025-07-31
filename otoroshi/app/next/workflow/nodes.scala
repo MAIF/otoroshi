@@ -1,7 +1,7 @@
 package otoroshi.next.workflow
 
 import akka.stream.scaladsl.{Sink, Source}
-import io.azam.ulidj.ULID
+import next.workflow.CallNodes
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -24,33 +24,9 @@ object NodesInitializer {
     Node.registerNode("wait", json => WaitNode(json))
     Node.registerNode("error", json => ErrorNode(json))
     Node.registerNode("value", json => ValueNode(json))
-    Node.registerNode("wasm", json => WasmNode(json))
+    Node.registerNode("wasm", json => CallNodes.WasmNode(json))
+    Node.registerNode("log", json => CallNodes.LogNode(json))
   }
-}
-
-case class WasmNode(json: JsObject) extends Node {
-    override def documentationName: String = "wasm"
-    override def documentationDescription: String = "This node executes an exported function from a WASM plugin"
-
-    val functionName: String = "core.wasm_call"
-
-    override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-      CallNode(Json.obj(
-        "function" -> functionName,
-        "args" -> Json.obj(
-          "wasm_plugin" -> json.select("source").select("path").as[String],
-          "function" -> json.select("functionName").as[String],
-          "params" -> WorkflowOperator.processOperators(Json.parse(json.select("params").as[String]), wfr, env)
-        ),
-        "id" -> id,
-        "description" -> description,
-        "enabled"-> enabled,
-        "kind"-> kind,
-        "result"-> result,
-        "returned"-> returned,
-      ))
-        .run(wfr)
-    }
 }
 
 case class ValueNode(json: JsObject) extends Node {
@@ -442,25 +418,24 @@ case class IfThenElseNode(json: JsObject) extends Node {
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val pass =
-      WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
-
-//    println("ifthennode", json.select("predicate").asValue)
-//    println("result", WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env))
-//    println("pass", pass)
-    if (pass) {
-      val node = Node.from(json.select("then").asObject)
-      node.internalRun(wfr).recover { case t: Throwable =>
-        WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
-      }
+    if (json.select("predicate").isEmpty) {
+      WorkflowError(s"Missing predicate node").left.future
     } else {
-      json.select("else").asOpt[JsObject] match {
-        case None           => JsNull.rightf
-        case Some(nodeJson) => {
-          val node = Node.from(nodeJson)
-          node.internalRun(wfr).recover { case t: Throwable =>
-            WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
-          }
+      val pass =
+        WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
+      if (pass) {
+        val node = Node.from(json.select("then").asObject)
+        node.internalRun(wfr).recover { case t: Throwable =>
+          WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+        }
+      } else {
+        json.select("else").asOpt[JsObject] match {
+          case None           => JsNull.rightf
+          case Some(nodeJson) =>
+            val node = Node.from(nodeJson)
+            node.internalRun(wfr).recover { case t: Throwable =>
+              WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+            }
         }
       }
     }

@@ -163,6 +163,13 @@ export function setupWorkflowsExtension(registerExtension) {
             height: '40vh',
           },
         },
+        orphans: {
+          type: 'jsonobjectcode',
+          props: {
+            label: 'Orphans',
+            height: '40vh',
+          },
+        },
         tester: {
           type: WorkflowTester,
         },
@@ -189,6 +196,8 @@ export function setupWorkflowsExtension(registerExtension) {
         '<<<Tester',
         //'>>>Tester',
         'tester',
+        '<<<Debug',
+        'orphans',
       ];
 
       client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
