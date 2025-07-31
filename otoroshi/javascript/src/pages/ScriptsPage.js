@@ -1,5 +1,4 @@
 import React, { Component, useState } from 'react';
-import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { SelectInput, Table } from '../components/inputs';
 import faker from 'faker';

@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
-import faker from 'faker';
 
 export class GroupsPage extends Component {
   formSchema = {

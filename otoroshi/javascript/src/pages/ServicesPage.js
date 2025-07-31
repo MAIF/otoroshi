@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import { Table, SelectInput } from '../components/inputs';
 import { Link } from 'react-router-dom';
 import { ServicePage } from './ServicePage';

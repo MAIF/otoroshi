@@ -1,5 +1,4 @@
 import React, { Component, useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import { Form, OffSwitch, OnSwitch } from '.';
 import { NgForm } from '../nginputs/form';
 import debounce from 'lodash/debounce';
