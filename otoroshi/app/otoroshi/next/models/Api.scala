@@ -884,7 +884,7 @@ case class Api(
             .collect {
               case JsSuccess(api, _) if api.testing.enabled =>
                 api.copy(
-                  backends = backends.map(backend =>
+                  backends = api.backends.map(backend =>
                     backend
                       .copy(backend =
                         backend.backend.copy(
