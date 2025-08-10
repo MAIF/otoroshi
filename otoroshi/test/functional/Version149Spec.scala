@@ -524,7 +524,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           { r =>
             val state             = r.getHeader("Otoroshi-State").get()
             val tokenBody         =
-              Try(Json.parse(JavaBase64.getDecoder.decode(state.value().split("\\.")(1)))).getOrElse(Json.obj())
+              Try(Json.parse(JavaBase64.getUrlDecoder.decode(state.value().split("\\.")(1)))).getOrElse(Json.obj())
             val stateValue        = (tokenBody \ "state").asOpt[String].getOrElse {
               // TODO: This should return a 400 Bad Request instead of using empty string
               //       but that would require refactoring the test handler structure
@@ -552,7 +552,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           { r =>
             val state             = r.getHeader("Otoroshi-State").get()
             val tokenBody         =
-              Try(Json.parse(JavaBase64.getDecoder.decode(state.value().split("\\.")(1)))).getOrElse(Json.obj())
+              Try(Json.parse(JavaBase64.getUrlDecoder.decode(state.value().split("\\.")(1)))).getOrElse(Json.obj())
             val stateValue        = (tokenBody \ "state").asOpt[String].getOrElse {
               // TODO: This should return a 400 Bad Request instead of using empty string
               //       but that would require refactoring the test handler structure
