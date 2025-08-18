@@ -23,6 +23,7 @@ import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.ResponseImplicits._
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits._
@@ -3224,7 +3225,7 @@ class ProxyEngine() extends RequestHandler {
                   case _                              => hds
                 }
               },
-              cookies = response.cookies,
+              cookies = response.safeCookies(env),
               body = response.bodyAsSource
             ),
             response.some

@@ -9,6 +9,7 @@ import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.BodyHelper
 import otoroshi.utils.mailer._
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.ResponseImplicits._
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
 import play.api.libs.json._
@@ -573,7 +574,7 @@ class HttpClientFunction extends WorkflowFunction {
           .obj(
             "status"    -> resp.status,
             "headers"   -> resp.headers,
-            "cookies"   -> JsArray(resp.cookies.map(_.json)),
+            "cookies"   -> JsArray(resp.safeCookies(env).map(_.json)),
             "body_str"  -> body_str,
             "body_json" -> body_json
           )

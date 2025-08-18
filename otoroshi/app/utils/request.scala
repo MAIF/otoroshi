@@ -5,7 +5,6 @@ import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import play.api.mvc.RequestHeader
 
-import java.util.concurrent.ConcurrentHashMap
 import scala.util.Try
 
 object RequestImplicits {

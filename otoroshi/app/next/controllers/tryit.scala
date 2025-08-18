@@ -10,6 +10,7 @@ import otoroshi.next.models.{NgRoute, NgRouteComposition, NgTarget, NgTlsConfig}
 import otoroshi.next.plugins.ForceHttpsTraffic
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.ResponseImplicits._
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
@@ -186,7 +187,7 @@ class TryItController(
                   "status"       -> status,
                   "headers"      -> headers,
                   "body_base_64" -> respBodyRaw.encodeBase64.utf8String,
-                  "cookies"      -> JsArray(resp.cookies.map(c => JsonHelpers.wsCookieToJson(c))),
+                  "cookies"      -> JsArray(resp.safeCookies(env).map(c => JsonHelpers.wsCookieToJson(c))),
                   "report"       -> report,
                   "curl"         -> curl
                 )
