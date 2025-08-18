@@ -1,4 +1,4 @@
-import akka.stream.Materializer
+import org.appache.pekko.stream.Materializer
 import com.auth0.jwt._
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces._
@@ -16,7 +16,7 @@ object OtoroshiFilter {
   }
 }
 
-class OtoroshiFilter(env: String, sharedKey: String)(implicit ec: ExecutionContext, val mat: Materializer) extends Filter {
+class OtoroshiFilter(env: String, sharedKey: String)(using ec: ExecutionContext, val mat: Materializer) extends Filter {
 
   def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
     val maybeState = requestHeader.headers.get("Otoroshi-State")

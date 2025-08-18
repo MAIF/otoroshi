@@ -15,11 +15,11 @@ class ApikeyBearerSpec extends OtoroshiSpec {
       val apikey         = otoroshiComponents.env.proxyState.apikey(otoroshiComponents.env.backOfficeApiKeyClientId).get
       val bearer         = apikey.toBearer()
       val (body, status) = wsClient
-        .url(s"http://127.0.0.1:${port}/apis/apim.otoroshi.io/v1/apikeys")
+        .url(s"http://127.0.0.1:$port/apis/apim.otoroshi.io/v1/apikeys")
         .withHttpHeaders(
           "Host"          -> "otoroshi-api.oto.tools",
           "Accept"        -> "application/json",
-          "Authorization" -> s"Bearer ${bearer}"
+          "Authorization" -> s"Bearer $bearer"
         )
         .withFollowRedirects(false)
         .get()
@@ -35,7 +35,7 @@ class ApikeyBearerSpec extends OtoroshiSpec {
     }
   }
 
-  override def getTestConfiguration(configuration: Configuration) = {
+  override def getTestConfiguration(configuration: Configuration): Configuration = {
     Configuration(
       ConfigFactory.parseString(s"""app.env = dev""".stripMargin).resolve()
     ).withFallback(configuration)

@@ -2,7 +2,7 @@ package functional
 
 import java.util.Date
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import akka.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
@@ -11,9 +11,11 @@ import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.DefaultBodyReadables.readableAsString
 import otoroshi.security.IdGenerator
 
+import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Try}
 
@@ -24,7 +26,7 @@ class BasicSpec() extends OtoroshiSpec {
   def name: String                     = "--"
   def configurationSpec: Configuration = Configuration.empty
 
-  override def getTestConfiguration(configuration: Configuration) = {
+  override def getTestConfiguration(configuration: Configuration): Configuration = {
     Configuration(
       ConfigFactory
         .parseString("{}")
@@ -38,7 +40,6 @@ class BasicSpec() extends OtoroshiSpec {
     val basicTestExpectedBody = """{"message":"hello world"}"""
     val basicTestServer       = TargetService(
       Some(serviceHost),
-      "/api",
       "application/json",
       { _ =>
         callCounter.incrementAndGet()
@@ -258,7 +259,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { r =>
           r.headers.find(_.name() == "X-Foo").map(_.value()) mustBe Some("Bar")
@@ -305,7 +305,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter.incrementAndGet()
@@ -851,7 +850,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body2    = """{"message":"hello world2"}"""
       val server1  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter1.incrementAndGet()
@@ -860,7 +858,6 @@ class BasicSpec() extends OtoroshiSpec {
       ).await()
       val server2  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter2.incrementAndGet()
@@ -916,24 +913,23 @@ class BasicSpec() extends OtoroshiSpec {
       resp1.status mustBe 200
       resp1.body mustBe body2
 
-      allBotUserAgents.par.foreach { userAgent =>
-        val resp = ws
-          .url(s"http://127.0.0.1:$port/api")
-          .withHttpHeaders(
-            "Host"       -> "bot.oto.tools",
-            "User-Agent" -> userAgent
-          )
-          .get()
+      Future
+          .traverse(allBotUserAgents.toList) { ua =>
+            ws.url(s"http://127.0.0.1:$port/api")
+                .withHttpHeaders(
+                  "Host"       -> "bot.oto.tools",
+                  "User-Agent" -> ua
+                )
+                .get()
+                .map { resp =>
+                  if (resp.status != 200) println(s"Not supported: $ua")
+                  resp.status mustBe 200
+
+                  if (resp.body != body1) println(s"Failed for $ua")
+                  resp.body mustBe body1
+                }
+          }
           .futureValue
-        if (resp.status != 200) {
-          println(s"Not supported: $userAgent")
-        }
-        resp.status mustBe 200
-        if (!resp.body.equals(body1)) {
-          println("Failed for " + userAgent)
-        }
-        resp.body mustBe body1
-      }
 
       deleteOtoroshiService(service1).futureValue
       deleteOtoroshiService(service2).futureValue
@@ -946,7 +942,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter.incrementAndGet()
@@ -1010,7 +1005,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter.incrementAndGet()
@@ -1056,7 +1050,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter.incrementAndGet()
@@ -1102,7 +1095,6 @@ class BasicSpec() extends OtoroshiSpec {
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { _ =>
           counter.incrementAndGet()
@@ -1188,7 +1180,6 @@ class BasicSpec() extends OtoroshiSpec {
           )
         ),
         forceHttps = false,
-        enforceSecureCommunication = true,
         publicPatterns = Seq("/.*")
       )
       createOtoroshiService(service).futureValue
@@ -1210,32 +1201,35 @@ class BasicSpec() extends OtoroshiSpec {
 
     // FIXME there seem to be a side effect between the above test and this one, therefore we use a different subdomain
     "Validate sec. communication in V2" in {
-      import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+      import java.util.{Base64 => JavaBase64}
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
       val server  = TargetService
-        .full(
-          None,
-          "/api",
-          "application/json",
-          { r =>
-            val state             = r.getHeader("Otoroshi-State").get()
-            val tokenBody         =
-              Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
-            val stateValue        = (tokenBody \ "state").as[String]
-            val respToken: String = JWT
-              .create()
-              .withJWTId(IdGenerator.uuid)
-              .withAudience("Otoroshi")
-              .withClaim("state-resp", stateValue)
-              .withIssuedAt(DateTime.now().toDate)
-              .withExpiresAt(DateTime.now().plusSeconds(10).toDate)
-              .sign(Algorithm.HMAC512("secret"))
-            counter.incrementAndGet()
-            (200, body, List(RawHeader("Otoroshi-State-Resp", respToken)))
-          }
-        )
-        .await()
+          .full(
+            None,
+            "/api",
+            "application/json",
+            { r =>
+              val state             = r.getHeader("Otoroshi-State").get()
+              val parts             = state.value().split("\\.")
+              // JWT uses base64url encoding, not standard base64
+              val decoded           = JavaBase64.getUrlDecoder.decode(parts(1))
+              val tokenBodyStr      = new String(decoded)
+              val tokenBody         = Try(Json.parse(tokenBodyStr)).getOrElse(Json.obj())
+              val stateValue        = (tokenBody \ "state").as[String]
+              val respToken: String = JWT
+                  .create()
+                  .withJWTId(IdGenerator.uuid)
+                  .withAudience("Otoroshi")
+                  .withClaim("state-resp", stateValue)
+                  .withIssuedAt(DateTime.now().toDate)
+                  .withExpiresAt(DateTime.now().plusSeconds(10).toDate)
+                  .sign(Algorithm.HMAC512("secret"))
+              counter.incrementAndGet()
+              (200, body, List(RawHeader("Otoroshi-State-Resp", respToken)))
+            }
+          )
+          .await()
       val service = ServiceDescriptor(
         id = "seccom-v2-test",
         name = "seccom-v2-test",
@@ -1249,19 +1243,18 @@ class BasicSpec() extends OtoroshiSpec {
           )
         ),
         forceHttps = false,
-        enforceSecureCommunication = true,
         secComVersion = SecComVersion.V2,
         publicPatterns = Seq("/.*")
       )
       val res     = createOtoroshiService(service).futureValue
 
       val resp1 = ws
-        .url(s"http://127.0.0.1:$port/api")
-        .withHttpHeaders(
-          "Host" -> "seccom2.oto.tools"
-        )
-        .get()
-        .futureValue
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> "seccom2.oto.tools"
+          )
+          .get()
+          .futureValue
 
       resp1.status mustBe 200
       resp1.body mustBe body
@@ -1298,7 +1291,6 @@ class BasicSpec() extends OtoroshiSpec {
           )
         ),
         forceHttps = false,
-        enforceSecureCommunication = true,
         secComVersion = SecComVersion.V2,
         publicPatterns = Seq("/.*")
       )

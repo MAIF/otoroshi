@@ -1,23 +1,20 @@
 package functional
 
-import java.util.concurrent.atomic.AtomicInteger
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import otoroshi.models.{ApiKey, GlobalConfig, ServiceGroupIdentifier, Webhook}
-import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType}
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatestplus.play.PlaySpec
+import otoroshi.models._
 import play.api.Configuration
 import play.api.libs.json.Json
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration._
 
 class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "analytics.oto.tools"
-  implicit val system  = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -109,7 +106,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration) e
         groupSize = 1
       )
 
-      val config: GlobalConfig = (for {
+      val _: GlobalConfig = (for {
         _      <- createExporterConfig(webhookEventsExporters)
         config <- getOtoroshiConfig()
       } yield config).futureValue

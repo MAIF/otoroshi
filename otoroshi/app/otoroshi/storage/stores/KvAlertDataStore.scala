@@ -1,0 +1,28 @@
+package otoroshi.storage.stores
+
+import org.apache.pekko.util.ByteString
+import otoroshi.env.Env
+import otoroshi.events.{AlertDataStore, AlertEvent}
+import play.api.libs.json.{JsValue, Json}
+import otoroshi.storage.RedisLike
+
+import scala.concurrent.{ExecutionContext, Future}
+
+class KvAlertDataStore(redisCli: RedisLike) extends AlertDataStore {
+
+  override def count()(using ec: ExecutionContext, env: Env): Future[Long] =
+    redisCli.llen(s"${env.storageRoot}:events:alerts")
+
+  override def findAllRaw(from: Long = 0, to: Long = 1000)(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Seq[ByteString]] =
+    redisCli.lrange(s"${env.storageRoot}:events:alerts", from, to)
+
+  override def push(event: JsValue)(using ec: ExecutionContext, env: Env): Future[Long] =
+    for {
+      config <- env.datastores.globalConfigDataStore.singleton()
+      n      <- redisCli.lpush(s"${env.storageRoot}:events:alerts", Json.stringify(event))
+      -      <- redisCli.ltrim(s"${env.storageRoot}:events:alerts", 0, config.maxLogsSize)
+    } yield n
+}

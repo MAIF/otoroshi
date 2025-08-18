@@ -84,7 +84,7 @@ class Targets extends Component {
           rules.push(rule);
           value.rules = rules;
           this.props.rawOnChange(value);
-          return;
+
         } else {
           r.targets.forEach((target, i) => {
             if (i === idx) {

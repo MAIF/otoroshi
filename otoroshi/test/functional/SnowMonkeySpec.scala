@@ -1,37 +1,24 @@
 package functional
 
-import java.util.concurrent.atomic.AtomicInteger
-import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
+import org.apache.pekko.stream.Materializer
 import org.joda.time.LocalTime
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatestplus.play.PlaySpec
-import otoroshi.models.SnowMonkeyConfig.toJson
-import otoroshi.next.models.{
-  NgBackend,
-  NgClientConfig,
-  NgDomainAndPath,
-  NgFrontend,
-  NgPluginInstance,
-  NgPluginInstanceConfig,
-  NgPlugins,
-  NgRoute,
-  NgTarget
-}
-import otoroshi.next.plugins.{NgChaosConfig, OverrideHost, SnowMonkeyChaos}
+import otoroshi.models.*
+import otoroshi.next.models.*
+import otoroshi.next.plugins.SnowMonkeyChaos
 import otoroshi.next.plugins.api.NgPluginHelper
 import play.api.Configuration
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json
+import play.api.libs.ws.WSBodyWritables.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost  = "monkey.oto.tools"
-  implicit lazy val mat = otoroshiComponents.materializer
+  implicit lazy val mat: Materializer = otoroshiComponents.materializer
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -58,7 +45,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends 
     //     })
     //   basicTestExpectedBody
     // }).await()
-    val basicTestServer = new BodySizeService()
+    val basicTestServer = new BodySizeService().await()
     /*val initialDescriptor = ServiceDescriptor(
       id = "basic-sm-test",
       name = "basic-sm-test",
@@ -123,10 +110,9 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends 
     "Setup the monkey" in {
       (for {
         _ <- createOtoroshiRoute(initialRoute)
-        _ <- updateSnowMonkey(c =>
+        _ <- updateSnowMonkey(_ =>
                SnowMonkeyConfig(
                  enabled = true,
-                 dryRun = false,
                  timesPerDay = 1000,
                  includeUserFacingDescriptors = true,
                  outageDurationFrom = 3600000.millis,
@@ -293,6 +279,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends 
     }
 
     "shutdown" in {
+      basicTestServer.stop()
       stopAll()
     }
   }

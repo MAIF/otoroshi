@@ -1,6 +1,6 @@
 package functional
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
@@ -13,9 +13,9 @@ import java.util.concurrent.atomic.AtomicInteger
 class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "auth.oto.tools"
-  implicit val system  = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -31,7 +31,6 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
     val basicTestExpectedBody     = """{"message":"hello world"}"""
     val basicTestServer1          = TargetService(
       Some(serviceHost),
-      "/api",
       "application/json",
       { _ =>
         callCounter1.incrementAndGet()
