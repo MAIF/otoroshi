@@ -1,11 +1,14 @@
 package otoroshi.next.workflow
 
+import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
+
+import scala.jdk.CollectionConverters.asScalaBufferConverter
 
 object WorkflowOperatorsInitializer {
   def initDefaults(): Unit = {
@@ -52,6 +55,51 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$prettify", new PrettifyOperator())
     WorkflowOperator.registerOperator("$str_replace", new StringReplaceOperator())
     WorkflowOperator.registerOperator("$str_replace_all", new StringReplaceAllOperator())
+    WorkflowOperator.registerOperator("$jq", new JqOperator())
+  }
+}
+
+class JqOperator extends WorkflowOperator {
+
+  private val library = ImmutableJqLibrary.of()
+
+  override def documentationName: String                  = "$jq"
+  override def documentationDescription: String           = "This operator transforms a json value using JQ"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("value"),
+      "properties" -> Json.obj(
+        "filter" -> Json.obj("type" -> "string", "description" -> "The JQ filter applied on the JSON"),
+        "value" -> Json.obj("type" -> "any", "description" -> "The JSON passed to JQ"),
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$jq" -> Json.obj(
+        "filter" -> "{foo: .bar}",
+        "value" -> Json.arr(Json.obj("bar" -> 42))
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val filter = opts.select("filter").asOptString.getOrElse("")
+    val value = opts.select("value").asOpt[JsValue].filterNot(_ == JsNull).getOrElse(Json.obj())
+    val request  = ImmutableJqRequest
+      .builder()
+      .lib(library)
+      .input(value.stringify)
+      .filter(filter)
+      .build()
+    val response = request.execute()
+    if (response.hasErrors) {
+      val errors = response.getErrors.asScala
+      val errorsJson = JsArray(errors.map(err => JsString(err)))
+      errorsJson
+    } else {
+      response.getOutput.parseJson
+    }
   }
 }
 

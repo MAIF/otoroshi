@@ -40,6 +40,68 @@ object WorkflowFunctionsInitializer {
     WorkflowFunction.registerFunction("core.state_get_all", new StateGetAllFunction())
     WorkflowFunction.registerFunction("core.state_get", new StateGetOneFunction())
     WorkflowFunction.registerFunction("core.send_mail", new SendMailFunction())
+    WorkflowFunction.registerFunction("core.env_get", new EnvGetFunction())
+    WorkflowFunction.registerFunction("core.config_read", new ConfigReadFunction())
+  }
+}
+
+class ConfigReadFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.config_read"
+  override def documentationDescription: String           = "This function retrieves values from otoroshi config."
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("path"),
+      "properties" -> Json.obj(
+        "path"          -> Json.obj("type" -> "string", "description" -> "The path of the config. to read"),
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.config_read",
+      "args"     -> Json.obj(
+        "path" -> "otoroshi.domain",
+      )
+    )
+  )
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val path = args.select("path").asOptString.getOrElse("foo")
+    env.configurationJson.at(path).asOpt[JsValue].filterNot(_ == JsNull) match {
+      case None => WorkflowError.apply("no value found", None, None).leftf
+      case Some(value) => value.rightf
+    }
+  }
+}
+
+class EnvGetFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.env_get"
+  override def documentationDescription: String           = "This function retrieves values from environment variables"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("name"),
+      "properties" -> Json.obj(
+        "name"          -> Json.obj("type" -> "string", "description" -> "The environment variable name"),
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.env_get",
+      "args"     -> Json.obj(
+        "name" -> "OPENAI_APIKEY",
+      )
+    )
+  )
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val name = args.select("name").asOptString.getOrElse("--")
+    sys.env.get(name) match {
+      case None => WorkflowError.apply("no value found", None, None).leftf
+      case Some(value) => value.json.rightf
+    }
   }
 }
 
