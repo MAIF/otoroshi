@@ -1458,6 +1458,7 @@ object ApiKeyHelper {
               sendQuotasAlmostExceededError(key, quotas)
               callDownstream(config, Some(key), None)
             case (false, _, quotas)            =>
+              attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
               sendQuotasExceededError(key, quotas)
               errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
           }
@@ -1497,6 +1498,7 @@ object ApiKeyHelper {
                 sendQuotasAlmostExceededError(key, quotas)
                 callDownstream(config, Some(key), None)
               case (false, _, quotas)            =>
+                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
@@ -1533,6 +1535,7 @@ object ApiKeyHelper {
                 sendQuotasAlmostExceededError(key, quotas)
                 callDownstream(config, Some(key), None)
               case (false, _, quotas)            =>
+                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
@@ -1565,6 +1568,7 @@ object ApiKeyHelper {
                 sendQuotasAlmostExceededError(key, quotas)
                 callDownstream(config, Some(key), None)
               case (false, _, quotas)            =>
+                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
@@ -1716,6 +1720,7 @@ object ApiKeyHelper {
                               sendQuotasAlmostExceededError(apiKey, quotas)
                               callDownstream(config, Some(apiKey), None)
                             case (false, _, quotas)            =>
+                              attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apiKey)
                               sendQuotasExceededError(apiKey, quotas)
                               errorResult(
                                 TooManyRequests,
@@ -1778,6 +1783,7 @@ object ApiKeyHelper {
                     sendQuotasAlmostExceededError(key, quotas)
                     callDownstream(config, Some(key), None)
                   case (false, _, quotas)            =>
+                    attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
                     sendQuotasExceededError(key, quotas)
                     errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                 }
@@ -2358,6 +2364,7 @@ object ApiKeyHelper {
                   apikey.rightf
                 }
               case (false, _, quotas)            =>
+                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apikey)
                 sendQuotasExceededError(apikey, quotas)
                 error(
                   Results.TooManyRequests,

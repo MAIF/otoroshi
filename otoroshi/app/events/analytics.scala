@@ -15,6 +15,7 @@ import org.joda.time.DateTime
 import otoroshi.next.models.NgRoute
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.tcp.TcpService
+import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.utils.json.JsonImplicits._
@@ -296,6 +297,31 @@ object Identity {
       case Success(s) => JsSuccess(s)
       case Failure(e) => JsError(e.getMessage)
     }
+  }
+  def from(attrs: TypedMap): Option[Identity] = {
+    val apiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).orElse(attrs.get(otoroshi.plugins.Keys.ErrorApiKeyKey))
+    val paUsr = attrs.get(otoroshi.plugins.Keys.UserKey)
+    apiKey
+      .map(k =>
+        Identity(
+          identityType = "APIKEY",
+          identity = k.clientId,
+          label = k.clientName,
+          tags = k.tags,
+          metadata = k.metadata
+        )
+      )
+      .orElse(
+        paUsr.map(k =>
+          Identity(
+            identityType = "PRIVATEAPP",
+            identity = k.email,
+            label = k.name,
+            tags = k.tags,
+            metadata = k.metadata
+          )
+        )
+      )
   }
 }
 

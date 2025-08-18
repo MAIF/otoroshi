@@ -20,6 +20,7 @@ object Keys {
   val OtoTokenKey              = TypedKey[JsObject]("otoroshi.core.OtoToken")
   val JwtVerifierKey           = TypedKey[JwtVerifier]("otoroshi.core.JwtVerifier")
   val ApiKeyKey                = TypedKey[ApiKey]("otoroshi.core.ApiKey")
+  val ErrorApiKeyKey           = TypedKey[ApiKey]("otoroshi.core.ErrorApiKey")
   val ApiKeyJwtKey             = TypedKey[JsValue]("otoroshi.core.ApiKeyJwt")
   val ApiKeyRotationKey        = TypedKey[ApiKeyRotationInfo]("otoroshi.core.ApiKeyRotationInfo")
   val ApiKeyRemainingQuotasKey = TypedKey[RemainingQuotas]("otoroshi.core.RemainingQuotas")
