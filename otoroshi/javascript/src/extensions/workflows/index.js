@@ -170,14 +170,14 @@ export function setupWorkflowsExtension(registerExtension) {
         },
         'job.enabled': {
           type: 'bool',
-          props: { label: 'Job Enabled' },
+          props: { label: 'Schedule' },
         },
         'job.kind': {
           type: 'select',
           props: {
-            label: 'Job Kind',
+            label: 'Kind',
             possibleValues: [
-              { label: 'ScheduledEvery', value: 'ScheduledEvery' },
+              { label: 'Interval', value: 'ScheduledEvery' },
               { label: 'Cron', value: 'Cron' },
             ]
           }
@@ -185,12 +185,12 @@ export function setupWorkflowsExtension(registerExtension) {
         'job.instantiation': {
           type: 'select',
           props: {
-            label: 'Job Instantiation',
+            label: 'Instantiation',
             possibleValues: [
-              { label: 'OneInstancePerOtoroshiInstance', value: 'OneInstancePerOtoroshiInstance' },
-              { label: 'OneInstancePerOtoroshiWorkerInstance', value: 'OneInstancePerOtoroshiWorkerInstance' },
-              { label: 'OneInstancePerOtoroshiLeaderInstance', value: 'OneInstancePerOtoroshiLeaderInstance' },
-              { label: 'OneInstancePerOtoroshiCluster', value: 'OneInstancePerOtoroshiCluster' },
+              { label: 'One Instance Per Otoroshi Instance', value: 'OneInstancePerOtoroshiInstance' },
+              { label: 'One Instance Per Otoroshi Worker Instance', value: 'OneInstancePerOtoroshiWorkerInstance' },
+              { label: 'One Instance Per Otoroshi Leader Instance', value: 'OneInstancePerOtoroshiLeaderInstance' },
+              { label: 'One Instance Per Otoroshi Cluster', value: 'OneInstancePerOtoroshiCluster' },
             ]
           }
         },
@@ -212,14 +212,21 @@ export function setupWorkflowsExtension(registerExtension) {
           type: 'string',
           props: {
             label: 'Cron Expression',
+            placeholder: '0 0/5 8-20 ? * MON-SAT *',
           }
         },
         'job.config': {
           type: 'jsonobjectcode',
           props: {
-            label: 'Job config.'
+            label: 'Workflow input'
           }
         },
+        'functions': {
+          type: 'jsonobjectcode',
+          props: {
+            label: 'Functions'
+          }
+        }
       };
 
       columns = [
@@ -238,7 +245,14 @@ export function setupWorkflowsExtension(registerExtension) {
         'description',
         'tags',
         'metadata',
-        '>>>Job',
+        '<<<Workflow',
+        'config',
+        '>>>Local Functions',
+        'functions',
+        '<<<Tester',
+        //'>>>Tester',
+        'tester',
+        '>>>Scheduling',
         'job.enabled',
         'job.kind',
         'job.instantiation',
@@ -246,11 +260,6 @@ export function setupWorkflowsExtension(registerExtension) {
         'job.interval',
         'job.cron_expression',
         'job.config',
-        '<<<Workflow',
-        'config',
-        '<<<Tester',
-        //'>>>Tester',
-        'tester',
       ];
 
       componentDidMount() {
@@ -272,6 +281,18 @@ export function setupWorkflowsExtension(registerExtension) {
               description: 'New Workflow',
               tags: [],
               metadata: {},
+              functions: {},
+              job: {
+                enabled: false,
+                kind: 'ScheduledEvery',
+                instantiation: 'OneInstancePerOtoroshiInstance',
+                initial_delay: 1000,
+                interval: 60000,
+                cron_expression: '',
+                config: {
+                  name: 'Job'
+                }
+              },
               config: {
                 id: 'main',
                 kind: 'workflow',
