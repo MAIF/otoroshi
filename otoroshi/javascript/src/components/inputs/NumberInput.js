@@ -58,15 +58,15 @@ export class NumberInput extends Component {
                 defaultValue={this.props.value}
                 onChange={this.onChange}
               />
-              {this.props.prefix && (
+              {this.props.suffix && (
                 <span
                   className="input-group-text"
                   onClick={
                     this.props.suffixCb ? () => this.props.suffixCb(this.props.value) : undefined
                   }
-                  style={this.props.prefixStyle || {}}
+                  style={this.props.suffixStyle || {}}
                 >
-                  {this.props.prefix}
+                  {this.props.suffix}
                 </span>
               )}
             </div>
