@@ -2,9 +2,8 @@ import React from 'react'
 
 export const WaitNode = (_workflow) => {
     return {
-        label: <i className='fas fa-clock' />,
+        label: 'fas fa-clock',
         name: 'Wait',
-        description: 'Wait before continue with execution',
         workflow: _workflow,
         kind: 'wait',
         flow: ['duration'],

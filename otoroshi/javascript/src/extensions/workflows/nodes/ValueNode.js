@@ -3,9 +3,8 @@ import { ValueToCheck } from '../operators/ValueToCheck'
 import { NgCodeRenderer } from '../../../components/nginputs'
 
 export const ValueNode = (_workflow) => ({
-    label: <i className='fas fa-cube' />,
+    label: 'fas fa-cube',
     name: 'Value',
-    description: 'Apply operators on value',
     workflow: _workflow,
     kind: 'value',
     sources: ['output'],

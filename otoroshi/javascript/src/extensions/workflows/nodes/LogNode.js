@@ -4,7 +4,7 @@ import { NgCodeRenderer } from '../../../components/nginputs';
 
 export function LogNode(_workflow) {
     return {
-        label: <i className='fa fa-plug' />,
+        label: 'fa fa-plug',
         name: 'Log',
         kind: 'log',
         description: 'This function writes whatever the user want to the otoroshi logs',

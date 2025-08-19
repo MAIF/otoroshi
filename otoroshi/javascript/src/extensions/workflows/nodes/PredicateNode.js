@@ -3,7 +3,7 @@ import { ValueToCheck } from '../operators/ValueToCheck'
 
 export const PredicateNode = (_workflow) => {
     return {
-        label: <i className='fas fa-filter' />,
+        label: 'fas fa-filter',
         description: 'Predicate node',
         kind: 'predicate',
         name: 'Predicate',

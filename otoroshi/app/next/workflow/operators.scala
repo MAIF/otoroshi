@@ -205,12 +205,13 @@ class AddOperator extends WorkflowOperator {
   override def documentationName: String = "$add"
   override def documentationDescription: String = "This operator adds a list of numbers"
   override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("values"),
-    "properties" -> Json.obj(
-      "values" -> Json.obj("type" -> "array", "description" -> "The list of numbers to add"),
-    ))
-  )
+    "values" -> Json.obj(
+      "type" -> "array",
+      "label" -> "Numbers to Add",
+      "array" -> true,
+      "format" -> null
+    )
+  ))
   override def documentationExample: Option[JsObject] = Some(Json.obj(
     "$add" -> Json.obj(
       "values" -> Seq(1, 2, 3)
@@ -228,12 +229,14 @@ class SubtractOperator extends WorkflowOperator {
   override def documentationName: String = "$subtract"
   override def documentationDescription: String = "This operator subtracts a list of numbers"
   override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("values"),
-    "properties" -> Json.obj(
-      "values" -> Json.obj("type" -> "array", "description" -> "The list of numbers to subtract"),
-    ))
-  )
+    "values" -> Json.obj(
+      "type" -> "array",
+      "array" -> true,
+      "label" -> "Values",
+      "props" -> Json.obj(
+        "description" -> "The list of numbers to subtract"
+      )
+  )))
   override def documentationExample: Option[JsObject] = Some(Json.obj(
     "$subtract" -> Json.obj(
       "values" -> Seq(1, 2, 3)

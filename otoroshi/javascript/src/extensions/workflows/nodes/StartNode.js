@@ -2,7 +2,7 @@ import React from 'react'
 
 export function StartNode(_workflow) {
     return {
-        label: <i className='fas fa-box' />,
+        label: 'fas fa-box',
         name: 'Start',
         kind: 'start',
         description: 'Start',

@@ -1,10 +1,9 @@
 import React from 'react';
 
 export const ParseTimeOperator = _workflow => ({
-    label: <i className="fas fa-clock" />,
+    label: "fas fa-clock",
     name: 'Parse Time',
     kind: '$parse_time',
-    description: 'Parses a time string into a timestamp',
     workflow: _workflow,
     flow: ['value', 'pattern'],
     schema: {

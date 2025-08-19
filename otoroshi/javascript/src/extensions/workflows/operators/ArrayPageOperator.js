@@ -2,10 +2,9 @@ import React from 'react';
 import { FromMemory, FromMemoryFlow } from './FromMemory';
 
 export const ArrayPageOperator = _workflow => ({
-    label: <i className="fas fa-file-alt" />,
+    label: "fas fa-file-alt",
     name: 'Array Page',
     kind: '$array_page',
-    description: 'Gets a page of an array',
     workflow: _workflow,
     flow: ['page', 'page_size', 'fromMemory', 'array', FromMemoryFlow],
     schema: {

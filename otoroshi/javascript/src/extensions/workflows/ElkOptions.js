@@ -107,7 +107,7 @@ export const onLayout = ({ direction, nodes, edges, setNodes, setEdges }) => {
         ...elkOptions
     }
 
-    console.log(nodes)
+    // console.log(nodes)
     const filteredEdges = edges
         .filter(f => f.target && f.source)
         .filter(edge => {

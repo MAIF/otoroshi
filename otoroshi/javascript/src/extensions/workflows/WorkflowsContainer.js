@@ -54,14 +54,17 @@ function Container(props) {
         ['getWorkflow', params.workflowId],
         () => client.findById(params.workflowId))
 
+
+    const docs = useQuery("getDoc", BackOfficeServices.getWorkflowDocs)
+
     useEffect(() => {
         if (workflow.data)
             props.setSidebarContent(<WorkflowSidebar {...props} workflow={workflow.data} />);
     }, [workflow.isLoading])
 
-    return <Loader loading={workflow.isLoading}>
+    return <Loader loading={workflow.isLoading || docs.loading}>
         <ReactFlowProvider>
-            <WorkflowsDesigner {...props} workflow={workflow.data} />
+            <WorkflowsDesigner {...props} workflow={workflow.data} docs={docs.data} />
         </ReactFlowProvider>
     </Loader>
 }

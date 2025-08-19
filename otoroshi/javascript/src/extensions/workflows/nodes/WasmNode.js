@@ -10,7 +10,7 @@ export function WasmNode(_workflow) {
     })
 
     return {
-        label: <i className='fa fa-plug' />,
+        label: 'fa fa-plug',
         name: 'Wasm',
         kind: 'wasm',
         description: 'This node executes an exported function from a WASM plugin',

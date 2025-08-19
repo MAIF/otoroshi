@@ -39,6 +39,7 @@ export const WorkflowSidebar = ({ workflow }) => {
             }}
         >
             <ul className="nav flex-column nav-sidebar">
+                {openedSidebar && <p className="sidebar-title">Shortcuts</p>}
                 <li className={`nav-item mb-3 ${openedSidebar ? 'nav-item--open' : ''}`} key="Workflows">
                     <Link
                         to={`/extensions/workflows/workflows`}

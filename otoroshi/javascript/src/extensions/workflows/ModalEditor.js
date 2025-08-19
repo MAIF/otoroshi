@@ -55,7 +55,7 @@ export function ModalEditor({ node }) {
         {
             type: 'group',
             name: 'Configuration',
-            fields: [...(node.data.flow || []), !isAnOperator ? 'result' : ''].filter(field => field.length > 0)
+            fields: [...(node.data.flow || Object.keys(node.data.schema || {})), !isAnOperator ? 'result' : ''].filter(field => field.length > 0)
         }
     ]
 

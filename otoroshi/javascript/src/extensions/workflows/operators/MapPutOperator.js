@@ -3,10 +3,9 @@ import { FromMemory, FromMemoryFlow } from './FromMemory';
 import { ValueToCheck } from './ValueToCheck';
 
 export const MapPutOperator = _workflow => ({
-    label: <i className="fas fa-plus-square" />,
+    label: "fas fa-plus-square",
     name: 'Map Put',
     kind: '$map_put',
-    description: 'Puts a key-value pair in a map',
     workflow: _workflow,
     flow: ['key', 'value', 'fromMemory', 'map', FromMemoryFlow],
     schema: {

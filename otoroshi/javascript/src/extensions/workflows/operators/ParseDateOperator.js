@@ -1,10 +1,9 @@
 import React from 'react';
 
 export const ParseDateOperator = _workflow => ({
-    label: <i className="fas fa-calendar-alt" />,
+    label: "fas fa-calendar-alt",
     name: 'Parse Date',
     kind: '$parse_date',
-    description: 'Parses a date string into a timestamp',
     workflow: _workflow,
     flow: ['value', 'pattern'],
     schema: {

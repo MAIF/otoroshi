@@ -1,10 +1,9 @@
 import React from 'react';
 
 export const DivideOperator = _workflow => ({
-    label: <i className="fas fa-divide" />,
+    label: "fas fa-divide",
     name: 'Divide',
     kind: '$divide',
-    description: 'Divides a list of numbers',
     workflow: _workflow,
     flow: ['values'],
     schema: {

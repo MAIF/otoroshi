@@ -4,10 +4,9 @@ import { isArray } from 'lodash';
 import { ValueToCheck } from './ValueToCheck';
 
 export const ArrayPrependOperator = _workflow => ({
-    label: <i className="fas fa-arrow-left" />,
+    label: "fas fa-arrow-left",
     name: 'Array Prepend',
     kind: '$array_prepend',
-    description: 'Prepends a value to an array',
     workflow: _workflow,
     flow: [
         'value',

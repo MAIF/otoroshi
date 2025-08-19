@@ -14,24 +14,20 @@ import {
     useEdgesState,
 } from '@xyflow/react';
 import { NewTask } from './flow/NewTask';
-import { NODES, OPERATORS } from './models/Functions';
+import { NODES } from './models/Functions';
 import ReportExplorer from './ReportExplorer';
 import { onLayout } from './ElkOptions';
 import { TagsModal } from './TagsModal';
 
 const GROUP_NODES = ['if', 'switch', 'parallel', 'foreach', 'map', 'filter', 'flatmap']
 
-export function createSimpleNode(node) {
-    console.log('createSimpleNode', node.kind || node.data?.kind, node)
+export function createSimpleNode(node, docs) {
+    // console.log('createSimpleNode', node.kind || node.data?.kind, node)
 
-    let data = NODES[(node.kind || node.data.kind).toLowerCase()]
+    let data = NODES(docs)[(node.kind || node.data.kind).toLowerCase()]
 
     if (data)
         data = data("workflow" in node ? node.workflow : node)
-
-    if (!data) {
-        data = OPERATORS[(node.kind || node.data.kind).toLowerCase()](node)
-    }
 
     if (data.operator) {
         data = {
@@ -56,8 +52,8 @@ export function createSimpleNode(node) {
     }
 }
 
-function createNode(id, existingNodes, child, addInformationsToNode) {
-    const newNode = addInformationsToNode(createSimpleNode(child))
+function createNode(id, child, addInformationsToNode, docs) {
+    const newNode = addInformationsToNode(createSimpleNode(child, docs))
     return {
         ...newNode,
         id,
@@ -69,7 +65,7 @@ function createNode(id, existingNodes, child, addInformationsToNode) {
     }
 }
 
-const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
+const buildGraph = (docs, workflows, addInformationsToNode, targetId, handleId) => {
 
     if (workflows.filter(f => f).length === 0) {
         return { edges: [], nodes: [] }
@@ -87,19 +83,19 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
 
     const useCurrent = workflow.kind !== 'workflow'
 
-    let current = useCurrent ? createNode(me, [], workflow, addInformationsToNode) : undefined
+    let current = useCurrent ? createNode(me, workflow, addInformationsToNode, docs) : undefined
 
     if (useCurrent)
         nodes.push(current)
 
     if (workflow.kind === 'workflow') {
         if (workflow.returned) {
-            let returnedNode = createNode(`${me}-returned-node`, [], {
+            let returnedNode = createNode(`${me}-returned-node`, {
                 returned: {
                     ...(workflow.returned || {}),
                 },
                 kind: 'returned'
-            }, addInformationsToNode)
+            }, addInformationsToNode, docs)
 
             returnedNode = {
                 ...returnedNode,
@@ -110,7 +106,7 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
                 }
             }
 
-            const child = buildGraph(workflow.steps.slice().reverse(), addInformationsToNode, returnedNode.id)
+            const child = buildGraph(docs, workflow.steps.slice().reverse(), addInformationsToNode, returnedNode.id)
             nodes = [...child.nodes, returnedNode]
 
             edges = edges.concat(child.edges)
@@ -125,11 +121,11 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
                     animated: true,
                 })
         } else {
-            const child = buildGraph(workflow.steps.slice().reverse(), addInformationsToNode, targetId, handleId)
+            const child = buildGraph(docs, workflow.steps.slice().reverse(), addInformationsToNode, targetId, handleId)
             nodes = [...child.nodes]
 
             if (workflow.predicate) {
-                const predicate = buildGraph([{
+                const predicate = buildGraph(docs, [{
                     kind: 'predicate',
                 }], addInformationsToNode, me, 'node')
                 const predicateNode = predicate.nodes[0]
@@ -150,8 +146,8 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
             edges = edges.concat(child.edges)
         }
     } else if (workflow.kind === "if") {
-        const thensubGraph = workflow.then ? buildGraph([workflow.then], addInformationsToNode, targetId, handleId) : undefined
-        const elseGraph = workflow.else ? buildGraph([workflow.else], addInformationsToNode, targetId, handleId) : undefined
+        const thensubGraph = workflow.then ? buildGraph(docs, [workflow.then], addInformationsToNode, targetId, handleId) : undefined
+        const elseGraph = workflow.else ? buildGraph(docs, [workflow.else], addInformationsToNode, targetId, handleId) : undefined
 
         let predicate = workflow.predicate
         if (typeof workflow.predicate === "object" && workflow.predicate !== null && Object.keys(workflow.predicate).find(key => key.startsWith('$'))) {
@@ -162,7 +158,7 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
             }
         }
 
-        predicate = predicate ? buildGraph([predicate], addInformationsToNode) : undefined
+        predicate = predicate ? buildGraph(docs, [predicate], addInformationsToNode) : undefined
 
         const hasThenSubGraph = thensubGraph && thensubGraph.nodes.length > 0
         const hasElseGraph = elseGraph && elseGraph.nodes.length > 0
@@ -221,7 +217,7 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
         workflow.kind === 'flatmap' ||
         workflow.kind === 'map') {
         if (workflow.node) {
-            const subGraph = buildGraph([workflow.node], addInformationsToNode)
+            const subGraph = buildGraph(docs, [workflow.node], addInformationsToNode)
 
             if (subGraph.nodes.length > 0) {
 
@@ -246,7 +242,7 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
 
         for (let i = 0; i < workflow.paths.length; i++) {
             const subflow = workflow.paths[i]
-            const nestedPath = buildGraph([subflow], addInformationsToNode, targetId, handleId)
+            const nestedPath = buildGraph(docs, [subflow], addInformationsToNode, targetId, handleId)
             paths.push(nestedPath)
         }
 
@@ -277,7 +273,7 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
             }
         }
 
-        predicate = buildGraph([predicate], addInformationsToNode)
+        predicate = buildGraph(docs, [predicate], addInformationsToNode)
 
         nodes = nodes.concat(predicate.nodes)
         edges = edges.concat(predicate.edges)
@@ -293,7 +289,7 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
         })
     } else if (workflow.predicate !== undefined) {
         // sub path of switch or parallel node
-        const predicate = buildGraph([{
+        const predicate = buildGraph(docs, [{
             kind: 'predicate',
         }], addInformationsToNode, me, 'node')
         const predicateNode = predicate.nodes[0]
@@ -328,7 +324,7 @@ const buildGraph = (workflows, addInformationsToNode, targetId, handleId) => {
     }
 
     if (useCurrent) {
-        const subGraph = buildGraph(rest, addInformationsToNode, me)
+        const subGraph = buildGraph(docs, rest, addInformationsToNode, me)
 
         return {
             edges: [...subGraph.edges, ...edges],
@@ -361,11 +357,11 @@ const setupTargetsAndSources = (node) => {
     return node
 }
 
-const initializeGraph = (config, orphans, addInformationsToNode) => {
+const initializeGraph = (config, orphans, addInformationsToNode, docs) => {
 
-    let startingNode = createNode('start', [], {
+    let startingNode = createNode('start', {
         kind: 'start'
-    }, addInformationsToNode)
+    }, addInformationsToNode, docs)
 
     startingNode = {
         ...startingNode,
@@ -376,12 +372,12 @@ const initializeGraph = (config, orphans, addInformationsToNode) => {
         }
     }
 
-    let returnedNode = createNode('returned-node', [], {
+    let returnedNode = createNode('returned-node', {
         returned: {
             ...(config.returned || {}),
         },
         kind: 'returned'
-    }, addInformationsToNode)
+    }, addInformationsToNode, docs)
 
     returnedNode = {
         ...returnedNode,
@@ -391,7 +387,7 @@ const initializeGraph = (config, orphans, addInformationsToNode) => {
             sourceHandles: []
         }
     }
-    const subGraph = buildGraph(config.steps.slice().reverse(), addInformationsToNode, returnedNode.id)
+    const subGraph = buildGraph(docs, config.steps.slice().reverse(), addInformationsToNode, returnedNode.id)
 
     let startingEdge = {
         id: 'start-edge',
@@ -418,7 +414,7 @@ const initializeGraph = (config, orphans, addInformationsToNode) => {
     const orphansNodes = orphans.nodes
         .filter(f => f.kind)
         .map(orphan => {
-            const node = createNode(orphan.id, [], orphan.data, addInformationsToNode)
+            const node = createNode(orphan.id, orphan.data, addInformationsToNode, docs)
             return {
                 ...setupTargetsAndSources(node),
                 position: orphan.position
@@ -461,7 +457,7 @@ export function WorkflowsDesigner(props) {
     const [workflow, setWorkflow] = useState(props.workflow)
 
     useEffect(() => {
-        const initialState = initializeGraph(workflow?.config, workflow.orphans, addInformationsToNode)
+        const initialState = initializeGraph(workflow?.config, workflow.orphans, addInformationsToNode, props.docs)
 
         onLayout({
             direction: 'RIGHT',
@@ -924,7 +920,7 @@ export function WorkflowsDesigner(props) {
             targetId = `${targetId}-operator`
 
         let newNode = addInformationsToNode({
-            ...createSimpleNode(item),
+            ...createSimpleNode(item, props.docs),
             id: targetId,
             type: item.type || 'simple',
             position: screenToFlowPosition(position),
@@ -944,7 +940,7 @@ export function WorkflowsDesigner(props) {
                 (/*parent.data.kind === 'parallel' ||*/ parent.data.kind === 'switch')) {
                 predicateNode = addInformationsToNode(createSimpleNode({
                     kind: 'predicate',
-                }))
+                }, props.docs))
 
                 const { targets = [], sources = [] } = predicateNode.data
                 predicateNode = {
@@ -1078,7 +1074,7 @@ export function WorkflowsDesigner(props) {
         }))
     }, [workflow])
 
-    console.log(nodes)
+    // console.log(nodes)
 
     return <div className='workflow'>
         <DesignerActions run={run} />
@@ -1101,7 +1097,8 @@ export function WorkflowsDesigner(props) {
 
         <NodesExplorer
             activeNode={activeNode}
-            handleSelectNode={handleSelectNode} />
+            handleSelectNode={handleSelectNode}
+            docs={props.docs} />
         <Flow
             onConnectEnd={onConnectEnd}
             onConnect={onConnect}

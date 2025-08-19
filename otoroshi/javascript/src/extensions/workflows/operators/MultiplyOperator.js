@@ -1,10 +1,9 @@
 import React from 'react';
 
 export const MultiplyOperator = _workflow => ({
-    label: <i className="fas fa-times" />,
+    label: "fas fa-times",
     name: 'Multiply',
     kind: '$multiply',
-    description: 'Multiplies a list of numbers',
     workflow: _workflow,
     flow: ['values'],
     schema: {

@@ -28,7 +28,7 @@ function Search({ query, onChange, isOpen }) {
     </div>
 }
 
-export function WhatsNext({ handleSelectNode, isOpen }) {
+export function WhatsNext({ handleSelectNode, isOpen, docs }) {
 
     const [query, setQuery] = useState("")
     const [title, setTitle] = useState("What happens next ?")
@@ -51,6 +51,7 @@ export function WhatsNext({ handleSelectNode, isOpen }) {
             query={query}
             setTitle={setTitle}
             handleSelectNode={handleSelectNode}
-            isOpen={isOpen} />
+            isOpen={isOpen}
+            docs={docs} />
     </>
 }

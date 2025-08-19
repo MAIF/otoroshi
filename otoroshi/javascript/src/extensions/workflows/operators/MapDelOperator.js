@@ -2,10 +2,9 @@ import React from 'react';
 import { FromMemory, FromMemoryFlow } from './FromMemory';
 
 export const MapDelOperator = _workflow => ({
-    label: <i className="fas fa-minus-square" />,
+    label: "fas fa-minus-square",
     name: 'Map Delete',
     kind: '$map_del',
-    description: 'Deletes a key from a map',
     workflow: _workflow,
     flow: ['key', 'fromMemory', 'map', FromMemoryFlow],
     schema: {

@@ -1,10 +1,9 @@
 import React from 'react';
 
 export const IsFalsyOperator = _workflow => ({
-    label: <i className="fas fa-times-circle" />,
+    label: "fas fa-times-circle",
     name: 'Is Falsy',
     kind: '$is_falsy',
-    description: 'Checks if a value is falsy',
     workflow: _workflow,
     flow: ['value'],
     schema: {

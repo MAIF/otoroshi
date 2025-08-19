@@ -1,10 +1,9 @@
 import React from 'react';
 
 export const IncrOperator = _workflow => ({
-    label: <i className="fas fa-plus-circle" />,
+    label: "fas fa-plus-circle",
     name: 'Increment',
     kind: '$incr',
-    description: 'Increments a value by a given amount',
     workflow: _workflow,
     flow: ['value', 'increment'],
     schema: {

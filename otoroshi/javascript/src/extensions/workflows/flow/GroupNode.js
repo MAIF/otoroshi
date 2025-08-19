@@ -22,7 +22,7 @@ export const GroupNode = (props) => {
         {data.nodeRenderer && data.nodeRenderer(props)}
 
         <Panel className="m-0 node-one-output" position={position}>
-            {data.label} {data.name}
+            <i className={data.label} /> {data.name}
         </Panel>
 
         <NodeTrashButton {...props} />

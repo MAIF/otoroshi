@@ -3,10 +3,9 @@ import { FromMemory, FromMemoryFlow } from './FromMemory';
 import { ValueToCheck } from './ValueToCheck';
 
 export const ArrayAppendOperator = _workflow => ({
-    label: <i className="fas fa-arrow-right" />,
+    label: "fas fa-arrow-right",
     name: 'Array Append',
     kind: '$array_append',
-    description: 'Appends a value to an array',
     workflow: _workflow,
     flow: [
         'value',

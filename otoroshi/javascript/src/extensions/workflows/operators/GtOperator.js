@@ -1,10 +1,9 @@
 import React from 'react';
 
 export const GtOperator = _workflow => ({
-    label: <i className="fas fa-greater-than" />,
+    label: "fas fa-greater-than",
     name: 'Greater Than',
     kind: '$gt',
-    description: 'Checks if a number is greater than another number',
     workflow: _workflow,
     flow: ['a', 'b'],
     schema: {
@@ -19,6 +18,4 @@ export const GtOperator = _workflow => ({
     },
     sources: ['output'],
     operator: true
-});
-
-// String Upper Case Operator;
+})

@@ -1,10 +1,9 @@
 import React from 'react';
 
 export const IsTruthyOperator = _workflow => ({
-    label: <i className="fas fa-check-circle" />,
+    label: "fas fa-check-circle",
     name: 'Is Truthy',
     kind: '$is_truthy',
-    description: 'Checks if a value is truthy',
     workflow: _workflow,
     flow: [
         'fromMemory',

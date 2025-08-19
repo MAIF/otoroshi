@@ -24,12 +24,12 @@ export function Node(props) {
                     data.functions.onDoubleClick(props)
                 }}>
                 <div className='node-one-output d-flex-center'>
-                    {data.operator ? <i className='fas fa-wrench' /> : (data.label || data.item?.label)} {data.name}
+                    {data.operator ? <i className='fas fa-wrench' /> : <i className={(data.label || data.item?.label)} />} {data.name}
                 </div>
 
                 {data.nodeRenderer && data.nodeRenderer(props)}
 
-                {data.kind !== 'returned' && <NodeTrashButton {...props} />}
+                {props.id !== 'returned-node' && <NodeTrashButton {...props} />}
 
                 <div className='node-description'>{props.data.description}</div>
             </button>

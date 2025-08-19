@@ -2,10 +2,9 @@ import React from 'react';
 import { ValueToCheck } from './ValueToCheck';
 
 export const EqOperator = _workflow => ({
-    label: <i className="fas fa-equals" />,
+    label: "fas fa-equals",
     name: 'Equals',
     kind: '$eq',
-    description: 'Checks if two values are equal',
     workflow: _workflow,
     flow: ['a', 'b'],
     schema: {

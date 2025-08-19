@@ -1,10 +1,9 @@
 import React from 'react';
 
 export const StrConcatOperator = _workflow => ({
-    label: <i className="fas fa-link" />,
+    label: "fas fa-link",
     name: 'String Concatenate',
     kind: '$str_concat',
-    description: 'Concatenates a list of strings',
     workflow: _workflow,
     flow: ['values', 'separator'],
     schema: {

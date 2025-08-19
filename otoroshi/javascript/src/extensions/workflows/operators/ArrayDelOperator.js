@@ -2,10 +2,9 @@ import React from 'react';
 import { FromMemory, FromMemoryFlow } from './FromMemory';
 
 export const ArrayDelOperator = _workflow => ({
-    label: <i className="fas fa-trash" />,
+    label: "fas fa-trash",
     name: 'Array Delete',
     kind: '$array_del',
-    description: 'Deletes an element from an array',
     workflow: _workflow,
     flow: ['idx', 'fromMemory', 'array', FromMemoryFlow],
     schema: {

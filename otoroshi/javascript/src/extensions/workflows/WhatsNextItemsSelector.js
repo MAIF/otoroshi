@@ -57,10 +57,10 @@ import { PredicateNode } from './nodes/PredicateNode'
 import { WasmNode } from './nodes/WasmNode'
 import { LogNode } from './nodes/LogNode'
 
-
 const ITEMS_BY_CATEGORY = [
     {
         name: "Flow",
+        id: 'flow',
         description: "Branch, merge or loop the flow, etc",
         nodes: {
             "assign": AssignNode(),
@@ -75,6 +75,7 @@ const ITEMS_BY_CATEGORY = [
     },
     {
         name: 'Core',
+        id: 'nodes',
         description: 'Run code, make HTTP requests, etc',
         nodes: {
             "call": CallNode(),
@@ -89,6 +90,7 @@ const ITEMS_BY_CATEGORY = [
     },
     {
         name: 'Predicate',
+        id: 'operators',
         description: 'Operators are one-key JSON objects used to manipulate data',
         nodes: {
             "$mem_ref": MemRefOperator(),
@@ -131,6 +133,13 @@ const ITEMS_BY_CATEGORY = [
             "$str_split": StrSplitOperator(),
             "$expression_language": ExpressionLanguageOperator(),
         }
+    },
+    {
+        name: 'Functions',
+        id: 'functions',
+        description: 'Functions',
+        nodes: {
+        }
     }
 ]
 
@@ -155,7 +164,7 @@ function Node({ node, onClick }) {
             minWidth: 32,
             fontSize: '1.15rem'
         }}>
-            {node.label}
+            <i className={node.label} />
         </div>
         <div className=' d-flex flex-column px-2'>
             <p className='m-0' style={{
@@ -180,7 +189,7 @@ function UnFoldedCategory({ nodes, onClick }) {
             key={`${node.label}-${i}`} />)
 }
 
-export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCategory, setSelectedCategory }) {
+export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCategory, setSelectedCategory, docs }) {
 
     const onClick = item => {
         setSelectedCategory(item)
@@ -196,13 +205,93 @@ export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCateg
             setSelectedCategory(undefined)
     }, [query])
 
+    // console.log(docs)
+    let serverNodes = [
+        ...docs.nodes.map(n => ({ ...n, nodes: true })),
+        ...docs.functions.map(n => ({ ...n, functions: true })),
+        ...docs.operators.map(n => ({ ...n, operators: true }))
+    ]
+
+    let items = ITEMS_BY_CATEGORY.map(({ nodes, ...props }) => {
+        return {
+            ...props,
+            nodes: Object.fromEntries(Object.entries(nodes).map(([key, value]) => {
+                const serverItem = serverNodes.find(item => item.name === key)
+
+                if (serverItem) {
+                    serverNodes = serverNodes.filter(f => f.name !== key)
+                    return [
+                        key, {
+                            ...serverItem,
+                            ...value,
+                            kind: value.kind || value.name
+                        }]
+                }
+
+                return [key, value]
+            }))
+        }
+    })
+
+    // console.log(items)
+
+    serverNodes.forEach(node => {
+        if (node.operators) {
+            items = items.map(items => {
+                if (items.id === 'operators')
+                    return {
+                        ...items,
+                        nodes: {
+                            ...items.nodes,
+                            [node.name]: {
+                                ...node,
+                                kind: node.name
+                            }
+                        }
+                    }
+                return items
+            })
+        } else if (node.functions) {
+            items = items.map(items => {
+                if (items.id === 'functions')
+                    return {
+                        ...items,
+                        nodes: {
+                            ...items.nodes,
+                            [node.name]: {
+                                ...node,
+                                kind: node.name
+                            }
+                        }
+                    }
+                return items
+            })
+        } else {
+            items = items.map(items => {
+                if (items.id === 'nodes')
+                    return {
+                        ...items,
+                        nodes: {
+                            ...items.nodes,
+                            [node.name]: {
+                                ...node,
+                                kind: node.name
+                            }
+                        }
+                    }
+                return items
+            })
+        }
+    })
 
     if (query.length > 0) {
         const lowercaseQuery = query.toLowerCase()
-        return ITEMS_BY_CATEGORY.flatMap(category => Object.entries(category.nodes))
-            .filter(([_key, value]) => value.name.toLowerCase().includes(lowercaseQuery) ||
-                value.description.toLowerCase().includes(lowercaseQuery) ||
-                value.kind.toLowerCase().includes(lowercaseQuery))
+        return items.flatMap(category => Object.entries(category.nodes))
+            .filter(([_key, value]) => {
+                return value.name.toLowerCase().includes(lowercaseQuery) ||
+                    value.description.toLowerCase().includes(lowercaseQuery) ||
+                    value.kind.toLowerCase().includes(lowercaseQuery)
+            })
             .map(([_, node], i) => <Node
                 node={node}
                 onClick={() => handleSelectNode(node)}
@@ -212,7 +301,7 @@ export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCateg
     if (selectedCategory)
         return <UnFoldedCategory {...selectedCategory} onClick={item => handleSelectNode(item)} />
 
-    const categories = ITEMS_BY_CATEGORY
+    const categories = items
         .filter(category => Object.entries(category.nodes))
 
     if (categories.length === 0)

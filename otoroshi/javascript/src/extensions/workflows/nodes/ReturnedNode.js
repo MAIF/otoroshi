@@ -4,7 +4,7 @@ import { Row } from '../../../components/Row';
 
 export function ReturnedNode(_workflow) {
     return {
-        label: <i className='fas fa-box' />,
+        label: 'fas fa-box',
         name: 'Returned',
         kind: 'returned',
         description: ' Overrides the output of the node with the result of an operator',

@@ -2,10 +2,9 @@ import React from 'react';
 
 export const MemRefOperator = _workflow => {
     return {
-        label: <i className="fas fa-memory" />,
+        label: "fas fa-memory",
         name: 'Memory Reference',
         kind: '$mem_ref',
-        description: 'Gets a value from the memory',
         workflow: _workflow,
         flow: ['name', 'path'],
         schema: {
