@@ -31,6 +31,7 @@ case class Workflow(
     metadata: Map[String, String],
     config: JsObject,
     job: WorkflowJobConfig,
+    functions: Map[String, JsObject],
     testPayload: JsObject
 ) extends EntityLocationSupport {
   override def internalId: String               = id
@@ -51,6 +52,7 @@ object Workflow {
     tags = Seq.empty,
     config = Node.default,
     job = WorkflowJobConfig.default,
+    functions = Map.empty,
     testPayload = Json.obj("name" -> "foo")
   )
   val format               = new Format[Workflow] {
@@ -62,6 +64,7 @@ object Workflow {
       "tags"         -> JsArray(o.tags.map(JsString.apply)),
       "config"       -> o.config,
       "job"          -> o.job.json,
+      "functions"    -> o.functions,
       "test_payload" -> o.testPayload
     )
     override def reads(json: JsValue): JsResult[Workflow] = Try {
@@ -74,6 +77,7 @@ object Workflow {
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
         job = (json \ "job").asOpt[JsObject].flatMap(o => WorkflowJobConfig.format.reads(o).asOpt).getOrElse(WorkflowJobConfig.default),
+        functions = (json \ "functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
         testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo"))
       )
     } match {
@@ -206,9 +210,10 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
           secretFillFuture.flatMap { payload_filled =>
             val payload  = payload_filled.parseJson
             val input    = payload.select("input").asString.parseJson.asObject
+            val functions = payload.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
             val workflow = payload.select("workflow").asObject
             val node     = Node.from(workflow)
-            engine.run(node, input, TypedMap.empty).map { res =>
+            engine.run(node, input, TypedMap.empty, functions).map { res =>
               Results.Ok(res.json)
             }
           }

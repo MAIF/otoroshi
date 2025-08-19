@@ -226,10 +226,21 @@ case class CallNode(json: JsObject) extends Node {
   override def run(
       wfr: WorkflowRun
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    WorkflowFunction.get(functionName) match {
-      case None           => WorkflowError(s"function '${functionName}' not supported in task '${id}'", None, None).leftf
-      case Some(function) =>
-        function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
+    if (functionName.startsWith("self.")) {
+      wfr.functions.get(functionName.substring(5)) match {
+        case None => WorkflowError(s"function '${functionName}' not supported in task '${id}'", None, None).leftf
+        case Some(function) =>
+          wfr.memory.set("function_args", WorkflowOperator.processOperators(args, wfr, env))
+          Node.from(function).run(wfr).andThen {
+            case _ => wfr.memory.remove("function_args")
+          }
+      }
+    } else {
+      WorkflowFunction.get(functionName) match {
+        case None => WorkflowError(s"function '${functionName}' not supported in task '${id}'", None, None).leftf
+        case Some(function) =>
+          function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
+      }
     }
   }
 }

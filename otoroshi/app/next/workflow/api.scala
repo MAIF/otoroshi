@@ -20,8 +20,8 @@ class WorkflowEngine(env: Env) {
 
   implicit val executorContext = env.otoroshiExecutionContext
 
-  def run(node: Node, input: JsObject, attrs: TypedMap): Future[WorkflowResult] = {
-    val wfRun = WorkflowRun(ULID.random(), attrs, env)
+  def run(node: Node, input: JsObject, attrs: TypedMap, functions: Map[String, JsObject] = Map.empty): Future[WorkflowResult] = {
+    val wfRun = WorkflowRun(ULID.random(), attrs, env, functions)
     wfRun.memory.set("input", input)
     node
       .internalRun(wfRun)(env, executorContext)
@@ -93,7 +93,7 @@ class WorkflowLog {
   def log(item: WorkflowLogItem): Unit = queue.offer(item)
 }
 
-case class WorkflowRun(id: String, attrs: TypedMap, env: Env) {
+case class WorkflowRun(id: String, attrs: TypedMap, env: Env, functions: Map[String, JsObject] = Map.empty) {
   val memory             = new WorkflowMemory()
   val runlog             = new WorkflowLog()
   def log(message: String, node: Node, error: Option[WorkflowError] = None): Unit = {

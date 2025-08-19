@@ -42,6 +42,7 @@ export function setupWorkflowsExtension(registerExtension) {
               body: JSON.stringify({
                 input: this.state.input,
                 workflow: this.props.rawValue.config,
+                functions: this.props.rawValue.functions,
               }),
             })
               .then((r) => r.json())

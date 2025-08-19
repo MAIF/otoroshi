@@ -623,7 +623,7 @@ class WorkflowCallFunction extends WorkflowFunction {
       case None           => Left(WorkflowError("workflow not found", Some(Json.obj("workflow_id" -> workflowId)), None)).vfuture
       case Some(workflow) => {
         val node = Node.from(workflow.config)
-        extension.engine.run(node, input, wfr.attrs).map {
+        extension.engine.run(node, input, wfr.attrs, workflow.functions).map {
           case res if res.hasError => Left(res.error.get)
           case res                 => Right(res.returned.get)
         }

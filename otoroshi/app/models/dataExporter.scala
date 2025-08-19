@@ -231,7 +231,7 @@ case class WorkflowCallSettings(ref: String) extends Exporter {
       case None           => ExportResult.ExportResultFailure(s"workflow '${ref}' not found").vfuture
       case Some(workflow) => {
         extension.engine
-          .run(Node.from(workflow.config), Json.obj("events" -> events, "config" -> config.json), TypedMap.empty)
+          .run(Node.from(workflow.config), Json.obj("events" -> events, "config" -> config.json), TypedMap.empty, workflow.functions)
           .map { result =>
             if (result.hasError) {
               ExportResult.ExportResultFailure(result.error.get.json.stringify)

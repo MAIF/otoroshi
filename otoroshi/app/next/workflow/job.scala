@@ -82,7 +82,7 @@ class WorkflowJob(ref: String, config: WorkflowJobConfig) extends Job {
           logger.error(s"No workflow context found for ${ref}")
           Future.successful(())
         case Some(workflow) =>
-          ext.engine.run(Node.from(workflow.config), config.rawConfig, ctx.attrs).map {
+          ext.engine.run(Node.from(workflow.config), config.rawConfig, ctx.attrs, workflow.functions).map {
             case WorkflowResult(returned, error, run) if error.isDefined =>
               logger.error(s"Errors during workflow context for ${ref}: ${error.get.json.prettify}")
             case WorkflowResult(returned, error, run) => ()
