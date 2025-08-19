@@ -17,8 +17,9 @@ import otoroshi.models.GlobalConfig
 import otoroshi.next.plugins.WasmJob
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.next.utils.JsonHelpers
+import otoroshi.next.workflow.WorkflowJob
 import otoroshi.utils
-import otoroshi.utils.{future, JsonPathValidator, JsonValidator, SchedulerHelper, TypedMap}
+import otoroshi.utils.{JsonPathValidator, JsonValidator, SchedulerHelper, TypedMap, future}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -649,6 +650,7 @@ class JobManager(env: Env) {
     JobManager.logger.info("Starting job manager")
     env.scriptManager.jobNames
       .filterNot(_ == classOf[WasmJob].getName)
+      .filterNot(_ == classOf[WorkflowJob].getName)
       .map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
     scanRef.set(
       jobScheduler.scheduleAtFixedRate(1.second, 1.second)(SchedulerHelper.runnable(scanRegisteredJobs()))(jobExecutor)

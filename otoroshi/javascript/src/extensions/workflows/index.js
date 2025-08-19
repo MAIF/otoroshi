@@ -168,6 +168,58 @@ export function setupWorkflowsExtension(registerExtension) {
         tester: {
           type: WorkflowTester,
         },
+        'job.enabled': {
+          type: 'bool',
+          props: { label: 'Job Enabled' },
+        },
+        'job.kind': {
+          type: 'select',
+          props: {
+            label: 'Job Kind',
+            possibleValues: [
+              { label: 'ScheduledEvery', value: 'ScheduledEvery' },
+              { label: 'Cron', value: 'Cron' },
+            ]
+          }
+        },
+        'job.instantiation': {
+          type: 'select',
+          props: {
+            label: 'Job Instantiation',
+            possibleValues: [
+              { label: 'OneInstancePerOtoroshiInstance', value: 'OneInstancePerOtoroshiInstance' },
+              { label: 'OneInstancePerOtoroshiWorkerInstance', value: 'OneInstancePerOtoroshiWorkerInstance' },
+              { label: 'OneInstancePerOtoroshiLeaderInstance', value: 'OneInstancePerOtoroshiLeaderInstance' },
+              { label: 'OneInstancePerOtoroshiCluster', value: 'OneInstancePerOtoroshiCluster' },
+            ]
+          }
+        },
+        'job.initial_delay': {
+          type: 'number',
+          props: {
+            label: 'Initial Delay',
+            suffix: 'ms.'
+          }
+        },
+        'job.interval': {
+          type: 'number',
+          props: {
+            label: 'Interval',
+            suffix: 'ms.'
+          }
+        },
+        'job.cron_expression': {
+          type: 'string',
+          props: {
+            label: 'Cron Expression',
+          }
+        },
+        'job.config': {
+          type: 'jsonobjectcode',
+          props: {
+            label: 'Job config.'
+          }
+        },
       };
 
       columns = [
@@ -186,6 +238,14 @@ export function setupWorkflowsExtension(registerExtension) {
         'description',
         'tags',
         'metadata',
+        '>>>Job',
+        'job.enabled',
+        'job.kind',
+        'job.instantiation',
+        'job.initial_delay',
+        'job.interval',
+        'job.cron_expression',
+        'job.config',
         '<<<Workflow',
         'config',
         '<<<Tester',
