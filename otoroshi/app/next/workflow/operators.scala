@@ -306,7 +306,7 @@ class StringSplitOperator extends WorkflowOperator {
 class IncrementOperator extends WorkflowOperator {
   override def documentationName: String                  = "$incr"
   override def documentationDisplayName: String           = "Increment"
-  override def documentationIcon: String                  = "fas fa-plus-sign"
+  override def documentationIcon: String                  = "fas fa-plus"
   override def documentationDescription: String           = "This operator increments a value by a given amount"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -334,7 +334,7 @@ class IncrementOperator extends WorkflowOperator {
 class DecrementOperator extends WorkflowOperator {
   override def documentationName: String                  = "$decr"
   override def documentationDisplayName: String           = "Decrement"
-  override def documentationIcon: String                  = "fas fa-minus-sign"
+  override def documentationIcon: String                  = "fas fa-minus"
   override def documentationDescription: String           = "This operator decrements a value by a given amount"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -404,7 +404,7 @@ class ExpressionLanguageOperator extends WorkflowOperator {
 class AddOperator extends WorkflowOperator {
   override def documentationName: String                  = "$add"
   override def documentationDisplayName: String           = "Add"
-  override def documentationIcon: String                  = "fas fa-plus-sign"
+  override def documentationIcon: String                  = "fas fa-plus"
   override def documentationDescription: String           = "This operator adds a list of numbers"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -433,7 +433,7 @@ class AddOperator extends WorkflowOperator {
 class SubtractOperator extends WorkflowOperator {
   override def documentationName: String                  = "$subtract"
   override def documentationDisplayName: String           = "Subtract"
-  override def documentationIcon: String                  = "fas fa-minus-sign"
+  override def documentationIcon: String                  = "fas fa-minus"
   override def documentationDescription: String           = "This operator subtracts a list of numbers"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -462,7 +462,7 @@ class SubtractOperator extends WorkflowOperator {
 class MultiplyOperator extends WorkflowOperator {
   override def documentationName: String                  = "$multiply"
   override def documentationDisplayName: String           = "Multiply"
-  override def documentationIcon: String                  = "fas fa-times-sign"
+  override def documentationIcon: String                  = "fas fa-times"
   override def documentationDescription: String           = "This operator multiplies a list of numbers"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -491,7 +491,7 @@ class MultiplyOperator extends WorkflowOperator {
 class DivideOperator extends WorkflowOperator {
   override def documentationName: String                  = "$divide"
   override def documentationDisplayName: String           = "Divide"
-  override def documentationIcon: String                  = "fas fa-divide-sign"
+  override def documentationIcon: String                  = "fas fa-divide"
   override def documentationDescription: String           = "This operator divides a list of numbers"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1316,7 +1316,7 @@ class MapPutOperator extends WorkflowOperator {
 class ArrayAppendOperator extends WorkflowOperator {
   override def documentationName: String                  = "$array_append"
   override def documentationDisplayName: String           = "Array append"
-  override def documentationIcon: String                  = "fas fa-plus-sign"
+  override def documentationIcon: String                  = "fas fa-plus"
   override def documentationDescription: String           = "This operator appends a value to an array"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1361,7 +1361,7 @@ class ArrayAppendOperator extends WorkflowOperator {
 class ArrayPrependOperator extends WorkflowOperator {
   override def documentationName: String                  = "$array_prepend"
   override def documentationDisplayName: String           = "Array prepend"
-  override def documentationIcon: String                  = "fas fa-plus-sign"
+  override def documentationIcon: String                  = "fas fa-plus"
   override def documentationDescription: String           = "This operator prepends a value to an array"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1406,7 +1406,7 @@ class ArrayPrependOperator extends WorkflowOperator {
 class ArrayDelOperator extends WorkflowOperator {
   override def documentationName: String                  = "$array_del"
   override def documentationDisplayName: String           = "Array delete"
-  override def documentationIcon: String                  = "fas fa-minus-sign"
+  override def documentationIcon: String                  = "fas fa-minus"
   override def documentationDescription: String           = "This operator deletes an element from an array"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(

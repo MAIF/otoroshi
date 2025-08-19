@@ -2587,15 +2587,35 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       s"""<html>
          |  <head>
          |    <title>Workflow doc</title>
+         |    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+         |    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+         |    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />         |    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/javascript.min.js"></script>
+         |    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/json.min.js"></script>
          |    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js" integrity="sha512-LhccdVNGe2QMEfI3x4DVV3ckMRe36TfydKss6mJpdHjNFiV07dFpS2xzeZedptKZrwxfICJpez09iNioiSZ3hA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+         |    <style>
+         |      h2, h4 {
+         |        margin-bottom: 30px;
+         |      }
+         |      h1 {
+         |        margin-bottom: 40px;
+         |      }
+         |      h3 {
+         |        margin-top: 60px;
+         |        margin-bottom: 40px;
+         |      }
+         |      .fas {
+         |        margin-right: 10px;
+         |      }
+         |    </style>
          |  </head>
          |  <body>
-         |    <div id="root"></div>
+         |    <div id="root" style="margin: 10"></div>
          |    <script>
          |      var converter = new showdown.Converter();
          |      fetch('/apis/workflows/doc.md').then(r => r.text()).then(md => {
          |        var html = converter.makeHtml(md);
          |        document.getElementById("root").innerHTML = html;
+         |        hljs.highlightAll();
          |      });
          |    </script>
          |  </body>

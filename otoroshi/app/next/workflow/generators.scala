@@ -92,7 +92,7 @@ object WorkflowGenerators {
                |""".stripMargin
       }
       s"""
-           |#### `${node.documentationName}`
+           |#### <span class="${node.documentationIcon}"></span> `${node.documentationDisplayName} (${node.documentationName})`
            |
            |${node.documentationDescription}
            |
@@ -115,7 +115,7 @@ object WorkflowGenerators {
                |""".stripMargin
       }
       s"""
-           |#### `${function.documentationDisplayName}`
+           |#### <span class="${function.documentationIcon}"></span>`${function.documentationDisplayName} ($key)`
            |
            |${function.documentationDescription}
            |
@@ -138,7 +138,7 @@ object WorkflowGenerators {
                |""".stripMargin
       }
       s"""
-           |####`${operator.documentationDisplayName}`
+           |#### <span class="${operator.documentationIcon}"></span> `${operator.documentationDisplayName} ($key)`
            |
            |${operator.documentationDescription}
            |
@@ -148,6 +148,8 @@ object WorkflowGenerators {
     }.toSeq
 
     s"""
+      |# Otoroshi Workflows documentation
+      |
       |## Nodes
       |
       |Each node must declare a `kind` field and can optionally define:

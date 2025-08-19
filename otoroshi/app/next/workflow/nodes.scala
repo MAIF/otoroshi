@@ -142,7 +142,7 @@ case class WorkflowNode(json: JsObject) extends Node {
 
   override def documentationName: String                  = "workflow"
   override def documentationDisplayName: String           = "Workflow"
-  override def documentationIcon: String                  = "fas fa-pied-piper"
+  override def documentationIcon: String                  = "fas fa-code-branch"
   override def documentationDescription: String           = "This node executes a sequence of nodes sequentially"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(

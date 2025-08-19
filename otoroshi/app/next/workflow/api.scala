@@ -110,8 +110,8 @@ case class WorkflowRun(id: String, attrs: TypedMap, env: Env, functions: Map[Str
 
 trait WorkflowFunction {
   def documentationName: String                                                                             = this.getClass.getName.replace("$", "")
-  def documentationDisplayName: String
-  def documentationIcon: String
+  def documentationDisplayName: String = documentationName
+  def documentationIcon: String = "fas fa-circle"
   def documentationDescription: String                                                                      = "no description"
   def documentationInputSchema: Option[JsObject]                                                            = None
   def documentationOutputSchema: Option[JsObject]                                                           = None
@@ -142,8 +142,8 @@ trait Node {
   def returned: Option[JsValue]                  = json.select("returned").asOpt[JsValue]
   def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
   def documentationName: String                  = this.getClass.getSimpleName.replace("$", "").toLowerCase()
-  def documentationDisplayName: String
-  def documentationIcon: String
+  def documentationDisplayName: String = documentationName
+  def documentationIcon: String = "fas fa-circle"
   def documentationDescription: String           = "no description"
   def documentationInputSchema: Option[JsObject] = None
   def documentationExample: Option[JsObject]     = None
@@ -232,8 +232,8 @@ object Node {
 
 trait WorkflowOperator {
   def documentationName: String                  = this.getClass.getName.replace("$", "")
-  def documentationDisplayName: String
-  def documentationIcon: String
+  def documentationDisplayName: String = documentationName
+  def documentationIcon: String = "fas fa-circle"
   def documentationDescription: String           = "no description"
   def documentationInputSchema: Option[JsObject] = None
   def documentationExample: Option[JsObject]     = None
