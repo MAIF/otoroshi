@@ -28,7 +28,9 @@ object NodesInitializer {
 
 case class ValueNode(json: JsObject) extends Node {
   override def documentationName: String                  = "value"
-  override def documentationDescription: String           = "This node executes a sequence of nodes sequentially"
+  override def documentationDisplayName: String           = "Value"
+  override def documentationIcon: String                  = "fas fa-font"
+  override def documentationDescription: String           = "This node returns a value"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
@@ -55,6 +57,8 @@ case class ValueNode(json: JsObject) extends Node {
 
 case class ErrorNode(json: JsObject) extends Node {
   override def documentationName: String                  = "error"
+  override def documentationDisplayName: String           = "Error"
+  override def documentationIcon: String                  = "fas fa-exclamation"
   override def documentationDescription: String           = "This node returns an error"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -89,6 +93,8 @@ case class ErrorNode(json: JsObject) extends Node {
 
 case class WaitNode(json: JsObject) extends Node {
   override def documentationName: String                  = "wait"
+  override def documentationDisplayName: String           = "Wait"
+  override def documentationIcon: String                  = "fas fa-clock"
   override def documentationDescription: String           = "This node waits a certain amount of time"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -120,6 +126,8 @@ case class WaitNode(json: JsObject) extends Node {
 
 case class NoopNode(json: JsObject) extends Node {
   override def documentationName: String                  = "noop"
+  override def documentationDisplayName: String           = "Noop"
+  override def documentationIcon: String                  = "fas fa-poop"
   override def documentationDescription: String           = "This node does nothing"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema.some
   override def run(
@@ -133,6 +141,8 @@ case class NoopNode(json: JsObject) extends Node {
 case class WorkflowNode(json: JsObject) extends Node {
 
   override def documentationName: String                  = "workflow"
+  override def documentationDisplayName: String           = "Workflow"
+  override def documentationIcon: String                  = "fas fa-pied-piper"
   override def documentationDescription: String           = "This node executes a sequence of nodes sequentially"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -197,6 +207,8 @@ case class WorkflowNode(json: JsObject) extends Node {
 case class CallNode(json: JsObject) extends Node {
 
   override def documentationName: String                  = "call"
+  override def documentationDisplayName: String           = "Call"
+  override def documentationIcon: String                  = "fas fa-subscript"
   override def documentationDescription: String           = "This node calls a function an returns its result"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -255,6 +267,8 @@ case class AssignOperation(json: JsObject) {
 
 case class AssignNode(json: JsObject) extends Node {
   override def documentationName: String                  = "assign"
+  override def documentationDisplayName: String           = "Assign in memory"
+  override def documentationIcon: String                  = "fas fa-dollar-sign"
   override def documentationDescription: String           =
     "This node with executes a sequence of memory assignation operations sequentially"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
@@ -314,6 +328,8 @@ case class AssignNode(json: JsObject) extends Node {
 
 case class ParallelFlowsNode(json: JsObject) extends Node {
   override def documentationName: String                  = "parallel"
+  override def documentationDisplayName: String           = "Parallel paths"
+  override def documentationIcon: String                  = "fas fa-sitemap"
   override def documentationDescription: String           = "This node executes multiple nodes in parallel"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -409,6 +425,8 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
 
 case class SwitchNode(json: JsObject) extends Node {
   override def documentationName: String                  = "switch"
+  override def documentationDisplayName: String           = "Switch paths"
+  override def documentationIcon: String                  = "fas fa-sitemap"
   override def documentationDescription: String           = "This node executes the first path matching a predicate"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -474,6 +492,8 @@ case class SwitchNode(json: JsObject) extends Node {
 
 case class IfThenElseNode(json: JsObject) extends Node {
   override def documentationName: String                  = "if"
+  override def documentationDisplayName: String           = "If then else"
+  override def documentationIcon: String                  = "fas fa-code-merge"
   override def documentationDescription: String           = "This executes a node if the predicate matches or another one if not"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -536,6 +556,8 @@ case class IfThenElseNode(json: JsObject) extends Node {
 
 case class ForEachNode(json: JsObject) extends Node {
   override def documentationName: String                  = "foreach"
+  override def documentationDisplayName: String           = "For each"
+  override def documentationIcon: String                  = "fas fa-sync"
   override def documentationDescription: String           = "This node executes a node for each element in an array"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -629,6 +651,8 @@ case class ForEachNode(json: JsObject) extends Node {
 
 case class MapNode(json: JsObject) extends Node {
   override def documentationName: String                  = "map"
+  override def documentationDisplayName: String           = "Map"
+  override def documentationIcon: String                  = "fas fa-map"
   override def documentationDescription: String           = "This node transforms an array by applying a node on each value"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -696,6 +720,8 @@ case class MapNode(json: JsObject) extends Node {
 
 case class FlatMapNode(json: JsObject) extends Node {
   override def documentationName: String                  = "flatmap"
+  override def documentationDisplayName: String           = "Flatmap"
+  override def documentationIcon: String                  = "fas fa-map"
   override def documentationDescription: String           = "This node transforms an array by applying a node on each value"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -764,6 +790,8 @@ case class FlatMapNode(json: JsObject) extends Node {
 
 case class FilterNode(json: JsObject) extends Node {
   override def documentationName: String                  = "filter"
+  override def documentationDisplayName: String           = "Filter"
+  override def documentationIcon: String                  = "fas fa-filter"
   override def documentationDescription: String           =
     "This node transforms an array by filtering values based on a node execution"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema

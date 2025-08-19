@@ -46,8 +46,10 @@ object WorkflowFunctionsInitializer {
 }
 
 class ConfigReadFunction extends WorkflowFunction {
-  override def documentationName: String                  = "core.config_read"
-  override def documentationDescription: String           = "This function retrieves values from otoroshi config."
+  override def documentationName: String = "core.config_read"
+  override def documentationDisplayName: String = "Read from Otoroshi config."
+  override def documentationIcon: String = "fas fa-book"
+  override def documentationDescription: String = "This function retrieves values from otoroshi config."
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -77,6 +79,8 @@ class ConfigReadFunction extends WorkflowFunction {
 
 class EnvGetFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.env_get"
+  override def documentationDisplayName: String           = "Get environment variable"
+  override def documentationIcon: String                  = "fas fa-dollar-sign"
   override def documentationDescription: String           = "This function retrieves values from environment variables"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -107,6 +111,8 @@ class EnvGetFunction extends WorkflowFunction {
 
 class SendMailFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.send_mail"
+  override def documentationDisplayName: String           = "Send an email"
+  override def documentationIcon: String                  = "fas fa-envelope" 
   override def documentationDescription: String           = "This function sends an email"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -183,6 +189,8 @@ class SendMailFunction extends WorkflowFunction {
 
 class StateGetAllFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.state_get_all"
+  override def documentationDisplayName: String           = "Get all resources from the state"
+  override def documentationIcon: String                  = "fas fa-database"
   override def documentationDescription: String           = "This function gets all resources from the state"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -227,6 +235,8 @@ class StateGetAllFunction extends WorkflowFunction {
 
 class StateGetOneFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.state_get"
+  override def documentationDisplayName: String           = "Get a resource from the state"
+  override def documentationIcon: String                  = "fas fa-database"
   override def documentationDescription: String           = "This function gets a resource from the state"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -273,6 +283,8 @@ class StateGetOneFunction extends WorkflowFunction {
 
 class FileDeleteFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.file_delete"
+  override def documentationDisplayName: String           = "Delete a file"
+  override def documentationIcon: String                  = "fas fa-file"
   override def documentationDescription: String           = "This function deletes a file"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -306,6 +318,8 @@ class FileDeleteFunction extends WorkflowFunction {
 
 class FileReadFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.file_read"
+  override def documentationDisplayName: String           = "Read a file"
+  override def documentationIcon: String                  = "fas fa-file"
   override def documentationDescription: String           = "This function reads a file"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -353,6 +367,8 @@ class FileReadFunction extends WorkflowFunction {
 
 class FileWriteFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.file_write"
+  override def documentationDisplayName: String           = "Write a file"
+  override def documentationIcon: String                  = "fas fa-file"
   override def documentationDescription: String           = "This function writes a file"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -417,6 +433,8 @@ class FileWriteFunction extends WorkflowFunction {
 
 class EmitEventFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.emit_event"
+  override def documentationDisplayName: String           = "Emit an event"
+  override def documentationIcon: String                  = "fas fa-bell"
   override def documentationDescription: String           = "This function emits an event"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -455,6 +473,8 @@ object LogFunction {
 class LogFunction extends WorkflowFunction {
 
   override def documentationName: String                  = "core.log"
+  override def documentationDisplayName: String           = "Log a message"
+  override def documentationIcon: String                  = "fas fa-file"
   override def documentationDescription: String           = "This function writes whatever the user want to the otoroshi logs"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -487,6 +507,8 @@ class LogFunction extends WorkflowFunction {
 
 class HelloFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.hello"
+  override def documentationDisplayName: String           = "Hello function"
+  override def documentationIcon: String                  = "fas fa-globe"
   override def documentationDescription: String           = "This function returns a hello message"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -516,6 +538,8 @@ class HelloFunction extends WorkflowFunction {
 
 class HttpClientFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.http_client"
+  override def documentationDisplayName: String           = "HTTP client"
+  override def documentationIcon: String                  = "fas fa-globe"
   override def documentationDescription: String           = "This function makes a HTTP request"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -589,6 +613,8 @@ class HttpClientFunction extends WorkflowFunction {
 class WorkflowCallFunction extends WorkflowFunction {
 
   override def documentationName: String                  = "core.workflow_call"
+  override def documentationDisplayName: String           = "Call a workflow"
+  override def documentationIcon: String                  = "fas fa-phone"
   override def documentationDescription: String           = "This function calls another workflow stored in otoroshi"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -637,6 +663,8 @@ class SystemCallFunction extends WorkflowFunction {
   import scala.sys.process._
 
   override def documentationName: String                  = "core.system_call"
+  override def documentationDisplayName: String           = "System call"
+  override def documentationIcon: String                  = "fas fa-terminal"
   override def documentationDescription: String           = "This function calls a system command"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -682,6 +710,8 @@ class SystemCallFunction extends WorkflowFunction {
 
 class WasmCallFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.wasm_call"
+  override def documentationDisplayName: String           = "Wasm call"
+  override def documentationIcon: String                  = "fas fa-phone"
   override def documentationDescription: String           = "This function calls a wasm function"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -743,6 +773,8 @@ class WasmCallFunction extends WorkflowFunction {
 
 class StoreDelFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_del"
+  override def documentationDisplayName: String           = "Datastore delete"
+  override def documentationIcon: String                  = "fas fa-database"
   override def documentationDescription: String           = "This function deletes keys from the store"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -772,6 +804,8 @@ class StoreDelFunction extends WorkflowFunction {
 
 class StoreGetFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_get"
+  override def documentationDisplayName: String           = "Datastore get"
+  override def documentationIcon: String                  = "fas fa-database"
   override def documentationDescription: String           = "This function gets keys from the store"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -805,7 +839,9 @@ class StoreGetFunction extends WorkflowFunction {
 
 class StoreSetFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_set"
-  override def documentationDescription: String           = "This function sets a key in the store"
+  override def documentationDisplayName: String           = "Datastore set"
+  override def documentationIcon: String                  = "fas fa-database"
+  override def documentationDescription: String           = "This function sets a key in the datastore"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -840,7 +876,9 @@ class StoreSetFunction extends WorkflowFunction {
 
 class StoreKeysFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_keys"
-  override def documentationDescription: String           = "This function gets keys from the store"
+  override def documentationDisplayName: String           = "Datastore list keys"
+  override def documentationIcon: String                  = "fas fa-database"
+  override def documentationDescription: String           = "This function lists keys from the datastore"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -869,7 +907,9 @@ class StoreKeysFunction extends WorkflowFunction {
 
 class StoreMgetFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_mget"
-  override def documentationDescription: String           = "This function gets multiple keys from the store"
+  override def documentationDisplayName: String           = "Datastore get multiple keys"
+  override def documentationIcon: String                  = "fas fa-database"
+  override def documentationDescription: String           = "This function gets multiple keys from the datastore"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -898,7 +938,9 @@ class StoreMgetFunction extends WorkflowFunction {
 
 class StoreMatchFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_match"
-  override def documentationDescription: String           = "This function gets keys from the store matching a pattern"
+  override def documentationDisplayName: String           = "Datastore matching keys"
+  override def documentationIcon: String                  = "fas fa-database"
+  override def documentationDescription: String           = "This function gets keys from the datastore matching a pattern"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",

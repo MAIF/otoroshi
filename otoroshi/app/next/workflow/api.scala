@@ -18,7 +18,7 @@ import scala.util.Success
 // TODO: fuel budget per run, with fuel consumption per node
 class WorkflowEngine(env: Env) {
 
-  implicit val executorContext = env.otoroshiExecutionContext
+  implicit val executorContext: ExecutionContext = env.otoroshiExecutionContext
 
   def run(node: Node, input: JsObject, attrs: TypedMap, functions: Map[String, JsObject] = Map.empty): Future[WorkflowResult] = {
     val wfRun = WorkflowRun(ULID.random(), attrs, env, functions)
@@ -110,6 +110,8 @@ case class WorkflowRun(id: String, attrs: TypedMap, env: Env, functions: Map[Str
 
 trait WorkflowFunction {
   def documentationName: String                                                                             = this.getClass.getName.replace("$", "")
+  def documentationDisplayName: String
+  def documentationIcon: String
   def documentationDescription: String                                                                      = "no description"
   def documentationInputSchema: Option[JsObject]                                                            = None
   def documentationOutputSchema: Option[JsObject]                                                           = None
@@ -140,6 +142,8 @@ trait Node {
   def returned: Option[JsValue]                  = json.select("returned").asOpt[JsValue]
   def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
   def documentationName: String                  = this.getClass.getSimpleName.replace("$", "").toLowerCase()
+  def documentationDisplayName: String
+  def documentationIcon: String
   def documentationDescription: String           = "no description"
   def documentationInputSchema: Option[JsObject] = None
   def documentationExample: Option[JsObject]     = None
@@ -228,6 +232,8 @@ object Node {
 
 trait WorkflowOperator {
   def documentationName: String                  = this.getClass.getName.replace("$", "")
+  def documentationDisplayName: String
+  def documentationIcon: String
   def documentationDescription: String           = "no description"
   def documentationInputSchema: Option[JsObject] = None
   def documentationExample: Option[JsObject]     = None

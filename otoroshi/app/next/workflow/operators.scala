@@ -64,6 +64,8 @@ class JqOperator extends WorkflowOperator {
   private val library = ImmutableJqLibrary.of()
 
   override def documentationName: String                  = "$jq"
+  override def documentationDisplayName: String           = "JQ"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator transforms a json value using JQ"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -105,6 +107,8 @@ class JqOperator extends WorkflowOperator {
 
 class StringifyOperator extends WorkflowOperator {
   override def documentationName: String                  = "$stringify"
+  override def documentationDisplayName: String           = "Stringify"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator stringify a json value"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -129,6 +133,8 @@ class StringifyOperator extends WorkflowOperator {
 
 class PrettifyOperator extends WorkflowOperator {
   override def documentationName: String                  = "$prettify"
+  override def documentationDisplayName: String           = "Prettify"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator prettify a json value"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -153,6 +159,8 @@ class PrettifyOperator extends WorkflowOperator {
 
 class StringReplaceOperator extends WorkflowOperator {
   override def documentationName: String                  = "$str_replace"
+  override def documentationDisplayName: String           = "String Replace"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator replace values inside a string"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -184,6 +192,8 @@ class StringReplaceOperator extends WorkflowOperator {
 
 class StringReplaceAllOperator extends WorkflowOperator {
   override def documentationName: String                  = "$str_replace_all"
+  override def documentationDisplayName: String           = "String Replace All"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator replace all values matching a regex inside a string"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -215,6 +225,8 @@ class StringReplaceAllOperator extends WorkflowOperator {
 
 class UppercaseOperator extends WorkflowOperator {
   override def documentationName: String                  = "$str_upper_case"
+  override def documentationDisplayName: String           = "Uppercase"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator converts a string to uppercase"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -239,6 +251,8 @@ class UppercaseOperator extends WorkflowOperator {
 
 class LowercaseOperator extends WorkflowOperator {
   override def documentationName: String                  = "$str_lower_case"
+  override def documentationDisplayName: String           = "Lowercase"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator converts a string to lowercase"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -263,6 +277,8 @@ class LowercaseOperator extends WorkflowOperator {
 
 class StringSplitOperator extends WorkflowOperator {
   override def documentationName: String                  = "$str_split"
+  override def documentationDisplayName: String           = "String Split"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator splits a string into an array based on a regex"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -289,6 +305,8 @@ class StringSplitOperator extends WorkflowOperator {
 
 class IncrementOperator extends WorkflowOperator {
   override def documentationName: String                  = "$incr"
+  override def documentationDisplayName: String           = "Increment"
+  override def documentationIcon: String                  = "fas fa-plus-sign"
   override def documentationDescription: String           = "This operator increments a value by a given amount"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -315,6 +333,8 @@ class IncrementOperator extends WorkflowOperator {
 
 class DecrementOperator extends WorkflowOperator {
   override def documentationName: String                  = "$decr"
+  override def documentationDisplayName: String           = "Decrement"
+  override def documentationIcon: String                  = "fas fa-minus-sign"
   override def documentationDescription: String           = "This operator decrements a value by a given amount"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -341,6 +361,8 @@ class DecrementOperator extends WorkflowOperator {
 
 class ExpressionLanguageOperator extends WorkflowOperator {
   override def documentationName: String                  = "$expression_language"
+  override def documentationDisplayName: String           = "Expression Language"
+  override def documentationIcon: String                  = "fas fa-dollar-sign"
   override def documentationDescription: String           = "This operator evaluates an expression language"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -381,6 +403,8 @@ class ExpressionLanguageOperator extends WorkflowOperator {
 
 class AddOperator extends WorkflowOperator {
   override def documentationName: String                  = "$add"
+  override def documentationDisplayName: String           = "Add"
+  override def documentationIcon: String                  = "fas fa-plus-sign"
   override def documentationDescription: String           = "This operator adds a list of numbers"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -408,6 +432,8 @@ class AddOperator extends WorkflowOperator {
 
 class SubtractOperator extends WorkflowOperator {
   override def documentationName: String                  = "$subtract"
+  override def documentationDisplayName: String           = "Subtract"
+  override def documentationIcon: String                  = "fas fa-minus-sign"
   override def documentationDescription: String           = "This operator subtracts a list of numbers"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -435,6 +461,8 @@ class SubtractOperator extends WorkflowOperator {
 
 class MultiplyOperator extends WorkflowOperator {
   override def documentationName: String                  = "$multiply"
+  override def documentationDisplayName: String           = "Multiply"
+  override def documentationIcon: String                  = "fas fa-times-sign"
   override def documentationDescription: String           = "This operator multiplies a list of numbers"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -462,6 +490,8 @@ class MultiplyOperator extends WorkflowOperator {
 
 class DivideOperator extends WorkflowOperator {
   override def documentationName: String                  = "$divide"
+  override def documentationDisplayName: String           = "Divide"
+  override def documentationIcon: String                  = "fas fa-divide-sign"
   override def documentationDescription: String           = "This operator divides a list of numbers"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -489,6 +519,8 @@ class DivideOperator extends WorkflowOperator {
 
 class ParseDateTimeOperator extends WorkflowOperator {
   override def documentationName: String                  = "$parse_datetime"
+  override def documentationDisplayName: String           = "Parse DateTime"
+  override def documentationIcon: String                  = "fas fa-clock"
   override def documentationDescription: String           = "This operator parses a datetime string into a timestamp"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -523,6 +555,8 @@ class ParseDateTimeOperator extends WorkflowOperator {
 
 class ParseDateOperator extends WorkflowOperator {
   override def documentationName: String                  = "$parse_date"
+  override def documentationDisplayName: String           = "Parse Date"
+  override def documentationIcon: String                  = "fas fa-clock"
   override def documentationDescription: String           = "This operator parses a date string into a timestamp"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -557,6 +591,8 @@ class ParseDateOperator extends WorkflowOperator {
 
 class ParseTimeOperator extends WorkflowOperator {
   override def documentationName: String                  = "$parse_time"
+  override def documentationDisplayName: String           = "Parse Time"
+  override def documentationIcon: String                  = "fas fa-clock"
   override def documentationDescription: String           = "This operator parses a time string into a timestamp"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -597,6 +633,8 @@ class ParseTimeOperator extends WorkflowOperator {
 
 class NotOperator extends WorkflowOperator {
   override def documentationName: String                  = "$not"
+  override def documentationDisplayName: String           = "Not"
+  override def documentationIcon: String                  = "fas fa-exclamation"
   override def documentationDescription: String           = "This operator negates a boolean value"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -624,6 +662,8 @@ class NotOperator extends WorkflowOperator {
 
 class NowOperator extends WorkflowOperator {
   override def documentationName: String                  = "$now"
+  override def documentationDisplayName: String           = "Now"
+  override def documentationIcon: String                  = "fas fa-clock"
   override def documentationDescription: String           = "This operator returns the current timestamp"
   override def documentationInputSchema: Option[JsObject] = None
   override def documentationExample: Option[JsObject]     = Some(
@@ -638,6 +678,8 @@ class NowOperator extends WorkflowOperator {
 
 class BasicAuthOperator extends WorkflowOperator {
   override def documentationName: String                  = "$basic_auth"
+  override def documentationDisplayName: String           = "Basic Auth"
+  override def documentationIcon: String                  = "fas fa-user-secret"
   override def documentationDescription: String           = "This operator returns a basic authentication header"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -666,6 +708,8 @@ class BasicAuthOperator extends WorkflowOperator {
 
 class EncodeBase64Operator extends WorkflowOperator {
   override def documentationName: String                  = "$encode_base64"
+  override def documentationDisplayName: String           = "Encode Base64"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator encodes a string in base64"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -690,6 +734,8 @@ class EncodeBase64Operator extends WorkflowOperator {
 
 class DecodeBase64Operator extends WorkflowOperator {
   override def documentationName: String                  = "$decode_base64"
+  override def documentationDisplayName: String           = "Decode Base64"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator decodes a base64 string"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -714,6 +760,8 @@ class DecodeBase64Operator extends WorkflowOperator {
 
 class GtOperator extends WorkflowOperator {
   override def documentationName: String                  = "$gt"
+  override def documentationDisplayName: String           = "Greater than"
+  override def documentationIcon: String                  = "fas fa-greater-than"
   override def documentationDescription: String           = "This operator checks if a number is greater than another number"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -742,8 +790,9 @@ class GtOperator extends WorkflowOperator {
 
 class GteOperator extends WorkflowOperator {
   override def documentationName: String                  = "$gte"
-  override def documentationDescription: String           =
-    "This operator checks if a number is greater than or equal to another number"
+  override def documentationDisplayName: String           = "Greater than or equal to"
+  override def documentationIcon: String                  = "fas fa-greater-than-equal"
+  override def documentationDescription: String           = "This operator checks if a number is greater than or equal to another number"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -771,6 +820,8 @@ class GteOperator extends WorkflowOperator {
 
 class LtOperator extends WorkflowOperator {
   override def documentationName: String                  = "$lt"
+  override def documentationDisplayName: String           = "Less than"
+  override def documentationIcon: String                  = "fas fa-less-than"
   override def documentationDescription: String           = "This operator checks if a number is less than another number"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -799,8 +850,9 @@ class LtOperator extends WorkflowOperator {
 
 class LteOperator extends WorkflowOperator {
   override def documentationName: String                  = "$lte"
-  override def documentationDescription: String           =
-    "This operator checks if a number is less than or equal to another number"
+  override def documentationDisplayName: String           = "Less than or equal to"
+  override def documentationIcon: String                  = "fas fa-less-than-equal"
+  override def documentationDescription: String           = "This operator checks if a number is less than or equal to another number"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -828,6 +880,8 @@ class LteOperator extends WorkflowOperator {
 
 class EqOperator extends WorkflowOperator {
   override def documentationName: String                  = "$eq"
+  override def documentationDisplayName: String           = "Equal to"
+  override def documentationIcon: String                  = "fas fa-equals"
   override def documentationDescription: String           = "This operator checks if two values are equal"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -856,6 +910,8 @@ class EqOperator extends WorkflowOperator {
 
 class NeqOperator extends WorkflowOperator {
   override def documentationName: String                  = "$neq"
+  override def documentationDisplayName: String           = "Not equal to"
+  override def documentationIcon: String                  = "fas fa-not-equal"
   override def documentationDescription: String           = "This operator checks if two values are not equal"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -883,7 +939,9 @@ class NeqOperator extends WorkflowOperator {
 }
 
 class ContainsOperator extends WorkflowOperator {
-  override def documentationName: String                  = "$contains"
+  override def documentationName: String                  = "$contains" 
+  override def documentationDisplayName: String           = "Contains"
+  override def documentationIcon: String                  = "fas fa-box-open"
   override def documentationDescription: String           = "This operator checks if a value is contained in a container"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -928,6 +986,8 @@ class ContainsOperator extends WorkflowOperator {
 
 class IsTruthyOperator extends WorkflowOperator {
   override def documentationName: String                  = "$is_truthy"
+  override def documentationDisplayName: String           = "Is truthy"
+  override def documentationIcon: String                  = "fas fa-check"
   override def documentationDescription: String           = "This operator checks if a value is truthy"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -970,6 +1030,8 @@ class IsTruthyOperator extends WorkflowOperator {
 
 class IsFalsyOperator extends WorkflowOperator {
   override def documentationName: String                  = "$is_falsy"
+  override def documentationDisplayName: String           = "Is falsy"
+  override def documentationIcon: String                  = "fas fa-times"
   override def documentationDescription: String           = "This operator checks if a value is falsy"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1013,6 +1075,8 @@ class IsFalsyOperator extends WorkflowOperator {
 
 class MemRefOperator extends WorkflowOperator {
   override def documentationName: String                  = "$memref"
+  override def documentationDisplayName: String           = "Memory reference"
+  override def documentationIcon: String                  = "fas fa-brain"
   override def documentationDescription: String           = "This operator gets a value from the memory"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1045,6 +1109,8 @@ class MemRefOperator extends WorkflowOperator {
 
 class JsonParseOperator extends WorkflowOperator {
   override def documentationName: String                  = "$json_parse"
+  override def documentationDisplayName: String           = "JSON parse"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator parses a JSON string"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1084,6 +1150,8 @@ class JsonParseOperator extends WorkflowOperator {
 
 class StrConcatOperator extends WorkflowOperator {
   override def documentationName: String                  = "$str_concat"
+  override def documentationDisplayName: String           = "String Concat"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator concatenates a list of strings"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1112,6 +1180,8 @@ class StrConcatOperator extends WorkflowOperator {
 
 class MapGetOperator extends WorkflowOperator {
   override def documentationName: String                  = "$map_get"
+  override def documentationDisplayName: String           = "Map get"
+  override def documentationIcon: String                  = "fas fa-brain"
   override def documentationDescription: String           = "This operator gets a value from a map"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1154,6 +1224,8 @@ class MapGetOperator extends WorkflowOperator {
 
 class MapDelOperator extends WorkflowOperator {
   override def documentationName: String                  = "$map_del"
+  override def documentationDisplayName: String           = "Map delete"
+  override def documentationIcon: String                  = "fas fa-brain"
   override def documentationDescription: String           = "This operator deletes a key from a map"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1196,6 +1268,8 @@ class MapDelOperator extends WorkflowOperator {
 
 class MapPutOperator extends WorkflowOperator {
   override def documentationName: String                  = "$map_put"
+  override def documentationDisplayName: String           = "Map put"
+  override def documentationIcon: String                  = "fas fa-brain"
   override def documentationDescription: String           = "This operator puts a key-value pair in a map"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1241,6 +1315,8 @@ class MapPutOperator extends WorkflowOperator {
 
 class ArrayAppendOperator extends WorkflowOperator {
   override def documentationName: String                  = "$array_append"
+  override def documentationDisplayName: String           = "Array append"
+  override def documentationIcon: String                  = "fas fa-plus-sign"
   override def documentationDescription: String           = "This operator appends a value to an array"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1284,6 +1360,8 @@ class ArrayAppendOperator extends WorkflowOperator {
 
 class ArrayPrependOperator extends WorkflowOperator {
   override def documentationName: String                  = "$array_prepend"
+  override def documentationDisplayName: String           = "Array prepend"
+  override def documentationIcon: String                  = "fas fa-plus-sign"
   override def documentationDescription: String           = "This operator prepends a value to an array"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1327,6 +1405,8 @@ class ArrayPrependOperator extends WorkflowOperator {
 
 class ArrayDelOperator extends WorkflowOperator {
   override def documentationName: String                  = "$array_del"
+  override def documentationDisplayName: String           = "Array delete"
+  override def documentationIcon: String                  = "fas fa-minus-sign"
   override def documentationDescription: String           = "This operator deletes an element from an array"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1369,6 +1449,8 @@ class ArrayDelOperator extends WorkflowOperator {
 
 class ArrayAtOperator extends WorkflowOperator {
   override def documentationName: String                  = "$array_at"
+  override def documentationDisplayName: String           = "Array at"
+  override def documentationIcon: String                  = "fas fa-brain"
   override def documentationDescription: String           = "This operator gets an element from an array"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1411,6 +1493,8 @@ class ArrayAtOperator extends WorkflowOperator {
 
 class ArrayPageOperator extends WorkflowOperator {
   override def documentationName: String                  = "$array_page"
+  override def documentationDisplayName: String           = "Array page"
+  override def documentationIcon: String                  = "fas fa-brain"
   override def documentationDescription: String           = "This operator gets a page of an array"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -1460,6 +1544,8 @@ class ArrayPageOperator extends WorkflowOperator {
 
 class ProjectionOperator extends WorkflowOperator {
   override def documentationName: String                  = "$projection"
+  override def documentationDisplayName: String           = "Projection"
+  override def documentationIcon: String                  = "fas fa-brain"
   override def documentationDescription: String           = "This operator projects a value"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(

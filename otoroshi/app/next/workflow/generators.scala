@@ -11,9 +11,11 @@ object WorkflowGenerators {
         val node = value.apply(Json.obj())
         Json.obj(
           "name"        -> node.documentationName,
+          "display_name" -> node.documentationDisplayName,
+          "icon" -> node.documentationIcon,
           "description" -> node.documentationDescription,
           "schema"      -> node.documentationInputSchema,
-          "example"     -> node.documentationExample
+          "example"     -> node.documentationExample,
         )
       }.toSeq),
       "functions" -> JsArray(WorkflowFunction.functions.map { case (key, value) =>
@@ -21,7 +23,9 @@ object WorkflowGenerators {
           "name"        -> key,
           "description" -> value.documentationDescription,
           "schema"      -> value.documentationInputSchema,
-          "example"     -> value.documentationExample
+          "example"     -> value.documentationExample,
+          "display_name" -> value.documentationDisplayName,
+          "icon" -> value.documentationIcon,
         )
       }.toSeq),
       "operators" -> JsArray(WorkflowOperator.operators.map { case (key, value) =>
@@ -29,7 +33,9 @@ object WorkflowGenerators {
           "name"        -> key,
           "description" -> value.documentationDescription,
           "schema"      -> value.documentationInputSchema,
-          "example"     -> value.documentationExample
+          "example"     -> value.documentationExample,
+          "display_name" -> value.documentationDisplayName,
+          "icon" -> value.documentationIcon,
         )
       }.toSeq)
     )
@@ -109,7 +115,7 @@ object WorkflowGenerators {
                |""".stripMargin
       }
       s"""
-           |#### `${key}`
+           |#### `${function.documentationDisplayName}`
            |
            |${function.documentationDescription}
            |
@@ -132,7 +138,7 @@ object WorkflowGenerators {
                |""".stripMargin
       }
       s"""
-           |####`${key}`
+           |####`${operator.documentationDisplayName}`
            |
            |${operator.documentationDescription}
            |
