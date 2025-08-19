@@ -27,20 +27,23 @@ export function RoutesTable(props) {
   const params = useParams();
   const history = useHistory();
 
+  const [queryFilters, setQueryFilters] = useState(undefined)
+
   const [loading, setLoading] = useState(true);
   const [fields, setFields] = useState({
-    id: false,
     name: true,
     description: true,
-    tags: false,
-    metadata: false,
     enabled: true,
-    groups: false,
     frontend: true,
     backend: true,
+    groups: true,
+    'metadata.updated_at': true,
+
+    id: false,
+    tags: false,
+    metadata: false,
     plugins: false,
     'created at': false,
-    'metadata.updated_at': true,
     'metadata.created_at': false,
   });
 
@@ -162,9 +165,8 @@ export function RoutesTable(props) {
 
   const groupsColumn = {
     title: 'Groups',
-    content: (item) => (item.groups || []).join(','),
-    notSortable: true,
-    notFilterable: true,
+    filterId: 'groups',
+    content: (item) => (Array.isArray(item.groups) ? item.groups : []).join(',')
   };
 
   const pluginsColumn = {
@@ -272,6 +274,7 @@ export function RoutesTable(props) {
 
   const onFieldsChange = (fields) => {
     if (ref.current) {
+      console.log('update table')
       ref.current.update();
     }
 
@@ -279,8 +282,22 @@ export function RoutesTable(props) {
   };
 
   useEffect(() => {
+    loadSearchParamsFromQuery()
     loadFields();
   }, []);
+
+  const loadSearchParamsFromQuery = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const rawSearch = urlParams.get('search')
+
+    if (rawSearch) {
+      try {
+        setQueryFilters(Object.entries(JSON.parse(atob(rawSearch))).map(([id, value]) => ({ id, value })))
+      } catch (_) { }
+
+    }
+  }
 
   const loadFields = () => {
     try {
@@ -288,7 +305,6 @@ export function RoutesTable(props) {
 
       if (values.routes) setFields(values.routes);
     } catch (e) {
-      // console.log(e);
     } finally {
       setLoading(false);
     }
@@ -308,13 +324,16 @@ export function RoutesTable(props) {
     } catch (e) {
       // console.log(e);
     }
-  };
+  }
+
+  console.log(queryFilters)
 
   return (
     <Loader loading={loading}>
       <div className="designer">
         <Table
           ref={ref}
+          defaultFiltered={queryFilters}
           parentProps={{ params }}
           navigateTo={(item) => history.push(`/routes/${item.id}?tab=flow`)}
           navigateOnEdit={(item) => history.push(`/routes/${item.id}?tab=informations`)}

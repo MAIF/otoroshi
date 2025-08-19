@@ -19,7 +19,6 @@ The expected structure is the following :
   "authConfigs": [],
   "certificates": [],
   "clientValidators": [],
-  "scripts": [],
   "tcpServices": [],
   "dataExporters": [],
   "tenants": [],

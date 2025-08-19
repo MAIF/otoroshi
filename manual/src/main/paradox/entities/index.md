@@ -131,15 +131,6 @@ Any entity has the following properties
 @@@
 
 @@@div { .entities }
-<img src="../imgs/entities-groups.png">
-<div>
-<span>Scripts</span>
-<span></span>
-</div>
-@ref:[View](./scripts.md)
-@@@
-
-@@@div { .entities }
 <img src="../imgs/entities-services.png">
 <div>
 <span>Service descriptors</span>
@@ -162,7 +153,6 @@ Any entity has the following properties
 * [Certificates](./certificates.md)
 * [JWT verifiers](./jwt-verifiers.md)
 * [Data exporters](./data-exporters.md)
-* [Scripts](./scripts.md)
 * [TCP services](./tcp-services.md)
 * [Service descriptors](./service-descriptors.md)
 

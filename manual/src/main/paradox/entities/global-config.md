@@ -89,7 +89,7 @@ Once configured, you can register one clever cloud app of your organization dire
 
 ###  Global scripts
 
-Global scripts will be deprecated soon, please use global plugins instead (see the next section)!
+Global scripts is deprecated, please use global plugins instead (see the next section)!
 
 ###  Global plugins
 

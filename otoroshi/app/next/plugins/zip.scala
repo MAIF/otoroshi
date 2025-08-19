@@ -184,7 +184,7 @@ class ZipFileBackend extends NgBackendCall {
           route = ctx.route.some,
           apiKey = ctx.apikey,
           user = ctx.user,
-          context = Map.empty,
+          context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
           attrs = ctx.attrs,
           env = env
         )

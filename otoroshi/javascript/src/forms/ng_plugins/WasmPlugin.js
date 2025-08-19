@@ -80,6 +80,13 @@ const schema = {
         'Plugin is compiled targeting WASI (checked if you use Go or JS/TS as plugin language).',
     },
   },
+  isJS: {
+    type: 'box-bool',
+    label: 'Is JS?',
+    props: {
+      description: 'Is the WASM module written in JavaScript?',
+    },
+  },
   instances: {
     type: 'Number',
     label: 'Instances',
@@ -263,7 +270,8 @@ export default {
     [
       'source',
       'functionName',
-      v.source?.kind.toLowerCase() !== 'local' && 'wasi',
+      v.source.kind.toLowerCase() !== 'local' && 'isJS',
+      v.source.kind.toLowerCase() !== 'local' && 'wasi',
       // v.source.kind.toLowerCase() !== 'local' && 'lifetime',
       v.source?.kind.toLowerCase() !== 'local' && 'authorizations',
       v.source?.kind.toLowerCase() !== 'local' && 'killOptions',

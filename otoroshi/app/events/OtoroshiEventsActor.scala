@@ -1031,6 +1031,32 @@ object Exporters {
     }
   }
 
+  class HttpCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(ec, env) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        exporter[HttpCallSettings].map { eec =>
+          eec.call(events, config, globalConfig)
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
+  class WorkflowCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(ec, env) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        exporter[WorkflowCallSettings].map { eec =>
+          eec.call(events, config, globalConfig)
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
   class KafkaExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
       extends DefaultDataExporter(config)(ec, env) {
 
@@ -1290,13 +1316,13 @@ object Exporters {
             val id   = (jsonEvt \ "@id").as[String]
             s"""<li><a href="#$id">""" + (jsonEvt \ "alert")
               .asOpt[String]
-              .getOrElse("Unkown alert") + s" - ${date.toString()}</a></li>"
+              .getOrElse("Unknown alert") + s" - ${date.toString()}</a></li>"
           }
           .mkString("<ul>", "\n", "</ul>")
 
         val email = events
           .map { jsonEvt =>
-            val alert = (jsonEvt \ "alert").asOpt[String].getOrElse("Unkown alert")
+            val alert = (jsonEvt \ "alert").asOpt[String].getOrElse("Unknown alert")
             val date  = new DateTime((jsonEvt \ "@timestamp").as[Long])
             val id    = (jsonEvt \ "@id").as[String]
             s"""<h3 id="$id">$alert - ${date.toString()}</h3><pre>${Json.prettyPrint(jsonEvt)}</pre><br/>"""
@@ -1304,7 +1330,7 @@ object Exporters {
           .mkString("\n")
 
         val emailBody =
-          s"""<p>${events.size} new events occured on Otoroshi, you can visualize it on the <a href="${env.rootScheme}${env.backOfficeHost}/">Otoroshi Dashboard</a></p>
+          s"""<p>${events.size} new events occurred on Otoroshi, you can visualize it on the <a href="${env.rootScheme}${env.backOfficeHost}/">Otoroshi Dashboard</a></p>
              |$titles
              |$email
                  """

@@ -55,8 +55,10 @@ export class GroupsPage extends Component {
         <button
           type="button"
           className="btn btn-sm btn-success"
-          onClick={(e) => (window.location = `/bo/dashboard/groups/edit/${item.id}/stats`)}
-        >
+          onClick={(e) => {
+            e.stopPropagation()
+            window.location = `/bo/dashboard/groups/edit/${item.id}/stats`
+          }}>
           <i className="fas fa-chart-bar" />
         </button>
       ),
@@ -93,7 +95,8 @@ export class GroupsPage extends Component {
         navigateTo={(item) => {
           window.location = `/bo/dashboard/groups/edit/${item.id}`
         }}
-        itemUrl={(i) => `/bo/dashboard/groups/edit/${i.id}`}
+        linkUrl={(item) => `/bo/dashboard/groups/edit/${item.id}`}
+        itemUrl={(item) => `/bo/dashboard/routes?search=${btoa(JSON.stringify({ groups: item.id }))}`}
         displayTrash={(item) => this.props.env && this.props.env.adminGroupId === item.id}
         showActions={true}
         showLink={true}

@@ -43,34 +43,38 @@ object WorkflowFunctionsInitializer {
 }
 
 class SendMailFunction extends WorkflowFunction {
-  override def documentationName: String = "core.send_mail"
-  override def documentationDescription: String = "This function sends an email"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("from", "to", "subject", "html", "mailer_config"),
-    "properties" -> Json.obj(
-      "from" -> Json.obj("type" -> "string", "description" -> "The sender email address"),
-      "to" -> Json.obj("type" -> "array", "description" -> "The recipient email addresses"),
-      "subject" -> Json.obj("type" -> "string", "description" -> "The email subject"),
-      "html" -> Json.obj("type" -> "string", "description" -> "The email HTML content"),
-      "mailer_config" -> Json.obj("type" -> "object", "description" -> "The mailer configuration"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.send_mail", 
-    "args" -> Json.obj(
-      "from" -> "sender@example.com",
-      "to" -> Seq("recipient@example.com"),
-      "subject" -> "Test email",
-      "html" -> "Hello, this is a test email",
-      "mailer_config" -> Json.obj(
-        "kind" -> "mailgun",
-        "api_key" -> "your_api_key",
-        "domain" -> "your_domain"
+  override def documentationName: String                  = "core.send_mail"
+  override def documentationDescription: String           = "This function sends an email"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("from", "to", "subject", "html", "mailer_config"),
+      "properties" -> Json.obj(
+        "from"          -> Json.obj("type" -> "string", "description" -> "The sender email address"),
+        "to"            -> Json.obj("type" -> "array", "description" -> "The recipient email addresses"),
+        "subject"       -> Json.obj("type" -> "string", "description" -> "The email subject"),
+        "html"          -> Json.obj("type" -> "string", "description" -> "The email HTML content"),
+        "mailer_config" -> Json.obj("type" -> "object", "description" -> "The mailer configuration")
       )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.send_mail",
+      "args"     -> Json.obj(
+        "from"          -> "sender@example.com",
+        "to"            -> Seq("recipient@example.com"),
+        "subject"       -> "Test email",
+        "html"          -> "Hello, this is a test email",
+        "mailer_config" -> Json.obj(
+          "kind"    -> "mailgun",
+          "api_key" -> "your_api_key",
+          "domain"  -> "your_domain"
+        )
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val config                 = args.select("mailer_config").asOpt[JsObject].getOrElse(Json.obj())
     val from: EmailLocation    = EmailLocation.format.reads(args.select("from").asValue).get
@@ -115,26 +119,30 @@ class SendMailFunction extends WorkflowFunction {
 }
 
 class StateGetAllFunction extends WorkflowFunction {
-  override def documentationName: String = "core.state_get_all"
-  override def documentationDescription: String = "This function gets all resources from the state"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("name", "group", "version"),
-    "properties" -> Json.obj(
-      "name" -> Json.obj("type" -> "string", "description" -> "The name of the resource"),
-      "group" -> Json.obj("type" -> "string", "description" -> "The group of the resource"),
-      "version" -> Json.obj("type" -> "string", "description" -> "The version of the resource"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.state_get_all", 
-    "args" -> Json.obj(
-      "name" -> "my_resource",
-      "group" -> "my_group",
-      "version" -> "my_version"
+  override def documentationName: String                  = "core.state_get_all"
+  override def documentationDescription: String           = "This function gets all resources from the state"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("name", "group", "version"),
+      "properties" -> Json.obj(
+        "name"    -> Json.obj("type" -> "string", "description" -> "The name of the resource"),
+        "group"   -> Json.obj("type" -> "string", "description" -> "The group of the resource"),
+        "version" -> Json.obj("type" -> "string", "description" -> "The version of the resource")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.state_get_all",
+      "args"     -> Json.obj(
+        "name"    -> "my_resource",
+        "group"   -> "my_group",
+        "version" -> "my_version"
+      )
+    )
+  )
 
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val name    = args.select("name").asString
@@ -155,28 +163,32 @@ class StateGetAllFunction extends WorkflowFunction {
 }
 
 class StateGetOneFunction extends WorkflowFunction {
-  override def documentationName: String = "core.state_get"
-  override def documentationDescription: String = "This function gets a resource from the state"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("id", "name", "group", "version"),
-    "properties" -> Json.obj(
-      "id" -> Json.obj("type" -> "string", "description" -> "The ID of the resource"),
-      "name" -> Json.obj("type" -> "string", "description" -> "The name of the resource"),
-      "group" -> Json.obj("type" -> "string", "description" -> "The group of the resource"),
-      "version" -> Json.obj("type" -> "string", "description" -> "The version of the resource"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.state_get_one", 
-    "args" -> Json.obj(
-      "id" -> "my_id",
-      "name" -> "my_resource",
-      "group" -> "my_group",
-      "version" -> "my_version"
+  override def documentationName: String                  = "core.state_get"
+  override def documentationDescription: String           = "This function gets a resource from the state"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("id", "name", "group", "version"),
+      "properties" -> Json.obj(
+        "id"      -> Json.obj("type" -> "string", "description" -> "The ID of the resource"),
+        "name"    -> Json.obj("type" -> "string", "description" -> "The name of the resource"),
+        "group"   -> Json.obj("type" -> "string", "description" -> "The group of the resource"),
+        "version" -> Json.obj("type" -> "string", "description" -> "The version of the resource")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.state_get_one",
+      "args"     -> Json.obj(
+        "id"      -> "my_id",
+        "name"    -> "my_resource",
+        "group"   -> "my_group",
+        "version" -> "my_version"
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val id      = args.select("id").asString
     val name    = args.select("name").asString
@@ -197,22 +209,26 @@ class StateGetOneFunction extends WorkflowFunction {
 }
 
 class FileDeleteFunction extends WorkflowFunction {
-  override def documentationName: String = "core.file_delete"
-  override def documentationDescription: String = "This function deletes a file"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("path"),
-    "properties" -> Json.obj(
-      "path" -> Json.obj("type" -> "string", "description" -> "The path of the file to delete"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.file_delete", 
-    "args" -> Json.obj(
-      "path" -> "/path/to/file.txt"
+  override def documentationName: String                  = "core.file_delete"
+  override def documentationDescription: String           = "This function deletes a file"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("path"),
+      "properties" -> Json.obj(
+        "path" -> Json.obj("type" -> "string", "description" -> "The path of the file to delete")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.file_delete",
+      "args"     -> Json.obj(
+        "path" -> "/path/to/file.txt"
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val path = args.select("path").asString
     try {
@@ -226,26 +242,33 @@ class FileDeleteFunction extends WorkflowFunction {
 }
 
 class FileReadFunction extends WorkflowFunction {
-  override def documentationName: String = "core.file_read"
-  override def documentationDescription: String = "This function reads a file"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("path"),
-    "properties" -> Json.obj(
-      "path" -> Json.obj("type" -> "string", "description" -> "The path of the file to read"),
-      "parse_json" -> Json.obj("type" -> "boolean", "description" -> "Whether to parse the file as JSON"),
-      "encode_base64" -> Json.obj("type" -> "boolean", "description" -> "Whether to encode the file content in base64"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.file_read", 
-    "args" -> Json.obj(
-      "path" -> "/path/to/file.txt",
-      "parse_json" -> true,
-      "encode_base64" -> true
+  override def documentationName: String                  = "core.file_read"
+  override def documentationDescription: String           = "This function reads a file"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("path"),
+      "properties" -> Json.obj(
+        "path"          -> Json.obj("type" -> "string", "description" -> "The path of the file to read"),
+        "parse_json"    -> Json.obj("type" -> "boolean", "description" -> "Whether to parse the file as JSON"),
+        "encode_base64" -> Json.obj(
+          "type"        -> "boolean",
+          "description" -> "Whether to encode the file content in base64"
+        )
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.file_read",
+      "args"     -> Json.obj(
+        "path"          -> "/path/to/file.txt",
+        "parse_json"    -> true,
+        "encode_base64" -> true
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val path         = args.select("path").asString
     val parseJson    = args.select("parse_json").asOptBoolean.getOrElse(false)
@@ -266,28 +289,32 @@ class FileReadFunction extends WorkflowFunction {
 }
 
 class FileWriteFunction extends WorkflowFunction {
-  override def documentationName: String = "core.file_write"
-  override def documentationDescription: String = "This function writes a file"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("path", "value"),
-    "properties" -> Json.obj(
-      "path" -> Json.obj("type" -> "string", "description" -> "The path of the file to write"),
-      "value" -> Json.obj("type" -> "string", "description" -> "The value to write"),
-      "prettify" -> Json.obj("type" -> "boolean", "description" -> "Whether to prettify the JSON"),
-      "from_base64" -> Json.obj("type" -> "boolean", "description" -> "Whether to decode the base64 content"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.file_write", 
-    "args" -> Json.obj(
-      "path" -> "/path/to/file.txt",
-      "value" -> "my_value",
-      "prettify" -> true,
-      "from_base64" -> true
+  override def documentationName: String                  = "core.file_write"
+  override def documentationDescription: String           = "This function writes a file"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("path", "value"),
+      "properties" -> Json.obj(
+        "path"        -> Json.obj("type" -> "string", "description" -> "The path of the file to write"),
+        "value"       -> Json.obj("type" -> "string", "description" -> "The value to write"),
+        "prettify"    -> Json.obj("type" -> "boolean", "description" -> "Whether to prettify the JSON"),
+        "from_base64" -> Json.obj("type" -> "boolean", "description" -> "Whether to decode the base64 content")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.file_write",
+      "args"     -> Json.obj(
+        "path"        -> "/path/to/file.txt",
+        "value"       -> "my_value",
+        "prettify"    -> true,
+        "from_base64" -> true
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val path         =
       args.select("path").asOptString.getOrElse(Files.createTempFile("llm-ext-fw-", ".tmp").toFile.getAbsolutePath)
@@ -326,27 +353,31 @@ class FileWriteFunction extends WorkflowFunction {
 }
 
 class EmitEventFunction extends WorkflowFunction {
-  override def documentationName: String = "core.emit_event"
-  override def documentationDescription: String = "This function emits an event"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("event"),
-    "properties" -> Json.obj(
-      "event" -> Json.obj("type" -> "object", "description" -> "The event to emit"),
-    ))
+  override def documentationName: String                  = "core.emit_event"
+  override def documentationDescription: String           = "This function emits an event"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("event"),
+      "properties" -> Json.obj(
+        "event" -> Json.obj("type" -> "object", "description" -> "The event to emit")
+      )
+    )
   )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.emit_event", 
-    "args" -> Json.obj(
-      "event" -> Json.obj(
-        "type" -> "object",
-        "properties" -> Json.obj(
-          "name" -> Json.obj("type" -> "string", "description" -> "The name of the event"),
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.emit_event",
+      "args"     -> Json.obj(
+        "event" -> Json.obj(
+          "type"       -> "object",
+          "properties" -> Json.obj(
+            "name" -> Json.obj("type" -> "string", "description" -> "The name of the event")
+          )
         )
       )
     )
-  ))
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val event = args.select("event").asOpt[JsObject].getOrElse(Json.obj())
     WorkflowEmitEvent(event, env).toAnalytics()
@@ -360,24 +391,28 @@ object LogFunction {
 
 class LogFunction extends WorkflowFunction {
 
-  override def documentationName: String = "core.log"
-  override def documentationDescription: String = "This function writes whatever the user want to the otoroshi logs"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("message"),
-    "properties" -> Json.obj(
-      "message" -> Json.obj("type" -> "string", "description" -> "The message to log"),
-      "params" -> Json.obj("type" -> "array", "description" -> "The parameters to log"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.log",
-    "args" -> Json.obj(
-      "message" -> "Hello",
-      "params" -> Json.arr("World")
+  override def documentationName: String                  = "core.log"
+  override def documentationDescription: String           = "This function writes whatever the user want to the otoroshi logs"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("message"),
+      "properties" -> Json.obj(
+        "message" -> Json.obj("type" -> "string", "description" -> "The message to log"),
+        "params"  -> Json.obj("type" -> "array", "description" -> "The parameters to log")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.log",
+      "args"     -> Json.obj(
+        "message" -> "Hello",
+        "params"  -> Json.arr("World")
+      )
+    )
+  )
 
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val message = args.select("message").asString
@@ -388,22 +423,26 @@ class LogFunction extends WorkflowFunction {
 }
 
 class HelloFunction extends WorkflowFunction {
-  override def documentationName: String = "core.hello"
-  override def documentationDescription: String = "This function returns a hello message"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("name"),
-    "properties" -> Json.obj(
-      "name" -> Json.obj("type" -> "string", "description" -> "The name of the person to greet"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.hello", 
-    "args" -> Json.obj(
-      "name" -> "Otoroshi"
+  override def documentationName: String                  = "core.hello"
+  override def documentationDescription: String           = "This function returns a hello message"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("name"),
+      "properties" -> Json.obj(
+        "name" -> Json.obj("type" -> "string", "description" -> "The name of the person to greet")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.hello",
+      "args"     -> Json.obj(
+        "name" -> "Otoroshi"
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val name    = args.select("name").asOptString.getOrElse("Stranger")
     val message = s"Hello ${name} !"
@@ -413,37 +452,41 @@ class HelloFunction extends WorkflowFunction {
 }
 
 class HttpClientFunction extends WorkflowFunction {
-  override def documentationName: String = "core.http_client"
-  override def documentationDescription: String = "This function makes a HTTP request"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("url"),
-    "properties" -> Json.obj(
-      "url" -> Json.obj("type" -> "string", "description" -> "The URL to call"),
-      "method" -> Json.obj("type" -> "string", "description" -> "The HTTP method to use"),
-      "headers" -> Json.obj("type" -> "object", "description" -> "The headers to send"),
-      "timeout" -> Json.obj("type" -> "number", "description" -> "The timeout in milliseconds"),
-      "body" -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
-      "body_str" -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
-      "body_json" -> Json.obj("type" -> "object", "description" -> "The body (json) to send"),
-      "body_bytes" -> Json.obj("type" -> "array", "description" -> "The body (bytes array) to send"),
-      "body_base64" -> Json.obj("type" -> "string", "description" -> "The body (base64) to send"),
-      "tls_config" -> Json.obj("type" -> "object", "description" -> "The TLS configuration"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.http_client", 
-    "args" -> Json.obj(
-      "url" -> "https://httpbin.org/get",
-      "method" -> "GET",
-      "headers" -> Json.obj(
-        "User-Agent" -> "Otoroshi"
-      ),
-      "timeout" -> 30000,
-      "body_json" -> Json.obj("foo" -> "bar")
+  override def documentationName: String                  = "core.http_client"
+  override def documentationDescription: String           = "This function makes a HTTP request"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("url"),
+      "properties" -> Json.obj(
+        "url"         -> Json.obj("type" -> "string", "description" -> "The URL to call"),
+        "method"      -> Json.obj("type" -> "string", "description" -> "The HTTP method to use"),
+        "headers"     -> Json.obj("type" -> "object", "description" -> "The headers to send"),
+        "timeout"     -> Json.obj("type" -> "number", "description" -> "The timeout in milliseconds"),
+        "body"        -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
+        "body_str"    -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
+        "body_json"   -> Json.obj("type" -> "object", "description" -> "The body (json) to send"),
+        "body_bytes"  -> Json.obj("type" -> "array", "description" -> "The body (bytes array) to send"),
+        "body_base64" -> Json.obj("type" -> "string", "description" -> "The body (base64) to send"),
+        "tls_config"  -> Json.obj("type" -> "object", "description" -> "The TLS configuration")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.http_client",
+      "args"     -> Json.obj(
+        "url"       -> "https://httpbin.org/get",
+        "method"    -> "GET",
+        "headers"   -> Json.obj(
+          "User-Agent" -> "Otoroshi"
+        ),
+        "timeout"   -> 30000,
+        "body_json" -> Json.obj("foo" -> "bar")
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val url       = args.select("url").asString
     val method    = args.select("method").asOptString.getOrElse("GET")
@@ -482,26 +525,30 @@ class HttpClientFunction extends WorkflowFunction {
 
 class WorkflowCallFunction extends WorkflowFunction {
 
-  override def documentationName: String = "core.workflow_call"
-  override def documentationDescription: String = "This function calls another workflow stored in otoroshi"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("workflow_id", "input"),
-    "properties" -> Json.obj(
-      "workflow_id" -> Json.obj("type" -> "string", "description" -> "The ID of the workflow to call"),
-      "input" -> Json.obj("type" -> "object", "description" -> "The input of the workflow"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.workflow_call", 
-    "args" -> Json.obj(
-      "workflow_id" -> "my_workflow_id",
-      "input" -> Json.obj(
-        "foo" -> "bar"
+  override def documentationName: String                  = "core.workflow_call"
+  override def documentationDescription: String           = "This function calls another workflow stored in otoroshi"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("workflow_id", "input"),
+      "properties" -> Json.obj(
+        "workflow_id" -> Json.obj("type" -> "string", "description" -> "The ID of the workflow to call"),
+        "input"       -> Json.obj("type" -> "object", "description" -> "The input of the workflow")
       )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.workflow_call",
+      "args"     -> Json.obj(
+        "workflow_id" -> "my_workflow_id",
+        "input"       -> Json.obj(
+          "foo" -> "bar"
+        )
+      )
+    )
+  )
 
   override def callWithRun(
       args: JsObject
@@ -526,22 +573,26 @@ class SystemCallFunction extends WorkflowFunction {
 
   import scala.sys.process._
 
-  override def documentationName: String = "core.system_call"
-  override def documentationDescription: String = "This function calls a system command"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("command"),
-    "properties" -> Json.obj(
-      "command" -> Json.obj("type" -> "array", "description" -> "The command to execute"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.system_call", 
-    "args" -> Json.obj(
-      "command" -> Seq("ls", "-l")
+  override def documentationName: String                  = "core.system_call"
+  override def documentationDescription: String           = "This function calls a system command"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("command"),
+      "properties" -> Json.obj(
+        "command" -> Json.obj("type" -> "array", "description" -> "The command to execute")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.system_call",
+      "args"     -> Json.obj(
+        "command" -> Seq("ls", "-l")
+      )
+    )
+  )
 
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     try {
@@ -567,28 +618,32 @@ class SystemCallFunction extends WorkflowFunction {
 }
 
 class WasmCallFunction extends WorkflowFunction {
-  override def documentationName: String = "core.wasm_call"
-  override def documentationDescription: String = "This function calls a wasm function"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("wasm_plugin", "function"),
-    "properties" -> Json.obj(
-      "wasm_plugin" -> Json.obj("type" -> "string", "description" -> "The wasm plugin to use"),
-      "function" -> Json.obj("type" -> "string", "description" -> "The function to call"),
-      "params" -> Json.obj("type" -> "object", "description" -> "The parameters to passed to the function"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.wasm_call", 
-    "args" -> Json.obj(
-      "wasm_plugin" -> "my_wasm_plugin",
-      "function" -> "my_function",
-      "params" -> Json.obj(
-        "foo" -> "bar"
+  override def documentationName: String                  = "core.wasm_call"
+  override def documentationDescription: String           = "This function calls a wasm function"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("wasm_plugin", "function"),
+      "properties" -> Json.obj(
+        "wasm_plugin" -> Json.obj("type" -> "string", "description" -> "The wasm plugin to use"),
+        "function"    -> Json.obj("type" -> "string", "description" -> "The function to call"),
+        "params"      -> Json.obj("type" -> "object", "description" -> "The parameters to passed to the function")
       )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.wasm_call",
+      "args"     -> Json.obj(
+        "wasm_plugin" -> "my_wasm_plugin",
+        "function"    -> "my_function",
+        "params"      -> Json.obj(
+          "foo" -> "bar"
+        )
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val wasmSource   = args.select("wasm_plugin").asString
     val functionName = args.select("function").asOptString.getOrElse("call")
@@ -625,22 +680,26 @@ class WasmCallFunction extends WorkflowFunction {
 }
 
 class StoreDelFunction extends WorkflowFunction {
-  override def documentationName: String = "core.store_del"
-  override def documentationDescription: String = "This function deletes keys from the store"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("keys"),
-    "properties" -> Json.obj(
-      "keys" -> Json.obj("type" -> "array", "description" -> "The keys to delete"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.store_del", 
-    "args" -> Json.obj(
-      "keys" -> Seq("key1", "key2")
+  override def documentationName: String                  = "core.store_del"
+  override def documentationDescription: String           = "This function deletes keys from the store"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("keys"),
+      "properties" -> Json.obj(
+        "keys" -> Json.obj("type" -> "array", "description" -> "The keys to delete")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.store_del",
+      "args"     -> Json.obj(
+        "keys" -> Seq("key1", "key2")
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty)
     env.datastores.rawDataStore.del(keys).map { r =>
@@ -650,22 +709,26 @@ class StoreDelFunction extends WorkflowFunction {
 }
 
 class StoreGetFunction extends WorkflowFunction {
-  override def documentationName: String = "core.store_get"
-  override def documentationDescription: String = "This function gets keys from the store"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("key"),
-    "properties" -> Json.obj(
-      "key" -> Json.obj("type" -> "string", "description" -> "The key to get"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.store_get", 
-    "args" -> Json.obj(
-      "key" -> "my_key"
+  override def documentationName: String                  = "core.store_get"
+  override def documentationDescription: String           = "This function gets keys from the store"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("key"),
+      "properties" -> Json.obj(
+        "key" -> Json.obj("type" -> "string", "description" -> "The key to get")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.store_get",
+      "args"     -> Json.obj(
+        "key" -> "my_key"
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     args.select("key").asOptString match {
       case None      => Right(JsNull).vfuture
@@ -679,26 +742,30 @@ class StoreGetFunction extends WorkflowFunction {
 }
 
 class StoreSetFunction extends WorkflowFunction {
-  override def documentationName: String = "core.store_set"
-  override def documentationDescription: String = "This function sets a key in the store"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("key", "value"),
-    "properties" -> Json.obj(
-      "key" -> Json.obj("type" -> "string", "description" -> "The key to set"),
-      "value" -> Json.obj("type" -> "string", "description" -> "The value to set"),
-      "ttl" -> Json.obj("type" -> "number", "description" -> "The optional time to live in seconds"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.store_set", 
-    "args" -> Json.obj(
-      "key" -> "my_key",
-      "value" -> "my_value",
-      "ttl" -> 3600
+  override def documentationName: String                  = "core.store_set"
+  override def documentationDescription: String           = "This function sets a key in the store"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("key", "value"),
+      "properties" -> Json.obj(
+        "key"   -> Json.obj("type" -> "string", "description" -> "The key to set"),
+        "value" -> Json.obj("type" -> "string", "description" -> "The value to set"),
+        "ttl"   -> Json.obj("type" -> "number", "description" -> "The optional time to live in seconds")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.store_set",
+      "args"     -> Json.obj(
+        "key"   -> "my_key",
+        "value" -> "my_value",
+        "ttl"   -> 3600
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val key   = args.select("key").asString
     val value = args.select("value").asValue
@@ -710,22 +777,26 @@ class StoreSetFunction extends WorkflowFunction {
 }
 
 class StoreKeysFunction extends WorkflowFunction {
-  override def documentationName: String = "core.store_keys"
-  override def documentationDescription: String = "This function gets keys from the store"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("pattern"),
-    "properties" -> Json.obj(
-      "pattern" -> Json.obj("type" -> "string", "description" -> "The pattern to match"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.store_keys", 
-    "args" -> Json.obj(
-      "pattern" -> "my_pattern:*"
+  override def documentationName: String                  = "core.store_keys"
+  override def documentationDescription: String           = "This function gets keys from the store"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("pattern"),
+      "properties" -> Json.obj(
+        "pattern" -> Json.obj("type" -> "string", "description" -> "The pattern to match")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.store_keys",
+      "args"     -> Json.obj(
+        "pattern" -> "my_pattern:*"
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val pattern = args.select("pattern").asString
     env.datastores.rawDataStore.keys(pattern).map { seq =>
@@ -735,22 +806,26 @@ class StoreKeysFunction extends WorkflowFunction {
 }
 
 class StoreMgetFunction extends WorkflowFunction {
-  override def documentationName: String = "core.store_mget"
-  override def documentationDescription: String = "This function gets multiple keys from the store"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("keys"),
-    "properties" -> Json.obj(
-      "keys" -> Json.obj("type" -> "array", "description" -> "The keys to get"),
-    ))  
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.store_mget", 
-    "args" -> Json.obj(
-      "keys" -> Seq("key1", "key2")
+  override def documentationName: String                  = "core.store_mget"
+  override def documentationDescription: String           = "This function gets multiple keys from the store"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("keys"),
+      "properties" -> Json.obj(
+        "keys" -> Json.obj("type" -> "array", "description" -> "The keys to get")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.store_mget",
+      "args"     -> Json.obj(
+        "keys" -> Seq("key1", "key2")
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty)
     env.datastores.rawDataStore.mget(keys).map { seq =>
@@ -760,22 +835,26 @@ class StoreMgetFunction extends WorkflowFunction {
 }
 
 class StoreMatchFunction extends WorkflowFunction {
-  override def documentationName: String = "core.store_match"
-  override def documentationDescription: String = "This function gets keys from the store matching a pattern"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("pattern"),
-    "properties" -> Json.obj(
-      "pattern" -> Json.obj("type" -> "string", "description" -> "The pattern to match"),
-    ))
-  )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "kind" -> "call",
-    "function" -> "core.store_match", 
-    "args" -> Json.obj(
-      "pattern" -> "my_pattern:*"
+  override def documentationName: String                  = "core.store_match"
+  override def documentationDescription: String           = "This function gets keys from the store matching a pattern"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("pattern"),
+      "properties" -> Json.obj(
+        "pattern" -> Json.obj("type" -> "string", "description" -> "The pattern to match")
+      )
     )
-  ))
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.store_match",
+      "args"     -> Json.obj(
+        "pattern" -> "my_pattern:*"
+      )
+    )
+  )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val pattern = args.select("pattern").asString
     env.datastores.rawDataStore.allMatching(pattern).map { seq =>

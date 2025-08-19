@@ -225,6 +225,7 @@ export class WasmPluginsPage extends Component {
       value.config.source.kind.toLowerCase() !== 'local' &&
         'config.killOptions.max_unused_duration',
       value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host function authorizations',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.isJS',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedPaths',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.httpAccess',
@@ -392,6 +393,13 @@ export class WasmPluginsPage extends Component {
       display: (v) => v.config.wasi,
       props: {
         label: 'Allow file paths',
+      },
+    },
+    'config.isJS': {
+      type: 'box-bool',
+      label: 'Is JS?',
+      props: {
+        description: 'Is the WASM module written in JavaScript?',
       },
     },
     'config.lifetime': {

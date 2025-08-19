@@ -1,9 +1,11 @@
 package otoroshi.next.plugins
 
 import akka.stream.Materializer
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api._
+import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -22,11 +24,11 @@ case class AdditionalCookieOutConfig(
     httpOnly: Boolean = false,
     sameSite: Option[play.api.mvc.Cookie.SameSite] = None
 ) extends NgPluginConfig {
-  override def json: JsValue                            = AdditionalCookieOutConfig.format.writes(this)
-  def toCookie(implicit env: Env): WSCookieWithSameSite = WSCookieWithSameSite(
-    name = name,
-    value = value,
-    domain = domain,
+  override def json: JsValue                                             = AdditionalCookieOutConfig.format.writes(this)
+  def toCookie(attrs: TypedMap)(implicit env: Env): WSCookieWithSameSite = WSCookieWithSameSite(
+    name = GlobalExpressionLanguage.apply(name, attrs, env),
+    value = GlobalExpressionLanguage.apply(value, attrs, env),
+    domain = domain.map(v => GlobalExpressionLanguage.apply(v, attrs, env)),
     path = path,
     maxAge = maxAge,
     secure = secure,
@@ -105,10 +107,10 @@ case class AdditionalCookieInConfig(
     name: String,
     value: String
 ) extends NgPluginConfig {
-  override def json: JsValue                            = AdditionalCookieInConfig.format.writes(this)
-  def toCookie(implicit env: Env): WSCookieWithSameSite = WSCookieWithSameSite(
-    name = name,
-    value = value
+  override def json: JsValue                                             = AdditionalCookieInConfig.format.writes(this)
+  def toCookie(attrs: TypedMap)(implicit env: Env): WSCookieWithSameSite = WSCookieWithSameSite(
+    name = GlobalExpressionLanguage.apply(name, attrs, env),
+    value = GlobalExpressionLanguage.apply(value, attrs, env)
   )
 }
 
@@ -169,7 +171,7 @@ class AdditionalCookieIn extends NgRequestTransformer {
       ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format.reads).getOrElse(AdditionalCookieInConfig.default)
     Right(
       ctx.otoroshiRequest.copy(
-        cookies = ctx.otoroshiRequest.cookies :+ config.toCookie
+        cookies = ctx.otoroshiRequest.cookies :+ config.toCookie(ctx.attrs)
       )
     ).vfuture
   }
@@ -202,7 +204,7 @@ class AdditionalCookieOut extends NgRequestTransformer {
       .getOrElse(AdditionalCookieOutConfig.default)
     Right(
       ctx.otoroshiResponse.copy(
-        cookies = ctx.otoroshiResponse.cookies :+ config.toCookie
+        cookies = ctx.otoroshiResponse.cookies :+ config.toCookie(ctx.attrs)
       )
     ).vfuture
   }
@@ -328,7 +330,7 @@ class MissingCookieIn extends NgRequestTransformer {
     if (!ctx.otoroshiRequest.cookies.exists(_.name == config.name)) {
       Right(
         ctx.otoroshiRequest.copy(
-          cookies = ctx.otoroshiRequest.cookies :+ config.toCookie
+          cookies = ctx.otoroshiRequest.cookies :+ config.toCookie(ctx.attrs)
         )
       ).vfuture
     } else {
@@ -365,7 +367,7 @@ class MissingCookieOut extends NgRequestTransformer {
     if (!ctx.otoroshiResponse.cookies.exists(_.name == config.name)) {
       Right(
         ctx.otoroshiResponse.copy(
-          cookies = ctx.otoroshiResponse.cookies :+ config.toCookie
+          cookies = ctx.otoroshiResponse.cookies :+ config.toCookie(ctx.attrs)
         )
       ).vfuture
     } else {

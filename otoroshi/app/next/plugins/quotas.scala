@@ -326,7 +326,7 @@ case class NgCustomQuotasConfig(
       route = ctx.route.some,
       apiKey = ctx.apikey,
       user = ctx.user,
-      context = Map.empty,
+      context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
       attrs = ctx.attrs,
       env = env
     )
@@ -341,7 +341,7 @@ case class NgCustomQuotasConfig(
           route = ctx.route.some,
           apiKey = ctx.apikey,
           user = ctx.user,
-          context = Map.empty,
+          context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
           attrs = ctx.attrs,
           env = env
         )
@@ -498,7 +498,7 @@ case class NgCustomThrottlingConfig(
       route = ctx.route.some,
       apiKey = ctx.apikey,
       user = ctx.user,
-      context = Map.empty,
+      context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
       attrs = ctx.attrs,
       env = env
     )
@@ -513,7 +513,7 @@ case class NgCustomThrottlingConfig(
           route = ctx.route.some,
           apiKey = ctx.apikey,
           user = ctx.user,
-          context = Map.empty,
+          context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
           attrs = ctx.attrs,
           env = env
         )

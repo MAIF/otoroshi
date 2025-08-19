@@ -41,7 +41,8 @@ object GlobalExpressionLanguage {
       route = None,
       apiKey = None,
       user = None,
-      context = context,
+      context =
+        Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -301,6 +302,10 @@ object GlobalExpressionLanguage {
               Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
             case r"apikey.tags\['$field@(.*)'\]" if apiKey.isDefined            =>
               Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
+            case r"apikey.json.pretty" if apiKey.isDefined                      =>
+              apiKey.get.lightJson.prettify
+            case r"apikey.json" if apiKey.isDefined                             =>
+              apiKey.get.lightJson.stringify
 
             // for jwt comptab only
             case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"           =>
@@ -437,6 +442,8 @@ object GlobalExpressionLanguage {
                 .getOrElse(s"no-global-env-at-$path")
             case "user.name" if user.isDefined                                                   => user.get.name
             case "user.email" if user.isDefined                                                  => user.get.email
+            case "user.json.pretty" if user.isDefined                                            => user.get.lightJson.prettify
+            case "user.json" if user.isDefined                                                   => user.get.lightJson.stringify
             case "user.tokens.id_token" if user.isDefined                                        =>
               user.get.token.select("id_token").asOpt[String].getOrElse("no-id_token")
             case "user.tokens.access_token" if user.isDefined                                    =>
@@ -508,6 +515,12 @@ object GlobalExpressionLanguage {
             case "consumer.kind" if user.isDefined                                               => "user"
             case "consumer.kind" if apiKey.isDefined                                             => "apikey"
             case "consumer.kind" if apiKey.isEmpty && user.isEmpty                               => "public"
+            case "consumer.json.pretty" if apiKey.isEmpty && user.isEmpty                        => Json.obj("kind" -> "public", "consumer" -> JsNull).prettify
+            case "consumer.json.pretty" if apiKey.isDefined                                      => Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).prettify
+            case "consumer.json.pretty" if user.isDefined                                        => Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).prettify
+            case "consumer.json" if apiKey.isEmpty && user.isEmpty                               => Json.obj("kind" -> "public", "consumer" -> JsNull).stringify
+            case "consumer.json" if apiKey.isDefined                                             => Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).stringify
+            case "consumer.json" if user.isDefined                                               => Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).stringify
             case r"consumer.metadata.$field@(.*):$dv@(.*)" if user.isDefined || apiKey.isDefined =>
               user
                 .flatMap(_.otoroshiData)
@@ -574,12 +587,13 @@ object HeadersExpressionLanguage {
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
-      req = req,
-      service = service,
-      route = route,
-      apiKey = apiKey,
-      user = user,
-      context = context,
+      req = req.orElse(attrs.get(otoroshi.plugins.Keys.RequestKey)),
+      service = service.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy)),
+      route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
+      apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
+      user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+      context =
+        Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -601,12 +615,13 @@ object RedirectionExpressionLanguage {
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
-      req = req,
-      service = service,
-      route = route,
-      apiKey = apiKey,
-      user = user,
-      context = context,
+      req = req.orElse(attrs.get(otoroshi.plugins.Keys.RequestKey)),
+      service = service.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy)),
+      route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
+      apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
+      user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+      context =
+        Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -628,12 +643,13 @@ object TargetExpressionLanguage {
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
-      req = req,
-      service = service,
-      route = route,
-      apiKey = apiKey,
-      user = user,
-      context = context,
+      req = req.orElse(attrs.get(otoroshi.plugins.Keys.RequestKey)),
+      service = service.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy)),
+      route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
+      apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
+      user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+      context =
+        Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )
@@ -655,12 +671,13 @@ object JwtExpressionLanguage {
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
-      req = req,
-      service = service,
-      route = route,
-      apiKey = apiKey,
-      user = user,
-      context = context,
+      req = req.orElse(attrs.get(otoroshi.plugins.Keys.RequestKey)),
+      service = service.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey).map(_.legacy)),
+      route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
+      apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
+      user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+      context =
+        Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
       env = env
     )

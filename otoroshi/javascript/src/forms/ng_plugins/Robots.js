@@ -15,7 +15,7 @@ export default {
     },
     robot_txt_content: {
       label: 'robot_txt_content',
-      type: 'string',
+      type: 'text',
     },
     header_enabled: {
       label: 'header_enabled',

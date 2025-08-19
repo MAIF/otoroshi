@@ -244,7 +244,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   def this() = this(BasicAuthModule.defaultConfig)
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
-
   def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")
     Option(base64)

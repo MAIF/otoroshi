@@ -18,7 +18,7 @@ You can also create a `kustomization.yaml` file with a remote base
 
 ```yaml
 bases:
-- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v17.4.0-dev
+- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v17.5.0-dev
 ```
 
 Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 
@@ -87,7 +87,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:17.4.0-dev
+      - image: maif/otoroshi:17.5.0-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi
         args: ['-Dconfig.file=/usr/app/otoroshi/conf/oto.conf']
@@ -274,7 +274,7 @@ dns.example
 
 ## Using Otoroshi as an Ingress Controller
 
-If you want to use Otoroshi as an [Ingress Controller](https://kubernetes.io/fr/docs/concepts/services-networking/ingress/), just go to the danger zone, and in `Global scripts` add the job named `Kubernetes Ingress Controller`.
+If you want to use Otoroshi as an [Ingress Controller](https://kubernetes.io/fr/docs/concepts/services-networking/ingress/), just go to the danger zone, and in `Global plugins` add the job named `Kubernetes Ingress Controller`.
 
 Then add the following configuration for the job (with your own tweaks of course)
 
@@ -646,7 +646,6 @@ Otoroshi provides some Custom Resource Definitions for kubernetes in order to ma
 - `tenants`
 - `teams`
 - `data-exporters`
-- `scripts`
 - `wasm-plugins`
 - `global-configs`
 - `green-scores`
@@ -698,7 +697,7 @@ team.yaml
 
 ### Configuration
 
-To configure it, just go to the danger zone, and in `Global scripts` add the job named `Kubernetes Otoroshi CRDs Controller`. Then add the following configuration for the job (with your own tweak of course)
+To configure it, just go to the danger zone, and in `Global plugins` add the job named `Kubernetes Otoroshi CRDs Controller`. Then add the following configuration for the job (with your own tweak of course)
 
 ```json
 {

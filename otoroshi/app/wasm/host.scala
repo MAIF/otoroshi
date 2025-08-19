@@ -64,10 +64,15 @@ trait AwaitCapable {
 
 object HFunction {
 
-  def defineEmptyFunction(fname: String, returnType: LibExtism.ExtismValType, params: LibExtism.ExtismValType*)(
+  def defineEmptyFunction(
+      config: WasmConfig,
+      fname: String,
+      returnType: LibExtism.ExtismValType,
+      params: LibExtism.ExtismValType*
+  )(
       f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal]) => Unit
   ): HostFunction[EmptyUserData] = {
-    defineFunction[EmptyUserData](fname, None, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3))
+    defineFunction[EmptyUserData](config, fname, None, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3))
   }
 
   def defineClassicFunction(
@@ -79,7 +84,7 @@ object HFunction {
       f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal], EnvUserData) => Unit
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val ev = EnvUserData(env.wasmIntegration.context, ec, mat, config)
-    defineFunction[EnvUserData](fname, ev.some, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3, ev))
+    defineFunction[EnvUserData](config, fname, ev.some, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3, ev))
   }
 
   def defineContextualFunction(
@@ -90,6 +95,7 @@ object HFunction {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val ev = EnvUserData(env.wasmIntegration.context, ec, mat, config)
     defineFunction[EnvUserData](
+      config,
       fname,
       ev.some,
       LibExtism.ExtismValType.I64,
@@ -99,6 +105,7 @@ object HFunction {
   }
 
   def defineFunction[A <: HostUserData](
+      config: WasmConfig,
       fname: String,
       data: Option[A],
       returnType: LibExtism.ExtismValType,
@@ -124,7 +131,7 @@ object HFunction {
         case None    => Optional.empty[A]()
         case Some(d) => Optional.of(d)
       }
-    ).withNamespace("env")
+    ).withNamespace(if (config.isJS) "env/Otoroshi" else "env")
   }
 
   def defineFunctionWithReturn[A <: HostUserData](
@@ -156,7 +163,8 @@ object Logging extends AwaitCapable {
 
   val logger = Logger("otoroshi-wasm-logger")
 
-  def proxyLog() = HFunction.defineEmptyFunction(
+  def proxyLog(config: WasmConfig) = HFunction.defineEmptyFunction(
+    config,
     "proxy_log",
     LibExtism.ExtismValType.I32,
     LibExtism.ExtismValType.I32,
@@ -213,7 +221,7 @@ object Logging extends AwaitCapable {
       mat: Materializer
   ): Seq[HostFunctionWithAuthorization] = {
     Seq(
-      HostFunctionWithAuthorization(proxyLog(), _ => true),
+      HostFunctionWithAuthorization(proxyLog(config), _ => true),
       HostFunctionWithAuthorization(proxyLogWithEvent(config), _ => true)
     )
   }
@@ -250,7 +258,11 @@ object Http extends AwaitCapable {
                 Duration(
                   (context \ "request_timeout")
                     .asOpt[Long]
-                    .getOrElse(hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.clusterConfig.worker.timeout),
+                    .getOrElse(try {
+                      hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.clusterConfig.worker.timeout
+                    } catch {
+                      case _: Throwable => 10000
+                    }),
                   TimeUnit.MILLISECONDS
                 )
               )
@@ -1023,12 +1035,13 @@ object State {
     }
   }
 
-  def proxyGlobalMapSet(pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
+  def proxyGlobalMapSet(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
   ): HostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
+      config,
       if (pluginRestricted) "proxy_plugin_map_set" else "proxy_global_map_set",
       StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       LibExtism.ExtismValType.I64,
@@ -1059,12 +1072,13 @@ object State {
     }
   }
 
-  def proxyGlobalMapDel(pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
+  def proxyGlobalMapDel(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
   ): HostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
+      config,
       if (pluginRestricted) "proxy_plugin_map_del" else "proxy_global_map_del",
       StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       LibExtism.ExtismValType.I64,
@@ -1090,12 +1104,13 @@ object State {
     }
   }
 
-  def proxyGlobalMapGet(pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
+  def proxyGlobalMapGet(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
   ): HostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
+      config,
       if (pluginRestricted) "proxy_plugin_map_get" else "proxy_global_map_get",
       StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       LibExtism.ExtismValType.I64,
@@ -1120,12 +1135,13 @@ object State {
     }
   }
 
-  def proxyGlobalMap(pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
+  def proxyGlobalMap(config: WasmConfig, pluginRestricted: Boolean = false, pluginId: Option[String] = None)(implicit
       env: Env,
       executionContext: ExecutionContext,
       mat: Materializer
   ): HostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
+      config,
       if (pluginRestricted) "proxy_plugin_map" else "proxy_global_map",
       StateUserData(env.wasmIntegration.context, executionContext, mat, cache).some,
       LibExtism.ExtismValType.I64,
@@ -1179,32 +1195,35 @@ object State {
         _.asInstanceOf[WasmConfig].authorizations.configurationAccess
       ),
       HostFunctionWithAuthorization(
-        proxyGlobalMapDel(),
+        proxyGlobalMapDel(config),
         _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.write
       ),
       HostFunctionWithAuthorization(
-        proxyGlobalMapSet(),
+        proxyGlobalMapSet(config),
         _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.write
       ),
       HostFunctionWithAuthorization(
-        proxyGlobalMapGet(),
+        proxyGlobalMapGet(config),
         _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.read
       ),
-      HostFunctionWithAuthorization(proxyGlobalMap(), _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.read),
       HostFunctionWithAuthorization(
-        proxyGlobalMapDel(pluginRestricted = true, pluginId.some),
+        proxyGlobalMap(config),
+        _.asInstanceOf[WasmConfig].authorizations.globalMapAccess.read
+      ),
+      HostFunctionWithAuthorization(
+        proxyGlobalMapDel(config, pluginRestricted = true, pluginId.some),
         _.asInstanceOf[WasmConfig].authorizations.pluginMapAccess.write
       ),
       HostFunctionWithAuthorization(
-        proxyGlobalMapSet(pluginRestricted = true, pluginId.some),
+        proxyGlobalMapSet(config, pluginRestricted = true, pluginId.some),
         _.asInstanceOf[WasmConfig].authorizations.pluginMapAccess.write
       ),
       HostFunctionWithAuthorization(
-        proxyGlobalMapGet(pluginRestricted = true, pluginId.some),
+        proxyGlobalMapGet(config, pluginRestricted = true, pluginId.some),
         _.asInstanceOf[WasmConfig].authorizations.pluginMapAccess.read
       ),
       HostFunctionWithAuthorization(
-        proxyGlobalMap(pluginRestricted = true, pluginId.some),
+        proxyGlobalMap(config, pluginRestricted = true, pluginId.some),
         _.asInstanceOf[WasmConfig].authorizations.pluginMapAccess.read
       )
     )

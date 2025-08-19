@@ -29,8 +29,10 @@ import java.util.concurrent.atomic.AtomicReference
 class OtoroshiLoader extends ApplicationLoader {
 
   def load(context: Context): Application = {
-    LoggerConfigurator(context.environment.classLoader).foreach {
-      _.configure(context.environment, context.initialConfiguration, Map.empty)
+    LoggerConfigurator(context.environment.classLoader).foreach { lc =>
+      if (lc.loggerFactory.getClass.getName != "org.slf4j.helpers.NOPLoggerFactory") {
+        lc.configure(context.environment, context.initialConfiguration, Map.empty)
+      }
     }
     val components = new OtoroshiComponentsInstances(context, None, None, false)
     OtoroshiLoaderHelper.initOpenTelemetryLogger(context.initialConfiguration, components.env)

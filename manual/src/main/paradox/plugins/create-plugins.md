@@ -12,13 +12,7 @@ there are many plugin types explained @ref:[here](./plugins.md)
 
 ## Code and signatures
 
-* https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/requestsink.scala#L14-L19
-* https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/routing.scala#L75-L78
-* https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L65-L85
-* https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/script.scala#269-L540
-* https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/eventlistener.scala#L27-L48
-* https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L69-L164
-* https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L108-L110
+* https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/next/plugins/api.scala
 
 
 for more information about APIs you can use
@@ -32,46 +26,7 @@ for more information about APIs you can use
 
 ## Plugin examples
 
-@ref:[A lot of plugins](./built-in-plugins.md) comes with otoroshi, you can find them on [github](https://github.com/MAIF/otoroshi/tree/master/otoroshi/app/plugins)
-
-## Writing a plugin from Otoroshi UI
-
-Log into Otoroshi and go to `Settings (cog icon) / Plugins`. Here you can create multiple request transformer scripts and associate it with service descriptor later.
-
-@@@ div { .centered-img }
-<img src="../imgs/scripts-1.png" />
-@@@
-
-when you write for instance a transformer in the Otoroshi UI, do the following
-
-```scala
-import akka.stream.Materializer
-import env.Env
-import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-import otoroshi.script._
-import play.api.Logger
-import play.api.mvc.{Result, Results}
-import scala.util._
-import scala.concurrent.{ExecutionContext, Future}
-
-class MyTransformer extends RequestTransformer {
-
-  val logger = Logger("my-transformer")
-
-  // implements the methods you want
-}
-
-// WARN: do not forget this line to provide a working instance of your transformer to Otoroshi
-new MyTransformer()
-```
-
-You can use the compile button to check if the script compiles, or code the transformer in your IDE (see next point).
-
-Then go to a service descriptor, scroll to the bottom of the page, and select your transformer in the list
-
-@@@ div { .centered-img }
-<img src="../imgs/scripts-2.png" />
-@@@
+@ref:[A lot of plugins](./built-in-plugins.md) comes with otoroshi, you can find them on [github](https://github.com/MAIF/otoroshi/tree/master/otoroshi/app/next/plugins)
 
 ## Providing a transformer from Java classpath
 
@@ -86,18 +41,108 @@ lazy val root = (project in file(".")).
       version      := "0.1.0-SNAPSHOT"
     )),
     name := "request-transformer-example",
-    libraryDependencies += "fr.maif" %% "otoroshi" % "1.x.x"
+    libraryDependencies += "fr.maif" %% "otoroshi" % "17.x.x"
   )
+```
+
+
+then, you can write something like 
+
+```scala
+package otoroshi_plugins.mycompany.demo
+
+import akka.stream.Materializer
+import otoroshi.env.Env
+import otoroshi.next.plugins.api._
+import otoroshi.utils.syntax.implicits._
+import play.api.libs.json._
+import play.api.mvc.Result
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util._
+
+case class BodyLengthLimiterConfig(maxRequestBodySize: Option[Long] = None, maxResponseBodySize: Option[Long] = None) extends NgPluginConfig {
+  def json: JsValue = BodyLengthLimiterConfig.format.writes(this)
+}
+
+object BodyLengthLimiterConfig {
+  val configFlow: Seq[String]        = Seq("max_request_body_size", "max_response_body_size")
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "max_response_body_size" -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Max response length",
+        "props" -> Json.obj(
+          "label"  -> "Max response Length",
+          "suffix" -> "bytes"
+        )
+      ),
+      "max_request_body_size" -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Max request length",
+        "props" -> Json.obj(
+          "label"  -> "Max request Length",
+          "suffix" -> "bytes"
+        )
+      )
+    )
+  )
+  val format = new Format[BodyLengthLimiterConfig] {
+    override def reads(json: JsValue): JsResult[BodyLengthLimiterConfig] = Try {
+      BodyLengthLimiterConfig(
+        maxRequestBodySize = json.select("max_request_body_size").asOpt[Long],
+        maxResponseBodySize = json.select("max_response_body_size").asOpt[Long],
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: BodyLengthLimiterConfig): JsValue = Json.obj(
+      "max_request_body_size" -> o.maxRequestBodySize,
+      "max_response_body_size" -> o.maxResponseBodySize
+    )
+  }
+}
+
+class BodyLengthLimiter extends NgRequestTransformer {
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = true
+  override def name: String                                = "Body length limiter"
+  override def description: Option[String]                 = "This plugin will limit request and response body length".some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(BodyLengthLimiterConfig())
+  override def noJsForm: Boolean = true
+  override def configFlow: Seq[String] = BodyLengthLimiterConfig.configFlow
+  override def configSchema: Option[JsObject] = BodyLengthLimiterConfig.configSchema
+
+  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    val config = ctx.cachedConfig(internalName)(BodyLengthLimiterConfig.format).getOrElse(BodyLengthLimiterConfig())
+    val maxFromConfigFile = env.configuration.getOptional[Long]("my-transformer.maxRequestBodySize")
+    val max: Long = config.maxRequestBodySize.orElse(maxFromConfigFile).getOrElse(4 * 1024 * 1024)
+    Right(ctx.otoroshiRequest.copy(body = ctx.otoroshiRequest.body.limitWeighted(max)(_.size))).vfuture
+  }
+
+  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+    val config = ctx.cachedConfig(internalName)(BodyLengthLimiterConfig.format).getOrElse(BodyLengthLimiterConfig())
+    val maxFromConfigFile = env.configuration.getOptional[Long]("my-transformer.maxResponseBodySize")
+    val max: Long = config.maxResponseBodySize.orElse(maxFromConfigFile).getOrElse(4 * 1024 * 1024)
+    Right(ctx.otoroshiResponse.copy(body = ctx.otoroshiResponse.body.limitWeighted(max)(_.size))).vfuture
+  }
+}
 ```
 
 @@@ warning
 you MUST provide plugins that lies in the `otoroshi_plugins` package or in a sub-package of `otoroshi_plugins`. If you do not, your plugin will not be found by otoroshi. for example
 
 ```scala
-package otoroshi_plugins.com.my.company.myplugin
+package otoroshi_plugins.mycompany.demo
 ```
-
-also you don't have to instantiate your plugin at the end of the file like in the Otoroshi UI
 @@@
 
 When your code is ready, create a jar file 
@@ -112,11 +157,20 @@ and add the jar file to the Otoroshi classpath
 java -cp "/path/to/transformer.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
 ```
 
-then, in your service descriptor, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using `cp:` prefix like 
+then, in the route designer, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using `cp:` prefix like 
 
 ```json
 {
-  "transformerRef": "cp:otoroshi_plugins.my.class.package.MyTransformer"
+  "plugin": "cp:otoroshi_plugins.mycompany.demo.BodyLengthLimiter",
+  "enabled": true,
+  "debug": false,
+  "include": [],
+  "exclude": [],
+  "bound_listeners": [],
+  "config": {
+    "max_request_body_size": null,
+    "max_response_body_size": null
+  }
 }
 ```
 
@@ -126,12 +180,6 @@ Let say you need to provide custom configuration values for a script, then you c
 
 ```hocon
 include "application.conf"
-
-otoroshi {
-  scripts {
-    enabled = true
-  }
-}
 
 my-transformer {
   env = "prod"
@@ -146,50 +194,22 @@ then start Otoroshi like
 java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
 ```
 
-then, in your transformer, you can write something like 
-
-```scala
-package otoroshi_plugins.com.example.otoroshi
-
-import akka.stream.Materializer
-import akka.stream.scaladsl._
-import akka.util.ByteString
-import env.Env
-import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-import otoroshi.script._
-import play.api.Logger
-import play.api.mvc.{Result, Results}
-import scala.util._
-import scala.concurrent.{ExecutionContext, Future}
-
-class BodyLengthLimiter extends RequestTransformer {
-
-  override def def transformResponseWithCtx(ctx: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    val max = env.configuration.getOptional[Long]("my-transformer.maxResponseBodySize").getOrElse(Long.MaxValue)
-    ctx.body.limitWeighted(max)(_.size)
-  }
-
-  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    val max = env.configuration.getOptional[Long]("my-transformer.maxRequestBodySize").getOrElse(Long.MaxValue)
-    ctx.body.limitWeighted(max)(_.size)
-  }
-}
-```
-
 ## Using a library that is not embedded in Otoroshi
 
 Just use the `classpath` option when running Otoroshi
 
 ```sh
-java -cp "/path/to/library.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
+java -cp "/path/to/library.jar:/path/to/transformer.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
 ```
 
 Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability
 
-## Enabling plugins
+## Full examples
 
-plugins can be enabled per service from the service settings page or globally from the danger zone in the plugins section.
+you can find some example projects on the [Cloud APIM]() github account: 
 
-## Full example
-
-a full external plugin example can be found @link:[here](https://github.com/mathieuancelin/otoroshi-wasmer-plugin)
+- basic plugin example: [Cloud APIM Mailer plugin](https://github.com/cloud-apim/otoroshi-plugin-mailer)
+- custom datastore and custom data exporter exporter: [Cloud APIM Couchbase plugin](https://github.com/cloud-apim/otoroshi-plugin-couchbase)
+- extensions with multiple plugins, entities, admin APIs/UIs
+    - [Cloud APIM LLM Extension](https://github.com/cloud-apim/otoroshi-llm-extension)
+    - [Cloud APIM Biscuit Studio](https://github.com/cloud-apim/otoroshi-biscuit-studio)

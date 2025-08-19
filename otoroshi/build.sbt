@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "17.4.0-dev"
+version := "17.5.0-dev"
 scalaVersion := scalaLangVersion
 
 inThisBuild(
@@ -252,8 +252,8 @@ IntegrationTest / testForkedParallel := false
 
 usePgpKeyHex("4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))
-sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
-sonatypeCredentialHost := "s01.oss.sonatype.org"
+sonatypeRepository := "https://ossrh-staging-api.central.sonatype.com/service/local/"
+sonatypeCredentialHost := sonatypeCentralHost
 licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 //githubOwner := "MAIF"
 //githubRepository := "otoroshi"
