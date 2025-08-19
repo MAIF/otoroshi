@@ -136,6 +136,7 @@ trait NodeLike {
   def id: String
   def description: String
   def kind: String
+  def enabled: Boolean
   def subNodes: Seq[NodeLike]
 }
 
@@ -237,11 +238,12 @@ object Node {
     }
   }
   def flattenTree(node: NodeLike, path: String = "0"): List[(String, NodeLike)] = {
-    val children = node.subNodes.zipWithIndex.flatMap { case (child, idx) =>
-      val childPath = s"$path.$idx"
-      flattenTree(child, childPath)
+    val children = node.subNodes.filter(_.enabled).zipWithIndex.flatMap {
+      case (child, idx) =>
+        val childPath = s"$path.$idx"
+        flattenTree(child, childPath)
     }
-    List((path -> node)) ++ children
+    List(path -> node) ++ children
   }
 }
 
