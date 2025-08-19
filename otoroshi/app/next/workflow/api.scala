@@ -24,7 +24,7 @@ class WorkflowEngine(env: Env) {
     val wfRun = WorkflowRun(ULID.random(), attrs, env, functions)
     wfRun.memory.set("input", input)
     node
-      .internalRun(wfRun)(env, executorContext)
+      .internalRun(wfRun, "0")(env, executorContext)
       .map {
         case Left(err)     => WorkflowResult(None, err.some, wfRun)
         case Right(result) => WorkflowResult(result.some, None, wfRun)
@@ -132,7 +132,14 @@ object WorkflowFunction {
   def get(name: String): Option[WorkflowFunction] = functions.get(name)
 }
 
-trait Node {
+trait NodeLike {
+  def id: String
+  def description: String
+  def kind: String
+  def subNodes: Seq[NodeLike]
+}
+
+trait Node extends NodeLike {
   def json: JsObject
   def id: String                                 = json.select("id").asOptString.getOrElse(ULID.random().toLowerCase)
   def description: String                        = json.select("description").asOptString.getOrElse("")
@@ -140,22 +147,23 @@ trait Node {
   def enabled: Boolean                           = json.select("enabled").asOptBoolean.getOrElse(true)
   def result: Option[String]                     = json.select("result").asOptString
   def returned: Option[JsValue]                  = json.select("returned").asOpt[JsValue]
-  def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
+  def run(wfr: WorkflowRun, prefix: String)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
   def documentationName: String                  = this.getClass.getSimpleName.replace("$", "").toLowerCase()
   def documentationDisplayName: String = documentationName
   def documentationIcon: String = "fas fa-circle"
   def documentationDescription: String           = "no description"
   def documentationInputSchema: Option[JsObject] = None
   def documentationExample: Option[JsObject]     = None
+  def subNodes: Seq[NodeLike]
   final def internalRun(
-      wfr: WorkflowRun
+      wfr: WorkflowRun, prefix: String
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (!enabled) {
       // println(s"skipping ${id}")
       JsNull.rightf
     } else {
       wfr.log(s"starting '${id}'", this)
-      run(wfr)
+      run(wfr, prefix)
         .map {
           case Left(err)  => {
             wfr.log(s"ending with error '${id}'", this, err.some)
@@ -227,6 +235,13 @@ object Node {
       case None       => NoopNode(json)
       case Some(node) => node(json)
     }
+  }
+  def flattenTree(node: NodeLike, path: String = "0"): List[(String, NodeLike)] = {
+    val children = node.subNodes.zipWithIndex.flatMap { case (child, idx) =>
+      val childPath = s"$path.$idx"
+      flattenTree(child, childPath)
+    }
+    List((path -> node)) ++ children
   }
 }
 

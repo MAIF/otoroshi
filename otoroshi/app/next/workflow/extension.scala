@@ -213,6 +213,9 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             val functions = payload.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
             val workflow = payload.select("workflow").asObject
             val node     = Node.from(workflow)
+            // Node.flattenTree(node).foreach {
+            //   case (path, n) => println(s"${path} - ${n.kind} / ${n.id}")
+            // }
             engine.run(node, input, TypedMap.empty, functions).map { res =>
               Results.Ok(res.json)
             }
