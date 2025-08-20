@@ -52,7 +52,8 @@ case class Workflow(
     config: JsObject,
     job: WorkflowJobConfig,
     functions: Map[String, JsObject],
-    testPayload: JsObject
+    testPayload: JsObject,
+    orphans: Orphans
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = Workflow.format.writes(this)
@@ -73,7 +74,8 @@ object Workflow {
     config = Node.default,
     job = WorkflowJobConfig.default,
     functions = Map.empty,
-    testPayload = Json.obj("name" -> "foo")
+    testPayload = Json.obj("name" -> "foo"),
+    orphans = Orphans()
   )
   val format               = new Format[Workflow] {
     override def writes(o: Workflow): JsValue             = o.location.jsonWithKey ++ Json.obj(
@@ -84,7 +86,7 @@ object Workflow {
       "tags"         -> JsArray(o.tags.map(JsString.apply)),
       "config"       -> o.config,
       "test_payload" -> o.testPayload,
-      "orphans"      -> Orphans.format.writes(o.orphans)
+      "orphans"      -> Orphans.format.writes(o.orphans),
       "job"          -> o.job.json,
       "functions"    -> o.functions
     )
@@ -99,7 +101,8 @@ object Workflow {
         config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
         job = (json \ "job").asOpt[JsObject].flatMap(o => WorkflowJobConfig.format.reads(o).asOpt).getOrElse(WorkflowJobConfig.default),
         functions = (json \ "functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
-        testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo"))
+        testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo")),
+        orphans = (json \ "orphans").asOpt[Orphans](Orphans.format.reads).getOrElse(Orphans())
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

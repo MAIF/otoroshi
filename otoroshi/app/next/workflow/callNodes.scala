@@ -1,7 +1,7 @@
 package next.workflow
 
 import otoroshi.env.Env
-import otoroshi.next.workflow.{CallNode, LogFunction, Node, WasmCallFunction, WorkflowError, WorkflowFunction, WorkflowOperator, WorkflowRun}
+import otoroshi.next.workflow.{CallNode, LogFunction, Node, NodeLike, WasmCallFunction, WorkflowError, WorkflowFunction, WorkflowOperator, WorkflowRun}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
@@ -14,13 +14,15 @@ object CallNodes {
     override def documentationName: String = function.documentationName
     override def documentationDescription: String = function.documentationDescription
 
-    override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    override def run(wfr: WorkflowRun, prefix: String)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
       function.callWithRun(Json.obj(
           "wasm_plugin" -> json.select("source").select("path").as[String],
           "function" -> json.selectAsString("functionName"),
           "params" -> WorkflowOperator.processOperators(Json.parse(json.selectAsString("params")), wfr, env)
         ))(env, ec, wfr)
     }
+
+    override def subNodes: Seq[NodeLike] = Seq.empty
   }
 
   case class LogNode(json: JsObject) extends Node {
@@ -29,8 +31,10 @@ object CallNodes {
     override def documentationName: String = function.documentationName
     override def documentationDescription: String = function.documentationDescription
 
-    override def run(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    override def run(wfr: WorkflowRun, prefix: String)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
       function.callWithRun(json.selectAsOptObject("args").getOrElse(Json.obj()))(env, ec, wfr)
     }
+
+    override def subNodes: Seq[NodeLike] = Seq.empty
   }
 }
