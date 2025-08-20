@@ -24,6 +24,7 @@ case class PausedWorkflowSession(
   lazy val token = JWT.create()
     .withClaim("wi", workflowRef)
     .withClaim("i", id)
+    .withClaim("k", "resume-token")
     .sign(OtoroshiEnvHolder.get().sha512Alg)
 
   def json: JsValue = PausedWorkflowSession.format.writes(this)
@@ -33,19 +34,20 @@ case class PausedWorkflowSession(
     val wfrHydrated = wfr.hydrate(workflowRef, workflow, attrs, env)
     wfrHydrated.memory.set("resume_data", data)
     val node = Node.from(workflow)
-    if (env.clusterConfig.mode.isWorker) {
-      // TODO: call leader to delete !!!!
-    }
     ext.datastores.pausedWorkflowSession.delete(workflowRef, id)
+    if (env.clusterConfig.mode.isWorker) {
+      env.clusterAgent.deleteWorkflowSession(this)
+    }
     ext.engine.resume(node, wfrHydrated, from, attrs)
   }
 
   def save(env: Env): Future[Boolean] = {
     val ext = env.adminExtensions.extension[WorkflowAdminExtension].get
+    val fu = ext.datastores.pausedWorkflowSession.save(workflowRef, id, this)
     if (env.clusterConfig.mode.isWorker) {
-      // TODO: call leader to save !!!!
+      env.clusterAgent.saveWorkflowSession(this)
     }
-    ext.datastores.pausedWorkflowSession.save(workflowRef, id, this)
+    fu
   }
 }
 

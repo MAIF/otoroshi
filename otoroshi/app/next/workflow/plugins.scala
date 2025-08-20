@@ -1,6 +1,8 @@
 package otoroshi.next.workflow
 
 import akka.stream.Materializer
+import akka.util.ByteString
+import com.auth0.jwt.JWT
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.BodyHelper
@@ -12,6 +14,7 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 case class WorkflowBackendConfig(json: JsValue = Json.obj()) extends NgPluginConfig {
   lazy val ref: String    = json.select("ref").asString
@@ -335,6 +338,103 @@ class WorkflowAccessValidator extends NgAccessValidator {
                   maybeRoute = ctx.route.some
                 )
                 .map(r => NgAccess.NgDenied(r))
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+class WorkflowResumeBackend extends NgBackendCall {
+
+  override def useDelegates: Boolean                       = false
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Workflow Resume Backend"
+  override def description: Option[String]                 = "This plugin can be used to resume a paused workflow".some
+  override def defaultConfigObject: Option[NgPluginConfig] = WorkflowBackendConfig().some
+
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Custom("Workflow"))
+  override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
+  override def noJsForm: Boolean                 = true
+  override def configFlow: Seq[String]           = WorkflowBackendConfig.configFlow
+  override def configSchema: Option[JsObject]    = WorkflowBackendConfig.configSchema
+
+  def error(code: Int, msg: String): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    NgProxyEngineError.NgResultProxyEngineError(Results.Status(code)(Json.obj("error" -> msg))).leftf
+  }
+
+  override def callBackend(
+                            ctx: NgbBackendCallContext,
+                            delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+                          )(implicit
+                            env: Env,
+                            ec: ExecutionContext,
+                            mat: Materializer
+                          ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config = ctx
+      .cachedConfig(internalName)(WorkflowBackendConfig.format)
+      .getOrElse(WorkflowBackendConfig())
+    env.adminExtensions
+      .extension[WorkflowAdminExtension]
+      .flatMap(ext => ext.states.workflow(config.ref).map(w => (ext, w))) match {
+      case None                        =>
+        Errors
+          .craftResponseResult(
+            "workflow not found !",
+            Results.Status(500),
+            ctx.rawRequest,
+            None,
+            None,
+            attrs = ctx.attrs,
+            maybeRoute = ctx.route.some
+          )
+          .map(r => NgProxyEngineError.NgResultProxyEngineError(r).left)
+      case Some((extension, workflow)) => {
+        ctx.request.header("resume-token") match {
+          case None => error(400, "no resume-token")
+          case Some(token) => {
+            Try(JWT.require(env.sha512Alg).withClaim("k", "resume-token").build().verify(token)) match {
+              case Failure(e) =>
+                e.printStackTrace()
+                error(400, "error decoding resume-token")
+              case Success(decodedToken) => {
+                val workflowId = decodedToken.getClaim("wi").asString()
+                if (workflowId != workflow.id) {
+                  error(404, "workflow not found")
+                } else {
+                  val sessionId = decodedToken.getClaim("i").asString()
+                  extension.datastores.pausedWorkflowSession.one(workflowId, sessionId).flatMap {
+                    case None => error(404, "session not found")
+                    case Some(session) => {
+                      val dataF = if (ctx.request.hasBody) {
+                        ctx.request.body.runFold(ByteString(""))(_ ++ _).flatMap { rawBody =>
+                          Json.obj(
+                            "query" -> ctx.request.queryParams,
+                            "body" -> rawBody.utf8String.parseJson
+                          ).vfuture
+                        }
+                      } else {
+                        Json.obj(
+                          "query" -> ctx.request.queryParams,
+                        ).vfuture
+                      }
+                      dataF.flatMap { data =>
+                        val fu = session.resume(data, ctx.attrs, env)
+                        if (config.async) {
+                          BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(Json.obj("ack" -> true))), None).rightf
+                        } else {
+                          fu.map { result =>
+                            BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(result.json)), None).right
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
