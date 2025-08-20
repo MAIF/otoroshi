@@ -139,7 +139,7 @@ class StringifyOperator extends WorkflowOperator {
           "description" -> "The json to convert to string"
         )
     )
-  )
+  ))
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -1210,7 +1210,7 @@ class ContainsOperator extends WorkflowOperator {
             "description" -> "The container to check"
           )
     )
-  )
+  )))
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -1266,7 +1266,7 @@ class IsTruthyOperator extends WorkflowOperator {
           "description" -> "The value to check"
         )
     )
-  )
+  ))
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -1320,7 +1320,7 @@ class IsFalsyOperator extends WorkflowOperator {
           "description" -> "The value to check"
         )
     )
-  )
+  ))
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",

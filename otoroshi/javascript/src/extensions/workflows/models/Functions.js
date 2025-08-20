@@ -61,18 +61,21 @@ export const NODES = (docs) => {
         ...docs.nodes.map(n => ({
             ...n,
             nodes: true,
+            sources: ['output'],
             schema: n.form_schema,
             kind: n.kind || n.name
         })),
         ...docs.functions.map(n => ({
             ...n,
             functions: true,
+            sources: ['output'],
             schema: n.form_schema,
             kind: n.kind || n.name
         })),
         ...docs.operators.map(n => ({
             ...n,
             operator: true,
+            sources: ['output'],
             schema: n.form_schema,
             kind: n.kind || n.name
         }))

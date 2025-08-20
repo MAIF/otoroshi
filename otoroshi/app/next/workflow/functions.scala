@@ -476,6 +476,22 @@ class LogFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Log a message"
   override def documentationIcon: String                  = "fas fa-clipboard-list"
   override def documentationDescription: String           = "This function writes whatever the user want to the otoroshi logs"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+      "message" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Message",
+        "props" -> Json.obj(
+          "description" -> "The message to log"
+        )
+      ),
+      "params"  -> Json.obj(
+        "type"  -> "array",
+        "props" -> Json.obj(
+          "description" -> "The parameters to log"
+        ),
+        "label" -> "Parameters"
+      )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -510,6 +526,15 @@ class HelloFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Hello function"
   override def documentationIcon: String                  = "fas fa-hand-paper"
   override def documentationDescription: String           = "This function returns a hello message"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "name"  -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Name",
+      "props" -> Json.obj(
+        "description" -> "The name of the person to great"
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -541,6 +566,18 @@ class HttpClientFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "HTTP client"
   override def documentationIcon: String                  = "fas fa-network-wired"
   override def documentationDescription: String           = "This function makes a HTTP request"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "url"         -> Json.obj("label" -> "URL", "type" -> "string", "props" -> Json.obj( "description" -> "The URL to call")),
+    "method"      -> Json.obj("label" -> "Nethod", "type" -> "string", "props" -> Json.obj( "description" -> "The HTTP method to use")),
+    "headers"     -> Json.obj("label" -> "Headers", "type" -> "object", "props" -> Json.obj( "description" -> "The headers to send")),
+    "timeout"     -> Json.obj("label" -> "Timeout", "type" -> "number", "props" -> Json.obj( "description" -> "The timeout in milliseconds")),
+    "body"        -> Json.obj("label" -> "Body", "type" -> "string", "props" -> Json.obj( "description" -> "The body (string) to send")),
+    "body_str"    -> Json.obj("label" -> "String Body", "type" -> "string", "props" -> Json.obj( "description" -> "The body (string) to send")),
+    "body_json"   -> Json.obj("label" -> "JSON Body", "type" -> "object", "props" -> Json.obj( "description" -> "The body (json) to send")),
+    "body_bytes"  -> Json.obj("label" -> "Bytes Body", "type" -> "array",  "props" -> Json.obj( "description" -> "The body (bytes array) to send")),
+    "body_base64" -> Json.obj("label" -> "Base64 body", "type" -> "string", "props" -> Json.obj( "description" -> "The body (base64) to send")),
+    "tls_config"  -> Json.obj("label" -> "TLS Configuration", "type" -> "object", "props" -> Json.obj( "description" -> "The TLS configuration"))
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -616,6 +653,22 @@ class WorkflowCallFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Call a workflow"
   override def documentationIcon: String                  = "fas fa-project-diagram"
   override def documentationDescription: String           = "This function calls another workflow stored in otoroshi"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "workflow_id"  -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Workflow Identifier",
+      "props" -> Json.obj(
+        "description" -> "The ID of the workflow to call"
+      )
+    ),
+    "input"  -> Json.obj(
+      "type"  -> "object",
+      "label" -> "Input",
+      "props" -> Json.obj(
+        "description" -> "The input of the workflow"
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -666,6 +719,15 @@ class SystemCallFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "System call"
   override def documentationIcon: String                  = "fas fa-terminal"
   override def documentationDescription: String           = "This function calls a system command"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "command"  -> Json.obj(
+      "type"  -> "array",
+      "label" -> "Command",
+      "props" -> Json.obj(
+        "description" -> "The command to execute"
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -713,6 +775,29 @@ class WasmCallFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Wasm call"
   override def documentationIcon: String                  = "fas fa-cube"
   override def documentationDescription: String           = "This function calls a wasm function"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "wasm_plugin"  -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Wasm Plugin",
+      "props" -> Json.obj(
+        "description" -> "The wasm plugin to user"
+      )
+    ),
+    "function"  -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Function",
+      "props" -> Json.obj(
+        "description" -> "The function to call"
+      )
+    ),
+    "params"  -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Parameters",
+      "props" -> Json.obj(
+        "description" -> "The parameters to passed to the function"
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -777,6 +862,15 @@ class StoreDelFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Datastore delete"
   override def documentationIcon: String                  = "fas fa-eraser"
   override def documentationDescription: String           = "This function deletes keys from the store"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "keys"  -> Json.obj(
+      "type"  -> "array",
+      "label" -> "Wasm Plugin",
+      "props" -> Json.obj(
+        "description" -> "The keys to delete"
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -843,6 +937,29 @@ class StoreSetFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Datastore set"
   override def documentationIcon: String                  = "fas fa-upload"
   override def documentationDescription: String           = "This function sets a key in the datastore"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "key"  -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Key",
+      "props" -> Json.obj(
+        "description" -> "The key to set"
+      )
+    ),
+    "value"  -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Value",
+      "props" -> Json.obj(
+        "description" -> "The value to set"
+      )
+    ),
+    "ttl"  -> Json.obj(
+      "type"  -> "number",
+      "label" -> "TTL",
+      "props" -> Json.obj(
+        "description" -> "The optional time to live in seconds"
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -880,6 +997,15 @@ class StoreKeysFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Datastore list keys"
   override def documentationIcon: String                  = "fas fa-key"
   override def documentationDescription: String           = "This function lists keys from the datastore"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "pattern"  -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Pattern",
+      "props" -> Json.obj(
+        "description" -> "The pattern to match"
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -911,6 +1037,15 @@ class StoreMgetFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Datastore get multiple keys"
   override def documentationIcon: String                  = "fas fa-boxes"
   override def documentationDescription: String           = "This function gets multiple keys from the datastore"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "keys"  -> Json.obj(
+      "type"  -> "array",
+      "label" -> "Keys",
+      "props" -> Json.obj(
+        "description" -> "The keys to get"
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -942,6 +1077,15 @@ class StoreMatchFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Datastore matching keys"
   override def documentationIcon: String                  = "fas fa-search"
   override def documentationDescription: String           = "This function gets keys from the datastore matching a pattern"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "pattern"  -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Pattern",
+      "props" -> Json.obj(
+        "description" -> "The pattern to match"
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",

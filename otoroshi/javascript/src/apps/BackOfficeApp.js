@@ -375,12 +375,9 @@ class BackOfficeAppContainer extends Component {
             <div className="d-flex" style={{ position: 'relative' }}>
               <div
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
-                id="sidebar"
-              >
-                <i
-                  className={`fas fa-chevron-${
-                    this.state.openedSidebar ? 'left' : 'right'
-                  } sidebar-toggle`}
+                id="sidebar">
+                {!window.location.pathname.includes('/bo/dashboard/extensions/workflows/workflows/') && <i
+                  className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'} sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();
                     window.localStorage.setItem(
@@ -391,15 +388,8 @@ class BackOfficeAppContainer extends Component {
                       openedSidebar: !this.state.openedSidebar,
                     });
                   }}
-                />
-                <div
-                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : 'px-1'}`}
-                  style={
-                    {
-                      // alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
-                    }
-                  }
-                >
+                />}
+                <div className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : 'px-1'}`}>
                   {this.state.env && (
                     <GlobalTenantSelector
                       env={this.state.env}
@@ -1024,7 +1014,7 @@ class BackOfficeAppContainer extends Component {
           </div>
           <Toasts />
         </SidebarContext.Provider>
-      </Loader>
+      </Loader >
     );
   }
 }
