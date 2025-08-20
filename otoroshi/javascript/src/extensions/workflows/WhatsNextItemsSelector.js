@@ -17,7 +17,6 @@ import { BasicAuthOperator } from './operators/BasicAuthOperator'
 import { EqOperator } from './operators/EqOperator'
 import { NowOperator } from './operators/NowOperator'
 import { IsFalsyOperator } from './operators/IsFalsyOperator'
-import { AddOperator } from './operators/AddOperator'
 import { ArrayAppendOperator } from './operators/ArrayAppendOperator'
 import { NeqOperator } from './operators/NeqOperator'
 import { ArrayAtOperator } from './operators/ArrayAtOperator'
@@ -122,7 +121,6 @@ const ITEMS_BY_CATEGORY = [
             "$parse_datetime": ParseDateTimeOperator(),
             "$parse_date": ParseDateOperator(),
             "$parse_time": ParseTimeOperator(),
-            "$add": AddOperator(),
             "$subtract": SubtractOperator(),
             "$multiply": MultiplyOperator(),
             "$divide": DivideOperator(),

@@ -29,6 +29,11 @@ export function createSimpleNode(node, docs) {
     if (data)
         data = data("workflow" in node ? node.workflow : node)
 
+    console.log(data, node)
+
+    if (!data)
+        data = node
+
     if (data.operator) {
         data = {
             ...data,

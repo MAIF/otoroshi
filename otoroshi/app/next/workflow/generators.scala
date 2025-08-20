@@ -15,6 +15,7 @@ object WorkflowGenerators {
           "icon" -> node.documentationIcon,
           "description" -> node.documentationDescription,
           "schema"      -> node.documentationInputSchema,
+          "form_schema" -> node.documentationFormSchema,
           "example"     -> node.documentationExample,
         )
       }.toSeq),
@@ -23,6 +24,7 @@ object WorkflowGenerators {
           "name"        -> key,
           "description" -> value.documentationDescription,
           "schema"      -> value.documentationInputSchema,
+          "form_schema" -> value.documentationFormSchema,
           "example"     -> value.documentationExample,
           "display_name" -> value.documentationDisplayName,
           "icon" -> value.documentationIcon,
@@ -33,6 +35,7 @@ object WorkflowGenerators {
           "name"        -> key,
           "description" -> value.documentationDescription,
           "schema"      -> value.documentationInputSchema,
+          "form_schema" -> value.documentationFormSchema,
           "example"     -> value.documentationExample,
           "display_name" -> value.documentationDisplayName,
           "icon" -> value.documentationIcon,

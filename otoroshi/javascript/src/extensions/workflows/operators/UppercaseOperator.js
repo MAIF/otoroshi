@@ -5,12 +5,5 @@ export const UppercaseOperator = _workflow => ({
     name: 'String Uppercase',
     kind: '$str_upper_case',
     workflow: _workflow,
-    flow: ['value'],
-    schema: {
-        value: {
-            type: 'string',
-            label: 'String Value'
-        }
-    },
     sources: ['output']
 });
