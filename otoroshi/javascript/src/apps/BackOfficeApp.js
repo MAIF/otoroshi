@@ -180,7 +180,7 @@ const sidebarOpenOnLoad =
 
 export const SidebarContext = React.createContext({
   sidebarOpen: sidebarOpenOnLoad,
-  shortcuts: [],
+  shortcuts: []
 });
 
 class BackOfficeAppContainer extends Component {
@@ -347,6 +347,7 @@ class BackOfficeAppContainer extends Component {
             reloadEnv: this.reloadEnv,
             openedSidebar: this.state.openedSidebar,
             toggleSibebar: (openedSidebar) => this.setState({ openedSidebar }),
+            width: () => this.state.openedSidebar ? 250 : 52
           }}
         >
           <ReloadNewVersion />
@@ -392,7 +393,7 @@ class BackOfficeAppContainer extends Component {
                   }}
                 />
                 <div
-                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : 'mx-1'}`}
+                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : 'px-1'}`}
                   style={
                     {
                       // alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
@@ -455,7 +456,7 @@ class BackOfficeAppContainer extends Component {
                   </div>
                 </div>
               </div>
-              <div className="flex-fill px-3" style={{ overflowX: 'auto' }}>
+              <div className="flex-fill px-3" style={{ overflowX: 'auto' }} id="content-scroll-container-parent">
                 <div className={classes.join(' ')} id="content-scroll-container">
                   <DynamicTitleSignal env={this.state.env} reloadEnv={this.reloadEnv} />
                   {!this.state.catchedError && (

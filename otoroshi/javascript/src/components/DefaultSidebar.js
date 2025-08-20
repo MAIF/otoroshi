@@ -137,6 +137,12 @@ export function DefaultSidebar(props) {
       .map((f) => ({ ...f, title: f.title.toLowerCase() }))
       .sort((a, b) => a.title.localeCompare(b.title))
   );
+
+
+  if(window.location.pathname.startsWith('/bo/dashboard/extensions/workflows/workflows/')) {
+    return null
+  }
+
   return (
     <>
       <ul

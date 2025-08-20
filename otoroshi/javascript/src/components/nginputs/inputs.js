@@ -143,9 +143,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
-                  } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -369,6 +368,7 @@ export class NgStringRenderer extends Component {
               className="form-control"
               placeholder={props.placeholder}
               title={props.help}
+              autoFocus={props.autoFocus}
               value={
                 this.state.touched ? this.props.value || '' : this.props.value || defaultValue || ''
               }
@@ -605,13 +605,13 @@ export class NgBoxBooleanRenderer extends Component {
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-          <div className={`row mb-${margin} ${className || ''}`}>
-            <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-              {label}
-            </label>
-            <div className="col-sm-10">{children}</div>
-          </div>
-        );
+        <div className={`row mb-${margin} ${className || ''}`}>
+          <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+            {label}
+          </label>
+          <div className="col-sm-10">{children}</div>
+        </div>
+      );
 
     return (
       <Container>
@@ -667,22 +667,24 @@ export class NgArrayRenderer extends Component {
 
   isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-  defaultValues = (current) => ({
-    number: () => 0,
-    boolean: () => false,
-    bool: () => false,
-    array: () => [],
-    string: () => '',
-    select: () =>
-      current && current.props && current.props.options
-        ? current && current.props && current.props.options[0]
-        : '',
-    form: () => ({
-      ...this.generateDefaultValue(current.schema),
-    }),
-    object: () => {},
-    json: () => {},
-  });
+  defaultValues = (current) => {
+    return {
+      number: () => 0,
+      boolean: () => false,
+      bool: () => false,
+      array: () => [],
+      string: () => '',
+      select: () =>
+        current && current.props && current.props.options
+          ? current && current.props && current.props.options[0]
+          : '',
+      form: () => ({
+        ...this.generateDefaultValue(current.schema),
+      }),
+      object: () => { },
+      json: () => { },
+    }
+  }
 
   generateDefaultValue = (obj) => {
     return Object.entries(obj).reduce((acc, current) => {
@@ -875,21 +877,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
                 : null
             }
           />
@@ -1208,6 +1210,11 @@ export class NgSelectRenderer extends Component {
       };
     }
 
+    const fullOptions = this.applyTransformer(
+      props || this.props,
+      this.state.options || props.options || this.props.options
+    )
+
     return (
       <LabelAndInput {...this.props}>
         {readOnly && <ReadOnlyField value={this.props.value} />}
@@ -1222,14 +1229,11 @@ export class NgSelectRenderer extends Component {
             disabled={props.disabled}
             placeholder={props.placeholder || this.props.placeholder}
             optionRenderer={props.optionRenderer}
-            options={this.applyTransformer(
-              props || this.props,
-              this.state.options || props.options || this.props.options
-            )}
+            options={fullOptions}
             onChange={(e) => {
-              if (creatable && !this.state.options.find((o) => o.value === e)) {
+              if (creatable && !fullOptions.find((o) => o.value === e)) {
                 this.setState({
-                  options: [...this.state.options, e],
+                  options: [...fullOptions, e],
                 });
               }
               this.props.onChange(e);

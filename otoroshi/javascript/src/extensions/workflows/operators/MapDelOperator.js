@@ -1,0 +1,26 @@
+import React from 'react';
+import { FromMemory, FromMemoryFlow } from './FromMemory';
+
+export const MapDelOperator = _workflow => ({
+    label: "fas fa-minus-square",
+    name: 'Map Delete',
+    kind: '$map_del',
+    workflow: _workflow,
+    flow: ['key', 'fromMemory', 'map', FromMemoryFlow],
+    schema: {
+        ...FromMemory({ isArray: true }),
+        key: {
+            type: 'string',
+            label: 'Key to Delete'
+        },
+        map: {
+            type: 'object',
+            label: 'Source Map',
+            visible: props => !props.fromMemory
+        }
+    },
+    sources: ['output'],
+    operator: true
+});
+
+// Array Delete Operator;

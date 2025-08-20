@@ -1,0 +1,485 @@
+.workflow {
+  position: relative;
+
+  // p {
+  //   margin: 0;
+  // }
+
+  .node {
+    background: var(--bg-color_level3);
+    border: 2px solid hsl(220, 18%, 80%);
+    border-radius: .75rem;
+    min-width: 200px;
+    min-height: 100px;
+    // z-index: 1;
+    position: relative;
+    height: 100%;
+    width: 100%;
+  }
+
+  .react-flow__node-group:hover,
+  .node:hover {
+    border-color: var(--color-primary) !important;
+    cursor: pointer;
+  }
+
+  .react-flow__node-group:hover .node-trash,
+  .node:hover .node-trash {
+    opacity: 1;
+  }
+
+  .node-trash {
+    opacity: 0;
+    transition: opacity 0.15s;
+    position: absolute;
+    top: -1.5rem;
+    margin: auto;
+    padding-bottom: 1rem;
+  }
+
+  .react-flow__edges svg {
+    z-index: 1000000 !important;
+  }
+
+  .designer-actions {
+    position: fixed;
+    bottom: 1rem;
+    right: 0;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    z-index: 2;
+    width: fit-content;
+  }
+
+  .workflow-navbar {
+    width: 100%;
+    background-color: var(--bg-color_level2);
+    border: 1px solid var(--bg-color_level3);
+    border-left: 0;
+    border-right: 0;
+    z-index: 1;
+    padding: 0 1.5rem;
+    height: 56px;
+  }
+
+  .d-flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .add-tag {
+    border: none;
+    background: none;
+    color: var(--text);
+    opacity: .8;
+    gap: .35rem;
+    display: flex;
+    align-items: center;
+    font-size: .65rem;
+  }
+
+  .add-tag i {
+    margin-left: .5rem;
+  }
+
+  .nodes-explorer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    top: 56px;
+    width: 0;
+    height: 100%;
+    z-index: 10;
+    background: var(--bg-color_level3);
+    transition: width 0.3s;
+    padding-bottom: 4rem;
+
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .nodes-explorer--opened {
+    width: 400px;
+  }
+
+  .nodes-explorer--large-opened {
+    width: 600px;
+  }
+
+  .start-node {
+    height: 100%;
+    margin-top: 30px;
+    width: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    fill: var(--color-primary);
+  }
+
+  div[data-id^="start"],
+  div[data-id^="start"] .node {
+    width: 100px !important;
+    max-width: 100px !important;
+    min-width: initial;
+    border-bottom-left-radius: 2rem;
+    border-bottom-right-radius: 2rem;
+  }
+
+  .node-one-output {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: .25rem 1rem;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: .5rem;
+    background-color: var(--bg-color_level2);
+    border-top-left-radius: .5rem;
+    border-top-right-radius: .5rem;
+  }
+
+  // .source::before {
+  // content: "";
+  // background: var(--color_level1);
+  // mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 30 25" stroke-width="4" stroke="%23e5e5e5"><path fill="%23e5e5e5" stroke-linecap="round" stroke-linejoin="round" d="M14 5 14 19m6-7L14 5M14 5 14 19 20 12M25 6 21 6 21 18 25 18 25 6" /></svg>');
+  // mask-size: contain;
+  // mask-repeat: no-repeat;
+  // mask-position: center;
+  // margin-left: -1.5rem;
+  // margin-top: -16px;
+  // width: 36px;
+  // height: 36px;
+  // display: inline-block;
+  // z-index: 10000;
+  // }
+
+  .react-flow__edge-path {
+    transition: stroke-width 0.2s ease, stroke 0.2s ease;
+    stroke-width: 2px;
+  }
+
+  .react-flow__edge path {
+    stroke: var(--color_level1);
+  }
+
+  .react-flow__edge-hover {
+    stroke: var(--color-primary);
+  }
+
+  .edge-label-renderer {
+    opacity: 0;
+    transition: opacity .15s;
+  }
+
+  .edge-content-hovered {
+    opacity: 1;
+  }
+
+  .node-one-output-bar {
+    min-height: .1rem;
+    border-bottom: 3px dashed var(--text);
+    min-width: 5rem;
+  }
+
+  .node-one-output-add {
+    border: 2px solid var(--color_level1);
+    background: var(--bg-color_level2);
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: .25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .node-one-output-add:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .new-task {
+    position: absolute;
+    top: calc(56px + 1rem);
+    right: 1rem;
+    z-index: 1;
+  }
+
+  .whats-next-title {
+    background: var(--bg-color_level2);
+    font-size: 1.25rem;
+  }
+
+  .whats-next-title i {
+    cursor: pointer;
+  }
+
+  .whats-new-category {
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    gap: .5rem;
+  }
+
+  .whats-new-category:hover {
+    background: var(--bg-color_level2);
+    border-color: var(--color-primary);
+  }
+
+  .whats-next-category-informations p:first-child {
+    font-weight: bold;
+  }
+
+  .react-flow__controls-button {
+    color: var(--text);
+    border: 1px solid var(--color-primary) !important;
+    background-color: transparent;
+    z-index: 200000;
+    width: 42px;
+    height: 42px;
+    border-radius: .5rem;
+  }
+
+  .react-flow__controls-button:hover {
+    color: var(--color-dark);
+    border: 1px solid;
+    border-color: var(--color-primary-lighter);
+    background-color: var(--color-primary-lighter);
+  }
+
+  .react-flow__panel.bottom {
+    bottom: 52px;
+    gap: 1rem;
+  }
+
+  .react-flow__node-IfThenElse,
+  .react-flow__node-group {
+    background: rgba(240, 240, 240, 0.25);
+    border: 2px solid hsl(220, 18%, 80%) !important;
+    border-radius: .5rem;
+    width: fit-content;
+    padding: 2rem;
+    min-width: 200px;
+    min-height: 112px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .react-flow__node-group .node-one-output {
+    background-color: var(--bg-color_level1);
+  }
+
+  .node-group-label {
+    border: none !important;
+    background: var(--bg-color_level2) !important;
+    border-bottom-right-radius: .5rem;
+    border-top-left-radius: .5rem;
+  }
+
+  .node-add--large {
+    background: var(--bg-color_level3);
+    border: 2px dashed hsl(220, 18%, 80%);
+    border-radius: .75rem;
+    min-width: 120px;
+    min-height: 120px;
+
+    font-size: 40px;
+  }
+
+  .react-flow__attribution {
+    display: none;
+  }
+
+  .react-flow__resize-control {
+    background-color: var(--color-primary) !important;
+    border: 2px solid var(--color-primary) !important;
+    width: .5rem;
+    height: .5rem;
+    z-index: 10;
+  }
+
+  .handles {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    z-index: 1000;
+  }
+
+  .handles.sources {
+    right: 0;
+    top: 30px;
+    bottom: 0;
+    margin-top: .5rem;
+    display: flex;
+    flex-direction: column;
+    justify-items: flex-end;
+    align-items: flex-end;
+  }
+
+  .handles.targets div[data-handleid^="input"],
+  .handles.sources div[data-handleid^="output"] {
+    content: ' ';
+    background: var(--color_level1);
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="%23e5e5e5"><path fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round" d="M20.625 13.949c1.5-.866 1.5-3.032 0-3.898L7.874 2.697c-1.5-.866-3.374.217-3.374 1.948v14.71c0 1.73 1.874 2.813 3.374 1.948l12.751-7.354Z" /></svg>');
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    z-index: 10000;
+  }
+
+  .handles.targets div[data-handleid^="input"].connected,
+  .handles.sources div[data-handleid^="output"].connected {
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23e5e5e5" viewBox="0 0 24 24" stroke-width="1.5" stroke="%23e5e5e5"><path fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round" d="M20.625 13.949c1.5-.866 1.5-3.032 0-3.898L7.874 2.697c-1.5-.866-3.374.217-3.374 1.948v14.71c0 1.73 1.874 2.813 3.374 1.948l12.751-7.354Z" /></svg>');
+  }
+
+  .handles.targets {
+    left: 0;
+    bottom: 0;
+    top: 30px;
+    margin-top: .5rem;
+  }
+
+  .handles .react-flow__handle {
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: fit-content;
+    height: initial;
+    background: none;
+    border: none;
+  }
+
+  .react-flow__handle.connectionindicator {
+    cursor: pointer;
+  }
+
+  .handle-dot {
+    border-radius: 50%;
+    min-width: 12px;
+    min-height: 12px;
+    border: 1px solid var(--color_level1);
+    pointer-events: none;
+  }
+
+  .react-flow__connection-path {
+    stroke: var(--color_level1);
+  }
+
+  .handle-dot--connected {
+    background-color: var(--color_level1);
+  }
+
+  .react-flow__handle.target {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: .5rem;
+  }
+
+  .react-flow__handle.source {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: .5rem;
+  }
+
+  .add-handle {
+    // border: none;
+    // background: none;
+    font-size: .6rem;
+    margin-right: 0.5rem;
+    margin-top: .25rem;
+    padding: .2rem;
+  }
+
+  .handle-dot--selected {
+    background-color: var(--color_level1) !important;
+  }
+
+  .report-explorer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    margin-left: 120px;
+    top: 56px;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    background: var(--bg-color_level1);
+    transition: width 0.15s;
+    padding-bottom: 4rem;
+
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .report-explorer-action {
+    position: fixed;
+    bottom: 1rem;
+    right: 0;
+    margin: auto;
+    width: fit-content;
+    z-index: 10001;
+  }
+
+  .assign-node {
+    display: flex;
+    flex-direction: column;
+    text-align: start;
+    justify-content: center;
+    margin-top: 30px;
+    height: calc(100% - 30px);
+
+    font-size: .75rem;
+    text-align: center;
+  }
+
+  .operator {
+    height: 75px !important;
+  }
+
+  .operator .node {
+    min-height: initial;
+  }
+
+  .operator .node-one-output {
+    background-color: var(--bg-color_level1);
+  }
+
+  .tag {
+    color: var(--reverse-text);
+    font-size: .8rem;
+    border-radius: 1rem;
+    border: 1px solid var(--color-primary);
+    background-color: var(--color-primary);
+    padding: .1rem .3rem;
+    min-width: 3rem;
+    text-align: center;
+  }
+
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  
+  .node-description {
+    position: fixed;
+    top: 100%;
+    font-size: .75rem;
+    font-style: italic;
+  }
+}

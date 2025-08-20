@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test')
+const { validAnonymousModal } = require('../../utils')
 
 let context
 
@@ -19,6 +20,7 @@ async function deleteAPI(page) {
 
 async function createAPI(page) {
     await page.goto('/bo/dashboard/apis')
+    await validAnonymousModal(page)
     await page.getByRole('link', { name: ' Create new API' }).click()
 
 
@@ -39,6 +41,7 @@ async function createAPI(page) {
 
 test('Should be able to create an API', async () => {
     const page = await context.newPage()
+    await validAnonymousModal(page)
     await createAPI(page)
     await deleteAPI(page)
 })
@@ -81,6 +84,7 @@ async function publishedDraftAPI(page) {
 
 test('Should be able to create a route, a consumer and to publish an API', async () => {
     const page = await context.newPage()
+    await validAnonymousModal(page)
     await createAPI(page)
     await publishedDraftAPI(page)
     await deleteAPI(page)
@@ -88,6 +92,7 @@ test('Should be able to create a route, a consumer and to publish an API', async
 
 test('Subscribers can only subscribe to published consumers', async () => {
     const page = await context.newPage()
+    await validAnonymousModal(page)
     await createAPI(page)
     await publishedDraftAPI(page)
 
@@ -125,6 +130,7 @@ async function assignConsumerOnFlow(page) {
 
 test('API keys consumer selected in a flow should apply the API Keys plugin.', async () => {
     const page = await context.newPage()
+    await validAnonymousModal(page)
     await createAPI(page)
     await publishedDraftAPI(page)
 
@@ -139,6 +145,7 @@ test('API keys consumer selected in a flow should apply the API Keys plugin.', a
 
 test('Draft version should be promote in production environment', async () => {
     const page = await context.newPage()
+    await validAnonymousModal(page)
     await createAPI(page)
     await publishedDraftAPI(page)
 

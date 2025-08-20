@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import moment from 'moment';

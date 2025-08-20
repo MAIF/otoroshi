@@ -31,7 +31,7 @@ export class JsonObjectAsCodeInput extends Component {
         onChange={(e) => {
           try {
             this.props.onChange(JSON.parse(e));
-          } catch (ex) {}
+          } catch (ex) { }
         }}
       />
     );
@@ -63,7 +63,7 @@ export class JsonObjectAsCodeInputUpdatable extends Component {
             this.setState({ value }, () => {
               this.props.onChange(value);
             });
-          } catch (ex) {}
+          } catch (ex) { }
         }}
       />
     );
@@ -171,6 +171,14 @@ export default class CodeInput extends Component {
     if (this.props.mode === 'json' && typeof code !== 'string') {
       code = JSON.stringify(code, null, 2);
     }
+
+    // avoid to send json to Ace
+    if (typeof code === 'object' && !Array.isArray(code) && code !== null) {
+      code = JSON.stringify(code, null, 2);
+    }
+
+    if (!isNaN(code))
+      code = code + ""
 
     const mode = this.getMode(this.props.mode);
 

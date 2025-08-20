@@ -46,8 +46,6 @@ import { useSignalValue } from 'signals-react-safe';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
 import { HTTP_COLORS } from './MocksDesigner';
 
-const TryItComponent = React.lazy(() => import('./TryIt'));
-
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
     <div className="flex-column p-1" style={{ color: 'var(--color_level2)' }}>

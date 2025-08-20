@@ -223,6 +223,14 @@ class StringReplaceAllOperator extends WorkflowOperator {
   }
 }
 
+object JsNumberStringSupport {
+  def asDouble(jsValue: JsValue, field: String): Double = {
+    jsValue.select(field).asOpt[JsNumber]
+      .map(_.value.toDouble)
+      .getOrElse(jsValue.select(field).as[String].toDouble)
+  }
+}
+
 class UppercaseOperator extends WorkflowOperator {
   override def documentationName: String                  = "$str_upper_case"
   override def documentationDisplayName: String           = "Uppercase"
@@ -402,26 +410,23 @@ class ExpressionLanguageOperator extends WorkflowOperator {
 }
 
 class AddOperator extends WorkflowOperator {
-  override def documentationName: String                  = "$add"
-  override def documentationDisplayName: String           = "Add"
-  override def documentationIcon: String                  = "fas fa-plus"
-  override def documentationDescription: String           = "This operator adds a list of numbers"
-  override def documentationInputSchema: Option[JsObject] = Some(
-    Json.obj(
-      "type"       -> "object",
-      "required"   -> Seq("values"),
-      "properties" -> Json.obj(
-        "values" -> Json.obj("type" -> "array", "description" -> "The list of numbers to add")
-      )
+  override def documentationName: String = "$add"
+override def documentationDisplayName: String           = "Add"
+  override def documentationIcon: String                = "fas fa-plus"
+  override def documentationDescription: String = "This operator adds a list of numbers"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "values" -> Json.obj(
+      "type" -> "array",
+      "label" -> "Numbers to Add",
+      "array" -> true,
+      "format" -> null
     )
-  )
-  override def documentationExample: Option[JsObject]     = Some(
-    Json.obj(
-      "$add" -> Json.obj(
-        "values" -> Seq(1, 2, 3)
-      )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$add" -> Json.obj(
+      "values" -> Seq(1, 2, 3)
     )
-  )
+  ))
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("values").asOpt[Seq[JsNumber]] match {
       case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a + b.value))
@@ -431,26 +436,24 @@ class AddOperator extends WorkflowOperator {
 }
 
 class SubtractOperator extends WorkflowOperator {
-  override def documentationName: String                  = "$subtract"
+  override def documentationName: String = "$subtract"
   override def documentationDisplayName: String           = "Subtract"
   override def documentationIcon: String                  = "fas fa-minus"
-  override def documentationDescription: String           = "This operator subtracts a list of numbers"
-  override def documentationInputSchema: Option[JsObject] = Some(
-    Json.obj(
-      "type"       -> "object",
-      "required"   -> Seq("values"),
-      "properties" -> Json.obj(
-        "values" -> Json.obj("type" -> "array", "description" -> "The list of numbers to subtract")
+  override def documentationDescription: String = "This operator subtracts a list of numbers"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "values" -> Json.obj(
+      "type" -> "array",
+      "array" -> true,
+      "label" -> "Values",
+      "props" -> Json.obj(
+        "description" -> "The list of numbers to subtract"
       )
+  )))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$subtract" -> Json.obj(
+      "values" -> Seq(1, 2, 3)
     )
-  )
-  override def documentationExample: Option[JsObject]     = Some(
-    Json.obj(
-      "$subtract" -> Json.obj(
-        "values" -> Seq(1, 2, 3)
-      )
-    )
-  )
+  ))
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("values").asOpt[Seq[JsNumber]] match {
       case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a - b.value))
@@ -546,6 +549,9 @@ class ParseDateTimeOperator extends WorkflowOperator {
       .asOpt[String]
       .map(p => DateTimeFormat.forPattern(p))
       .getOrElse(ISODateTimeFormat.dateTimeParser.withOffsetParsed)
+
+    println("ParseDateTimeOperator",  DateTime.parse(opts.select("value").as[String], pattern).toDate.getTime.json)
+
     opts.select("value").asOpt[String] match {
       case Some(dateStr) => DateTime.parse(dateStr, pattern).toDate.getTime.json
       case _             => JsBoolean(false)
@@ -782,9 +788,9 @@ class GtOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val a = opts.select("a").as[JsNumber]
-    val b = opts.select("b").as[JsNumber]
-    (a.value > b.value).json
+    val a = JsNumberStringSupport.asDouble(opts, "a")
+    val b = JsNumberStringSupport.asDouble(opts, "b")
+    (a > b).json
   }
 }
 
@@ -812,9 +818,9 @@ class GteOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val a = opts.select("a").as[JsNumber]
-    val b = opts.select("b").as[JsNumber]
-    (a.value >= b.value).json
+    val a = JsNumberStringSupport.asDouble(opts, "a")
+    val b = JsNumberStringSupport.asDouble(opts, "b")
+    (a >= b).json
   }
 }
 
@@ -842,9 +848,9 @@ class LtOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val a = opts.select("a").as[JsNumber]
-    val b = opts.select("b").as[JsNumber]
-    (a.value < b.value).json
+    val a = JsNumberStringSupport.asDouble(opts, "a")
+    val b = JsNumberStringSupport.asDouble(opts, "b")
+    (a < b).json
   }
 }
 
@@ -872,9 +878,15 @@ class LteOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val a = opts.select("a").as[JsNumber]
-    val b = opts.select("b").as[JsNumber]
-    (a.value <= b.value).json
+    val a = opts.select("a")
+      .asOpt[JsNumber]
+      .map(_.value.toDouble)
+      .getOrElse(opts.select("a").as[String].toDouble)
+    val b = opts.select("b")
+      .asOpt[JsNumber]
+      .map(_.value.toDouble)
+      .getOrElse(opts.select("b").as[String].toDouble)
+    (a <= b).json
   }
 }
 
@@ -1337,6 +1349,10 @@ class ArrayAppendOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+
+    if (opts.select("value").isEmpty)
+      throw new Exception("ArrayAppendOperator : Missing value field")
+
     val v              = opts.select("value").asValue
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v

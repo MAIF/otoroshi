@@ -450,7 +450,7 @@ export default class MocksDesigner extends React.Component {
       };
     } else {
       return {
-        resources: [],
+        resources: ['output'],
         endpoints: [],
       };
     }

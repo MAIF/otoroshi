@@ -1,6 +1,7 @@
 package otoroshi.next.workflow
 
 import akka.stream.scaladsl.{Sink, Source}
+import next.workflow.CallNodes
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -23,6 +24,8 @@ object NodesInitializer {
     Node.registerNode("wait", json => WaitNode(json))
     Node.registerNode("error", json => ErrorNode(json))
     Node.registerNode("value", json => ValueNode(json))
+    Node.registerNode("wasm", json => CallNodes.WasmNode(json))
+    Node.registerNode("log", json => CallNodes.LogNode(json))
   }
 }
 
@@ -54,6 +57,7 @@ case class ValueNode(json: JsObject) extends Node {
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     println(s"running: ${prefix} - ${kind} / ${id}")
     val value = WorkflowOperator.processOperators(json.select("value").asValue, wfr, env)
+    println("return value", value)
     value.rightf
   }
 }
@@ -746,8 +750,10 @@ case class MapNode(json: JsObject) extends Node {
           .takeWhile(_.isRight, inclusive = true)
           .runWith(Sink.seq)(env.otoroshiMaterializer)
           .map { seq =>
+            println("seq", seq)
             val last = seq.last
             if (last.isLeft) {
+              println("LAST", last)
               last
             } else {
               val result = JsArray(seq.collect { case Right(v) =>
@@ -756,6 +762,7 @@ case class MapNode(json: JsObject) extends Node {
               json.select("destination").asOptString.foreach { destination =>
                 wfr.memory.set(destination, result)
               }
+              println("result", result)
               result.right
             }
           }

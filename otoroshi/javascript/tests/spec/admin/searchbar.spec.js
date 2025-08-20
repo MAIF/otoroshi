@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { validAnonymousModal } = require('../../utils');
 
 let context;
 
@@ -13,6 +14,7 @@ test.afterAll(async () => {
 test('access to the admin api', async () => {
     const page = await context.newPage()
     await page.goto('/');
+    await validAnonymousModal(page)
 
     await page.locator('#navbar').click();
 
