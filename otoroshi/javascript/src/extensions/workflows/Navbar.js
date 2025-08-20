@@ -8,7 +8,7 @@ export function Navbar({ workflow, save, manageTags }) {
         <div className='d-flex-center gap-3'>
             <Link
                 className='m-0 cursor-pointer'
-                to={`/extensions/workflows/workflows/edit/${workflow.id}`}>{workflow.name}</Link>
+                to={`/extensions/workflows/edit/${workflow.id}`}>{workflow.name}</Link>
             <button className='add-tag'
                 onClick={manageTags}>
                 {workflow.tags

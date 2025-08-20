@@ -1,5 +1,6 @@
 package otoroshi.next.workflow
 
+import io.azam.ulidj.ULID
 import otoroshi.env.Env
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
@@ -125,7 +126,7 @@ object WorkflowTest {
       .asObject
     val node                     = Node.from(workflow)
     Files.writeString(new File("./workflow_test_1.json").toPath, workflow.prettify)
-    engine.run(node, Json.obj("name" -> "foo"), TypedMap.empty, Map.empty).map { res =>
+    engine.run(ULID.random(), node, Json.obj("name" -> "foo"), TypedMap.empty, Map.empty).map { res =>
       println(s"result: ${res.lightJson.prettify}")
     }
   }
@@ -165,7 +166,7 @@ object WorkflowTest {
     )
     val node                     = Node.from(workflow)
     Files.writeString(new File("./workflow_test.json").toPath, workflow.prettify)
-    engine.run(node, Json.obj("foo" -> Json.obj("bar" -> "qix")), TypedMap.empty, Map.empty).map { res =>
+    engine.run(ULID.random(), node, Json.obj("foo" -> Json.obj("bar" -> "qix")), TypedMap.empty, Map.empty).map { res =>
       println(s"result: ${res.lightJson.prettify}")
     }
   }

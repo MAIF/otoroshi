@@ -2,6 +2,7 @@ package otoroshi.next.workflow
 
 import akka.stream.scaladsl.{Sink, Source}
 import next.workflow.CallNodes
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -26,6 +27,58 @@ object NodesInitializer {
     Node.registerNode("value", json => ValueNode(json))
     Node.registerNode("wasm", json => CallNodes.WasmNode(json))
     Node.registerNode("log", json => CallNodes.LogNode(json))
+    Node.registerNode("pause", json => PauseNode(json))
+  }
+}
+
+case class PauseNode(json: JsObject) extends Node {
+  override def subNodes: Seq[NodeLike] = Seq.empty
+  override def documentationName: String                  = "pause"
+  override def documentationDisplayName: String           = "Pause"
+  override def documentationIcon: String                  = "fas fa-pause"
+  override def documentationDescription: String           = "This node pauses the current workflow"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
+    .deepMerge(
+      Json.obj()
+    )
+    .some
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"        -> "pause",
+      "description" -> "Pause the workflow at this point.",
+    )
+  )
+  override def run(
+                    wfr: WorkflowRun,
+                    prefix: Seq[Int],
+                    from: Seq[Int],
+                  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
+    println("prefix: " + prefix.mkString(", "))
+    val session = PausedWorkflowSession(
+      id = wfr.id,
+      workflowRef = wfr.workflow_ref,
+      workflow = wfr.workflow,
+      functions = wfr.functions,
+      wfr = wfr,
+      from = if (prefix.length > 1) {
+        val init = prefix.init
+        val last = prefix.last
+        init :+ (last + 1)
+      } else {
+        prefix
+      },
+      createdAt = DateTime.now(),
+      validUntil = None,
+    )
+    // println(s"saving session: ${session.json.prettify}")
+    session.save(env).map { _ =>
+      WorkflowError(
+        message = "_____otoroshi_workflow_paused",
+        details = Some(Json.obj("access_token" -> session.token)),
+        exception = None
+      ).left
+    }
   }
 }
 
@@ -56,7 +109,7 @@ case class ValueNode(json: JsObject) extends Node {
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
     val value = WorkflowOperator.processOperators(json.select("value").asValue, wfr, env)
-    println("return value", value)
+    // println("return value", value)
     value.rightf
   }
 }
@@ -220,6 +273,7 @@ case class WorkflowNode(json: JsObject) extends Node {
       head
         .internalRun(wfr, prefix :+ idx, from)
         .flatMap {
+          case Left(err) if err.message == "_____otoroshi_workflow_paused" => err.details.get.select("access_token").asValue.rightf
           case Left(err) => Left(err).vfuture
           case Right(_)  => next(nodes.tail, wfr, prefix, from, idx + 1)
         }

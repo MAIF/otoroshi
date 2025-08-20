@@ -2,6 +2,7 @@ package otoroshi.next.workflow
 
 import io.azam.ulidj.ULID
 import org.joda.time.DateTime
+import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.utils.TypedMap
@@ -11,8 +12,8 @@ import play.api.libs.json._
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.concurrent.TrieMap
 import scala.concurrent._
-import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
-import scala.util.Success
+import scala.jdk.CollectionConverters._
+import scala.util._
 
 // TODO: time budget per node
 // TODO: fuel budget per run, with fuel consumption per node
@@ -20,8 +21,15 @@ class WorkflowEngine(env: Env) {
 
   implicit val executorContext: ExecutionContext = env.otoroshiExecutionContext
 
-  def run(node: Node, input: JsObject, attrs: TypedMap, functions: Map[String, JsObject] = Map.empty): Future[WorkflowResult] = {
-    val wfRun = WorkflowRun(ULID.random(), attrs, env, functions)
+  def run(wfRef: String, node: Node, input: JsObject, attrs: TypedMap, functions: Map[String, JsObject] = Map.empty): Future[WorkflowResult] = {
+    val wfRun = WorkflowRun(
+      ULID.random(),
+      attrs,
+      env,
+      functions,
+      workflow_ref = wfRef,
+      workflow = node.json,
+    )
     wfRun.memory.set("input", input)
     node
       .internalRun(wfRun, Seq(0), Seq.empty)(env, executorContext)
@@ -79,14 +87,33 @@ case class WorkflowResult(returned: Option[JsValue], error: Option[WorkflowError
 }
 
 case class WorkflowError(message: String, details: Option[JsObject] = None, exception: Option[Throwable] = None) {
-  def json: JsValue = Json.obj(
-    "message"   -> message,
-    "details"   -> details,
-    "exception" -> exception.map(_.getMessage.json).getOrElse(JsNull).asValue
-  )
+  def json: JsValue = WorkflowError.format.writes(this)
+}
+
+object WorkflowError {
+  val format = new Format[WorkflowError] {
+
+    override def reads(json: JsValue): JsResult[WorkflowError] = Try {
+      WorkflowError(
+        message = (json \ "message").as[String],
+        details = (json \ "details").asOpt[JsObject],
+        exception = None,
+      )
+    } match {
+      case Failure(t) => JsError(t.getMessage)
+      case Success(r) => JsSuccess(r)
+    }
+
+    override def writes(o: WorkflowError): JsValue = Json.obj(
+      "message"   -> o.message,
+      "details"   -> o.details,
+      "exception" -> o.exception.map(_.getMessage.json).getOrElse(JsNull).asValue
+    )
+  }
 }
 
 class WorkflowMemory(memory: TrieMap[String, JsValue] = new TrieMap[String, JsValue]()) {
+  def contains(name: String): Boolean         = memory.contains(name)
   def get(name: String): Option[JsValue]      = memory.get(name)
   def set(name: String, value: JsValue): Unit = memory.put(name, value)
   def remove(name: String): Unit              = memory.remove(name)
@@ -99,32 +126,103 @@ case class WorkflowLogItem(
     node: Node,
     memory: JsValue,
     error: Option[WorkflowError] = None
-)                 {
-  def json: JsValue = Json.obj(
-    "timestamp" -> timestamp.toDate.getTime,
-    "message"   -> message,
-    "node"      -> node.json,
-    "memory"    -> memory,
-    "error"     -> error.map(_.json).getOrElse(JsNull).asValue
-  )
+) {
+  def json: JsValue = WorkflowLogItem.format.writes(this)
 }
+
+object WorkflowLogItem {
+  val format = new Format[WorkflowLogItem] {
+    override def reads(json: JsValue): JsResult[WorkflowLogItem] = Try {
+      WorkflowLogItem(
+        timestamp = new DateTime(json.select("timestamp").as[Long]),
+        message = json.select("message").as[String],
+        node = Node.from(json.select("node").as[JsObject]),
+        memory = json.select("memory").as[JsObject],
+        error = json.select("error").asOpt[JsObject].flatMap(o => WorkflowError.format.reads(o).asOpt),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(r) => JsSuccess(r)
+    }
+    override def writes(o: WorkflowLogItem): JsValue = Json.obj(
+      "timestamp" -> o.timestamp.toDate.getTime,
+      "message"   -> o.message,
+      "node"      -> o.node.json,
+      "memory"    -> o.memory,
+      "error"     -> o.error.map(_.json).getOrElse(JsNull).asValue
+    )
+  }
+}
+
 class WorkflowLog {
   private val queue                    = new ConcurrentLinkedQueue[WorkflowLogItem]()
   def json: JsValue                    = JsArray(queue.asScala.map(_.json).toSeq)
   def log(item: WorkflowLogItem): Unit = queue.offer(item)
 }
 
-case class WorkflowRun(id: String, attrs: TypedMap, env: Env, functions: Map[String, JsObject] = Map.empty, memory: WorkflowMemory = new WorkflowMemory(), runlog: WorkflowLog = new WorkflowLog()) {
+object WorkflowLog {
+  def apply(items: Seq[WorkflowLogItem]): WorkflowLog = {
+    val wl = new WorkflowLog()
+    wl.queue.addAll(items.asJava)
+    wl
+  }
+}
+
+case class WorkflowRun(
+    id: String,
+    attrs: TypedMap,
+    env: Env,
+    functions: Map[String, JsObject] = Map.empty,
+    memory: WorkflowMemory = new WorkflowMemory(),
+    runlog: WorkflowLog = new WorkflowLog(),
+    workflow_ref: String,
+    workflow: JsObject,
+) {
   def log(message: String, node: Node, error: Option[WorkflowError] = None): Unit = {
-    // println(s"[LOG] ${id} - ${message}")
     runlog.log(WorkflowLogItem(DateTime.now(), message, node, memory.json, error))
   }
-  def json: JsValue      = Json.obj(
-    "id"     -> id,
-    "memory" -> memory.json,
-    "log"    -> runlog.json
-  )
-  def lightJson: JsValue = json.asObject - "log"
+  def hydrate(
+    workflow_ref: String,
+    workflow: JsObject,
+    attrs: TypedMap,
+    env: Env,
+  ): WorkflowRun = {
+    copy(attrs = attrs, env = env)
+  }
+  def json: JsValue = WorkflowRun.format.writes(this)
+  def lightJson: JsValue = json.asObject - "log" - "functions"
+}
+
+object WorkflowRun {
+  val format = new Format[WorkflowRun] {
+    override def reads(json: JsValue): JsResult[WorkflowRun] = Try {
+      WorkflowRun(
+        id = json.select("id").asString,
+        functions = json.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
+        memory = {
+          val map = json.select("memory").as[Map[String, JsValue]]
+          val tmap = new TrieMap[String, JsValue]()
+          tmap.addAll(map)
+          new WorkflowMemory(tmap)
+        },
+        runlog = WorkflowLog(json.select("log").as[Seq[JsObject]].map(o => WorkflowLogItem.format.reads(o).get)),
+        attrs = TypedMap.empty,
+        env = OtoroshiEnvHolder.get(),
+        workflow_ref = "",
+        workflow = Json.obj(),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(r) => JsSuccess(r)
+    }
+
+    override def writes(o: WorkflowRun): JsValue = Json.obj(
+      "id" -> o.id,
+      "functions" -> o.functions,
+      "memory" -> o.memory.json,
+      "log" -> o.runlog.json,
+    )
+  }
 }
 
 trait WorkflowFunction {
@@ -189,6 +287,12 @@ trait Node extends NodeLike {
       wfr.log(s"starting '${id}'", this)
       run(wfr, prefix, from)
         .map {
+          case Left(err) if err.message == "_____otoroshi_workflow_paused" => {
+            wfr.log(s"pausing '${id}'", this)
+            val res = err.details.get.select("access_token").asValue
+            result.foreach(name => wfr.memory.set(name, res))
+            Left(err)
+          }
           case Left(err)  => {
             wfr.log(s"ending with error '${id}'", this, err.some)
             Left(err)

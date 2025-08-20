@@ -1,11 +1,12 @@
 package otoroshi.next.workflow
 
+import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import io.azam.ulidj.ULID
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
-import otoroshi.models.{BackOfficeUser, EntityLocation, EntityLocationSupport}
+import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions._
 import otoroshi.next.plugins.{WasmJob, WasmJobsConfig}
 import otoroshi.script.{Job, JobInstantiation, JobKind}
@@ -123,9 +124,62 @@ class KvWorkflowConfigDataStore(extensionId: AdminExtensionId, redisCli: RedisLi
   override def extractId(value: Workflow): String      = value.id
 }
 
+class KvPausedWorkflowSessionDatastore(extensionId: AdminExtensionId, redisCli: RedisLike, _env: Env) {
+
+  implicit val ec = _env.otoroshiExecutionContext
+  implicit val mat = _env.otoroshiMaterializer
+  implicit val env = _env
+
+  def fromJsonSafe(value: JsValue): JsResult[PausedWorkflowSession]  = fmt.reads(value)
+  def fmt: Format[PausedWorkflowSession]                   = PausedWorkflowSession.format
+  def redisLike(implicit env: Env): RedisLike = redisCli
+  def keyAll(): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflow-sessions:*"
+  def key(wfId: String, id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflow-sessions:$wfId:$id"
+  def extractId(value: PausedWorkflowSession): String      = value.id
+
+  def all(): Future[Seq[PausedWorkflowSession]] = {
+    redisLike
+      .keys(keyAll())
+      .flatMap(keys =>
+        if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+        else redisLike.mget(keys: _*)
+      )
+      .map(seq =>
+        seq.filter(_.isDefined).map(_.get).map(v => fromJsonSafe(Json.parse(v.utf8String))).collect {
+          case JsSuccess(i, _) => i
+        }
+      )
+  }
+  def allForWorkflow(wfId: String): Future[Seq[PausedWorkflowSession]] = {
+    redisLike
+      .keys(key(wfId, "*"))
+      .flatMap(keys =>
+        if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+        else redisLike.mget(keys: _*)
+      )
+      .map(seq =>
+        seq.filter(_.isDefined).map(_.get).map(v => fromJsonSafe(Json.parse(v.utf8String))).collect {
+          case JsSuccess(i, _) => i
+        }
+      )
+  }
+  def one(wfId: String, id: String): Future[Option[PausedWorkflowSession]] = {
+    redisLike.get(key(wfId, id)).map(_.flatMap(v => fromJsonSafe(Json.parse(v.utf8String)).asOpt))
+  }
+  def delete(wfId: String, id: String): Future[Boolean] = {
+    redisLike.del(key(wfId, id)).map(_ > 0)
+  }
+  def save(wfId: String, id: String, session: PausedWorkflowSession): Future[Boolean] = {
+    redisLike.set(
+      key(wfId, id),
+      session.json.stringify,
+    )
+  }
+}
+
 class WorkflowConfigAdminExtensionDatastores(env: Env, extensionId: AdminExtensionId) {
-  val workflowsDatastore: WorkflowConfigDataStore =
-    new KvWorkflowConfigDataStore(extensionId, env.datastores.redis, env)
+  val workflowsDatastore: WorkflowConfigDataStore = new KvWorkflowConfigDataStore(extensionId, env.datastores.redis, env)
+  val pausedWorkflowSession: KvPausedWorkflowSessionDatastore = new KvPausedWorkflowSessionDatastore(extensionId, env.datastores.redis, env)
 }
 
 class WorkflowConfigAdminExtensionState(env: Env) {
@@ -185,6 +239,120 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
     )
   )
 
+  override def adminApiRoutes(): Seq[AdminExtensionAdminApiRoute] = {
+    Seq(
+      AdminExtensionAdminApiRoute(
+        method = "POST",
+        path = "/apis/extensions/otoroshi.extensions.workflows/sessions/:wfId/:id/_resume",
+        wantsBody = true,
+        handle = (ctx, req, apikey, optBody) => {
+          val wfId = ctx.named("wfId").getOrElse("--")
+          val id = ctx.named("id").getOrElse("--")
+          optBody match {
+            case None => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
+            case Some(body) => body.runFold(ByteString(""))(_ ++ _)(env.otoroshiMaterializer).flatMap { bodyRaw =>
+              bodyRaw.utf8String.parseJson match {
+                case data @ JsObject(_) => {
+                  datastores.pausedWorkflowSession.one(wfId, id).flatMap {
+                    case Some(session) => {
+                      val async = req.getQueryString("async").contains("true")
+                      val attrs = TypedMap.empty
+                      if (async) {
+                        session.resume(data, attrs, env)
+                        Results.Ok(Json.obj("ack" -> true)).vfuture
+                      } else {
+                        session.resume(data, attrs, env).map { r =>
+                          Results.Ok(r.json)
+                        }(env.otoroshiExecutionContext)
+                      }
+                    }
+                    case None => Results.NotFound(Json.obj("error" -> "resource not found")).vfuture
+                  }(env.otoroshiExecutionContext)
+                }
+                case _ => Results.BadRequest(Json.obj("error" -> "bad data format")).vfuture
+              }
+            }(env.otoroshiExecutionContext)
+          }
+        }
+      ),
+      AdminExtensionAdminApiRoute(
+        method = "GET",
+        path = "/apis/extensions/otoroshi.extensions.workflows/sessions/:wfId/:id",
+        wantsBody = false,
+        handle = (ctx, req, apikey, optBody) => {
+          val wfId = ctx.named("wfId").getOrElse("--")
+          val id = ctx.named("id").getOrElse("--")
+          datastores.pausedWorkflowSession.one(wfId, id).map {
+            case Some(session) => Results.Ok(session.json)
+            case None => Results.NotFound(Json.obj("error" -> "resource not found"))
+          }(env.otoroshiExecutionContext)
+        }
+      ),
+      AdminExtensionAdminApiRoute(
+        method = "DELETE",
+        path = "/apis/extensions/otoroshi.extensions.workflows/sessions/:wfId/:id",
+        wantsBody = false,
+        handle = (ctx, req, apikey, optBody) => {
+          val wfId = ctx.named("wfId").getOrElse("--")
+          val id = ctx.named("id").getOrElse("--")
+          datastores.pausedWorkflowSession.delete(wfId, id).map {
+            case true => Results.Ok(Json.obj("done" -> true))
+            case false => Results.NotFound(Json.obj("error" -> "resource not found"))
+          }(env.otoroshiExecutionContext)
+        }
+      ),
+      AdminExtensionAdminApiRoute(
+        method = "GET",
+        path = "/apis/extensions/otoroshi.extensions.workflows/sessions/:wfId",
+        wantsBody = false,
+        handle = (ctx, req, apikey, optBody) => {
+          val wfId = ctx.named("wfId").getOrElse("--")
+          datastores.pausedWorkflowSession.allForWorkflow(wfId).map { sessions =>
+            Results.Ok(JsArray(sessions.map(_.json)))
+          }(env.otoroshiExecutionContext)
+        }
+      ),
+      AdminExtensionAdminApiRoute(
+        method = "POST",
+        path = "/apis/extensions/otoroshi.extensions.workflows/sessions",
+        wantsBody = true,
+        handle = (ctx, req, apikey, optBody) => {
+          optBody match {
+            case None => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
+            case Some(body) => body.runFold(ByteString(""))(_ ++ _)(env.otoroshiMaterializer).flatMap { bodyRaw =>
+              val json = bodyRaw.utf8String.parseJson
+              PausedWorkflowSession.format.reads(json) match {
+                case JsError(errors) => Results.BadRequest(Json.obj("error" -> errors.mkString("\n"))).vfuture
+                case JsSuccess(session, _) => {
+                  val wfId = session.workflowRef
+                  val id = session.id
+                  datastores.pausedWorkflowSession.one(wfId, id).flatMap {
+                    case Some(s) => Results.Conflict(Json.obj("error" -> "resource already exists")).vfuture
+                    case None => {
+                      datastores.pausedWorkflowSession.save(wfId, id, session).map { _ =>
+                        Results.Ok(session.json)
+                      }(env.otoroshiExecutionContext)
+                    }
+                  }(env.otoroshiExecutionContext)
+                }
+              }
+            }(env.otoroshiExecutionContext)
+          }
+        }
+      ),
+      AdminExtensionAdminApiRoute(
+        method = "GET",
+        path = "/apis/extensions/otoroshi.extensions.workflows/sessions",
+        wantsBody = false,
+        handle = (ctx, req, apikey, optBody) => {
+          datastores.pausedWorkflowSession.all().map { sessions =>
+            Results.Ok(JsArray(sessions.map(_.json)))
+          }(env.otoroshiExecutionContext)
+        }
+      )
+    )
+  }
+
   override def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = {
     Seq(
       AdminExtensionEntity(
@@ -236,133 +404,11 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             val payload  = payload_filled.parseJson
             val input    = payload.select("input").asString.parseJson.asObject
             val functions = payload.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
+            val workflow_id = payload.select("workflow_id").asString
             val workflow = payload.select("workflow").asObject
             val node     = Node.from(workflow)
-            if (false) {
-              // here to test workflow resume
-              val wfr = WorkflowRun(ULID.random(), TypedMap.empty, env, functions)
-              wfr.memory.set("input", Json.obj())
-              wfr.memory.set("pokemons_with_from_at_0.1", Json.parse("""{
-                                                      |    "status" : 200,
-                                                      |    "headers" : {
-                                                      |      "Age" : [ "54560" ],
-                                                      |      "Nel" : [ "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}" ],
-                                                      |      "Date" : [ "Wed, 20 Aug 2025 08:56:00 GMT" ],
-                                                      |      "Etag" : [ "W/\"588-/X6dSpO6F3LPFuUhaJHfN5AqUco\"" ],
-                                                      |      "Vary" : [ "Accept-Encoding,cookie,need-authorization, x-fh-requested-host, accept-encoding" ],
-                                                      |      "CF-RAY" : [ "9720acca8f9e6f8e-CDG" ],
-                                                      |      "Server" : [ "cloudflare" ],
-                                                      |      "Alt-Svc" : [ "h3=\":443\"; ma=86400" ],
-                                                      |      "X-Cache" : [ "HIT" ],
-                                                      |      "X-Timer" : [ "S1752312201.695106,VS0,VE1" ],
-                                                      |      "Report-To" : [ "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=VS%2F7h3ykEkCKAA38xTeWxEX0ZcsWBlf%2B4TC6A7q9eYJAQCQo5M7HXLIC0jXns09%2Bf4ra6eIobCxXWhkFVjIlilG0J3n%2B4NOgc1Y%3D\"}]}" ],
-                                                      |      "Connection" : [ "keep-alive" ],
-                                                      |      "X-Served-By" : [ "cache-par-lfpb1150076-PAR" ],
-                                                      |      "Content-Type" : [ "application/json; charset=utf-8" ],
-                                                      |      "X-Cache-Hits" : [ "0" ],
-                                                      |      "X-Powered-By" : [ "Express" ],
-                                                      |      "Cache-Control" : [ "public, max-age=86400, s-maxage=86400" ],
-                                                      |      "X-Country-Code" : [ "FR" ],
-                                                      |      "Cf-Cache-Status" : [ "HIT" ],
-                                                      |      "Transfer-Encoding" : [ "chunked" ],
-                                                      |      "Function-Execution-Id" : [ "6exnmyljxuik" ],
-                                                      |      "X-Cloud-Trace-Context" : [ "4819c381b2ab1625427cd08cd6d38304" ],
-                                                      |      "X-Orig-Accept-Language" : [ "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7" ],
-                                                      |      "Strict-Transport-Security" : [ "max-age=31556926" ],
-                                                      |      "Access-Control-Allow-Origin" : [ "*" ]
-                                                      |    },
-                                                      |    "cookies" : [ ],
-                                                      |    "body_str" : "{\"count\":1302,\"next\":\"https://pokeapi.co/api/v2/pokemon?offset=20&limit=20\",\"previous\":null,\"results\":[{\"name\":\"bulbasaur\",\"url\":\"https://pokeapi.co/api/v2/pokemon/1/\"},{\"name\":\"ivysaur\",\"url\":\"https://pokeapi.co/api/v2/pokemon/2/\"},{\"name\":\"venusaur\",\"url\":\"https://pokeapi.co/api/v2/pokemon/3/\"},{\"name\":\"charmander\",\"url\":\"https://pokeapi.co/api/v2/pokemon/4/\"},{\"name\":\"charmeleon\",\"url\":\"https://pokeapi.co/api/v2/pokemon/5/\"},{\"name\":\"charizard\",\"url\":\"https://pokeapi.co/api/v2/pokemon/6/\"},{\"name\":\"squirtle\",\"url\":\"https://pokeapi.co/api/v2/pokemon/7/\"},{\"name\":\"wartortle\",\"url\":\"https://pokeapi.co/api/v2/pokemon/8/\"},{\"name\":\"blastoise\",\"url\":\"https://pokeapi.co/api/v2/pokemon/9/\"},{\"name\":\"caterpie\",\"url\":\"https://pokeapi.co/api/v2/pokemon/10/\"},{\"name\":\"metapod\",\"url\":\"https://pokeapi.co/api/v2/pokemon/11/\"},{\"name\":\"butterfree\",\"url\":\"https://pokeapi.co/api/v2/pokemon/12/\"},{\"name\":\"weedle\",\"url\":\"https://pokeapi.co/api/v2/pokemon/13/\"},{\"name\":\"kakuna\",\"url\":\"https://pokeapi.co/api/v2/pokemon/14/\"},{\"name\":\"beedrill\",\"url\":\"https://pokeapi.co/api/v2/pokemon/15/\"},{\"name\":\"pidgey\",\"url\":\"https://pokeapi.co/api/v2/pokemon/16/\"},{\"name\":\"pidgeotto\",\"url\":\"https://pokeapi.co/api/v2/pokemon/17/\"},{\"name\":\"pidgeot\",\"url\":\"https://pokeapi.co/api/v2/pokemon/18/\"},{\"name\":\"rattata\",\"url\":\"https://pokeapi.co/api/v2/pokemon/19/\"},{\"name\":\"raticate\",\"url\":\"https://pokeapi.co/api/v2/pokemon/20/\"}]}",
-                                                      |    "body_json" : {
-                                                      |      "count" : 1302,
-                                                      |      "next" : "https://pokeapi.co/api/v2/pokemon?offset=20&limit=20",
-                                                      |      "previous" : null,
-                                                      |      "results" : [ {
-                                                      |        "name" : "bulbasaur",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/1/"
-                                                      |      }, {
-                                                      |        "name" : "ivysaur",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/2/"
-                                                      |      }, {
-                                                      |        "name" : "venusaur",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/3/"
-                                                      |      }, {
-                                                      |        "name" : "charmander",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/4/"
-                                                      |      }, {
-                                                      |        "name" : "charmeleon",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/5/"
-                                                      |      }, {
-                                                      |        "name" : "charizard",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/6/"
-                                                      |      }, {
-                                                      |        "name" : "squirtle",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/7/"
-                                                      |      }, {
-                                                      |        "name" : "wartortle",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/8/"
-                                                      |      }, {
-                                                      |        "name" : "blastoise",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/9/"
-                                                      |      }, {
-                                                      |        "name" : "caterpie",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/10/"
-                                                      |      }, {
-                                                      |        "name" : "metapod",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/11/"
-                                                      |      }, {
-                                                      |        "name" : "butterfree",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/12/"
-                                                      |      }, {
-                                                      |        "name" : "weedle",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/13/"
-                                                      |      }, {
-                                                      |        "name" : "kakuna",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/14/"
-                                                      |      }, {
-                                                      |        "name" : "beedrill",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/15/"
-                                                      |      }, {
-                                                      |        "name" : "pidgey",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/16/"
-                                                      |      }, {
-                                                      |        "name" : "pidgeotto",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/17/"
-                                                      |      }, {
-                                                      |        "name" : "pidgeot",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/18/"
-                                                      |      }, {
-                                                      |        "name" : "rattata",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/19/"
-                                                      |      }, {
-                                                      |        "name" : "raticate",
-                                                      |        "url" : "https://pokeapi.co/api/v2/pokemon/20/"
-                                                      |      } ]
-                                                      |    }
-                                                      |  }""".stripMargin))
-              wfr.memory.set("pokemons", Json.parse("""[ {
-                                                          |  "name" : "bulbasaur",
-                                                          |  "url" : "https://pokeapi.co/api/v2/pokemon/1/"
-                                                          |}, {
-                                                          |  "name" : "ivysaur",
-                                                          |  "url" : "https://pokeapi.co/api/v2/pokemon/2/"
-                                                          |}, {
-                                                          |  "name" : "venusaur",
-                                                          |  "url" : "https://pokeapi.co/api/v2/pokemon/3/"
-                                                          |}, {
-                                                          |  "name" : "charmander",
-                                                          |  "url" : "https://pokeapi.co/api/v2/pokemon/4/"
-                                                          |} ]""".stripMargin))
-              engine.resume(node, wfr, Seq(0, 2), TypedMap.empty).map { res =>
-                Results.Ok(res.json)
-              }
-            } else {
-              // Node.flattenTree(node).foreach {
-              //   case (path, n) => println(s"${path} - ${n.kind} / ${n.id}")
-              // }
-              engine.run(node, input, TypedMap.empty, functions).map { res =>
-                Results.Ok(res.json)
-              }
+            engine.run(workflow_id, node, input, TypedMap.empty, functions).map { res =>
+              Results.Ok(res.json)
             }
           }
         }

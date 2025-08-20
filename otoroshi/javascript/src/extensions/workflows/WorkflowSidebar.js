@@ -6,7 +6,7 @@ import { createTooltip } from "../../tooltips";
 const LINKS = (id) =>
     [
         {
-            to: `/extensions/workflows/workflows/${id}/designer`,
+            to: `/extensions//workflows/${id}/designer`,
             icon: 'fa-pencil-ruler',
             title: 'Overview',
             tab: 'overview',
@@ -14,7 +14,7 @@ const LINKS = (id) =>
             isActive: (pathname) => pathname.endsWith('designer')
         },
         {
-            to: `/extensions/workflows/workflows/edit/${id}`,
+            to: `/extensions/workflows/edit/${id}`,
             icon: 'fa-file-alt',
             title: 'Informations',
             tab: 'informations',
@@ -42,7 +42,7 @@ export const WorkflowSidebar = ({ workflow }) => {
                 {openedSidebar && <p className="sidebar-title">Shortcuts</p>}
                 <li className={`nav-item mb-3 ${openedSidebar ? 'nav-item--open' : ''}`} key="Workflows">
                     <Link
-                        to={`/extensions/workflows/workflows`}
+                        to={`/extensions/workflows`}
                         {...createTooltip(`All your workflows`)}
                         className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-3' : ''} m-0`}>
                         <div style={{ width: '20px' }} className="d-flex justify-content-center">
