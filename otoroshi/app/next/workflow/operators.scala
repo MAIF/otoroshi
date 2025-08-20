@@ -69,8 +69,22 @@ class JqOperator extends WorkflowOperator {
   override def documentationDescription: String           = "This operator transforms a json value using JQ"
   override def documentationFormSchema: Option[JsObject] = Some(
     Json.obj(
-      "filter" -> Json.obj("type" -> "string", "description" -> "The JQ filter applied on the JSON"),
-      "value" -> Json.obj("type" -> "code", "description" -> "The JSON passed to JQ"),
+      "filter" -> Json.obj(
+        "type"        -> "code",
+        "label"       -> "Filter",
+        "props"       -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The JQ filter applied on the JSON"
+        )
+      ),
+      "value" -> Json.obj(
+        "type"        -> "code",
+        "props"       -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The JSON passed to JQ",
+        ),
+        "label"       -> "Value"
+      ),
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -118,7 +132,12 @@ class StringifyOperator extends WorkflowOperator {
   override def documentationDescription: String           = "This operator stringify a json value"
   override def documentationFormSchema: Option[JsObject] = Some(
     Json.obj(
-      "value" -> Json.obj("type" -> "code", "description" -> "The json to convert to string")
+      "value" -> Json.obj(
+        "type"  -> "code",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The json to convert to string"
+        )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -151,6 +170,7 @@ class PrettifyOperator extends WorkflowOperator {
     Json.obj(
       "value" -> Json.obj(
         "type" -> "code",
+        "editorOnly"  -> true,
         "description" -> "The json to convert to string"
       )
     )
@@ -1081,8 +1101,20 @@ class EqOperator extends WorkflowOperator {
   override def documentationDescription: String           = "This operator checks if two values are equal"
   override def documentationFormSchema: Option[JsObject] = Some(
     Json.obj(
-      "a" -> Json.obj("type" -> "code", "description" -> "The first value"),
-      "b" -> Json.obj("type" -> "code", "description" -> "The second value")
+      "a" -> Json.obj(
+        "type" -> "code",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The first value"
+        )
+      ),
+      "b" -> Json.obj(
+        "type" -> "code",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The second value"
+        )
+      )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -1117,8 +1149,20 @@ class NeqOperator extends WorkflowOperator {
   override def documentationDescription: String           = "This operator checks if two values are not equal"
   override def documentationFormSchema: Option[JsObject] = Some(
     Json.obj(
-      "a" -> Json.obj("type" -> "code", "description" -> "The first value"),
-      "b" -> Json.obj("type" -> "code", "description" -> "The second value")
+      "a" -> Json.obj(
+        "type" -> "code",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The first value"
+        )
+      ),
+      "b" -> Json.obj(
+        "type" -> "code",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The second value"
+        )
+      )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -1153,8 +1197,18 @@ class ContainsOperator extends WorkflowOperator {
   override def documentationDescription: String           = "This operator checks if a value is contained in a container"
   override def documentationFormSchema: Option[JsObject] = Some(
     Json.obj(
-        "value"     -> Json.obj("type" -> "code", "description" -> "The value to check"),
-        "container" -> Json.obj("type" -> "code", "description" -> "The container to check")
+        "value"     -> Json.obj(
+          "type" -> "code",
+          "props" -> Json.obj(
+            "editorOnly"  -> true,
+            "description" -> "The value to check"
+          ),
+        "container" -> Json.obj(
+          "type" -> "code",
+          "props" -> Json.obj(
+            "editorOnly"  -> true,
+            "description" -> "The container to check"
+          )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -1205,7 +1259,12 @@ class IsTruthyOperator extends WorkflowOperator {
   override def documentationDescription: String           = "This operator checks if a value is truthy"
   override def documentationFormSchema: Option[JsObject] = Some(
     Json.obj(
-      "value" -> Json.obj("type" -> "code", "description" -> "The value to check")
+      "value" -> Json.obj(
+        "type" -> "code",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The value to check"
+        )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -1254,7 +1313,12 @@ class IsFalsyOperator extends WorkflowOperator {
   override def documentationDescription: String           = "This operator checks if a value is falsy"
   override def documentationFormSchema: Option[JsObject] = Some(
     Json.obj(
-      "value" -> Json.obj("type" -> "code", "description" -> "The value to check")
+      "value" -> Json.obj(
+        "type" -> "code",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The value to check"
+        )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -1535,7 +1599,12 @@ class MapPutOperator extends WorkflowOperator {
   override def documentationFormSchema: Option[JsObject] = Some(
     Json.obj(
       "key"   -> Json.obj("type" -> "string", "description" -> "The key to put"),
-      "value" -> Json.obj("type" -> "code", "description" -> "The value to put"),
+      "value" -> Json.obj(
+        "type" -> "code",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The value to put"
+        )),
       "map"   -> Json.obj("type" -> "object", "description" -> "The map to put the key-value pair in")
     )
   )
@@ -1588,7 +1657,13 @@ class ArrayAppendOperator extends WorkflowOperator {
   override def documentationDescription: String           = "This operator appends a value to an array"
   override def documentationFormSchema: Option[JsObject] = Some(
     Json.obj(
-      "value" -> Json.obj("type" -> "code", "description" -> "The value to append"),
+      "value" -> Json.obj(
+        "type" -> "code",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The value to append"
+        )
+      ),
       "array" -> Json.obj("type" -> "array", "description" -> "The array to append the value to")
     )
   )
@@ -1643,7 +1718,13 @@ class ArrayPrependOperator extends WorkflowOperator {
   override def documentationDescription: String           = "This operator prepends a value to an array"
   override def documentationFormSchema: Option[JsObject] = Some(
     Json.obj(
-      "value" -> Json.obj("type" -> "code", "description" -> "The value to prepend"),
+      "value" -> Json.obj(
+        "type" -> "code",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The value to prepend"
+        )
+      ),
       "array" -> Json.obj("type" -> "array", "description" -> "The array to prepend the value to")
     )
   )

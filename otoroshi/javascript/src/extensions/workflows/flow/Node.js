@@ -24,7 +24,7 @@ export function Node(props) {
                     data.functions.onDoubleClick(props)
                 }}>
                 <div className='node-one-output d-flex-center'>
-                    {data.operator ? <i className='fas fa-wrench' /> : <i className={(data.label || data.item?.label)} />} {data.name}
+                    {data.operator ? <i className='fas fa-wrench' /> : <i className={(data.label || data.item?.label || data.icon)} />} {data.display_name || data.name}
                 </div>
 
                 {data.nodeRenderer && data.nodeRenderer(props)}

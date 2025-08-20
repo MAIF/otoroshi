@@ -58,12 +58,27 @@ import { LogNode } from "../nodes/LogNode"
 export const NODES = (docs) => {
 
     let serverNodes = [
-        ...docs.nodes.map(n => ({ ...n, nodes: true })),
-        ...docs.functions.map(n => ({ ...n, functions: true })),
-        ...docs.operators.map(n => ({ ...n, operator: true }))
+        ...docs.nodes.map(n => ({
+            ...n,
+            nodes: true,
+            schema: n.form_schema,
+            kind: n.kind || n.name
+        })),
+        ...docs.functions.map(n => ({
+            ...n,
+            functions: true,
+            schema: n.form_schema,
+            kind: n.kind || n.name
+        })),
+        ...docs.operators.map(n => ({
+            ...n,
+            operator: true,
+            schema: n.form_schema,
+            kind: n.kind || n.name
+        }))
     ]
 
-    return Object.fromEntries(Object.entries({
+    let items = Object.fromEntries(Object.entries({
         "assign": AssignNode,
         "parallel": ParallelFlowsNode,
         "switch": SwitchNode,
@@ -121,11 +136,28 @@ export const NODES = (docs) => {
         "$expression_language": ExpressionLanguageOperator
     })
         .map(([key, node]) => {
-            return [key, workflow => ({
-                ...(serverNodes.find(n => n.name === key) || {}),
-                ...node(workflow)
-            })]
+            const item = serverNodes.find(n => n.name === key)
+            if (item)
+                serverNodes = serverNodes.filter(f => f.name !== key)
+
+            return [key,
+                workflow => ({
+                    ...(item || {}),
+                    ...node(workflow)
+                })]
         }))
+
+
+    serverNodes.forEach(node => {
+        items[node.name] = () => ({
+            ...node,
+            kind: node.name
+        })
+    })
+
+    console.log(items)
+
+    return items
 }
 
 export const CORE_FUNCTIONS = {

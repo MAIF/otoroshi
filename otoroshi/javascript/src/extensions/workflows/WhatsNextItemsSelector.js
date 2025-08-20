@@ -162,12 +162,12 @@ function Node({ node, onClick }) {
             minWidth: 32,
             fontSize: '1.15rem'
         }}>
-            <i className={node.label} />
+            <i className={node.label || node.icon} />
         </div>
         <div className=' d-flex flex-column px-2'>
             <p className='m-0' style={{
                 fontWeight: 'bold'
-            }}>{node.name}</p>
+            }}>{node.display_name || node.name}</p>
             <p className='m-0'>{node.description}</p>
         </div>
     </div>
@@ -205,9 +205,9 @@ export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCateg
 
     // console.log(docs)
     let serverNodes = [
-        ...docs.nodes.map(n => ({ ...n, nodes: true })),
-        ...docs.functions.map(n => ({ ...n, functions: true })),
-        ...docs.operators.map(n => ({ ...n, operators: true }))
+        ...docs.nodes.map(n => ({ ...n, nodes: true, schema: n.form_schema })),
+        ...docs.functions.map(n => ({ ...n, functions: true, schema: n.form_schema })),
+        ...docs.operators.map(n => ({ ...n, operators: true, schema: n.form_schema }))
     ]
 
     let items = ITEMS_BY_CATEGORY.map(({ nodes, ...props }) => {

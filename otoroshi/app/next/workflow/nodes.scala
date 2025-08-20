@@ -956,7 +956,7 @@ case class FilterNode(json: JsObject) extends Node {
     ),
     "not" -> Json.obj(
       "type"    -> "bool",
-      "lalbel"  -> "Not"
+      "label"  -> "Not"
     ),
     "destination" -> Json.obj(
       "type"  -> "string",

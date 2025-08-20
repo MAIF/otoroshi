@@ -22,17 +22,17 @@ import { TagsModal } from './TagsModal';
 const GROUP_NODES = ['if', 'switch', 'parallel', 'foreach', 'map', 'filter', 'flatmap']
 
 export function createSimpleNode(node, docs) {
-    // console.log('createSimpleNode', node.kind || node.data?.kind, node)
+    console.log('createSimpleNode', node,  NODES(docs))
 
     let data = NODES(docs)[(node.kind || node.data.kind).toLowerCase()]
 
     if (data)
         data = data("workflow" in node ? node.workflow : node)
 
-    console.log(data, node)
-
     if (!data)
         data = node
+
+    console.log(data)
 
     if (data.operator) {
         data = {
@@ -419,7 +419,7 @@ const initializeGraph = (config, orphans, addInformationsToNode, docs) => {
     const orphansNodes = orphans.nodes
         .filter(f => f.kind)
         .map(orphan => {
-            const node = createNode(orphan.id, orphan.data, addInformationsToNode, docs)
+            const node = createNode(orphan.id, orphan, addInformationsToNode, docs)
             return {
                 ...setupTargetsAndSources(node),
                 position: orphan.position
