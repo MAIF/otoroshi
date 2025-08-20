@@ -24,7 +24,7 @@ class WorkflowEngine(env: Env) {
     val wfRun = WorkflowRun(ULID.random(), attrs, env, functions)
     wfRun.memory.set("input", input)
     node
-      .internalRun(wfRun, "0")(env, executorContext)
+      .internalRun(wfRun, Seq(0))(env, executorContext)
       .map {
         case Left(err)     => WorkflowResult(None, err.some, wfRun)
         case Right(result) => WorkflowResult(result.some, None, wfRun)
@@ -149,7 +149,7 @@ trait Node extends NodeLike {
   def enabled: Boolean                           = json.select("enabled").asOptBoolean.getOrElse(true)
   def result: Option[String]                     = json.select("result").asOptString
   def returned: Option[JsValue]                  = json.select("returned").asOpt[JsValue]
-  def run(wfr: WorkflowRun, prefix: String)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
+  def run(wfr: WorkflowRun, prefix: Seq[Int])(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
   def documentationName: String                  = this.getClass.getSimpleName.replace("$", "").toLowerCase()
   def documentationDisplayName: String = documentationName
   def documentationIcon: String = "fas fa-circle"
@@ -159,7 +159,7 @@ trait Node extends NodeLike {
   def documentationExample: Option[JsObject]     = None
   def subNodes: Seq[NodeLike]
   final def internalRun(
-      wfr: WorkflowRun, prefix: String
+      wfr: WorkflowRun, prefix: Seq[Int]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (!enabled) {
       // println(s"skipping ${id}")
