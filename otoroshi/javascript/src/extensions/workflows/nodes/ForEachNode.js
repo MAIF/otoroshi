@@ -6,16 +6,6 @@ export const ForEachNode = (_workflow) => ({
     workflow: _workflow,
     kind: 'foreach',
     type: 'group',
-    flow: ['values'],
-    schema: {
-        values: {
-            type: 'code',
-            label: 'Values to iterate',
-            props: {
-                editorOnly: true,
-            },
-        }
-    },
     sources: ['ForEachLoop', 'output'],
     targets: []
 })

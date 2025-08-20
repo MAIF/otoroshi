@@ -66,6 +66,19 @@ case class ErrorNode(json: JsObject) extends Node {
   override def documentationDisplayName: String           = "Error"
   override def documentationIcon: String                  = "fas fa-exclamation"
   override def documentationDescription: String           = "This node returns an error"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "message" -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Message"
+    ),
+    "details" -> Json.obj(
+      "type"  -> "code",
+      "label" -> "Details",
+      "props" -> Json.obj(
+        "editorOnly"  -> true
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
@@ -103,6 +116,12 @@ case class WaitNode(json: JsObject) extends Node {
   override def documentationDisplayName: String           = "Wait"
   override def documentationIcon: String                  = "fas fa-clock"
   override def documentationDescription: String           = "This node waits a certain amount of time"
+  override def documentationFormSchema: Option[JsObject]  = Json.obj(
+    "duration"  -> Json.obj(
+      "type"  -> "number",
+      "label" -> "Duration"
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
@@ -591,6 +610,15 @@ case class ForEachNode(json: JsObject) extends Node {
   override def documentationDisplayName: String           = "For each"
   override def documentationIcon: String                  = "fas fa-sync"
   override def documentationDescription: String           = "This node executes a node for each element in an array"
+  override def documentationFormSchema: Option[JsObject] = Json.obj(
+    "values"  -> Json.obj(
+      "type"  -> "code",
+      "label" -> "Values to iterate",
+      "props" -> Json.obj(
+        "editorOnly"  -> true
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
@@ -690,6 +718,19 @@ case class MapNode(json: JsObject) extends Node {
   override def documentationDisplayName: String           = "Map"
   override def documentationIcon: String                  = "fas fa-map"
   override def documentationDescription: String           = "This node transforms an array by applying a node on each value"
+  override def documentationFormSchema: Option[JsObject]  = Json.obj(
+    "values"  ->  Json.obj(
+      "type"  -> "code",
+      "label" -> "Values to iterate",
+      "props" -> Json.obj(
+        "editorOnly" -> true
+      )
+    ),
+    "destination" -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Destination"
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
@@ -764,6 +805,19 @@ case class FlatMapNode(json: JsObject) extends Node {
   override def documentationDisplayName: String           = "Flatmap"
   override def documentationIcon: String                  = "fas fa-map"
   override def documentationDescription: String           = "This node transforms an array by applying a node on each value"
+  override def documentationFormSchema: Option[JsObject]  = Json.obj(
+    "values"  ->  Json.obj(
+      "type"  -> "code",
+      "label" -> "Values to iterate",
+      "props" -> Json.obj(
+        "editorOnly" -> true
+      )
+    ),
+    "destination" -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Destination"
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
@@ -837,6 +891,23 @@ case class FilterNode(json: JsObject) extends Node {
   override def documentationIcon: String                  = "fas fa-filter"
   override def documentationDescription: String           =
     "This node transforms an array by filtering values based on a node execution"
+  override def documentationFormSchema: Option[JsObject]  = Json.obj(
+    "values"  ->  Json.obj(
+      "type"  -> "code",
+      "label" -> "Values to iterate",
+      "props" -> Json.obj(
+        "editorOnly" -> true
+      )
+    ),
+    "not" -> Json.obj(
+      "type"    -> "bool",
+      "lalbel"  -> "Not"
+    ),
+    "destination" -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Destination"
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
