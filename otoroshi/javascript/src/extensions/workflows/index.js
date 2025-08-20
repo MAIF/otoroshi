@@ -362,6 +362,23 @@ export function setupWorkflowsExtension(registerExtension) {
       }
     }
 
+    class SessionResumeModal extends Component {
+      render() {
+        return (
+          <>
+            <div className="modal-body">
+              ???
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+                Close
+              </button>
+            </div>
+          </>
+        );
+      }
+    }
+
     class WorkflowSessionsPage extends Component {
 
       client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
@@ -376,7 +393,7 @@ export function setupWorkflowsExtension(registerExtension) {
         { title: 'From', filterId: 'from', content: (item) => item.from.join(".") },
         { title: 'Actions', content: (item) => (
             <div className="btn-group">
-              <button className="btn btn-sm btn-success btn-block btn-sm" onClick={e => this.resumeSession(item.id)}><span className="fas fa-play" /> Resume</button>
+              <button className="btn btn-sm btn-success btn-block btn-sm" onClick={e => this.resumeSession(item)}><span className="fas fa-play" /> Resume</button>
               <button className="btn btn-sm btn-danger btn-block btn-sm" onClick={e => this.deleteSession(item.id)}><span className="fas fa-trash" /> Delete</button>
             </div>
           )
@@ -395,7 +412,17 @@ export function setupWorkflowsExtension(registerExtension) {
         });
       }
 
-      resumeSession = (id) => {
+      resumeSession = (item) => {
+        const id = item.id;
+        window.popup('Session resume', (ok, cancel) => (
+          <SessionResumeModal
+            ok={ok}
+            cancel={cancel}
+            session={item}
+            workflow={this.state.workflow}
+            workflowId={this.props.match.params.workflowId}
+          />
+        ));
         window.newConfirm('Are you sure to resume this session ?').then((ok) => {
           if (ok)
             fetch(`/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.match.params.workflowId}/${id}/_resume`, {
