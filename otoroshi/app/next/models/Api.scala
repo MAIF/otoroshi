@@ -886,13 +886,11 @@ case class Api(
                 api.copy(
                   backends = api.backends.map(backend =>
                     backend
-                      .copy(backend =
-                        backend.backend.copy(
+                      .copy(backend = backend.backend.copy(
                           client =
                             api.clients.find(_.id == backend.client).map(_.client).getOrElse(NgClientConfig.default)
                         )
-                      )
-                  ),
+                      )),
                   routes = api.routes.map(route =>
                     route.copy(
                       id = s"testing_route_${route.id}",
@@ -903,8 +901,10 @@ case class Api(
                 )
             }
 
-          val draftRoutes =
-            draftApis.map(api => api.routes.map(route => routeToNgRoute(route, api.some))).getOrElse(Seq.empty)
+          val draftRoutes = draftApis
+              .map(api => api.routes.map(route => routeToNgRoute(route, api.some)))
+              .getOrElse(Seq.empty)
+
 
           Future
             .sequence(routes.map(route => routeToNgRoute(route, this.some)) ++ draftRoutes)
@@ -1014,7 +1014,10 @@ object Api {
       val description = json.select("info").select("description").asOpt[String].getOrElse("")
       val version     = json.select("info").select("version").asOpt[String].getOrElse("")
       val targets     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { server =>
-        val serverUrl = serverURL.getOrElse(server.selectAsString("url"))
+        val serverUrl = serverURL match {
+          case Some(url) if url.nonEmpty => url
+          case _ => server.selectAsString("url")
+        }
         val serverUri = Uri(serverUrl)
 
         val serverDomain = serverUri.authority.host.toString()
@@ -1131,6 +1134,7 @@ object Api {
   }
 
   def applyConsumersOnFlow(flow: ApiFlows, api: Api): ApiFlows = {
+    println("applyConsumersOnFlow", flow)
     val outFlow = api.consumers.foldLeft(flow) { case (flow, consumer) =>
       flow.copy(plugins = consumer.consumerKind match {
         case ApiConsumerKind.Apikey => flow.plugins.togglePluginState(pluginId[ApikeyCalls], enabled = false)

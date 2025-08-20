@@ -79,12 +79,24 @@ object Draft {
   ): Future[Either[JsValue, Draft]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
-    val kind = newDraft.content.selectAsOptString("kind").getOrElse("route")
+    val optKind = newDraft.content.selectAsOptString("kind")
+    var kind = optKind.getOrElse("route")
+
+    // TODO - Sometimes the draft content doesn't have the "kind" field
+    if (optKind.isEmpty && newDraft.content.selectAsOptString("routes").isDefined &&
+      newDraft.content.selectAsOptString("flows").isDefined &&
+      newDraft.content.selectAsOptString("consumers").isDefined &&
+      newDraft.content.selectAsOptString("backend").isDefined) {
+      kind = "api"
+    }
+
+    println(kind)
 
     kind match {
       case "api" | "apis.otoroshi.io/Api" =>
         Api.format.reads(newDraft.content) match {
           case JsSuccess(api, _) =>
+                      println("apply api validato ron draft")
             Api
               .writeValidator(
                 api,
