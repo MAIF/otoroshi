@@ -353,7 +353,7 @@ case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) 
     resp.headers
       .get("set-cookie")
       .map { values =>
-        values.map(ClientCookieDecoder.LAX.decode).map { cookie =>
+        values.map(ClientCookieDecoder.LAX.decode).filterNot(_ == null).map { cookie =>
           DefaultWSCookie(
             name = cookie.name(),
             value = cookie.value(),

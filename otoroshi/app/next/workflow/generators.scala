@@ -11,9 +11,11 @@ object WorkflowGenerators {
         val node = value.apply(Json.obj())
         Json.obj(
           "name"        -> node.documentationName,
+          "display_name" -> node.documentationDisplayName,
+          "icon" -> node.documentationIcon,
           "description" -> node.documentationDescription,
           "schema"      -> node.documentationInputSchema,
-          "example"     -> node.documentationExample
+          "example"     -> node.documentationExample,
         )
       }.toSeq),
       "functions" -> JsArray(WorkflowFunction.functions.map { case (key, value) =>
@@ -21,7 +23,9 @@ object WorkflowGenerators {
           "name"        -> key,
           "description" -> value.documentationDescription,
           "schema"      -> value.documentationInputSchema,
-          "example"     -> value.documentationExample
+          "example"     -> value.documentationExample,
+          "display_name" -> value.documentationDisplayName,
+          "icon" -> value.documentationIcon,
         )
       }.toSeq),
       "operators" -> JsArray(WorkflowOperator.operators.map { case (key, value) =>
@@ -29,7 +33,9 @@ object WorkflowGenerators {
           "name"        -> key,
           "description" -> value.documentationDescription,
           "schema"      -> value.documentationInputSchema,
-          "example"     -> value.documentationExample
+          "example"     -> value.documentationExample,
+          "display_name" -> value.documentationDisplayName,
+          "icon" -> value.documentationIcon,
         )
       }.toSeq)
     )
@@ -86,7 +92,7 @@ object WorkflowGenerators {
                |""".stripMargin
       }
       s"""
-           |#### `${node.documentationName}`
+           |#### <span class="${node.documentationIcon}"></span> `${node.documentationDisplayName} (${node.documentationName})`
            |
            |${node.documentationDescription}
            |
@@ -109,7 +115,7 @@ object WorkflowGenerators {
                |""".stripMargin
       }
       s"""
-           |#### `${key}`
+           |#### <span class="${function.documentationIcon}"></span>`${function.documentationDisplayName} ($key)`
            |
            |${function.documentationDescription}
            |
@@ -132,7 +138,7 @@ object WorkflowGenerators {
                |""".stripMargin
       }
       s"""
-           |####`${key}`
+           |#### <span class="${operator.documentationIcon}"></span> `${operator.documentationDisplayName} ($key)`
            |
            |${operator.documentationDescription}
            |
@@ -142,6 +148,8 @@ object WorkflowGenerators {
     }.toSeq
 
     s"""
+      |# Otoroshi Workflows documentation
+      |
       |## Nodes
       |
       |Each node must declare a `kind` field and can optionally define:

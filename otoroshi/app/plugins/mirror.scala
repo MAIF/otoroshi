@@ -19,6 +19,7 @@ import play.api.libs.json._
 import play.api.libs.ws.{EmptyBody, InMemoryBody, WSRequest, WSResponse}
 import play.api.mvc.{RequestHeader, Result}
 import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.ResponseImplicits._
 import otoroshi.utils.http.Implicits._
 
 import scala.collection.concurrent.TrieMap
@@ -185,7 +186,7 @@ case class MirroringEvent(`@id`: String, `@env`: String, ctx: RequestContext, `@
           "cookies" -> JsArray(
             ctx.mirroredResp
               .get()
-              .cookies
+              .safeCookies(_env)
               .map(c =>
                 Json.obj(
                   "name"     -> c.name,

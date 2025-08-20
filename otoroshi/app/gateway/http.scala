@@ -27,6 +27,7 @@ import play.api.mvc.Results.{BadGateway, Forbidden, HttpVersionNotSupported, Not
 import play.api.mvc._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.ResponseImplicits._
 import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.streams.MaxLengthLimiter
@@ -560,7 +561,7 @@ class HttpHandler()(implicit env: Env) {
               val rawResponse         = otoroshi.script.HttpResponse(
                 status = resp.status,
                 headers = headers.toMap,
-                cookies = resp.cookies,
+                cookies = resp.safeCookies(env),
                 body = () => resp.bodyAsSource
               )
               val stateRespHeaderName = descriptor.secComHeaders.stateResponseName
@@ -653,7 +654,7 @@ class HttpHandler()(implicit env: Env) {
                   val otoroshiResponse = otoroshi.script.HttpResponse(
                     status = resp.status,
                     headers = _headersOut.toMap,
-                    cookies = resp.cookies,
+                    cookies = resp.safeCookies(env),
                     body = () => resp.bodyAsSource
                   )
                   descriptor

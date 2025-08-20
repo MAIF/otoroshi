@@ -40,6 +40,7 @@ export function setupWorkflowsExtension(registerExtension) {
               body: JSON.stringify({
                 input: this.state.input,
                 workflow: this.props.rawValue.config,
+                functions: this.props.rawValue.functions,
               }),
             })
               .then((r) => r.json())
@@ -173,6 +174,65 @@ export function setupWorkflowsExtension(registerExtension) {
         tester: {
           type: WorkflowTester,
         },
+        'job.enabled': {
+          type: 'bool',
+          props: { label: 'Schedule' },
+        },
+        'job.kind': {
+          type: 'select',
+          props: {
+            label: 'Kind',
+            possibleValues: [
+              { label: 'Interval', value: 'ScheduledEvery' },
+              { label: 'Cron', value: 'Cron' },
+            ]
+          }
+        },
+        'job.instantiation': {
+          type: 'select',
+          props: {
+            label: 'Instantiation',
+            possibleValues: [
+              { label: 'One Instance Per Otoroshi Instance', value: 'OneInstancePerOtoroshiInstance' },
+              { label: 'One Instance Per Otoroshi Worker Instance', value: 'OneInstancePerOtoroshiWorkerInstance' },
+              { label: 'One Instance Per Otoroshi Leader Instance', value: 'OneInstancePerOtoroshiLeaderInstance' },
+              { label: 'One Instance Per Otoroshi Cluster', value: 'OneInstancePerOtoroshiCluster' },
+            ]
+          }
+        },
+        'job.initial_delay': {
+          type: 'number',
+          props: {
+            label: 'Initial Delay',
+            suffix: 'ms.'
+          }
+        },
+        'job.interval': {
+          type: 'number',
+          props: {
+            label: 'Interval',
+            suffix: 'ms.'
+          }
+        },
+        'job.cron_expression': {
+          type: 'string',
+          props: {
+            label: 'Cron Expression',
+            placeholder: '0 0/5 8-20 ? * MON-SAT *',
+          }
+        },
+        'job.config': {
+          type: 'jsonobjectcode',
+          props: {
+            label: 'Workflow input'
+          }
+        },
+        'functions': {
+          type: 'jsonobjectcode',
+          props: {
+            label: 'Functions'
+          }
+        }
       };
 
       columns = [
@@ -193,11 +253,21 @@ export function setupWorkflowsExtension(registerExtension) {
         'metadata',
         '<<<Workflow',
         'config',
+        '>>>Local Functions',
+        'functions',
         '<<<Tester',
         //'>>>Tester',
         'tester',
         '<<<Debug',
         'orphans',
+        '>>>Scheduling',
+        'job.enabled',
+        'job.kind',
+        'job.instantiation',
+        'job.initial_delay',
+        'job.interval',
+        'job.cron_expression',
+        'job.config',
       ];
 
       client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
@@ -227,6 +297,18 @@ export function setupWorkflowsExtension(registerExtension) {
               description: 'New Workflow',
               tags: [],
               metadata: {},
+              functions: {},
+              job: {
+                enabled: false,
+                kind: 'ScheduledEvery',
+                instantiation: 'OneInstancePerOtoroshiInstance',
+                initial_delay: 1000,
+                interval: 60000,
+                cron_expression: '',
+                config: {
+                  name: 'Job'
+                }
+              },
               config: {
                 id: 'main',
                 kind: 'workflow',
