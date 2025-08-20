@@ -54,7 +54,6 @@ case class PauseNode(json: JsObject) extends Node {
                     from: Seq[Int],
                   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
-    println("prefix: " + prefix.mkString(", "))
     val session = PausedWorkflowSession(
       id = wfr.id,
       workflowRef = wfr.workflow_ref,

@@ -21,11 +21,7 @@ case class PausedWorkflowSession(
     createdAt: DateTime,
     validUntil: Option[DateTime]) {
 
-  lazy val token = JWT.create()
-    .withClaim("wi", workflowRef)
-    .withClaim("i", id)
-    .withClaim("k", "resume-token")
-    .sign(OtoroshiEnvHolder.get().sha512Alg)
+  lazy val token = PausedWorkflowSession.computeToken(workflowRef, id, OtoroshiEnvHolder.get())
 
   def json: JsValue = PausedWorkflowSession.format.writes(this)
 
@@ -52,6 +48,13 @@ case class PausedWorkflowSession(
 }
 
 object PausedWorkflowSession {
+  def computeToken(workflowRef: String, id: String, env: Env): String = {
+    JWT.create()
+      .withClaim("wi", workflowRef)
+      .withClaim("i", id)
+      .withClaim("k", "resume-token")
+      .sign(env.sha512Alg)
+  }
   val format = new Format[PausedWorkflowSession] {
     override def writes(o: PausedWorkflowSession): JsValue = Json.obj(
       "id" -> o.id,

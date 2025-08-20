@@ -403,6 +403,9 @@ object WorkflowOperator {
     case JsArray(arr)                                                                     => JsArray(arr.map(v => processOperators(v, wfr, env)))
     case JsObject(map)                                                                    => JsObject(map.mapValues(v => processOperators(v, wfr, env)))
     case JsString("${now}")                                                               => System.currentTimeMillis().json
+    case JsString("${workflow_id}")                                                       => wfr.workflow_ref.json
+    case JsString("${session_id}")                                                        => wfr.id.json
+    case JsString("${resume_token}")                                                      => PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env).json
     case JsString(str) if str.startsWith("${") && str.endsWith("}") && !str.contains(".") => {
       val name = str.substring(2).init
       wfr.memory.get(name) match {
@@ -421,6 +424,9 @@ object WorkflowOperator {
     }
     case JsString(str) if str.contains("${now_str}")                                      => JsString(str.replace("${now_str}", DateTime.now().toString))
     case JsString(str) if str.contains("${now}")                                          => JsString(str.replace("${now}", System.currentTimeMillis().toString))
+    case JsString(str) if str.contains("${workflow_id}")                                  => JsString(str.replace("${workflow_id}", wfr.workflow_ref))
+    case JsString(str) if str.contains("${session_id}")                                   => JsString(str.replace("${session_id}", wfr.id))
+    case JsString(str) if str.contains("${resume_token}")                                 => JsString(str.replace("${resume_token}", PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env)))
     case _                                                                                => value
   }
 }

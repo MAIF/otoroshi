@@ -6,7 +6,6 @@ import CodeInput from '../../components/inputs/CodeInput';
 import { WorkflowsContainer as WorkflowsDesigner } from './WorkflowsContainer';
 import { WorkflowSidebar } from './WorkflowSidebar';
 import {Link} from "react-router-dom";
-import {nextClient} from "../../services/BackOfficeServices";
 
 const extensionId = 'otoroshi.extensions.Workflows';
 
@@ -139,6 +138,7 @@ export function setupWorkflowsExtension(registerExtension) {
     }
 
     class WorkflowsPage extends Component {
+
       formSchema = {
         _loc: {
           type: 'location',
@@ -363,11 +363,76 @@ export function setupWorkflowsExtension(registerExtension) {
     }
 
     class SessionResumeModal extends Component {
+
+      state = {
+        data: '{}',
+        result: null,
+        error: null
+      }
+
+      deleteSession = () => {
+        window.newConfirm('Are you sure to delete this session ?').then((ok) => {
+          if (ok)
+            fetch(`/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.workflowId}/${this.props.session.id}`, {
+              method: 'DELETE',
+              credentials: 'include',
+            }).then(() => {
+              this.props.cancel();
+            });
+        });
+      }
+
+      resume = () => {
+        this.setState({ result: null, error: null });
+        fetch(`/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.workflowId}/${this.props.session.id}/_resume`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'content-type': 'application/json',
+          },
+          body: this.state.data
+        }).then(r => {
+          r.json().then(result => {
+            if (r.status !== 200) {
+              this.setState({ error: result.error });
+            } else {
+              this.setState({ result });
+            }
+          })
+        });
+      }
+
       render() {
         return (
           <>
             <div className="modal-body">
-              ???
+              <CodeInput
+                label="Input data"
+                mode="json"
+                value={this.state.data}
+                onChange={(e) => {
+                  this.setState({ data: e })
+                }}
+              />
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginTop: 10, marginBottom: 10 }}>
+                <div className="btn-group">
+                  <button className="btn btn-success" onClick={this.resume}><span className="fas fa-play" /> resume</button>
+                  <button className="btn btn-danger" onClick={this.deleteSession}><span className="fas fa-trash" /> delete</button>
+                </div>
+              </div>
+              {this.state.error && (
+                <div className="alert alert-danger" role="alert">
+                  {this.state.error}
+                </div>
+              )}
+              {this.state.result && (
+                <CodeInput
+                  label="result"
+                  mode="json"
+                  value={JSON.stringify(this.state.result, null, 2)}
+                  onChange={(e) => ({})}
+                />
+              )}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
@@ -380,6 +445,8 @@ export function setupWorkflowsExtension(registerExtension) {
     }
 
     class WorkflowSessionsPage extends Component {
+
+      state = {}
 
       client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
 
@@ -413,7 +480,6 @@ export function setupWorkflowsExtension(registerExtension) {
       }
 
       resumeSession = (item) => {
-        const id = item.id;
         window.popup('Session resume', (ok, cancel) => (
           <SessionResumeModal
             ok={ok}
@@ -422,19 +488,8 @@ export function setupWorkflowsExtension(registerExtension) {
             workflow={this.state.workflow}
             workflowId={this.props.match.params.workflowId}
           />
-        ));
-        window.newConfirm('Are you sure to resume this session ?').then((ok) => {
-          if (ok)
-            fetch(`/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.match.params.workflowId}/${id}/_resume`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                'content-type': 'application/json',
-              },
-              body: JSON.stringify({ foo: 'bar' })
-            }).then(r => {
-              this.table.update();
-            })
+        ), { additionalClass: 'modal-xl' }).then(() => {
+          this.table.update();
         });
       }
 
