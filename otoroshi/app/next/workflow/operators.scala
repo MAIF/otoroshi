@@ -354,14 +354,7 @@ class AddOperator extends WorkflowOperator {
     "$add" -> Json.obj(
       "values" -> Seq(1, 2, 3)
     )
-  )
-  override def documentationExample: Option[JsObject]     = Some(
-    Json.obj(
-      "$add" -> Json.obj(
-        "values" -> Seq(1, 2, 3)
-      )
-    )
-  )
+  ))
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("values").asOpt[Seq[JsNumber]] match {
       case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a + b.value))
@@ -386,14 +379,7 @@ class SubtractOperator extends WorkflowOperator {
     "$subtract" -> Json.obj(
       "values" -> Seq(1, 2, 3)
     )
-  )
-  override def documentationExample: Option[JsObject]     = Some(
-    Json.obj(
-      "$subtract" -> Json.obj(
-        "values" -> Seq(1, 2, 3)
-      )
-    )
-  )
+  ))
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("values").asOpt[Seq[JsNumber]] match {
       case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a - b.value))

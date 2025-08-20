@@ -137,7 +137,7 @@ const ITEMS_BY_CATEGORY = [
     {
         name: 'Functions',
         id: 'functions',
-        description: 'Functions',
+        description: 'Execute functions',
         nodes: {
         }
     }
