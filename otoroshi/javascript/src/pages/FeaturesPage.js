@@ -196,7 +196,7 @@ export const graph = (env) => {
           icon: () => 'fa-brush',
           link: '/apis',
           tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
-        },
+        }
       ],
     },
     {

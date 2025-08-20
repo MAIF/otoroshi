@@ -383,6 +383,7 @@ export function setupWorkflowsExtension(registerExtension) {
           link: '/extensions/workflows/workflows',
           display: () => true,
           icon: () => 'fa-cubes',
+          tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
         },
       ],
       searchItems: [
