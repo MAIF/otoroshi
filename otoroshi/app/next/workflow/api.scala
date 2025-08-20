@@ -24,7 +24,7 @@ class WorkflowEngine(env: Env) {
     val wfRun = WorkflowRun(ULID.random(), attrs, env, functions)
     wfRun.memory.set("input", input)
     node
-      .internalRun(wfRun, Seq(0))(env, executorContext)
+      .internalRun(wfRun, Seq(0), Seq.empty)(env, executorContext)
       .map {
         case Left(err)     => WorkflowResult(None, err.some, wfRun)
         case Right(result) => WorkflowResult(result.some, None, wfRun)
@@ -33,6 +33,27 @@ class WorkflowEngine(env: Env) {
         WorkflowResult(
           node.result.flatMap(r => wfRun.memory.get(r)),
           WorkflowError("exception on root run", None, t.some).some,
+          wfRun
+        )
+      }
+      .andThen { case Success(value) =>
+        WorkflowRunEvent(node, input, value, env).toAnalytics()(env)
+      }
+  }
+
+  def resume(node: Node, wfr: WorkflowRun, from: Seq[Int], attrs: TypedMap): Future[WorkflowResult] = {
+    val wfRun = wfr.copy(attrs = attrs)
+    val input = wfr.memory.get("input").map(_.asObject).getOrElse(Json.obj())
+    node
+      .internalRun(wfRun, Seq(0), from.tail)(env, executorContext)
+      .map {
+        case Left(err)     => WorkflowResult(None, err.some, wfRun)
+        case Right(result) => WorkflowResult(result.some, None, wfRun)
+      }
+      .recover { case t: Throwable =>
+        WorkflowResult(
+          node.result.flatMap(r => wfRun.memory.get(r)),
+          WorkflowError("exception on root resume", None, t.some).some,
           wfRun
         )
       }
@@ -93,9 +114,7 @@ class WorkflowLog {
   def log(item: WorkflowLogItem): Unit = queue.offer(item)
 }
 
-case class WorkflowRun(id: String, attrs: TypedMap, env: Env, functions: Map[String, JsObject] = Map.empty) {
-  val memory             = new WorkflowMemory()
-  val runlog             = new WorkflowLog()
+case class WorkflowRun(id: String, attrs: TypedMap, env: Env, functions: Map[String, JsObject] = Map.empty, memory: WorkflowMemory = new WorkflowMemory(), runlog: WorkflowLog = new WorkflowLog()) {
   def log(message: String, node: Node, error: Option[WorkflowError] = None): Unit = {
     // println(s"[LOG] ${id} - ${message}")
     runlog.log(WorkflowLogItem(DateTime.now(), message, node, memory.json, error))
@@ -149,7 +168,7 @@ trait Node extends NodeLike {
   def enabled: Boolean                           = json.select("enabled").asOptBoolean.getOrElse(true)
   def result: Option[String]                     = json.select("result").asOptString
   def returned: Option[JsValue]                  = json.select("returned").asOpt[JsValue]
-  def run(wfr: WorkflowRun, prefix: Seq[Int])(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
+  def run(wfr: WorkflowRun, prefix: Seq[Int], from: Seq[Int])(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
   def documentationName: String                  = this.getClass.getSimpleName.replace("$", "").toLowerCase()
   def documentationDisplayName: String = documentationName
   def documentationIcon: String = "fas fa-circle"
@@ -159,14 +178,16 @@ trait Node extends NodeLike {
   def documentationExample: Option[JsObject]     = None
   def subNodes: Seq[NodeLike]
   final def internalRun(
-      wfr: WorkflowRun, prefix: Seq[Int]
+      wfr: WorkflowRun,
+      prefix: Seq[Int],
+      from: Seq[Int]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (!enabled) {
       // println(s"skipping ${id}")
       JsNull.rightf
     } else {
       wfr.log(s"starting '${id}'", this)
-      run(wfr, prefix)
+      run(wfr, prefix, from)
         .map {
           case Left(err)  => {
             wfr.log(s"ending with error '${id}'", this, err.some)

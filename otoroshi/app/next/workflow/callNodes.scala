@@ -14,7 +14,7 @@ object CallNodes {
     override def documentationName: String = function.documentationName
     override def documentationDescription: String = function.documentationDescription
 
-    override def run(wfr: WorkflowRun, prefix: String)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    override def run(wfr: WorkflowRun, prefix: Seq[Int], from: Seq[Int])(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
       function.callWithRun(Json.obj(
           "wasm_plugin" -> json.select("source").select("path").as[String],
           "function" -> json.selectAsString("functionName"),
@@ -31,7 +31,7 @@ object CallNodes {
     override def documentationName: String = function.documentationName
     override def documentationDescription: String = function.documentationDescription
 
-    override def run(wfr: WorkflowRun, prefix: String)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    override def run(wfr: WorkflowRun, prefix: Seq[Int], from: Seq[Int])(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
       function.callWithRun(json.selectAsOptObject("args").getOrElse(Json.obj()))(env, ec, wfr)
     }
 
