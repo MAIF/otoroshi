@@ -33,10 +33,7 @@ function Node({ node, onClick }) {
     </div>
 }
 
-function UnFoldedCategory({ onClick, docs, ...props }) {
-    console.log(props.nodes)
-    const nodes = props.nodes.map(kind => getNodeFromKind(docs, kind))
-
+function UnFoldedCategory({ onClick, nodes }) {
     if (nodes.length === 0)
         return <p className='text-center m-0'>No results found</p>
 
@@ -61,23 +58,28 @@ export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCateg
     }, [query])
 
     const items = NODES_BY_CATEGORIES(docs)
+        .map(category => {
+            return {
+                ...category,
+                nodes: category.nodes.map(kind => getNodeFromKind(docs, kind))
+            }
+        })
 
     if (query.length > 0) {
         const lowercaseQuery = query.toLowerCase()
-        return items.flatMap(category => Object.entries(category.nodes))
-            .filter(([_key, value]) => {
-                return value.name.toLowerCase().includes(lowercaseQuery) ||
-                    value.description.toLowerCase().includes(lowercaseQuery) ||
-                    value.kind.toLowerCase().includes(lowercaseQuery)
-            })
-            .map(([_, node], i) => <Node
+        return items.flatMap(category => category.nodes)
+            .filter(value => value.name.toLowerCase().includes(lowercaseQuery) ||
+                value.description.toLowerCase().includes(lowercaseQuery) ||
+                value.kind.toLowerCase().includes(lowercaseQuery))
+            .reduce((acc, node) => acc.find(f => f.kind === node.kind) ? acc : [...acc, node], [])
+            .map((node, i) => <Node
                 node={node}
                 onClick={() => handleSelectNode(node)}
-                key={`${node.label}-${i}`} />)
+                key={`${node.name}-${node.kind}-${i}`} />)
     }
 
     if (selectedCategory)
-        return <UnFoldedCategory {...selectedCategory} onClick={item => handleSelectNode(item)} docs={docs} />
+        return <UnFoldedCategory {...selectedCategory} onClick={item => handleSelectNode(item)} />
 
     const categories = items
         .filter(category => Object.entries(category.nodes))

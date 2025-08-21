@@ -108,7 +108,7 @@ case class FunctionsCategory(
   name: String = "Functions",
   description: String = "Execute functions",
   nodes: Seq[String] = Seq(
-    
+
   )
 ) extends NodeCategory
 

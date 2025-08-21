@@ -22,7 +22,7 @@ import { TagsModal } from './TagsModal';
 const GROUP_NODES = ['if', 'switch', 'parallel', 'foreach', 'map', 'filter', 'flatmap']
 
 export function createSimpleNode(node, docs) {
-    console.log('createSimpleNode', node)
+    // console.log('createSimpleNode', node)
 
     const { id, kind, name, ref, description, ...props } = node
 
@@ -30,7 +30,7 @@ export function createSimpleNode(node, docs) {
     // kind = everything else
     const data = NODES(docs)[(ref || kind || name).toLowerCase()]
 
-    console.log(data)
+    // console.log(data)
 
     // console.log(data)
 
@@ -52,7 +52,7 @@ export function createSimpleNode(node, docs) {
         type: data.type || 'simple',
         data: {
             ...data,
-            config: props
+            ...props
         }
     }
 }
@@ -815,14 +815,14 @@ export function WorkflowsDesigner(props) {
         }
     }
 
-    function handleNodeDataChange(nodeId, workflow) {
+    function handleNodeDataChange(nodeId, newData) {
         setNodes(eds => eds.map(node => {
             if (node.id === nodeId) {
                 return {
                     ...node,
                     data: {
                         ...node.data,
-                        workflow
+                        ...newData
                     }
                 }
             }
@@ -934,7 +934,7 @@ export function WorkflowsDesigner(props) {
             ...createSimpleNode(item, props.docs),
             id: targetId,
             type: item.type || 'simple',
-            position: screenToFlowPosition(position),
+            position: (activeNode.fromOrigin || activeNode.event) ? screenToFlowPosition(position) : position,
         })
 
         let newEdges = []
@@ -1084,6 +1084,9 @@ export function WorkflowsDesigner(props) {
             tags: newTags
         }))
     }, [workflow])
+
+    if (nodes.length === 0)
+        return null
 
     console.log(nodes, edges)
 

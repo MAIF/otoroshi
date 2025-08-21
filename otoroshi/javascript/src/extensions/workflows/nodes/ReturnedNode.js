@@ -61,10 +61,9 @@ export const ReturnedNode = {
                         mode: 'json',
                     },
                 }}
-                value={props.data.workflow?.returned}
+                value={props.data?.returned}
                 onChange={(e) => {
                     props.data.functions.handleWorkflowChange(props.id, {
-                        ...props.workflow,
                         returned: JSON.parse(e)
                     })
                 }}

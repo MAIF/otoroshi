@@ -1,16 +1,6 @@
 import React, { useState } from 'react'
 import { NgForm } from '../../components/nginputs';
 
-function getWorkflow(node) {
-
-    const { workflow, kind } = node.data
-
-    if (kind.startsWith('$') && workflow)
-        return workflow[kind]
-
-    return workflow
-}
-
 function setEnabled(state) {
     if (state?.enabled === undefined)
         return {
@@ -59,9 +49,11 @@ export function ModalEditor({ node }) {
         }
     ]
 
-    const value = setEnabled(getWorkflow(node))
+    const value = setEnabled(node.data)
 
-    const [state, setState] = useState(value ? Object.fromEntries(Object.entries(value).filter(([key, _]) => Object.keys(schema).includes(key))) : {})
+    const [state, setState] = useState(value)
+
+    console.log(state)
 
     return <div className='modal-editor'>
         <p className='p-3 m-0 whats-next-title'>{node.data.name}</p>

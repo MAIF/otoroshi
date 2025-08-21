@@ -8,13 +8,14 @@ export const GroupNode = (props) => {
 
     useLayoutEffect(() => {
         const height = props.data.height
+        console.log(props.data)
         if (height) {
             const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
             setTimeout(() => {
                 sourceEl.style.height = height(props.data)
             }, 150)
         }
-    }, [])
+    }, [props.data])
 
     return <>
         <Handles {...props} />

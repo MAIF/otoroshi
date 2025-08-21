@@ -36,7 +36,7 @@ export const ValueNode = {
                         mode: 'json',
                     },
                 }}
-                value={props.data.workflow?.value}
+                value={props.data?.value}
             />
         </div>
     }

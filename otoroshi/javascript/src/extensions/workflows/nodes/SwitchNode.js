@@ -4,6 +4,6 @@ export const SwitchNode = {
     sourcesIsArray: true,
     handlePrefix: 'path',
     sources: [],
-    height: (data) => `${110 + 20 * data?.paths.length}px`,
+    height: (data) => `${110 + 20 * data?.sourceHandles?.length}px`,
     targets: []
 }
