@@ -25,7 +25,7 @@ export function ModalEditor({ node }) {
     if (!node)
         return null
 
-    const isAnOperator = node.data.operator
+    const isAnOperator = node.data.operators
 
     const schema = {
         description: {
@@ -71,7 +71,7 @@ export function ModalEditor({ node }) {
                 flow={flow}
                 value={state}
                 onChange={newData => {
-                    if (node.data.operator) {
+                    if (node.data.operators) {
                         node.data.functions.handleWorkflowChange(node.id, {
                             [node.data.kind]: newData
                         })

@@ -7,6 +7,9 @@ object WorkflowGenerators {
 
   def generateJsonDescriptor(): JsValue = {
     Json.obj(
+      "categories"-> JsArray(Node.categories.map { case (key, informations) =>
+        Json.obj("id" -> key).deepMerge(informations.json)
+      }.toSeq),
       "nodes"     -> JsArray(Node.nodes.map { case (key, value) =>
         val node = value.apply(Json.obj())
         Json.obj(
@@ -16,6 +19,7 @@ object WorkflowGenerators {
           "description" -> node.documentationDescription,
           "schema"      -> node.documentationInputSchema,
           "form_schema" -> node.documentationFormSchema,
+          "category"    -> node.documentationCategory,
           "example"     -> node.documentationExample,
         )
       }.toSeq),
@@ -25,6 +29,7 @@ object WorkflowGenerators {
           "description" -> value.documentationDescription,
           "schema"      -> value.documentationInputSchema,
           "form_schema" -> value.documentationFormSchema,
+          "category"    -> "functions",
           "example"     -> value.documentationExample,
           "display_name" -> value.documentationDisplayName,
           "icon" -> value.documentationIcon,
@@ -36,6 +41,7 @@ object WorkflowGenerators {
           "description" -> value.documentationDescription,
           "schema"      -> value.documentationInputSchema,
           "form_schema" -> value.documentationFormSchema,
+          "category"    -> "operators",
           "example"     -> value.documentationExample,
           "display_name" -> value.documentationDisplayName,
           "icon" -> value.documentationIcon,

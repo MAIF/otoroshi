@@ -2,10 +2,9 @@ import React from 'react'
 import { ValueToCheck } from '../operators/ValueToCheck'
 import { NgCodeRenderer } from '../../../components/nginputs'
 
-export const ValueNode = (_workflow) => ({
+export const ValueNode = {
     label: 'fas fa-cube',
     name: 'Value',
-    workflow: _workflow,
     kind: 'value',
     sources: ['output'],
     schema: {
@@ -41,4 +40,4 @@ export const ValueNode = (_workflow) => ({
             />
         </div>
     }
-})
+}

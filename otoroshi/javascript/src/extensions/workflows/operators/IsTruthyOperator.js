@@ -1,10 +1,5 @@
-import React from 'react';
-
-export const IsTruthyOperator = _workflow => ({
-    label: "fas fa-check-circle",
-    name: 'Is Truthy',
+export const IsTruthyOperator = {
     kind: '$is_truthy',
-    workflow: _workflow,
     flow: [
         'fromMemory',
         'value',
@@ -48,7 +43,5 @@ export const IsTruthyOperator = _workflow => ({
         },
     },
     sources: ['output'],
-    operator: true
-});
-
-// Map Delete Operator;
+    operators: true
+}

@@ -1,10 +1,5 @@
-import React from 'react';
-
-export const IsFalsyOperator = _workflow => ({
-    label: "fas fa-times-circle",
-    name: 'Is Falsy',
+export const IsFalsyOperator = {
     kind: '$is_falsy',
-    workflow: _workflow,
     flow: ['value'],
     schema: {
         fromMemory: {
@@ -37,7 +32,5 @@ export const IsFalsyOperator = _workflow => ({
         },
     },
     sources: ['output'],
-    operator: true
-});
-
-// Add Operator;
+    operators: true
+}

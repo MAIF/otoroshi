@@ -2,11 +2,8 @@ import React from 'react';
 import { FromMemory, FromMemoryFlow } from './FromMemory';
 import { ValueToCheck } from './ValueToCheck';
 
-export const MapPutOperator = _workflow => ({
-    label: "fas fa-plus-square",
-    name: 'Map Put',
+export const MapPutOperator = {
     kind: '$map_put',
-    workflow: _workflow,
     flow: ['key', 'value', 'fromMemory', 'map', FromMemoryFlow],
     schema: {
         ...FromMemory(),
@@ -25,7 +22,5 @@ export const MapPutOperator = _workflow => ({
         }
     },
     sources: ['output'],
-    operator: true
-});
-
-// Multiply Operator;
+    operators: true
+}

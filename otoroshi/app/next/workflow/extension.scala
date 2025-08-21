@@ -214,6 +214,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
     WorkflowFunctionsInitializer.initDefaults()
     WorkflowOperatorsInitializer.initDefaults()
     NodesInitializer.initDefaults()
+    CategoriesInitializer.initDefaults()
   }
 
   override def stop(): Unit = ()

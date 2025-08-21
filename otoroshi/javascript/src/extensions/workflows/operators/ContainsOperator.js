@@ -2,11 +2,8 @@ import React from 'react';
 import { FromMemory, FromMemoryFlow } from './FromMemory';
 import { ValueToCheck } from './ValueToCheck';
 
-export const ContainsOperator = _workflow => ({
-    label: "fas fa-search-plus",
-    name: 'Contains',
+export const ContainsOperator = {
     kind: '$contains',
-    workflow: _workflow,
     flow: ['value', 'fromMemory', 'container', FromMemoryFlow],
     schema: {
         ...FromMemory(),
@@ -25,7 +22,5 @@ export const ContainsOperator = _workflow => ({
         }
     },
     sources: ['output'],
-    operator: true
-});
-
-// Greater Than or Equal Operator;
+    operators: true
+}

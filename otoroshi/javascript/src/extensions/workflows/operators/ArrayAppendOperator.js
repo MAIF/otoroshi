@@ -2,11 +2,8 @@ import React from 'react';
 import { FromMemory, FromMemoryFlow } from './FromMemory';
 import { ValueToCheck } from './ValueToCheck';
 
-export const ArrayAppendOperator = _workflow => ({
-    label: "fas fa-arrow-right",
-    name: 'Array Append',
+export const ArrayAppendOperator = {
     kind: '$array_append',
-    workflow: _workflow,
     flow: [
         'value',
         'fromMemory',
@@ -26,7 +23,5 @@ export const ArrayAppendOperator = _workflow => ({
         }
     },
     sources: ['output'],
-    operator: true
-});
-
-// Not Equals Operator;
+    operators: true
+}

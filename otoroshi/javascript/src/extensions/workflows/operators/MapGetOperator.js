@@ -1,11 +1,8 @@
 import React from 'react';
 import { FromMemory, FromMemoryFlow } from './FromMemory';
 
-export const MapGetOperator = _workflow => ({
-    label: "fas fa-search",
-    name: 'Map Get',
+export const MapGetOperator = {
     kind: '$map_get',
-    workflow: _workflow,
     flow: ['key', 'fromMemory', 'map', FromMemoryFlow],
     schema: {
         ...FromMemory({ isArray: true }),
@@ -20,7 +17,5 @@ export const MapGetOperator = _workflow => ({
         }
     },
     sources: ['output'],
-    operator: true
-});
-
-// Parse Time Operator;
+    operators: true
+}

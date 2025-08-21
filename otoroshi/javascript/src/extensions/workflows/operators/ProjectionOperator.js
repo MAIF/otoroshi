@@ -2,11 +2,8 @@ import React from 'react';
 import { ValueToCheck } from './ValueToCheck';
 import { FromMemory, FromMemoryFlow } from './FromMemory';
 
-export const ProjectionOperator = _workflow => ({
-    label: "fas fa-filter",
-    name: 'Projection',
+export const ProjectionOperator = {
     kind: '$projection',
-    workflow: _workflow,
     flow: ['projection', 'fromMemory', 'value', FromMemoryFlow],
     schema: {
         ...FromMemory(),
@@ -14,6 +11,4 @@ export const ProjectionOperator = _workflow => ({
         value: ValueToCheck("Value to project"),
     },
     sources: ['output']
-});
-
-// Less Than or Equal Operator;
+}

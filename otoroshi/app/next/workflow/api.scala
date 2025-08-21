@@ -273,6 +273,7 @@ trait Node extends NodeLike {
   def documentationDescription: String           = "no description"
   def documentationInputSchema: Option[JsObject] = None
   def documentationFormSchema: Option[JsObject]  = None
+  def documentationCategory: Option[JsObject]    = None
   def documentationExample: Option[JsObject]     = None
   def subNodes: Seq[NodeLike]
   final def internalRun(
@@ -354,6 +355,11 @@ object Node {
     )
   )
   val nodes           = new TrieMap[String, (JsObject) => Node]()
+  val categories      = new TrieMap[String, NodeCategory]()
+
+  def registerCategory(name: String, informations: NodeCategory): Unit = {
+    categories.put(name, informations)
+  }
   def registerNode(name: String, f: (JsObject) => Node): Unit = {
     nodes.put(name, f)
   }

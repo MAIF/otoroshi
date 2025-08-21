@@ -1,12 +1,8 @@
 import React from 'react'
-import { Row } from '../../../components/Row';
 import { NgCodeRenderer } from '../../../components/nginputs';
 
-export const AssignNode = _workflow => ({
-    label: "fas fa-equals",
-    name: 'Assign',
+export const AssignNode = {
     kind: 'assign',
-    workflow: _workflow,
     flow: ['values'],
     schema: {
         values: {
@@ -21,11 +17,6 @@ export const AssignNode = _workflow => ({
                     label: 'Name'
                 },
                 value: {
-                    // type: 'code',
-                    // label: 'Value',
-                    // props: {
-                    //     editorOnly: true,
-                    // },
                     renderer: props => <NgCodeRenderer
                         ngOptions={{ spread: true }}
                         rawSchema={{
@@ -57,4 +48,4 @@ export const AssignNode = _workflow => ({
             })}
         </div>
     }
-})
+}

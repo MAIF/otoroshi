@@ -1,14 +1,9 @@
-import React from 'react'
-
-export const SwitchNode = (_workflow) => ({
-    label: 'fas fa-exchange-alt',
-    name: 'Switch',
+export const SwitchNode = {
     type: 'group',
-    workflow: _workflow,
     kind: 'switch',
     sourcesIsArray: true,
     handlePrefix: 'path',
     sources: [],
-    height: () => `${110 + 20 * _workflow?.paths.length}px`,
+    height: (data) => `${110 + 20 * data?.paths.length}px`,
     targets: []
-})
+}

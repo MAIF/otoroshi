@@ -1,19 +1,16 @@
 import React from 'react'
 import { ValueToCheck } from '../operators/ValueToCheck'
 
-export const PredicateNode = (_workflow) => {
-    return {
-        label: 'fas fa-filter',
-        description: 'Predicate node',
-        kind: 'predicate',
-        name: 'Predicate',
-        type: 'simple',
-        workflow: _workflow,
-        sources: ['output'],
-        targets: ['PredicateOperator'],
-        schema: {
-            value: ValueToCheck('Predicate', false)
-        },
-        flow: ['value']
-    }
+export const PredicateNode = {
+    label: 'fas fa-filter',
+    description: 'Predicate node',
+    kind: 'predicate',
+    name: 'Predicate',
+    type: 'simple',
+    sources: ['output'],
+    targets: ['PredicateOperator'],
+    schema: {
+        value: ValueToCheck('Predicate', false)
+    },
+    flow: ['value']
 }

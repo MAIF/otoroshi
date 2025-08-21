@@ -25,8 +25,6 @@ object NodesInitializer {
     Node.registerNode("wait", json => WaitNode(json))
     Node.registerNode("error", json => ErrorNode(json))
     Node.registerNode("value", json => ValueNode(json))
-    Node.registerNode("wasm", json => CallNodes.WasmNode(json))
-    Node.registerNode("log", json => CallNodes.LogNode(json))
     Node.registerNode("pause", json => PauseNode(json))
   }
 }
@@ -118,7 +116,7 @@ case class ValueNode(json: JsObject) extends Node {
 case class ErrorNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike] = Seq.empty
   override def documentationName: String                  = "error"
-  override def documentationDisplayName: String           = "Error"
+  override def documentationDisplayName: String           = "Stop and Error"
   override def documentationIcon: String                  = "fas fa-exclamation"
   override def documentationDescription: String           = "This node returns an error"
   override def documentationFormSchema: Option[JsObject] = Json.obj(
@@ -312,7 +310,7 @@ case class CallNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike] = Seq.empty
   override def documentationName: String                  = "call"
   override def documentationDisplayName: String           = "Call"
-  override def documentationIcon: String                  = "fas fa-subscript"
+  override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This node calls a function an returns its result"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -452,7 +450,7 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(v => Node.from(v))
   override def documentationName: String                  = "parallel"
   override def documentationDisplayName: String           = "Parallel paths"
-  override def documentationIcon: String                  = "fas fa-sitemap"
+  override def documentationIcon: String                  = "fas fa-code-branch"
   override def documentationDescription: String           = "This node executes multiple nodes in parallel"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -562,7 +560,7 @@ case class SwitchNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(v => Node.from(v))
   override def documentationName: String                  = "switch"
   override def documentationDisplayName: String           = "Switch paths"
-  override def documentationIcon: String                  = "fas fa-sitemap"
+  override def documentationIcon: String                  = "fas fa-exchange-alt"
   override def documentationDescription: String           = "This node executes the first path matching a predicate"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -640,7 +638,7 @@ case class IfThenElseNode(json: JsObject) extends Node {
   ).flatten
   override def documentationName: String                  = "if"
   override def documentationDisplayName: String           = "If then else"
-  override def documentationIcon: String                  = "fas fa-code-merge"
+  override def documentationIcon: String                  = "fas fa-question"
   override def documentationDescription: String           = "This executes a node if the predicate matches or another one if not"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -920,7 +918,7 @@ case class FlatMapNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike] = Seq(Node.from(json.select("node").asObject))
   override def documentationName: String                  = "flatmap"
   override def documentationDisplayName: String           = "Flatmap"
-  override def documentationIcon: String                  = "fas fa-map"
+  override def documentationIcon: String                  = "fas fa-layer-group"
   override def documentationDescription: String           = "This node transforms an array by applying a node on each value"
   override def documentationFormSchema: Option[JsObject]  = Json.obj(
     "properties" -> Json.obj(

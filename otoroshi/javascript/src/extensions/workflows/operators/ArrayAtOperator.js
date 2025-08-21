@@ -1,11 +1,8 @@
 import React from 'react';
 import { FromMemory, FromMemoryFlow } from './FromMemory';
 
-export const ArrayAtOperator = _workflow => ({
-    label: "fas fa-list-ol",
-    name: 'Array At',
+export const ArrayAtOperator = {
     kind: '$array_at',
-    workflow: _workflow,
     flow: ['idx', 'fromMemory', 'array', FromMemoryFlow],
     schema: {
         ...FromMemory({ isArray: true }),
@@ -22,7 +19,5 @@ export const ArrayAtOperator = _workflow => ({
         }
     },
     sources: ['output'],
-    operator: true
-});
-
-// Parse Date Operator;
+    operators: true
+}

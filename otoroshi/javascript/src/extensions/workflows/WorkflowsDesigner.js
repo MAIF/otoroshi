@@ -22,37 +22,37 @@ import { TagsModal } from './TagsModal';
 const GROUP_NODES = ['if', 'switch', 'parallel', 'foreach', 'map', 'filter', 'flatmap']
 
 export function createSimpleNode(node, docs) {
-    console.log('createSimpleNode', node,  NODES(docs))
+    console.log('createSimpleNode', node)
 
-    let data = NODES(docs)[(node.kind || node.data.kind).toLowerCase()]
+    const { id, kind, name, ref, description, ...props } = node
 
-    if (data)
-        data = data("workflow" in node ? node.workflow : node)
-
-    if (!data)
-        data = node
+    // ref = functions wrapped in a Call node
+    // kind = everything else
+    const data = NODES(docs)[(ref || kind).toLowerCase()]
 
     console.log(data)
 
-    if (data.operator) {
-        data = {
-            ...data,
-            workflow: {
-                [data.kind]: {
-                    ...node.workflow,
-                    description: node.description
-                }
-            }
-        }
-    }
+    // console.log(data)
 
-    // maybe try catch here and create a node Value with raw value
+    // if (data.operator) {
+    //     data = {
+    //         ...data,
+    //         workflow: {
+    //             [data.kind]: {
+    //                 ...node.workflow,
+    //                 description: node.description
+    //             }
+    //         }
+    //     }
+    // }
+
     return {
-        id: uuid(),
+        id: id || uuid(),
         position: { x: 0, y: 0 },
-        type: node.type || data.type || 'simple',
+        type: data.type || 'simple',
         data: {
-            ...data
+            ...data,
+            config: props
         }
     }
 }
@@ -480,15 +480,19 @@ export function WorkflowsDesigner(props) {
             kind: 'workflow',
             steps: [],
             returned: nodes.find(node => node.id === 'returned-node').data.workflow?.returned,
-            id: 'start'
+            // id: 'start'
         }
 
         const startOutput = edges.find(edge => edge.source === 'start')
-        const firstNode = nodes.find(node => node.id === startOutput.target)
+        if (edges.length > 0 && startOutput) {
+            const firstNode = nodes.find(node => node.id === startOutput.target)
 
-        const graph = nodeToJson(firstNode, start, false, [], true)
+            const graph = nodeToJson(firstNode, start, false, [], true)
 
-        return graph
+            return graph
+        }
+
+        return [start, []]
     }
 
     const nodeToJson = (node, currentWorkflow, disableRecursion, alreadySeen, isStart) => {
@@ -703,13 +707,14 @@ export function WorkflowsDesigner(props) {
         let outputWorkflow = subflow ? {
             ...subflow,
             id: node.id,
+            ref: node.data.name,
             kind
         } : undefined
 
         if (currentWorkflow && currentWorkflow.kind === 'workflow') {
             outputWorkflow = {
                 ...currentWorkflow,
-                steps: [...currentWorkflow.steps, subflow]
+                steps: [...currentWorkflow.steps, outputWorkflow]
             }
         }
 
@@ -765,6 +770,7 @@ export function WorkflowsDesigner(props) {
             orphans: {
                 nodes: orphans.map(r => ({
                     id: r.id,
+                    ref: r.data.name,
                     position: r.position,
                     kind: r.data.kind,
                     data: r.data.workflow
@@ -1079,7 +1085,7 @@ export function WorkflowsDesigner(props) {
         }))
     }, [workflow])
 
-    // console.log(nodes)
+    console.log(nodes, edges)
 
     return <div className='workflow'>
         <DesignerActions run={run} />

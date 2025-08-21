@@ -11,7 +11,7 @@ export const GroupNode = (props) => {
         if (height) {
             const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
             setTimeout(() => {
-                sourceEl.style.height = height()
+                sourceEl.style.height = height(props.data)
             }, 150)
         }
     }, [])

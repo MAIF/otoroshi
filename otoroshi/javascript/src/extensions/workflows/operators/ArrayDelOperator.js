@@ -1,11 +1,8 @@
 import React from 'react';
 import { FromMemory, FromMemoryFlow } from './FromMemory';
 
-export const ArrayDelOperator = _workflow => ({
-    label: "fas fa-trash",
-    name: 'Array Delete',
+export const ArrayDelOperator = {
     kind: '$array_del',
-    workflow: _workflow,
     flow: ['idx', 'fromMemory', 'array', FromMemoryFlow],
     schema: {
         ...FromMemory({ isArray: true }),
@@ -21,7 +18,5 @@ export const ArrayDelOperator = _workflow => ({
         }
     },
     sources: ['output'],
-    operator: true
-});
-
-// Decrement Operator;
+    operators: true
+}

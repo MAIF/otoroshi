@@ -1,11 +1,8 @@
 import React from 'react';
 import { ValueToCheck } from './ValueToCheck';
 
-export const StrSplitOperator = _workflow => ({
-    label: "fas fa-cut",
-    name: 'String Split',
+export const StrSplitOperator = {
     kind: '$str_split',
-    workflow: _workflow,
     flow: ['value', 'regex'],
     schema: {
         value: {
@@ -15,6 +12,4 @@ export const StrSplitOperator = _workflow => ({
         regex: ValueToCheck('Regex Pattern')
     },
     sources: ['output']
-});
-
-// Array Prepend Operator;
+}
