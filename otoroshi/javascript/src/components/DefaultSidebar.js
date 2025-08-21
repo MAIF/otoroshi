@@ -139,7 +139,7 @@ export function DefaultSidebar(props) {
   );
 
 
-  if(window.location.pathname.startsWith('/bo/dashboard/extensions/workflows/workflows/')) {
+  if(window.location.pathname.startsWith('/bo/dashboard/extensions/workflows/')) {
     return null
   }
 

@@ -6,7 +6,7 @@ import { createTooltip } from "../../tooltips";
 const LINKS = (id) =>
     [
         {
-            to: `/extensions//workflows/${id}/designer`,
+            to: `/extensions/workflows/${id}/designer`,
             icon: 'fa-pencil-ruler',
             title: 'Overview',
             tab: 'overview',

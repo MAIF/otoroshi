@@ -706,9 +706,10 @@ export function WorkflowsDesigner(props) {
 
         let outputWorkflow = subflow ? {
             ...subflow,
+            ...node.data,
             id: node.id,
             ref: node.data.name,
-            kind
+            kind,
         } : undefined
 
         if (currentWorkflow && currentWorkflow.kind === 'workflow') {
