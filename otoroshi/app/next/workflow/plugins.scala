@@ -393,7 +393,7 @@ class WorkflowResumeBackend extends NgBackendCall {
           )
           .map(r => NgProxyEngineError.NgResultProxyEngineError(r).left)
       case Some((extension, workflow)) => {
-        ctx.request.header("resume-token") match {
+        ctx.request.header("resume-token").orElse(ctx.request.queryParam("resume-token")).orElse(ctx.request.cookies.find(_.name == "resume-token").map(_.value)) match {
           case None => error(400, "no resume-token")
           case Some(token) => {
             Try(JWT.require(env.sha512Alg).withClaim("k", "resume-token").build().verify(token)) match {
@@ -412,13 +412,13 @@ class WorkflowResumeBackend extends NgBackendCall {
                       val dataF = if (ctx.request.hasBody) {
                         ctx.request.body.runFold(ByteString(""))(_ ++ _).flatMap { rawBody =>
                           Json.obj(
-                            "query" -> ctx.request.queryParams,
+                            "query" -> (ctx.request.queryParams - "resume-token"),
                             "body" -> rawBody.utf8String.parseJson
                           ).vfuture
                         }
                       } else {
                         Json.obj(
-                          "query" -> ctx.request.queryParams,
+                          "query" -> (ctx.request.queryParams - "resume-token"),
                         ).vfuture
                       }
                       dataF.flatMap { data =>
