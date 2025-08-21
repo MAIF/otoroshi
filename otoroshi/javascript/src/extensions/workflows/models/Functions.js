@@ -69,56 +69,107 @@ const OVERLOADED_NODES = {
     "$str_split": StrSplitOperator,
 }
 
+function getNodeCategory(categories, node) {
+    let nodeCategory = node.category
+
+    let hasCategory = categories.find(cat => cat.id === nodeCategory)
+
+    if (!hasCategory) {
+        for (const category of categories) {
+            const defaultCategory = category.nodes.find(n => n === node.kind)
+
+            if (defaultCategory) {
+                nodeCategory = defaultCategory
+                hasCategory = true
+                break
+            }
+        }
+    }
+
+    return nodeCategory
+}
+
+export function getNodeFromKind(docs, kind) {
+    return Object.values(NODES(docs)).find(n => n.kind === kind || n.name === kind)
+}
+
+export function NODES_BY_CATEGORIES(docs) {
+    return Object.values(NODES(docs)).reduce((categories, node) => {
+        const nodeCategory = getNodeCategory(categories, node)
+
+        return categories.map(category => {
+            if (!nodeCategory && category.id === 'others')
+                return {
+                    ...category,
+                    nodes: [...category.nodes, node.name]
+                }
+            if (category.id === nodeCategory) {
+                return {
+                    ...category,
+                    nodes: [...category.nodes, node.name]
+                }
+            }
+            return category
+        })
+    }, docs.categories.sort((a, b) => a.name.localeCompare(b.name)))
+}
+
+let NODES_CACHE = undefined
+
 export const NODES = (docs) => {
 
-    let defaultValues = [
-        ...docs.nodes.map(n => ({
-            ...n,
-            nodes: true,
-            sources: ['output'],
-            schema: n.form_schema,
-            kind: n.kind || n.name
-        })),
-        ...docs.functions.map(n => ({
-            ...n,
-            functions: true,
-            sources: ['output'],
-            schema: n.form_schema,
-            kind: "Call"
-        })),
-        ...docs.operators.map(n => ({
-            ...n,
-            operators: true,
-            sources: ['output'],
-            schema: n.form_schema,
-            kind: n.kind || n.name
-        }))
-    ]
+    if (!NODES_CACHE) {
+        let defaultValues = [
+            ...docs.nodes.map(n => ({
+                ...n,
+                nodes: true,
+                sources: ['output'],
+                schema: n.form_schema,
+                kind: n.kind || n.name
+            })),
+            ...docs.functions.map(n => ({
+                ...n,
+                functions: true,
+                sources: ['output'],
+                schema: n.form_schema,
+                kind: "Call"
+            })),
+            ...docs.operators.map(n => ({
+                ...n,
+                operators: true,
+                sources: ['output'],
+                schema: n.form_schema,
+                kind: n.kind || n.name
+            }))
+        ]
 
-    const items = Object.fromEntries(Object.entries(OVERLOADED_NODES)
-        .map(([key, node]) => {
-            const defaultValue = defaultValues.find(n => n.name === key)
-            if (defaultValue)
-                defaultValues = defaultValues.filter(f => f.name !== key)
+        const items = Object.fromEntries(Object.entries(OVERLOADED_NODES)
+            .map(([key, node]) => {
+                const defaultValue = defaultValues.find(n => n.name === key)
+                if (defaultValue)
+                    defaultValues = defaultValues.filter(f => f.name !== key)
 
-            return [
-                key,
-                {
-                    ...(defaultValue || {}),
-                    ...node
-                }
-            ]
-        }))
+                return [
+                    key,
+                    {
+                        ...(defaultValue || {}),
+                        ...node
+                    }
+                ]
+            }))
 
 
-    defaultValues.forEach(node => {
-        items[node.name] = {
-            ...node,
-            kind: node.kind || node.name
-        }
-    })
+        defaultValues.forEach(node => {
+            items[node.name] = {
+                ...node,
+                kind: node.kind || node.name
+            }
+        })
 
-    return items
+        NODES_CACHE = items
+    }
+
+    return NODES_CACHE
 }
 
 export const CORE_FUNCTIONS = {

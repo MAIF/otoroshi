@@ -1,7 +1,7 @@
 package otoroshi.next.workflow
 
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 
 object WorkflowGenerators {
 
@@ -29,7 +29,7 @@ object WorkflowGenerators {
           "description" -> value.documentationDescription,
           "schema"      -> value.documentationInputSchema,
           "form_schema" -> value.documentationFormSchema,
-          "category"    -> "functions",
+          "category"    -> JsString(value.documentationCategory.getOrElse("functions")),
           "example"     -> value.documentationExample,
           "display_name" -> value.documentationDisplayName,
           "icon" -> value.documentationIcon,
@@ -41,7 +41,7 @@ object WorkflowGenerators {
           "description" -> value.documentationDescription,
           "schema"      -> value.documentationInputSchema,
           "form_schema" -> value.documentationFormSchema,
-          "category"    -> "operators",
+          "category"    -> JsString(value.documentationCategory.getOrElse("operators")),
           "example"     -> value.documentationExample,
           "display_name" -> value.documentationDisplayName,
           "icon" -> value.documentationIcon,

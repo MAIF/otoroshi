@@ -1,7 +1,6 @@
 package otoroshi.next.workflow
 
 import akka.stream.scaladsl.{Sink, Source}
-import next.workflow.CallNodes
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._

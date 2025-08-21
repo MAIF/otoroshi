@@ -28,7 +28,7 @@ export function createSimpleNode(node, docs) {
 
     // ref = functions wrapped in a Call node
     // kind = everything else
-    const data = NODES(docs)[(ref || kind).toLowerCase()]
+    const data = NODES(docs)[(ref || kind || name).toLowerCase()]
 
     console.log(data)
 

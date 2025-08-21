@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { NODES } from './models/Functions'
+import { getNodeFromKind, NODES, NODES_BY_CATEGORIES } from './models/Functions'
 
 function Category(item) {
     const { name, description, onClick } = item
@@ -33,18 +33,15 @@ function Node({ node, onClick }) {
     </div>
 }
 
-function UnFoldedCategory({ nodes, onClick }) {
+function UnFoldedCategory({ onClick, docs, ...props }) {
+    console.log(props.nodes)
+    const nodes = props.nodes.map(kind => getNodeFromKind(docs, kind))
 
-    const filteredNodes = Object.entries(nodes)
-
-    if (filteredNodes.length === 0)
+    if (nodes.length === 0)
         return <p className='text-center m-0'>No results found</p>
 
-    return filteredNodes
-        .map(([_, node], i) => <Node
-            node={node}
-            onClick={() => onClick(node)}
-            key={`${node.label}-${i}`} />)
+    return nodes
+        .map(node => <Node node={node} onClick={() => onClick(node)} key={node.name} />)
 }
 
 export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCategory, setSelectedCategory, docs }) {
@@ -63,26 +60,7 @@ export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCateg
             setSelectedCategory(undefined)
     }, [query])
 
-    console.log(docs)
-    const items = Object.values(NODES(docs)).reduce((categories, node) => {
-
-        const hasCategory = !categories.find(cat => cat.id === node.category)
-
-        return categories.map(category => {
-            if (!hasCategory && category.id === 'others')
-                return {
-                    ...category,
-                    nodes: [...category.nodes, node]
-                }
-            if (category.id === node.category) {
-                return {
-                    ...category,
-                    nodes: [...category.nodes, node]
-                }
-            }
-            return category
-        })
-    }, docs.categories)
+    const items = NODES_BY_CATEGORIES(docs)
 
     if (query.length > 0) {
         const lowercaseQuery = query.toLowerCase()
@@ -99,7 +77,7 @@ export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCateg
     }
 
     if (selectedCategory)
-        return <UnFoldedCategory {...selectedCategory} onClick={item => handleSelectNode(item)} />
+        return <UnFoldedCategory {...selectedCategory} onClick={item => handleSelectNode(item)} docs={docs} />
 
     const categories = items
         .filter(category => Object.entries(category.nodes))

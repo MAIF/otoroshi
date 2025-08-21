@@ -232,6 +232,7 @@ trait WorkflowFunction {
   def documentationDescription: String                                                                      = "no description"
   def documentationInputSchema: Option[JsObject]                                                            = None
   def documentationFormSchema: Option[JsObject]                                                             = None
+  def documentationCategory: Option[String]                                                                 = None
   def documentationOutputSchema: Option[JsObject]                                                           = None
   def documentationExample: Option[JsObject]                                                                = None
   def callWithRun(
@@ -273,7 +274,7 @@ trait Node extends NodeLike {
   def documentationDescription: String           = "no description"
   def documentationInputSchema: Option[JsObject] = None
   def documentationFormSchema: Option[JsObject]  = None
-  def documentationCategory: Option[JsObject]    = None
+  def documentationCategory: Option[String]      = None
   def documentationExample: Option[JsObject]     = None
   def subNodes: Seq[NodeLike]
   final def internalRun(
@@ -387,6 +388,7 @@ trait WorkflowOperator {
   def documentationDescription: String           = "no description"
   def documentationInputSchema: Option[JsObject] = None
   def documentationFormSchema: Option[JsObject]  = None
+  def documentationCategory: Option[String]       = None
   def documentationExample: Option[JsObject]     = None
   def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue
 }

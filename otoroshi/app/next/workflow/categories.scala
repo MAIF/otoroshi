@@ -47,7 +47,9 @@ case class CoreCategory(
     "error",
     "value",
     "predicate",
-    "returned"
+    "returned",
+    "start",
+    "pause"
   )
 ) extends NodeCategory
 
@@ -66,15 +68,39 @@ case class TransformationsCategory(
     "$map_get",
     "$map_del",
     "$json_parse",
+    "$str_concat",
     "$is_truthy",
     "$is_falsy",
     "$contains",
     "$eq",
     "$neq",
+    "$gt",
+    "$lt",
+    "$gte",
+    "$lte",
     "$encode_base64",
     "$decode_base64",
+    "$basic_auth",
+    "$now",
     "$not",
-    "$str_split"
+    "$parse_datetime",
+    "$parse_date",
+    "$parse_time",
+    "$add",
+    "$subtract",
+    "$multiply",
+    "$divide",
+    "$incr",
+    "$decr",
+    "$str_upper_case",
+    "$str_lower_case",
+    "$str_split",
+    "$expression_language",
+    "$stringify",
+    "$prettify",
+    "$str_replace",
+    "$str_replace_all",
+    "$jq",
   )
 ) extends NodeCategory
 
@@ -82,7 +108,7 @@ case class FunctionsCategory(
   name: String = "Functions",
   description: String = "Execute functions",
   nodes: Seq[String] = Seq(
-
+    
   )
 ) extends NodeCategory
 
