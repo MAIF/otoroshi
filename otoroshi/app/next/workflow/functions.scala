@@ -42,6 +42,28 @@ object WorkflowFunctionsInitializer {
     WorkflowFunction.registerFunction("core.send_mail", new SendMailFunction())
     WorkflowFunction.registerFunction("core.env_get", new EnvGetFunction())
     WorkflowFunction.registerFunction("core.config_read", new ConfigReadFunction())
+    WorkflowFunction.registerFunction("core.compute_resume_token", new ComputeResumeTokenFunction())
+  }
+}
+
+class ComputeResumeTokenFunction extends WorkflowFunction {
+  override def documentationName: String = "core.compute_resume_token"
+  override def documentationDisplayName: String = "Compute a resume token for the current workflow"
+  override def documentationIcon: String = "fas fa-cogs"
+  override def documentationDescription: String = "This function computes a resume token for the current workflow"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj()
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.compute_resume_token",
+      "args"     -> Json.obj()
+    )
+  )
+
+  override def callWithRun(args: JsObject)(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
+    PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env).json.rightf
   }
 }
 
