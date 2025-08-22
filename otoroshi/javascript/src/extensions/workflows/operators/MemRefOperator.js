@@ -5,7 +5,7 @@ export const MemRefOperator = {
     sources: ['output'],
     operators: true,
     nodeRenderer: props => {
-        const memRef = props.data.workflow ? props.data.workflow["$mem_ref"] : {}
+        const memRef = props.data.content ? props.data.content["$mem_ref"] : {}
         return <div className='assign-node'>
             <span >{memRef?.name}</span>
         </div>

@@ -376,7 +376,7 @@ class BackOfficeAppContainer extends Component {
               <div
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
                 id="sidebar">
-                {!window.location.pathname.includes('/bo/dashboard/extensions/workflows/workflows/') && <i
+                {!window.location.pathname.includes('/designer') && <i
                   className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'} sidebar-toggle`}
                   onClick={(e) => {
                     e.stopPropagation();

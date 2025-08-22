@@ -15,15 +15,12 @@ export function Node(props) {
 
     let label = data.label || data.item?.label || data.icon
     let name = data.display_name || data.name
-    let description = data.description
 
-    if (props.data.function) {
-        const functionData = props.data.functions.docs.functions.find(f => f.name === props.data.function)
-        console.log(props.data)
+    if (data.content?.function) {
+        const functionData = data.functions.docs.functions.find(f => f.name === data.content.function)
         if (functionData) {
             label = functionData.icon
             name = functionData.display_name
-            description = functionData.description
         }
     }
 
@@ -45,7 +42,7 @@ export function Node(props) {
 
                 {props.id !== 'returned-node' && <NodeTrashButton {...props} />}
 
-                <div className='node-description'>{description}</div>
+                <div className='node-description'>{data.description}</div>
             </button>
         </>
     );

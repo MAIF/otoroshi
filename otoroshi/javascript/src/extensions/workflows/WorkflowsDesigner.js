@@ -21,36 +21,73 @@ import { TagsModal } from './TagsModal';
 
 const GROUP_NODES = ['if', 'switch', 'parallel', 'foreach', 'map', 'filter', 'flatmap']
 
-export function createSimpleNode(node, docs) {
-    console.log('createSimpleNode', node)
+const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name']
 
-    const { id, kind, name, ref, description, ...props } = node
+export function splitInformationAndContent(obj) {
+    return Object.entries(obj).reduce(
+        (acc, [key, value]) => {
+            if (INFORMATION_FIELDS.includes(key)) {
+                acc.information[key] = value
+            } else {
+                acc.content[key] = value
+            }
+            return acc;
+        },
+        {
+            information: {},
+            content: {}
+        }
+    );
+}
 
-    const data = NODES(docs)[(kind || name).toLowerCase()]
+export function createNodeFromUI(node, docs) {
+    console.log('createNodeFromUI', node)
+
+    const { information } = splitInformationAndContent(node)
+
+    const data = NODES(docs)[(information.kind || information.name).toLowerCase()]
 
     let functionData = {}
-    if (node.category === 'functions') {
+    // pre-fill function
+    if (data.category === 'functions') {
         functionData = {
-            function: node.name
+            function: information.name
         }
     }
 
-    const newNode = {
-        id: id || uuid(),
-        position: { x: 0, y: 0 },
+    return {
+        id: uuid(),
         type: data.type || 'simple',
         data: {
-            ...props,
             ...data,
-            ...functionData
+            information: {
+                ...information,
+                description: data.description
+            },
+            content: {
+                ...(data.example || {}),
+                ...functionData
+            }
         }
     }
-
-    return newNode
 }
 
 function createNode(id, child, addInformationsToNode, docs) {
-    const newNode = addInformationsToNode(createSimpleNode(child, docs), docs)
+    const { information, content } = splitInformationAndContent(child)
+
+    const template = NODES(docs)[(information.kind || information.name).toLowerCase()]
+
+    const node = {
+        id,
+        type: template.type || 'simple',
+        data: {
+            ...template,
+            information,
+            content
+        }
+    }
+
+    const newNode = addInformationsToNode(node, docs)
     return {
         ...newNode,
         id,
@@ -471,8 +508,8 @@ export function WorkflowsDesigner(props) {
         const start = {
             kind: 'workflow',
             steps: [],
-            returned: nodes.find(node => node.id === 'returned-node').data.workflow?.returned,
-            // id: 'start'
+            returned: nodes.find(node => node.id === 'returned-node').data.content?.returned,
+            id: 'start'
         }
 
         const startOutput = edges.find(edge => edge.source === 'start')
@@ -500,7 +537,7 @@ export function WorkflowsDesigner(props) {
         if (node.id.endsWith('returned-node')) {
             return [{
                 ...currentWorkflow,
-                returned: node.data.workflow?.returned,
+                returned: node.data.content?.returned,
                 // id: node.id
             }, alreadySeen]
         }
@@ -698,12 +735,11 @@ export function WorkflowsDesigner(props) {
 
         let outputWorkflow = subflow ? {
             ...subflow,
-            ...node.data,
+            ...node.data.content,
+            ...node.data.information,
             id: node.id,
             kind,
         } : undefined
-
-        console.log(outputWorkflow)
 
         if (currentWorkflow && currentWorkflow.kind === 'workflow') {
             outputWorkflow = {
@@ -764,7 +800,8 @@ export function WorkflowsDesigner(props) {
                     id: r.id,
                     position: r.position,
                     kind: r.data.kind,
-                    data: r.data.workflow
+                    content: r.data.content,
+                    information: r.data.information,
                 })),
                 edges: orphansEdges
             }
@@ -774,7 +811,6 @@ export function WorkflowsDesigner(props) {
     }
 
     function updateData(props, changes) {
-        console.log('update data', props, changes)
         setNodes(nodes.map(node => {
             if (node.id === props.id) {
                 return {
@@ -800,14 +836,14 @@ export function WorkflowsDesigner(props) {
                     onNodeDelete: onNodeDelete,
                     updateData: updateData,
                     appendSourceHandle: appendSourceHandle,
-                    handleWorkflowChange: handleNodeDataChange,
+                    handleDataChange: handleDataChange,
                     deleteHandle: deleteHandle
                 }
             },
         }
     }
 
-    function handleNodeDataChange(nodeId, newData) {
+    function handleDataChange(nodeId, newData) {
         setNodes(eds => eds.map(node => {
             if (node.id === nodeId) {
                 return {
@@ -879,7 +915,6 @@ export function WorkflowsDesigner(props) {
             event.stopPropagation()
             if (!connectionState.isValid) {
 
-                console.log('set active node')
                 setActiveNode({
                     ...connectionState.fromNode,
                     handle: connectionState.fromHandle,
@@ -923,7 +958,7 @@ export function WorkflowsDesigner(props) {
             targetId = `${targetId}-operator`
 
         let newNode = addInformationsToNode({
-            ...createSimpleNode(item, props.docs),
+            ...createNodeFromUI(item, props.docs),
             id: targetId,
             type: item.type || 'simple',
             position: (activeNode.fromOrigin || activeNode.event) ? screenToFlowPosition(position) : position,
@@ -942,7 +977,7 @@ export function WorkflowsDesigner(props) {
                 parent &&
                 (/*parent.data.kind === 'parallel' ||*/ parent.data.kind === 'switch')) {
                 predicateNode = addInformationsToNode(
-                    createSimpleNode({ kind: 'predicate', }, props.docs),
+                    createNodeFromUI({ kind: 'predicate', }, props.docs),
                     props.docs)
 
                 const { targets = [], sources = [] } = predicateNode.data
@@ -1019,7 +1054,6 @@ export function WorkflowsDesigner(props) {
             }
         }
 
-        // console.log(newNode)
 
         const newNodes = [...nodes, predicateNode, newNode].filter(f => f)
         newEdges = [...edges, ...newEdges]
@@ -1027,7 +1061,6 @@ export function WorkflowsDesigner(props) {
         setNodes(newNodes)
         setEdges(newEdges)
 
-        console.log('set active node to false 1019')
         setActiveNode(false)
     }
 

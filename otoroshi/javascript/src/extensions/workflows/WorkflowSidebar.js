@@ -17,8 +17,8 @@ const LINKS = (id) =>
             to: `/extensions/workflows/edit/${id}`,
             icon: 'fa-file-alt',
             title: 'Informations',
-            tab: 'informations',
-            tooltip: { ...createTooltip(`Show informations tab`) },
+            tab: 'information',
+            tooltip: { ...createTooltip(`Show information tab`) },
             isActive: (pathname) => pathname.includes('edit')
         },
     ].filter((link) => !link.enabled);

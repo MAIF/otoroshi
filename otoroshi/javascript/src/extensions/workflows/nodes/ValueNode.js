@@ -36,7 +36,7 @@ export const ValueNode = {
                         mode: 'json',
                     },
                 }}
-                value={props.data?.value}
+                value={props.data?.content?.value}
             />
         </div>
     }

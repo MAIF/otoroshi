@@ -48,7 +48,7 @@ export const CallNode = {
     sources: ['output'],
     nodeRenderer: props => {
         return <div className='assign-node'>
-            <span >{props.data.workflow?.function}</span>
+            <span >{props.data.content?.function}</span>
         </div>
     }
 }
