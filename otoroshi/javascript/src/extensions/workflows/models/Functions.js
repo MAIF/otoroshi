@@ -129,7 +129,7 @@ export const NODES = (docs) => {
             })),
             ...docs.functions.map(n => ({
                 ...n,
-                functions: true,
+                category: "functions",
                 sources: ['output'],
                 schema: n.form_schema,
                 kind: "Call"
@@ -170,64 +170,4 @@ export const NODES = (docs) => {
     }
 
     return NODES_CACHE
-}
-
-export const CORE_FUNCTIONS = {
-    "core.log": {
-
-    },
-    "core.hello": {
-
-    },
-    "core.http_client": {
-
-    },
-    "core.wasm_call": {
-
-    },
-    "core.workflow_call": {
-
-    },
-    "core.system_call": {
-
-    },
-    "core.store_keys": {
-
-    },
-    "core.store_mget": {
-
-    },
-    "core.store_match": {
-
-    },
-    "core.store_get": {
-
-    },
-    "core.store_set": {
-
-    },
-    "core.store_del": {
-
-    },
-    "core.emit_event": {
-
-    },
-    "core.file_read": {
-
-    },
-    "core.file_write": {
-
-    },
-    "core.file_del": {
-
-    },
-    "core.state_get_all": {
-
-    },
-    "core.state_get": {
-
-    },
-    "core.send_mail": {
-
-    },
 }

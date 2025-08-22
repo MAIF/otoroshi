@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect } from 'react'
+import React, { useEffect, useLayoutEffect, useState } from 'react'
 
 import Handles from './Handles'
 import NodeTrashButton from './NodeTrashButton'
@@ -13,6 +13,20 @@ export function Node(props) {
             sourceEl?.classList.add('operator')
     })
 
+    let label = data.label || data.item?.label || data.icon
+    let name = data.display_name || data.name
+    let description = data.description
+
+    if (props.data.function) {
+        const functionData = props.data.functions.docs.functions.find(f => f.name === props.data.function)
+        console.log(props.data)
+        if (functionData) {
+            label = functionData.icon
+            name = functionData.display_name
+            description = functionData.description
+        }
+    }
+
     return (
         <>
             <Handles {...props} />
@@ -24,14 +38,14 @@ export function Node(props) {
                     data.functions.onDoubleClick(props)
                 }}>
                 <div className='node-one-output d-flex-center'>
-                    {data.operators ? <i className='fas fa-wrench' /> : <i className={(data.label || data.item?.label || data.icon)} />} {data.display_name || data.name}
+                    {data.operators ? <i className='fas fa-wrench' /> : <i className={label} />} {name}
                 </div>
 
                 {data.nodeRenderer && data.nodeRenderer(props)}
 
                 {props.id !== 'returned-node' && <NodeTrashButton {...props} />}
 
-                <div className='node-description'>{props.data.description}</div>
+                <div className='node-description'>{description}</div>
             </button>
         </>
     );

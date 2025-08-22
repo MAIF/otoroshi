@@ -1,5 +1,4 @@
 import React from 'react'
-import { CORE_FUNCTIONS } from '../models/Functions'
 import { NgCodeRenderer, NgSelectRenderer } from '../../../components/nginputs';
 import { Row } from '../../../components/Row';
 
@@ -9,15 +8,10 @@ export const CallNode = {
     schema: {
         function: {
             renderer: props => {
-                const options = Object.keys(CORE_FUNCTIONS).includes(props.value) ? CORE_FUNCTIONS : {
-                    ...CORE_FUNCTIONS,
-                    [props.value]: ""
-                }
-
                 return <Row title="Select a function to execute">
                     <NgSelectRenderer
                         creatable={true}
-                        options={Object.keys(options).map(func => ({ label: func, value: func }))}
+                        options={props.rootValue?.coreFunctions.map(func => ({ label: func.display_name, value: func.name }))}
                         ngOptions={{ spread: true }}
                         value={props.value}
                         onChange={(k) => props.onChange(k.value)}

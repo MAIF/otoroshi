@@ -22,43 +22,35 @@ import { TagsModal } from './TagsModal';
 const GROUP_NODES = ['if', 'switch', 'parallel', 'foreach', 'map', 'filter', 'flatmap']
 
 export function createSimpleNode(node, docs) {
-    // console.log('createSimpleNode', node)
+    console.log('createSimpleNode', node)
 
     const { id, kind, name, ref, description, ...props } = node
 
-    // ref = functions wrapped in a Call node
-    // kind = everything else
-    const data = NODES(docs)[(ref || kind || name).toLowerCase()]
+    const data = NODES(docs)[(kind || name).toLowerCase()]
 
-    // console.log(data)
+    let functionData = {}
+    if (node.category === 'functions') {
+        functionData = {
+            function: node.name
+        }
+    }
 
-    // console.log(data)
-
-    // if (data.operator) {
-    //     data = {
-    //         ...data,
-    //         workflow: {
-    //             [data.kind]: {
-    //                 ...node.workflow,
-    //                 description: node.description
-    //             }
-    //         }
-    //     }
-    // }
-
-    return {
+    const newNode = {
         id: id || uuid(),
         position: { x: 0, y: 0 },
         type: data.type || 'simple',
         data: {
+            ...props,
             ...data,
-            ...props
+            ...functionData
         }
     }
+
+    return newNode
 }
 
 function createNode(id, child, addInformationsToNode, docs) {
-    const newNode = addInformationsToNode(createSimpleNode(child, docs))
+    const newNode = addInformationsToNode(createSimpleNode(child, docs), docs)
     return {
         ...newNode,
         id,
@@ -708,9 +700,10 @@ export function WorkflowsDesigner(props) {
             ...subflow,
             ...node.data,
             id: node.id,
-            ref: node.data.name,
             kind,
         } : undefined
+
+        console.log(outputWorkflow)
 
         if (currentWorkflow && currentWorkflow.kind === 'workflow') {
             outputWorkflow = {
@@ -749,8 +742,6 @@ export function WorkflowsDesigner(props) {
     const handleSave = () => {
         const graph = graphToJson()
 
-        console.log(graph[0])
-
         const [config, seen] = graph
         const alreadySeen = seen.flatMap(f => f)
 
@@ -771,7 +762,6 @@ export function WorkflowsDesigner(props) {
             orphans: {
                 nodes: orphans.map(r => ({
                     id: r.id,
-                    ref: r.data.name,
                     position: r.position,
                     kind: r.data.kind,
                     data: r.data.workflow
@@ -799,12 +789,13 @@ export function WorkflowsDesigner(props) {
         }))
     }
 
-    function addInformationsToNode(node) {
+    function addInformationsToNode(node, docs) {
         return {
             ...node,
             data: {
                 ...(node.data || {}),
                 functions: {
+                    docs: docs,
                     onDoubleClick: setActiveNode,
                     onNodeDelete: onNodeDelete,
                     updateData: updateData,
@@ -936,7 +927,7 @@ export function WorkflowsDesigner(props) {
             id: targetId,
             type: item.type || 'simple',
             position: (activeNode.fromOrigin || activeNode.event) ? screenToFlowPosition(position) : position,
-        })
+        }, props.docs)
 
         let newEdges = []
         let predicateNode = undefined
@@ -950,9 +941,9 @@ export function WorkflowsDesigner(props) {
             if (item.kind !== 'predicate' &&
                 parent &&
                 (/*parent.data.kind === 'parallel' ||*/ parent.data.kind === 'switch')) {
-                predicateNode = addInformationsToNode(createSimpleNode({
-                    kind: 'predicate',
-                }, props.docs))
+                predicateNode = addInformationsToNode(
+                    createSimpleNode({ kind: 'predicate', }, props.docs),
+                    props.docs)
 
                 const { targets = [], sources = [] } = predicateNode.data
                 predicateNode = {
@@ -1028,7 +1019,7 @@ export function WorkflowsDesigner(props) {
             }
         }
 
-        console.log(newNode)
+        // console.log(newNode)
 
         const newNodes = [...nodes, predicateNode, newNode].filter(f => f)
         newEdges = [...edges, ...newEdges]
@@ -1049,7 +1040,8 @@ export function WorkflowsDesigner(props) {
             },
             body: JSON.stringify({
                 input: JSON.stringify({}, null, 4),
-                workflow: graphToJson()[0]
+                workflow: graphToJson()[0],
+                workflow_id: props.workflow.id
             }),
         })
             .then((r) => r.json())

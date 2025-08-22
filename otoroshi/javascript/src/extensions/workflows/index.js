@@ -5,7 +5,7 @@ import { Table } from '../../components/inputs/Table';
 import CodeInput from '../../components/inputs/CodeInput';
 import { WorkflowsContainer as WorkflowsDesigner } from './WorkflowsContainer';
 import { WorkflowSidebar } from './WorkflowSidebar';
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const extensionId = 'otoroshi.extensions.Workflows';
 
@@ -246,8 +246,10 @@ export function setupWorkflowsExtension(registerExtension) {
           content: (item) => item.name,
         },
         { title: 'Description', filterId: 'description', content: (item) => item.description },
-        { title: 'Sessions', content: (item) => (
-            <Link className="btn btn-sm btn-primary me-2" to={`/extensions/workflows/${item.id}/sessions`}>Sessions</Link>
+        {
+          title: 'Sessions', content: (item) => (
+            <Link className="btn btn-sm btn-primary me-2" to={`/extensions/workflows/${item.id}/sessions`}
+              onClick={e => e.stopPropagation()}>Sessions</Link>
           )
         },
       ];
@@ -458,7 +460,8 @@ export function setupWorkflowsExtension(registerExtension) {
         },
         { title: 'Created at', filterId: 'created_at', content: (item) => item.created_at },
         { title: 'From', filterId: 'from', content: (item) => item.from.join(".") },
-        { title: 'Actions', content: (item) => (
+        {
+          title: 'Actions', content: (item) => (
             <div className="btn-group">
               <button className="btn btn-sm btn-success btn-block btn-sm" onClick={e => this.resumeSession(item)}><span className="fas fa-play" /> Resume</button>
               <button className="btn btn-sm btn-danger btn-block btn-sm" onClick={e => this.deleteSession(item.id)}><span className="fas fa-trash" /> Delete</button>
