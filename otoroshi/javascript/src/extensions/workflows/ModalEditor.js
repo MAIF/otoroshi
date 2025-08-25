@@ -48,11 +48,11 @@ export function ModalEditor({ node, docs }) {
             args: {
                 type: 'form',
                 label: 'Arguments',
-                flow: Object.keys(functionData.form_schema || {}),
-                schema: functionData.form_schema || {}
+                flow: Object.keys(functionData?.form_schema || {}),
+                schema: functionData?.form_schema || {}
             }
         }
-        data.schema = functionData.form_schema
+        data.schema = functionData?.form_schema
     } else {
         schema = {
             ...schema,
@@ -92,6 +92,10 @@ export function ModalEditor({ node, docs }) {
 
     const [jsonView, setJsonView] = useState(false)
 
+    const handleCodeInputChange = newData => {
+        onChange({ ...state, ...JSON.parse(newData) })
+    }
+
     const onChange = newData => {
         const { coreFunctions, ...props } = newData
 
@@ -108,19 +112,26 @@ export function ModalEditor({ node, docs }) {
                 content
             })
         }
+        console.log(newData)
         setState(newData)
     }
 
-    // probleme on save le data dans le .node et donc on se tape à nouveau tous les champs
+    const getCodeInputValue = () => {
+        const fields = flow[1]?.fields
+
+        return Object.fromEntries(
+            Object.entries(state).filter(([key, _]) => fields.includes(key))
+        )
+    }
 
     return <div className='modal-editor d-flex flex-column' style={{ flex: 1 }}>
-        <p className='p-3 m-0 whats-next-title'>{functionData ? functionData.display_name : node.data.node.name}</p>
+        <p className='p-3 m-0 whats-next-title'>{functionData ? functionData.display_name : node.data.node?.name}</p>
 
         <PillButton
             className='mt-3'
             rightEnabled={!jsonView}
-            leftText="FORM"
-            rightText="RAW JSON"
+            leftText="Visual Editor"
+            rightText="Code Editor"
             onLeftClick={() => setJsonView(false)}
             onRightClick={() => setJsonView(true)}
         />
@@ -131,8 +142,8 @@ export function ModalEditor({ node, docs }) {
                     mode="json"
                     editorOnly={true}
                     height="100%"
-                    value={state}
-                    onChange={onChange}
+                    value={getCodeInputValue()}
+                    onChange={handleCodeInputChange}
                 />
             </div>
         </Suspense> :

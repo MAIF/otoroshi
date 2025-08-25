@@ -79,7 +79,7 @@ function createNode(id, child, addInformationsToNode, docs) {
 
     const node = {
         id,
-        type: template.type || 'simple',
+        type: template?.type || 'simple',
         data: {
             ...template,
             information,
@@ -92,6 +92,7 @@ function createNode(id, child, addInformationsToNode, docs) {
         ...newNode,
         id,
         data: {
+            sources: ['output'],
             ...newNode.data,
             targetHandles: [],
             sourceHandles: []
