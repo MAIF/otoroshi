@@ -10,7 +10,7 @@ export default {
       props: {
         label: 'body',
         editorOnly: true,
-        mode: 'json',
+        mode: 'text',
       },
     },
     status: {

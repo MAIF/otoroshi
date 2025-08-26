@@ -2,6 +2,7 @@ package otoroshi.models
 
 import akka.stream.scaladsl.{Sink, Source}
 import com.google.common.hash.Hashing
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.Exporters._
 import otoroshi.events._
@@ -167,6 +168,15 @@ case class HttpCallSettings(
       ec: ExecutionContext
   ): Future[ExportResult] = {
     val finalBody = body
+      .applyOnIf(body.contains("${now_str}")) { str =>
+        str.replace("${now_str}", DateTime.now.toString)
+      }
+      .applyOnIf(body.contains("${now}")) { str =>
+        str.replace("${now}", System.currentTimeMillis.toString)
+      }
+      .applyOnIf(body.contains("${now_epoch}")) { str =>
+        str.replace("${now_epoch}", scala.math.BigDecimal(System.currentTimeMillis.toDouble / 1000.0).toString)
+      }
       .applyOnIf(body.contains("${events}")) { str =>
         str.replace("${events}", JsArray(events).stringify)
       }
@@ -175,6 +185,12 @@ case class HttpCallSettings(
       }
       .applyOnIf(body.contains("${events.prettify}")) { str =>
         str.replace("${events.prettify}", JsArray(events).prettify)
+      }
+      .applyOnIf(body.contains("${events.nd_stringify}")) { str =>
+        str.replace("${events.nd_stringify}", events.map(_.stringify).mkString("\n\n"))
+      }
+      .applyOnIf(body.contains("${events.nd_prettify}")) { str =>
+        str.replace("${events.nd_prettify}", JsArray(events).prettify)
       }
       .applyOnIf(body.contains("${events.length}")) { str =>
         str.replace("${events.length}", events.length.toString)
