@@ -16,46 +16,6 @@ import java.util.regex.{Matcher, Pattern}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-/*
-# Examples
-
-1) Prefix all relative hrefs with /proxy and rewrite a domain to another
-
-
-{
-  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
-  "enabled": true,
-  "config": {
-    "content_types": ["text/html"],
-    "auto_href_prefix": "/proxy",
-    "rules": [
-      { "pattern": "(?i)https?://example\.com", "replacement": "https://public.example.com" }
-    ],
-    "max_response_body_size": 1048576
-  }
-}
-
-
-2) Rewrite paths while keeping captured groups
-
-
-{
-  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
-  "enabled": true,
-  "config": {
-    "content_types": ["text/html", "text/plain"],
-    "rules": [
-      { "pattern": "href=([\"'])/v1/(.+?)\1", "replacement": "href=$1/v2/$2$1", "flags": "i" }
-    ]
-  }
-}
-
-
-Note: replacement supports backrefs $1, $2, ...
-Remember to properly escape backslashes in JSON.
-
-
-*/
 case class RegexRule(
                       pattern: String,
                       replacement: String,
@@ -175,6 +135,43 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
 
   override def name: String                        = "Regex response body rewriter"
   override def description: Option[String] = Some("Rewrites the HTTP response body using a set of regex rules, with optional auto-prefix for relative hrefs.")
+
+  override def documentation: Option[String] = Some(
+    """### Examples
+      |
+      |1) Prefix all relative hrefs with /proxy and rewrite a domain to another
+      |
+      |{
+      |  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+      |  "enabled": true,
+      |  "config": {
+      |    "content_types": ["text/html"],
+      |    "auto_href_prefix": "/proxy",
+      |    "rules": [
+      |      { "pattern": "(?i)https?://example\.com", "replacement": "https://public.example.com" }
+      |    ],
+      |    "max_body_size": 1048576
+      |  }
+      |}
+      |
+      |
+      |2) Rewrite paths while keeping captured groups
+      |
+      |{
+      |  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+      |  "enabled": true,
+      |  "config": {
+      |    "content_types": ["text/html", "text/plain"],
+      |    "rules": [
+      |      { "pattern": "href=([\"'])/v1/(.+?)\1", "replacement": "href=$1/v2/$2$1", "flags": "i" }
+      |    ]
+      |  }
+      |}
+      |
+      |
+      |Note: replacement supports backrefs $1, $2, ...
+      |Remember to properly escape backslashes in JSON.
+      |""".stripMargin)
   override def defaultConfigObject: Option[NgPluginConfig] = Some(
     RegexBodyRewriterConfig()
   )
@@ -292,6 +289,41 @@ class RegexRequestBodyRewriter extends NgRequestTransformer {
 
   override def name: String                        = "Regex request body rewriter"
   override def description: Option[String] = Some("Rewrites the HTTP request body using a set of regex rules")
+  override def documentation: Option[String] = Some(
+    """### Examples
+      |
+      |1) Rewrite a domain to another
+      |
+      |{
+      |  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+      |  "enabled": true,
+      |  "config": {
+      |    "content_types": ["text/html"],
+      |    "rules": [
+      |      { "pattern": "(?i)https?://example\.com", "replacement": "https://public.example.com" }
+      |    ],
+      |    "max_body_size": 1048576
+      |  }
+      |}
+      |
+      |
+      |2) Rewrite paths while keeping captured groups
+      |
+      |{
+      |  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+      |  "enabled": true,
+      |  "config": {
+      |    "content_types": ["text/html", "text/plain"],
+      |    "rules": [
+      |      { "pattern": "href=([\"'])/v1/(.+?)\1", "replacement": "href=$1/v2/$2$1", "flags": "i" }
+      |    ]
+      |  }
+      |}
+      |
+      |
+      |Note: replacement supports backrefs $1, $2, ...
+      |Remember to properly escape backslashes in JSON.
+      |""".stripMargin)
   override def defaultConfigObject: Option[NgPluginConfig] = Some(
     RegexBodyRewriterConfig()
   )
