@@ -44,6 +44,7 @@ object StatusCodeRange {
 }
 
 case class Fail2BanConfig(
+   identifier: String = "${req.ip}",
    detectTimeMs:   FiniteDuration = 10.minute,
    banTimeMs:      FiniteDuration = 3.hour,
    maxRetry:       Int = 4,
@@ -82,6 +83,7 @@ object Fail2BanConfig {
   private val defaultRanges = Seq(StatusCodeRange(400), StatusCodeRange(401), StatusCodeRange(403, 499), StatusCodeRange(500, 599))
 
   def configFlow: Seq[String] = Seq(
+    "identifier",
     "detect_time",
     "ban_time",
     "max_retry",
@@ -91,6 +93,7 @@ object Fail2BanConfig {
   )
 
   def configSchema: JsObject = Json.obj(
+    "identifier"     -> Json.obj("type" -> "string", "label" -> "Client identifier", "default" -> "${req.ip}"),
     "detect_time"    -> Json.obj("type" -> "string", "label" -> "Detection window", "default" -> "60s"),
     "ban_time"       -> Json.obj("type" -> "string", "label" -> "Ban time", "default" -> "15m"),
     "max_retry"      -> Json.obj("type" -> "number", "label" -> "Max retries", "default" -> 5),
@@ -117,13 +120,14 @@ object Fail2BanConfig {
     override def reads(js: JsValue): JsResult[Fail2BanConfig] = Try {
       val detectMs = parseDurationMillis((js \ "detect_time").asOpt[JsValue].getOrElse(JsString("60s")))
       val banMs    = parseDurationMillis((js \ "ban_time").asOpt[JsValue].getOrElse(JsString("15m")))
+      val identifier = (js \ "identifier").asOpt[String].getOrElse("${req.ip}")
       val maxRetry = (js \ "max_retry").asOpt[Int].getOrElse(5)
       val regexes  = (js \ "url_regex").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { obj => RegexRule(obj) }
       val scodes   = (js \ "status_codes").asOpt[Seq[String]].getOrElse(Seq("401", "403", "429", "500-599"))
       val ranges   = parseStatusRanges(scodes).getOrElse(defaultRanges)
       val ignored  = (js \ "ignored_ips").asOpt[Seq[String]].getOrElse(Seq.empty)
-
       Fail2BanConfig(
+        identifier     = identifier,
         detectTimeMs   = detectMs,
         banTimeMs      = banMs,
         maxRetry       = maxRetry,
@@ -137,6 +141,7 @@ object Fail2BanConfig {
     }
 
     override def writes(o: Fail2BanConfig): JsValue = Json.obj(
+      "identifier" -> o.identifier,
       "detect_time" -> o.detectTimeMs.toMillis,
       "ban_time" -> o.banTimeMs.toMillis,
       "max_retry" -> o.maxRetry,
@@ -231,15 +236,15 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
   override def configFlow: Seq[String]            = Fail2BanConfig.configFlow
   override def configSchema: Option[JsObject]     = Fail2BanConfig.configSchema.some
 
-  override def name: String = "Fail2Ban"
+  override def name: String = "fail2ban"
   override def description: Option[String] =
-    Some("Temporarily bans client IPs when too many failed requests occur within a detection window (fail2ban-like).")
+    Some("Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like).")
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
-    val ip  = ctx.request.theIpAddress
+    val ip  = conf.identifier.evaluateEl(ctx.attrs) // ctx.request.theIpAddress
     val now = System.currentTimeMillis()
 
     if (conf.isIgnored(ip)) {
@@ -248,7 +253,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
       val remain = Fail2BanState.remainingBanSeconds(ip, now)
       val body   = Json.obj(
         "error"   -> "temporary_ban",
-        "message" -> s"Your IP is temporarily banned due to too many failed requests.",
+        "message" -> s"You are temporarily banned due to too many failed requests.",
         "retry_in_seconds" -> remain
       )
       NgAccess.NgDenied(Results.Forbidden(body)).vfuture
@@ -261,7 +266,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
-    val ip  = ctx.request.theIpAddress
+    val ip  = conf.identifier.evaluateEl(ctx.attrs) // ctx.request.theIpAddress
     if (conf.isIgnored(ip)) {
       Right(ctx.otoroshiResponse).vfuture
     } else {
