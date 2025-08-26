@@ -1150,6 +1150,7 @@ const possibleExporterConfigFormValues = {
       'cookies',
       'timeout',
       'body',
+      'tls_config'
       // 'tls_config.enabled',
       // 'tls_config.loose',
       // 'tls_config.trustAll',
@@ -1183,7 +1184,67 @@ const possibleExporterConfigFormValues = {
       },
       timeout: {
         type: 'number',
-        props: { label: 'HTTP Timeout' },
+        props: { label: 'HTTP Timeout', suffix: 'ms.' },
+      },
+      tls_config: {
+        type: 'jsonobjectcode',
+        props: { label: 'TLS Config' },
+      },
+    },
+  },
+  splunk: {
+    flow: [
+      'url',
+      'headers',
+      'timeout',
+      'token',
+      'source_type',
+      'index',
+      'fields',
+      'tls_config',
+      // 'tls_config.loose',
+      // 'tls_config.trustAll',
+      // 'tls_config.certs',
+      // 'tls_config.trustedCerts',
+    ],
+    schema: {
+      url: {
+        type: 'string',
+        props: { label: 'URL', placeholder: 'https://hec.example.com:8088/services/collector/event' },
+      },
+      token: {
+        type: 'string',
+        props: { label: 'Auth. token', placeholder: 'The auth. token to call Splunk' },
+      },
+      source_type: {
+        type: 'string',
+        props: { label: 'Source type', placeholder: 'otoroshi:event' },
+      },
+      index: {
+        type: 'string',
+        props: { label: 'Index', placeholder: 'otoroshi' },
+      },
+      fields: {
+        type: 'object',
+        props: {
+          label: 'Fields',
+        },
+      },
+      headers: {
+        type: 'object',
+        props: {
+          label: 'Http Headers',
+          placeholderKey: 'Name of the header',
+          placeholderValue: 'Value of the header',
+        },
+      },
+      timeout: {
+        type: 'number',
+        props: { label: 'HTTP Timeout', suffix: 'ms.' },
+      },
+      tls_config: {
+        type: 'jsonobjectcode',
+        props: { label: 'TLS Config' },
       },
     },
   },
