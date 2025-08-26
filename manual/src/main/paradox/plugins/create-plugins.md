@@ -1,9 +1,5 @@
 # Create plugins
 
-@@@ warning
-This section is under rewrite. The following content is deprecated
-@@@
-
 When everything has failed and you absolutely need a feature in Otoroshi to make your use case work, there is a solution. Plugins is the feature in Otoroshi that allow you to code how Otoroshi should behave when receiving, validating and routing an http request. With request plugin, you can change request / response headers and request / response body the way you want, provide your own apikey, etc.
 
 ## Plugin types
