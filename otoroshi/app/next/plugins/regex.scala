@@ -156,9 +156,7 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
   override def description: Option[String] = Some("Rewrites the HTTP response body using a set of regex rules, with optional auto-prefix for relative hrefs.")
 
   override def documentation: Option[String] = Some(
-    """### Examples
-      |
-      |1) Prefix all relative hrefs with /proxy and rewrite a domain to another
+    """1) Prefix all relative hrefs with /proxy and rewrite a domain to another
       |
       |```json
       |{
@@ -191,7 +189,6 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
       |```
       |
       |Note: replacement supports backrefs $1, $2, ...
-      |Remember to properly escape backslashes in JSON.
       |""".stripMargin)
   override def defaultConfigObject: Option[NgPluginConfig] = Some(
     RegexBodyRewriterConfig()
