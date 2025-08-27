@@ -370,7 +370,7 @@ const initializeGraph = (config, orphans, addInformationsToNode, docs) => {
 
     let startingNode = createNode('start', {
         kind: 'start',
-        position: { x: 0, y: 0 }
+        position: config.position || { x: 0, y: 0 }
     }, addInformationsToNode, docs)
 
     startingNode = {
@@ -391,6 +391,7 @@ const initializeGraph = (config, orphans, addInformationsToNode, docs) => {
 
     returnedNode = {
         ...returnedNode,
+        position: config.returned.position || returnedNode.position,
         data: {
             ...returnedNode.data,
             targetHandles: [{ id: `input-returned-node` }],
@@ -483,30 +484,27 @@ export function WorkflowsDesigner(props) {
     }, [])
 
     const graphToJson = () => {
-        let start = {
+        const lastNode = nodes.find(node => node.id === 'returned-node')
+
+        const start = {
             kind: 'workflow',
             steps: [],
-            returned: nodes.find(node => node.id === 'returned-node').data.content?.returned,
-            id: 'start'
+            returned: lastNode.data.content?.returned,
+            id: 'start',
+            position: nodes.find(node => node.id === 'start').position
         }
 
         const startOutput = edges.find(edge => edge.source === 'start')
         if (edges.length > 0 && startOutput) {
             const firstNode = nodes.find(node => node.id === startOutput.target)
 
-            start = {
-                ...start,
-                position: firstNode.position
-            }
-
             const graph = nodeToJson(firstNode, start, false, [], true)
-
             return [
                 {
                     ...graph[0],
                     returned: {
                         ...graph[0].returned,
-                        position: nodes.find(node => node.id === 'returned-node')?.position
+                        position: lastNode.position
                     }
                 },
                 graph[1]
@@ -713,8 +711,6 @@ export function WorkflowsDesigner(props) {
             }
         }
 
-        // console.log('subflow before outputworkflow', subflow)
-
         let outputWorkflow = subflow ? {
             ...node.data.content,
             ...node.data.information,
@@ -724,19 +720,12 @@ export function WorkflowsDesigner(props) {
             position: node.position
         } : undefined
 
-        // console.log('subflow after outputworkflow', subflow,
-        //     node.data.content,
-        //     node.data.information
-        // )
-
         if (currentWorkflow && currentWorkflow.kind === 'workflow') {
             outputWorkflow = {
                 ...currentWorkflow,
                 steps: [...currentWorkflow.steps, outputWorkflow]
             }
         }
-
-        // console.log("after after", outputWorkflow)
 
         if (nextNode)
             return removeReturnedFromWorkflow(nodeToJson(nextNode, outputWorkflow, false, alreadySeen))
@@ -767,6 +756,8 @@ export function WorkflowsDesigner(props) {
 
     const handleSave = () => {
         const graph = graphToJson()
+
+        console.log(graph)
 
         const [config, seen] = graph
         const alreadySeen = seen.flatMap(f => f)
