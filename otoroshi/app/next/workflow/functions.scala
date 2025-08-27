@@ -924,6 +924,15 @@ class StoreGetFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Datastore get"
   override def documentationIcon: String                  = "fas fa-download"
   override def documentationDescription: String           = "This function gets keys from the store"
+  override def documentationFormSchema: Option[JsObject]  = Json.obj(
+    "key" -> Json.obj(
+      "type"  -> "string",
+      "label" -> "Key",
+      "props" -> Json.obj(
+        "description" -> "The key to get"
+      )
+    )
+  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",

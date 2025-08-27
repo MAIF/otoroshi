@@ -329,7 +329,7 @@ case class CallNode(json: JsObject) extends Node {
   )
 
   lazy val functionName: String = json.select("function").asString
-  lazy val args: JsObject       = json.select("args").asObject
+  lazy val args: JsObject       = json.selectAsOptObject("args").getOrElse(Json.obj())
 
   override def run(
     wfr: WorkflowRun,

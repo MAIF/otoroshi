@@ -1,5 +1,6 @@
 export const FilterNode = {
     kind: 'filter',
     type: 'group',
-    targets: ['predicate']
+    targets: ['predicate'],
+    targetsNames: ['Entry', 'FilterChain']
 }

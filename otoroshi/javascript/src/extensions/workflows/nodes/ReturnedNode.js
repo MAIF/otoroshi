@@ -12,6 +12,13 @@ export const ReturnedNode = {
     form_schema: {
         returned: {
             renderer: props => {
+
+                let value = props.value
+
+                if (typeof value === 'object') {
+                    delete value.position
+                }
+
                 return <Row title="Returned operator (optional)">
                     <NgCodeRenderer
                         ngOptions={{ spread: true }}
@@ -27,9 +34,11 @@ export const ReturnedNode = {
                                 height: '10rem',
                             },
                         }}
-                        value={props.value}
+                        value={value}
                         onChange={(e) => {
-                            props.onChange(JSON.parse(e));
+                            try {
+                                props.onChange(JSON.parse(e));
+                            } catch (_) { }
                         }}
                     />
                 </Row>

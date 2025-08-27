@@ -62,7 +62,7 @@ export function createNodeFromUI(node, docs) {
             ...data,
             information: {
                 ...information,
-                description: data.description
+                description: information.description || data.description
             },
             content: {
                 ...functionData
@@ -71,11 +71,8 @@ export function createNodeFromUI(node, docs) {
     }
 }
 
-function createNode(id, child, addInformationsToNode, docs, isOrphan) {
+function createNode(id, child, addInformationsToNode, docs) {
     const { information, content } = splitInformationAndContent(child)
-
-    if (isOrphan)
-        console.log(information, content, child)
 
     const template = NODES(docs)[(information.kind || information.name).toLowerCase()]
 
@@ -89,9 +86,6 @@ function createNode(id, child, addInformationsToNode, docs, isOrphan) {
             content
         }
     }
-
-    if (isOrphan)
-    console.log(node)
 
     const newNode = addInformationsToNode(node, docs)
 
@@ -166,24 +160,24 @@ const buildGraph = (docs, workflows, addInformationsToNode, targetId, handleId) 
             const child = buildGraph(docs, workflow.steps.slice().reverse(), addInformationsToNode, targetId, handleId)
             nodes = [...child.nodes]
 
-            if (workflow.predicate) {
-                const predicate = buildGraph(docs, [{
-                    kind: 'predicate',
-                }], addInformationsToNode, me, 'node')
-                const predicateNode = predicate.nodes[0]
+            // if (workflow.predicate) {
+            //     const predicate = buildGraph(docs, [{
+            //         kind: 'predicate',
+            //     }], addInformationsToNode, me, 'node')
+            //     const predicateNode = predicate.nodes[0]
 
-                nodes = [predicateNode, ...child.nodes]
+            //     nodes = [predicateNode, ...child.nodes]
 
-                edges.push({
-                    id: uuid(),
-                    source: predicateNode.id,
-                    sourceHandle: `output-${predicateNode.id}`,
-                    target: child.nodes[0].id,
-                    targetHandle: `input-${child.nodes[0].id}`,
-                    type: 'customEdge',
-                    animated: true,
-                })
-            }
+            //     edges.push({
+            //         id: uuid(),
+            //         source: predicateNode.id,
+            //         sourceHandle: `output-${predicateNode.id}`,
+            //         target: child.nodes[0].id,
+            //         targetHandle: `input-${child.nodes[0].id}`,
+            //         type: 'customEdge',
+            //         animated: true,
+            //     })
+            // }
 
             edges = edges.concat(child.edges)
         }
@@ -429,7 +423,7 @@ const initializeGraph = (config, orphans, addInformationsToNode, docs) => {
     const orphansNodes = orphans.nodes
         .filter(f => f.kind)
         .map(orphan => {
-            const node = createNode(orphan.id, orphan, addInformationsToNode, docs, true)
+            const node = createNode(orphan.id, orphan, addInformationsToNode, docs)
             return {
                 ...setupTargetsAndSources(node),
                 position: orphan.position
@@ -906,8 +900,8 @@ export function WorkflowsDesigner(props) {
     const onConnectEnd = useCallback(
         (event, connectionState) => {
             event.stopPropagation()
+            console.log('on connect end')
             if (!connectionState.isValid) {
-
                 setActiveNode({
                     ...connectionState.fromNode,
                     handle: connectionState.fromHandle,
@@ -920,23 +914,16 @@ export function WorkflowsDesigner(props) {
 
     const onConnect = useCallback(
         (connection) => {
+            console.log('on connect')
             const edge = {
                 ...connection, type: 'customEdge',
                 animated: true,
             }
-            setEdges(!edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges)
-            setNodes(nodes)
-            // onLayout({
-            //     direction: 'RIGHT',
-            //     nodes,
-            //     edges: !edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges
-            // })
-            //     .then(({ edges, nodes }) => {
-            //         setEdges(edges)
-            //         setNodes(nodes)
-            //     })
+            setEdges(eds => !eds.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, eds) : eds)
+
+            // console.log(edges, !edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges)
         },
-        [setEdges, nodes],
+        [],
     );
 
     const handleSelectNode = item => {

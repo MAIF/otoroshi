@@ -45,9 +45,9 @@ export const CallNode = {
         }
     },
     sources: ['output'],
-    nodeRenderer: props => {
-        return <div className='assign-node'>
-            <span >{props.data.content?.function}</span>
-        </div>
-    }
+    // nodeRenderer: props => {
+    //     return <div className='assign-node'>
+    //         <span >{props.data.content?.function}</span>
+    //     </div>
+    // }
 }

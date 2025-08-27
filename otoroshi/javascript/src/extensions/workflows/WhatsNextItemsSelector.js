@@ -65,10 +65,7 @@ export function Items({
             setSelectedCategory(undefined)
     }, [query])
 
-    const onlyOperator = ['if', 'parallel'].includes(node.data?.name) && node.handle?.id.startsWith('predicate-')
-
     const items = NODES_BY_CATEGORIES(docs)
-        .filter(category => onlyOperator ? category.id === 'transformations' : true)
         .map(category => {
             return {
                 ...category,

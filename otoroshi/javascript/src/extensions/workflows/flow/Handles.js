@@ -28,7 +28,7 @@ export default function Handles(props) {
 
     return <>
         <div className="handles targets">
-            {props.data.targetHandles.map((handle) => {
+            {props.data.targetHandles.map((handle, idx) => {
                 const selected = connections.find(connection => connection.targetHandle === handle.id)
 
                 const classNames = [
@@ -44,7 +44,7 @@ export default function Handles(props) {
                     className={classNames.join(' ')}
                 >
                     <div className={`handle-dot me-1 ${selected ? 'handle-dot--selected' : ''}`} />
-                    {handle.id.split('-')[0]}
+                    {props.data.targetsNames ? props.data.targetsNames[idx] : handle.id.split('-')[0]}
                 </Handle>
             })}
         </div>
