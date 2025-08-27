@@ -45,8 +45,8 @@ object ElasticTemplates                 {
     """{
       |  "template": "$$$INDEX$$$-*",
       |  "settings": {
-      |    "number_of_shards": $$$SHARDS$$$,
-      |    "number_of_replicas": $$$REPLICAS$$$,
+      |    "number_of_shards": "$$$SHARDS$$$",
+      |    "number_of_replicas": "$$$REPLICAS$$$",
       |    "index": {
       |    }
       |  },
@@ -123,8 +123,8 @@ object ElasticTemplates                 {
     """{
       |  "index_patterns" : ["$$$INDEX$$$-*"],
       |  "settings": {
-      |    "number_of_shards": $$$SHARDS$$$,
-      |    "number_of_replicas": $$$REPLICAS$$$,
+      |    "number_of_shards": "$$$SHARDS$$$",
+      |    "number_of_replicas": "$$$REPLICAS$$$",
       |    "index": {}
       |  },
       |  "mappings": {
@@ -212,8 +212,8 @@ object ElasticTemplates                 {
       |  "index_patterns" : ["$$$INDEX$$$-*"],
       |  "template": {
       |  "settings": {
-      |    "number_of_shards": $$$SHARDS$$$,
-      |    "number_of_replicas": $$$REPLICAS$$$,
+      |    "number_of_shards": "$$$SHARDS$$$",
+      |    "number_of_replicas": "$$$REPLICAS$$$",
       |    "index.mapping.ignore_malformed": true,
       |    "index": {}
       |  },
@@ -353,6 +353,35 @@ object ElasticTemplates                 {
       |  }
       |}
     """.stripMargin
+
+  val indexTemplate_v8_9 = Json.parse(indexTemplate_v7_8).asObject.deepMerge(Json.obj(
+    "template" -> Json.obj(
+      "settings" -> Json.obj(
+        "index" -> Json.obj(
+          "mapping" -> Json.obj(
+            "total_fields" -> Json.obj(
+              "limit" -> 5000
+            )
+          )
+        )
+      )
+    )
+  )).prettify
+
+  val indexTemplate_v8_15 = Json.parse(indexTemplate_v7_8).asObject.deepMerge(Json.obj(
+    "template" -> Json.obj(
+      "settings" -> Json.obj(
+        "index" -> Json.obj(
+          "mapping" -> Json.obj(
+            "total_fields" -> Json.obj(
+              "limit" -> 5000,
+              "ignore_dynamic_beyond_limit" -> true
+            )
+          )
+        )
+      )
+    )
+  )).prettify.debugPrintln
 }
 
 object ElasticWritesAnalytics {
@@ -375,11 +404,13 @@ object ElasticWritesAnalytics {
         config.version match {
           case Some(rawVersion) => {
             val version = Version(rawVersion) match {
-              case v if v.isAfterEq(Version("8.0.0")) => ElasticVersion.AboveEight(rawVersion)
-              case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(rawVersion)
-              case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(rawVersion)
-              case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(rawVersion)
-              case _                                  => ElasticVersion.AboveSeven(rawVersion)
+              case v if v.isAfterEq(Version("8.15.0")) => ElasticVersion.AboveEightFifteen(rawVersion)
+              case v if v.isAfterEq(Version("8.9.0"))  => ElasticVersion.AboveEightNine(rawVersion)
+              case v if v.isAfterEq(Version("8.0.0"))  => ElasticVersion.AboveEight(rawVersion)
+              case v if v.isBefore(Version("7.0.0"))   => ElasticVersion.UnderSeven(rawVersion)
+              case v if v.isAfterEq(Version("7.8.0"))  => ElasticVersion.AboveSevenEight(rawVersion)
+              case v if v.isAfterEq(Version("7.0.0"))  => ElasticVersion.AboveSeven(rawVersion)
+              case _                                   => ElasticVersion.AboveSeven(rawVersion)
             }
             (false, version)
           }
@@ -413,6 +444,16 @@ object ElasticVersion       {
     def aboveOrEqualsEight: Boolean = false
   }
   case class AboveEight(raw: String)      extends ElasticVersion {
+    def underSeven: Boolean         = false
+    def underEight: Boolean         = false
+    def aboveOrEqualsEight: Boolean = true
+  }
+  case class AboveEightNine(raw: String)      extends ElasticVersion {
+    def underSeven: Boolean         = false
+    def underEight: Boolean         = false
+    def aboveOrEqualsEight: Boolean = true
+  }
+  case class AboveEightFifteen(raw: String)      extends ElasticVersion {
     def underSeven: Boolean         = false
     def underEight: Boolean         = false
     def aboveOrEqualsEight: Boolean = true
@@ -471,11 +512,13 @@ object ElasticUtils {
     config.version match {
       case Some(version) => {
         (Version(version) match {
-          case v if v.isAfterEq(Version("8.0.0")) => ElasticVersion.AboveEight(version)
-          case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(version)
-          case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(version)
-          case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(version)
-          case _                                  => ElasticVersion.AboveSeven(version)
+          case v if v.isAfterEq(Version("8.15.0")) => ElasticVersion.AboveEightFifteen(version)
+          case v if v.isAfterEq(Version("8.9.0"))  => ElasticVersion.AboveEightNine(version)
+          case v if v.isAfterEq(Version("8.0.0"))  => ElasticVersion.AboveEight(version)
+          case v if v.isBefore(Version("7.0.0"))   => ElasticVersion.UnderSeven(version)
+          case v if v.isAfterEq(Version("7.8.0"))  => ElasticVersion.AboveSevenEight(version)
+          case v if v.isAfterEq(Version("7.0.0"))  => ElasticVersion.AboveSeven(version)
+          case _                                   => ElasticVersion.AboveSeven(version)
         }).future
       }
       case None          => {
@@ -485,11 +528,13 @@ object ElasticUtils {
             case Left(err) => ElasticVersion.default
             case Right(_v) => {
               Version(_v) match {
-                case v if v.isAfterEq(Version("8.0.0")) => ElasticVersion.AboveEight(_v)
-                case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(_v)
-                case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(_v)
-                case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(_v)
-                case _                                  => ElasticVersion.AboveSeven(_v)
+                case v if v.isAfterEq(Version("8.15.0")) => ElasticVersion.AboveEightFifteen(_v)
+                case v if v.isAfterEq(Version("8.9.0"))  => ElasticVersion.AboveEightNine(_v)
+                case v if v.isAfterEq(Version("8.0.0"))  => ElasticVersion.AboveEight(_v)
+                case v if v.isBefore(Version("7.0.0"))   => ElasticVersion.UnderSeven(_v)
+                case v if v.isAfterEq(Version("7.8.0"))  => ElasticVersion.AboveSevenEight(_v)
+                case v if v.isAfterEq(Version("7.0.0"))  => ElasticVersion.AboveSeven(_v)
+                case _                                   => ElasticVersion.AboveSeven(_v)
               }
             }
           }
@@ -536,20 +581,28 @@ object ElasticUtils {
           (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
         case ElasticVersion.AboveEight(_)      =>
           (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
+        case ElasticVersion.AboveEightNine(_)      =>
+          (ElasticTemplates.indexTemplate_v8_9, "/_index_template/otoroshi-tpl")
+        case ElasticVersion.AboveEightFifteen(_)      =>
+          (ElasticTemplates.indexTemplate_v8_15, "/_index_template/otoroshi-tpl")
       }
       if (logger.isDebugEnabled) logger.debug(s"$version, $indexTemplatePath")
       val tpl: JsValue                = if (config.indexSettings.clientSide) {
         Json.parse(
           strTpl
             .replace("$$$INDEX$$$", index)
+            .replace(""""$$$SHARDS$$$"""", numberOfShards)
             .replace("$$$SHARDS$$$", numberOfShards)
+            .replace(""""$$$REPLICAS$$$"""", numberOfReplicas)
             .replace("$$$REPLICAS$$$", numberOfReplicas)
         )
       } else {
         Json.parse(
           strTpl
             .replace("$$$INDEX$$$-*", index)
+            .replace(""""$$$SHARDS$$$"""", numberOfShards)
             .replace("$$$SHARDS$$$", numberOfShards)
+            .replace(""""$$$REPLICAS$$$"""", numberOfReplicas)
             .replace("$$$REPLICAS$$$", numberOfReplicas)
         )
       }
