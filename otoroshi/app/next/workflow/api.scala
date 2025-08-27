@@ -303,7 +303,12 @@ trait Node extends NodeLike {
             wfr.log(s"ending '${id}'", this)
             result.foreach(name => wfr.memory.set(name, res))
             returned
-              .map(v => WorkflowOperator.processOperators(v, wfr, env))
+              .map {
+                case obj@JsObject(_) =>
+                  val returnedObject = obj - "position"
+                  WorkflowOperator.processOperators(returnedObject, wfr, env)
+                case value => WorkflowOperator.processOperators(value, wfr, env)
+              }
               .map(v => Right(v))
               .getOrElse(Right(res)) // TODO: el like
           }

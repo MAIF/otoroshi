@@ -37,13 +37,14 @@ export const ReturnedNode = {
         }
     },
     nodeRenderer: props => {
+        const { position, ...rest } = props.data?.content?.returned
+
         return <div style={{
             position: 'absolute',
             top: 30,
             left: 24,
             right: 0,
             bottom: 0,
-            // borderBottomLeftRadius: '.75rem',
             borderBottomRightRadius: '.75rem',
             overflow: 'hidden'
         }}>
@@ -61,14 +62,7 @@ export const ReturnedNode = {
                         mode: 'json',
                     },
                 }}
-                value={props.data?.content?.returned}
-                onChange={(e) => {
-                    props.data.functions.handleDataChange(props.id, {
-                        content: {
-                            returned: JSON.parse(e)
-                        }
-                    })
-                }}
+                value={rest}
             />
         </div>
     }

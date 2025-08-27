@@ -48,10 +48,9 @@ export function createNodeFromUI(node, docs) {
     const data = NODES(docs)[(information.kind || information.name).toLowerCase()]
 
     let functionData = {}
-    // pre-fill function
-    if (data.category === 'functions') {
+    if (node.category === 'functions') {
         functionData = {
-            function: information.name
+            function: node.name
         }
     }
 
@@ -66,15 +65,17 @@ export function createNodeFromUI(node, docs) {
                 description: data.description
             },
             content: {
-                // ...(data.example || {}),
                 ...functionData
             }
         }
     }
 }
 
-function createNode(id, child, addInformationsToNode, docs) {
+function createNode(id, child, addInformationsToNode, docs, isOrphan) {
     const { information, content } = splitInformationAndContent(child)
+
+    if (isOrphan)
+        console.log(information, content, child)
 
     const template = NODES(docs)[(information.kind || information.name).toLowerCase()]
 
@@ -88,6 +89,9 @@ function createNode(id, child, addInformationsToNode, docs) {
             content
         }
     }
+
+    if (isOrphan)
+    console.log(node)
 
     const newNode = addInformationsToNode(node, docs)
 
@@ -425,7 +429,7 @@ const initializeGraph = (config, orphans, addInformationsToNode, docs) => {
     const orphansNodes = orphans.nodes
         .filter(f => f.kind)
         .map(orphan => {
-            const node = createNode(orphan.id, orphan, addInformationsToNode, docs)
+            const node = createNode(orphan.id, orphan, addInformationsToNode, docs, true)
             return {
                 ...setupTargetsAndSources(node),
                 position: orphan.position
@@ -470,28 +474,33 @@ export function WorkflowsDesigner(props) {
     useEffect(() => {
         const initialState = initializeGraph(workflow?.config, workflow.orphans, addInformationsToNode, props.docs)
 
-        setNodes(initialState.nodes)
-        setEdges(initialState.edges)
-        // onLayout({
-        //     direction: 'RIGHT',
-        //     nodes: initialState.nodes,
-        //     edges: initialState.edges
-        // })
-        //     .then(({ nodes, edges }) => {
-        //         setNodes(nodes)
-        //         setEdges(edges)
-        //     })
+        if (initialState.nodes.every(node => node.position.x === 0 && node.position.y === 0)) {
+            onLayout({
+                direction: 'RIGHT',
+                nodes: initialState.nodes,
+                edges: initialState.edges
+            })
+                .then(({ nodes, edges }) => {
+                    setNodes(nodes)
+                    setEdges(edges)
+                })
+        } else {
+            setNodes(initialState.nodes)
+            setEdges(initialState.edges)
+        }
     }, [])
 
     const graphToJson = () => {
         const lastNode = nodes.find(node => node.id === 'returned-node')
+
+        const startPosition = nodes.find(node => node.id === 'start').position
 
         const start = {
             kind: 'workflow',
             steps: [],
             returned: lastNode.data.content?.returned,
             id: 'start',
-            position: nodes.find(node => node.id === 'start').position
+            position: startPosition
         }
 
         const startOutput = edges.find(edge => edge.source === 'start')
@@ -501,7 +510,10 @@ export function WorkflowsDesigner(props) {
             const graph = nodeToJson(firstNode, start, false, [], true)
             return [
                 {
-                    ...graph[0],
+                    ...{
+                        ...graph[0],
+                        position: startPosition
+                    },
                     returned: {
                         ...graph[0].returned,
                         position: lastNode.position
@@ -781,8 +793,8 @@ export function WorkflowsDesigner(props) {
                     id: r.id,
                     position: r.position,
                     kind: r.data.kind,
-                    content: r.data.content,
-                    information: r.data.information,
+                    ...r.data.content,
+                    ...r.data.information,
                 })),
                 edges: orphansEdges
             }
@@ -930,7 +942,9 @@ export function WorkflowsDesigner(props) {
     const handleSelectNode = item => {
         let targetId = uuid()
 
-        let position = activeNode.fromOrigin ? activeNode.fromOrigin : { x: 0, y: 0 }
+        const startPosition = nodes.find(node => node.id === 'start').position
+
+        let position = activeNode.fromOrigin ? activeNode.fromOrigin : { x: startPosition.x, y: startPosition.y - 150 }
         if (activeNode.event) {
             const { clientX, clientY } = 'changedTouches' in activeNode.event ? activeNode.event.changedTouches[0] : activeNode.event
             position = { x: clientX, y: clientY }

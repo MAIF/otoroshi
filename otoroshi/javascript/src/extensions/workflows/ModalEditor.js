@@ -24,7 +24,6 @@ export function ModalEditor({ node, docs }) {
     const isAFunction = data.content.function
     const functionData = isAFunction ? data.functions.docs.functions.find(f => f.name === isAFunction) : undefined
 
-
     let schema = {
         description: {
             type: 'string',
@@ -60,6 +59,36 @@ export function ModalEditor({ node, docs }) {
         }
     }
 
+    const hasArgsSchema = Object.keys(functionData?.form_schema || {}).length > 0
+    const argsFlow = ['args', 'result']
+
+    const defaultFlow = [
+        ...(data.flow || Object.keys(data.schema || {})),
+        'result'
+    ]
+        .filter(field => field.length > 0)
+
+    const getConfigurationGroup = () => {
+        const configuration = {
+            type: 'group',
+            name: 'Configuration',
+            collapsable: false,
+            fields: []
+        }
+
+        if (isAFunction) {
+            if (hasArgsSchema)
+                return { ...configuration, fields: argsFlow }
+            else
+                return { ...configuration, fields: ['result'] }
+        } else {
+            return {
+                ...configuration,
+                fields: defaultFlow
+            }
+        }
+    }
+
     let flow = [
         {
             type: 'group',
@@ -70,27 +99,16 @@ export function ModalEditor({ node, docs }) {
                 'description'
             ].filter(field => field.length > 0),
         },
-        {
-            type: 'group',
-            name: 'Configuration',
-            collapsable: false,
-            fields: isAFunction ? ['args', 'result'] : [
-                ...(data.flow || Object.keys(data.schema || {})),
-                'result'
-            ]
-                .filter(field => field.length > 0)
-        }
+        getConfigurationGroup()
     ]
 
     const value = setEnabled({
         ...node.data.information,
-        ...node.data.content
-    })
-
-    const [state, setState] = useState({
-        ...value,
+        ...node.data.content,
         coreFunctions: docs.functions
     })
+
+    const [state, setState] = useState(value)
 
     const [jsonView, setJsonView] = useState(false)
 

@@ -10,11 +10,10 @@ export const CallNode = {
             renderer: props => {
                 return <Row title="Select a function to execute">
                     <NgSelectRenderer
-                        creatable={true}
                         options={props.rootValue?.coreFunctions.map(func => ({ label: func.display_name, value: func.name }))}
                         ngOptions={{ spread: true }}
                         value={props.value}
-                        onChange={(k) => props.onChange(k.value)}
+                        onChange={props.onChange}
                     />
                 </Row>
             }

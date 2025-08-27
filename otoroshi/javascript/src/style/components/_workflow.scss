@@ -143,6 +143,9 @@
     border-top-left-radius: .5rem;
     border-top-right-radius: .5rem;
     font-size: .75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   // .source::before {
@@ -476,7 +479,7 @@
   .cursor-pointer {
     cursor: pointer;
   }
-  
+
   .node-description {
     position: fixed;
     top: 100%;
