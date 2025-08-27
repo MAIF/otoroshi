@@ -1,7 +1,5 @@
 package otoroshi.next.plugins
 
-package otoroshi_plugins.regex
-
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -16,16 +14,37 @@ import java.util.regex.{Matcher, Pattern}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class RegexRule(
+case class RegexReplacementRule(
                       pattern: String,
                       replacement: String,
                       flags: Option[String] = None
-                    )
-object RegexRule { implicit val format: Format[RegexRule] = Json.format[RegexRule] }
+                    ) {
+  def json: JsValue = RegexReplacementRule.format.writes(this)
+}
+object RegexReplacementRule {
+  val format: Format[RegexReplacementRule] = new Format[RegexReplacementRule] {
+    override def reads(json: JsValue): JsResult[RegexReplacementRule] = Try {
+      RegexReplacementRule(
+        pattern = json.select("pattern").asString,
+        replacement = json.select("replacement").asString,
+        flags = json.select("flags").asOptString,
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+
+    override def writes(o: RegexReplacementRule): JsValue = Json.obj(
+      "pattern" -> o.pattern,
+      "replacement" -> o.replacement,
+      "flags" -> o.flags
+    )
+  }
+}
 
 case class RegexBodyRewriterConfig(
                                     contentTypes: Seq[String] = Seq("text/html"),
-                                    rules: Seq[RegexRule] = Seq.empty,
+                                    rules: Seq[RegexReplacementRule] = Seq.empty,
                                     autoHrefPrefix: Option[String] = None,
                                     maxBodySize: Option[Long] = None,
                                     charsetFallback: Option[String] = Some("UTF-8")
@@ -87,7 +106,7 @@ object RegexBodyRewriterConfig {
     override def reads(json: JsValue): JsResult[RegexBodyRewriterConfig] = Try {
       RegexBodyRewriterConfig(
         contentTypes = json.select("content_types").asOpt[Seq[String]].getOrElse(Seq("text/html")),
-        rules = json.select("rules").asOpt[Seq[RegexRule]].getOrElse(Seq.empty),
+        rules = json.select("rules").asOpt[Seq[JsObject]].map(seq => seq.flatMap(r => RegexReplacementRule.format.reads(r).asOpt)).getOrElse(Seq.empty),
         autoHrefPrefix = json.select("auto_href_prefix").asOpt[String],
         maxBodySize = json.select("max_body_size").asOpt[Long],
         charsetFallback = json.select("charset_fallback").asOpt[String].orElse(Some("UTF-8"))
@@ -98,7 +117,7 @@ object RegexBodyRewriterConfig {
     }
     override def writes(o: RegexBodyRewriterConfig): JsValue = Json.obj(
       "content_types" -> o.contentTypes,
-      "rules" -> o.rules,
+      "rules" -> JsArray(o.rules.map(_.json)),
       "auto_href_prefix" -> o.autoHrefPrefix,
       "max_body_size" -> o.maxBodySize,
       "charset_fallback" -> o.charsetFallback
@@ -200,7 +219,7 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
     fromHeader.getOrElse(Try(Charset.forName(fallback)).getOrElse(StandardCharsets.UTF_8))
   }
 
-  private def applyRegexRules(input: String, rules: Seq[RegexRule]): String = {
+  private def applyRegexReplacementRules(input: String, rules: Seq[RegexReplacementRule]): String = {
     rules.foldLeft(input) { case (acc, rule) =>
       val p: Pattern = Pattern.compile(rule.pattern, flagsBits(rule.flags))
       val m: Matcher = p.matcher(acc)
@@ -257,7 +276,7 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
       limited.runFold(ByteString.empty)(_ ++ _).map { bs =>
 
         val in     = bs.decodeString(charset)
-        val afterR = applyRegexRules(in, conf.rules)
+        val afterR = applyRegexReplacementRules(in, conf.rules)
         val out    = conf.autoHrefPrefix.filter(_.nonEmpty).map(p => autoPrefixHref(afterR, p)).getOrElse(afterR)
         val bytes  = ByteString(out, charset)
 
@@ -352,7 +371,7 @@ class RegexRequestBodyRewriter extends NgRequestTransformer {
     fromHeader.getOrElse(Try(Charset.forName(fallback)).getOrElse(StandardCharsets.UTF_8))
   }
 
-  private def applyRegexRules(input: String, rules: Seq[RegexRule]): String = {
+  private def applyRegexReplacementRules(input: String, rules: Seq[RegexReplacementRule]): String = {
     rules.foldLeft(input) { case (acc, rule) =>
       val p: Pattern = Pattern.compile(rule.pattern, flagsBits(rule.flags))
       val m: Matcher = p.matcher(acc)
@@ -407,7 +426,7 @@ class RegexRequestBodyRewriter extends NgRequestTransformer {
       limited.runFold(ByteString.empty)(_ ++ _).map { bs =>
 
         val in     = bs.decodeString(charset)
-        val afterR = applyRegexRules(in, conf.rules)
+        val afterR = applyRegexReplacementRules(in, conf.rules)
         val out    = conf.autoHrefPrefix.filter(_.nonEmpty).map(p => autoPrefixHref(afterR, p)).getOrElse(afterR)
         val bytes  = ByteString(out, charset)
 
