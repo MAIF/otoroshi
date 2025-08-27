@@ -231,6 +231,8 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = false
   override def transformsResponse: Boolean       = true
+  override def transformsError: Boolean          = true
+
   override def noJsForm: Boolean                 = true
   override def defaultConfigObject: Option[NgPluginConfig] = Fail2BanConfig.default.some
   override def configFlow: Seq[String]            = Fail2BanConfig.configFlow
@@ -238,15 +240,14 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
 
   override def name: String = "fail2ban"
   override def description: Option[String] =
-    Some("Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like).")
+    Some("Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like). Client is identified by the 'identifier' that can use the Otoroshi expression language to extract informations like user id, apikey, ip address, etc.")
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
-    val ip  = conf.identifier.evaluateEl(ctx.attrs) // ctx.request.theIpAddress
+    val ip  = conf.identifier.evaluateEl(ctx.attrs)
     val now = System.currentTimeMillis()
-
     if (conf.isIgnored(ip)) {
       NgAccess.NgAllowed.vfuture
     } else if (Fail2BanState.isBanned(ip, now)) {
@@ -266,7 +267,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
-    val ip  = conf.identifier.evaluateEl(ctx.attrs) // ctx.request.theIpAddress
+    val ip  = conf.identifier.evaluateEl(ctx.attrs)
     if (conf.isIgnored(ip)) {
       Right(ctx.otoroshiResponse).vfuture
     } else {
@@ -284,6 +285,30 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
         }
       }
       Right(ctx.otoroshiResponse).vfuture
+    }
+  }
+
+  override def transformError(ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+    val conf = ctx
+      .cachedConfig(internalName)(Fail2BanConfig.format)
+      .getOrElse(Fail2BanConfig.default)
+    val ip  = conf.identifier.evaluateEl(ctx.attrs)
+    if (conf.isIgnored(ip)) {
+      ctx.otoroshiResponse.vfuture
+    } else {
+      val pathAndQuery = ctx.request.thePath
+      val status       = ctx.otoroshiResponse.status
+      if (conf.isUrlInScope(pathAndQuery) && conf.isFailedStatus(status)) {
+        val now     = System.currentTimeMillis()
+        val counter = Fail2BanState.counterFor(ip)
+        val n       = counter.increment(now, conf.detectTimeMs.toMillis)
+
+        if (n >= conf.maxRetry) {
+          Fail2BanState.ban(ip, (now + conf.banTimeMs.toMillis).millis)
+          counter.reset()
+        }
+      }
+      ctx.otoroshiResponse.vfuture
     }
   }
 }
