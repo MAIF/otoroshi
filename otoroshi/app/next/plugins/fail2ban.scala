@@ -50,7 +50,8 @@ case class Fail2BanConfig(
    maxRetry:       Int = 4,
    urlRegex:       Seq[RegexRule] = Seq.empty,
    statusMatchers: Seq[StatusCodeRange] = Fail2BanConfig.defaultRanges, // inclusive ranges
-   ignoredCidrs:   Seq[String] = Seq.empty      // exact IP or CIDR
+   ignored:   Seq[String] = Seq.empty,
+   blocked:   Seq[String] = Seq.empty,
 ) extends NgPluginConfig {
   def isUrlInScope(pathAndQuery: String): Boolean = {
     if (urlRegex.isEmpty) true
@@ -66,12 +67,26 @@ case class Fail2BanConfig(
     statusMatchers.exists { case StatusCodeRange(min, max) => status >= min && status <= max }
 
   def isIgnored(remoteAddress: String): Boolean = {
-    ignoredCidrs.exists { ip =>
-      if (ip.contains("/")) {
-        IpFiltering.cidr(ip).contains(remoteAddress)
-      } else {
-        otoroshi.utils.RegexPool(ip).matches(remoteAddress)
+    ignored.exists {
+      case ip if ip.startsWith("Ip(") && ip.endsWith(")") => {
+        otoroshi.utils.RegexPool(ip.substring(3).init).matches(remoteAddress)
       }
+      case cidr if cidr.startsWith("Cidr(") && cidr.endsWith(")") => {
+        IpFiltering.cidr(cidr).contains(remoteAddress)
+      }
+      case identifier => otoroshi.utils.RegexPool(identifier).matches(remoteAddress)
+    }
+  }
+
+  def isBlocked(remoteAddress: String): Boolean = {
+    blocked.exists {
+      case ip if ip.startsWith("Ip(") && ip.endsWith(")") => {
+        otoroshi.utils.RegexPool(ip.substring(3).init).matches(remoteAddress)
+      }
+      case cidr if cidr.startsWith("Cidr(") && cidr.endsWith(")") => {
+        IpFiltering.cidr(cidr).contains(remoteAddress)
+      }
+      case identifier => otoroshi.utils.RegexPool(identifier).matches(remoteAddress)
     }
   }
 
@@ -89,7 +104,8 @@ object Fail2BanConfig {
     "max_retry",
     "url_regex",
     "status_codes",
-    "ignored_ips",
+    "ignored",
+    "blocked",
   )
 
   def configSchema: JsObject = Json.obj(
@@ -110,7 +126,8 @@ object Fail2BanConfig {
       "flow" -> Json.arr("pattern", "mode"),
     ),
     "status_codes"   -> Json.obj("type" -> "array", "array" -> true, "format" -> JsNull, "label" -> "Status codes", "default" -> Json.arr("400", "401", "403-499", "500-599")),
-    "ignored_ips"    -> Json.obj("type" -> "array", "array" -> true, "format" -> JsNull, "label" -> "Ignored IP addresses", "default" -> Json.arr())
+    "ignored"    -> Json.obj("type" -> "array", "array" -> true, "format" -> JsNull, "label" -> "Ignored identifiers", "default" -> Json.arr()),
+    "blocked"    -> Json.obj("type" -> "array", "array" -> true, "format" -> JsNull, "label" -> "Blocked identifiers", "default" -> Json.arr()),
   )
 
   def default: Fail2BanConfig = Fail2BanConfig()
@@ -125,7 +142,8 @@ object Fail2BanConfig {
       val regexes  = (js \ "url_regex").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { obj => RegexRule(obj) }
       val scodes   = (js \ "status_codes").asOpt[Seq[String]].getOrElse(Seq("401", "403", "429", "500-599"))
       val ranges   = parseStatusRanges(scodes).getOrElse(defaultRanges)
-      val ignored  = (js \ "ignored_ips").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val ignored  = (js \ "ignored").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val blocked  = (js \ "blocked").asOpt[Seq[String]].getOrElse(Seq.empty)
       Fail2BanConfig(
         identifier     = identifier,
         detectTimeMs   = detectMs,
@@ -133,7 +151,8 @@ object Fail2BanConfig {
         maxRetry       = maxRetry,
         urlRegex       = regexes,
         statusMatchers = ranges,
-        ignoredCidrs   = ignored
+        ignored        = ignored,
+        blocked        = blocked,
       )
     } match {
       case Success(config) => JsSuccess(config)
@@ -147,7 +166,8 @@ object Fail2BanConfig {
       "max_retry" -> o.maxRetry,
       "url_regex" -> JsArray(o.urlRegex.map(_.json)),
       "status_codes" -> JsArray(o.statusMatchers.map(_.str.json)),
-      "ignored_ips" -> o.ignoredCidrs,
+      "ignored" -> o.ignored,
+      "blocked" -> o.blocked,
     )
   }
 
@@ -250,6 +270,11 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
     val now = System.currentTimeMillis()
     if (conf.isIgnored(ip)) {
       NgAccess.NgAllowed.vfuture
+    } else if (conf.isBlocked(ip)) {
+      NgAccess.NgDenied(Results.Forbidden(Json.obj(
+        "error"   -> "blocked",
+        "message" -> s"You cant access this resource.",
+      ))).vfuture
     } else if (Fail2BanState.isBanned(ip, now)) {
       val remain = Fail2BanState.remainingBanSeconds(ip, now)
       val body   = Json.obj(
@@ -269,6 +294,8 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
       .getOrElse(Fail2BanConfig.default)
     val ip  = conf.identifier.evaluateEl(ctx.attrs)
     if (conf.isIgnored(ip)) {
+      Right(ctx.otoroshiResponse).vfuture
+    } else if (conf.isBlocked(ip)) {
       Right(ctx.otoroshiResponse).vfuture
     } else {
       val pathAndQuery = ctx.request.thePath
@@ -294,6 +321,8 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
       .getOrElse(Fail2BanConfig.default)
     val ip  = conf.identifier.evaluateEl(ctx.attrs)
     if (conf.isIgnored(ip)) {
+      ctx.otoroshiResponse.vfuture
+    } else if (conf.isBlocked(ip)) {
       ctx.otoroshiResponse.vfuture
     } else {
       val pathAndQuery = ctx.request.thePath
