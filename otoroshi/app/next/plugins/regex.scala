@@ -160,6 +160,7 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
       |
       |1) Prefix all relative hrefs with /proxy and rewrite a domain to another
       |
+      |```json
       |{
       |  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
       |  "enabled": true,
@@ -172,10 +173,11 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
       |    "max_body_size": 1048576
       |  }
       |}
-      |
+      |```
       |
       |2) Rewrite paths while keeping captured groups
       |
+      |```json
       |{
       |  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
       |  "enabled": true,
@@ -186,7 +188,7 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
       |    ]
       |  }
       |}
-      |
+      |```
       |
       |Note: replacement supports backrefs $1, $2, ...
       |Remember to properly escape backslashes in JSON.

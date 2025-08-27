@@ -1,8 +1,82 @@
 # Built-in plugins
 
-Otoroshi next provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration.
+Otoroshi next provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration
 
 <div id="plugins-container"></div>
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AdditionalCookieIn }
+
+## Additional cookies in
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.AdditionalCookieIn`
+
+### Description
+
+This plugin adds cookies in the otoroshi request
+
+
+
+### Default configuration
+
+```json
+{
+  "name" : "cookie",
+  "value" : "value"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AdditionalCookieOut }
+
+## Additional cookies out
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.AdditionalCookieOut`
+
+### Description
+
+This plugin adds cookies in the otoroshi response
+
+
+
+### Default configuration
+
+```json
+{
+  "name" : "cookie",
+  "value" : "value",
+  "domain" : null,
+  "path" : null,
+  "maxAge" : null,
+  "secure" : false,
+  "httpOnly" : false,
+  "sameSite" : null
+}
+```
+
+
+
+
+
+@@@
+
 
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AdditionalHeadersIn }
 
@@ -166,7 +240,9 @@ This plugin expects to find an apikey to allow the request to pass
     "basic" : {
       "enabled" : true,
       "header_name" : null,
-      "query_name" : null
+      "query_name" : null,
+      "cookie_name" : null,
+      "path_name" : null
     },
     "custom_headers" : {
       "enabled" : true,
@@ -176,7 +252,9 @@ This plugin expects to find an apikey to allow the request to pass
     "client_id" : {
       "enabled" : true,
       "header_name" : null,
-      "query_name" : null
+      "query_name" : null,
+      "cookie_name" : null,
+      "path_name" : null
     },
     "jwt" : {
       "enabled" : true,
@@ -186,7 +264,15 @@ This plugin expects to find an apikey to allow the request to pass
       "max_jwt_lifespan_sec" : null,
       "header_name" : null,
       "query_name" : null,
-      "cookie_name" : null
+      "cookie_name" : null,
+      "path_name" : null
+    },
+    "oto_bearer" : {
+      "enabled" : true,
+      "header_name" : null,
+      "query_name" : null,
+      "cookie_name" : null,
+      "path_name" : null
     }
   },
   "routing" : {
@@ -224,6 +310,151 @@ This plugin expects to find an apikey to allow the request to pass
 Increments quotas for the currents apikey. Useful when 'legacy checks' are disabled on a service/globally or when apikey are extracted in a custom fashion.
 
 
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Auth0PasswordlessEndFlowEndpoint }
+
+## Auth0 Passwordless end flow endpoint
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.Auth0PasswordlessEndFlowEndpoint`
+
+### Description
+
+This plugin provide an endpoint to end a passwordless flow
+
+
+
+### Default configuration
+
+```json
+{
+  "ref" : "",
+  "connection" : "email",
+  "send" : "code",
+  "audience" : null
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Auth0PasswordlessFlow }
+
+## Auth0 Passwordless start/end flow
+
+### Defined on steps
+
+  - `ValidateAccess`
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.Auth0PasswordlessFlow`
+
+### Description
+
+This plugin provide endpoints to start and end a passwordless flow
+
+
+
+### Default configuration
+
+```json
+{
+  "ref" : "",
+  "connection" : "email",
+  "send" : "code",
+  "audience" : null
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Auth0PasswordlessStartEndFlowEndpoints }
+
+## Auth0 Passwordless start/end flow endpoints
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.Auth0PasswordlessStartEndFlowEndpoints`
+
+### Description
+
+This plugin provide endpoints to start and end a passwordless flow
+
+
+
+### Default configuration
+
+```json
+{
+  "ref" : "",
+  "connection" : "email",
+  "send" : "code",
+  "audience" : null
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Auth0PasswordlessStartFlowEndpoint }
+
+## Auth0 Passwordless start flow endpoint
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.Auth0PasswordlessStartFlowEndpoint`
+
+### Description
+
+This plugin provide an endpoint to start a passwordless flow
+
+
+
+### Default configuration
+
+```json
+{
+  "ref" : "",
+  "connection" : "email",
+  "send" : "code",
+  "audience" : null
+}
+```
 
 
 
@@ -292,6 +523,77 @@ This plugin can be used to call api that are authenticated using basic auth.
   "passaword" : null,
   "headerName" : "Authorization",
   "headerValueFormat" : "Basic %s"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.BasicAuthWithAuthModule }
+
+## Basic auth. from auth. module
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.BasicAuthWithAuthModule`
+
+### Description
+
+This plugin enforces basic auth. authentication with users coming from LDAP and In-memory auth. modules
+
+
+
+### Default configuration
+
+```json
+{
+  "ref" : "",
+  "add_authenticate_header" : true
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.BlockHttpTraffic }
+
+## Block non HTTPS traffic
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.BlockHttpTraffic`
+
+### Description
+
+This plugin blocks any incoming non HTTPS traffic and returns a nice error message because nowadays HTTPS should be deployed everywhere.
+Also, this plugin will revoke any apikey or user session passed in clear text if there is one.
+In that case, make sure this plugins comes after Apikey and Authentication plugins.
+
+
+
+### Default configuration
+
+```json
+{
+  "revoke_apikeys" : true,
+  "revoke_user_session" : false,
+  "message" : null
 }
 ```
 
@@ -401,6 +703,31 @@ This plugin can split a portion of the traffic to canary backends
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ConsumerEndpoint }
+
+## Consumer endpoint
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ConsumerEndpoint`
+
+### Description
+
+This plugin returns the current consumer profile
+
+
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ContextValidation }
 
 ## Context validator
@@ -474,9 +801,9 @@ The JSONPath will be applied on a document that will look like
     "otoroshi.core.RequestWebsocket" : false,
     "otoroshi.core.RequestCounterOut" : 0,
     "otoroshi.core.RemainingQuotas" : {
-      "authorizedCallsPerSec" : 10000000,
-      "currentCallsPerSec" : 0,
-      "remainingCallsPerSec" : 10000000,
+      "authorizedCallsPerWindow" : 10000000,
+      "throttlingCallsPerWindow" : 0,
+      "remainingCallsPerWindow" : 10000000,
       "authorizedCallsPerDay" : 10000000,
       "currentCallsPerDay" : 2,
       "remainingCallsPerDay" : 9999998,
@@ -529,6 +856,39 @@ for instance to check if the current apikey has a metadata name `foo` with a val
 ```json
 {
   "validators" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.CookiesValidation }
+
+## Cookies validation
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.CookiesValidation`
+
+### Description
+
+This plugin validates cookies content
+
+
+
+### Default configuration
+
+```json
+{
+  "cookies" : { }
 }
 ```
 
@@ -596,6 +956,39 @@ This plugin applies CORS rules
 This plugin forbids HTTP/1.0 requests
 
 
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.EchoBackend }
+
+## Request Echo
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.EchoBackend`
+
+### Description
+
+This plugin returns request content as json
+
+
+
+### Default configuration
+
+```json
+{
+  "limit" : 524288
+}
+```
 
 
 
@@ -732,6 +1125,46 @@ This plugin can be used to used a target that come from an external Eureka serve
 {
   "eureka_server" : null,
   "eureka_app" : null
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Fail2BanPlugin }
+
+## fail2ban
+
+### Defined on steps
+
+  - `ValidateAccess`
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.Fail2BanPlugin`
+
+### Description
+
+Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like).
+
+
+
+### Default configuration
+
+```json
+{
+  "identifier" : "${req.ip}",
+  "detect_time" : 600000,
+  "ban_time" : 10800000,
+  "max_retry" : 4,
+  "url_regex" : [ ],
+  "status_codes" : [ "400", "401", "403-499", "500-599" ],
+  "ignored_ips" : [ ]
 }
 ```
 
@@ -1353,6 +1786,40 @@ This plugin let you transform JSON response using [JQ filters](https://stedolan.
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JqWebsocketMessageTransformer }
+
+## Websocket JQ transformer
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.JqWebsocketMessageTransformer`
+
+### Description
+
+Transform messages JSON content using JQ filters
+
+
+
+### Default configuration
+
+```json
+{
+  "request_filter" : ".",
+  "response_filter" : "."
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JsonToXmlRequest }
 
 ## request body json-to-xml
@@ -1409,6 +1876,100 @@ This plugin transform response body from json to xml and may apply a jq transfor
 ```json
 {
   "filter" : null
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JweExtractor }
+
+## JWE extractor
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.JweExtractor`
+
+### Description
+
+This plugin validates and extracts the payload of JWE
+
+
+
+### Default configuration
+
+```json
+{
+  "keyManagementAlgorithm" : "RSA_OAEP_256",
+  "contentEncryptionAlgorithm" : "A128CBC_HS256",
+  "certId" : null,
+  "source" : {
+    "type" : "InHeader",
+    "name" : "X-JWT-Token",
+    "remove" : ""
+  },
+  "forward_location" : {
+    "type" : "InHeader",
+    "name" : "X-JWT-Token",
+    "remove" : ""
+  },
+  "strict" : false,
+  "metadata" : { }
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JweSigner }
+
+## JWE signer
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.JweSigner`
+
+### Description
+
+This plugin can only generate token
+
+
+
+### Default configuration
+
+```json
+{
+  "keyManagementAlgorithm" : "RSA_OAEP_256",
+  "contentEncryptionAlgorithm" : "A128CBC_HS256",
+  "certId" : null,
+  "source" : {
+    "type" : "InHeader",
+    "name" : "X-JWT-Token",
+    "remove" : ""
+  },
+  "forward_location" : {
+    "type" : "InHeader",
+    "name" : "X-JWT-Token",
+    "remove" : ""
+  },
+  "strict" : false,
+  "metadata" : { }
 }
 ```
 
@@ -1523,6 +2084,72 @@ This plugin verifies the current request with one jwt verifier
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.LimitHeaderInTooLong }
+
+## Limit headers in too long
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.LimitHeaderInTooLong`
+
+### Description
+
+This plugin limit all headers to backend with a length above a max
+
+
+
+### Default configuration
+
+```json
+{
+  "value" : 8192
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.LimitHeaderOutTooLong }
+
+## Limit headers out too long
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.LimitHeaderOutTooLong`
+
+### Description
+
+This plugin limit all headers from backend with a length above a max
+
+
+
+### Default configuration
+
+```json
+{
+  "value" : 8192
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.MaintenanceMode }
 
 ## Maintenance mode
@@ -1540,6 +2167,86 @@ This plugin verifies the current request with one jwt verifier
 This plugin displays a maintenance page
 
 
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.MissingCookieIn }
+
+## Missing cookies in
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.MissingCookieIn`
+
+### Description
+
+This plugin adds cookies in the otoroshi request if not present
+
+
+
+### Default configuration
+
+```json
+{
+  "name" : "cookie",
+  "value" : "value",
+  "domain" : null,
+  "path" : null,
+  "maxAge" : null,
+  "secure" : false,
+  "httpOnly" : false,
+  "sameSite" : null
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.MissingCookieOut }
+
+## Missing cookies out
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.MissingCookieOut`
+
+### Description
+
+This plugin adds cookies in the otoroshi response if not present
+
+
+
+### Default configuration
+
+```json
+{
+  "name" : "cookie",
+  "value" : "value",
+  "domain" : null,
+  "path" : null,
+  "maxAge" : null,
+  "secure" : false,
+  "httpOnly" : false,
+  "sameSite" : null
+}
+```
 
 
 
@@ -1672,6 +2379,72 @@ This plugin applies an authentication module from a list of selected modules
 {
   "pass_with_apikey" : false,
   "auth_modules" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgApikeyMandatoryMetadata }
+
+## Apikey mandatory metadata
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.NgApikeyMandatoryMetadata`
+
+### Description
+
+This plugin checks that if an apikey is provided, there is one or more metadata on it
+
+
+
+### Default configuration
+
+```json
+{
+  "metadata" : { }
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgApikeyMandatoryTags }
+
+## Apikey mandatory tags
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.NgApikeyMandatoryTags`
+
+### Description
+
+This plugin checks that if an apikey is provided, there is one or more tags on it
+
+
+
+### Default configuration
+
+```json
+{
+  "tags" : [ ]
 }
 ```
 
@@ -1927,7 +2700,7 @@ This plugin pass client certificate informations to the target in headers
 
 ### Description
 
-This plugin provide the endpoint for the client_credential flow token endpoint
+This plugin provide the endpoint for the client_credential flow
 
 
 
@@ -1936,7 +2709,9 @@ This plugin provide the endpoint for the client_credential flow token endpoint
 ```json
 {
   "expiration" : 3600000,
-  "default_key_pair" : "otoroshi-jwt-signing"
+  "default_key_pair" : "otoroshi-jwt-signing",
+  "allowed_apikeys" : [ ],
+  "allowed_groups" : [ ]
 }
 ```
 
@@ -2264,6 +3039,138 @@ This plugin catch http response with specific statuses and rewrite the response
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgExpectedConsumer }
+
+## Expected consumer
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.NgExpectedConsumer`
+
+### Description
+
+This plugin expect that a user or an apikey made the call
+
+
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgExternalValidator }
+
+## External request validator
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.NgExternalValidator`
+
+### Description
+
+This plugin checks let requests pass based on an external validation service
+
+
+
+### Default configuration
+
+```json
+{
+  "cache_expression" : null,
+  "url" : null,
+  "ttl" : 60000,
+  "timeout" : 30000,
+  "headers" : { },
+  "error_message" : "forbidden",
+  "error_status" : 403
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgGenericAllowedList }
+
+## Generic allowed list
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.NgGenericAllowedList`
+
+### Description
+
+This plugin checks let requests pass based on an el expression
+
+
+
+### Default configuration
+
+```json
+{
+  "expression" : "${req.ip_address}",
+  "values" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgGenericBlockList }
+
+## Generic block list
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.NgGenericBlockList`
+
+### Description
+
+This plugin checks let requests is blocked based on an el expression
+
+
+
+### Default configuration
+
+```json
+{
+  "expression" : "${req.ip_address}",
+  "values" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgGeolocationInfoEndpoint }
 
 ## Geolocation endpoint
@@ -2509,7 +3416,9 @@ This plugin can inject elements in html pages (in the body or in the head) retur
 ```json
 {
   "append_head" : [ ],
-  "append_body" : [ ]
+  "append_body" : [ ],
+  "prepend_head" : [ ],
+  "prepend_body" : [ ]
 }
 ```
 
@@ -2548,6 +3457,56 @@ This plugin add cache headers to responses
   "mime_types" : [ "text/html" ]
 }
 ```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgIncomingRequestValidatorAllowedDomainNames }
+
+## Globally allowed domain names
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.NgIncomingRequestValidatorAllowedDomainNames`
+
+### Description
+
+Globally allowed domain names plugin
+
+
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgIncomingRequestValidatorDeniedDomainNames }
+
+## Globally denied domain names
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.NgIncomingRequestValidatorDeniedDomainNames`
+
+### Description
+
+Globally denied domain names plugin
+
+
 
 
 
@@ -2757,7 +3716,9 @@ This plugin expects to find an apikey to allow the request to pass. This plugin 
     "basic" : {
       "enabled" : true,
       "header_name" : null,
-      "query_name" : null
+      "query_name" : null,
+      "cookie_name" : null,
+      "path_name" : null
     },
     "custom_headers" : {
       "enabled" : true,
@@ -2767,7 +3728,9 @@ This plugin expects to find an apikey to allow the request to pass. This plugin 
     "client_id" : {
       "enabled" : true,
       "header_name" : null,
-      "query_name" : null
+      "query_name" : null,
+      "cookie_name" : null,
+      "path_name" : null
     },
     "jwt" : {
       "enabled" : true,
@@ -2777,7 +3740,15 @@ This plugin expects to find an apikey to allow the request to pass. This plugin 
       "max_jwt_lifespan_sec" : null,
       "header_name" : null,
       "query_name" : null,
-      "cookie_name" : null
+      "cookie_name" : null,
+      "path_name" : null
+    },
+    "oto_bearer" : {
+      "enabled" : true,
+      "header_name" : null,
+      "query_name" : null,
+      "cookie_name" : null,
+      "path_name" : null
     }
   },
   "routing" : {
@@ -3337,6 +4308,43 @@ Use it to combine apikey validation and OIDC access_token validation.
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OIDCAuthToken }
+
+## OIDC access_token authentication
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OIDCAuthToken`
+
+### Description
+
+This plugin will authenticate a user based on it's OIDC access_token
+
+
+
+### Default configuration
+
+```json
+{
+  "ref" : "",
+  "opaque" : true,
+  "fetch_user_profile" : true,
+  "validate_audience" : false,
+  "header_name" : "Authorization"
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OIDCHeaders }
 
 ## OIDC headers
@@ -3375,6 +4383,39 @@ This plugin injects headers containing tokens and profile from current OIDC prov
     "headerName" : "X-OIDC-Access-Token",
     "jwt" : true
   }
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiAIAEndpoint }
+
+## Otoroshi AIA endpoint
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OtoroshiAIAEndpoint`
+
+### Description
+
+This plugin provide an endpoint to return Otoroshi Authority Information Access for your certificates
+
+
+
+### Default configuration
+
+```json
+{
+  "cert_ids" : [ ]
 }
 ```
 
@@ -3460,6 +4501,31 @@ This plugin adds Otoroshi specific headers to the request
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiHealthEndpoint }
+
+## Otoroshi Health endpoint
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OtoroshiHealthEndpoint`
+
+### Description
+
+This plugin provide an endpoint to return Otoroshi Health informations data for the current node
+
+
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiInfos }
 
 ## Otoroshi info. token
@@ -3486,12 +4552,112 @@ This plugin adds a jwt token with informations about the caller to the backend
   "ttl" : 30,
   "header_name" : null,
   "add_fields" : null,
+  "projection" : { },
   "algo" : {
     "type" : "HSAlgoSettings",
     "size" : 512,
     "secret" : "secret",
     "base64" : false
   }
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiJWKSEndpoint }
+
+## Otoroshi JWKS endpoint
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OtoroshiJWKSEndpoint`
+
+### Description
+
+This plugin provide an endpoint to return Otoroshi JWKS data
+
+
+
+### Default configuration
+
+```json
+{
+  "cert_ids" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiMetricsEndpoint }
+
+## Otoroshi Metrics endpoint
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OtoroshiMetricsEndpoint`
+
+### Description
+
+This plugin provide an endpoint to return Otoroshi metrics data for the current node
+
+
+
+### Default configuration
+
+```json
+{
+  "filter" : null
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiOCSPResponderEndpoint }
+
+## Otoroshi OCSP Responder endpoint
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OtoroshiOCSPResponderEndpoint`
+
+### Description
+
+This plugin provide an endpoint to act as the Otoroshi OCSP Responder
+
+
+
+### Default configuration
+
+```json
+{
+  "cert_ids" : [ ]
 }
 ```
 
@@ -3517,6 +4683,81 @@ This plugin adds a jwt token with informations about the caller to the backend
 ### Description
 
 This plugin override the current Host header with the Host of the backend target
+
+
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OverrideLocationHeader }
+
+## Override Location header
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OverrideLocationHeader`
+
+### Description
+
+This plugin override the current Location header with the Host of the backend target
+
+
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.PolyfillIoDetector }
+
+## cdn.polyfill.io detector
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.PolyfillIoDetector`
+
+### Description
+
+This plugin detects compromised cdn.polyfill.io script tags in html resource with the cloudflare equivalent and send an alert event. For each occurence of a cdn.polyfill.io script tag, a CdnPolyfillIoDetectedAlert will be sent
+
+
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.PolyfillIoReplacer }
+
+## cdn.polyfill.io mitigation
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.PolyfillIoReplacer`
+
+### Description
+
+This plugin replaces compromised cdn.polyfill.io script tags in html resource with the cloudflare equivalent. For each occurence of a cdn.polyfill.io script tag, a CdnPolyfillIoReplacedAlert will be sent
 
 
 
@@ -3697,6 +4938,289 @@ This plugin redirects the current request elsewhere
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexRequestBodyRewriter }
+
+## Regex request body rewriter
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RegexRequestBodyRewriter`
+
+### Description
+
+Rewrites the HTTP request body using a set of regex rules
+
+
+
+### Default configuration
+
+```json
+{
+  "content_types" : [ "text/html" ],
+  "rules" : [ ],
+  "auto_href_prefix" : null,
+  "max_body_size" : null,
+  "charset_fallback" : "UTF-8"
+}
+```
+
+
+
+### Documentation
+
+### Examples
+
+1) Rewrite a domain to another
+
+{
+  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+  "enabled": true,
+  "config": {
+    "content_types": ["text/html"],
+    "rules": [
+      { "pattern": "(?i)https?://example\.com", "replacement": "https://public.example.com" }
+    ],
+    "max_body_size": 1048576
+  }
+}
+
+
+2) Rewrite paths while keeping captured groups
+
+{
+  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+  "enabled": true,
+  "config": {
+    "content_types": ["text/html", "text/plain"],
+    "rules": [
+      { "pattern": "href=([\"'])/v1/(.+?)\1", "replacement": "href=$1/v2/$2$1", "flags": "i" }
+    ]
+  }
+}
+
+
+Note: replacement supports backrefs $1, $2, ...
+Remember to properly escape backslashes in JSON.
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexResponseBodyRewriter }
+
+## Regex response body rewriter
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RegexResponseBodyRewriter`
+
+### Description
+
+Rewrites the HTTP response body using a set of regex rules, with optional auto-prefix for relative hrefs.
+
+
+
+### Default configuration
+
+```json
+{
+  "content_types" : [ "text/html" ],
+  "rules" : [ ],
+  "auto_href_prefix" : null,
+  "max_body_size" : null,
+  "charset_fallback" : "UTF-8"
+}
+```
+
+
+
+### Documentation
+
+### Examples
+
+1) Prefix all relative hrefs with /proxy and rewrite a domain to another
+
+```json
+{
+  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+  "enabled": true,
+  "config": {
+    "content_types": ["text/html"],
+    "auto_href_prefix": "/proxy",
+    "rules": [
+      { "pattern": "(?i)https?://example\.com", "replacement": "https://public.example.com" }
+    ],
+    "max_body_size": 1048576
+  }
+}
+```
+
+2) Rewrite paths while keeping captured groups
+
+```json
+{
+  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+  "enabled": true,
+  "config": {
+    "content_types": ["text/html", "text/plain"],
+    "rules": [
+      { "pattern": "href=([\"'])/v1/(.+?)\1", "replacement": "href=$1/v2/$2$1", "flags": "i" }
+    ]
+  }
+}
+```
+
+Note: replacement supports backrefs $1, $2, ...
+Remember to properly escape backslashes in JSON.
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RejectHeaderInTooLong }
+
+## Reject headers in too long
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RejectHeaderInTooLong`
+
+### Description
+
+This plugin remove all headers to backend with a length above a max
+
+
+
+### Default configuration
+
+```json
+{
+  "value" : 8192
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RejectHeaderOutTooLong }
+
+## Reject headers out too long
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RejectHeaderOutTooLong`
+
+### Description
+
+This plugin remove all headers from backend with a length above a max
+
+
+
+### Default configuration
+
+```json
+{
+  "value" : 8192
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RemoveCookiesIn }
+
+## Remove cookies in
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RemoveCookiesIn`
+
+### Description
+
+This plugin remove cookies from the otoroshi request
+
+
+
+### Default configuration
+
+```json
+{
+  "names" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RemoveCookiesOut }
+
+## Remove cookies out
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RemoveCookiesOut`
+
+### Description
+
+This plugin remove cookies from the otoroshi response
+
+
+
+### Default configuration
+
+```json
+{
+  "names" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RemoveHeadersIn }
 
 ## Remove headers in
@@ -3753,6 +5277,39 @@ This plugin removes headers in the otoroshi response
 ```json
 {
   "header_names" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RequestBodyEchoBackend }
+
+## Request body Echo
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RequestBodyEchoBackend`
+
+### Description
+
+This plugin returns request body content
+
+
+
+### Default configuration
+
+```json
+{
+  "limit" : 524288
 }
 ```
 
@@ -3944,6 +5501,40 @@ This plugin adds response header containing useful informations about the curren
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SimpleBasicAuth }
+
+## Basic Auth
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.SimpleBasicAuth`
+
+### Description
+
+This plugin can be used to protect a route with basic auth. You can use clear text passwords (not recommended for production usage) or Bcryt hashed password as password values
+
+
+
+### Default configuration
+
+```json
+{
+  "realm" : "authentication",
+  "users" : { }
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SnowMonkeyChaos }
 
 ## Snow Monkey Chaos
@@ -3971,6 +5562,39 @@ This plugin introduce some chaos into you life
   "large_response_fault" : null,
   "latency_injection_fault" : null,
   "bad_responses_fault" : null
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.StaticAssetEndpoint }
+
+## Http static asset
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.StaticAssetEndpoint`
+
+### Description
+
+Serve any static http asset for the current request
+
+
+
+### Default configuration
+
+```json
+{
+  "url" : null
 }
 ```
 
@@ -4038,7 +5662,8 @@ This plugin returns static responses
 {
   "status" : 200,
   "headers" : { },
-  "body" : ""
+  "body" : "",
+  "apply_el" : false
 }
 ```
 
@@ -4108,6 +5733,44 @@ This plugin creates TCP tunnels through otoroshi
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.TimeControlledCanaryMode }
+
+## Time controlled Canary mode
+
+### Defined on steps
+
+  - `PreRoute`
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.TimeControlledCanaryMode`
+
+### Description
+
+This plugin can split a portion of the traffic to canary backends between two dates
+
+
+
+### Default configuration
+
+```json
+{
+  "start" : "2025-08-27T09:18:05.340+02:00",
+  "stop" : "2025-08-28T09:18:05.352+02:00",
+  "increment_percent" : 1,
+  "targets" : [ ],
+  "root" : "/"
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.UdpTunnel }
 
 ## UDP Tunnel
@@ -4123,6 +5786,31 @@ This plugin creates TCP tunnels through otoroshi
 ### Description
 
 This plugin creates UDP tunnels through otoroshi
+
+
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.UserProfileEndpoint }
+
+## User profile endpoint
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.UserProfileEndpoint`
+
+### Description
+
+This plugin returns the current user profile
 
 
 
@@ -4197,13 +5885,14 @@ Delegate route access to a wasm plugin
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 20,
+  "memoryPages" : 50,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
+  "httpWasm" : false,
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4233,7 +5922,8 @@ Delegate route access to a wasm plugin
     "max_memory_usage" : 0,
     "max_avg_call_duration" : 0,
     "max_unused_duration" : 300000
-  }
+  },
+  "isJS" : false
 }
 ```
 
@@ -4271,13 +5961,14 @@ This plugin can be used to use a wasm plugin as backend
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 20,
+  "memoryPages" : 50,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
+  "httpWasm" : false,
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4307,7 +5998,8 @@ This plugin can be used to use a wasm plugin as backend
     "max_memory_usage" : 0,
     "max_avg_call_duration" : 0,
     "max_unused_duration" : 300000
-  }
+  },
+  "isJS" : false
 }
 ```
 
@@ -4345,13 +6037,14 @@ Repo policies as WASM modules
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 20,
+  "memoryPages" : 50,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : true,
+  "httpWasm" : false,
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4381,7 +6074,8 @@ Repo policies as WASM modules
     "max_memory_usage" : 0,
     "max_avg_call_duration" : 0,
     "max_unused_duration" : 300000
-  }
+  },
+  "isJS" : false
 }
 ```
 
@@ -4419,13 +6113,14 @@ This plugin can be used to use a wasm plugin as in pre-route phase
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 20,
+  "memoryPages" : 50,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
+  "httpWasm" : false,
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4455,7 +6150,8 @@ This plugin can be used to use a wasm plugin as in pre-route phase
     "max_memory_usage" : 0,
     "max_avg_call_duration" : 0,
     "max_unused_duration" : 300000
-  }
+  },
+  "isJS" : false
 }
 ```
 
@@ -4493,13 +6189,14 @@ Transform the content of the request with a wasm plugin
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 20,
+  "memoryPages" : 50,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
+  "httpWasm" : false,
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4529,7 +6226,8 @@ Transform the content of the request with a wasm plugin
     "max_memory_usage" : 0,
     "max_avg_call_duration" : 0,
     "max_unused_duration" : 300000
-  }
+  },
+  "isJS" : false
 }
 ```
 
@@ -4567,13 +6265,14 @@ Transform the content of a response with a wasm plugin
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 20,
+  "memoryPages" : 50,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
+  "httpWasm" : false,
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4603,7 +6302,8 @@ Transform the content of a response with a wasm plugin
     "max_memory_usage" : 0,
     "max_avg_call_duration" : 0,
     "max_unused_duration" : 300000
-  }
+  },
+  "isJS" : false
 }
 ```
 
@@ -4641,13 +6341,14 @@ This plugin can be used to use a wasm plugin as route matcher
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 20,
+  "memoryPages" : 50,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
+  "httpWasm" : false,
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4677,7 +6378,8 @@ This plugin can be used to use a wasm plugin as route matcher
     "max_memory_usage" : 0,
     "max_avg_call_duration" : 0,
     "max_unused_duration" : 300000
-  }
+  },
+  "isJS" : false
 }
 ```
 
@@ -4715,13 +6417,14 @@ Can decide for routing with a wasm plugin
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 20,
+  "memoryPages" : 50,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
+  "httpWasm" : false,
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4751,7 +6454,8 @@ Can decide for routing with a wasm plugin
     "max_memory_usage" : 0,
     "max_avg_call_duration" : 0,
     "max_unused_duration" : 300000
-  }
+  },
+  "isJS" : false
 }
 ```
 
@@ -4789,13 +6493,14 @@ Handle unmatched requests with a wasm plugin
     "path" : "",
     "opts" : { }
   },
-  "memoryPages" : 20,
+  "memoryPages" : 50,
   "functionName" : null,
   "config" : { },
   "allowedHosts" : [ ],
   "allowedPaths" : { },
   "wasi" : false,
   "opa" : false,
+  "httpWasm" : false,
   "authorizations" : {
     "httpAccess" : false,
     "proxyHttpCallTimeout" : 5000,
@@ -4825,7 +6530,228 @@ Handle unmatched requests with a wasm plugin
     "max_memory_usage" : 0,
     "max_avg_call_duration" : 0,
     "max_unused_duration" : 300000
-  }
+  },
+  "isJS" : false
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmWebsocketTransformer }
+
+## Wasm Websocket transformer
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.WasmWebsocketTransformer`
+
+### Description
+
+Transform messages and filter websocket messages
+
+
+
+### Default configuration
+
+```json
+{
+  "source" : {
+    "kind" : "Unknown",
+    "path" : "",
+    "opts" : { }
+  },
+  "memoryPages" : 50,
+  "functionName" : null,
+  "config" : { },
+  "allowedHosts" : [ ],
+  "allowedPaths" : { },
+  "wasi" : false,
+  "opa" : false,
+  "httpWasm" : false,
+  "authorizations" : {
+    "httpAccess" : false,
+    "proxyHttpCallTimeout" : 5000,
+    "globalDataStoreAccess" : {
+      "read" : false,
+      "write" : false
+    },
+    "pluginDataStoreAccess" : {
+      "read" : false,
+      "write" : false
+    },
+    "globalMapAccess" : {
+      "read" : false,
+      "write" : false
+    },
+    "pluginMapAccess" : {
+      "read" : false,
+      "write" : false
+    },
+    "proxyStateAccess" : false,
+    "configurationAccess" : false
+  },
+  "instances" : 1,
+  "killOptions" : {
+    "immortal" : false,
+    "max_calls" : 2147483647,
+    "max_memory_usage" : 0,
+    "max_avg_call_duration" : 0,
+    "max_unused_duration" : 300000
+  },
+  "isJS" : false
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WebsocketContentValidatorIn }
+
+## Websocket content validator in
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.WebsocketContentValidatorIn`
+
+### Description
+
+Validate the content of each frame
+
+
+
+### Default configuration
+
+```json
+{
+  "validator" : {
+    "kind" : "json-path-validator",
+    "path" : "$.message",
+    "value" : "foo",
+    "error" : null
+  },
+  "reject_strategy" : "drop"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WebsocketJsonFormatValidator }
+
+## Websocket json format validator
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.WebsocketJsonFormatValidator`
+
+### Description
+
+Validate the json
+
+
+
+### Default configuration
+
+```json
+{
+  "schema" : "{ \"type\": \"object\", \"required\": [\"name\"] }",
+  "specification" : "https://json-schema.org/draft/2020-12/schema",
+  "reject_strategy" : "drop"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WebsocketSizeValidator }
+
+## Websocket size validator
+
+### Defined on steps
+
+  - `ValidateAccess`
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.WebsocketSizeValidator`
+
+### Description
+
+Make sure the frame does not exceed the maximum size set.
+
+
+
+### Default configuration
+
+```json
+{
+  "client_max_payload" : 4096,
+  "upstream_max_payload" : 4096,
+  "reject_strategy" : "drop"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WebsocketTypeValidator }
+
+## Websocket type validator
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.WebsocketTypeValidator`
+
+### Description
+
+Validate the type of each frame
+
+
+
+### Default configuration
+
+```json
+{
+  "allowed_format" : "all",
+  "reject_strategy" : "drop"
 }
 ```
 
@@ -4927,6 +6853,43 @@ This plugin transform response body from xml to json and may apply a jq transfor
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ZipBombBackend }
+
+## Zip Bomb backend
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ZipBombBackend`
+
+### Description
+
+This plugin returns zip bomb responses based on predicates
+
+
+
+### Default configuration
+
+```json
+{
+  "predicates" : [ ],
+  "or" : false,
+  "size" : "10G",
+  "status" : null,
+  "content_type" : null
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ZipFileBackend }
 
 ## Zip file backend
@@ -4964,6 +6927,31 @@ Serves content from a zip file
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.api.YesWebsocketBackend }
+
+## Yes
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.api.YesWebsocketBackend`
+
+### Description
+
+Outputs Ys to the client
+
+
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.tunnel.TunnelPlugin }
 
 ## Remote tunnel calls
@@ -4988,6 +6976,161 @@ This plugin can contact remote service using tunnels
 {
   "tunnel_id" : "default"
 }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.workflow.WorkflowAccessValidator }
+
+## Workflow Access control
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.workflow.WorkflowAccessValidator`
+
+### Description
+
+Delegate route access to a worflow
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.workflow.WorkflowBackend }
+
+## Workflow Backend
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.workflow.WorkflowBackend`
+
+### Description
+
+This plugin uses a workflow as a backend
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.workflow.WorkflowRequestTransformer }
+
+## Workflow Request Transformer
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.workflow.WorkflowRequestTransformer`
+
+### Description
+
+Transform the content of the request with a workflow
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.workflow.WorkflowResponseTransformer }
+
+## Workflow Response Transformer
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.workflow.WorkflowResponseTransformer`
+
+### Description
+
+Transform the content of a response with a workflow
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.workflow.WorkflowResumeBackend }
+
+## Workflow Resume Backend
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.workflow.WorkflowResumeBackend`
+
+### Description
+
+This plugin can be used to resume a paused workflow
+
+
+
+### Default configuration
+
+```json
+{ }
 ```
 
 
@@ -5030,4 +7173,39 @@ Coraza WAF plugin
 
 
 @@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.wasm.proxywasm.NgIncomingRequestValidatorCorazaWAF }
+
+## Coraza WAF - Incoming Request Validator
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.wasm.proxywasm.NgIncomingRequestValidatorCorazaWAF`
+
+### Description
+
+Coraza WAF - Incoming Request Validator plugin
+
+
+
+### Default configuration
+
+```json
+{
+  "ref" : "none"
+}
+```
+
+
+
+
+
+@@@
+
+
 
