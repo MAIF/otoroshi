@@ -32,7 +32,7 @@ class PluginDocumentationGenerator(docPath: String) {
 
       import collection.JavaConverters._
       val start                  = System.currentTimeMillis()
-      val allPackages            = Seq("otoroshi", "otoroshi_plugins")
+      val allPackages            = Seq("otoroshi")//, "otoroshi_plugins")
       val scanResult: ScanResult = new ClassGraph()
         .addClassLoader(this.getClass.getClassLoader)
         .enableClassInfo()
@@ -334,6 +334,7 @@ class PluginDocumentationGenerator(docPath: String) {
     val plugins               =
       (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames ++ handlerNames).distinct
         .filterNot(_ == "otoroshi.next.plugins.WasmJob")
+        .filterNot(_ == "otoroshi.next.workflow.WorkflowJob")
     val contents: Seq[String] = plugins
       .map { pl =>
         this.getClass.getClassLoader.loadClass(pl).newInstance()
