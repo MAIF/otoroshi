@@ -5,7 +5,7 @@ import { ValueToCheck } from './ValueToCheck';
 export const ContainsOperator = {
     kind: '$contains',
     flow: ['value', 'fromMemory', 'container', FromMemoryFlow],
-    schema: {
+    form_schema: {
         ...FromMemory(),
         value: ValueToCheck(),
         container: {

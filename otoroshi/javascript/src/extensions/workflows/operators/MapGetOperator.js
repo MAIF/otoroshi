@@ -4,7 +4,7 @@ import { FromMemory, FromMemoryFlow } from './FromMemory';
 export const MapGetOperator = {
     kind: '$map_get',
     flow: ['key', 'fromMemory', 'map', FromMemoryFlow],
-    schema: {
+    form_schema: {
         ...FromMemory({ isArray: true }),
         key: {
             type: 'string',

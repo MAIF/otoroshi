@@ -42,7 +42,7 @@ export function Node(props) {
 
                 {props.id !== 'returned-node' && <NodeTrashButton {...props} />}
 
-                <div className='node-description'>{data.description}</div>
+                <div className='node-description'>{data.information.description}</div>
             </button>
         </>
     );

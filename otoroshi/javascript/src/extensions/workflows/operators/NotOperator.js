@@ -4,7 +4,7 @@ import { ValueToCheck } from './ValueToCheck';
 export const NotOperator = {
     kind: '$not',
     flow: ['value'],
-    schema: {
+    form_schema: {
         value: ValueToCheck('Boolean Value')
     },
     sources: ['output'],

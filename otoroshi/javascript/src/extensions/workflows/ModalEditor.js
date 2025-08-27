@@ -22,7 +22,7 @@ export function ModalEditor({ node, docs }) {
 
     const isAnOperator = data.operators
     const isAFunction = data.content.function
-    const functionData = isAFunction ? data.functions.docs.functions.find(f => f.name === isAFunction) : {}
+    const functionData = isAFunction ? data.functions.docs.functions.find(f => f.name === isAFunction) : undefined
 
 
     let schema = {
@@ -56,25 +56,27 @@ export function ModalEditor({ node, docs }) {
     } else {
         schema = {
             ...schema,
-            ...data.schema
+            ...data.form_schema
         }
     }
 
     let flow = [
         {
             type: 'group',
-            name: 'Informations',
+            name: 'General',
+            collapsable: false,
             fields: [
                 !isAnOperator ? 'enabled' : '',
-                'description',
-                !isAnOperator ? 'result' : ''
+                'description'
             ].filter(field => field.length > 0),
         },
         {
             type: 'group',
             name: 'Configuration',
-            fields: isAFunction ? ['args'] : [
-                ...(data.flow || Object.keys(data.schema || {}))
+            collapsable: false,
+            fields: isAFunction ? ['args', 'result'] : [
+                ...(data.flow || Object.keys(data.schema || {})),
+                'result'
             ]
                 .filter(field => field.length > 0)
         }
@@ -112,7 +114,6 @@ export function ModalEditor({ node, docs }) {
                 content
             })
         }
-        console.log(newData)
         setState(newData)
     }
 
@@ -125,7 +126,7 @@ export function ModalEditor({ node, docs }) {
     }
 
     return <div className='modal-editor d-flex flex-column' style={{ flex: 1 }}>
-        <p className='p-3 m-0 whats-next-title'>{functionData ? functionData.display_name : node.data.node?.name}</p>
+        <p className='p-3 m-0 whats-next-title'>{functionData ? functionData.display_name : node.data.display_name}</p>
 
         <PillButton
             className='mt-3'

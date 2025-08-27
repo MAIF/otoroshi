@@ -12,7 +12,7 @@ export const IsTruthyOperator = {
             visible: (props) => props?.fromMemory
         }
     ],
-    schema: {
+    form_schema: {
         fromMemory: {
             type: 'box-bool',
             label: 'Read memory',

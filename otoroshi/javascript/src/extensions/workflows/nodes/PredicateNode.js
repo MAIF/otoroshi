@@ -9,7 +9,7 @@ export const PredicateNode = {
     type: 'simple',
     sources: ['output'],
     targets: ['PredicateOperator'],
-    schema: {
+    form_schema: {
         value: ValueToCheck('Predicate', false)
     },
     flow: ['value']

@@ -5,7 +5,7 @@ import { ValueToCheck } from './ValueToCheck';
 export const MapPutOperator = {
     kind: '$map_put',
     flow: ['key', 'value', 'fromMemory', 'map', FromMemoryFlow],
-    schema: {
+    form_schema: {
         ...FromMemory(),
         key: {
             type: 'string',

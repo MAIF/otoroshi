@@ -4,7 +4,7 @@ import { FromMemory, FromMemoryFlow } from './FromMemory';
 export const ArrayPageOperator = {
     kind: '$array_page',
     flow: ['page', 'page_size', 'fromMemory', 'array', FromMemoryFlow],
-    schema: {
+    form_schema: {
         ...FromMemory({ isArray: true }),
         page: {
             type: 'number',

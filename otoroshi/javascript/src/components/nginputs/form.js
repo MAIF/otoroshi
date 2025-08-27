@@ -710,7 +710,7 @@ export class NgForm extends Component {
   ) {
     const paths = name.includes('.') ? name.split('.') : [name];
 
-    const stepSchema = paths.reduce((acc, path) => acc[path] || acc.schema[path], schema);
+    const stepSchema = paths.reduce((acc, path) => acc[path] || (acc.schema ? acc.schema[path] : {}), schema);
 
     if (stepSchema) {
       const visible =

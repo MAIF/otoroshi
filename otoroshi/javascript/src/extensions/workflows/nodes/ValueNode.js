@@ -7,7 +7,7 @@ export const ValueNode = {
     name: 'Value',
     kind: 'value',
     sources: ['output'],
-    schema: {
+    form_schema: {
         value: ValueToCheck('Value', false)
     },
     flow: ['value'],

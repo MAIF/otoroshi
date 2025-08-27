@@ -1,7 +1,7 @@
 export const IsFalsyOperator = {
     kind: '$is_falsy',
-    flow: ['value'],
-    schema: {
+    flow: ['fromMemory', 'value', 'name', 'path'],
+    form_schema: {
         fromMemory: {
             type: 'box-bool',
             label: 'Read memory',

@@ -41,7 +41,15 @@ function UnFoldedCategory({ onClick, nodes }) {
         .map(node => <Node node={node} onClick={() => onClick(node)} key={node.name} />)
 }
 
-export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCategory, setSelectedCategory, docs }) {
+export function Items({
+    setTitle,
+    handleSelectNode,
+    isOpen,
+    query,
+    selectedCategory,
+    setSelectedCategory,
+    docs,
+    node }) {
 
     const onClick = item => {
         setSelectedCategory(item)
@@ -57,7 +65,10 @@ export function Items({ setTitle, handleSelectNode, isOpen, query, selectedCateg
             setSelectedCategory(undefined)
     }, [query])
 
+    const onlyOperator = ['if', 'parallel'].includes(node.data?.name) && node.handle?.id.startsWith('predicate-')
+
     const items = NODES_BY_CATEGORIES(docs)
+        .filter(category => onlyOperator ? category.id === 'transformations' : true)
         .map(category => {
             return {
                 ...category,

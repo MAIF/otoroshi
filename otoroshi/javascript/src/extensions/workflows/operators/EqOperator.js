@@ -4,7 +4,7 @@ import { ValueToCheck } from './ValueToCheck';
 export const EqOperator = {
     kind: '$eq',
     flow: ['a', 'b'],
-    schema: {
+    form_schema: {
         a: ValueToCheck('First value', false),
         b: ValueToCheck('Second value', false)
     },

@@ -9,7 +9,7 @@ export const ReturnedNode = {
     description: ' Overrides the output of the node with the result of an operator',
     flow: ['returned'],
     sources: ['output'],
-    schema: {
+    form_schema: {
         returned: {
             renderer: props => {
                 return <Row title="Returned operator (optional)">
@@ -19,12 +19,12 @@ export const ReturnedNode = {
                             props: {
                                 showGutter: false,
                                 ace_config: {
+                                    mode: 'json',
                                     onLoad: (editor) => editor.renderer.setPadding(10),
                                     fontSize: 14,
                                 },
                                 editorOnly: true,
                                 height: '10rem',
-                                mode: 'json',
                             },
                         }}
                         value={props.value}

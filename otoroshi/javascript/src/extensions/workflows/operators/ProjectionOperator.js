@@ -5,7 +5,7 @@ import { FromMemory, FromMemoryFlow } from './FromMemory';
 export const ProjectionOperator = {
     kind: '$projection',
     flow: ['projection', 'fromMemory', 'value', FromMemoryFlow],
-    schema: {
+    form_schema: {
         ...FromMemory(),
         projection: ValueToCheck('Projection'),
         value: ValueToCheck("Value to project"),

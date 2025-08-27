@@ -4,7 +4,7 @@ import { FromMemory, FromMemoryFlow } from './FromMemory';
 export const ArrayAtOperator = {
     kind: '$array_at',
     flow: ['idx', 'fromMemory', 'array', FromMemoryFlow],
-    schema: {
+    form_schema: {
         ...FromMemory({ isArray: true }),
         idx: {
             type: 'number',

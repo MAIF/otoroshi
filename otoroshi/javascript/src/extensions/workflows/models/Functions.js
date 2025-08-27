@@ -146,8 +146,12 @@ export const NODES = (docs) => {
         const items = Object.fromEntries(Object.entries(OVERLOADED_NODES)
             .map(([key, node]) => {
                 const defaultValue = defaultValues.find(n => n.name === key)
+
                 if (defaultValue)
                     defaultValues = defaultValues.filter(f => f.name !== key)
+
+                if (typeof node === 'function')
+                    node = node(docs)
 
                 return [
                     key,

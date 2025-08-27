@@ -46,7 +46,7 @@ export const WorkflowSidebar = ({ workflow }) => {
                         {...createTooltip(`All your workflows`)}
                         className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-3' : ''} m-0`}>
                         <div style={{ width: '20px' }} className="d-flex justify-content-center">
-                            <i className={`fas fa-road`} />
+                            <i className="fas fa-cubes" />
                         </div>
                         <div className="title"> {openedSidebar ? 'Workflows' : ''}</div>
                     </Link>

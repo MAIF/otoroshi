@@ -5,7 +5,7 @@ import { FromMemory, FromMemoryFlow } from './FromMemory';
 export const JsonParseOperator = {
     kind: '$json_parse',
     flow: ['fromMemory', 'value', FromMemoryFlow],
-    schema: {
+    form_schema: {
         ...FromMemory(),
         value: {
             ...ValueToCheck("The JSON string to parse"),

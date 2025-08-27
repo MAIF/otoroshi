@@ -28,6 +28,6 @@ export const GroupNode = (props) => {
 
         <NodeTrashButton {...props} />
 
-        <div className='node-description'>{props.data.description}</div>
+        <div className='node-description'>{props.data.information.description}</div>
     </>
 }

@@ -4,7 +4,7 @@ import { ValueToCheck } from './ValueToCheck';
 export const StrSplitOperator = {
     kind: '$str_split',
     flow: ['value', 'regex'],
-    schema: {
+    form_schema: {
         value: {
             type: 'string',
             label: 'String to Split'

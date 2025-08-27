@@ -58,6 +58,7 @@ export function createNodeFromUI(node, docs) {
     return {
         id: uuid(),
         type: data.type || 'simple',
+        position: node.position || { x: 0, y: 0 },
         data: {
             ...data,
             information: {
@@ -65,7 +66,7 @@ export function createNodeFromUI(node, docs) {
                 description: data.description
             },
             content: {
-                ...(data.example || {}),
+                // ...(data.example || {}),
                 ...functionData
             }
         }
@@ -79,6 +80,7 @@ function createNode(id, child, addInformationsToNode, docs) {
 
     const node = {
         id,
+        position: child.position || { x: 0, y: 0 },
         type: template?.type || 'simple',
         data: {
             ...template,
@@ -88,6 +90,7 @@ function createNode(id, child, addInformationsToNode, docs) {
     }
 
     const newNode = addInformationsToNode(node, docs)
+
     return {
         ...newNode,
         id,
@@ -184,20 +187,8 @@ const buildGraph = (docs, workflows, addInformationsToNode, targetId, handleId) 
         const thensubGraph = workflow.then ? buildGraph(docs, [workflow.then], addInformationsToNode, targetId, handleId) : undefined
         const elseGraph = workflow.else ? buildGraph(docs, [workflow.else], addInformationsToNode, targetId, handleId) : undefined
 
-        let predicate = workflow.predicate
-        if (typeof workflow.predicate === "object" && workflow.predicate !== null && Object.keys(workflow.predicate).find(key => key.startsWith('$'))) {
-            const kind = Object.keys(workflow.predicate).find(key => key.startsWith('$'))
-            predicate = {
-                kind,
-                ...workflow.predicate[kind]
-            }
-        }
-
-        predicate = predicate ? buildGraph(docs, [predicate], addInformationsToNode) : undefined
-
         const hasThenSubGraph = thensubGraph && thensubGraph.nodes.length > 0
         const hasElseGraph = elseGraph && elseGraph.nodes.length > 0
-        const hasPredicate = predicate && predicate.nodes.length > 0
 
         if (hasThenSubGraph) {
             nodes = nodes.concat(thensubGraph.nodes)
@@ -207,11 +198,6 @@ const buildGraph = (docs, workflows, addInformationsToNode, targetId, handleId) 
         if (hasElseGraph) {
             nodes = nodes.concat(elseGraph.nodes)
             edges = edges.concat(elseGraph.edges)
-        }
-
-        if (hasPredicate) {
-            nodes = nodes.concat(predicate.nodes)
-            edges = edges.concat(predicate.edges)
         }
 
         if (hasThenSubGraph)
@@ -235,18 +221,6 @@ const buildGraph = (docs, workflows, addInformationsToNode, targetId, handleId) 
                 type: 'customEdge',
                 animated: true,
             })
-
-        if (hasPredicate)
-            edges.push({
-                id: `${me}-predicate`,
-                source: predicate.nodes[predicate.nodes.length - 1].id,
-                sourceHandle: `output-${predicate.nodes[predicate.nodes.length - 1].id}`,
-                target: me,
-                targetHandle: `predicate-${me}`,
-                type: 'customEdge',
-                animated: true,
-            })
-
     } else if (
         workflow.kind === 'foreach' ||
         workflow.kind === 'flatmap' ||
@@ -395,7 +369,8 @@ const setupTargetsAndSources = (node) => {
 const initializeGraph = (config, orphans, addInformationsToNode, docs) => {
 
     let startingNode = createNode('start', {
-        kind: 'start'
+        kind: 'start',
+        position: { x: 0, y: 0 }
     }, addInformationsToNode, docs)
 
     startingNode = {
@@ -494,19 +469,21 @@ export function WorkflowsDesigner(props) {
     useEffect(() => {
         const initialState = initializeGraph(workflow?.config, workflow.orphans, addInformationsToNode, props.docs)
 
-        onLayout({
-            direction: 'RIGHT',
-            nodes: initialState.nodes,
-            edges: initialState.edges
-        })
-            .then(({ nodes, edges }) => {
-                setNodes(nodes)
-                setEdges(edges)
-            })
+        setNodes(initialState.nodes)
+        setEdges(initialState.edges)
+        // onLayout({
+        //     direction: 'RIGHT',
+        //     nodes: initialState.nodes,
+        //     edges: initialState.edges
+        // })
+        //     .then(({ nodes, edges }) => {
+        //         setNodes(nodes)
+        //         setEdges(edges)
+        //     })
     }, [])
 
     const graphToJson = () => {
-        const start = {
+        let start = {
             kind: 'workflow',
             steps: [],
             returned: nodes.find(node => node.id === 'returned-node').data.content?.returned,
@@ -517,9 +494,23 @@ export function WorkflowsDesigner(props) {
         if (edges.length > 0 && startOutput) {
             const firstNode = nodes.find(node => node.id === startOutput.target)
 
+            start = {
+                ...start,
+                position: firstNode.position
+            }
+
             const graph = nodeToJson(firstNode, start, false, [], true)
 
-            return graph
+            return [
+                {
+                    ...graph[0],
+                    returned: {
+                        ...graph[0].returned,
+                        position: nodes.find(node => node.id === 'returned-node')?.position
+                    }
+                },
+                graph[1]
+            ]
         }
 
         return [start, []]
@@ -539,28 +530,17 @@ export function WorkflowsDesigner(props) {
             return [{
                 ...currentWorkflow,
                 returned: node.data.content?.returned,
-                // id: node.id
+                position: node.position
             }, alreadySeen]
         }
 
         if (kind === "if") {
-            const ifFlow = node.data.workflow
+            const ifFlow = node.data.content
 
             const then = connections.find(conn => conn.sourceHandle.startsWith('then'))
             const elseTarget = connections.find(conn => conn.sourceHandle.startsWith('else'))
 
-            const targets = edges.filter(edge => edge.target === node.id)
-            const predicate = targets.find(conn => conn.targetHandle.startsWith('predicate'))
-
-            let thenNode, predicateNode, elseNode;
-
-            if (predicate) {
-                const res = removeReturnedFromWorkflow(nodeToJson(nodes.find(n => n.id === predicate.source), emptyWorkflow, true, alreadySeen))
-                predicateNode = Object.fromEntries(
-                    Object.entries(res[0]?.steps[0]).filter(([key]) => key.startsWith('$'))
-                )
-                alreadySeen = alreadySeen.concat([res[1]])
-            }
+            let thenNode, elseNode;
 
             if (then) {
                 const res = removeReturnedFromWorkflow(nodeToJson(nodes.find(n => n.id === then.target), emptyWorkflow, false, alreadySeen))
@@ -587,14 +567,13 @@ export function WorkflowsDesigner(props) {
 
             subflow = {
                 ...ifFlow,
-                predicate: predicateNode,
                 then: thenNode,
                 else: elseNode,
                 kind
             }
 
         } else if (kind === 'foreach') {
-            const foreachFlow = node.data.workflow
+            const foreachFlow = node.data.content
             const foreachLoop = connections.find(conn => conn.sourceHandle.startsWith('ForEachLoop'))
 
             if (foreachLoop) {
@@ -613,7 +592,7 @@ export function WorkflowsDesigner(props) {
                 }
             }
         } else if (kind === 'map' || kind === 'flatmap' || kind === 'foreach') {
-            const flow = node.data.workflow
+            const flow = node.data.content
             const nodeLoop = connections.find(conn => conn.sourceHandle.startsWith('Item'))
 
             if (nodeLoop) {
@@ -636,7 +615,7 @@ export function WorkflowsDesigner(props) {
             }
         } else if (kind === 'filter') {
             const targets = edges.filter(edge => edge.target === node.id)
-            const predicateFlow = node.data.workflow
+            const predicateFlow = node.data.content
             const predicate = targets.find(conn => conn.targetHandle.startsWith('predicate'))
 
             if (predicate) {
@@ -681,7 +660,7 @@ export function WorkflowsDesigner(props) {
                     }
                 }
             }, {
-                ...node.data.workflow,
+                ...node.data.content,
                 kind,
                 paths: []
             })
@@ -706,7 +685,7 @@ export function WorkflowsDesigner(props) {
                     }]
                 }
             }, {
-                ...node.data.workflow,
+                ...node.data.content,
                 paths: []
             })
         } else if (kind === 'predicate') {
@@ -728,19 +707,27 @@ export function WorkflowsDesigner(props) {
             subflow = predicateNode
         } else {
             subflow = {
-                ...node.data.workflow,
+                ...node.data.content,
                 id: node.id,
                 kind
             }
         }
 
+        // console.log('subflow before outputworkflow', subflow)
+
         let outputWorkflow = subflow ? {
-            ...subflow,
             ...node.data.content,
             ...node.data.information,
+            ...subflow,
             id: node.id,
             kind,
+            position: node.position
         } : undefined
+
+        // console.log('subflow after outputworkflow', subflow,
+        //     node.data.content,
+        //     node.data.information
+        // )
 
         if (currentWorkflow && currentWorkflow.kind === 'workflow') {
             outputWorkflow = {
@@ -748,6 +735,8 @@ export function WorkflowsDesigner(props) {
                 steps: [...currentWorkflow.steps, outputWorkflow]
             }
         }
+
+        // console.log("after after", outputWorkflow)
 
         if (nextNode)
             return removeReturnedFromWorkflow(nodeToJson(nextNode, outputWorkflow, false, alreadySeen))
@@ -932,16 +921,17 @@ export function WorkflowsDesigner(props) {
                 ...connection, type: 'customEdge',
                 animated: true,
             }
-
-            onLayout({
-                direction: 'RIGHT',
-                nodes,
-                edges: !edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges
-            })
-                .then(({ edges, nodes }) => {
-                    setEdges(edges)
-                    setNodes(nodes)
-                })
+            setEdges(!edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges)
+            setNodes(nodes)
+            // onLayout({
+            //     direction: 'RIGHT',
+            //     nodes,
+            //     edges: !edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges
+            // })
+            //     .then(({ edges, nodes }) => {
+            //         setEdges(edges)
+            //         setNodes(nodes)
+            //     })
         },
         [setEdges, nodes],
     );
@@ -1112,6 +1102,18 @@ export function WorkflowsDesigner(props) {
         }))
     }, [workflow])
 
+    const autoLayout = () => {
+        onLayout({
+            direction: 'RIGHT',
+            nodes: nodes,
+            edges: edges
+        })
+            .then(({ nodes, edges }) => {
+                setNodes(nodes)
+                setEdges(edges)
+            })
+    }
+
     if (nodes.length === 0)
         return null
 
@@ -1141,6 +1143,7 @@ export function WorkflowsDesigner(props) {
             handleSelectNode={handleSelectNode}
             docs={props.docs} />
         <Flow
+            autoLayout={autoLayout}
             onConnectEnd={onConnectEnd}
             onConnect={onConnect}
             onEdgesChange={onEdgesChange}

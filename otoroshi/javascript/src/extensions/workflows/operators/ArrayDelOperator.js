@@ -4,7 +4,7 @@ import { FromMemory, FromMemoryFlow } from './FromMemory';
 export const ArrayDelOperator = {
     kind: '$array_del',
     flow: ['idx', 'fromMemory', 'array', FromMemoryFlow],
-    schema: {
+    form_schema: {
         ...FromMemory({ isArray: true }),
         idx: {
             type: 'number',

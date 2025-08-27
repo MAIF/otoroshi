@@ -5,7 +5,7 @@ import { Row } from '../../../components/Row';
 export const CallNode = {
     kind: 'call',
     flow: ['function', 'args'],
-    schema: {
+    form_schema: {
         function: {
             renderer: props => {
                 return <Row title="Select a function to execute">

@@ -10,7 +10,7 @@ export const ArrayPrependOperator = {
         'array',
         FromMemoryFlow
     ],
-    schema: {
+    form_schema: {
         ...FromMemory({ isArray: true }),
         value: ValueToCheck('Value to Prepend'),
         array: {

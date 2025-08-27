@@ -4,7 +4,7 @@ import { NgCodeRenderer } from '../../../components/nginputs';
 export const AssignNode = {
     kind: 'assign',
     flow: ['values'],
-    schema: {
+    form_schema: {
         values: {
             type: 'array',
             array: true,

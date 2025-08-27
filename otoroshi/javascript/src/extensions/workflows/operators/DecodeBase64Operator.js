@@ -6,7 +6,7 @@ export const DecodeBase64Operator = {
     name: 'Decode Base64',
     kind: '$decode_base64',
     flow: ['value'],
-    schema: {
+    form_schema: {
         value: ValueToCheck('Base64 String')
     },
     sources: ['output'],

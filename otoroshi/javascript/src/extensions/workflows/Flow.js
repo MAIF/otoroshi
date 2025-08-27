@@ -6,7 +6,16 @@ import { CustomEdge } from './flow/CustomEdge'
 import { ReactFlow, Background, Controls } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onConnect, onConnectEnd, onGroupNodeClick }) {
+export function Flow({
+    nodes,
+    onClick,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    onConnectEnd,
+    autoLayout,
+    onGroupNodeClick }) {
 
     return <div style={{ height: 'calc(100vh - 52px)' }} onClick={onClick}>
         <ReactFlow
@@ -31,7 +40,11 @@ export function Flow({ nodes, onClick, edges, onNodesChange, onEdgesChange, onCo
             onNodeDoubleClick={(_, group) => onGroupNodeClick(group)}
         >
             <Background />
-            <Controls orientation='horizontal' showInteractive={false} />
+            <Controls orientation='horizontal' showInteractive={false} >
+                <button className='react-flow__controls-button react-flow__controls-fitview' onClick={autoLayout}>
+                    <i className='fas fa-hat-wizard' />
+                </button>
+            </Controls>
         </ReactFlow>
-    </div >
+    </div>
 }
