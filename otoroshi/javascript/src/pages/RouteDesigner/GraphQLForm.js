@@ -804,7 +804,7 @@ const Header = ({ schemaView, toggleSchema, hide }) => (
   <>
     <div className="d-flex-between">
       <h3>GraphQL Schema Editor</h3>
-      <button className="btn btn-sm" onClick={hide}>
+      <button className="btn btn-quiet btn-sm" onClick={hide}>
         <i className="fas fa-times" />
       </button>
     </div>

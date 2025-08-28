@@ -41,6 +41,22 @@ case class QueryResponse(resp: JsValue) {
 }
 // TODO: handle issue: "mapper [route.plugins.config.version] cannot be changed from type [text] to [long]
 object ElasticTemplates                 {
+
+  val totalFieldsLimit = Json.obj(
+    "template" -> Json.obj(
+      "settings" -> Json.obj(
+        "index" -> Json.obj(
+          "mapping" -> Json.obj(
+            "ignore_malformed" -> true,
+            "total_fields" -> Json.obj(
+              "limit" -> 5000
+            )
+          )
+        )
+      )
+    )
+  )
+
   val indexTemplate_v6 =
     """{
       |  "template": "$$$INDEX$$$-*",
@@ -48,6 +64,11 @@ object ElasticTemplates                 {
       |    "number_of_shards": "$$$SHARDS$$$",
       |    "number_of_replicas": "$$$REPLICAS$$$",
       |    "index": {
+      |     "mapping": {
+      |       "total_fields": {
+      |         "limit": 5000
+      |       }
+      |      }
       |    }
       |  },
       |  "mappings": {
@@ -117,7 +138,7 @@ object ElasticTemplates                 {
       |    }
       |  }
       |}
-    """.stripMargin
+    """
 
   val indexTemplate_v7 =
     """{
@@ -125,7 +146,13 @@ object ElasticTemplates                 {
       |  "settings": {
       |    "number_of_shards": "$$$SHARDS$$$",
       |    "number_of_replicas": "$$$REPLICAS$$$",
-      |    "index": {}
+      |    "index": {
+      |     "mapping": {
+      |       "total_fields": {
+      |         "limit": 5000
+      |       }
+      |      }
+      |    }
       |  },
       |  "mappings": {
       |    "date_detection": false,
@@ -201,13 +228,42 @@ object ElasticTemplates                 {
       |            "type": "keyword"
       |          }
       |        }
+      |      },
+      |      "node": {
+      |        "properties": {
+      |          "steps": {
+      |            "enabled": false
+      |          }
+      |        }
+      |      },
+      |      "result": {
+      |        "properties": {
+      |          "run": {
+      |            "enabled": false
+      |          }
+      |        }
+      |      },
+      |      "route": {
+      |        "properties": {
+      |          "plugins": {
+      |            "properties": {
+      |              "config": {
+      |                "properties": {
+      |                  "form_data": {
+      |                    "enabled": false
+      |                  }
+      |                }
+      |              }
+      |            }
+      |          }
+      |        }
       |      }
       |    }
       |  }
       |}
-    """.stripMargin
+    """
 
-  val indexTemplate_v7_8 =
+  val indexTemplate_v7_8 = Json.parse(
     """{
       |  "index_patterns" : ["$$$INDEX$$$-*"],
       |  "template": {
@@ -347,26 +403,43 @@ object ElasticTemplates                 {
       |            "type": "keyword"
       |          }
       |        }
+      |      },
+      |      "node": {
+      |        "properties": {
+      |          "steps": {
+      |            "enabled": false
+      |          }
+      |        }
+      |      },
+      |      "result": {
+      |        "properties": {
+      |          "run": {
+      |            "enabled": false
+      |          }
+      |        }
+      |      },
+      |      "route": {
+      |        "properties": {
+      |          "plugins": {
+      |            "properties": {
+      |              "config": {
+      |                "properties": {
+      |                  "form_data": {
+      |                    "enabled": false
+      |                  }
+      |                }
+      |              }
+      |            }
+      |          }
+      |        }
       |      }
       |    }
       |  }
       |  }
       |}
-    """.stripMargin
+    """.stripMargin).asObject.deepMerge(totalFieldsLimit).prettify
 
-  val indexTemplate_v8_9 = Json.parse(indexTemplate_v7_8).asObject.deepMerge(Json.obj(
-    "template" -> Json.obj(
-      "settings" -> Json.obj(
-        "index" -> Json.obj(
-          "mapping" -> Json.obj(
-            "total_fields" -> Json.obj(
-              "limit" -> 5000
-            )
-          )
-        )
-      )
-    )
-  )).prettify
+  val indexTemplate_v8_9 = indexTemplate_v7_8
 
   val indexTemplate_v8_15 = Json.parse(indexTemplate_v7_8).asObject.deepMerge(Json.obj(
     "template" -> Json.obj(

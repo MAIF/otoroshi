@@ -705,7 +705,7 @@ export class NgArrayRenderer extends Component {
       const value = this.defaultValues(current[1], type)
       return {
         ...acc,
-        [current[0]]: value ? value() : '',
+        [current[0]]: value ? (typeof value === 'function' ? value() : value) : '',
       };
     }, {});
   };
