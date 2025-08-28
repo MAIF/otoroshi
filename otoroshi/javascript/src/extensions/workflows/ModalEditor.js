@@ -121,6 +121,9 @@ export function ModalEditor({ node, docs }) {
 
         const { information, content } = splitInformationAndContent(props)
 
+
+        console.log(newData, content)
+
         if (data.operators) {
             data.functions.handleDataChange(id, {
                 [data.kind]: content,

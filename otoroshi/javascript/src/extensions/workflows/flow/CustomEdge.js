@@ -94,7 +94,7 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY }) {
                         <i className='fas fa-trash' />
                     </div>
                 </div>
-            </EdgeLabelRenderer >
+            </EdgeLabelRenderer>
         </>
     );
 }

@@ -651,6 +651,11 @@ export class NgBoxBooleanRenderer extends Component {
 
 export class NgArrayRenderer extends Component {
   canShowActions(path) {
+    const props = this.props.rawSchema.props || {};
+
+    if (props.disableActions)
+      return false
+
     const breadcrumbAsArray = this.props.breadcrumb || [];
     const pathAsArray = path || this.props.path || [];
 
@@ -667,8 +672,8 @@ export class NgArrayRenderer extends Component {
 
   isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-  defaultValues = (current) => {
-    return {
+  defaultValues = (current, idx) => {
+    const values = {
       number: () => 0,
       boolean: () => false,
       bool: () => false,
@@ -684,12 +689,20 @@ export class NgArrayRenderer extends Component {
       object: () => { },
       json: () => { },
     }
+
+    if (values[idx])
+      return values[idx]()
+
+    return undefined
   }
 
   generateDefaultValue = (obj) => {
+    if (obj?.type)
+      return this.defaultValues(obj, obj.type)
+
     return Object.entries(obj).reduce((acc, current) => {
-      const type = current[1] ? current[1].type : undefined;
-      const value = this.defaultValues(current[1])[type];
+      const type = current[1] ? current[1].type : undefined
+      const value = this.defaultValues(current[1], type)
       return {
         ...acc,
         [current[0]]: value ? value() : '',
@@ -705,7 +718,9 @@ export class NgArrayRenderer extends Component {
 
     const showActions = this.canShowActions();
 
-    if (readOnly && Array.isArray(this.props.value) && this.props.value.length === 0) return null;
+    if (readOnly && Array.isArray(this.props.value) && this.props.value.length === 0) {
+      return null;
+    }
 
     const customTemplate =
       this.props.rawSchema?.props?.v2?.template || this.generateDefaultValue(schema);
@@ -732,10 +747,10 @@ export class NgArrayRenderer extends Component {
                     display: 'flex',
                     alignItems: 'center',
                     width: '100%',
-                    border: showItem ? 'var(--bg-color_level2) solid 1px' : 'none',
+                    border: 'var(--bg-color_level2) solid 1px',
                     borderRadius: 6,
-                    padding: showItem ? '12px' : 0,
-                    marginBottom: showItem ? '6px' : 0,
+                    padding: 12,
+                    marginBottom: 6
                   }}
                   key={path}
                 >
@@ -819,8 +834,9 @@ export class NgArrayRenderer extends Component {
                 if (schema.of) {
                   return this.props.onChange([...newArr, '']);
                 } else if (schema.itemRenderer) {
-                  this.props.onChange([...newArr, this.defaultValues({})[schema.type]()]);
+                  this.props.onChange([...newArr, this.defaultValues({}, schema.type)]);
                 } else {
+                  console.log('ici', customTemplate)
                   this.props.onChange([...newArr, customTemplate]);
                 }
               }}

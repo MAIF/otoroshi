@@ -11,7 +11,6 @@ export const IfThenElseNode = docs => ({
     form_schema: {
         predicate: {
             renderer: props => {
-                console.log(props)
                 const field = Object.keys(props.rootValue.predicate || {})[0]
 
                 const operator = docs.operators.find(ope => ope.name === field)
