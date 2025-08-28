@@ -66,6 +66,7 @@ export function Items({
     }, [query])
 
     const items = NODES_BY_CATEGORIES(docs)
+        .filter(category => category.id !== 'transformations')
         .map(category => {
             return {
                 ...category,

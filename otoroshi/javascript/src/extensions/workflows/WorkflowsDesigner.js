@@ -146,6 +146,7 @@ const buildGraph = (docs, workflows, addInformationsToNode, targetId, handleId) 
             nodes = [...child.nodes, returnedNode]
 
             edges = edges.concat(child.edges)
+
             if (targetId && handleId)
                 edges.push({
                     id: `${targetId}-returned-node`,
@@ -293,16 +294,33 @@ const buildGraph = (docs, workflows, addInformationsToNode, targetId, handleId) 
         nodes[i] = setupTargetsAndSources(nodes[i])
     }
 
-    if (targetId && useCurrent && current.data.sources.includes('output')) {
-        edges.push({
-            id: `${me}-${targetId}`,
-            source: me,
-            sourceHandle: `${handleId ? handleId : "output"}-${me}`,
-            target: targetId,
-            targetHandle: `input-${targetId}`,
-            type: 'customEdge',
-            animated: true,
-        })
+    if (targetId && useCurrent) {
+        // nodes except parallel and switch
+        if (current.data.sources.includes('output')) {
+            edges.push({
+                id: `${me}-${targetId}`,
+                source: me,
+                sourceHandle: `${handleId ? handleId : "output"}-${me}`,
+                target: targetId,
+                targetHandle: `input-${targetId}`,
+                type: 'customEdge',
+                animated: true,
+            })
+        } else {
+            (current.data.content.paths || []).forEach((path, idx) => {
+                if (!path.node) {
+                    edges.push({
+                        id: `${me}-${targetId}`,
+                        source: me,
+                        sourceHandle: `path-${idx}`,
+                        target: targetId,
+                        targetHandle: `input-${targetId}`,
+                        type: 'customEdge',
+                        animated: true,
+                    })
+                }
+            })
+        }
     }
 
     if (useCurrent) {

@@ -23,18 +23,16 @@ export const AssignNode = {
                             props: {
                                 showGutter: false,
                                 ace_config: {
+                                    mode: 'json',
                                     onLoad: (editor) => editor.renderer.setPadding(10),
                                     fontSize: 14,
                                 },
                                 editorOnly: true,
                                 height: '10rem',
-                                mode: 'json',
                             },
                         }}
                         value={props.value}
-                        onChange={(e) => {
-                            props.onChange(JSON.parse(e));
-                        }}
+                        onChange={props.onChange}
                     />
                 }
             },

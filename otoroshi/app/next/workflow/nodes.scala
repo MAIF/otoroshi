@@ -519,7 +519,12 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
                   true
                 }
             }
-            .map { case (o, idx) => (Node.from(o), idx) }
+            .map { case (o, idx) => {
+              val node = o.selectAsOptObject("node")
+                .map(Node.from)
+                .getOrElse(NoopNode(json))
+              (node, idx)
+            } }
             .map { case (path, idx) =>
               if (env.isDev) println(s"running: ${prefix.mkString(".")}.${idx} - ${kind} / ${id}")
               path.internalRun(wfr, prefix :+ idx, from).recover { case t: Throwable =>
