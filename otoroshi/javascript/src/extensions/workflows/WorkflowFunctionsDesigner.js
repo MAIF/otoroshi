@@ -27,6 +27,6 @@ export function WorkflowFunctionsDesigner(props) {
     console.log(workflow?.functions)
 
     return <Loader loading={!workflow}>
-        COUCOU
+        Functions designer soon
     </Loader>
 }

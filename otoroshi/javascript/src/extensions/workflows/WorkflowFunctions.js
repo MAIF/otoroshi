@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useParams, Link } from "react-router-dom"
+import { useParams, Link, useHistory } from "react-router-dom"
 import * as BackOfficeServices from '../../services/BackOfficeServices'
 
 import Loader from '../../components/Loader'
@@ -8,16 +8,16 @@ import { WorkflowSidebar } from './WorkflowSidebar'
 import { Table } from '../../components/inputs'
 
 export function WorkflowFunctions(props) {
-    useEffect(() => {
-        props.setTitle("Functions")
-    }, [])
+    const params = useParams()
+    const history = useHistory()
 
     const [workflow, setWorkflow] = useState()
-    const params = useParams()
 
     const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
 
     useEffect(() => {
+        props.setTitle("Functions")
+
         client.findById(params.workflowId)
             .then(workflow => {
                 props.setSidebarContent(<WorkflowSidebar {...props} workflow={workflow} />);
@@ -28,10 +28,12 @@ export function WorkflowFunctions(props) {
     const columns = [
         {
             title: 'Description',
-            id: 'description'
+            filterId: 'description',
+            cell: (_, item) => item.description
         },
         {
             title: 'Enabled',
+            filterId: 'enabled',
             id: 'enabled',
             style: { textAlign: 'center', width: 90 },
             notFilterable: true,
@@ -41,7 +43,8 @@ export function WorkflowFunctions(props) {
                 ) : (
                     <span className="fas fa-times" style={{ color: 'var(--color-red)' }} />
                 ),
-        }]
+        }
+    ]
 
     const deleteItem = item => console.log('delete item')
 
@@ -51,7 +54,7 @@ export function WorkflowFunctions(props) {
         <Table
             parentProps={{ params }}
             navigateTo={(item) => history.push(`/extensions/workflows/${workflow.id}/functions/${item.id}/designer`)}
-            navigateOnEdit={(item) => history.push(`/extensions/workflows/${workflow.id}/functions/${item.id}/edit`)}
+            navigateOnEdit={(item) => history.push(`/extensions/workflows/${workflow.id}/functions/${item.id}/designer`)}
             selfUrl="extensions/workflows"
             defaultTitle="Functions"
             itemName="Function"
@@ -61,7 +64,7 @@ export function WorkflowFunctions(props) {
             deleteItem={(item) => deleteItem(item)}
             defaultSort="metadata.updated_at"
             defaultSortDesc="true"
-            fetchItems={() => Promise.resolve(workflow.functions)}
+            fetchItems={() => Promise.resolve(Object.values(workflow.functions))}
             showActions={true}
             showLink={false}
             extractKey={(item) => item.id}

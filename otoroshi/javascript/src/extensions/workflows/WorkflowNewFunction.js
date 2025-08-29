@@ -16,11 +16,13 @@ export function WorkflowNewFunction(props) {
 
     const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
 
+
     useEffect(() => {
-        client.findById(params.workflowId)
-            .then(workflow => {
+        Promise.all([client.findById(params.workflowId), client.template()])
+            .then(([workflow, template]) => {
                 props.setSidebarContent(<WorkflowSidebar {...props} workflow={workflow} />);
                 setWorkflow(workflow)
+                setFunction(template)
             })
 
         props.setTitle("New function")
@@ -48,9 +50,20 @@ export function WorkflowNewFunction(props) {
                     fontSize: 14,
                 },
                 editorOnly: true,
-                height: '10rem',
+                height: '40vh',
             },
         },
+    }
+
+    const create = () => {
+        const name = `self.${newFunction.name.toLowerCase().replace(/\s/g, "_")}`
+        return client.update({
+            ...workflow,
+            functions: {
+                ...workflow.functions,
+                [name]: newFunction
+            }
+        })
     }
 
     return <Loader loading={!workflow}>
@@ -62,7 +75,7 @@ export function WorkflowNewFunction(props) {
         <FeedbackButton
             type="success"
             className="d-flex ms-auto"
-            onPress={() => { }}
+            onPress={create}
             text="Create"
         />
     </Loader>
