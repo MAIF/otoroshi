@@ -2,8 +2,9 @@ import React from 'react'
 
 import { NgForm, NgSelectRenderer } from "../../../components/nginputs"
 import { Row } from '../../../components/Row'
+import { nodesCatalogSignal } from '../models/Functions'
 
-export const IfThenElseNode = docs => ({
+export const IfThenElseNode = ({
     type: 'group',
     kind: 'if',
     sources: ['then', 'else'],
@@ -11,9 +12,11 @@ export const IfThenElseNode = docs => ({
     form_schema: {
         predicate: {
             renderer: props => {
+                const operators = nodesCatalogSignal.value.categories.find(category => category.id === 'operators')?.nodes || []
+
                 const field = Object.keys(props.rootValue.predicate || {})[0]
 
-                const operator = docs.operators.find(ope => ope.name === field)
+                const operator = operators.find(ope => ope.name === field)
 
                 const value = props.rootValue.predicate[field]
 
@@ -24,7 +27,7 @@ export const IfThenElseNode = docs => ({
                             ngOptions={{
                                 spread: true
                             }}
-                            options={docs.operators.map(r => r.name)}
+                            options={operators.map(r => r.name)}
                             value={field}
                             onChange={operator => {
                                 props.rootOnChange({

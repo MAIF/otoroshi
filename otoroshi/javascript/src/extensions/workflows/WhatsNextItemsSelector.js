@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { getNodeFromKind, NODES_BY_CATEGORIES } from './models/Functions'
+import { getNodeFromKind, nodesCatalogSignal } from './models/Functions'
 
 const FORBIDDEN_KINDS = ['workflow', 'start']
 
@@ -49,9 +49,7 @@ export function Items({
     isOpen,
     query,
     selectedCategory,
-    setSelectedCategory,
-    docs,
-    node }) {
+    setSelectedCategory }) {
 
     const onClick = item => {
         setSelectedCategory(item)
@@ -67,14 +65,14 @@ export function Items({
             setSelectedCategory(undefined)
     }, [query])
 
-    const items = NODES_BY_CATEGORIES(docs)
+    const items = nodesCatalogSignal.categories
         .filter(category => category.id !== 'transformations')
         .map(category => {
             return {
                 ...category,
                 nodes: category.nodes
                     .filter(kind => !FORBIDDEN_KINDS.includes(kind))
-                    .map(kind => getNodeFromKind(docs, kind))
+                    .map(kind => getNodeFromKind(kind))
             }
         })
         .filter(category => category.nodes.length > 0)
@@ -84,8 +82,9 @@ export function Items({
         return items.flatMap(category => category.nodes)
             .filter(value => value.name.toLowerCase().includes(lowercaseQuery) ||
                 value.description.toLowerCase().includes(lowercaseQuery) ||
-                value.kind.toLowerCase().includes(lowercaseQuery))
-            .reduce((acc, node) => acc.find(f => f.kind === node.kind) ? acc : [...acc, node], [])
+                value.kind.toLowerCase().includes(lowercaseQuery) ||
+                value.display_name?.toLowerCase().includes(lowercaseQuery))
+            .reduce((acc, node) => acc.find(f => f.namee === node.name) ? acc : [...acc, node], [])
             .map((node, i) => <Node
                 node={node}
                 onClick={() => handleSelectNode(node)}

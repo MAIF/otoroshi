@@ -675,22 +675,6 @@ class WorkflowCallFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Call a workflow"
   override def documentationIcon: String                  = "fas fa-project-diagram"
   override def documentationDescription: String           = "This function calls another workflow stored in otoroshi"
-  override def documentationFormSchema: Option[JsObject] = Json.obj(
-    "workflow_id"  -> Json.obj(
-      "type"  -> "string",
-      "label" -> "Workflow Identifier",
-      "props" -> Json.obj(
-        "description" -> "The ID of the workflow to call"
-      )
-    ),
-    "input"  -> Json.obj(
-      "type"  -> "object",
-      "label" -> "Input",
-      "props" -> Json.obj(
-        "description" -> "The input of the workflow"
-      )
-    )
-  ).some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",

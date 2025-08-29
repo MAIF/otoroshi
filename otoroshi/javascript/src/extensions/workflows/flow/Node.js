@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useState } from 'react'
 
 import Handles from './Handles'
 import NodeTrashButton from './NodeTrashButton'
+import { getNodeFromKind } from '../models/Functions'
 
 export function Node(props) {
     const { data } = props
@@ -17,7 +18,7 @@ export function Node(props) {
     let name = data.display_name || data.name
 
     if (data.content?.function) {
-        const functionData = data.functions.docs.functions.find(f => f.name === data.content.function)
+        const functionData = getNodeFromKind(data.content.function)
         if (functionData) {
             label = functionData.icon
             name = functionData.display_name

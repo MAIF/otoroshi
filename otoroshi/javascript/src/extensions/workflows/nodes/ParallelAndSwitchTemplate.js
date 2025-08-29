@@ -1,9 +1,11 @@
 import React from 'react'
 import { Row } from '../../../components/Row'
 import { NgForm, NgSelectRenderer } from '../../../components/nginputs'
+import { nodesCatalogSignal } from '../models/Functions'
 
-export const ParallelAndSwitchTemplate = (docs, kind) => {
+export const ParallelAndSwitchTemplate = kind => {
     return {
+        kind,
         type: 'group',
         sourcesIsArray: true,
         handlePrefix: 'path',
@@ -24,11 +26,13 @@ export const ParallelAndSwitchTemplate = (docs, kind) => {
                 schema: {
                     predicate: {
                         renderer: props => {
+                            const operators = nodesCatalogSignal.value.categories.find(category => category.id === 'operators')?.nodes || []
+
                             const predicate = props.value || {}
 
                             const field = Object.keys(predicate || {})[0]
 
-                            const operator = docs.operators.find(ope => ope.name === field)
+                            const operator = operators.find(ope => ope.name === field)
 
                             const value = predicate[field]
 
@@ -39,7 +43,7 @@ export const ParallelAndSwitchTemplate = (docs, kind) => {
                                         ngOptions={{
                                             spread: true
                                         }}
-                                        options={docs.operators.map(r => r.name)}
+                                        options={operators.map(r => r.name)}
                                         value={field}
                                         onChange={operator => {
                                             props.onChange({

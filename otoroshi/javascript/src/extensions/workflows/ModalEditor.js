@@ -3,6 +3,7 @@ import { NgForm } from '../../components/nginputs';
 import { PillButton } from '../../components/PillButton';
 import CodeInput from '../../components/inputs/CodeInput';
 import { splitInformationAndContent } from './WorkflowsDesigner';
+import { getNodeFromKind } from './models/Functions';
 
 function setEnabled(state) {
     if (state?.enabled === undefined)
@@ -13,7 +14,7 @@ function setEnabled(state) {
     return state
 }
 
-export function ModalEditor({ node, docs }) {
+export function ModalEditor({ node }) {
 
     if (!node)
         return null
@@ -22,7 +23,8 @@ export function ModalEditor({ node, docs }) {
 
     const isAnOperator = data.operators
     const isAFunction = data.content.function
-    const functionData = isAFunction ? data.functions.docs.functions.find(f => f.name === isAFunction) : undefined
+
+    const functionData = isAFunction ? getNodeFromKind(isAFunction) : undefined
 
     let schema = {
         description: {
@@ -104,12 +106,10 @@ export function ModalEditor({ node, docs }) {
 
     const value = setEnabled({
         ...node.data.information,
-        ...node.data.content,
-        coreFunctions: docs.functions
+        ...node.data.content
     })
 
     const [state, setState] = useState(value)
-
     const [jsonView, setJsonView] = useState(false)
 
     const handleCodeInputChange = newData => {
@@ -117,12 +117,7 @@ export function ModalEditor({ node, docs }) {
     }
 
     const onChange = newData => {
-        const { coreFunctions, ...props } = newData
-
-        const { information, content } = splitInformationAndContent(props)
-
-
-        console.log(newData, content)
+        const { information, content } = splitInformationAndContent(newData)
 
         if (data.operators) {
             data.functions.handleDataChange(id, {

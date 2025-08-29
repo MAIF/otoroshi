@@ -8,6 +8,7 @@ import Loader from '../../components/Loader'
 import { ReactFlowProvider } from '@xyflow/react'
 import { WorkflowsDesigner } from './WorkflowsDesigner'
 import { WorkflowSidebar } from './WorkflowSidebar'
+import { NODES, NODES_BY_CATEGORIES, nodesCatalogSignal } from './models/Functions'
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -54,17 +55,29 @@ function Container(props) {
         ['getWorkflow', params.workflowId],
         () => client.findById(params.workflowId))
 
+    const workflows = useQuery(
+        'getWorkflows', () => client.findAll()
+    )
 
-    const docs = useQuery("getDoc", BackOfficeServices.getWorkflowDocs)
+    const documentation = useQuery("getDoc", BackOfficeServices.getWorkflowDocs)
 
     useEffect(() => {
         if (workflow.data)
             props.setSidebarContent(<WorkflowSidebar {...props} workflow={workflow.data} />);
     }, [workflow.isLoading])
 
-    return <Loader loading={workflow.isLoading || docs.loading}>
+    if (!(workflow.isLoading || documentation.isLoading || workflows.isLoading)) {
+        const nodes = NODES(documentation.data)
+        nodesCatalogSignal.value = {
+            nodes,
+            categories: NODES_BY_CATEGORIES(nodes, documentation.data.categories),
+            workflows: workflows.data
+        }
+    }
+
+    return <Loader loading={workflow.isLoading || documentation.isLoading || workflows.isLoading || nodesCatalogSignal.value.categories.length === 0}>
         <ReactFlowProvider>
-            <WorkflowsDesigner {...props} workflow={workflow.data} docs={docs.data} />
+            <WorkflowsDesigner {...props} workflow={workflow.data} />
         </ReactFlowProvider>
     </Loader>
 }
