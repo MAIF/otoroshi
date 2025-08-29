@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react'
-import { getNodeFromKind, NODES, NODES_BY_CATEGORIES } from './models/Functions'
+import React, { useEffect } from 'react'
+import { getNodeFromKind, NODES_BY_CATEGORIES } from './models/Functions'
+
+const FORBIDDEN_KINDS = ['workflow', 'start']
 
 function Category(item) {
     const { name, description, onClick } = item
@@ -70,9 +72,12 @@ export function Items({
         .map(category => {
             return {
                 ...category,
-                nodes: category.nodes.map(kind => getNodeFromKind(docs, kind))
+                nodes: category.nodes
+                    .filter(kind => !FORBIDDEN_KINDS.includes(kind))
+                    .map(kind => getNodeFromKind(docs, kind))
             }
         })
+        .filter(category => category.nodes.length > 0)
 
     if (query.length > 0) {
         const lowercaseQuery = query.toLowerCase()
