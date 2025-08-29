@@ -6,6 +6,9 @@ import CodeInput from '../../components/inputs/CodeInput';
 import { WorkflowsContainer as WorkflowsDesigner } from './WorkflowsContainer';
 import { WorkflowSidebar } from './WorkflowSidebar';
 import { Link } from "react-router-dom";
+import { WorkflowFunctions } from './WorkflowFunctions';
+import { WorkflowFunctionsDesigner } from './WorkflowFunctionsDesigner';
+import { WorkflowNewFunction } from './WorkflowNewFunction';
 
 const extensionId = 'otoroshi.extensions.Workflows';
 
@@ -499,6 +502,7 @@ export function setupWorkflowsExtension(registerExtension) {
       componentDidMount() {
         this.client.findById(this.props.match.params.workflowId).then(r => {
           if (r) {
+            this.props.setSidebarContent(<WorkflowSidebar {...this.props} workflow={r} />)
             this.setState({ workflow: r })
             this.props.setTitle(`Workflow sessions for ${r.name}`)
           }
@@ -584,6 +588,24 @@ export function setupWorkflowsExtension(registerExtension) {
           path: '/extensions/workflows/:workflowId/designer',
           component: (props) => {
             return <WorkflowsDesigner {...props} />;
+          },
+        },
+        {
+          path: '/extensions/workflows/:workflowId/functions/new',
+          component: (props) => {
+            return <WorkflowNewFunction {...props} />;
+          },
+        },
+        {
+          path: '/extensions/workflows/:workflowId/functions/:functionId/designer',
+          component: (props) => {
+            return <WorkflowFunctionsDesigner {...props} />;
+          },
+        },
+        {
+          path: '/extensions/workflows/:workflowId/functions',
+          component: (props) => {
+            return <WorkflowFunctions {...props} />;
           },
         },
         {

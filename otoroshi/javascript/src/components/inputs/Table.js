@@ -50,7 +50,7 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
   const [fieldExampleValue, setFieldExampleValue] = useState('');
 
   useEffect(() => {
-    if (!template) fetchTemplate().then(setTemplate);
+    if (!template && fetchTemplate) fetchTemplate().then(setTemplate);
   }, []);
 
   useEffect(() => {

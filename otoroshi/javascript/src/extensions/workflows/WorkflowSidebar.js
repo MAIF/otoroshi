@@ -9,7 +9,6 @@ const LINKS = (id) =>
             to: `/extensions/workflows/${id}/designer`,
             icon: 'fa-pencil-ruler',
             title: 'Overview',
-            tab: 'overview',
             tooltip: { ...createTooltip(`Show overview tab`) },
             isActive: (pathname) => pathname.endsWith('designer')
         },
@@ -17,9 +16,22 @@ const LINKS = (id) =>
             to: `/extensions/workflows/edit/${id}`,
             icon: 'fa-file-alt',
             title: 'Informations',
-            tab: 'information',
             tooltip: { ...createTooltip(`Show information tab`) },
             isActive: (pathname) => pathname.includes('edit')
+        },
+        {
+            to: `/extensions/workflows/${id}/functions`,
+            icon: 'fa-code',
+            title: 'Functions',
+            tooltip: { ...createTooltip(`Show functions tab`) },
+            isActive: (pathname) => pathname.endsWith('functions')
+        },
+        {
+            to: `/extensions/workflows/${id}/sessions`,
+            icon: 'fa-arrows-rotate',
+            title: 'Sessions',
+            tooltip: { ...createTooltip(`Show sessions tab`) },
+            isActive: (pathname) => pathname.endsWith('sessions')
         },
     ].filter((link) => !link.enabled);
 
@@ -29,7 +41,7 @@ export const WorkflowSidebar = ({ workflow }) => {
 
     const { openedSidebar } = useContext(SidebarContext);
 
-    if (location.pathname.endsWith('/new')) return null;
+    if (location.pathname.endsWith('/new') && !location.pathname.endsWith('functions/new')) return null;
 
     return (
         <div
@@ -52,7 +64,7 @@ export const WorkflowSidebar = ({ workflow }) => {
                     </Link>
                 </li>
                 {openedSidebar && <p className="sidebar-title">Workflow</p>}
-                {LINKS(workflow.id).map(({ to, icon, title, tooltip, tab, isActive }) => {
+                {LINKS(workflow.id).map(({ to, icon, title, tooltip, isActive }) => {
                     return (
                         <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
                             <Link

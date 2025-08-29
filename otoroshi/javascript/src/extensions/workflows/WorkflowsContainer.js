@@ -19,7 +19,7 @@ const queryClient = new QueryClient({
     },
 })
 
-const applyStyles = () => {
+const applyWorkflowsStyles = () => {
     const pageContainer = document.getElementById('content-scroll-container')
     const parentPageContainer = document.getElementById('content-scroll-container-parent')
 
@@ -38,7 +38,7 @@ const applyStyles = () => {
 export function WorkflowsContainer(props) {
     useEffect(() => {
         props.setTitle(undefined)
-        return applyStyles()
+        return applyWorkflowsStyles()
     }, [])
 
     return <QueryClientProvider client={queryClient}>
@@ -71,7 +71,8 @@ function Container(props) {
         nodesCatalogSignal.value = {
             nodes,
             categories: NODES_BY_CATEGORIES(nodes, documentation.data.categories),
-            workflows: workflows.data
+            workflows: workflows.data,
+            workflow: workflow.data
         }
     }
 

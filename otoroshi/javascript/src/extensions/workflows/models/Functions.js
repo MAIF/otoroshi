@@ -38,6 +38,7 @@ import { signal } from "signals-react-safe"
 export const nodesCatalogSignal = signal({
     nodes: [],
     categories: [],
+    workflows: []
 })
 
 const OVERLOADED_NODES = {
@@ -97,13 +98,11 @@ function getNodeCategory(categories, node) {
     return nodeCategory
 }
 
-export function getNodeFromKind(kind, workflow, workflows) {
-    console.log('getNodeFromKind')
+export function getNodeFromKind(kind) {
     return Object.values(nodesCatalogSignal.value.nodes).find(n => n.kind === kind || n.name === kind)
 }
 
 export function NODES_BY_CATEGORIES(nodes, categories) {
-    console.log('NODES_BY_CATEGORIES')
     return Object.values(nodes).reduce((categories, node) => {
         const nodeCategory = getNodeCategory(categories, node)
 
@@ -166,7 +165,6 @@ export const NODES = documentation => {
                 }
             ]
         }))
-
 
     defaultValues.forEach(node => {
         items[node.name] = {
