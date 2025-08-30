@@ -1150,7 +1150,7 @@ This plugin can be used to used a target that come from an external Eureka serve
 
 ### Description
 
-Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like).
+Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like). Client is identified by the 'identifier' that can use the Otoroshi expression language to extract informations like user id, apikey, ip address, etc.
 
 
 
@@ -1164,7 +1164,8 @@ Temporarily bans client when too many failed requests occur within a detection w
   "max_retry" : 4,
   "url_regex" : [ ],
   "status_codes" : [ "400", "401", "403-499", "500-599" ],
-  "ignored_ips" : [ ]
+  "ignored" : [ ],
+  "blocked" : [ ]
 }
 ```
 
@@ -5046,8 +5047,6 @@ Rewrites the HTTP response body using a set of regex rules, with optional auto-p
 
 ### Documentation
 
-### Examples
-
 1) Prefix all relative hrefs with /proxy and rewrite a domain to another
 
 ```json
@@ -5081,7 +5080,6 @@ Rewrites the HTTP response body using a set of regex rules, with optional auto-p
 ```
 
 Note: replacement supports backrefs $1, $2, ...
-Remember to properly escape backslashes in JSON.
 
 
 
@@ -5756,8 +5754,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-08-27T07:28:56.270Z",
-  "stop" : "2025-08-28T07:28:56.290Z",
+  "start" : "2025-08-30T12:18:38.776Z",
+  "stop" : "2025-08-31T12:18:38.796Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
