@@ -101,11 +101,16 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
                   {isCustomFieldView ? 'New column' : 'Columns'}
                 </h3>
               </div>
-              <Button type="quiet" onClick={closeTab} className="btn-sm" style={{
-                width: 32,
-                height: 32
-              }}>
-                <i className='fas fa-times' />
+              <Button
+                type="quiet"
+                onClick={closeTab}
+                className="btn-sm"
+                style={{
+                  width: 32,
+                  height: 32,
+                }}
+              >
+                <i className="fas fa-times" />
               </Button>
             </div>
 
@@ -377,10 +382,10 @@ class TableComponent extends Component {
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-          ...paginationState,
-          pageSize: this.state.rowsPerPage,
-          page: page + 1,
-        })
+            ...paginationState,
+            pageSize: this.state.rowsPerPage,
+            page: page + 1,
+          })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         const sortedItems = [...rawItems];
@@ -819,26 +824,30 @@ class TableComponent extends Component {
               {(typeof this.props.hideEditButton === 'function'
                 ? !this.props.hideEditButton(item)
                 : !this.props.hideEditButton) && (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-success me-2"
-                    {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
-                    onClick={(e) => {
-                      this.props.navigateOnEdit
-                        ? this.props.navigateOnEdit(item)
-                        : //: this.showEditForm(e, item);
+                <button
+                  type="button"
+                  className="btn btn-sm btn-success me-2"
+                  {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
+                  onClick={(e) => {
+                    this.props.navigateOnEdit
+                      ? this.props.navigateOnEdit(item)
+                      : //: this.showEditForm(e, item);
                         this.gotoItem(e, item);
-                    }}
-                  >
-                    <i className="fas fa-pencil-alt" />
-                  </button>
-                )}
+                  }}
+                >
+                  <i className="fas fa-pencil-alt" />
+                </button>
+              )}
               {this.props.showLink && (
                 <a
                   className="btn btn-sm btn-primary me-2"
                   {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
                   href={`${this.props.itemUrl(item)}`}
-                  onClick={(e) => this.props.linkUrl ? (this.props.history.push(this.props.linkUrl)) : this.gotoItem(e, item)}
+                  onClick={(e) =>
+                    this.props.linkUrl
+                      ? this.props.history.push(this.props.linkUrl)
+                      : this.gotoItem(e, item)
+                  }
                 >
                   <i className="fas fa-link" />
                 </a>
@@ -968,10 +977,11 @@ class TableComponent extends Component {
                   },
                 ]}
                 defaultFiltered={
-                  this.props.defaultFiltered ? this.props.defaultFiltered :
-                    (this.props.search
+                  this.props.defaultFiltered
+                    ? this.props.defaultFiltered
+                    : this.props.search
                       ? [{ id: this.props.columns[0]?.title, value: this.props.search }]
-                      : [])
+                      : []
                 }
                 onFetchData={(state, instance) => {
                   this.update(state);

@@ -5,7 +5,7 @@ import { Table } from '../../components/inputs/Table';
 import CodeInput from '../../components/inputs/CodeInput';
 import { WorkflowsContainer as WorkflowsDesigner } from './WorkflowsContainer';
 import { WorkflowSidebar } from './WorkflowSidebar';
-import { Link } from "react-router-dom";
+import { Link } from 'react-router-dom';
 import { WorkflowFunctions } from './WorkflowFunctions';
 import { WorkflowFunctionsDesigner } from './WorkflowFunctionsDesigner';
 import { WorkflowNewFunction } from './WorkflowNewFunction';
@@ -13,9 +13,7 @@ import { WorkflowNewFunction } from './WorkflowNewFunction';
 const extensionId = 'otoroshi.extensions.Workflows';
 
 export function setupWorkflowsExtension(registerExtension) {
-
   registerExtension(extensionId, true, (ctx) => {
-
     class WorkflowTester extends Component {
       state = {
         input: this.props.rawValue.test_payload
@@ -141,7 +139,6 @@ export function setupWorkflowsExtension(registerExtension) {
     }
 
     class WorkflowsPage extends Component {
-
       formSchema = {
         _loc: {
           type: 'location',
@@ -192,54 +189,66 @@ export function setupWorkflowsExtension(registerExtension) {
             possibleValues: [
               { label: 'Interval', value: 'ScheduledEvery' },
               { label: 'Cron', value: 'Cron' },
-            ]
-          }
+            ],
+          },
         },
         'job.instantiation': {
           type: 'select',
           props: {
             label: 'Instantiation',
             possibleValues: [
-              { label: 'One Instance Per Otoroshi Instance', value: 'OneInstancePerOtoroshiInstance' },
-              { label: 'One Instance Per Otoroshi Worker Instance', value: 'OneInstancePerOtoroshiWorkerInstance' },
-              { label: 'One Instance Per Otoroshi Leader Instance', value: 'OneInstancePerOtoroshiLeaderInstance' },
-              { label: 'One Instance Per Otoroshi Cluster', value: 'OneInstancePerOtoroshiCluster' },
-            ]
-          }
+              {
+                label: 'One Instance Per Otoroshi Instance',
+                value: 'OneInstancePerOtoroshiInstance',
+              },
+              {
+                label: 'One Instance Per Otoroshi Worker Instance',
+                value: 'OneInstancePerOtoroshiWorkerInstance',
+              },
+              {
+                label: 'One Instance Per Otoroshi Leader Instance',
+                value: 'OneInstancePerOtoroshiLeaderInstance',
+              },
+              {
+                label: 'One Instance Per Otoroshi Cluster',
+                value: 'OneInstancePerOtoroshiCluster',
+              },
+            ],
+          },
         },
         'job.initial_delay': {
           type: 'number',
           props: {
             label: 'Initial Delay',
-            suffix: 'ms.'
-          }
+            suffix: 'ms.',
+          },
         },
         'job.interval': {
           type: 'number',
           props: {
             label: 'Interval',
-            suffix: 'ms.'
-          }
+            suffix: 'ms.',
+          },
         },
         'job.cron_expression': {
           type: 'string',
           props: {
             label: 'Cron Expression',
             placeholder: '0 0/5 8-20 ? * MON-SAT *',
-          }
+          },
         },
         'job.config': {
           type: 'jsonobjectcode',
           props: {
-            label: 'Workflow input'
-          }
+            label: 'Workflow input',
+          },
         },
-        'functions': {
+        functions: {
           type: 'jsonobjectcode',
           props: {
-            label: 'Functions'
-          }
-        }
+            label: 'Functions',
+          },
+        },
       };
 
       columns = [
@@ -250,10 +259,16 @@ export function setupWorkflowsExtension(registerExtension) {
         },
         { title: 'Description', filterId: 'description', content: (item) => item.description },
         {
-          title: 'Sessions', content: (item) => (
-            <Link className="btn btn-sm btn-primary me-2" to={`/extensions/workflows/${item.id}/sessions`}
-              onClick={e => e.stopPropagation()}>Sessions</Link>
-          )
+          title: 'Sessions',
+          content: (item) => (
+            <Link
+              className="btn btn-sm btn-primary me-2"
+              to={`/extensions/workflows/${item.id}/sessions`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Sessions
+            </Link>
+          ),
         },
       ];
 
@@ -287,14 +302,16 @@ export function setupWorkflowsExtension(registerExtension) {
 
       componentDidMount() {
         if (this.props.location.pathname === '/extensions/workflows')
-          this.props.setSidebarContent(null)
+          this.props.setSidebarContent(null);
         else {
           this.client
             .findById(this.props.match.params.titem)
-            .then(workflow => this.props.setSidebarContent(<WorkflowSidebar {...this.props} workflow={workflow} />))
-            .catch(console.log)
+            .then((workflow) =>
+              this.props.setSidebarContent(<WorkflowSidebar {...this.props} workflow={workflow} />)
+            )
+            .catch(console.log);
         }
-        this.props.setTitle('Workflows')
+        this.props.setTitle('Workflows');
       }
 
       render() {
@@ -319,8 +336,8 @@ export function setupWorkflowsExtension(registerExtension) {
                 interval: 60000,
                 cron_expression: '',
                 config: {
-                  name: 'Job'
-                }
+                  name: 'Job',
+                },
               },
               config: {
                 id: 'main',
@@ -352,8 +369,10 @@ export function setupWorkflowsExtension(registerExtension) {
             updateItem: (content) => this.client.update(content),
             createItem: (content) => this.client.create(content),
             deleteItem: this.client.delete,
-            navigateTo: (item) => this.props.history.push(`/extensions/workflows/${item.id}/designer`),
-            navigateOnEdit: (item) => this.props.history.push(`/extensions/workflows/edit/${item.id}`),
+            navigateTo: (item) =>
+              this.props.history.push(`/extensions/workflows/${item.id}/designer`),
+            navigateOnEdit: (item) =>
+              this.props.history.push(`/extensions/workflows/edit/${item.id}`),
             itemUrl: (item) => `/bo/dashboard/extensions/workflows/${item.id}/designer`,
             showActions: true,
             showLink: true,
@@ -368,44 +387,49 @@ export function setupWorkflowsExtension(registerExtension) {
     }
 
     class SessionResumeModal extends Component {
-
       state = {
         data: '{}',
         result: null,
-        error: null
-      }
+        error: null,
+      };
 
       deleteSession = () => {
         window.newConfirm('Are you sure to delete this session ?').then((ok) => {
           if (ok)
-            fetch(`/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.workflowId}/${this.props.session.id}`, {
-              method: 'DELETE',
-              credentials: 'include',
-            }).then(() => {
+            fetch(
+              `/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.workflowId}/${this.props.session.id}`,
+              {
+                method: 'DELETE',
+                credentials: 'include',
+              }
+            ).then(() => {
               this.props.cancel();
             });
         });
-      }
+      };
 
       resume = () => {
         this.setState({ result: null, error: null });
-        fetch(`/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.workflowId}/${this.props.session.id}/_resume`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'content-type': 'application/json',
-          },
-          body: this.state.data
-        }).then(r => {
-          r.json().then(result => {
+        fetch(
+          `/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.workflowId}/${this.props.session.id}/_resume`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'content-type': 'application/json',
+            },
+            body: this.state.data,
+          }
+        ).then((r) => {
+          r.json().then((result) => {
             if (r.status !== 200) {
               this.setState({ error: result.error });
             } else {
               this.setState({ result });
             }
-          })
+          });
         });
-      }
+      };
 
       render() {
         return (
@@ -416,13 +440,25 @@ export function setupWorkflowsExtension(registerExtension) {
                 mode="json"
                 value={this.state.data}
                 onChange={(e) => {
-                  this.setState({ data: e })
+                  this.setState({ data: e });
                 }}
               />
-              <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginTop: 10, marginBottom: 10 }}>
+              <div
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  marginTop: 10,
+                  marginBottom: 10,
+                }}
+              >
                 <div className="btn-group">
-                  <button className="btn btn-success" onClick={this.resume}><span className="fas fa-play" /> resume</button>
-                  <button className="btn btn-danger" onClick={this.deleteSession}><span className="fas fa-trash" /> delete</button>
+                  <button className="btn btn-success" onClick={this.resume}>
+                    <span className="fas fa-play" /> resume
+                  </button>
+                  <button className="btn btn-danger" onClick={this.deleteSession}>
+                    <span className="fas fa-trash" /> delete
+                  </button>
                 </div>
               </div>
               {this.state.error && (
@@ -450,8 +486,7 @@ export function setupWorkflowsExtension(registerExtension) {
     }
 
     class WorkflowSessionsPage extends Component {
-
-      state = {}
+      state = {};
 
       client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
 
@@ -462,51 +497,71 @@ export function setupWorkflowsExtension(registerExtension) {
           content: (item) => item.id,
         },
         { title: 'Created at', filterId: 'created_at', content: (item) => item.created_at },
-        { title: 'From', filterId: 'from', content: (item) => item.from.join(".") },
+        { title: 'From', filterId: 'from', content: (item) => item.from.join('.') },
         {
-          title: 'Actions', content: (item) => (
+          title: 'Actions',
+          content: (item) => (
             <div className="btn-group">
-              <button className="btn btn-sm btn-success btn-block btn-sm" onClick={e => this.resumeSession(item)}><span className="fas fa-play" /> Resume</button>
-              <button className="btn btn-sm btn-danger btn-block btn-sm" onClick={e => this.deleteSession(item.id)}><span className="fas fa-trash" /> Delete</button>
+              <button
+                className="btn btn-sm btn-success btn-block btn-sm"
+                onClick={(e) => this.resumeSession(item)}
+              >
+                <span className="fas fa-play" /> Resume
+              </button>
+              <button
+                className="btn btn-sm btn-danger btn-block btn-sm"
+                onClick={(e) => this.deleteSession(item.id)}
+              >
+                <span className="fas fa-trash" /> Delete
+              </button>
             </div>
-          )
+          ),
         },
       ];
 
       deleteSession = (id) => {
         window.newConfirm('Are you sure to delete this session ?').then((ok) => {
           if (ok)
-            fetch(`/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.match.params.workflowId}/${id}`, {
-              method: 'DELETE',
-              credentials: 'include',
-            }).then(r => {
+            fetch(
+              `/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.match.params.workflowId}/${id}`,
+              {
+                method: 'DELETE',
+                credentials: 'include',
+              }
+            ).then((r) => {
               this.table.update();
-            })
+            });
         });
-      }
+      };
 
       resumeSession = (item) => {
-        window.popup('Session resume', (ok, cancel) => (
-          <SessionResumeModal
-            ok={ok}
-            cancel={cancel}
-            session={item}
-            workflow={this.state.workflow}
-            workflowId={this.props.match.params.workflowId}
-          />
-        ), { additionalClass: 'modal-xl' }).then(() => {
-          this.table.update();
-        });
-      }
+        window
+          .popup(
+            'Session resume',
+            (ok, cancel) => (
+              <SessionResumeModal
+                ok={ok}
+                cancel={cancel}
+                session={item}
+                workflow={this.state.workflow}
+                workflowId={this.props.match.params.workflowId}
+              />
+            ),
+            { additionalClass: 'modal-xl' }
+          )
+          .then(() => {
+            this.table.update();
+          });
+      };
 
       componentDidMount() {
-        this.client.findById(this.props.match.params.workflowId).then(r => {
+        this.client.findById(this.props.match.params.workflowId).then((r) => {
           if (r) {
-            this.props.setSidebarContent(<WorkflowSidebar {...this.props} workflow={r} />)
-            this.setState({ workflow: r })
-            this.props.setTitle(`Workflow sessions for ${r.name}`)
+            this.props.setSidebarContent(<WorkflowSidebar {...this.props} workflow={r} />);
+            this.setState({ workflow: r });
+            this.props.setTitle(`Workflow sessions for ${r.name}`);
           }
-        })
+        });
       }
 
       render() {
@@ -519,16 +574,19 @@ export function setupWorkflowsExtension(registerExtension) {
             itemName: 'Workflow session',
             columns: this.columns,
             fetchItems: () => {
-              return fetch(`/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.match.params.workflowId}`, {
-                method: 'GET',
-                credentials: 'include',
-              }).then(r => r.json())
+              return fetch(
+                `/bo/api/proxy/apis/extensions/otoroshi.extensions.workflows/sessions/${this.props.match.params.workflowId}`,
+                {
+                  method: 'GET',
+                  credentials: 'include',
+                }
+              ).then((r) => r.json());
             },
             showActions: false,
             showLink: false,
             rowNavigation: false,
             extractKey: (item) => item.id,
-            injectTable: (table) => this.table = table
+            injectTable: (table) => (this.table = table),
           },
           null
         );
@@ -625,7 +683,7 @@ export function setupWorkflowsExtension(registerExtension) {
           component: (props) => {
             return <WorkflowsPage {...props} />;
           },
-        }
+        },
       ],
     };
   });

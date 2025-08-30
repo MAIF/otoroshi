@@ -1,5 +1,5 @@
-import { ParallelAndSwitchTemplate } from './ParallelAndSwitchTemplate'
+import { ParallelAndSwitchTemplate } from './ParallelAndSwitchTemplate';
 
 export const SwitchNode = {
-    ...ParallelAndSwitchTemplate('switch')
-}
+  ...ParallelAndSwitchTemplate('switch'),
+};

@@ -67,24 +67,24 @@ class JqOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "JQ"
   override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator transforms a json value using JQ"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "filter" -> Json.obj(
-        "type"        -> "code",
-        "label"       -> "Filter",
-        "props"       -> Json.obj(
+        "type"  -> "code",
+        "label" -> "Filter",
+        "props" -> Json.obj(
           "editorOnly"  -> true,
           "description" -> "The JQ filter applied on the JSON"
         )
       ),
-      "value" -> Json.obj(
-        "type"        -> "code",
-        "props"       -> Json.obj(
+      "value"  -> Json.obj(
+        "type"  -> "code",
+        "props" -> Json.obj(
           "editorOnly"  -> true,
-          "description" -> "The JSON passed to JQ",
+          "description" -> "The JSON passed to JQ"
         ),
-        "label"       -> "Value"
-      ),
+        "label" -> "Value"
+      )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -93,7 +93,7 @@ class JqOperator extends WorkflowOperator {
       "required"   -> Seq("value"),
       "properties" -> Json.obj(
         "filter" -> Json.obj("type" -> "string", "description" -> "The JQ filter applied on the JSON"),
-        "value" -> Json.obj("type" -> "any", "description" -> "The JSON passed to JQ"),
+        "value"  -> Json.obj("type" -> "any", "description" -> "The JSON passed to JQ")
       )
     )
   )
@@ -101,13 +101,13 @@ class JqOperator extends WorkflowOperator {
     Json.obj(
       "$jq" -> Json.obj(
         "filter" -> "{foo: .bar}",
-        "value" -> Json.arr(Json.obj("bar" -> 42))
+        "value"  -> Json.arr(Json.obj("bar" -> 42))
       )
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val filter = opts.select("filter").asOptString.getOrElse("")
-    val value = opts.select("value").asOpt[JsValue].filterNot(_ == JsNull).getOrElse(Json.obj())
+    val filter   = opts.select("filter").asOptString.getOrElse("")
+    val value    = opts.select("value").asOpt[JsValue].filterNot(_ == JsNull).getOrElse(Json.obj())
     val request  = ImmutableJqRequest
       .builder()
       .lib(library)
@@ -116,7 +116,7 @@ class JqOperator extends WorkflowOperator {
       .build()
     val response = request.execute()
     if (response.hasErrors) {
-      val errors = response.getErrors.asScala
+      val errors     = response.getErrors.asScala
       val errorsJson = JsArray(errors.map(err => JsString(err)))
       errorsJson
     } else {
@@ -130,7 +130,7 @@ class StringifyOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Stringify"
   override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator stringify a json value"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
         "type"  -> "code",
@@ -138,8 +138,9 @@ class StringifyOperator extends WorkflowOperator {
           "editorOnly"  -> true,
           "description" -> "The json to convert to string"
         )
+      )
     )
-  ))
+  )
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -166,10 +167,10 @@ class PrettifyOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Prettify"
   override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator prettify a json value"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type" -> "code",
+        "type"        -> "code",
         "editorOnly"  -> true,
         "description" -> "The json to convert to string"
       )
@@ -201,24 +202,24 @@ class StringReplaceOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "String Replace"
   override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator replace values inside a string"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value"       -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The string with parts to replace"
         )
       ),
       "target"      -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Target",
         "props" -> Json.obj(
           "description" -> "The value replaced"
         )
       ),
       "replacement" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Replacement",
         "props" -> Json.obj(
           "description" -> "The value to replace with"
@@ -259,24 +260,24 @@ class StringReplaceAllOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "String Replace All"
   override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator replace all values matching a regex inside a string"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value"       -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The string with parts to replace"
         )
       ),
       "target"      -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Target",
         "props" -> Json.obj(
           "description" -> "The regex replaced"
         )
       ),
       "replacement" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Replacement",
         "props" -> Json.obj(
           "description" -> "The value to replace with"
@@ -314,7 +315,9 @@ class StringReplaceAllOperator extends WorkflowOperator {
 
 object JsNumberStringSupport {
   def asDouble(jsValue: JsValue, field: String): Double = {
-    jsValue.select(field).asOpt[JsNumber]
+    jsValue
+      .select(field)
+      .asOpt[JsNumber]
       .map(_.value.toDouble)
       .getOrElse(jsValue.select(field).as[String].toDouble)
   }
@@ -325,15 +328,15 @@ class UppercaseOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "String Upper Case"
   override def documentationIcon: String                  = "fas fa-arrow-up"
   override def documentationDescription: String           = "This operator converts a string to uppercase"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
-        "value" -> Json.obj(
-          "type" -> "string",
-          "label" -> "Value",
-          "props" -> Json.obj(
-            "description" -> "The string to convert to uppercase"
-          )
+      "value" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Value",
+        "props" -> Json.obj(
+          "description" -> "The string to convert to uppercase"
         )
+      )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -362,15 +365,15 @@ class LowercaseOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Lowercase"
   override def documentationIcon: String                  = "fas fa-arrow-down"
   override def documentationDescription: String           = "This operator converts a string to lowercase"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
-        "value" -> Json.obj(
-          "type" -> "string",
-          "label" -> "Value",
-          "props" -> Json.obj(
-            "description" -> "The string to convert to lowercase"
-          )
+      "value" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Value",
+        "props" -> Json.obj(
+          "description" -> "The string to convert to lowercase"
         )
+      )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -399,17 +402,17 @@ class StringSplitOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "String Split"
   override def documentationIcon: String                  = "fas fa-cut"
   override def documentationDescription: String           = "This operator splits a string into an array based on a regex"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The string to split"
         )
       ),
       "regex" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Regex",
         "props" -> Json.obj(
           "description" -> "The regex to use for splitting"
@@ -445,17 +448,17 @@ class IncrementOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Increment"
   override def documentationIcon: String                  = "fas fa-plus-circle"
   override def documentationDescription: String           = "This operator increments a value by a given amount"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value"     -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The value to increment"
         )
       ),
       "increment" -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "Increment",
         "props" -> Json.obj(
           "description" -> "The amount to increment by"
@@ -491,17 +494,17 @@ class DecrementOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Decrement"
   override def documentationIcon: String                  = "fas fa-minus-circle"
   override def documentationDescription: String           = "This operator decrements a value by a given amount"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value"     -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The value to decrement"
         )
       ),
       "decrement" -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "Decrement",
         "props" -> Json.obj(
           "description" -> "The amount to decrement by"
@@ -537,10 +540,10 @@ class ExpressionLanguageOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Expression Language"
   override def documentationIcon: String                  = "fas fa-code"
   override def documentationDescription: String           = "This operator evaluates an expression language"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "expression" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Expression",
         "props" -> Json.obj(
           "description" -> "The expression to evaluate"
@@ -586,31 +589,37 @@ class ExpressionLanguageOperator extends WorkflowOperator {
 }
 
 class AddOperator extends WorkflowOperator {
-  override def documentationName: String = "$add"
-override def documentationDisplayName: String           = "Add"
-  override def documentationIcon: String                = "fas fa-plus"
-  override def documentationDescription: String = "This operator adds a list of numbers"
-  override def documentationFormSchema: Option[JsObject] = Some(Json.obj(
-    "values" -> Json.obj(
-      "type" -> "array",
-      "label" -> "Numbers to Add",
-      "array" -> true,
-      "format" -> null
+  override def documentationName: String                  = "$add"
+  override def documentationDisplayName: String           = "Add"
+  override def documentationIcon: String                  = "fas fa-plus"
+  override def documentationDescription: String           = "This operator adds a list of numbers"
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "values" -> Json.obj(
+        "type"   -> "array",
+        "label"  -> "Numbers to Add",
+        "array"  -> true,
+        "format" -> null
+      )
     )
-  ))
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "values" -> Json.obj(
-      "type" -> "array",
-      "label" -> "Numbers to Add",
-      "array" -> true,
-      "format" -> null
+  )
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "values" -> Json.obj(
+        "type"   -> "array",
+        "label"  -> "Numbers to Add",
+        "array"  -> true,
+        "format" -> null
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$add" -> Json.obj(
-      "values" -> Seq(1, 2, 3)
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$add" -> Json.obj(
+        "values" -> Seq(1, 2, 3)
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("values").asOpt[Seq[JsNumber]] match {
       case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a + b.value))
@@ -620,19 +629,22 @@ override def documentationDisplayName: String           = "Add"
 }
 
 class SubtractOperator extends WorkflowOperator {
-  override def documentationName: String = "$subtract"
+  override def documentationName: String                  = "$subtract"
   override def documentationDisplayName: String           = "Subtract"
   override def documentationIcon: String                  = "fas fa-minus"
-  override def documentationDescription: String = "This operator subtracts a list of numbers"
-  override def documentationFormSchema: Option[JsObject] = Some(Json.obj(
-    "values" -> Json.obj(
-      "type" -> "array",
-      "array" -> true,
-      "label" -> "Values",
-      "props" -> Json.obj(
-        "description" -> "The list of numbers to subtract"
+  override def documentationDescription: String           = "This operator subtracts a list of numbers"
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "values" -> Json.obj(
+        "type"  -> "array",
+        "array" -> true,
+        "label" -> "Values",
+        "props" -> Json.obj(
+          "description" -> "The list of numbers to subtract"
+        )
       )
-  )))
+    )
+  )
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -642,11 +654,13 @@ class SubtractOperator extends WorkflowOperator {
       )
     )
   )
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$subtract" -> Json.obj(
-      "values" -> Seq(1, 2, 3)
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$subtract" -> Json.obj(
+        "values" -> Seq(1, 2, 3)
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("values").asOpt[Seq[JsNumber]] match {
       case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a - b.value))
@@ -660,15 +674,15 @@ class MultiplyOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Multiply"
   override def documentationIcon: String                  = "fas fa-times"
   override def documentationDescription: String           = "This operator multiplies a list of numbers"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
-        "values" -> Json.obj(
-          "type" -> "array",
-          "label" -> "Values",
-          "props" -> Json.obj(
-            "description" -> "The list of numbers to multiply"
-          )
+      "values" -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Values",
+        "props" -> Json.obj(
+          "description" -> "The list of numbers to multiply"
         )
+      )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -700,10 +714,10 @@ class DivideOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Divide"
   override def documentationIcon: String                  = "fas fa-divide"
   override def documentationDescription: String           = "This operator divides a list of numbers"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "values" -> Json.obj(
-        "type" -> "array",
+        "type"  -> "array",
         "label" -> "Values",
         "props" -> Json.obj(
           "description" -> "The list of numbers to divide"
@@ -740,17 +754,17 @@ class ParseDateTimeOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Parse DateTime"
   override def documentationIcon: String                  = "fas fa-clock"
   override def documentationDescription: String           = "This operator parses a datetime string into a timestamp"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value"   -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The datetime string to parse"
         )
       ),
       "pattern" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Pattern",
         "props" -> Json.obj(
           "description" -> "The pattern to use for parsing"
@@ -783,7 +797,7 @@ class ParseDateTimeOperator extends WorkflowOperator {
       .map(p => DateTimeFormat.forPattern(p))
       .getOrElse(ISODateTimeFormat.dateTimeParser.withOffsetParsed)
 
-    println("ParseDateTimeOperator",  DateTime.parse(opts.select("value").as[String], pattern).toDate.getTime.json)
+    println("ParseDateTimeOperator", DateTime.parse(opts.select("value").as[String], pattern).toDate.getTime.json)
 
     opts.select("value").asOpt[String] match {
       case Some(dateStr) => DateTime.parse(dateStr, pattern).toDate.getTime.json
@@ -797,17 +811,17 @@ class ParseDateOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Parse Date"
   override def documentationIcon: String                  = "fas fa-calendar-alt"
   override def documentationDescription: String           = "This operator parses a date string into a timestamp"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value"   -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The date string to parse"
         )
       ),
       "pattern" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Pattern",
         "props" -> Json.obj(
           "description" -> "The pattern to use for parsing"
@@ -851,17 +865,17 @@ class ParseTimeOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Parse Time"
   override def documentationIcon: String                  = "fas fa-clock"
   override def documentationDescription: String           = "This operator parses a time string into a timestamp"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value"   -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The time string to parse"
         )
       ),
       "pattern" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Pattern",
         "props" -> Json.obj(
           "description" -> "The pattern to use for parsing"
@@ -911,10 +925,10 @@ class NotOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Not"
   override def documentationIcon: String                  = "fas fa-exclamation"
   override def documentationDescription: String           = "This operator negates a boolean value"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type" -> "boolean",
+        "type"  -> "boolean",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The boolean value to negate"
@@ -968,22 +982,22 @@ class BasicAuthOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Basic Auth"
   override def documentationIcon: String                  = "fas fa-shield-alt"
   override def documentationDescription: String           = "This operator returns a basic authentication header"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
-        "user"     -> Json.obj(
-          "type" -> "string",
-          "label" -> "User",
-          "props" -> Json.obj(
-            "description" -> "The username"
-          )
-        ),
-        "password" -> Json.obj(
-          "type" -> "string",
-          "label" -> "Password",
-          "props" -> Json.obj(
-            "description" -> "The password"
-          )
+      "user"     -> Json.obj(
+        "type"  -> "string",
+        "label" -> "User",
+        "props" -> Json.obj(
+          "description" -> "The username"
         )
+      ),
+      "password" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Password",
+        "props" -> Json.obj(
+          "description" -> "The password"
+        )
+      )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -1016,10 +1030,10 @@ class EncodeBase64Operator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Encode Base64"
   override def documentationIcon: String                  = "fas fa-lock"
   override def documentationDescription: String           = "This operator encodes a string in base64"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The string to encode in base64"
@@ -1053,15 +1067,15 @@ class DecodeBase64Operator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Decode Base64"
   override def documentationIcon: String                  = "fas fa-unlock"
   override def documentationDescription: String           = "This operator decodes a base64 string"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
-        "value" -> Json.obj(
-          "type" -> "string",
-          "label" -> "Value",
-          "props" -> Json.obj(
-            "description" -> "The base64 string to decode"
-          )
+      "value" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Value",
+        "props" -> Json.obj(
+          "description" -> "The base64 string to decode"
         )
+      )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
@@ -1090,17 +1104,17 @@ class GtOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Greater than"
   override def documentationIcon: String                  = "fas fa-greater-than"
   override def documentationDescription: String           = "This operator checks if a number is greater than another number"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "a" -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "A",
         "props" -> Json.obj(
           "description" -> "The first number"
         )
       ),
       "b" -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "B",
         "props" -> Json.obj(
           "description" -> "The second number"
@@ -1137,18 +1151,19 @@ class GteOperator extends WorkflowOperator {
   override def documentationName: String                  = "$gte"
   override def documentationDisplayName: String           = "Greater than or equal to"
   override def documentationIcon: String                  = "fas fa-greater-than-equal"
-  override def documentationDescription: String           = "This operator checks if a number is greater than or equal to another number"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationDescription: String           =
+    "This operator checks if a number is greater than or equal to another number"
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "a" -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "A",
         "props" -> Json.obj(
           "description" -> "The first number"
         )
       ),
       "b" -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "B",
         "props" -> Json.obj(
           "description" -> "The second number"
@@ -1186,17 +1201,17 @@ class LtOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Less than"
   override def documentationIcon: String                  = "fas fa-less-than"
   override def documentationDescription: String           = "This operator checks if a number is less than another number"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "a" -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "A",
         "props" -> Json.obj(
           "description" -> "The first number"
         )
       ),
       "b" -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "B",
         "props" -> Json.obj(
           "description" -> "The second number"
@@ -1233,18 +1248,19 @@ class LteOperator extends WorkflowOperator {
   override def documentationName: String                  = "$lte"
   override def documentationDisplayName: String           = "Less than or equal to"
   override def documentationIcon: String                  = "fas fa-less-than-equal"
-  override def documentationDescription: String           = "This operator checks if a number is less than or equal to another number"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationDescription: String           =
+    "This operator checks if a number is less than or equal to another number"
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "a" -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "A",
         "props" -> Json.obj(
           "description" -> "The first number"
         )
       ),
       "b" -> Json.obj(
-        "type" -> "number",
+        "type"  -> "number",
         "label" -> "B",
         "props" -> Json.obj(
           "description" -> "The second number"
@@ -1271,11 +1287,13 @@ class LteOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val a = opts.select("a")
+    val a = opts
+      .select("a")
       .asOpt[JsNumber]
       .map(_.value.toDouble)
       .getOrElse(opts.select("a").as[String].toDouble)
-    val b = opts.select("b")
+    val b = opts
+      .select("b")
       .asOpt[JsNumber]
       .map(_.value.toDouble)
       .getOrElse(opts.select("b").as[String].toDouble)
@@ -1288,10 +1306,10 @@ class EqOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Equal to"
   override def documentationIcon: String                  = "fas fa-equals"
   override def documentationDescription: String           = "This operator checks if two values are equal"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "a" -> Json.obj(
-        "type" -> "code",
+        "type"  -> "code",
         "label" -> "A",
         "props" -> Json.obj(
           "editorOnly"  -> true,
@@ -1299,7 +1317,7 @@ class EqOperator extends WorkflowOperator {
         )
       ),
       "b" -> Json.obj(
-        "type" -> "code",
+        "type"  -> "code",
         "label" -> "B",
         "props" -> Json.obj(
           "editorOnly"  -> true,
@@ -1338,10 +1356,10 @@ class NeqOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Not equal to"
   override def documentationIcon: String                  = "fas fa-not-equal"
   override def documentationDescription: String           = "This operator checks if two values are not equal"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "a" -> Json.obj(
-        "type" -> "code",
+        "type"  -> "code",
         "label" -> "A",
         "props" -> Json.obj(
           "editorOnly"  -> true,
@@ -1349,7 +1367,7 @@ class NeqOperator extends WorkflowOperator {
         )
       ),
       "b" -> Json.obj(
-        "type" -> "code",
+        "type"  -> "code",
         "label" -> "B",
         "props" -> Json.obj(
           "editorOnly"  -> true,
@@ -1384,28 +1402,30 @@ class NeqOperator extends WorkflowOperator {
 }
 
 class ContainsOperator extends WorkflowOperator {
-  override def documentationName: String                  = "$contains" 
+  override def documentationName: String                  = "$contains"
   override def documentationDisplayName: String           = "Contains"
   override def documentationIcon: String                  = "fas fa-search-plus"
   override def documentationDescription: String           = "This operator checks if a value is contained in a container"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
-        "value"     -> Json.obj(
-          "type" -> "code",
-          "label" -> "Value",
-          "props" -> Json.obj(
-            "editorOnly"  -> true,
-            "description" -> "The value to check"
-          ),
+      "value" -> Json.obj(
+        "type"      -> "code",
+        "label"     -> "Value",
+        "props"     -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "The value to check"
+        ),
         "container" -> Json.obj(
-          "type" -> "code",
+          "type"  -> "code",
           "label" -> "Container",
           "props" -> Json.obj(
             "editorOnly"  -> true,
             "description" -> "The container to check"
           )
+        )
+      )
     )
-  )))
+  )
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -1452,17 +1472,18 @@ class IsTruthyOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Is truthy"
   override def documentationIcon: String                  = "fas fa-check-circle"
   override def documentationDescription: String           = "This operator checks if a value is truthy"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type" -> "code",
+        "type"  -> "code",
         "label" -> "Value",
         "props" -> Json.obj(
           "editorOnly"  -> true,
           "description" -> "The value to check"
         )
+      )
     )
-  ))
+  )
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -1507,17 +1528,18 @@ class IsFalsyOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Is falsy"
   override def documentationIcon: String                  = "fas fa-times-circle"
   override def documentationDescription: String           = "This operator checks if a value is falsy"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type" -> "code",
+        "type"  -> "code",
         "label" -> "Value",
         "props" -> Json.obj(
           "editorOnly"  -> true,
           "description" -> "The value to check"
         )
+      )
     )
-  ))
+  )
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -1563,7 +1585,7 @@ class MemRefOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Memory reference"
   override def documentationIcon: String                  = "fas fa-memory"
   override def documentationDescription: String           = "This operator gets a value from the memory"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "name" -> Json.obj(
         "type"  -> "string",
@@ -1573,10 +1595,11 @@ class MemRefOperator extends WorkflowOperator {
         "type"  -> "string",
         "label" -> "Memory Path",
         "props" -> Json.obj(
-          "description"  -> "Only useful if the variable is an object"
+          "description" -> "Only useful if the variable is an object"
         )
       )
-  ))
+    )
+  )
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "name" -> Json.obj(
@@ -1588,7 +1611,8 @@ class MemRefOperator extends WorkflowOperator {
         "label" -> "Memory Path",
         "help"  -> "Only useful if the variable is an object"
       )
-  ))
+    )
+  )
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
       "$memref" -> Json.obj(
@@ -1598,8 +1622,8 @@ class MemRefOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val name = opts.select("name").asString
-    val path = opts.select("path").asOptString
+    val name                   = opts.select("name").asString
+    val path                   = opts.select("path").asOptString
     val first: Option[JsValue] = name.split("\\|").map(_.trim).filterNot(_.isBlank).collectFirst {
       case n if wfr.memory.contains(n) => {
         wfr.memory.get(n) match {
@@ -1623,10 +1647,10 @@ class JsonParseOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "JSON parse"
   override def documentationIcon: String                  = "fas fa-file-code"
   override def documentationDescription: String           = "This operator parses a JSON string"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The JSON string to parse"
@@ -1675,17 +1699,17 @@ class StrConcatOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "String Concat"
   override def documentationIcon: String                  = "fas fa-link"
   override def documentationDescription: String           = "This operator concatenates a list of strings"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "values"    -> Json.obj(
-        "type" -> "array",
+        "type"  -> "array",
         "label" -> "Values",
         "props" -> Json.obj(
           "description" -> "The list of strings to concatenate"
         )
       ),
       "separator" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Separator",
         "props" -> Json.obj(
           "description" -> "The separator to use"
@@ -1723,17 +1747,17 @@ class MapGetOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Map get"
   override def documentationIcon: String                  = "fas fa-search"
   override def documentationDescription: String           = "This operator gets a value from a map"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "key" -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Key",
         "props" -> Json.obj(
           "description" -> "The key to get"
         )
       ),
       "map" -> Json.obj(
-        "type" -> "object",
+        "type"  -> "object",
         "label" -> "Map",
         "props" -> Json.obj(
           "description" -> "The map to get the value from"
@@ -1785,7 +1809,7 @@ class MapDelOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Map delete"
   override def documentationIcon: String                  = "fas fa-minus-square"
   override def documentationDescription: String           = "This operator deletes a key from a map"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "key" -> Json.obj(
         "type"  -> "string",
@@ -1795,7 +1819,7 @@ class MapDelOperator extends WorkflowOperator {
         )
       ),
       "map" -> Json.obj(
-        "type" -> "object",
+        "type"  -> "object",
         "label" -> "Map",
         "props" -> Json.obj(
           "description" -> "The map to delete the key from"
@@ -1847,24 +1871,25 @@ class MapPutOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Map put"
   override def documentationIcon: String                  = "fas fa-plus-square"
   override def documentationDescription: String           = "This operator puts a key-value pair in a map"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "key"   -> Json.obj(
-        "type" -> "string",
+        "type"  -> "string",
         "label" -> "Key",
         "props" -> Json.obj(
           "description" -> "The key to put"
         )
       ),
       "value" -> Json.obj(
-        "type" -> "code",
+        "type"  -> "code",
         "label" -> "Value",
         "props" -> Json.obj(
           "editorOnly"  -> true,
           "description" -> "The value to put"
-        )),
+        )
+      ),
       "map"   -> Json.obj(
-        "type" -> "object",
+        "type"  -> "object",
         "label" -> "Map",
         "props" -> Json.obj(
           "description" -> "The map to put the key-value pair in"
@@ -1919,10 +1944,10 @@ class ArrayAppendOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Array append"
   override def documentationIcon: String                  = "fas fa-arrow-right"
   override def documentationDescription: String           = "This operator appends a value to an array"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type" -> "code",
+        "type"  -> "code",
         "label" -> "Value",
         "props" -> Json.obj(
           "editorOnly"  -> true,
@@ -1930,7 +1955,7 @@ class ArrayAppendOperator extends WorkflowOperator {
         )
       ),
       "array" -> Json.obj(
-        "type" -> "array",
+        "type"  -> "array",
         "label" -> "Array",
         "props" -> Json.obj(
           "description" -> "The array to append the value to"
@@ -1987,10 +2012,10 @@ class ArrayPrependOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Array prepend"
   override def documentationIcon: String                  = "fas fa-arrow-left"
   override def documentationDescription: String           = "This operator prepends a value to an array"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type" -> "code",
+        "type"  -> "code",
         "label" -> "Value",
         "props" -> Json.obj(
           "editorOnly"  -> true,
@@ -1998,7 +2023,7 @@ class ArrayPrependOperator extends WorkflowOperator {
         )
       ),
       "array" -> Json.obj(
-        "type" -> "array",
+        "type"  -> "array",
         "label" -> "Array",
         "props" -> Json.obj(
           "description" -> "The array to prepend the value to"
@@ -2051,17 +2076,17 @@ class ArrayDelOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Array delete"
   override def documentationIcon: String                  = "fas fa-trash"
   override def documentationDescription: String           = "This operator deletes an element from an array"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "idx"   -> Json.obj(
-        "type" -> "integer",
+        "type"  -> "integer",
         "label" -> "Index",
         "props" -> Json.obj(
           "description" -> "The index of the element to delete"
         )
       ),
       "array" -> Json.obj(
-        "type" -> "array",
+        "type"  -> "array",
         "label" -> "Array",
         "props" -> Json.obj(
           "description" -> "The array to delete the element from"
@@ -2113,16 +2138,17 @@ class ArrayAtOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Array at"
   override def documentationIcon: String                  = "fas fa-list-ol"
   override def documentationDescription: String           = "This operator gets an element from an array"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "idx"   -> Json.obj(
-        "type" -> "integer",
+        "type"  -> "integer",
         "label" -> "Index",
         "props" -> Json.obj(
           "description" -> "The index of the element to get"
-        )),
+        )
+      ),
       "array" -> Json.obj(
-        "type" -> "array",
+        "type"  -> "array",
         "label" -> "Array",
         "props" -> Json.obj(
           "description" -> "The array to get the element from"
@@ -2174,24 +2200,24 @@ class ArrayPageOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Array page"
   override def documentationIcon: String                  = "fas fa-file-alt"
   override def documentationDescription: String           = "This operator gets a page of an array"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "page"      -> Json.obj(
-        "type" -> "integer",
+        "type"  -> "integer",
         "label" -> "Page",
         "props" -> Json.obj(
           "description" -> "The page number"
         )
       ),
       "page_size" -> Json.obj(
-        "type" -> "integer",
+        "type"  -> "integer",
         "label" -> "Page size",
         "props" -> Json.obj(
           "description" -> "The page size"
         )
       ),
       "array"     -> Json.obj(
-        "type" -> "array",
+        "type"  -> "array",
         "label" -> "Array",
         "props" -> Json.obj(
           "description" -> "The array to get the page from"
@@ -2250,17 +2276,17 @@ class ProjectionOperator extends WorkflowOperator {
   override def documentationDisplayName: String           = "Projection"
   override def documentationIcon: String                  = "fas fa-filter"
   override def documentationDescription: String           = "This operator projects a value"
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "projection" -> Json.obj(
-        "type" -> "object",
+        "type"  -> "object",
         "label" -> "Projection",
         "props" -> Json.obj(
           "description" -> "The projection to apply"
         )
       ),
       "value"      -> Json.obj(
-        "type" -> "object",
+        "type"  -> "object",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The value to project"

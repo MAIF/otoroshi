@@ -1,33 +1,35 @@
-import React, { useLayoutEffect, useRef } from "react"
-import { Panel } from "@xyflow/react";
+import React, { useLayoutEffect, useRef } from 'react';
+import { Panel } from '@xyflow/react';
 import NodeTrashButton from './NodeTrashButton';
-import Handles from "./Handles";
+import Handles from './Handles';
 
 export const GroupNode = (props) => {
-    const { position, data } = props
+  const { position, data } = props;
 
-    useLayoutEffect(() => {
-        const height = props.data.height
-        
-        if (height) {
-            const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
-            setTimeout(() => {
-                sourceEl.style.height = height(props.data)
-            }, 150)
-        }
-    }, [props.data])
+  useLayoutEffect(() => {
+    const height = props.data.height;
 
-    return <>
-        <Handles {...props} />
+    if (height) {
+      const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
+      setTimeout(() => {
+        sourceEl.style.height = height(props.data);
+      }, 150);
+    }
+  }, [props.data]);
 
-        {data.nodeRenderer && data.nodeRenderer(props)}
+  return (
+    <>
+      <Handles {...props} />
 
-        <Panel className="m-0 node-one-output" position={position}>
-            <i className={data.label || data.icon} /> {data.display_name || data.name}
-        </Panel>
+      {data.nodeRenderer && data.nodeRenderer(props)}
 
-        <NodeTrashButton {...props} />
+      <Panel className="m-0 node-one-output" position={position}>
+        <i className={data.label || data.icon} /> {data.display_name || data.name}
+      </Panel>
 
-        <div className='node-description'>{props.data.information.description}</div>
+      <NodeTrashButton {...props} />
+
+      <div className="node-description">{props.data.information.description}</div>
     </>
-}
+  );
+};

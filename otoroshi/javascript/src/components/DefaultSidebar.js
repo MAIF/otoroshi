@@ -138,9 +138,8 @@ export function DefaultSidebar(props) {
       .sort((a, b) => a.title.localeCompare(b.title))
   );
 
-
-  if(window.location.pathname.startsWith('/bo/dashboard/extensions/workflows/')) {
-    return null
+  if (window.location.pathname.startsWith('/bo/dashboard/extensions/workflows/')) {
+    return null;
   }
 
   return (

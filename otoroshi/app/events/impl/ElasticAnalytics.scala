@@ -48,7 +48,7 @@ object ElasticTemplates                 {
         "index" -> Json.obj(
           "mapping" -> Json.obj(
             "ignore_malformed" -> true,
-            "total_fields" -> Json.obj(
+            "total_fields"     -> Json.obj(
               "limit" -> 5000
             )
           )
@@ -263,8 +263,8 @@ object ElasticTemplates                 {
       |}
     """
 
-  val indexTemplate_v7_8 = Json.parse(
-    """{
+  val indexTemplate_v7_8 = Json
+    .parse("""{
       |  "index_patterns" : ["$$$INDEX$$$-*"],
       |  "template": {
       |  "settings": {
@@ -437,24 +437,34 @@ object ElasticTemplates                 {
       |  }
       |  }
       |}
-    """.stripMargin).asObject.deepMerge(totalFieldsLimit).prettify
+    """.stripMargin)
+    .asObject
+    .deepMerge(totalFieldsLimit)
+    .prettify
 
   val indexTemplate_v8_9 = indexTemplate_v7_8
 
-  val indexTemplate_v8_15 = Json.parse(indexTemplate_v7_8).asObject.deepMerge(Json.obj(
-    "template" -> Json.obj(
-      "settings" -> Json.obj(
-        "index" -> Json.obj(
-          "mapping" -> Json.obj(
-            "total_fields" -> Json.obj(
-              "limit" -> 5000,
-              "ignore_dynamic_beyond_limit" -> true
+  val indexTemplate_v8_15 = Json
+    .parse(indexTemplate_v7_8)
+    .asObject
+    .deepMerge(
+      Json.obj(
+        "template" -> Json.obj(
+          "settings" -> Json.obj(
+            "index" -> Json.obj(
+              "mapping" -> Json.obj(
+                "total_fields" -> Json.obj(
+                  "limit"                       -> 5000,
+                  "ignore_dynamic_beyond_limit" -> true
+                )
+              )
             )
           )
         )
       )
     )
-  )).prettify.debugPrintln
+    .prettify
+    .debugPrintln
 }
 
 object ElasticWritesAnalytics {
@@ -501,32 +511,32 @@ sealed trait ElasticVersion {
 }
 object ElasticVersion       {
 
-  case class UnderSeven(raw: String)      extends ElasticVersion {
+  case class UnderSeven(raw: String)        extends ElasticVersion {
     def underSeven: Boolean         = true
     def underEight: Boolean         = true
     def aboveOrEqualsEight: Boolean = false
   }
-  case class AboveSeven(raw: String)      extends ElasticVersion {
+  case class AboveSeven(raw: String)        extends ElasticVersion {
     def underSeven: Boolean         = false
     def underEight: Boolean         = true
     def aboveOrEqualsEight: Boolean = false
   }
-  case class AboveSevenEight(raw: String) extends ElasticVersion {
+  case class AboveSevenEight(raw: String)   extends ElasticVersion {
     def underSeven: Boolean         = false
     def underEight: Boolean         = true
     def aboveOrEqualsEight: Boolean = false
   }
-  case class AboveEight(raw: String)      extends ElasticVersion {
+  case class AboveEight(raw: String)        extends ElasticVersion {
     def underSeven: Boolean         = false
     def underEight: Boolean         = false
     def aboveOrEqualsEight: Boolean = true
   }
-  case class AboveEightNine(raw: String)      extends ElasticVersion {
+  case class AboveEightNine(raw: String)    extends ElasticVersion {
     def underSeven: Boolean         = false
     def underEight: Boolean         = false
     def aboveOrEqualsEight: Boolean = true
   }
-  case class AboveEightFifteen(raw: String)      extends ElasticVersion {
+  case class AboveEightFifteen(raw: String) extends ElasticVersion {
     def underSeven: Boolean         = false
     def underEight: Boolean         = false
     def aboveOrEqualsEight: Boolean = true
@@ -648,15 +658,15 @@ object ElasticUtils {
     getElasticVersion(config, logger, env).flatMap { version =>
       // from elastic 7.8, we should use /_index_template/otoroshi-tpl and wrap almost everything expect index_patterns in a "template" object
       val (strTpl, indexTemplatePath) = version match {
-        case ElasticVersion.UnderSeven(_)      => (ElasticTemplates.indexTemplate_v6, "/_template/otoroshi-tpl")
-        case ElasticVersion.AboveSeven(_)      => (ElasticTemplates.indexTemplate_v7, "/_template/otoroshi-tpl")
-        case ElasticVersion.AboveSevenEight(_) =>
+        case ElasticVersion.UnderSeven(_)        => (ElasticTemplates.indexTemplate_v6, "/_template/otoroshi-tpl")
+        case ElasticVersion.AboveSeven(_)        => (ElasticTemplates.indexTemplate_v7, "/_template/otoroshi-tpl")
+        case ElasticVersion.AboveSevenEight(_)   =>
           (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
-        case ElasticVersion.AboveEight(_)      =>
+        case ElasticVersion.AboveEight(_)        =>
           (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
-        case ElasticVersion.AboveEightNine(_)      =>
+        case ElasticVersion.AboveEightNine(_)    =>
           (ElasticTemplates.indexTemplate_v8_9, "/_index_template/otoroshi-tpl")
-        case ElasticVersion.AboveEightFifteen(_)      =>
+        case ElasticVersion.AboveEightFifteen(_) =>
           (ElasticTemplates.indexTemplate_v8_15, "/_index_template/otoroshi-tpl")
       }
       if (logger.isDebugEnabled) logger.debug(s"$version, $indexTemplatePath")

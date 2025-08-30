@@ -7,7 +7,7 @@ import Loader from './Loader';
 import CodeInput from './inputs/CodeInput';
 import { ReportView } from './ReportView';
 
-const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']
+const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
 
 const LOCAL_STORAGE_KEY = 'global-tester';
 
@@ -74,7 +74,7 @@ export default function ({ route }) {
       if (storedData && r) {
         setRequest(r);
       }
-    } catch (_) { }
+    } catch (_) {}
   };
 
   const saveTestingRouteHistory = (request) => {
@@ -176,24 +176,24 @@ export default function ({ route }) {
       ),
       ...(format === 'basic'
         ? {
-          'authorization-header': {
-            key: apikeyHeader || request.apikeyHeader,
-            value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-            checked: true,
-          },
-        }
+            'authorization-header': {
+              key: apikeyHeader || request.apikeyHeader,
+              value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+              checked: true,
+            },
+          }
         : {
-          'Otoroshi-Client-Id': {
-            key: 'Otoroshi-Client-Id',
-            value: clientId,
-            checked: true,
-          },
-          'Otoroshi-Client-Secret': {
-            key: 'Otoroshi-Client-Secret',
-            value: clientSecret,
-            checked: true,
-          },
-        }),
+            'Otoroshi-Client-Id': {
+              key: 'Otoroshi-Client-Id',
+              value: clientId,
+              checked: true,
+            },
+            'Otoroshi-Client-Secret': {
+              key: 'Otoroshi-Client-Secret',
+              value: clientSecret,
+              checked: true,
+            },
+          }),
     };
   };
 
@@ -582,9 +582,11 @@ export default function ({ route }) {
               <span className="report-information">
                 {roundNsTo(response.report?.duration_ns)} ms
               </span>
-              {response.headers['content-length'] !== undefined && <span className="report-information">
-                {bytesToSize(response.headers['content-length'])}
-              </span>}
+              {response.headers['content-length'] !== undefined && (
+                <span className="report-information">
+                  {bytesToSize(response.headers['content-length'])}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -623,7 +625,7 @@ export default function ({ route }) {
                 },
               }}
               value={responseBody}
-              onChange={() => { }}
+              onChange={() => {}}
             />
           )}
         </div>

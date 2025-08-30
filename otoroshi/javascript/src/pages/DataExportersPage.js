@@ -1150,7 +1150,7 @@ const possibleExporterConfigFormValues = {
       'cookies',
       'timeout',
       'body',
-      'tls_config'
+      'tls_config',
       // 'tls_config.enabled',
       // 'tls_config.loose',
       // 'tls_config.trustAll',
@@ -1210,7 +1210,10 @@ const possibleExporterConfigFormValues = {
     schema: {
       url: {
         type: 'string',
-        props: { label: 'URL', placeholder: 'https://hec.example.com:8088/services/collector/event' },
+        props: {
+          label: 'URL',
+          placeholder: 'https://hec.example.com:8088/services/collector/event',
+        },
       },
       token: {
         type: 'string',

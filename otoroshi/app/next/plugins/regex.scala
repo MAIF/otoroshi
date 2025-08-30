@@ -15,10 +15,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class RegexReplacementRule(
-                      pattern: String,
-                      replacement: String,
-                      flags: Option[String] = None
-                    ) {
+    pattern: String,
+    replacement: String,
+    flags: Option[String] = None
+)                           {
   def json: JsValue = RegexReplacementRule.format.writes(this)
 }
 object RegexReplacementRule {
@@ -27,7 +27,7 @@ object RegexReplacementRule {
       RegexReplacementRule(
         pattern = json.select("pattern").asString,
         replacement = json.select("replacement").asString,
-        flags = json.select("flags").asOptString,
+        flags = json.select("flags").asOptString
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -35,20 +35,20 @@ object RegexReplacementRule {
     }
 
     override def writes(o: RegexReplacementRule): JsValue = Json.obj(
-      "pattern" -> o.pattern,
+      "pattern"     -> o.pattern,
       "replacement" -> o.replacement,
-      "flags" -> o.flags
+      "flags"       -> o.flags
     )
   }
 }
 
 case class RegexBodyRewriterConfig(
-                                    contentTypes: Seq[String] = Seq("text/html"),
-                                    rules: Seq[RegexReplacementRule] = Seq.empty,
-                                    autoHrefPrefix: Option[String] = None,
-                                    maxBodySize: Option[Long] = None,
-                                    charsetFallback: Option[String] = Some("UTF-8")
-                                  ) extends NgPluginConfig {
+    contentTypes: Seq[String] = Seq("text/html"),
+    rules: Seq[RegexReplacementRule] = Seq.empty,
+    autoHrefPrefix: Option[String] = None,
+    maxBodySize: Option[Long] = None,
+    charsetFallback: Option[String] = Some("UTF-8")
+) extends NgPluginConfig {
   def json: JsValue = RegexBodyRewriterConfig.format.writes(this)
 }
 object RegexBodyRewriterConfig {
@@ -62,42 +62,43 @@ object RegexBodyRewriterConfig {
 
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "content_types" -> Json.obj(
-        "type" -> "array",
-        "label" -> "Target Content-Types",
-        "format" -> "string",
-        "array" -> Json.obj("format" -> "string"),
-        "props" -> Json.obj("placeholder" -> "text/html"),
+      "content_types"    -> Json.obj(
+        "type"    -> "array",
+        "label"   -> "Target Content-Types",
+        "format"  -> "string",
+        "array"   -> Json.obj("format" -> "string"),
+        "props"   -> Json.obj("placeholder" -> "text/html"),
         "default" -> Json.arr("text/html")
       ),
-      "rules" -> Json.obj(
-        "type" -> "array",
-        "label" -> "Regex rules",
-        "array" -> true,
+      "rules"            -> Json.obj(
+        "type"   -> "array",
+        "label"  -> "Regex rules",
+        "array"  -> true,
         "format" -> "form",
         "schema" -> Json.obj(
-          "pattern" -> Json.obj("type" -> "string", "label" -> "Pattern", "placeholder" -> "href=([\\\"'])/v1/(.+?)\\1"),
+          "pattern"     -> Json
+            .obj("type" -> "string", "label" -> "Pattern", "placeholder" -> "href=([\\\"'])/v1/(.+?)\\1"),
           "replacement" -> Json.obj("type" -> "string", "label" -> "Replacement", "placeholder" -> "href=$1/v2/$2$1"),
-          "flags" -> Json.obj("type" -> "string", "label" -> "Flags (imsu)", "placeholder" -> "i"),
+          "flags"       -> Json.obj("type" -> "string", "label" -> "Flags (imsu)", "placeholder" -> "i")
         ),
-        "flow" -> Json.arr("pattern", "replacement", "flags"),
+        "flow"   -> Json.arr("pattern", "replacement", "flags")
       ),
       "auto_href_prefix" -> Json.obj(
-        "type" -> "string",
-        "label" -> "Auto prefix for relative href (optional)",
+        "type"        -> "string",
+        "label"       -> "Auto prefix for relative href (optional)",
         "placeholder" -> "/proxy"
       ),
-      "max_body_size" -> Json.obj(
-        "type" -> "number",
-        "label" -> "Max body size (bytes)",
+      "max_body_size"    -> Json.obj(
+        "type"        -> "number",
+        "label"       -> "Max body size (bytes)",
         "placeholder" -> "512000",
-        "props" -> Json.obj("suffix" -> "bytes")
+        "props"       -> Json.obj("suffix" -> "bytes")
       ),
       "charset_fallback" -> Json.obj(
-        "type" -> "string",
-        "label" -> "Charset fallback",
+        "type"        -> "string",
+        "label"       -> "Charset fallback",
         "placeholder" -> "UTF-8",
-        "default" -> "UTF-8"
+        "default"     -> "UTF-8"
       )
     )
   )
@@ -106,7 +107,11 @@ object RegexBodyRewriterConfig {
     override def reads(json: JsValue): JsResult[RegexBodyRewriterConfig] = Try {
       RegexBodyRewriterConfig(
         contentTypes = json.select("content_types").asOpt[Seq[String]].getOrElse(Seq("text/html")),
-        rules = json.select("rules").asOpt[Seq[JsObject]].map(seq => seq.flatMap(r => RegexReplacementRule.format.reads(r).asOpt)).getOrElse(Seq.empty),
+        rules = json
+          .select("rules")
+          .asOpt[Seq[JsObject]]
+          .map(seq => seq.flatMap(r => RegexReplacementRule.format.reads(r).asOpt))
+          .getOrElse(Seq.empty),
         autoHrefPrefix = json.select("auto_href_prefix").asOpt[String],
         maxBodySize = json.select("max_body_size").asOpt[Long],
         charsetFallback = json.select("charset_fallback").asOpt[String].orElse(Some("UTF-8"))
@@ -115,11 +120,11 @@ object RegexBodyRewriterConfig {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: RegexBodyRewriterConfig): JsValue = Json.obj(
-      "content_types" -> o.contentTypes,
-      "rules" -> JsArray(o.rules.map(_.json)),
+    override def writes(o: RegexBodyRewriterConfig): JsValue             = Json.obj(
+      "content_types"    -> o.contentTypes,
+      "rules"            -> JsArray(o.rules.map(_.json)),
       "auto_href_prefix" -> o.autoHrefPrefix,
-      "max_body_size" -> o.maxBodySize,
+      "max_body_size"    -> o.maxBodySize,
       "charset_fallback" -> o.charsetFallback
     )
   }
@@ -152,10 +157,12 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
   override def transformsResponse: Boolean       = true
   override def noJsForm: Boolean                 = true
 
-  override def name: String                        = "Regex response body rewriter"
-  override def description: Option[String] = Some("Rewrites the HTTP response body using a set of regex rules, with optional auto-prefix for relative hrefs.")
+  override def name: String                = "Regex response body rewriter"
+  override def description: Option[String] = Some(
+    "Rewrites the HTTP response body using a set of regex rules, with optional auto-prefix for relative hrefs."
+  )
 
-  override def documentation: Option[String] = Some(
+  override def documentation: Option[String]               = Some(
     """1) Prefix all relative hrefs with /proxy and rewrite a domain to another
       |
       |```json
@@ -189,12 +196,13 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
       |```
       |
       |Note: replacement supports backrefs $1, $2, ...
-      |""".stripMargin)
+      |""".stripMargin
+  )
   override def defaultConfigObject: Option[NgPluginConfig] = Some(
     RegexBodyRewriterConfig()
   )
-  override def configFlow: Seq[String]            = RegexBodyRewriterConfig.configFlow
-  override def configSchema: Option[JsObject]     = RegexBodyRewriterConfig.configSchema
+  override def configFlow: Seq[String]                     = RegexBodyRewriterConfig.configFlow
+  override def configSchema: Option[JsObject]              = RegexBodyRewriterConfig.configSchema
 
   private def flagsBits(flags: Option[String]): Int = {
     var bits = Pattern.UNICODE_CASE
@@ -232,8 +240,8 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
     val hrefRe = Pattern.compile(
       """(?i)\bhref\s*=\s*(['\"])\s*(?!https?://|/|#|mailto:|tel:|javascript:)([^'\"#?]+(?:\?[^'\"]*)?)\1"""
     )
-    val sb      = new StringBuffer()
-    val m       = hrefRe.matcher(html)
+    val sb     = new StringBuffer()
+    val m      = hrefRe.matcher(html)
     while (m.find()) {
       val quote   = m.group(1)
       val target  = Option(m.group(2)).getOrElse("")
@@ -252,14 +260,14 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
     }
 
   override def transformResponse(
-                                  ctx: NgTransformerResponseContext
-                                )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val conf = ctx
       .cachedConfig(internalName)(RegexBodyRewriterConfig.format)
       .getOrElse(RegexBodyRewriterConfig())
 
     val ctHeader = ctx.otoroshiResponse.contentType
-    val encoding =  ctx.otoroshiResponse.contentEncoding.map(_.toLowerCase)
+    val encoding = ctx.otoroshiResponse.contentEncoding.map(_.toLowerCase)
 
     val targeted = ctHeader.exists(ct => conf.contentTypes.exists(t => ct.toLowerCase.contains(t.toLowerCase)))
 
@@ -267,20 +275,21 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
     if (!targeted || encoding.exists(enc => enc == "gzip" || enc == "br" || enc == "deflate")) {
       Right(ctx.otoroshiResponse).vfuture
     } else {
-      val charset  = detectCharset(ctHeader, conf.charsetFallback.getOrElse("UTF-8"))
-      val limited  = conf.maxBodySize.map { max =>
-        ctx.otoroshiResponse.body.limitWeighted(max)(_.size)
-      }.getOrElse(ctx.otoroshiResponse.body)
+      val charset = detectCharset(ctHeader, conf.charsetFallback.getOrElse("UTF-8"))
+      val limited = conf.maxBodySize
+        .map { max =>
+          ctx.otoroshiResponse.body.limitWeighted(max)(_.size)
+        }
+        .getOrElse(ctx.otoroshiResponse.body)
 
       limited.runFold(ByteString.empty)(_ ++ _).map { bs =>
-
         val in     = bs.decodeString(charset)
         val afterR = applyRegexReplacementRules(in, conf.rules)
         val out    = conf.autoHrefPrefix.filter(_.nonEmpty).map(p => autoPrefixHref(afterR, p)).getOrElse(afterR)
         val bytes  = ByteString(out, charset)
 
         val newHeaders = stripLengthAndEncoding(ctx.otoroshiResponse.headers) ++ Map(
-          "Content-Length" -> bytes.length.toString,
+          "Content-Length" -> bytes.length.toString
         )
 
         Right(
@@ -305,10 +314,9 @@ class RegexRequestBodyRewriter extends NgRequestTransformer {
   override def transformsResponse: Boolean       = false
   override def noJsForm: Boolean                 = true
 
-  override def name: String                        = "Regex request body rewriter"
-  override def description: Option[String] = Some("Rewrites the HTTP request body using a set of regex rules")
-  override def documentation: Option[String] = Some(
-    """### Examples
+  override def name: String                                = "Regex request body rewriter"
+  override def description: Option[String]                 = Some("Rewrites the HTTP request body using a set of regex rules")
+  override def documentation: Option[String]               = Some("""### Examples
       |
       |1) Rewrite a domain to another
       |
@@ -345,8 +353,8 @@ class RegexRequestBodyRewriter extends NgRequestTransformer {
   override def defaultConfigObject: Option[NgPluginConfig] = Some(
     RegexBodyRewriterConfig()
   )
-  override def configFlow: Seq[String]            = RegexBodyRewriterConfig.configFlow.filterNot(_ == "auto_href_prefix")
-  override def configSchema: Option[JsObject]     = RegexBodyRewriterConfig.configSchema
+  override def configFlow: Seq[String]                     = RegexBodyRewriterConfig.configFlow.filterNot(_ == "auto_href_prefix")
+  override def configSchema: Option[JsObject]              = RegexBodyRewriterConfig.configSchema
 
   private def flagsBits(flags: Option[String]): Int = {
     var bits = Pattern.UNICODE_CASE
@@ -384,8 +392,8 @@ class RegexRequestBodyRewriter extends NgRequestTransformer {
     val hrefRe = Pattern.compile(
       """(?i)\bhref\s*=\s*(['\"])\s*(?!https?://|/|#|mailto:|tel:|javascript:)([^'\"#?]+(?:\?[^'\"]*)?)\1"""
     )
-    val sb      = new StringBuffer()
-    val m       = hrefRe.matcher(html)
+    val sb     = new StringBuffer()
+    val m      = hrefRe.matcher(html)
     while (m.find()) {
       val quote   = m.group(1)
       val target  = Option(m.group(2)).getOrElse("")
@@ -403,13 +411,15 @@ class RegexRequestBodyRewriter extends NgRequestTransformer {
       k.equalsIgnoreCase("Content-Length") || k.equalsIgnoreCase("Content-Encoding")
     }
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val conf = ctx
       .cachedConfig(internalName)(RegexBodyRewriterConfig.format)
       .getOrElse(RegexBodyRewriterConfig())
 
     val ctHeader = ctx.otoroshiRequest.contentType
-    val encoding =  ctx.otoroshiRequest.contentEncoding.map(_.toLowerCase)
+    val encoding = ctx.otoroshiRequest.contentEncoding.map(_.toLowerCase)
 
     val targeted = ctHeader.exists(ct => conf.contentTypes.exists(t => ct.toLowerCase.contains(t.toLowerCase)))
 
@@ -417,20 +427,21 @@ class RegexRequestBodyRewriter extends NgRequestTransformer {
     if (!targeted || encoding.exists(enc => enc == "gzip" || enc == "br" || enc == "deflate")) {
       Right(ctx.otoroshiRequest).vfuture
     } else {
-      val charset  = detectCharset(ctHeader, conf.charsetFallback.getOrElse("UTF-8"))
-      val limited  = conf.maxBodySize.map { max =>
-        ctx.otoroshiRequest.body.limitWeighted(max)(_.size)
-      }.getOrElse(ctx.otoroshiRequest.body)
+      val charset = detectCharset(ctHeader, conf.charsetFallback.getOrElse("UTF-8"))
+      val limited = conf.maxBodySize
+        .map { max =>
+          ctx.otoroshiRequest.body.limitWeighted(max)(_.size)
+        }
+        .getOrElse(ctx.otoroshiRequest.body)
 
       limited.runFold(ByteString.empty)(_ ++ _).map { bs =>
-
         val in     = bs.decodeString(charset)
         val afterR = applyRegexReplacementRules(in, conf.rules)
         val out    = conf.autoHrefPrefix.filter(_.nonEmpty).map(p => autoPrefixHref(afterR, p)).getOrElse(afterR)
         val bytes  = ByteString(out, charset)
 
         val newHeaders = stripLengthAndEncoding(ctx.otoroshiRequest.headers) ++ Map(
-          "Content-Length" -> bytes.length.toString,
+          "Content-Length" -> bytes.length.toString
         )
 
         Right(

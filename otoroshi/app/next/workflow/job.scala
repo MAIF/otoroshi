@@ -12,13 +12,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class WorkflowJobConfig(
-   enabled: Boolean = false,
-   kind: JobKind = JobKind.ScheduledEvery,
-   instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance,
-   initialDelay: Option[FiniteDuration] = None,
-   interval: Option[FiniteDuration] = None,
-   cronExpression: Option[String] = None,
-   rawConfig: JsObject = Json.obj()
+    enabled: Boolean = false,
+    kind: JobKind = JobKind.ScheduledEvery,
+    instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance,
+    initialDelay: Option[FiniteDuration] = None,
+    interval: Option[FiniteDuration] = None,
+    cronExpression: Option[String] = None,
+    rawConfig: JsObject = Json.obj()
 ) {
   def json: JsValue = Json.obj(
     "enabled"         -> enabled,
@@ -27,13 +27,13 @@ case class WorkflowJobConfig(
     "initial_delay"   -> initialDelay.map(_.toMillis).map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).asValue,
     "interval"        -> interval.map(_.toMillis).map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).asValue,
     "cron_expression" -> cronExpression.map(JsString.apply).getOrElse(JsNull).asValue,
-    "config"      -> rawConfig
+    "config"          -> rawConfig
   )
 }
 
 object WorkflowJobConfig {
   val default = WorkflowJobConfig()
-  val format = new Format[WorkflowJobConfig] {
+  val format  = new Format[WorkflowJobConfig] {
     override def reads(json: JsValue): JsResult[WorkflowJobConfig] = Try {
       WorkflowJobConfig(
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
@@ -42,10 +42,10 @@ object WorkflowJobConfig {
         initialDelay = json.select("initial_delay").asOpt[Long].map(_.millis),
         interval = json.select("interval").asOpt[Long].map(_.millis),
         cronExpression = json.select("cron_expression").asOpt[String],
-        rawConfig = json.select("config").asOpt[JsObject].getOrElse(Json.obj()),
+        rawConfig = json.select("config").asOpt[JsObject].getOrElse(Json.obj())
       )
     } match {
-      case Failure(e) => JsError(e.getMessage)
+      case Failure(e)   => JsError(e.getMessage)
       case Success(cfg) => JsSuccess(cfg)
     }
 
@@ -75,20 +75,23 @@ class WorkflowJob(ref: String, config: WorkflowJobConfig) extends Job {
   override def cronExpression(ctx: JobContext, env: Env): Option[String]       = config.cronExpression
   override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]   = Try {
-    env.adminExtensions.extension[WorkflowAdminExtension].map { ext =>
-      ext.workflow(ref) match {
-        case None =>
-          logger.error(s"No workflow context found for ${ref}")
-          Future.successful(())
-        case Some(workflow) =>
-          ext.engine.run(ref, Node.from(workflow.config), config.rawConfig, ctx.attrs, workflow.functions).map {
-            case WorkflowResult(returned, error, run) if error.isDefined =>
-              logger.error(s"Errors during workflow context for ${ref}: ${error.get.json.prettify}")
-            case WorkflowResult(returned, error, run) => ()
-          }
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
+    env.adminExtensions
+      .extension[WorkflowAdminExtension]
+      .map { ext =>
+        ext.workflow(ref) match {
+          case None           =>
+            logger.error(s"No workflow context found for ${ref}")
+            Future.successful(())
+          case Some(workflow) =>
+            ext.engine.run(ref, Node.from(workflow.config), config.rawConfig, ctx.attrs, workflow.functions).map {
+              case WorkflowResult(returned, error, run) if error.isDefined =>
+                logger.error(s"Errors during workflow context for ${ref}: ${error.get.json.prettify}")
+              case WorkflowResult(returned, error, run)                    => ()
+            }
+        }
       }
-    }.getOrElse(Future.successful(()))
+      .getOrElse(Future.successful(()))
   } match {
     case Failure(e) =>
       logger.error("error during workflow job run", e)

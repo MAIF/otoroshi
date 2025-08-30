@@ -7,7 +7,16 @@ import otoroshi.models.RightsChecker.Anyone
 import otoroshi.next.plugins.WasmJob
 import otoroshi.next.workflow.WorkflowJob
 import otoroshi.script._
-import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
@@ -201,10 +210,14 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           cpExporterNames.map(extractInfos) ++
           reqHandlers.map(extractInfos) ++
           tunnelHandlers.map(extractInfos) ++
-          cpJobNames.filter(_ != classOf[WasmJob].getName).filter(_ != classOf[WorkflowJob].getName).map(extractInfosFromJob).filter {
-            case JsNull => false
-            case _      => true
-          }
+          cpJobNames
+            .filter(_ != classOf[WasmJob].getName)
+            .filter(_ != classOf[WorkflowJob].getName)
+            .map(extractInfosFromJob)
+            .filter {
+              case JsNull => false
+              case _      => true
+            }
         Ok(JsArray(allClasses))
       }
     }

@@ -2279,11 +2279,11 @@ export function apisClient(group, version, pluralName) {
   };
 }
 
-
-export const getWorkflowDocs = () => fetch(`/bo/api/proxy/apis/workflows/doc.json`, {
-  method: 'GET',
-  credentials: 'include',
-  headers: {
-    Accept: 'application/json',
-  },
-}).then((r) => r.json());
+export const getWorkflowDocs = () =>
+  fetch(`/bo/api/proxy/apis/workflows/doc.json`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());

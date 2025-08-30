@@ -495,7 +495,7 @@ export class NgForm extends Component {
           placeholder: schema.placeholder,
           help: schema.help,
           disabled: schema.disabled,
-        }
+        },
       };
       return config;
     } else {
@@ -587,8 +587,8 @@ export class NgForm extends Component {
             !config.setBreadcrumb
               ? null
               : () => {
-                config.setBreadcrumb(fullPath);
-              }
+                  config.setBreadcrumb(fullPath);
+                }
           }
           useBreadcrumb={config.useBreadcrumb}
           path={fullPath}
@@ -710,7 +710,10 @@ export class NgForm extends Component {
   ) {
     const paths = name.includes('.') ? name.split('.') : [name];
 
-    const stepSchema = paths.reduce((acc, path) => acc[path] || (acc.schema ? acc.schema[path] : {}), schema);
+    const stepSchema = paths.reduce(
+      (acc, path) => acc[path] || (acc.schema ? acc.schema[path] : {}),
+      schema
+    );
 
     if (stepSchema) {
       const visible =
@@ -846,10 +849,10 @@ export class NgForm extends Component {
             toHome={
               root
                 ? () => {
-                  this.setState({
-                    breadcrumb: [],
-                  });
-                }
+                    this.setState({
+                      breadcrumb: [],
+                    });
+                  }
                 : null
             }
             setBreadcrumb={(i) => {

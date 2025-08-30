@@ -300,7 +300,7 @@ object Identity {
   }
   def from(attrs: TypedMap): Option[Identity] = {
     val apiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).orElse(attrs.get(otoroshi.plugins.Keys.ErrorApiKeyKey))
-    val paUsr = attrs.get(otoroshi.plugins.Keys.UserKey)
+    val paUsr  = attrs.get(otoroshi.plugins.Keys.UserKey)
     apiKey
       .map(k =>
         Identity(

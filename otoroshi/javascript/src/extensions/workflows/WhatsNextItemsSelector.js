@@ -1,107 +1,124 @@
-import React, { useEffect } from 'react'
-import { getNodeFromKind, nodesCatalogSignal } from './models/Functions'
+import React, { useEffect } from 'react';
+import { getNodeFromKind, nodesCatalogSignal } from './models/Functions';
 
-const FORBIDDEN_KINDS = ['workflow', 'start']
+const FORBIDDEN_KINDS = ['workflow', 'start'];
 
 function Category(item) {
-    const { name, description, onClick } = item
+  const { name, description, onClick } = item;
 
-    return <div className='whats-new-category d-flex-center justify-content-between px-3 py-2' onClick={() => onClick(item)}>
-        <div className='whats-next-category-informations'>
-            <p className='m-0'>{name}</p>
-            <p className='m-0'>{description}</p>
-        </div>
-        <i className='fas fa-arrow-right' />
+  return (
+    <div
+      className="whats-new-category d-flex-center justify-content-between px-3 py-2"
+      onClick={() => onClick(item)}
+    >
+      <div className="whats-next-category-informations">
+        <p className="m-0">{name}</p>
+        <p className="m-0">{description}</p>
+      </div>
+      <i className="fas fa-arrow-right" />
     </div>
+  );
 }
 
 function Node({ node, onClick }) {
-    return <div
-        className='whats-news-category d-flex align-items-center px-3 py-2'
-        style={{ cursor: 'pointer' }}
-        onClick={() => onClick(node)}>
-        <div className='d-flex-center' style={{
-            minWidth: 32,
-            fontSize: '1.15rem'
-        }}>
-            <i className={node.label || node.icon} />
-        </div>
-        <div className=' d-flex flex-column px-2'>
-            <p className='m-0' style={{
-                fontWeight: 'bold'
-            }}>{node.display_name || node.name}</p>
-            <p className='m-0'>{node.description}</p>
-        </div>
+  return (
+    <div
+      className="whats-news-category d-flex align-items-center px-3 py-2"
+      style={{ cursor: 'pointer' }}
+      onClick={() => onClick(node)}
+    >
+      <div
+        className="d-flex-center"
+        style={{
+          minWidth: 32,
+          fontSize: '1.15rem',
+        }}
+      >
+        <i className={node.label || node.icon} />
+      </div>
+      <div className=" d-flex flex-column px-2">
+        <p
+          className="m-0"
+          style={{
+            fontWeight: 'bold',
+          }}
+        >
+          {node.display_name || node.name}
+        </p>
+        <p className="m-0">{node.description}</p>
+      </div>
     </div>
+  );
 }
 
 function UnFoldedCategory({ onClick, nodes }) {
-    if (nodes.length === 0)
-        return <p className='text-center m-0'>No results found</p>
+  if (nodes.length === 0) return <p className="text-center m-0">No results found</p>;
 
-    return nodes
-        .map(node => <Node node={node} onClick={() => onClick(node)} key={node.name} />)
+  return nodes.map((node) => <Node node={node} onClick={() => onClick(node)} key={node.name} />);
 }
 
 export function Items({
-    setTitle,
-    handleSelectNode,
-    isOpen,
-    query,
-    selectedCategory,
-    setSelectedCategory }) {
+  setTitle,
+  handleSelectNode,
+  isOpen,
+  query,
+  selectedCategory,
+  setSelectedCategory,
+}) {
+  const onClick = (item) => {
+    setSelectedCategory(item);
+    setTitle(item.name);
+  };
 
-    const onClick = item => {
-        setSelectedCategory(item)
-        setTitle(item.name)
-    }
+  useEffect(() => {
+    setSelectedCategory(undefined);
+  }, [isOpen]);
 
-    useEffect(() => {
-        setSelectedCategory(undefined)
-    }, [isOpen])
+  useEffect(() => {
+    if (query.length === 0) setSelectedCategory(undefined);
+  }, [query]);
 
-    useEffect(() => {
-        if (query.length === 0)
-            setSelectedCategory(undefined)
-    }, [query])
+  const items = nodesCatalogSignal.categories
+    .filter((category) => category.id !== 'transformations')
+    .map((category) => {
+      return {
+        ...category,
+        nodes: category.nodes
+          .filter((kind) => !FORBIDDEN_KINDS.includes(kind))
+          .map((kind) => getNodeFromKind(kind)),
+      };
+    })
+    .filter((category) => category.nodes.length > 0);
 
-    const items = nodesCatalogSignal.categories
-        .filter(category => category.id !== 'transformations')
-        .map(category => {
-            return {
-                ...category,
-                nodes: category.nodes
-                    .filter(kind => !FORBIDDEN_KINDS.includes(kind))
-                    .map(kind => getNodeFromKind(kind))
-            }
-        })
-        .filter(category => category.nodes.length > 0)
+  if (query.length > 0) {
+    const lowercaseQuery = query.toLowerCase();
+    return items
+      .flatMap((category) => category.nodes)
+      .filter(
+        (value) =>
+          value.name.toLowerCase().includes(lowercaseQuery) ||
+          value.description.toLowerCase().includes(lowercaseQuery) ||
+          value.kind.toLowerCase().includes(lowercaseQuery) ||
+          value.display_name?.toLowerCase().includes(lowercaseQuery)
+      )
+      .reduce((acc, node) => (acc.find((f) => f.namee === node.name) ? acc : [...acc, node]), [])
+      .map((node, i) => (
+        <Node
+          node={node}
+          onClick={() => handleSelectNode(node)}
+          key={`${node.name}-${node.kind}-${i}`}
+        />
+      ));
+  }
 
-    if (query.length > 0) {
-        const lowercaseQuery = query.toLowerCase()
-        return items.flatMap(category => category.nodes)
-            .filter(value => value.name.toLowerCase().includes(lowercaseQuery) ||
-                value.description.toLowerCase().includes(lowercaseQuery) ||
-                value.kind.toLowerCase().includes(lowercaseQuery) ||
-                value.display_name?.toLowerCase().includes(lowercaseQuery))
-            .reduce((acc, node) => acc.find(f => f.namee === node.name) ? acc : [...acc, node], [])
-            .map((node, i) => <Node
-                node={node}
-                onClick={() => handleSelectNode(node)}
-                key={`${node.name}-${node.kind}-${i}`} />)
-    }
+  if (selectedCategory)
+    return <UnFoldedCategory {...selectedCategory} onClick={(item) => handleSelectNode(item)} />;
 
-    if (selectedCategory)
-        return <UnFoldedCategory {...selectedCategory} onClick={item => handleSelectNode(item)} />
+  const categories = items.filter((category) => Object.entries(category.nodes));
 
-    const categories = items
-        .filter(category => Object.entries(category.nodes))
+  if (categories.length === 0) return <p className="text-center m-0">No results found</p>;
 
-    if (categories.length === 0)
-        return <p className='text-center m-0'>No results found</p>
-
-    return categories.map(category => <Category {...category}
-        id={category.name}
-        key={category.name}
-        onClick={onClick} />)
+  return categories.map((category) => (
+    <Category {...category} id={category.name} key={category.name} onClick={onClick} />
+  ));
 }

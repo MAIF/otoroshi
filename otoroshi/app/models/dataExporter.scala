@@ -237,61 +237,72 @@ object SplunkCallSettings {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
-    override def writes(o: SplunkCallSettings): JsValue = o.toJson
+    override def writes(o: SplunkCallSettings): JsValue             = o.toJson
   }
 }
 
 case class SplunkCallSettings(
-   url: String,
-   headers: Map[String, String],
-   token: Option[String],
-   sourceType: Option[String],
-   index: Option[String],
-   fields: Map[String, String],
-   timeout: FiniteDuration,
-   tlsConfig: NgTlsConfig
- ) extends Exporter {
+    url: String,
+    headers: Map[String, String],
+    token: Option[String],
+    sourceType: Option[String],
+    index: Option[String],
+    fields: Map[String, String],
+    timeout: FiniteDuration,
+    tlsConfig: NgTlsConfig
+) extends Exporter {
 
   override def toJson: JsValue = {
-    Json.obj(
-      "token"      -> token,
-      "url"        -> url,
-      "headers"    -> headers,
-      "timeout"    -> timeout.toMillis,
-      "tls_config" -> tlsConfig.json
-    ).applyOnWithOpt(token) {
-      case (obj, token) => obj ++ Json.obj("token" -> token)
-    }.applyOnWithOpt(sourceType) {
-      case (obj, sourceType) => obj ++ Json.obj("sourceType" -> sourceType)
-    }.applyOnWithOpt(index) {
-      case (obj, index) => obj ++ Json.obj("index" -> index)
-    }.applyOnIf(fields.nonEmpty) { obj =>
-      obj ++ Json.obj("fields" -> fields)
-    }
+    Json
+      .obj(
+        "token"      -> token,
+        "url"        -> url,
+        "headers"    -> headers,
+        "timeout"    -> timeout.toMillis,
+        "tls_config" -> tlsConfig.json
+      )
+      .applyOnWithOpt(token) { case (obj, token) =>
+        obj ++ Json.obj("token" -> token)
+      }
+      .applyOnWithOpt(sourceType) { case (obj, sourceType) =>
+        obj ++ Json.obj("sourceType" -> sourceType)
+      }
+      .applyOnWithOpt(index) { case (obj, index) =>
+        obj ++ Json.obj("index" -> index)
+      }
+      .applyOnIf(fields.nonEmpty) { obj =>
+        obj ++ Json.obj("fields" -> fields)
+      }
   }
 
   def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
-                                                                                         env: Env,
-                                                                                         ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[ExportResult] = {
     env.MtlsWs
       .url(url, tlsConfig.legacy)
       .withRequestTimeout(timeout)
       .withMethod("POST")
-      .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) {
-        case (headers, token) => headers :+ ("Authorization" -> s"Splunk ${token}")
+      .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
+        headers :+ ("Authorization" -> s"Splunk ${token}")
       }: _*)
-      .withBody(events.map { evt =>
-        Json.obj(
-          "time" -> scala.math.BigDecimal(System.currentTimeMillis.toDouble / 1000.0).toString,
-          "host" -> env.clusterConfig.name,
-          "source" -> "otoroshi",
-          "sourcetype" -> sourceType,
-          "index" -> index,
-          "fields" -> fields,
-          "event" -> evt
-        ).prettify
-      }.mkString("\n\n"))
+      .withBody(
+        events
+          .map { evt =>
+            Json
+              .obj(
+                "time"       -> scala.math.BigDecimal(System.currentTimeMillis.toDouble / 1000.0).toString,
+                "host"       -> env.clusterConfig.name,
+                "source"     -> "otoroshi",
+                "sourcetype" -> sourceType,
+                "index"      -> index,
+                "fields"     -> fields,
+                "event"      -> evt
+              )
+              .prettify
+          }
+          .mkString("\n\n")
+      )
       .execute()
       .map { resp =>
         val status = resp.status
@@ -338,7 +349,13 @@ case class WorkflowCallSettings(ref: String) extends Exporter {
       case None           => ExportResult.ExportResultFailure(s"workflow '${ref}' not found").vfuture
       case Some(workflow) => {
         extension.engine
-          .run(ref, Node.from(workflow.config), Json.obj("events" -> events, "config" -> config.json), TypedMap.empty, workflow.functions)
+          .run(
+            ref,
+            Node.from(workflow.config),
+            Json.obj("events" -> events, "config" -> config.json),
+            TypedMap.empty,
+            workflow.functions
+          )
           .map { result =>
             if (result.hasError) {
               ExportResult.ExportResultFailure(result.error.get.json.stringify)

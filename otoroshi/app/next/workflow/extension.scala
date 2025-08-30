@@ -27,10 +27,10 @@ import scala.util.{Failure, Success, Try}
 case class Orphans(nodes: Seq[Node] = Seq.empty, edges: Seq[JsObject] = Seq.empty)
 
 object Orphans {
-  val format               = new Format[Orphans] {
+  val format = new Format[Orphans] {
     override def writes(o: Orphans): JsValue             = Json.obj(
-      "nodes"         -> o.nodes.map(_.json),
-      "edges"         -> o.edges
+      "nodes" -> o.nodes.map(_.json),
+      "edges" -> o.edges
     )
     override def reads(json: JsValue): JsResult[Orphans] = Try {
       Orphans(
@@ -101,7 +101,10 @@ object Workflow {
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
-        job = (json \ "job").asOpt[JsObject].flatMap(o => WorkflowJobConfig.format.reads(o).asOpt).getOrElse(WorkflowJobConfig.default),
+        job = (json \ "job")
+          .asOpt[JsObject]
+          .flatMap(o => WorkflowJobConfig.format.reads(o).asOpt)
+          .getOrElse(WorkflowJobConfig.default),
         functions = (json \ "functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
         testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo")),
         orphans = (json \ "orphans").asOpt[Orphans](Orphans.format.reads).getOrElse(Orphans())
@@ -126,16 +129,17 @@ class KvWorkflowConfigDataStore(extensionId: AdminExtensionId, redisCli: RedisLi
 
 class KvPausedWorkflowSessionDatastore(extensionId: AdminExtensionId, redisCli: RedisLike, _env: Env) {
 
-  implicit val ec = _env.otoroshiExecutionContext
+  implicit val ec  = _env.otoroshiExecutionContext
   implicit val mat = _env.otoroshiMaterializer
   implicit val env = _env
 
-  def fromJsonSafe(value: JsValue): JsResult[PausedWorkflowSession]  = fmt.reads(value)
-  def fmt: Format[PausedWorkflowSession]                   = PausedWorkflowSession.format
-  def redisLike(implicit env: Env): RedisLike = redisCli
-  def keyAll(): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflow-sessions:*"
-  def key(wfId: String, id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflow-sessions:$wfId:$id"
-  def extractId(value: PausedWorkflowSession): String      = value.id
+  def fromJsonSafe(value: JsValue): JsResult[PausedWorkflowSession] = fmt.reads(value)
+  def fmt: Format[PausedWorkflowSession]                            = PausedWorkflowSession.format
+  def redisLike(implicit env: Env): RedisLike                       = redisCli
+  def keyAll(): String                                              = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflow-sessions:*"
+  def key(wfId: String, id: String): String                         =
+    s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflow-sessions:$wfId:$id"
+  def extractId(value: PausedWorkflowSession): String               = value.id
 
   def all(): Future[Seq[PausedWorkflowSession]] = {
     redisLike
@@ -172,14 +176,16 @@ class KvPausedWorkflowSessionDatastore(extensionId: AdminExtensionId, redisCli: 
   def save(wfId: String, id: String, session: PausedWorkflowSession): Future[Boolean] = {
     redisLike.set(
       key(wfId, id),
-      session.json.stringify,
+      session.json.stringify
     )
   }
 }
 
 class WorkflowConfigAdminExtensionDatastores(env: Env, extensionId: AdminExtensionId) {
-  val workflowsDatastore: WorkflowConfigDataStore = new KvWorkflowConfigDataStore(extensionId, env.datastores.redis, env)
-  val pausedWorkflowSession: KvPausedWorkflowSessionDatastore = new KvPausedWorkflowSessionDatastore(extensionId, env.datastores.redis, env)
+  val workflowsDatastore: WorkflowConfigDataStore             =
+    new KvWorkflowConfigDataStore(extensionId, env.datastores.redis, env)
+  val pausedWorkflowSession: KvPausedWorkflowSessionDatastore =
+    new KvPausedWorkflowSessionDatastore(extensionId, env.datastores.redis, env)
 }
 
 class WorkflowConfigAdminExtensionState(env: Env) {
@@ -198,7 +204,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
 
   private[workflow] lazy val datastores = new WorkflowConfigAdminExtensionDatastores(env, id)
   private[workflow] lazy val states     = new WorkflowConfigAdminExtensionState(env)
-  private[workflow] val handledJobs = new UnboundedTrieMap[String, Job]()
+  private[workflow] val handledJobs     = new UnboundedTrieMap[String, Job]()
 
   val engine = new WorkflowEngine(env)
 
@@ -248,31 +254,38 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         wantsBody = true,
         handle = (ctx, req, apikey, optBody) => {
           val wfId = ctx.named("wfId").getOrElse("--")
-          val id = ctx.named("id").getOrElse("--")
+          val id   = ctx.named("id").getOrElse("--")
           optBody match {
-            case None => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
-            case Some(body) => body.runFold(ByteString(""))(_ ++ _)(env.otoroshiMaterializer).flatMap { bodyRaw =>
-              bodyRaw.utf8String.parseJson match {
-                case data @ JsObject(_) => {
-                  datastores.pausedWorkflowSession.one(wfId, id).flatMap {
-                    case Some(session) => {
-                      val async = req.getQueryString("async").contains("true")
-                      val attrs = TypedMap.empty
-                      if (async) {
-                        session.resume(data, attrs, env)
-                        Results.Ok(Json.obj("ack" -> true)).vfuture
-                      } else {
-                        session.resume(data, attrs, env).map { r =>
-                          Results.Ok(r.json)
+            case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
+            case Some(body) =>
+              body
+                .runFold(ByteString(""))(_ ++ _)(env.otoroshiMaterializer)
+                .flatMap { bodyRaw =>
+                  bodyRaw.utf8String.parseJson match {
+                    case data @ JsObject(_) => {
+                      datastores.pausedWorkflowSession
+                        .one(wfId, id)
+                        .flatMap {
+                          case Some(session) => {
+                            val async = req.getQueryString("async").contains("true")
+                            val attrs = TypedMap.empty
+                            if (async) {
+                              session.resume(data, attrs, env)
+                              Results.Ok(Json.obj("ack" -> true)).vfuture
+                            } else {
+                              session
+                                .resume(data, attrs, env)
+                                .map { r =>
+                                  Results.Ok(r.json)
+                                }(env.otoroshiExecutionContext)
+                            }
+                          }
+                          case None          => Results.NotFound(Json.obj("error" -> "resource not found")).vfuture
                         }(env.otoroshiExecutionContext)
-                      }
                     }
-                    case None => Results.NotFound(Json.obj("error" -> "resource not found")).vfuture
-                  }(env.otoroshiExecutionContext)
-                }
-                case _ => Results.BadRequest(Json.obj("error" -> "bad data format")).vfuture
-              }
-            }(env.otoroshiExecutionContext)
+                    case _                  => Results.BadRequest(Json.obj("error" -> "bad data format")).vfuture
+                  }
+                }(env.otoroshiExecutionContext)
           }
         }
       ),
@@ -282,11 +295,13 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         wantsBody = false,
         handle = (ctx, req, apikey, optBody) => {
           val wfId = ctx.named("wfId").getOrElse("--")
-          val id = ctx.named("id").getOrElse("--")
-          datastores.pausedWorkflowSession.one(wfId, id).map {
-            case Some(session) => Results.Ok(session.json)
-            case None => Results.NotFound(Json.obj("error" -> "resource not found"))
-          }(env.otoroshiExecutionContext)
+          val id   = ctx.named("id").getOrElse("--")
+          datastores.pausedWorkflowSession
+            .one(wfId, id)
+            .map {
+              case Some(session) => Results.Ok(session.json)
+              case None          => Results.NotFound(Json.obj("error" -> "resource not found"))
+            }(env.otoroshiExecutionContext)
         }
       ),
       AdminExtensionAdminApiRoute(
@@ -295,11 +310,13 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         wantsBody = false,
         handle = (ctx, req, apikey, optBody) => {
           val wfId = ctx.named("wfId").getOrElse("--")
-          val id = ctx.named("id").getOrElse("--")
-          datastores.pausedWorkflowSession.delete(wfId, id).map {
-            case true => Results.Ok(Json.obj("done" -> true))
-            case false => Results.NotFound(Json.obj("error" -> "resource not found"))
-          }(env.otoroshiExecutionContext)
+          val id   = ctx.named("id").getOrElse("--")
+          datastores.pausedWorkflowSession
+            .delete(wfId, id)
+            .map {
+              case true  => Results.Ok(Json.obj("done" -> true))
+              case false => Results.NotFound(Json.obj("error" -> "resource not found"))
+            }(env.otoroshiExecutionContext)
         }
       ),
       AdminExtensionAdminApiRoute(
@@ -308,9 +325,11 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         wantsBody = false,
         handle = (ctx, req, apikey, optBody) => {
           val wfId = ctx.named("wfId").getOrElse("--")
-          datastores.pausedWorkflowSession.allForWorkflow(wfId).map { sessions =>
-            Results.Ok(JsArray(sessions.map(_.json)))
-          }(env.otoroshiExecutionContext)
+          datastores.pausedWorkflowSession
+            .allForWorkflow(wfId)
+            .map { sessions =>
+              Results.Ok(JsArray(sessions.map(_.json)))
+            }(env.otoroshiExecutionContext)
         }
       ),
       AdminExtensionAdminApiRoute(
@@ -319,25 +338,32 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         wantsBody = true,
         handle = (ctx, req, apikey, optBody) => {
           optBody match {
-            case None => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
-            case Some(body) => body.runFold(ByteString(""))(_ ++ _)(env.otoroshiMaterializer).flatMap { bodyRaw =>
-              val json = bodyRaw.utf8String.parseJson
-              PausedWorkflowSession.format.reads(json) match {
-                case JsError(errors) => Results.BadRequest(Json.obj("error" -> errors.mkString("\n"))).vfuture
-                case JsSuccess(session, _) => {
-                  val wfId = session.workflowRef
-                  val id = session.id
-                  datastores.pausedWorkflowSession.one(wfId, id).flatMap {
-                    case Some(s) => Results.Conflict(Json.obj("error" -> "resource already exists")).vfuture
-                    case None => {
-                      datastores.pausedWorkflowSession.save(wfId, id, session).map { _ =>
-                        Results.Ok(session.json)
-                      }(env.otoroshiExecutionContext)
+            case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
+            case Some(body) =>
+              body
+                .runFold(ByteString(""))(_ ++ _)(env.otoroshiMaterializer)
+                .flatMap { bodyRaw =>
+                  val json = bodyRaw.utf8String.parseJson
+                  PausedWorkflowSession.format.reads(json) match {
+                    case JsError(errors)       => Results.BadRequest(Json.obj("error" -> errors.mkString("\n"))).vfuture
+                    case JsSuccess(session, _) => {
+                      val wfId = session.workflowRef
+                      val id   = session.id
+                      datastores.pausedWorkflowSession
+                        .one(wfId, id)
+                        .flatMap {
+                          case Some(s) => Results.Conflict(Json.obj("error" -> "resource already exists")).vfuture
+                          case None    => {
+                            datastores.pausedWorkflowSession
+                              .save(wfId, id, session)
+                              .map { _ =>
+                                Results.Ok(session.json)
+                              }(env.otoroshiExecutionContext)
+                          }
+                        }(env.otoroshiExecutionContext)
                     }
-                  }(env.otoroshiExecutionContext)
-                }
-              }
-            }(env.otoroshiExecutionContext)
+                  }
+                }(env.otoroshiExecutionContext)
           }
         }
       ),
@@ -346,9 +372,11 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         path = "/apis/extensions/otoroshi.extensions.workflows/sessions",
         wantsBody = false,
         handle = (ctx, req, apikey, optBody) => {
-          datastores.pausedWorkflowSession.all().map { sessions =>
-            Results.Ok(JsArray(sessions.map(_.json)))
-          }(env.otoroshiExecutionContext)
+          datastores.pausedWorkflowSession
+            .all()
+            .map { sessions =>
+              Results.Ok(JsArray(sessions.map(_.json)))
+            }(env.otoroshiExecutionContext)
         }
       )
     )
@@ -402,12 +430,12 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             if (payload_raw.contains("${vault://")) env.vaults.fillSecretsAsync("workflow-test", payload_raw)
             else payload_raw.vfuture
           secretFillFuture.flatMap { payload_filled =>
-            val payload  = payload_filled.parseJson
-            val input    = payload.select("input").asString.parseJson.asObject
-            val functions = payload.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
+            val payload     = payload_filled.parseJson
+            val input       = payload.select("input").asString.parseJson.asObject
+            val functions   = payload.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
             val workflow_id = payload.select("workflow_id").asString
-            val workflow = payload.select("workflow").asObject
-            val node     = Node.from(workflow)
+            val workflow    = payload.select("workflow").asObject
+            val node        = Node.from(workflow)
             engine.run(workflow_id, node, input, TypedMap.empty, functions).map { res =>
               Results.Ok(res.json)
             }
@@ -422,7 +450,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
 
   def startJobsIfNeeded(workflows: Seq[Workflow]): Unit = {
     val currentIds: Seq[String] = workflows.filter(_.job.enabled).map { workflow =>
-      val actualJob = new WorkflowJob(workflow.id, workflow.job)
+      val actualJob        = new WorkflowJob(workflow.id, workflow.job)
       val uniqueId: String = actualJob.uniqueId.id
       if (!handledJobs.contains(uniqueId)) {
         handledJobs.put(uniqueId, actualJob)

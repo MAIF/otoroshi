@@ -1514,7 +1514,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           if (Cluster.logger.isDebugEnabled)
             Cluster.logger.debug(s"saving workflow session '${session.workflowRef}/${session.id}' with a leader")
           env.MtlsWs
-            .url(otoroshiUrl + s"/apis/extensions/otoroshi.extensions.workflows/sessions/${session.workflowRef}", config.mtlsConfig)
+            .url(
+              otoroshiUrl + s"/apis/extensions/otoroshi.extensions.workflows/sessions/${session.workflowRef}",
+              config.mtlsConfig
+            )
             .withHttpHeaders(
               "Host"                                             -> config.leader.host,
               ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
@@ -1562,7 +1565,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           if (Cluster.logger.isDebugEnabled)
             Cluster.logger.debug(s"deleting workflow session '${session.workflowRef}/${session.id}' with a leader")
           env.MtlsWs
-            .url(otoroshiUrl + s"/apis/extensions/otoroshi.extensions.workflows/sessions/${session.workflowRef}/${session.id}", config.mtlsConfig)
+            .url(
+              otoroshiUrl + s"/apis/extensions/otoroshi.extensions.workflows/sessions/${session.workflowRef}/${session.id}",
+              config.mtlsConfig
+            )
             .withHttpHeaders(
               "Host"                                             -> config.leader.host,
               ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,

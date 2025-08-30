@@ -7,44 +7,44 @@ object WorkflowGenerators {
 
   def generateJsonDescriptor(): JsValue = {
     Json.obj(
-      "categories"-> JsArray(Node.categories.map { case (key, informations) =>
+      "categories" -> JsArray(Node.categories.map { case (key, informations) =>
         Json.obj("id" -> key).deepMerge(informations.json)
       }.toSeq),
-      "nodes"     -> JsArray(Node.nodes.map { case (key, value) =>
+      "nodes"      -> JsArray(Node.nodes.map { case (key, value) =>
         val node = value.apply(Json.obj())
         Json.obj(
-          "name"        -> node.documentationName,
+          "name"         -> node.documentationName,
           "display_name" -> node.documentationDisplayName,
-          "icon" -> node.documentationIcon,
-          "description" -> node.documentationDescription,
-          "schema"      -> node.documentationInputSchema,
-          "form_schema" -> node.documentationFormSchema,
-          "category"    -> node.documentationCategory,
-          "example"     -> node.documentationExample,
+          "icon"         -> node.documentationIcon,
+          "description"  -> node.documentationDescription,
+          "schema"       -> node.documentationInputSchema,
+          "form_schema"  -> node.documentationFormSchema,
+          "category"     -> node.documentationCategory,
+          "example"      -> node.documentationExample
         )
       }.toSeq),
-      "functions" -> JsArray(WorkflowFunction.functions.map { case (key, value) =>
+      "functions"  -> JsArray(WorkflowFunction.functions.map { case (key, value) =>
         Json.obj(
-          "name"        -> key,
-          "description" -> value.documentationDescription,
-          "schema"      -> value.documentationInputSchema,
-          "form_schema" -> value.documentationFormSchema,
-          "category"    -> JsString(value.documentationCategory.getOrElse("functions")),
-          "example"     -> value.documentationExample,
+          "name"         -> key,
+          "description"  -> value.documentationDescription,
+          "schema"       -> value.documentationInputSchema,
+          "form_schema"  -> value.documentationFormSchema,
+          "category"     -> JsString(value.documentationCategory.getOrElse("functions")),
+          "example"      -> value.documentationExample,
           "display_name" -> value.documentationDisplayName,
-          "icon" -> value.documentationIcon,
+          "icon"         -> value.documentationIcon
         )
       }.toSeq),
-      "operators" -> JsArray(WorkflowOperator.operators.map { case (key, value) =>
+      "operators"  -> JsArray(WorkflowOperator.operators.map { case (key, value) =>
         Json.obj(
-          "name"        -> key,
-          "description" -> value.documentationDescription,
-          "schema"      -> value.documentationInputSchema,
-          "form_schema" -> value.documentationFormSchema,
-          "category"    -> JsString(value.documentationCategory.getOrElse("operators")),
-          "example"     -> value.documentationExample,
+          "name"         -> key,
+          "description"  -> value.documentationDescription,
+          "schema"       -> value.documentationInputSchema,
+          "form_schema"  -> value.documentationFormSchema,
+          "category"     -> JsString(value.documentationCategory.getOrElse("operators")),
+          "example"      -> value.documentationExample,
           "display_name" -> value.documentationDisplayName,
-          "icon" -> value.documentationIcon,
+          "icon"         -> value.documentationIcon
         )
       }.toSeq)
     )

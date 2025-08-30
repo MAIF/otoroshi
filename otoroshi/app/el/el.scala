@@ -515,12 +515,18 @@ object GlobalExpressionLanguage {
             case "consumer.kind" if user.isDefined                                               => "user"
             case "consumer.kind" if apiKey.isDefined                                             => "apikey"
             case "consumer.kind" if apiKey.isEmpty && user.isEmpty                               => "public"
-            case "consumer.json.pretty" if apiKey.isEmpty && user.isEmpty                        => Json.obj("kind" -> "public", "consumer" -> JsNull).prettify
-            case "consumer.json.pretty" if apiKey.isDefined                                      => Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).prettify
-            case "consumer.json.pretty" if user.isDefined                                        => Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).prettify
-            case "consumer.json" if apiKey.isEmpty && user.isEmpty                               => Json.obj("kind" -> "public", "consumer" -> JsNull).stringify
-            case "consumer.json" if apiKey.isDefined                                             => Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).stringify
-            case "consumer.json" if user.isDefined                                               => Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).stringify
+            case "consumer.json.pretty" if apiKey.isEmpty && user.isEmpty                        =>
+              Json.obj("kind" -> "public", "consumer" -> JsNull).prettify
+            case "consumer.json.pretty" if apiKey.isDefined                                      =>
+              Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).prettify
+            case "consumer.json.pretty" if user.isDefined                                        =>
+              Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).prettify
+            case "consumer.json" if apiKey.isEmpty && user.isEmpty                               =>
+              Json.obj("kind" -> "public", "consumer" -> JsNull).stringify
+            case "consumer.json" if apiKey.isDefined                                             =>
+              Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).stringify
+            case "consumer.json" if user.isDefined                                               =>
+              Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).stringify
             case r"consumer.metadata.$field@(.*):$dv@(.*)" if user.isDefined || apiKey.isDefined =>
               user
                 .flatMap(_.otoroshiData)

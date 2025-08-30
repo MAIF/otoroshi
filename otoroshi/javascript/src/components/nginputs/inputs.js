@@ -143,8 +143,9 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
-                    } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${
+                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                  } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -605,13 +606,13 @@ export class NgBoxBooleanRenderer extends Component {
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-        <div className={`row mb-${margin} ${className || ''}`}>
-          <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-            {label}
-          </label>
-          <div className="col-sm-10">{children}</div>
-        </div>
-      );
+          <div className={`row mb-${margin} ${className || ''}`}>
+            <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+              {label}
+            </label>
+            <div className="col-sm-10">{children}</div>
+          </div>
+        );
 
     return (
       <Container>
@@ -653,8 +654,7 @@ export class NgArrayRenderer extends Component {
   canShowActions(path) {
     const props = this.props.rawSchema.props || {};
 
-    if (props.disableActions)
-      return false
+    if (props.disableActions) return false;
 
     const breadcrumbAsArray = this.props.breadcrumb || [];
     const pathAsArray = path || this.props.path || [];
@@ -686,23 +686,21 @@ export class NgArrayRenderer extends Component {
       form: () => ({
         ...this.generateDefaultValue(current.schema),
       }),
-      object: () => { },
-      json: () => { },
-    }
+      object: () => {},
+      json: () => {},
+    };
 
-    if (values[idx])
-      return values[idx]()
+    if (values[idx]) return values[idx]();
 
-    return undefined
-  }
+    return undefined;
+  };
 
   generateDefaultValue = (obj) => {
-    if (obj?.type)
-      return this.defaultValues(obj, obj.type)
+    if (obj?.type) return this.defaultValues(obj, obj.type);
 
     return Object.entries(obj).reduce((acc, current) => {
-      const type = current[1] ? current[1].type : undefined
-      const value = this.defaultValues(current[1], type)
+      const type = current[1] ? current[1].type : undefined;
+      const value = this.defaultValues(current[1], type);
       return {
         ...acc,
         [current[0]]: value ? (typeof value === 'function' ? value() : value) : '',
@@ -750,7 +748,7 @@ export class NgArrayRenderer extends Component {
                     border: 'var(--bg-color_level2) solid 1px',
                     borderRadius: 6,
                     padding: 12,
-                    marginBottom: 6
+                    marginBottom: 6,
                   }}
                   key={path}
                 >
@@ -836,7 +834,7 @@ export class NgArrayRenderer extends Component {
                 } else if (schema.itemRenderer) {
                   this.props.onChange([...newArr, this.defaultValues({}, schema.type)]);
                 } else {
-                  console.log('ici', customTemplate)
+                  console.log('ici', customTemplate);
                   this.props.onChange([...newArr, customTemplate]);
                 }
               }}
@@ -893,21 +891,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                  <ItemRenderer
-                    embedded
-                    flow={this.props.flow}
-                    schema={this.props.schema}
-                    value={value}
-                    key={key}
-                    idx={idx}
-                    onChange={(e) => {
-                      const newObject = this.props.value ? { ...this.props.value } : {};
-                      newObject[key] = e;
-                      this.props.onChange(newObject);
-                    }}
-                    {...props}
-                  />
-                )
+                    <ItemRenderer
+                      embedded
+                      flow={this.props.flow}
+                      schema={this.props.schema}
+                      value={value}
+                      key={key}
+                      idx={idx}
+                      onChange={(e) => {
+                        const newObject = this.props.value ? { ...this.props.value } : {};
+                        newObject[key] = e;
+                        this.props.onChange(newObject);
+                      }}
+                      {...props}
+                    />
+                  )
                 : null
             }
           />
@@ -1229,7 +1227,7 @@ export class NgSelectRenderer extends Component {
     const fullOptions = this.applyTransformer(
       props || this.props,
       this.state.options || props.options || this.props.options
-    )
+    );
 
     return (
       <LabelAndInput {...this.props}>

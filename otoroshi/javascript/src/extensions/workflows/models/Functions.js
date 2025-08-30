@@ -1,177 +1,180 @@
-import { AssignNode } from "../nodes/AssignNode"
-import { CallNode } from "../nodes/CallNode"
-import { FilterNode } from "../nodes/FilterNode"
-import { FlatMapNode } from "../nodes/FlatMapNode"
-import { ForEachNode } from "../nodes/ForEachNode"
-import { IfThenElseNode } from "../nodes/IfThenElseNode"
-import { MapNode } from "../nodes/MapNode"
-import { ParallelFlowsNode } from "../nodes/ParallelFlowsNode"
-import { SwitchNode } from "../nodes/SwitchNode"
-import { ValueNode } from "../nodes/ValueNode"
-import { WaitNode } from "../nodes/WaitNode"
-import { StartNode } from "../nodes/StartNode"
-import { ReturnedNode } from '../nodes/ReturnedNode'
-import { PredicateNode } from '../nodes/PredicateNode'
+import { AssignNode } from '../nodes/AssignNode';
+import { CallNode } from '../nodes/CallNode';
+import { FilterNode } from '../nodes/FilterNode';
+import { FlatMapNode } from '../nodes/FlatMapNode';
+import { ForEachNode } from '../nodes/ForEachNode';
+import { IfThenElseNode } from '../nodes/IfThenElseNode';
+import { MapNode } from '../nodes/MapNode';
+import { ParallelFlowsNode } from '../nodes/ParallelFlowsNode';
+import { SwitchNode } from '../nodes/SwitchNode';
+import { ValueNode } from '../nodes/ValueNode';
+import { WaitNode } from '../nodes/WaitNode';
+import { StartNode } from '../nodes/StartNode';
+import { ReturnedNode } from '../nodes/ReturnedNode';
+import { PredicateNode } from '../nodes/PredicateNode';
 
-import { IsFalsyOperator } from '../operators/IsFalsyOperator'
-import { ArrayAppendOperator } from '../operators/ArrayAppendOperator'
-import { NeqOperator } from '../operators/NeqOperator'
-import { ArrayAtOperator } from '../operators/ArrayAtOperator'
-import { ArrayPageOperator } from '../operators/ArrayPageOperator'
-import { MapGetOperator } from '../operators/MapGetOperator'
-import { MemRefOperator } from '../operators/MemRefOperator'
-import { EncodeBase64Operator } from '../operators/EncodeBase64Operator'
-import { NotOperator } from '../operators/NotOperator'
-import { ProjectionOperator } from '../operators/ProjectionOperator'
-import { StrSplitOperator } from '../operators/StrSplitOperator'
-import { ArrayPrependOperator } from '../operators/ArrayPrependOperator'
-import { DecodeBase64Operator } from '../operators/DecodeBase64Operator'
-import { JsonParseOperator } from '../operators/JsonParseOperator'
-import { ContainsOperator } from '../operators/ContainsOperator'
-import { MapPutOperator } from '../operators/MapPutOperator'
-import { IsTruthyOperator } from '../operators/IsTruthyOperator'
-import { MapDelOperator } from '../operators/MapDelOperator'
-import { ArrayDelOperator } from '../operators/ArrayDelOperator'
-import { WorkflowFunction } from "../functions/WorkflowFunction"
-import { signal } from "signals-react-safe"
+import { IsFalsyOperator } from '../operators/IsFalsyOperator';
+import { ArrayAppendOperator } from '../operators/ArrayAppendOperator';
+import { NeqOperator } from '../operators/NeqOperator';
+import { ArrayAtOperator } from '../operators/ArrayAtOperator';
+import { ArrayPageOperator } from '../operators/ArrayPageOperator';
+import { MapGetOperator } from '../operators/MapGetOperator';
+import { MemRefOperator } from '../operators/MemRefOperator';
+import { EncodeBase64Operator } from '../operators/EncodeBase64Operator';
+import { NotOperator } from '../operators/NotOperator';
+import { ProjectionOperator } from '../operators/ProjectionOperator';
+import { StrSplitOperator } from '../operators/StrSplitOperator';
+import { ArrayPrependOperator } from '../operators/ArrayPrependOperator';
+import { DecodeBase64Operator } from '../operators/DecodeBase64Operator';
+import { JsonParseOperator } from '../operators/JsonParseOperator';
+import { ContainsOperator } from '../operators/ContainsOperator';
+import { MapPutOperator } from '../operators/MapPutOperator';
+import { IsTruthyOperator } from '../operators/IsTruthyOperator';
+import { MapDelOperator } from '../operators/MapDelOperator';
+import { ArrayDelOperator } from '../operators/ArrayDelOperator';
+import { WorkflowFunction } from '../functions/WorkflowFunction';
+import { signal } from 'signals-react-safe';
 
 export const nodesCatalogSignal = signal({
-    nodes: [],
-    categories: [],
-    workflows: []
-})
+  nodes: [],
+  categories: [],
+  workflows: [],
+});
 
 const OVERLOADED_NODES = {
-    "assign": AssignNode,
-    "parallel": ParallelFlowsNode,
-    "switch": SwitchNode,
-    "if": IfThenElseNode,
-    "foreach": ForEachNode,
-    "map": MapNode,
-    "filter": FilterNode,
-    "flatmap": FlatMapNode,
-    "call": CallNode,
-    "wait": WaitNode,
-    "value": ValueNode,
-    "returned": ReturnedNode,
-    "start": StartNode,
-    "predicate": PredicateNode,
-    "$mem_ref": MemRefOperator,
-    "$array_append": ArrayAppendOperator,
-    "$array_prepend": ArrayPrependOperator,
-    "$array_at": ArrayAtOperator,
-    "$array_del": ArrayDelOperator,
-    "$array_page": ArrayPageOperator,
-    "$projection": ProjectionOperator,
-    "$map_put": MapPutOperator,
-    "$map_get": MapGetOperator,
-    "$map_del": MapDelOperator,
-    "$json_parse": JsonParseOperator,
-    "$is_truthy": IsTruthyOperator,
-    "$is_falsy": IsFalsyOperator,
-    "$contains": ContainsOperator,
-    "$neq": NeqOperator,
-    "$encode_base64": EncodeBase64Operator,
-    "$decode_base64": DecodeBase64Operator,
-    "$not": NotOperator,
-    "$str_split": StrSplitOperator,
-    "core.workflow_call": WorkflowFunction
-}
+  assign: AssignNode,
+  parallel: ParallelFlowsNode,
+  switch: SwitchNode,
+  if: IfThenElseNode,
+  foreach: ForEachNode,
+  map: MapNode,
+  filter: FilterNode,
+  flatmap: FlatMapNode,
+  call: CallNode,
+  wait: WaitNode,
+  value: ValueNode,
+  returned: ReturnedNode,
+  start: StartNode,
+  predicate: PredicateNode,
+  $mem_ref: MemRefOperator,
+  $array_append: ArrayAppendOperator,
+  $array_prepend: ArrayPrependOperator,
+  $array_at: ArrayAtOperator,
+  $array_del: ArrayDelOperator,
+  $array_page: ArrayPageOperator,
+  $projection: ProjectionOperator,
+  $map_put: MapPutOperator,
+  $map_get: MapGetOperator,
+  $map_del: MapDelOperator,
+  $json_parse: JsonParseOperator,
+  $is_truthy: IsTruthyOperator,
+  $is_falsy: IsFalsyOperator,
+  $contains: ContainsOperator,
+  $neq: NeqOperator,
+  $encode_base64: EncodeBase64Operator,
+  $decode_base64: DecodeBase64Operator,
+  $not: NotOperator,
+  $str_split: StrSplitOperator,
+  'core.workflow_call': WorkflowFunction,
+};
 
 function getNodeCategory(categories, node) {
-    let nodeCategory = node.category
+  let nodeCategory = node.category;
 
-    let hasCategory = categories.find(cat => cat.id === nodeCategory)
+  let hasCategory = categories.find((cat) => cat.id === nodeCategory);
 
-    if (!hasCategory) {
-        for (const category of categories) {
-            const defaultCategory = category.nodes.find(n => n === node.kind)
+  if (!hasCategory) {
+    for (const category of categories) {
+      const defaultCategory = category.nodes.find((n) => n === node.kind);
 
-            if (defaultCategory) {
-                nodeCategory = defaultCategory
-                hasCategory = true
-                break
-            }
-        }
+      if (defaultCategory) {
+        nodeCategory = defaultCategory;
+        hasCategory = true;
+        break;
+      }
     }
+  }
 
-    return nodeCategory
+  return nodeCategory;
 }
 
 export function getNodeFromKind(kind) {
-    return Object.values(nodesCatalogSignal.value.nodes).find(n => n.kind === kind || n.name === kind)
+  return Object.values(nodesCatalogSignal.value.nodes).find(
+    (n) => n.kind === kind || n.name === kind
+  );
 }
 
 export function NODES_BY_CATEGORIES(nodes, categories) {
-    return Object.values(nodes).reduce((categories, node) => {
-        const nodeCategory = getNodeCategory(categories, node)
+  return Object.values(nodes).reduce(
+    (categories, node) => {
+      const nodeCategory = getNodeCategory(categories, node);
 
-        return categories.map(category => {
-            if (!nodeCategory && category.id === 'others')
-                return {
-                    ...category,
-                    nodes: [...category.nodes, node.name]
-                }
-            if (category.id === nodeCategory) {
-                return {
-                    ...category,
-                    nodes: [...category.nodes, node.name]
-                }
-            }
-            return category
-        })
-    }, categories.sort((a, b) => a.name.localeCompare(b.name)))
-}
-
-
-export const NODES = documentation => {
-
-    let defaultValues = [
-        ...documentation.nodes.map(n => ({
-            ...n,
-            nodes: true,
-            sources: ['output'],
-            schema: n.form_schema,
-            kind: n.kind || n.name
-        })),
-        ...documentation.functions.map(n => ({
-            ...n,
-            category: "functions",
-            sources: ['output'],
-            schema: n.form_schema,
-            kind: "Call"
-        })),
-        ...documentation.operators.map(n => ({
-            ...n,
-            operators: true,
-            sources: ['output'],
-            schema: n.form_schema,
-            kind: n.kind || n.name
-        }))
-    ]
-
-    const items = Object.fromEntries(Object.entries(OVERLOADED_NODES)
-        .map(([key, node]) => {
-            const defaultValue = defaultValues.find(n => n.name === key)
-
-            if (defaultValue)
-                defaultValues = defaultValues.filter(f => f.name !== key)
-
-            return [
-                key,
-                {
-                    ...(defaultValue || {}),
-                    ...node
-                }
-            ]
-        }))
-
-    defaultValues.forEach(node => {
-        items[node.name] = {
-            ...node,
-            kind: node.kind || node.name
+      return categories.map((category) => {
+        if (!nodeCategory && category.id === 'others')
+          return {
+            ...category,
+            nodes: [...category.nodes, node.name],
+          };
+        if (category.id === nodeCategory) {
+          return {
+            ...category,
+            nodes: [...category.nodes, node.name],
+          };
         }
-    })
-
-    return items
+        return category;
+      });
+    },
+    categories.sort((a, b) => a.name.localeCompare(b.name))
+  );
 }
+
+export const NODES = (documentation) => {
+  let defaultValues = [
+    ...documentation.nodes.map((n) => ({
+      ...n,
+      nodes: true,
+      sources: ['output'],
+      schema: n.form_schema,
+      kind: n.kind || n.name,
+    })),
+    ...documentation.functions.map((n) => ({
+      ...n,
+      category: 'functions',
+      sources: ['output'],
+      schema: n.form_schema,
+      kind: 'Call',
+    })),
+    ...documentation.operators.map((n) => ({
+      ...n,
+      operators: true,
+      sources: ['output'],
+      schema: n.form_schema,
+      kind: n.kind || n.name,
+    })),
+  ];
+
+  const items = Object.fromEntries(
+    Object.entries(OVERLOADED_NODES).map(([key, node]) => {
+      const defaultValue = defaultValues.find((n) => n.name === key);
+
+      if (defaultValue) defaultValues = defaultValues.filter((f) => f.name !== key);
+
+      return [
+        key,
+        {
+          ...(defaultValue || {}),
+          ...node,
+        },
+      ];
+    })
+  );
+
+  defaultValues.forEach((node) => {
+    items[node.name] = {
+      ...node,
+      kind: node.kind || node.name,
+    };
+  });
+
+  return items;
+};

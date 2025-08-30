@@ -22,12 +22,13 @@ case class RegexRule(pattern: String = ".*", mode: String = "allow") {
   }
   def json: JsValue = Json.obj(
     "pattern" -> pattern,
-    "mode" -> mode
+    "mode"    -> mode
   )
 }
 
 object RegexRule {
-  def apply(obj: JsObject): RegexRule = RegexRule(obj.select("pattern").asOptString.getOrElse(".*"), obj("mode").asOptString.getOrElse("allow"))
+  def apply(obj: JsObject): RegexRule =
+    RegexRule(obj.select("pattern").asOptString.getOrElse(".*"), obj("mode").asOptString.getOrElse("allow"))
 }
 
 case class StatusCodeRange(from: Int, to: Int) {
@@ -39,25 +40,25 @@ case class StatusCodeRange(from: Int, to: Int) {
     }
   }
 }
-object StatusCodeRange {
+object StatusCodeRange                         {
   def apply(from: Int): StatusCodeRange = StatusCodeRange(from, from)
 }
 
 case class Fail2BanConfig(
-   identifier: String = "${req.ip}",
-   detectTimeMs:   FiniteDuration = 10.minute,
-   banTimeMs:      FiniteDuration = 3.hour,
-   maxRetry:       Int = 4,
-   urlRegex:       Seq[RegexRule] = Seq.empty,
-   statusMatchers: Seq[StatusCodeRange] = Fail2BanConfig.defaultRanges, // inclusive ranges
-   ignored:   Seq[String] = Seq.empty,
-   blocked:   Seq[String] = Seq.empty,
+    identifier: String = "${req.ip}",
+    detectTimeMs: FiniteDuration = 10.minute,
+    banTimeMs: FiniteDuration = 3.hour,
+    maxRetry: Int = 4,
+    urlRegex: Seq[RegexRule] = Seq.empty,
+    statusMatchers: Seq[StatusCodeRange] = Fail2BanConfig.defaultRanges, // inclusive ranges
+    ignored: Seq[String] = Seq.empty,
+    blocked: Seq[String] = Seq.empty
 ) extends NgPluginConfig {
   def isUrlInScope(pathAndQuery: String): Boolean = {
     if (urlRegex.isEmpty) true
     else {
       urlRegex.find(_.matches(pathAndQuery)) match {
-        case None => true
+        case None                                              => true
         case Some(rule) if rule.mode.equalsIgnoreCase("allow") => true
         case Some(rule) if rule.mode.equalsIgnoreCase("block") => false
       }
@@ -68,25 +69,25 @@ case class Fail2BanConfig(
 
   def isIgnored(remoteAddress: String): Boolean = {
     ignored.exists {
-      case ip if ip.startsWith("Ip(") && ip.endsWith(")") => {
+      case ip if ip.startsWith("Ip(") && ip.endsWith(")")         => {
         otoroshi.utils.RegexPool(ip.substring(3).init).matches(remoteAddress)
       }
       case cidr if cidr.startsWith("Cidr(") && cidr.endsWith(")") => {
         IpFiltering.cidr(cidr).contains(remoteAddress)
       }
-      case identifier => otoroshi.utils.RegexPool(identifier).matches(remoteAddress)
+      case identifier                                             => otoroshi.utils.RegexPool(identifier).matches(remoteAddress)
     }
   }
 
   def isBlocked(remoteAddress: String): Boolean = {
     blocked.exists {
-      case ip if ip.startsWith("Ip(") && ip.endsWith(")") => {
+      case ip if ip.startsWith("Ip(") && ip.endsWith(")")         => {
         otoroshi.utils.RegexPool(ip.substring(3).init).matches(remoteAddress)
       }
       case cidr if cidr.startsWith("Cidr(") && cidr.endsWith(")") => {
         IpFiltering.cidr(cidr).contains(remoteAddress)
       }
-      case identifier => otoroshi.utils.RegexPool(identifier).matches(remoteAddress)
+      case identifier                                             => otoroshi.utils.RegexPool(identifier).matches(remoteAddress)
     }
   }
 
@@ -95,7 +96,8 @@ case class Fail2BanConfig(
 
 object Fail2BanConfig {
 
-  private val defaultRanges = Seq(StatusCodeRange(400), StatusCodeRange(401), StatusCodeRange(403, 499), StatusCodeRange(500, 599))
+  private val defaultRanges =
+    Seq(StatusCodeRange(400), StatusCodeRange(401), StatusCodeRange(403, 499), StatusCodeRange(500, 599))
 
   def configFlow: Seq[String] = Seq(
     "identifier",
@@ -105,29 +107,52 @@ object Fail2BanConfig {
     "url_regex",
     "status_codes",
     "ignored",
-    "blocked",
+    "blocked"
   )
 
   def configSchema: JsObject = Json.obj(
-    "identifier"     -> Json.obj("type" -> "string", "label" -> "Client identifier", "default" -> "${req.ip}"),
-    "detect_time"    -> Json.obj("type" -> "string", "label" -> "Detection window", "default" -> "60s"),
-    "ban_time"       -> Json.obj("type" -> "string", "label" -> "Ban time", "default" -> "15m"),
-    "max_retry"      -> Json.obj("type" -> "number", "label" -> "Max retries", "default" -> 5),
-    "url_regex"      -> Json.obj(
-      "type" -> "array",
-      "label" -> "URLs rules",
-      "array" -> true,
-      "format" -> "form",
+    "identifier"   -> Json.obj("type" -> "string", "label" -> "Client identifier", "default" -> "${req.ip}"),
+    "detect_time"  -> Json.obj("type" -> "string", "label" -> "Detection window", "default" -> "60s"),
+    "ban_time"     -> Json.obj("type" -> "string", "label" -> "Ban time", "default" -> "15m"),
+    "max_retry"    -> Json.obj("type" -> "number", "label" -> "Max retries", "default" -> 5),
+    "url_regex"    -> Json.obj(
+      "type"    -> "array",
+      "label"   -> "URLs rules",
+      "array"   -> true,
+      "format"  -> "form",
       "default" -> Json.arr(),
-      "schema" -> Json.obj(
+      "schema"  -> Json.obj(
         "pattern" -> Json.obj("type" -> "string", "label" -> "Pattern", "placeholder" -> "/v1/.*"),
-        "mode" -> Json.obj("type" -> "select", "label" -> "Mode", "possibleValues" -> Json.arr(Json.obj("label" -> "Allow", "value" -> "allow"), Json.obj("label" -> "Block", "value" -> "block"))),
+        "mode"    -> Json.obj(
+          "type"           -> "select",
+          "label"          -> "Mode",
+          "possibleValues" -> Json
+            .arr(Json.obj("label" -> "Allow", "value" -> "allow"), Json.obj("label" -> "Block", "value" -> "block"))
+        )
       ),
-      "flow" -> Json.arr("pattern", "mode"),
+      "flow"    -> Json.arr("pattern", "mode")
     ),
-    "status_codes"   -> Json.obj("type" -> "array", "array" -> true, "format" -> JsNull, "label" -> "Status codes", "default" -> Json.arr("400", "401", "403-499", "500-599")),
-    "ignored"    -> Json.obj("type" -> "array", "array" -> true, "format" -> JsNull, "label" -> "Ignored identifiers", "default" -> Json.arr()),
-    "blocked"    -> Json.obj("type" -> "array", "array" -> true, "format" -> JsNull, "label" -> "Blocked identifiers", "default" -> Json.arr()),
+    "status_codes" -> Json.obj(
+      "type"    -> "array",
+      "array"   -> true,
+      "format"  -> JsNull,
+      "label"   -> "Status codes",
+      "default" -> Json.arr("400", "401", "403-499", "500-599")
+    ),
+    "ignored"      -> Json.obj(
+      "type"    -> "array",
+      "array"   -> true,
+      "format"  -> JsNull,
+      "label"   -> "Ignored identifiers",
+      "default" -> Json.arr()
+    ),
+    "blocked"      -> Json.obj(
+      "type"    -> "array",
+      "array"   -> true,
+      "format"  -> JsNull,
+      "label"   -> "Blocked identifiers",
+      "default" -> Json.arr()
+    )
   )
 
   def default: Fail2BanConfig = Fail2BanConfig()
@@ -135,39 +160,39 @@ object Fail2BanConfig {
   val format = new Format[Fail2BanConfig] {
 
     override def reads(js: JsValue): JsResult[Fail2BanConfig] = Try {
-      val detectMs = parseDurationMillis((js \ "detect_time").asOpt[JsValue].getOrElse(JsString("60s")))
-      val banMs    = parseDurationMillis((js \ "ban_time").asOpt[JsValue].getOrElse(JsString("15m")))
+      val detectMs   = parseDurationMillis((js \ "detect_time").asOpt[JsValue].getOrElse(JsString("60s")))
+      val banMs      = parseDurationMillis((js \ "ban_time").asOpt[JsValue].getOrElse(JsString("15m")))
       val identifier = (js \ "identifier").asOpt[String].getOrElse("${req.ip}")
-      val maxRetry = (js \ "max_retry").asOpt[Int].getOrElse(5)
-      val regexes  = (js \ "url_regex").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { obj => RegexRule(obj) }
-      val scodes   = (js \ "status_codes").asOpt[Seq[String]].getOrElse(Seq("401", "403", "429", "500-599"))
-      val ranges   = parseStatusRanges(scodes).getOrElse(defaultRanges)
-      val ignored  = (js \ "ignored").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val blocked  = (js \ "blocked").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val maxRetry   = (js \ "max_retry").asOpt[Int].getOrElse(5)
+      val regexes    = (js \ "url_regex").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { obj => RegexRule(obj) }
+      val scodes     = (js \ "status_codes").asOpt[Seq[String]].getOrElse(Seq("401", "403", "429", "500-599"))
+      val ranges     = parseStatusRanges(scodes).getOrElse(defaultRanges)
+      val ignored    = (js \ "ignored").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val blocked    = (js \ "blocked").asOpt[Seq[String]].getOrElse(Seq.empty)
       Fail2BanConfig(
-        identifier     = identifier,
-        detectTimeMs   = detectMs,
-        banTimeMs      = banMs,
-        maxRetry       = maxRetry,
-        urlRegex       = regexes,
+        identifier = identifier,
+        detectTimeMs = detectMs,
+        banTimeMs = banMs,
+        maxRetry = maxRetry,
+        urlRegex = regexes,
         statusMatchers = ranges,
-        ignored        = ignored,
-        blocked        = blocked,
+        ignored = ignored,
+        blocked = blocked
       )
     } match {
-      case Success(config) => JsSuccess(config)
+      case Success(config)    => JsSuccess(config)
       case Failure(exception) => JsError(exception.getMessage)
     }
 
     override def writes(o: Fail2BanConfig): JsValue = Json.obj(
-      "identifier" -> o.identifier,
-      "detect_time" -> o.detectTimeMs.toMillis,
-      "ban_time" -> o.banTimeMs.toMillis,
-      "max_retry" -> o.maxRetry,
-      "url_regex" -> JsArray(o.urlRegex.map(_.json)),
+      "identifier"   -> o.identifier,
+      "detect_time"  -> o.detectTimeMs.toMillis,
+      "ban_time"     -> o.banTimeMs.toMillis,
+      "max_retry"    -> o.maxRetry,
+      "url_regex"    -> JsArray(o.urlRegex.map(_.json)),
       "status_codes" -> JsArray(o.statusMatchers.map(_.str.json)),
-      "ignored" -> o.ignored,
-      "blocked" -> o.blocked,
+      "ignored"      -> o.ignored,
+      "blocked"      -> o.blocked
     )
   }
 
@@ -180,7 +205,7 @@ object Fail2BanConfig {
       else if (str.endsWith("m")) str.stripSuffix("m").trim.toLong * 60 * 1000
       else if (str.endsWith("h")) str.stripSuffix("h").trim.toLong * 60 * 60 * 1000
       else Try(str.toLong).getOrElse(60000L)
-    case _ => 60000L
+    case _           => 60000L
   }).millis
 
   private def parseStatusRanges(items: Seq[String]): Option[Seq[StatusCodeRange]] = Try {
@@ -225,7 +250,7 @@ object Fail2BanState {
 
   def isBanned(ip: String, nowMs: Long): Boolean = {
     bannedUntil.get(ip) match {
-      case None => false
+      case None     => false
       case Some(ts) => {
         if (nowMs > ts) {
           bannedUntil.remove(ip)
@@ -253,33 +278,41 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
   override def transformsResponse: Boolean       = true
   override def transformsError: Boolean          = true
 
-  override def noJsForm: Boolean                 = true
+  override def noJsForm: Boolean                           = true
   override def defaultConfigObject: Option[NgPluginConfig] = Fail2BanConfig.default.some
-  override def configFlow: Seq[String]            = Fail2BanConfig.configFlow
-  override def configSchema: Option[JsObject]     = Fail2BanConfig.configSchema.some
+  override def configFlow: Seq[String]                     = Fail2BanConfig.configFlow
+  override def configSchema: Option[JsObject]              = Fail2BanConfig.configSchema.some
 
-  override def name: String = "fail2ban"
+  override def name: String                = "fail2ban"
   override def description: Option[String] =
-    Some("Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like). Client is identified by the 'identifier' that can use the Otoroshi expression language to extract informations like user id, apikey, ip address, etc.")
+    Some(
+      "Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like). Client is identified by the 'identifier' that can use the Otoroshi expression language to extract informations like user id, apikey, ip address, etc."
+    )
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
-    val ip  = conf.identifier.evaluateEl(ctx.attrs)
-    val now = System.currentTimeMillis()
+    val ip   = conf.identifier.evaluateEl(ctx.attrs)
+    val now  = System.currentTimeMillis()
     if (conf.isIgnored(ip)) {
       NgAccess.NgAllowed.vfuture
     } else if (conf.isBlocked(ip)) {
-      NgAccess.NgDenied(Results.Forbidden(Json.obj(
-        "error"   -> "blocked",
-        "message" -> s"You cant access this resource.",
-      ))).vfuture
+      NgAccess
+        .NgDenied(
+          Results.Forbidden(
+            Json.obj(
+              "error"   -> "blocked",
+              "message" -> s"You cant access this resource."
+            )
+          )
+        )
+        .vfuture
     } else if (Fail2BanState.isBanned(ip, now)) {
       val remain = Fail2BanState.remainingBanSeconds(ip, now)
       val body   = Json.obj(
-        "error"   -> "temporary_ban",
-        "message" -> s"You are temporarily banned due to too many failed requests.",
+        "error"            -> "temporary_ban",
+        "message"          -> s"You are temporarily banned due to too many failed requests.",
         "retry_in_seconds" -> remain
       )
       NgAccess.NgDenied(Results.Forbidden(body)).vfuture
@@ -288,11 +321,13 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
     }
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponse(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
-    val ip  = conf.identifier.evaluateEl(ctx.attrs)
+    val ip   = conf.identifier.evaluateEl(ctx.attrs)
     if (conf.isIgnored(ip)) {
       Right(ctx.otoroshiResponse).vfuture
     } else if (conf.isBlocked(ip)) {
@@ -315,11 +350,13 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
     }
   }
 
-  override def transformError(ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  override def transformError(
+      ctx: NgTransformerErrorContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
-    val ip  = conf.identifier.evaluateEl(ctx.attrs)
+    val ip   = conf.identifier.evaluateEl(ctx.attrs)
     if (conf.isIgnored(ip)) {
       ctx.otoroshiResponse.vfuture
     } else if (conf.isBlocked(ip)) {

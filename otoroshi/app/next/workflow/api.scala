@@ -21,14 +21,20 @@ class WorkflowEngine(env: Env) {
 
   implicit val executorContext: ExecutionContext = env.otoroshiExecutionContext
 
-  def run(wfRef: String, node: Node, input: JsObject, attrs: TypedMap, functions: Map[String, JsObject] = Map.empty): Future[WorkflowResult] = {
+  def run(
+      wfRef: String,
+      node: Node,
+      input: JsObject,
+      attrs: TypedMap,
+      functions: Map[String, JsObject] = Map.empty
+  ): Future[WorkflowResult] = {
     val wfRun = WorkflowRun(
       ULID.random(),
       attrs,
       env,
       functions,
       workflow_ref = wfRef,
-      workflow = node.json,
+      workflow = node.json
     )
     wfRun.memory.set("input", input)
     node
@@ -97,7 +103,7 @@ object WorkflowError {
       WorkflowError(
         message = (json \ "message").as[String],
         details = (json \ "details").asOpt[JsObject],
-        exception = None,
+        exception = None
       )
     } match {
       case Failure(t) => JsError(t.getMessage)
@@ -138,13 +144,13 @@ object WorkflowLogItem {
         message = json.select("message").as[String],
         node = Node.from(json.select("node").as[JsObject]),
         memory = json.select("memory").as[JsObject],
-        error = json.select("error").asOpt[JsObject].flatMap(o => WorkflowError.format.reads(o).asOpt),
+        error = json.select("error").asOpt[JsObject].flatMap(o => WorkflowError.format.reads(o).asOpt)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(r) => JsSuccess(r)
     }
-    override def writes(o: WorkflowLogItem): JsValue = Json.obj(
+    override def writes(o: WorkflowLogItem): JsValue             = Json.obj(
       "timestamp" -> o.timestamp.toDate.getTime,
       "message"   -> o.message,
       "node"      -> o.node.json,
@@ -176,20 +182,20 @@ case class WorkflowRun(
     memory: WorkflowMemory = new WorkflowMemory(),
     runlog: WorkflowLog = new WorkflowLog(),
     workflow_ref: String,
-    workflow: JsObject,
+    workflow: JsObject
 ) {
   def log(message: String, node: Node, error: Option[WorkflowError] = None): Unit = {
     runlog.log(WorkflowLogItem(DateTime.now(), message, node, memory.json, error))
   }
   def hydrate(
-    workflow_ref: String,
-    workflow: JsObject,
-    attrs: TypedMap,
-    env: Env,
+      workflow_ref: String,
+      workflow: JsObject,
+      attrs: TypedMap,
+      env: Env
   ): WorkflowRun = {
     copy(attrs = attrs, env = env)
   }
-  def json: JsValue = WorkflowRun.format.writes(this)
+  def json: JsValue      = WorkflowRun.format.writes(this)
   def lightJson: JsValue = json.asObject - "log" - "functions"
 }
 
@@ -200,7 +206,7 @@ object WorkflowRun {
         id = json.select("id").asString,
         functions = json.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
         memory = {
-          val map = json.select("memory").as[Map[String, JsValue]]
+          val map  = json.select("memory").as[Map[String, JsValue]]
           val tmap = new TrieMap[String, JsValue]()
           tmap.addAll(map)
           new WorkflowMemory(tmap)
@@ -209,7 +215,7 @@ object WorkflowRun {
         attrs = TypedMap.empty,
         env = OtoroshiEnvHolder.get(),
         workflow_ref = "",
-        workflow = Json.obj(),
+        workflow = Json.obj()
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -217,18 +223,18 @@ object WorkflowRun {
     }
 
     override def writes(o: WorkflowRun): JsValue = Json.obj(
-      "id" -> o.id,
+      "id"        -> o.id,
       "functions" -> o.functions,
-      "memory" -> o.memory.json,
-      "log" -> o.runlog.json,
+      "memory"    -> o.memory.json,
+      "log"       -> o.runlog.json
     )
   }
 }
 
 trait WorkflowFunction {
   def documentationName: String                                                                             = this.getClass.getName.replace("$", "")
-  def documentationDisplayName: String = documentationName
-  def documentationIcon: String = "fas fa-circle"
+  def documentationDisplayName: String                                                                      = documentationName
+  def documentationIcon: String                                                                             = "fas fa-circle"
   def documentationDescription: String                                                                      = "no description"
   def documentationInputSchema: Option[JsObject]                                                            = None
   def documentationFormSchema: Option[JsObject]                                                             = None
@@ -267,10 +273,13 @@ trait Node extends NodeLike {
   def enabled: Boolean                           = json.select("enabled").asOptBoolean.getOrElse(true)
   def result: Option[String]                     = json.select("result").asOptString
   def returned: Option[JsValue]                  = json.select("returned").asOpt[JsValue]
-  def run(wfr: WorkflowRun, prefix: Seq[Int], from: Seq[Int])(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]]
+  def run(wfr: WorkflowRun, prefix: Seq[Int], from: Seq[Int])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[WorkflowError, JsValue]]
   def documentationName: String                  = this.getClass.getSimpleName.replace("$", "").toLowerCase()
-  def documentationDisplayName: String = documentationName
-  def documentationIcon: String = "fas fa-circle"
+  def documentationDisplayName: String           = documentationName
+  def documentationIcon: String                  = "fas fa-circle"
   def documentationDescription: String           = "no description"
   def documentationInputSchema: Option[JsObject] = None
   def documentationFormSchema: Option[JsObject]  = None
@@ -295,19 +304,19 @@ trait Node extends NodeLike {
             result.foreach(name => wfr.memory.set(name, res))
             Left(err)
           }
-          case Left(err)  => {
+          case Left(err)                                                   => {
             wfr.log(s"ending with error '${id}'", this, err.some)
             Left(err)
           }
-          case Right(res) => {
+          case Right(res)                                                  => {
             wfr.log(s"ending '${id}'", this)
             result.foreach(name => wfr.memory.set(name, res))
             returned
               .map {
-                case obj@JsObject(_) =>
+                case obj @ JsObject(_) =>
                   val returnedObject = obj - "position"
                   WorkflowOperator.processOperators(returnedObject, wfr, env)
-                case value => WorkflowOperator.processOperators(value, wfr, env)
+                case value             => WorkflowOperator.processOperators(value, wfr, env)
               }
               .map(v => Right(v))
               .getOrElse(Right(res)) // TODO: el like
@@ -377,10 +386,9 @@ object Node {
     }
   }
   def flattenTree(node: NodeLike, path: String = "0"): List[(String, NodeLike)] = {
-    val children = node.subNodes.filter(_.enabled).zipWithIndex.flatMap {
-      case (child, idx) =>
-        val childPath = s"$path.$idx"
-        flattenTree(child, childPath)
+    val children = node.subNodes.filter(_.enabled).zipWithIndex.flatMap { case (child, idx) =>
+      val childPath = s"$path.$idx"
+      flattenTree(child, childPath)
     }
     List(path -> node) ++ children
   }
@@ -388,12 +396,12 @@ object Node {
 
 trait WorkflowOperator {
   def documentationName: String                  = this.getClass.getName.replace("$", "")
-  def documentationDisplayName: String = documentationName
-  def documentationIcon: String = "fas fa-circle"
+  def documentationDisplayName: String           = documentationName
+  def documentationIcon: String                  = "fas fa-circle"
   def documentationDescription: String           = "no description"
   def documentationInputSchema: Option[JsObject] = None
   def documentationFormSchema: Option[JsObject]  = None
-  def documentationCategory: Option[String]       = None
+  def documentationCategory: Option[String]      = None
   def documentationExample: Option[JsObject]     = None
   def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue
 }
@@ -439,7 +447,8 @@ object WorkflowOperator {
     case JsString(str) if str.contains("${now}")                                          => JsString(str.replace("${now}", System.currentTimeMillis().toString))
     case JsString(str) if str.contains("${workflow_id}")                                  => JsString(str.replace("${workflow_id}", wfr.workflow_ref))
     case JsString(str) if str.contains("${session_id}")                                   => JsString(str.replace("${session_id}", wfr.id))
-    case JsString(str) if str.contains("${resume_token}")                                 => JsString(str.replace("${resume_token}", PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env)))
+    case JsString(str) if str.contains("${resume_token}")                                 =>
+      JsString(str.replace("${resume_token}", PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env)))
     case _                                                                                => value
   }
 }

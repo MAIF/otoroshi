@@ -1,7 +1,6 @@
-
 export const FlatMapNode = {
-    kind: 'flatmap',
-    type: 'group',
-    sources: ['Item', 'output'],
-    targets: []
-}
+  kind: 'flatmap',
+  type: 'group',
+  sources: ['Item', 'output'],
+  targets: [],
+};

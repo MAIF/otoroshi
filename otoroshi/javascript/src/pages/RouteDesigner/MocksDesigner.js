@@ -1154,7 +1154,12 @@ function Header({ hide, onDesigner, setDesigner }) {
     <>
       <div className="d-flex-between">
         <h3>Mock responses</h3>
-        <button className="btn btn-quiet btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
+        <button
+          className="btn btn-quiet btn-sm"
+          type="button"
+          style={{ minWidth: '36px' }}
+          onClick={hide}
+        >
           <i className="fas fa-times" />
         </button>
       </div>
