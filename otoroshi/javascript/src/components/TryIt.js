@@ -126,20 +126,22 @@ export default function ({ route }) {
 
   const findAllAuthorizations = () => {
     const local = { ...authorizations };
-    const futures = Otoroshi.extensions().flatMap((ext) => (ext.testerAuthorizations || []).map(auth => [ext, auth])).map(aar => {
-      const [ext, authorization] = aar;
-      if (authorization.fetchOptions) {
-        return authorization.fetchOptions().then(options => {
-          local[ext.id] = options;
-        });
-      } else {
-        return Promise.resolve()
-      }
-    });
+    const futures = Otoroshi.extensions()
+      .flatMap((ext) => (ext.testerAuthorizations || []).map((auth) => [ext, auth]))
+      .map((aar) => {
+        const [ext, authorization] = aar;
+        if (authorization.fetchOptions) {
+          return authorization.fetchOptions().then((options) => {
+            local[ext.id] = options;
+          });
+        } else {
+          return Promise.resolve();
+        }
+      });
     return Promise.all(futures).then(() => {
       setAuthorizations(local);
     });
-  }
+  };
 
   useEffect(() => {
     fetchApiKeysForPage(route.id).then(setApikeys);
@@ -445,38 +447,39 @@ export default function ({ route }) {
               />
             </Row>
           )}
-          {isAuthorizationTabVisible && (
-            Otoroshi.extensions().flatMap((ext) => (ext.testerAuthorizations || []).map(auth => [ext, auth])).map(aar => {
-              const [ext, authorization] = aar;
-              const valueExtractor = authorization.valueExtractor || (() => null);
-              const options = authorizations[ext.id] || [];
-              const optionsTransformer = authorization.optionsTransformer || ((arr) => arr);
-              const onChange = (input) => {
-                if (authorization.onChange) {
-                  const r = authorization.onChange(input, request);
-                  if (r.then) {
-                    r.then(rr => setRequest(rr));
-                  } else {
-                    setRequest(r);
+          {isAuthorizationTabVisible &&
+            Otoroshi.extensions()
+              .flatMap((ext) => (ext.testerAuthorizations || []).map((auth) => [ext, auth]))
+              .map((aar) => {
+                const [ext, authorization] = aar;
+                const valueExtractor = authorization.valueExtractor || (() => null);
+                const options = authorizations[ext.id] || [];
+                const optionsTransformer = authorization.optionsTransformer || ((arr) => arr);
+                const onChange = (input) => {
+                  if (authorization.onChange) {
+                    const r = authorization.onChange(input, request);
+                    if (r.then) {
+                      r.then((rr) => setRequest(rr));
+                    } else {
+                      setRequest(r);
+                    }
                   }
-                }
-              }
-              return (
-                <Row title={authorization.name} containerClassName="py-2 border-b m-0">
-                  <NgSelectRenderer
-                    isClearable
-                    ngOptions={{
-                      spread: true,
-                    }}
-                    options={options}
-                    value={valueExtractor(request)}
-                    onChange={onChange}
-                    optionsTransformer={optionsTransformer}
-                  />
-                </Row>
-              );
-            })
-          )}
+                };
+                return (
+                  <Row title={authorization.name} containerClassName="py-2 border-b m-0">
+                    <NgSelectRenderer
+                      isClearable
+                      ngOptions={{
+                        spread: true,
+                      }}
+                      options={options}
+                      value={valueExtractor(request)}
+                      onChange={onChange}
+                      optionsTransformer={optionsTransformer}
+                    />
+                  </Row>
+                );
+              })}
           {selectedTab === 'Headers' && headersStatus === 'down' && (
             <div className="border-b">
               <Headers
