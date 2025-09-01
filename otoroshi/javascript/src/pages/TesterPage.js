@@ -136,7 +136,7 @@ function TesterPage() {
 
 export default ({ setTitle }) => {
   useEffect(() => {
-    setTitle('Tester');
+    setTitle('Route Tester');
   }, []);
 
   return (
