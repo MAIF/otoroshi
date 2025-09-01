@@ -28,7 +28,7 @@ export default function ({ route }) {
 
   const [request, updateRequest] = useState({
     path: '/',
-    headers: { [Date.now()]: { key: '', value: '' } },
+    headers: {},
     method: METHODS[0],
     body: undefined,
     bodyContent: '',
