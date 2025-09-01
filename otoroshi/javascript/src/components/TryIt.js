@@ -154,6 +154,7 @@ export default function ({ route }) {
     tryIt({
       ...request,
       headers: Object.values(request.headers)
+        .filter((d) => d.key)
         .filter((d) => d.key.length > 0 && d.checked)
         .reduce((a, c) => ({ ...a, [c.key]: c.value }), {}),
       body:
