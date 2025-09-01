@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.5.1] - 2025-09-01
+
+
+https://github.com/MAIF/otoroshi/milestone/122?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.5.0...v17.5.1
+https://github.com/MAIF/otoroshi/releases/tag/v17.5.1
+
+
+### Added 
+
+- make authorizations pluggable in the route tester (#2245 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+
+
+### Contributors
+
+* @mathieuancelin
+
 ## [17.5.0] - 2025-08-30
 
 
