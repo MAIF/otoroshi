@@ -78,7 +78,7 @@ export function Items({
     if (query.length === 0) setSelectedCategory(undefined);
   }, [query]);
 
-  const items = nodesCatalogSignal.categories
+  const items = nodesCatalogSignal.value.categories
     .filter((category) => category.id !== 'transformations')
     .map((category) => {
       return {

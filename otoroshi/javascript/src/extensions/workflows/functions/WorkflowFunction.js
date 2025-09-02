@@ -9,10 +9,18 @@ export const WorkflowFunction = {
   form_schema: {
     workflow_id: {
       renderer: (props) => {
+        console.log('value', props.value)
+
+        const options = [
+          ...(Object.values(nodesCatalogSignal.value.workflow.functions)
+            .map(func => ({ ...func, self: true })) || []),
+          ...nodesCatalogSignal.value.workflows
+        ]
+
         return (
           <Row title="Workflow">
             <NgSelectRenderer
-              value={props.value}
+              value={options.find(option => option.id === props.value)}
               placeholder="Select an existing workflow"
               label={' '}
               ngOptions={{
@@ -20,7 +28,7 @@ export const WorkflowFunction = {
               }}
               isClearable
               onChange={(workflowRef) => {
-                props.onChange(workflowRef);
+                props.onChange(workflowRef.id);
               }}
               components={{
                 Option: (props) => {
@@ -29,13 +37,11 @@ export const WorkflowFunction = {
                       className="d-flex align-items-center m-0 p-2"
                       style={{ gap: '.5rem' }}
                       onClick={() => {
-                        props.selectOption(props.data);
+                        props.selectOption(props.data.value);
                       }}
                     >
-                      <span
-                        className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}
-                      >
-                        {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
+                      <span className={`badge ${props.data.value.self ? 'bg-warning' : 'bg-success'}`}>
+                        {props.data.value.self ? 'LOCAL' : 'GLOBAL'}
                       </span>
                       {props.data.label}
                     </div>
@@ -45,21 +51,18 @@ export const WorkflowFunction = {
                   return (
                     <div className="d-flex align-items-center m-0" style={{ gap: '.5rem' }}>
                       <span
-                        className={`badge ${props.data.value?.startsWith('backend_') ? 'bg-warning' : 'bg-success'}`}
+                        className={`badge ${props.data.value.self ? 'bg-warning' : 'bg-success'}`}
                       >
-                        {props.data.value?.startsWith('backend_') ? 'GLOBAL' : 'LOCAL'}
+                        {props.data.value.self ? 'LOCAL' : 'GLOBAL'}
                       </span>
                       {props.data.label}
                     </div>
                   );
                 },
               }}
-              options={[
-                ...nodesCatalogSignal.value.workflows,
-                ...(Object.values(nodesCatalogSignal.value.workflow.functions) || []),
-              ]}
+              options={options}
               optionsTransformer={(arr) =>
-                arr.map((item) => ({ label: item.name, value: item.id }))
+                arr.map((item) => ({ label: item.name, value: item }))
               }
             />
           </Row>

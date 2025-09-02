@@ -25,7 +25,7 @@ export function TagsModal({ isOpen, tags, setTags }) {
         <NgForm
           value={tags}
           onChange={(e) => {
-            if (tags.tags.find((val, index) => val !== e.tags[index])) {
+            if (tags.tags.some((val, index) => val !== e.tags[index]) || e.tags !== tags.tags) {
               setTags(e.tags);
             }
           }}

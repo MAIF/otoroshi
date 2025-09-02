@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
 import { useParams } from 'react-router-dom';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
@@ -49,31 +49,71 @@ export function WorkflowsContainer(props) {
 }
 
 function Container(props) {
-  const params = useParams();
+  const params = useParams()
+  const [rawWorkflow, setRawWorkflow] = useState()
 
-  const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
+  const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
 
-  const workflow = useQuery(['getWorkflow', params.workflowId], () =>
-    client.findById(params.workflowId)
-  );
+  const workflow = useQuery(['getWorkflow', params.workflowId],
+    () => {
+      return client
+        .findById(params.workflowId)
+        .then(workflow => {
+          setRawWorkflow(workflow)
+          if (params.functionId)
+            return Object
+              .values(workflow.functions)
+              .find(func => func.id === params.functionId)
+          return workflow
+        })
+    })
 
-  const workflows = useQuery('getWorkflows', () => client.findAll());
+  const workflows = useQuery('getWorkflows', () => client.findAll())
 
-  const documentation = useQuery('getDoc', BackOfficeServices.getWorkflowDocs);
+  const documentation = useQuery('getDoc', BackOfficeServices.getWorkflowDocs)
 
   useEffect(() => {
     if (workflow.data)
-      props.setSidebarContent(<WorkflowSidebar {...props} workflow={workflow.data} />);
-  }, [workflow.isLoading]);
+      props.setSidebarContent(
+        <WorkflowSidebar {...props} params={params} workflow={workflow.data} />
+      )
+  }, [workflow.isLoading])
 
   if (!(workflow.isLoading || documentation.isLoading || workflows.isLoading)) {
-    const nodes = NODES(documentation.data);
+    const nodes = NODES(documentation.data)
     nodesCatalogSignal.value = {
       nodes,
       categories: NODES_BY_CATEGORIES(nodes, documentation.data.categories),
       workflows: workflows.data,
       workflow: workflow.data,
-    };
+    }
+  }
+
+  const handleSave = (config, orphans) => {
+    if (params.functionId)
+      return client.update({
+        ...rawWorkflow,
+        functions: Object.fromEntries(
+          Object
+            .entries(rawWorkflow.functions)
+            .map(([key, value]) => {
+              if (value.id === params.functionId) {
+                return [key, {
+                  ...value,
+                  config,
+                  orphans
+                }]
+              }
+              return [key, value]
+            })
+        )
+      })
+    else
+      return client.update({
+        ...rawWorkflow,
+        config,
+        orphans
+      })
   }
 
   return (
@@ -86,7 +126,9 @@ function Container(props) {
       }
     >
       <ReactFlowProvider>
-        <WorkflowsDesigner {...props} workflow={workflow.data} />
+        <WorkflowsDesigner {...props}
+          workflow={workflow.data}
+          handleSave={handleSave} />
       </ReactFlowProvider>
     </Loader>
   );

@@ -19,7 +19,7 @@ export function WorkflowFunctions(props) {
     props.setTitle('Functions');
 
     client.findById(params.workflowId).then((workflow) => {
-      props.setSidebarContent(<WorkflowSidebar {...props} workflow={workflow} />);
+      props.setSidebarContent(<WorkflowSidebar {...props} params={params} />);
       setWorkflow(workflow);
     });
   }, []);
@@ -29,25 +29,23 @@ export function WorkflowFunctions(props) {
       title: 'Description',
       filterId: 'description',
       cell: (_, item) => item.description,
-    },
-    {
-      title: 'Enabled',
-      filterId: 'enabled',
-      id: 'enabled',
-      style: { textAlign: 'center', width: 90 },
-      notFilterable: true,
-      cell: (_, item) =>
-        item.enabled ? (
-          <span className="fas fa-check-circle" style={{ color: 'var(--color-green)' }} />
-        ) : (
-          <span className="fas fa-times" style={{ color: 'var(--color-red)' }} />
-        ),
-    },
+    }
   ];
 
-  const deleteItem = (item) => console.log('delete item');
+  const deleteItem = (removedItem) => {
+    const newWorkflow = {
+      ...workflow,
+      functions: Object.fromEntries(
+        Object.entries(workflow.functions).filter(item => item[1].id !== removedItem.id)
+      )
+    }
+    return client.update(newWorkflow)
+      .then(() => {
+        setWorkflow(newWorkflow)
+      })
+  }
 
-  console.log(workflow?.functions);
+  console.log(workflow)
 
   return (
     <Loader loading={!workflow}>

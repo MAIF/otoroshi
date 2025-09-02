@@ -304,12 +304,7 @@ export function setupWorkflowsExtension(registerExtension) {
         if (this.props.location.pathname === '/extensions/workflows')
           this.props.setSidebarContent(null);
         else {
-          this.client
-            .findById(this.props.match.params.titem)
-            .then((workflow) =>
-              this.props.setSidebarContent(<WorkflowSidebar {...this.props} workflow={workflow} />)
-            )
-            .catch(console.log);
+          this.props.setSidebarContent(<WorkflowSidebar {...this.props} />)
         }
         this.props.setTitle('Workflows');
       }
@@ -557,7 +552,7 @@ export function setupWorkflowsExtension(registerExtension) {
       componentDidMount() {
         this.client.findById(this.props.match.params.workflowId).then((r) => {
           if (r) {
-            this.props.setSidebarContent(<WorkflowSidebar {...this.props} workflow={r} />);
+            this.props.setSidebarContent(<WorkflowSidebar {...this.props} />)
             this.setState({ workflow: r });
             this.props.setTitle(`Workflow sessions for ${r.name}`);
           }
@@ -658,6 +653,12 @@ export function setupWorkflowsExtension(registerExtension) {
           path: '/extensions/workflows/:workflowId/functions/:functionId/designer',
           component: (props) => {
             return <WorkflowFunctionsDesigner {...props} />;
+          },
+        },
+        {
+          path: '/extensions/workflows/:workflowId/functions/:functionId/informations',
+          component: (props) => {
+            return <WorkflowNewFunction {...props} />;
           },
         },
         {

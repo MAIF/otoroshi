@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Flow } from './Flow';
 import { DesignerActions } from './DesignerActions';
 import { Navbar } from './Navbar';
@@ -438,6 +437,7 @@ export function WorkflowsDesigner(props) {
         sourceHandles: [],
       },
     };
+
     const subGraph = buildGraph(
       config.steps.slice().reverse(),
       addInformationsToNode,
@@ -746,13 +746,13 @@ export function WorkflowsDesigner(props) {
 
     let outputWorkflow = subflow
       ? {
-          ...node.data.content,
-          ...node.data.information,
-          ...subflow,
-          id: node.id,
-          kind,
-          position: node.position,
-        }
+        ...node.data.content,
+        ...node.data.information,
+        ...subflow,
+        id: node.id,
+        kind,
+        position: node.position,
+      }
       : undefined;
 
     if (currentWorkflow && currentWorkflow.kind === 'workflow') {
@@ -793,33 +793,28 @@ export function WorkflowsDesigner(props) {
   };
 
   const handleSave = () => {
-    const graph = graphToJson();
+    const graph = graphToJson()
 
-    // console.log(graph)
-
-    const [config, seen] = graph;
-    const alreadySeen = seen.flatMap((f) => f);
+    const [config, seen] = graph
+    const alreadySeen = seen.flatMap((f) => f)
 
     const orphans = nodes.filter(
       (node) => node.id !== 'start' && node.id !== 'returned-node' && !alreadySeen.includes(node.id)
-    );
+    )
     const orphansEdges = orphans
       .flatMap((orphan) =>
         edges.filter((edge) => edge.target === orphan.id || edge.source === orphan.id)
       )
       .reduce((edges, edge) => {
         if (!edges.find((e) => e.id === edge.id) && edge.id !== 'start-edge') {
-          return [...edges, edge];
+          return [...edges, edge]
         }
-        return edges;
-      }, []);
+        return edges
+      }, [])
 
-    const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
-
-    client.update({
-      ...workflow,
+    return props.handleSave(
       config,
-      orphans: {
+      {
         nodes: orphans.map((r) => ({
           id: r.id,
           position: r.position,
@@ -828,11 +823,9 @@ export function WorkflowsDesigner(props) {
           ...r.data.information,
         })),
         edges: orphansEdges,
-      },
-    });
-
-    return Promise.resolve();
-  };
+      }
+    )
+  }
 
   function updateData(props, changes) {
     setNodes(
