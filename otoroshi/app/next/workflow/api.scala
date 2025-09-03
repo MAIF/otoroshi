@@ -36,7 +36,7 @@ class WorkflowEngine(env: Env) {
       workflow_ref = wfRef,
       workflow = node.json
     )
-    wfRun.memory.set("global_input", input)
+    wfRun.memory.set("workflow_input", input)
     wfRun.memory.set("input", input)
     node
       .internalRun(wfRun, Seq(0), Seq.empty)(env, executorContext)
