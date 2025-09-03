@@ -331,7 +331,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
       &quot;description&quot;: &quot;Say hello to the name passed as input&quot;,
       &quot;function&quot;: &quot;core.hello&quot;,
       &quot;args&quot;: {
-        &quot;name&quot;: &quot;${input.name}&quot;
+        &quot;name&quot;: &quot;${workflow_input.name}&quot;
       },
       &quot;result&quot;: &quot;call_res&quot;
     }
@@ -365,7 +365,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 <h2><a href="#memory" name="memory" class="anchor"><span class="anchor-link"></span></a>Memory</h2>
 <p>Each workflow execution comes with its own <strong>memory</strong>, where variables can be read from or written to. This memory enables communication between steps.</p>
 <p>The <code>assign</code> node lets you manipulate memory directly, often combined with operators to compute values.</p>
-<p>At any moment you can access the memory using an expression language like <code>${input.name}</code> given a memory containing something like:</p>
+<p>At any moment you can access the memory using an expression language like <code>${workflow_input.name}</code> given a memory containing something like:</p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;input&quot;: {
     &quot;name&quot;: &quot;foo&quot;
@@ -384,7 +384,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   <li>required fields are: <strong>kind</strong></li>
 </ul>
 <h3><a href="#full-list-of-nodes" name="full-list-of-nodes" class="anchor"><span class="anchor-link"></span></a>Full List of Nodes</h3>
-<h4><a href="#workflow" name="workflow" class="anchor"><span class="anchor-link"></span></a><code>workflow</code></h4>
+<h4><a href="#span-class-fas-fa-code-branch-span-workflow-workflow-" name="span-class-fas-fa-code-branch-span-workflow-workflow-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-code-branch"></span> <code>Workflow (workflow)</code></h4>
 <p>This node executes a sequence of nodes sequentially</p>
 <p>expected configuration:</p>
 <ul>
@@ -414,7 +414,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#switch" name="switch" class="anchor"><span class="anchor-link"></span></a><code>switch</code></h4>
+<h4><a href="#span-class-fas-fa-exchange-alt-span-switch-paths-switch-" name="span-class-fas-fa-exchange-alt-span-switch-paths-switch-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-exchange-alt"></span> <code>Switch paths (switch)</code></h4>
 <p>This node executes the first path matching a predicate</p>
 <p>expected configuration:</p>
 <ul>
@@ -454,11 +454,29 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#wait" name="wait" class="anchor"><span class="anchor-link"></span></a><code>wait</code></h4>
+<h4><a href="#span-class-fas-fa-pause-span-pause-pause-" name="span-class-fas-fa-pause-span-pause-pause-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-pause"></span> <code>Pause (pause)</code></h4>
+<p>This node pauses the current workflow</p>
+<p>expected configuration:</p>
+<ul>
+  <li><code>description</code> (<code>string</code>) - The description of what this node does in the workflow (optional). for debug purposes only</li>
+  <li><code>result</code> (<code>string</code>) - The name of the memory that will be assigned with the result of this node (optional)</li>
+  <li><code>enabled</code> (<code>boolean</code>) - Is the node enabled (optional)</li>
+  <li><code>returned</code> (<code>string</code>) - Overrides the output of the node with the result of an operator (optional)</li>
+  <li><code>id</code> (<code>string</code>) - id of the node (optional). for debug purposes only</li>
+  <li><code>kind</code> (<code>string</code>) - The kind of the node</li>
+  <li>required fields are: <strong>kind</strong></li>
+</ul>
+<p>Usage example</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;kind&quot; : &quot;pause&quot;,
+  &quot;description&quot; : &quot;Pause the workflow at this point.&quot;
+}
+</code></pre>
+<hr/>
+<h4><a href="#span-class-fas-fa-clock-span-wait-wait-" name="span-class-fas-fa-clock-span-wait-wait-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-clock"></span> <code>Wait (wait)</code></h4>
 <p>This node waits a certain amount of time</p>
 <p>expected configuration:</p>
 <ul>
-  <li><code>duration</code> (<code>number</code>) - the number of milliseconds to wait</li>
   <li><code>description</code> (<code>string</code>) - The description of what this node does in the workflow (optional). for debug purposes only</li>
   <li><code>result</code> (<code>string</code>) - The name of the memory that will be assigned with the result of this node (optional)</li>
   <li><code>enabled</code> (<code>boolean</code>) - Is the node enabled (optional)</li>
@@ -475,7 +493,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#parallel" name="parallel" class="anchor"><span class="anchor-link"></span></a><code>parallel</code></h4>
+<h4><a href="#span-class-fas-fa-code-branch-span-parallel-paths-parallel-" name="span-class-fas-fa-code-branch-span-parallel-paths-parallel-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-code-branch"></span> <code>Parallel paths (parallel)</code></h4>
 <p>This node executes multiple nodes in parallel</p>
 <p>expected configuration:</p>
 <ul>
@@ -484,8 +502,8 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   <li><code>enabled</code> (<code>boolean</code>) - Is the node enabled (optional)</li>
   <li><code>paths</code> (<code>array</code>) - the nodes to be executed
     <ul>
-      <li><code>predicate</code> (<code>boolean</code>) - The predicate defining if the path is run or not</li>
-      <li>required fields are:</li>
+      <li>
+      <p>required fields are:</p></li>
     </ul>
   </li>
   <li><code>returned</code> (<code>string</code>) - Overrides the output of the node with the result of an operator (optional)</li>
@@ -519,7 +537,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#flatmap" name="flatmap" class="anchor"><span class="anchor-link"></span></a><code>flatmap</code></h4>
+<h4><a href="#span-class-fas-fa-layer-group-span-flatmap-flatmap-" name="span-class-fas-fa-layer-group-span-flatmap-flatmap-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-layer-group"></span> <code>Flatmap (flatmap)</code></h4>
 <p>This node transforms an array by applying a node on each value</p>
 <p>expected configuration:</p>
 <ul>
@@ -528,8 +546,6 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   <li><code>enabled</code> (<code>boolean</code>) - Is the node enabled (optional)</li>
   <li><code>returned</code> (<code>string</code>) - Overrides the output of the node with the result of an operator (optional)</li>
   <li><code>id</code> (<code>string</code>) - id of the node (optional). for debug purposes only</li>
-  <li><code>values</code> (<code>array</code>) - the values to iterate on</li>
-  <li><code>node</code> (<code>object</code>) - the node to execute for each element in an array, should return an array to flatten it</li>
   <li><code>kind</code> (<code>string</code>) - The kind of the node</li>
   <li>required fields are: <strong>kind</strong></li>
 </ul>
@@ -545,7 +561,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#map" name="map" class="anchor"><span class="anchor-link"></span></a><code>map</code></h4>
+<h4><a href="#span-class-fas-fa-map-span-map-map-" name="span-class-fas-fa-map-span-map-map-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-map"></span> <code>Map (map)</code></h4>
 <p>This node transforms an array by applying a node on each value</p>
 <p>expected configuration:</p>
 <ul>
@@ -554,8 +570,6 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   <li><code>enabled</code> (<code>boolean</code>) - Is the node enabled (optional)</li>
   <li><code>returned</code> (<code>string</code>) - Overrides the output of the node with the result of an operator (optional)</li>
   <li><code>id</code> (<code>string</code>) - id of the node (optional). for debug purposes only</li>
-  <li><code>values</code> (<code>array</code>) - the values to iterate on</li>
-  <li><code>node</code> (<code>object</code>) - the node to execute for each element in an array</li>
   <li><code>kind</code> (<code>string</code>) - The kind of the node</li>
   <li>required fields are: <strong>kind</strong></li>
 </ul>
@@ -573,7 +587,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#foreach" name="foreach" class="anchor"><span class="anchor-link"></span></a><code>foreach</code></h4>
+<h4><a href="#span-class-fas-fa-sync-span-for-each-foreach-" name="span-class-fas-fa-sync-span-for-each-foreach-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-sync"></span> <code>For each (foreach)</code></h4>
 <p>This node executes a node for each element in an array</p>
 <p>expected configuration:</p>
 <ul>
@@ -582,8 +596,6 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   <li><code>enabled</code> (<code>boolean</code>) - Is the node enabled (optional)</li>
   <li><code>returned</code> (<code>string</code>) - Overrides the output of the node with the result of an operator (optional)</li>
   <li><code>id</code> (<code>string</code>) - id of the node (optional). for debug purposes only</li>
-  <li><code>values</code> (<code>array</code>) - the values to iterate on</li>
-  <li><code>node</code> (<code>object</code>) - the node to execute for each element in an array</li>
   <li><code>kind</code> (<code>string</code>) - The kind of the node</li>
   <li>required fields are: <strong>kind</strong></li>
 </ul>
@@ -602,7 +614,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#assign" name="assign" class="anchor"><span class="anchor-link"></span></a><code>assign</code></h4>
+<h4><a href="#span-class-fas-fa-dollar-sign-span-assign-in-memory-assign-" name="span-class-fas-fa-dollar-sign-span-assign-in-memory-assign-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-dollar-sign"></span> <code>Assign in memory (assign)</code></h4>
 <p>This node with executes a sequence of memory assignation operations sequentially</p>
 <p>expected configuration:</p>
 <ul>
@@ -643,8 +655,8 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#value" name="value" class="anchor"><span class="anchor-link"></span></a><code>value</code></h4>
-<p>This node executes a sequence of nodes sequentially</p>
+<h4><a href="#span-class-fas-fa-font-span-value-value-" name="span-class-fas-fa-font-span-value-value-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-font"></span> <code>Value (value)</code></h4>
+<p>This node returns a value</p>
 <p>expected configuration:</p>
 <ul>
   <li><code>description</code> (<code>string</code>) - The description of what this node does in the workflow (optional). for debug purposes only</li>
@@ -664,16 +676,18 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#if" name="if" class="anchor"><span class="anchor-link"></span></a><code>if</code></h4>
+<h4><a href="#span-class-fas-fa-question-span-if-then-else-if-" name="span-class-fas-fa-question-span-if-then-else-if-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-question"></span> <code>If then else (if)</code></h4>
 <p>This executes a node if the predicate matches or another one if not</p>
 <p>expected configuration:</p>
 <ul>
+  <li><code>predicate</code> (<code>boolean</code>) - The predicate defining if the path is run or not</li>
   <li><code>description</code> (<code>string</code>) - The description of what this node does in the workflow (optional). for debug purposes only</li>
   <li><code>result</code> (<code>string</code>) - The name of the memory that will be assigned with the result of this node (optional)</li>
   <li><code>enabled</code> (<code>boolean</code>) - Is the node enabled (optional)</li>
+  <li><code>else</code> (<code>object</code>) - The node run if the predicate does not matches</li>
   <li><code>returned</code> (<code>string</code>) - Overrides the output of the node with the result of an operator (optional)</li>
   <li><code>id</code> (<code>string</code>) - id of the node (optional). for debug purposes only</li>
-  <li><code>properties</code> (<code>any</code>) -</li>
+  <li><code>then</code> (<code>object</code>) - The node run if the predicate matches</li>
   <li><code>kind</code> (<code>string</code>) - The kind of the node</li>
   <li>required fields are: <strong>kind</strong></li>
 </ul>
@@ -699,7 +713,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#error" name="error" class="anchor"><span class="anchor-link"></span></a><code>error</code></h4>
+<h4><a href="#span-class-fas-fa-exclamation-span-stop-and-error-error-" name="span-class-fas-fa-exclamation-span-stop-and-error-error-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-exclamation"></span> <code>Stop and Error (error)</code></h4>
 <p>This node returns an error</p>
 <p>expected configuration:</p>
 <ul>
@@ -708,8 +722,6 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   <li><code>enabled</code> (<code>boolean</code>) - Is the node enabled (optional)</li>
   <li><code>returned</code> (<code>string</code>) - Overrides the output of the node with the result of an operator (optional)</li>
   <li><code>id</code> (<code>string</code>) - id of the node (optional). for debug purposes only</li>
-  <li><code>details</code> (<code>object</code>) - the optional details of the error</li>
-  <li><code>message</code> (<code>string</code>) - the error message</li>
   <li><code>kind</code> (<code>string</code>) - The kind of the node</li>
   <li>required fields are: <strong>kind</strong></li>
 </ul>
@@ -724,7 +736,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#call" name="call" class="anchor"><span class="anchor-link"></span></a><code>call</code></h4>
+<h4><a href="#span-class-fas-fa-code-span-call-call-" name="span-class-fas-fa-code-span-call-call-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-code"></span> <code>Call (call)</code></h4>
 <p>This node calls a function an returns its result</p>
 <p>expected configuration:</p>
 <ul>
@@ -749,17 +761,15 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#filter" name="filter" class="anchor"><span class="anchor-link"></span></a><code>filter</code></h4>
+<h4><a href="#span-class-fas-fa-filter-span-filter-filter-" name="span-class-fas-fa-filter-span-filter-filter-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-filter"></span> <code>Filter (filter)</code></h4>
 <p>This node transforms an array by filtering values based on a node execution</p>
 <p>expected configuration:</p>
 <ul>
-  <li><code>predicate</code> (<code>object</code>) - the node to execute for each element in an array</li>
   <li><code>description</code> (<code>string</code>) - The description of what this node does in the workflow (optional). for debug purposes only</li>
   <li><code>result</code> (<code>string</code>) - The name of the memory that will be assigned with the result of this node (optional)</li>
   <li><code>enabled</code> (<code>boolean</code>) - Is the node enabled (optional)</li>
   <li><code>returned</code> (<code>string</code>) - Overrides the output of the node with the result of an operator (optional)</li>
   <li><code>id</code> (<code>string</code>) - id of the node (optional). for debug purposes only</li>
-  <li><code>values</code> (<code>array</code>) - the values to iterate on</li>
   <li><code>kind</code> (<code>string</code>) - The kind of the node</li>
   <li>required fields are: <strong>kind</strong></li>
 </ul>
@@ -785,7 +795,36 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <h3><a href="#full-list-of-functions" name="full-list-of-functions" class="anchor"><span class="anchor-link"></span></a>Full List of Functions</h3>
-<h4><a href="#core-store-get" name="core-store-get" class="anchor"><span class="anchor-link"></span></a><code>core.store_get</code></h4>
+<h4><a href="#span-class-fas-fa-circle-span-otoroshi-plugins-com-cloud-apim-otoroshi-extensions-biscuit-biscuitforgefunction-biscuit-extensions-cloud-apim-com-biscuit-forge-" name="span-class-fas-fa-circle-span-otoroshi-plugins-com-cloud-apim-otoroshi-extensions-biscuit-biscuitforgefunction-biscuit-extensions-cloud-apim-com-biscuit-forge-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitForgeFunction (biscuit.extensions.cloud-apim.com.biscuit_forge)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-generateimagefunction-extensions-com-cloud-apim-llm-extension-image-generate-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-generateimagefunction-extensions-com-cloud-apim-llm-extension-image-generate-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.GenerateImageFunction (extensions.com.cloud-apim.llm-extension.image_generate)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-cogs-span-read-from-otoroshi-config-core-config-read-" name="span-class-fas-fa-cogs-span-read-from-otoroshi-config-core-config-read-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-cogs"></span><code>Read from Otoroshi config. (core.config_read)</code></h4>
+<p>This function retrieves values from otoroshi config.</p>
+<p>expected configuration:</p>
+<ul>
+  <li><code>path</code> (<code>string</code>) - The path of the config. to read</li>
+  <li>required fields are: <strong>path</strong></li>
+</ul>
+<p>Usage example</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;kind&quot; : &quot;call&quot;,
+  &quot;function&quot; : &quot;core.config_read&quot;,
+  &quot;args&quot; : {
+    &quot;path&quot; : &quot;otoroshi.domain&quot;
+  }
+}
+</code></pre>
+<hr/>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-generatevideofunction-extensions-com-cloud-apim-llm-extension-video-generate-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-generatevideofunction-extensions-com-cloud-apim-llm-extension-video-generate-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.GenerateVideoFunction (extensions.com.cloud-apim.llm-extension.video_generate)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-download-span-datastore-get-core-store-get-" name="span-class-fas-fa-download-span-datastore-get-core-store-get-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-download"></span><code>Datastore get (core.store_get)</code></h4>
 <p>This function gets keys from the store</p>
 <p>expected configuration:</p>
 <ul>
@@ -802,7 +841,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-file-read" name="core-file-read" class="anchor"><span class="anchor-link"></span></a><code>core.file_read</code></h4>
+<h4><a href="#span-class-fas-fa-file-alt-span-read-a-file-core-file-read-" name="span-class-fas-fa-file-alt-span-read-a-file-core-file-read-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-file-alt"></span><code>Read a file (core.file_read)</code></h4>
 <p>This function reads a file</p>
 <p>expected configuration:</p>
 <ul>
@@ -823,7 +862,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-hello" name="core-hello" class="anchor"><span class="anchor-link"></span></a><code>core.hello</code></h4>
+<h4><a href="#span-class-fas-fa-hand-paper-span-hello-function-core-hello-" name="span-class-fas-fa-hand-paper-span-hello-function-core-hello-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-hand-paper"></span><code>Hello function (core.hello)</code></h4>
 <p>This function returns a hello message</p>
 <p>expected configuration:</p>
 <ul>
@@ -840,8 +879,8 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-store-match" name="core-store-match" class="anchor"><span class="anchor-link"></span></a><code>core.store_match</code></h4>
-<p>This function gets keys from the store matching a pattern</p>
+<h4><a href="#span-class-fas-fa-search-span-datastore-matching-keys-core-store-match-" name="span-class-fas-fa-search-span-datastore-matching-keys-core-store-match-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-search"></span><code>Datastore matching keys (core.store_match)</code></h4>
+<p>This function gets keys from the datastore matching a pattern</p>
 <p>expected configuration:</p>
 <ul>
   <li><code>pattern</code> (<code>string</code>) - The pattern to match</li>
@@ -857,8 +896,8 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-store-set" name="core-store-set" class="anchor"><span class="anchor-link"></span></a><code>core.store_set</code></h4>
-<p>This function sets a key in the store</p>
+<h4><a href="#span-class-fas-fa-upload-span-datastore-set-core-store-set-" name="span-class-fas-fa-upload-span-datastore-set-core-store-set-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-upload"></span><code>Datastore set (core.store_set)</code></h4>
+<p>This function sets a key in the datastore</p>
 <p>expected configuration:</p>
 <ul>
   <li><code>key</code> (<code>string</code>) - The key to set</li>
@@ -878,7 +917,47 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-wasm-call" name="core-wasm-call" class="anchor"><span class="anchor-link"></span></a><code>core.wasm_call</code></h4>
+<h4><a href="#span-class-fas-fa-leaf-span-get-environment-variable-core-env-get-" name="span-class-fas-fa-leaf-span-get-environment-variable-core-env-get-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-leaf"></span><code>Get environment variable (core.env_get)</code></h4>
+<p>This function retrieves values from environment variables</p>
+<p>expected configuration:</p>
+<ul>
+  <li><code>name</code> (<code>string</code>) - The environment variable name</li>
+  <li>required fields are: <strong>name</strong></li>
+</ul>
+<p>Usage example</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;kind&quot; : &quot;call&quot;,
+  &quot;function&quot; : &quot;core.env_get&quot;,
+  &quot;args&quot; : {
+    &quot;name&quot; : &quot;OPENAI_APIKEY&quot;
+  }
+}
+</code></pre>
+<hr/>
+<h4><a href="#span-class-fas-fa-circle-span-otoroshi-plugins-com-cloud-apim-otoroshi-extensions-biscuit-biscuitkeypairgenfunction-biscuit-extensions-cloud-apim-com-biscuit-keypair-gen-" name="span-class-fas-fa-circle-span-otoroshi-plugins-com-cloud-apim-otoroshi-extensions-biscuit-biscuitkeypairgenfunction-biscuit-extensions-cloud-apim-com-biscuit-keypair-gen-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitKeypairGenFunction (biscuit.extensions.cloud-apim.com.biscuit_keypair_gen)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-moderationcallfunction-extensions-com-cloud-apim-llm-extension-moderation-call-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-moderationcallfunction-extensions-com-cloud-apim-llm-extension-moderation-call-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.ModerationCallFunction (extensions.com.cloud-apim.llm-extension.moderation_call)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-cogs-span-compute-a-resume-token-for-the-current-workflow-core-compute-resume-token-" name="span-class-fas-fa-cogs-span-compute-a-resume-token-for-the-current-workflow-core-compute-resume-token-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-cogs"></span><code>Compute a resume token for the current workflow (core.compute_resume_token)</code></h4>
+<p>This function computes a resume token for the current workflow</p>
+<p>expected configuration:</p>
+<p>Usage example</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;kind&quot; : &quot;call&quot;,
+  &quot;function&quot; : &quot;core.compute_resume_token&quot;,
+  &quot;args&quot; : { }
+}
+</code></pre>
+<hr/>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-calltoolfunctionfunction-extensions-com-cloud-apim-llm-extension-tool-function-call-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-calltoolfunctionfunction-extensions-com-cloud-apim-llm-extension-tool-function-call-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.CallToolFunctionFunction (extensions.com.cloud-apim.llm-extension.tool_function_call)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-cube-span-wasm-call-core-wasm-call-" name="span-class-fas-fa-cube-span-wasm-call-core-wasm-call-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-cube"></span><code>Wasm call (core.wasm_call)</code></h4>
 <p>This function calls a wasm function</p>
 <p>expected configuration:</p>
 <ul>
@@ -901,7 +980,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-file-del" name="core-file-del" class="anchor"><span class="anchor-link"></span></a><code>core.file_del</code></h4>
+<h4><a href="#span-class-fas-fa-trash-span-delete-a-file-core-file-del-" name="span-class-fas-fa-trash-span-delete-a-file-core-file-del-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-trash"></span><code>Delete a file (core.file_del)</code></h4>
 <p>This function deletes a file</p>
 <p>expected configuration:</p>
 <ul>
@@ -918,8 +997,8 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-store-keys" name="core-store-keys" class="anchor"><span class="anchor-link"></span></a><code>core.store_keys</code></h4>
-<p>This function gets keys from the store</p>
+<h4><a href="#span-class-fas-fa-key-span-datastore-list-keys-core-store-keys-" name="span-class-fas-fa-key-span-datastore-list-keys-core-store-keys-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-key"></span><code>Datastore list keys (core.store_keys)</code></h4>
+<p>This function lists keys from the datastore</p>
 <p>expected configuration:</p>
 <ul>
   <li><code>pattern</code> (<code>string</code>) - The pattern to match</li>
@@ -935,7 +1014,15 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-log" name="core-log" class="anchor"><span class="anchor-link"></span></a><code>core.log</code></h4>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-audiottsfunction-extensions-com-cloud-apim-llm-extension-audio-tts-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-audiottsfunction-extensions-com-cloud-apim-llm-extension-audio-tts-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.AudioTtsFunction (extensions.com.cloud-apim.llm-extension.audio_tts)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-llmcallfunction-extensions-com-cloud-apim-llm-extension-llm-call-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-llmcallfunction-extensions-com-cloud-apim-llm-extension-llm-call-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.LlmCallFunction (extensions.com.cloud-apim.llm-extension.llm_call)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-clipboard-list-span-log-a-message-core-log-" name="span-class-fas-fa-clipboard-list-span-log-a-message-core-log-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-clipboard-list"></span><code>Log a message (core.log)</code></h4>
 <p>This function writes whatever the user want to the otoroshi logs</p>
 <p>expected configuration:</p>
 <ul>
@@ -954,7 +1041,15 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-http-client" name="core-http-client" class="anchor"><span class="anchor-link"></span></a><code>core.http_client</code></h4>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-computeembeddingfunction-extensions-com-cloud-apim-llm-extension-embedding-compute-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-computeembeddingfunction-extensions-com-cloud-apim-llm-extension-embedding-compute-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.ComputeEmbeddingFunction (extensions.com.cloud-apim.llm-extension.embedding_compute)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-circle-span-otoroshi-plugins-com-cloud-apim-otoroshi-extensions-biscuit-biscuitverifyfunction-biscuit-extensions-cloud-apim-com-biscuit-verify-" name="span-class-fas-fa-circle-span-otoroshi-plugins-com-cloud-apim-otoroshi-extensions-biscuit-biscuitverifyfunction-biscuit-extensions-cloud-apim-com-biscuit-verify-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitVerifyFunction (biscuit.extensions.cloud-apim.com.biscuit_verify)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-network-wired-span-http-client-core-http-client-" name="span-class-fas-fa-network-wired-span-http-client-core-http-client-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-network-wired"></span><code>HTTP client (core.http_client)</code></h4>
 <p>This function makes a HTTP request</p>
 <p>expected configuration:</p>
 <ul>
@@ -988,7 +1083,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-send-mail" name="core-send-mail" class="anchor"><span class="anchor-link"></span></a><code>core.send_mail</code></h4>
+<h4><a href="#span-class-fas-fa-envelope-span-send-an-email-core-send-mail-" name="span-class-fas-fa-envelope-span-send-an-email-core-send-mail-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-envelope"></span><code>Send an email (core.send_mail)</code></h4>
 <p>This function sends an email</p>
 <p>expected configuration:</p>
 <ul>
@@ -1017,7 +1112,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-system-call" name="core-system-call" class="anchor"><span class="anchor-link"></span></a><code>core.system_call</code></h4>
+<h4><a href="#span-class-fas-fa-terminal-span-system-call-core-system-call-" name="span-class-fas-fa-terminal-span-system-call-core-system-call-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-terminal"></span><code>System call (core.system_call)</code></h4>
 <p>This function calls a system command</p>
 <p>expected configuration:</p>
 <ul>
@@ -1034,7 +1129,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-state-get-all" name="core-state-get-all" class="anchor"><span class="anchor-link"></span></a><code>core.state_get_all</code></h4>
+<h4><a href="#span-class-fas-fa-layer-group-span-get-all-resources-from-the-state-core-state-get-all-" name="span-class-fas-fa-layer-group-span-get-all-resources-from-the-state-core-state-get-all-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-layer-group"></span><code>Get all resources from the state (core.state_get_all)</code></h4>
 <p>This function gets all resources from the state</p>
 <p>expected configuration:</p>
 <ul>
@@ -1055,7 +1150,11 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-store-del" name="core-store-del" class="anchor"><span class="anchor-link"></span></a><code>core.store_del</code></h4>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-vectorstoreaddfunction-extensions-com-cloud-apim-llm-extension-vector-store-add-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-vectorstoreaddfunction-extensions-com-cloud-apim-llm-extension-vector-store-add-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreAddFunction (extensions.com.cloud-apim.llm-extension.vector_store_add)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-eraser-span-datastore-delete-core-store-del-" name="span-class-fas-fa-eraser-span-datastore-delete-core-store-del-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-eraser"></span><code>Datastore delete (core.store_del)</code></h4>
 <p>This function deletes keys from the store</p>
 <p>expected configuration:</p>
 <ul>
@@ -1072,7 +1171,11 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-file-write" name="core-file-write" class="anchor"><span class="anchor-link"></span></a><code>core.file_write</code></h4>
+<h4><a href="#span-class-fas-fa-circle-span-otoroshi-plugins-com-cloud-apim-otoroshi-extensions-biscuit-biscuitattenuationfunction-biscuit-extensions-cloud-apim-com-biscuit-attenuation-" name="span-class-fas-fa-circle-span-otoroshi-plugins-com-cloud-apim-otoroshi-extensions-biscuit-biscuitattenuationfunction-biscuit-extensions-cloud-apim-com-biscuit-attenuation-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitAttenuationFunction (biscuit.extensions.cloud-apim.com.biscuit_attenuation)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-file-signature-span-write-a-file-core-file-write-" name="span-class-fas-fa-file-signature-span-write-a-file-core-file-write-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-file-signature"></span><code>Write a file (core.file_write)</code></h4>
 <p>This function writes a file</p>
 <p>expected configuration:</p>
 <ul>
@@ -1095,7 +1198,11 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-workflow-call" name="core-workflow-call" class="anchor"><span class="anchor-link"></span></a><code>core.workflow_call</code></h4>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-callmcpfunctionfunction-extensions-com-cloud-apim-llm-extension-mcp-function-call-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-callmcpfunctionfunction-extensions-com-cloud-apim-llm-extension-mcp-function-call-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.CallMcpFunctionFunction (extensions.com.cloud-apim.llm-extension.mcp_function_call)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-project-diagram-span-call-a-workflow-core-workflow-call-" name="span-class-fas-fa-project-diagram-span-call-a-workflow-core-workflow-call-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-project-diagram"></span><code>Call a workflow (core.workflow_call)</code></h4>
 <p>This function calls another workflow stored in otoroshi</p>
 <p>expected configuration:</p>
 <ul>
@@ -1116,7 +1223,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-state-get" name="core-state-get" class="anchor"><span class="anchor-link"></span></a><code>core.state_get</code></h4>
+<h4><a href="#span-class-fas-fa-cube-span-get-a-resource-from-the-state-core-state-get-" name="span-class-fas-fa-cube-span-get-a-resource-from-the-state-core-state-get-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-cube"></span><code>Get a resource from the state (core.state_get)</code></h4>
 <p>This function gets a resource from the state</p>
 <p>expected configuration:</p>
 <ul>
@@ -1139,8 +1246,8 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-store-mget" name="core-store-mget" class="anchor"><span class="anchor-link"></span></a><code>core.store_mget</code></h4>
-<p>This function gets multiple keys from the store</p>
+<h4><a href="#span-class-fas-fa-boxes-span-datastore-get-multiple-keys-core-store-mget-" name="span-class-fas-fa-boxes-span-datastore-get-multiple-keys-core-store-mget-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-boxes"></span><code>Datastore get multiple keys (core.store_mget)</code></h4>
+<p>This function gets multiple keys from the datastore</p>
 <p>expected configuration:</p>
 <ul>
   <li><code>keys</code> (<code>array</code>) - The keys to get</li>
@@ -1156,7 +1263,11 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#core-emit-event" name="core-emit-event" class="anchor"><span class="anchor-link"></span></a><code>core.emit_event</code></h4>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-vectorstoresearchfunction-extensions-com-cloud-apim-llm-extension-vector-store-search-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-vectorstoresearchfunction-extensions-com-cloud-apim-llm-extension-vector-store-search-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreSearchFunction (extensions.com.cloud-apim.llm-extension.vector_store_search)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-bullhorn-span-emit-an-event-core-emit-event-" name="span-class-fas-fa-bullhorn-span-emit-an-event-core-emit-event-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-bullhorn"></span><code>Emit an event (core.emit_event)</code></h4>
 <p>This function emits an event</p>
 <p>expected configuration:</p>
 <ul>
@@ -1180,6 +1291,14 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
   }
 }
 </code></pre>
+<hr/>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-audiosttfunction-extensions-com-cloud-apim-llm-extension-audio-stt-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-audiosttfunction-extensions-com-cloud-apim-llm-extension-audio-stt-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.AudioSttFunction (extensions.com.cloud-apim.llm-extension.audio_stt)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
+<hr/>
+<h4><a href="#span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-vectorstoreremovefunction-extensions-com-cloud-apim-llm-extension-vector-store-remove-" name="span-class-fas-fa-circle-span-com-cloud-apim-otoroshi-extensions-aigateway-vectorstoreremovefunction-extensions-com-cloud-apim-llm-extension-vector-store-remove-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-circle"></span><code>com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreRemoveFunction (extensions.com.cloud-apim.llm-extension.vector_store_remove)</code></h4>
+<p>no description</p>
+<p>expected configuration:</p>
 <h2><a href="#operators" name="operators" class="anchor"><span class="anchor-link"></span></a>Operators</h2>
 <p>Operators are one-key JSON objects (e.g. <code>{ &quot;$eq&quot;: { ... } }</code>) used to manipulate data. They can:</p>
 <ul>
@@ -1205,7 +1324,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 </code></pre>
 <p>Result: <code>false</code></p>
 <h3><a href="#full-list-of-operators" name="full-list-of-operators" class="anchor"><span class="anchor-link"></span></a>Full List of Operators</h3>
-<h4><a href="#basic-auth" name="basic-auth" class="anchor"><span class="anchor-link"></span></a><code>$basic_auth</code></h4>
+<h4><a href="#span-class-fas-fa-shield-alt-span-basic-auth-basic-auth-" name="span-class-fas-fa-shield-alt-span-basic-auth-basic-auth-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-shield-alt"></span> <code>Basic Auth ($basic_auth)</code></h4>
 <p>This operator returns a basic authentication header</p>
 <p>expected configuration:</p>
 <ul>
@@ -1222,7 +1341,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#eq" name="eq" class="anchor"><span class="anchor-link"></span></a><code>$eq</code></h4>
+<h4><a href="#span-class-fas-fa-equals-span-equal-to-eq-" name="span-class-fas-fa-equals-span-equal-to-eq-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-equals"></span> <code>Equal to ($eq)</code></h4>
 <p>This operator checks if two values are equal</p>
 <p>expected configuration:</p>
 <ul>
@@ -1239,7 +1358,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#now" name="now" class="anchor"><span class="anchor-link"></span></a><code>$now</code></h4>
+<h4><a href="#span-class-fas-fa-clock-span-now-now-" name="span-class-fas-fa-clock-span-now-now-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-clock"></span> <code>Now ($now)</code></h4>
 <p>This operator returns the current timestamp</p>
 <p>expected configuration:</p>
 <p>Usage example</p>
@@ -1248,7 +1367,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#is-falsy" name="is-falsy" class="anchor"><span class="anchor-link"></span></a><code>$is_falsy</code></h4>
+<h4><a href="#span-class-fas-fa-times-circle-span-is-falsy-is-falsy-" name="span-class-fas-fa-times-circle-span-is-falsy-is-falsy-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-times-circle"></span> <code>Is falsy ($is_falsy)</code></h4>
 <p>This operator checks if a value is falsy</p>
 <p>expected configuration:</p>
 <ul>
@@ -1263,12 +1382,11 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#add" name="add" class="anchor"><span class="anchor-link"></span></a><code>$add</code></h4>
+<h4><a href="#span-class-fas-fa-plus-span-add-add-" name="span-class-fas-fa-plus-span-add-add-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-plus"></span> <code>Add ($add)</code></h4>
 <p>This operator adds a list of numbers</p>
 <p>expected configuration:</p>
 <ul>
-  <li><code>values</code> (<code>array</code>) - The list of numbers to add</li>
-  <li>required fields are: <strong>values</strong></li>
+  <li>required fields are:</li>
 </ul>
 <p>Usage example</p>
 <pre class="prettyprint"><code class="language-json">{
@@ -1278,7 +1396,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#array-append" name="array-append" class="anchor"><span class="anchor-link"></span></a><code>$array_append</code></h4>
+<h4><a href="#span-class-fas-fa-arrow-right-span-array-append-array-append-" name="span-class-fas-fa-arrow-right-span-array-append-array-append-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-arrow-right"></span> <code>Array append ($array_append)</code></h4>
 <p>This operator appends a value to an array</p>
 <p>expected configuration:</p>
 <ul>
@@ -1295,7 +1413,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#neq" name="neq" class="anchor"><span class="anchor-link"></span></a><code>$neq</code></h4>
+<h4><a href="#span-class-fas-fa-not-equal-span-not-equal-to-neq-" name="span-class-fas-fa-not-equal-span-not-equal-to-neq-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-not-equal"></span> <code>Not equal to ($neq)</code></h4>
 <p>This operator checks if two values are not equal</p>
 <p>expected configuration:</p>
 <ul>
@@ -1312,7 +1430,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#array-at" name="array-at" class="anchor"><span class="anchor-link"></span></a><code>$array_at</code></h4>
+<h4><a href="#span-class-fas-fa-list-ol-span-array-at-array-at-" name="span-class-fas-fa-list-ol-span-array-at-array-at-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-list-ol"></span> <code>Array at ($array_at)</code></h4>
 <p>This operator gets an element from an array</p>
 <p>expected configuration:</p>
 <ul>
@@ -1329,7 +1447,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#parse-date" name="parse-date" class="anchor"><span class="anchor-link"></span></a><code>$parse_date</code></h4>
+<h4><a href="#span-class-fas-fa-calendar-alt-span-parse-date-parse-date-" name="span-class-fas-fa-calendar-alt-span-parse-date-parse-date-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-calendar-alt"></span> <code>Parse Date ($parse_date)</code></h4>
 <p>This operator parses a date string into a timestamp</p>
 <p>expected configuration:</p>
 <ul>
@@ -1346,7 +1464,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#parse-datetime" name="parse-datetime" class="anchor"><span class="anchor-link"></span></a><code>$parse_datetime</code></h4>
+<h4><a href="#span-class-fas-fa-clock-span-parse-datetime-parse-datetime-" name="span-class-fas-fa-clock-span-parse-datetime-parse-datetime-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-clock"></span> <code>Parse DateTime ($parse_datetime)</code></h4>
 <p>This operator parses a datetime string into a timestamp</p>
 <p>expected configuration:</p>
 <ul>
@@ -1363,7 +1481,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#array-page" name="array-page" class="anchor"><span class="anchor-link"></span></a><code>$array_page</code></h4>
+<h4><a href="#span-class-fas-fa-file-alt-span-array-page-array-page-" name="span-class-fas-fa-file-alt-span-array-page-array-page-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-file-alt"></span> <code>Array page ($array_page)</code></h4>
 <p>This operator gets a page of an array</p>
 <p>expected configuration:</p>
 <ul>
@@ -1382,7 +1500,26 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#map-get" name="map-get" class="anchor"><span class="anchor-link"></span></a><code>$map_get</code></h4>
+<h4><a href="#span-class-fas-fa-code-span-string-replace-str-replace-" name="span-class-fas-fa-code-span-string-replace-str-replace-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-code"></span> <code>String Replace ($str_replace)</code></h4>
+<p>This operator replace values inside a string</p>
+<p>expected configuration:</p>
+<ul>
+  <li><code>value</code> (<code>string</code>) - The string with parts to replace</li>
+  <li><code>target</code> (<code>string</code>) - The value replaced</li>
+  <li><code>replacement</code> (<code>string</code>) - The value to replace with</li>
+  <li>required fields are: <strong>value</strong>, <strong>target</strong>, <strong>replacement</strong></li>
+</ul>
+<p>Usage example</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;$str_replace&quot; : {
+    &quot;value&quot; : &quot;Hello World!&quot;,
+    &quot;target&quot; : &quot;Hello&quot;,
+    &quot;replacement&quot; : &quot;Goodbye&quot;
+  }
+}
+</code></pre>
+<hr/>
+<h4><a href="#span-class-fas-fa-search-span-map-get-map-get-" name="span-class-fas-fa-search-span-map-get-map-get-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-search"></span> <code>Map get ($map_get)</code></h4>
 <p>This operator gets a value from a map</p>
 <p>expected configuration:</p>
 <ul>
@@ -1401,7 +1538,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#parse-time" name="parse-time" class="anchor"><span class="anchor-link"></span></a><code>$parse_time</code></h4>
+<h4><a href="#span-class-fas-fa-clock-span-parse-time-parse-time-" name="span-class-fas-fa-clock-span-parse-time-parse-time-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-clock"></span> <code>Parse Time ($parse_time)</code></h4>
 <p>This operator parses a time string into a timestamp</p>
 <p>expected configuration:</p>
 <ul>
@@ -1418,13 +1555,11 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#mem-ref" name="mem-ref" class="anchor"><span class="anchor-link"></span></a><code>$mem_ref</code></h4>
+<h4><a href="#span-class-fas-fa-memory-span-memory-reference-mem-ref-" name="span-class-fas-fa-memory-span-memory-reference-mem-ref-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-memory"></span> <code>Memory reference ($mem_ref)</code></h4>
 <p>This operator gets a value from the memory</p>
 <p>expected configuration:</p>
 <ul>
-  <li><code>name</code> (<code>string</code>) - The name of the memory entry</li>
-  <li><code>path</code> (<code>string</code>) - The path of the memory entry</li>
-  <li>required fields are: <strong>name</strong>, <strong>path</strong></li>
+  <li>required fields are:</li>
 </ul>
 <p>Usage example</p>
 <pre class="prettyprint"><code class="language-json">{
@@ -1435,7 +1570,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#str-lower-case" name="str-lower-case" class="anchor"><span class="anchor-link"></span></a><code>$str_lower_case</code></h4>
+<h4><a href="#span-class-fas-fa-arrow-down-span-lowercase-str-lower-case-" name="span-class-fas-fa-arrow-down-span-lowercase-str-lower-case-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-arrow-down"></span> <code>Lowercase ($str_lower_case)</code></h4>
 <p>This operator converts a string to lowercase</p>
 <p>expected configuration:</p>
 <ul>
@@ -1450,7 +1585,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#encode-base64" name="encode-base64" class="anchor"><span class="anchor-link"></span></a><code>$encode_base64</code></h4>
+<h4><a href="#span-class-fas-fa-lock-span-encode-base64-encode-base64-" name="span-class-fas-fa-lock-span-encode-base64-encode-base64-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-lock"></span> <code>Encode Base64 ($encode_base64)</code></h4>
 <p>This operator encodes a string in base64</p>
 <p>expected configuration:</p>
 <ul>
@@ -1465,7 +1600,24 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#expression-language" name="expression-language" class="anchor"><span class="anchor-link"></span></a><code>$expression_language</code></h4>
+<h4><a href="#span-class-fas-fa-code-span-stringify-stringify-" name="span-class-fas-fa-code-span-stringify-stringify-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-code"></span> <code>Stringify ($stringify)</code></h4>
+<p>This operator stringify a json value</p>
+<p>expected configuration:</p>
+<ul>
+  <li><code>value</code> (<code>any</code>) - The json to convert to string</li>
+  <li>required fields are: <strong>value</strong></li>
+</ul>
+<p>Usage example</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;$stringify&quot; : {
+    &quot;value&quot; : {
+      &quot;foo&quot; : &quot;bar&quot;
+    }
+  }
+}
+</code></pre>
+<hr/>
+<h4><a href="#span-class-fas-fa-code-span-expression-language-expression-language-" name="span-class-fas-fa-code-span-expression-language-expression-language-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-code"></span> <code>Expression Language ($expression_language)</code></h4>
 <p>This operator evaluates an expression language</p>
 <p>expected configuration:</p>
 <ul>
@@ -1480,7 +1632,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#not" name="not" class="anchor"><span class="anchor-link"></span></a><code>$not</code></h4>
+<h4><a href="#span-class-fas-fa-exclamation-span-not-not-" name="span-class-fas-fa-exclamation-span-not-not-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-exclamation"></span> <code>Not ($not)</code></h4>
 <p>This operator negates a boolean value</p>
 <p>expected configuration:</p>
 <ul>
@@ -1495,7 +1647,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#projection" name="projection" class="anchor"><span class="anchor-link"></span></a><code>$projection</code></h4>
+<h4><a href="#span-class-fas-fa-filter-span-projection-projection-" name="span-class-fas-fa-filter-span-projection-projection-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-filter"></span> <code>Projection ($projection)</code></h4>
 <p>This operator projects a value</p>
 <p>expected configuration:</p>
 <ul>
@@ -1516,7 +1668,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#lte" name="lte" class="anchor"><span class="anchor-link"></span></a><code>$lte</code></h4>
+<h4><a href="#span-class-fas-fa-less-than-equal-span-less-than-or-equal-to-lte-" name="span-class-fas-fa-less-than-equal-span-less-than-or-equal-to-lte-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-less-than-equal"></span> <code>Less than or equal to ($lte)</code></h4>
 <p>This operator checks if a number is less than or equal to another number</p>
 <p>expected configuration:</p>
 <ul>
@@ -1533,7 +1685,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#str-split" name="str-split" class="anchor"><span class="anchor-link"></span></a><code>$str_split</code></h4>
+<h4><a href="#span-class-fas-fa-cut-span-string-split-str-split-" name="span-class-fas-fa-cut-span-string-split-str-split-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-cut"></span> <code>String Split ($str_split)</code></h4>
 <p>This operator splits a string into an array based on a regex</p>
 <p>expected configuration:</p>
 <ul>
@@ -1550,7 +1702,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#array-prepend" name="array-prepend" class="anchor"><span class="anchor-link"></span></a><code>$array_prepend</code></h4>
+<h4><a href="#span-class-fas-fa-arrow-left-span-array-prepend-array-prepend-" name="span-class-fas-fa-arrow-left-span-array-prepend-array-prepend-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-arrow-left"></span> <code>Array prepend ($array_prepend)</code></h4>
 <p>This operator prepends a value to an array</p>
 <p>expected configuration:</p>
 <ul>
@@ -1567,7 +1719,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#decode-base64" name="decode-base64" class="anchor"><span class="anchor-link"></span></a><code>$decode_base64</code></h4>
+<h4><a href="#span-class-fas-fa-unlock-span-decode-base64-decode-base64-" name="span-class-fas-fa-unlock-span-decode-base64-decode-base64-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-unlock"></span> <code>Decode Base64 ($decode_base64)</code></h4>
 <p>This operator decodes a base64 string</p>
 <p>expected configuration:</p>
 <ul>
@@ -1582,7 +1734,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#subtract" name="subtract" class="anchor"><span class="anchor-link"></span></a><code>$subtract</code></h4>
+<h4><a href="#span-class-fas-fa-minus-span-subtract-subtract-" name="span-class-fas-fa-minus-span-subtract-subtract-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-minus"></span> <code>Subtract ($subtract)</code></h4>
 <p>This operator subtracts a list of numbers</p>
 <p>expected configuration:</p>
 <ul>
@@ -1597,7 +1749,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#json-parse" name="json-parse" class="anchor"><span class="anchor-link"></span></a><code>$json_parse</code></h4>
+<h4><a href="#span-class-fas-fa-file-code-span-json-parse-json-parse-" name="span-class-fas-fa-file-code-span-json-parse-json-parse-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-file-code"></span> <code>JSON parse ($json_parse)</code></h4>
 <p>This operator parses a JSON string</p>
 <p>expected configuration:</p>
 <ul>
@@ -1612,7 +1764,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#contains" name="contains" class="anchor"><span class="anchor-link"></span></a><code>$contains</code></h4>
+<h4><a href="#span-class-fas-fa-search-plus-span-contains-contains-" name="span-class-fas-fa-search-plus-span-contains-contains-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-search-plus"></span> <code>Contains ($contains)</code></h4>
 <p>This operator checks if a value is contained in a container</p>
 <p>expected configuration:</p>
 <ul>
@@ -1629,7 +1781,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#gte" name="gte" class="anchor"><span class="anchor-link"></span></a><code>$gte</code></h4>
+<h4><a href="#span-class-fas-fa-greater-than-equal-span-greater-than-or-equal-to-gte-" name="span-class-fas-fa-greater-than-equal-span-greater-than-or-equal-to-gte-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-greater-than-equal"></span> <code>Greater than or equal to ($gte)</code></h4>
 <p>This operator checks if a number is greater than or equal to another number</p>
 <p>expected configuration:</p>
 <ul>
@@ -1646,7 +1798,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#incr" name="incr" class="anchor"><span class="anchor-link"></span></a><code>$incr</code></h4>
+<h4><a href="#span-class-fas-fa-plus-circle-span-increment-incr-" name="span-class-fas-fa-plus-circle-span-increment-incr-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-plus-circle"></span> <code>Increment ($incr)</code></h4>
 <p>This operator increments a value by a given amount</p>
 <p>expected configuration:</p>
 <ul>
@@ -1663,7 +1815,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#lt" name="lt" class="anchor"><span class="anchor-link"></span></a><code>$lt</code></h4>
+<h4><a href="#span-class-fas-fa-less-than-span-less-than-lt-" name="span-class-fas-fa-less-than-span-less-than-lt-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-less-than"></span> <code>Less than ($lt)</code></h4>
 <p>This operator checks if a number is less than another number</p>
 <p>expected configuration:</p>
 <ul>
@@ -1680,7 +1832,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#divide" name="divide" class="anchor"><span class="anchor-link"></span></a><code>$divide</code></h4>
+<h4><a href="#span-class-fas-fa-divide-span-divide-divide-" name="span-class-fas-fa-divide-span-divide-divide-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-divide"></span> <code>Divide ($divide)</code></h4>
 <p>This operator divides a list of numbers</p>
 <p>expected configuration:</p>
 <ul>
@@ -1695,7 +1847,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#map-put" name="map-put" class="anchor"><span class="anchor-link"></span></a><code>$map_put</code></h4>
+<h4><a href="#span-class-fas-fa-plus-square-span-map-put-map-put-" name="span-class-fas-fa-plus-square-span-map-put-map-put-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-plus-square"></span> <code>Map put ($map_put)</code></h4>
 <p>This operator puts a key-value pair in a map</p>
 <p>expected configuration:</p>
 <ul>
@@ -1716,7 +1868,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#multiply" name="multiply" class="anchor"><span class="anchor-link"></span></a><code>$multiply</code></h4>
+<h4><a href="#span-class-fas-fa-times-span-multiply-multiply-" name="span-class-fas-fa-times-span-multiply-multiply-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-times"></span> <code>Multiply ($multiply)</code></h4>
 <p>This operator multiplies a list of numbers</p>
 <p>expected configuration:</p>
 <ul>
@@ -1731,7 +1883,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#str-concat" name="str-concat" class="anchor"><span class="anchor-link"></span></a><code>$str_concat</code></h4>
+<h4><a href="#span-class-fas-fa-link-span-string-concat-str-concat-" name="span-class-fas-fa-link-span-string-concat-str-concat-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-link"></span> <code>String Concat ($str_concat)</code></h4>
 <p>This operator concatenates a list of strings</p>
 <p>expected configuration:</p>
 <ul>
@@ -1748,7 +1900,43 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#gt" name="gt" class="anchor"><span class="anchor-link"></span></a><code>$gt</code></h4>
+<h4><a href="#span-class-fas-fa-code-span-prettify-prettify-" name="span-class-fas-fa-code-span-prettify-prettify-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-code"></span> <code>Prettify ($prettify)</code></h4>
+<p>This operator prettify a json value</p>
+<p>expected configuration:</p>
+<ul>
+  <li><code>value</code> (<code>any</code>) - The json to convert to string</li>
+  <li>required fields are: <strong>value</strong></li>
+</ul>
+<p>Usage example</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;$prettify&quot; : {
+    &quot;value&quot; : {
+      &quot;foo&quot; : &quot;bar&quot;
+    }
+  }
+}
+</code></pre>
+<hr/>
+<h4><a href="#span-class-fas-fa-code-span-jq-jq-" name="span-class-fas-fa-code-span-jq-jq-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-code"></span> <code>JQ ($jq)</code></h4>
+<p>This operator transforms a json value using JQ</p>
+<p>expected configuration:</p>
+<ul>
+  <li><code>filter</code> (<code>string</code>) - The JQ filter applied on the JSON</li>
+  <li><code>value</code> (<code>any</code>) - The JSON passed to JQ</li>
+  <li>required fields are: <strong>value</strong></li>
+</ul>
+<p>Usage example</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;$jq&quot; : {
+    &quot;filter&quot; : &quot;{foo: .bar}&quot;,
+    &quot;value&quot; : [ {
+      &quot;bar&quot; : 42
+    } ]
+  }
+}
+</code></pre>
+<hr/>
+<h4><a href="#span-class-fas-fa-greater-than-span-greater-than-gt-" name="span-class-fas-fa-greater-than-span-greater-than-gt-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-greater-than"></span> <code>Greater than ($gt)</code></h4>
 <p>This operator checks if a number is greater than another number</p>
 <p>expected configuration:</p>
 <ul>
@@ -1765,7 +1953,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#str-upper-case" name="str-upper-case" class="anchor"><span class="anchor-link"></span></a><code>$str_upper_case</code></h4>
+<h4><a href="#span-class-fas-fa-arrow-up-span-string-upper-case-str-upper-case-" name="span-class-fas-fa-arrow-up-span-string-upper-case-str-upper-case-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-arrow-up"></span> <code>String Upper Case ($str_upper_case)</code></h4>
 <p>This operator converts a string to uppercase</p>
 <p>expected configuration:</p>
 <ul>
@@ -1780,7 +1968,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#is-truthy" name="is-truthy" class="anchor"><span class="anchor-link"></span></a><code>$is_truthy</code></h4>
+<h4><a href="#span-class-fas-fa-check-circle-span-is-truthy-is-truthy-" name="span-class-fas-fa-check-circle-span-is-truthy-is-truthy-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-check-circle"></span> <code>Is truthy ($is_truthy)</code></h4>
 <p>This operator checks if a value is truthy</p>
 <p>expected configuration:</p>
 <ul>
@@ -1795,7 +1983,26 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#map-del" name="map-del" class="anchor"><span class="anchor-link"></span></a><code>$map_del</code></h4>
+<h4><a href="#span-class-fas-fa-code-span-string-replace-all-str-replace-all-" name="span-class-fas-fa-code-span-string-replace-all-str-replace-all-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-code"></span> <code>String Replace All ($str_replace_all)</code></h4>
+<p>This operator replace all values matching a regex inside a string</p>
+<p>expected configuration:</p>
+<ul>
+  <li><code>value</code> (<code>string</code>) - The string with parts to replace</li>
+  <li><code>target</code> (<code>string</code>) - The regex replaced</li>
+  <li><code>replacement</code> (<code>string</code>) - The value to replace with</li>
+  <li>required fields are: <strong>value</strong>, <strong>target</strong>, <strong>replacement</strong></li>
+</ul>
+<p>Usage example</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;$str_replace_all&quot; : {
+    &quot;value&quot; : &quot;Hello World!&quot;,
+    &quot;target&quot; : &quot;Hello&quot;,
+    &quot;replacement&quot; : &quot;Goodbye&quot;
+  }
+}
+</code></pre>
+<hr/>
+<h4><a href="#span-class-fas-fa-minus-square-span-map-delete-map-del-" name="span-class-fas-fa-minus-square-span-map-delete-map-del-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-minus-square"></span> <code>Map delete ($map_del)</code></h4>
 <p>This operator deletes a key from a map</p>
 <p>expected configuration:</p>
 <ul>
@@ -1814,7 +2021,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#array-del" name="array-del" class="anchor"><span class="anchor-link"></span></a><code>$array_del</code></h4>
+<h4><a href="#span-class-fas-fa-trash-span-array-delete-array-del-" name="span-class-fas-fa-trash-span-array-delete-array-del-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-trash"></span> <code>Array delete ($array_del)</code></h4>
 <p>This operator deletes an element from an array</p>
 <p>expected configuration:</p>
 <ul>
@@ -1831,7 +2038,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
 }
 </code></pre>
 <hr/>
-<h4><a href="#decr" name="decr" class="anchor"><span class="anchor-link"></span></a><code>$decr</code></h4>
+<h4><a href="#span-class-fas-fa-minus-circle-span-decrement-decr-" name="span-class-fas-fa-minus-circle-span-decrement-decr-" class="anchor"><span class="anchor-link"></span></a><span class="fas fa-minus-circle"></span> <code>Decrement ($decr)</code></h4>
 <p>This operator decrements a value by a given amount</p>
 <p>expected configuration:</p>
 <ul>
@@ -1869,7 +2076,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
           &quot;name&quot;: &quot;query_date&quot;,
           &quot;value&quot;: {
             &quot;$parse_datetime&quot;: {
-              &quot;value&quot;: &quot;${input.request.query.date.0}&quot;
+              &quot;value&quot;: &quot;${workflow_input.request.query.date.0}&quot;
             }
           }
         },
@@ -2123,7 +2330,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
       &quot;kind&quot;: &quot;if&quot;,
       &quot;predicate&quot;: {
         &quot;$is_truthy&quot;: {
-          &quot;value&quot;: &quot;${input.request.body_json.audio}&quot;
+          &quot;value&quot;: &quot;${workflow_input.request.body_json.audio}&quot;
         }
       },
       &quot;then&quot;: {
@@ -2135,7 +2342,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
           &quot;decode_base64&quot;: true,
           &quot;payload&quot;: {
             &quot;model&quot;: &quot;gpt-4o-mini-transcribe&quot;,
-            &quot;audio&quot;: &quot;${input.request.body_json.audio}&quot;
+            &quot;audio&quot;: &quot;${workflow_input.request.body_json.audio}&quot;
           }
         },
         &quot;result&quot;: &quot;input_text&quot;
@@ -2146,7 +2353,7 @@ WorkflowOperator.registerOperator(&quot;$custom_op&quot;, new MyOperator())
         &quot;values&quot;: [
           {
             &quot;name&quot;: &quot;input_text&quot;,
-            &quot;value&quot;: &quot;${input.request.body_json.text}&quot;
+            &quot;value&quot;: &quot;${workflow_input.request.body_json.text}&quot;
           }
         ]
       }

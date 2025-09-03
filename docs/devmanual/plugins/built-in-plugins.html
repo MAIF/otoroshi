@@ -899,7 +899,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.Fail2BanPlugin</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like).</p>
+<p>Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like). Client is identified by the &lsquo;identifier&rsquo; that can use the Otoroshi expression language to extract informations like user id, apikey, ip address, etc.</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;identifier&quot; : &quot;${req.ip}&quot;,
@@ -908,7 +908,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;max_retry&quot; : 4,
   &quot;url_regex&quot; : [ ],
   &quot;status_codes&quot; : [ &quot;400&quot;, &quot;401&quot;, &quot;403-499&quot;, &quot;500-599&quot; ],
-  &quot;ignored_ips&quot; : [ ]
+  &quot;ignored&quot; : [ ],
+  &quot;blocked&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.ForceHttpsTraffic" class="ng-plugin plugin-hidden pl">
 <h2><a href="#force-https-traffic" name="force-https-traffic" class="anchor"><span class="anchor-link"></span></a>Force HTTPS traffic</h2>
@@ -2731,7 +2732,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 }
 </code></pre>
 <h3><a href="#documentation" name="documentation" class="anchor"><span class="anchor-link"></span></a>Documentation</h3>
-<h3><a href="#examples" name="examples" class="anchor"><span class="anchor-link"></span></a>Examples</h3>
 <p>1) Prefix all relative hrefs with /proxy and rewrite a domain to another</p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.RegexResponseBodyRewriter&quot;,
@@ -2758,7 +2758,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   }
 }
 </code></pre>
-<p>Note: replacement supports backrefs $1, $2, &hellip; Remember to properly escape backslashes in JSON.</p></div><div id="otoroshi.next.plugins.RejectHeaderInTooLong" class="ng-plugin plugin-hidden pl">
+<p>Note: replacement supports backrefs $1, $2, &hellip;</p></div><div id="otoroshi.next.plugins.RejectHeaderInTooLong" class="ng-plugin plugin-hidden pl">
 <h2><a href="#reject-headers-in-too-long" name="reject-headers-in-too-long" class="anchor"><span class="anchor-link"></span></a>Reject headers in too long</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -3060,8 +3060,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin can split a portion of the traffic to canary backends between two dates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;start&quot; : &quot;2025-08-27T07:28:56.270Z&quot;,
-  &quot;stop&quot; : &quot;2025-08-28T07:28:56.290Z&quot;,
+  &quot;start&quot; : &quot;2025-09-03T15:39:37.097Z&quot;,
+  &quot;stop&quot; : &quot;2025-09-04T15:39:37.118Z&quot;,
   &quot;increment_percent&quot; : 1,
   &quot;targets&quot; : [ ],
   &quot;root&quot; : &quot;/&quot;
