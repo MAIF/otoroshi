@@ -36,6 +36,7 @@ class WorkflowEngine(env: Env) {
       workflow_ref = wfRef,
       workflow = node.json
     )
+    wfRun.memory.set("global_input", input)
     wfRun.memory.set("input", input)
     node
       .internalRun(wfRun, Seq(0), Seq.empty)(env, executorContext)
@@ -310,6 +311,7 @@ trait Node extends NodeLike {
           }
           case Right(res)                                                  => {
             wfr.log(s"ending '${id}'", this)
+            wfr.memory.set("input", res)
             result.foreach(name => wfr.memory.set(name, res))
             returned
               .map {
@@ -318,7 +320,10 @@ trait Node extends NodeLike {
                   WorkflowOperator.processOperators(returnedObject, wfr, env)
                 case value             => WorkflowOperator.processOperators(value, wfr, env)
               }
-              .map(v => Right(v))
+              .map { v =>
+                wfr.memory.set("input", v)
+                Right(v)
+              }
               .getOrElse(Right(res)) // TODO: el like
           }
         }
