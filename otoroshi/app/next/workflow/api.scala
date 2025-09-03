@@ -58,7 +58,7 @@ class WorkflowEngine(env: Env) {
 
   def resume(node: Node, wfr: WorkflowRun, from: Seq[Int], attrs: TypedMap): Future[WorkflowResult] = {
     val wfRun = wfr.copy(attrs = attrs)
-    val input = wfr.memory.get("input").map(_.asObject).getOrElse(Json.obj())
+    val input = wfr.memory.get("workflow_input").map(_.asObject).getOrElse(Json.obj())
     node
       .internalRun(wfRun, Seq(0), from.tail)(env, executorContext)
       .map {
