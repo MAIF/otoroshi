@@ -347,7 +347,7 @@ object Node {
         "id"       -> "hello",
         "kind"     -> "call",
         "function" -> "core.hello",
-        "args"     -> Json.obj("name" -> "${input.name}"),
+        "args"     -> Json.obj("name" -> "${workflow_input.name}"),
         "result"   -> "call_res"
       )
     ),

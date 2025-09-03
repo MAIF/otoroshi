@@ -28,7 +28,7 @@ object WorkflowTest {
          |      "kind": "call",
          |      "function": "core.hello",
          |      "args": {
-         |        "name": "${input.name}"
+         |        "name": "${workflow_input.name}"
          |      },
          |      "result": "call_res"
          |    },
@@ -58,7 +58,7 @@ object WorkflowTest {
          |          "value": {
          |            "$array_append": {
          |              "array": "${foo}",
-         |              "value": "${input.name}"
+         |              "value": "${workflow_input.name}"
          |            }
          |          }
          |        },
@@ -144,7 +144,7 @@ object WorkflowTest {
           "id"       -> "call_1",
           "kind"     -> "call",
           "function" -> "core.log",
-          "args"     -> Json.obj("message" -> "${input.foo.bar}"),
+          "args"     -> Json.obj("message" -> "${workflow_input.foo.bar}"),
           "result"   -> "call_1"
         ),
         Json.obj(
