@@ -9,8 +9,6 @@ export const WorkflowFunction = {
   form_schema: {
     workflow_id: {
       renderer: (props) => {
-        console.log('value', props.value)
-
         const options = [
           ...(Object.values(nodesCatalogSignal.value.workflow.functions)
             .map(func => ({ ...func, self: true })) || []),
@@ -31,23 +29,24 @@ export const WorkflowFunction = {
                 props.onChange(workflowRef.id);
               }}
               components={{
-                Option: (props) => {
+                Option: (properties) => {
                   return (
                     <div
                       className="d-flex align-items-center m-0 p-2"
                       style={{ gap: '.5rem' }}
                       onClick={() => {
-                        props.selectOption(props.data.value);
+                        properties.selectOption(properties.data);
                       }}
                     >
-                      <span className={`badge ${props.data.value.self ? 'bg-warning' : 'bg-success'}`}>
-                        {props.data.value.self ? 'LOCAL' : 'GLOBAL'}
+                      <span className={`badge ${properties.data.value.self ? 'bg-warning' : 'bg-success'}`}>
+                        {properties.data.value.self ? 'LOCAL' : 'GLOBAL'}
                       </span>
-                      {props.data.label}
+                      {properties.data.label}
                     </div>
                   );
                 },
                 SingleValue: (props) => {
+                  console.log(props)
                   return (
                     <div className="d-flex align-items-center m-0" style={{ gap: '.5rem' }}>
                       <span

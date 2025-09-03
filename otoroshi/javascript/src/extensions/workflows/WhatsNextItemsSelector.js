@@ -81,12 +81,14 @@ export function Items({
   const items = nodesCatalogSignal.value.categories
     .filter((category) => category.id !== 'transformations')
     .map((category) => {
+      const nodes = category.nodes
+        .filter((kind) => !FORBIDDEN_KINDS.includes(kind))
+        .map((kind) => getNodeFromKind(kind))
+
       return {
         ...category,
-        nodes: category.nodes
-          .filter((kind) => !FORBIDDEN_KINDS.includes(kind))
-          .map((kind) => getNodeFromKind(kind)),
-      };
+        nodes,
+      }
     })
     .filter((category) => category.nodes.length > 0);
 

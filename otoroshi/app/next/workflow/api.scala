@@ -314,7 +314,7 @@ trait Node extends NodeLike {
             returned
               .map {
                 case obj @ JsObject(_) =>
-                  val returnedObject = obj - "position"
+                  val returnedObject = obj - "position" - "description"
                   WorkflowOperator.processOperators(returnedObject, wfr, env)
                 case value             => WorkflowOperator.processOperators(value, wfr, env)
               }

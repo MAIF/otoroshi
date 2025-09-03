@@ -3,7 +3,7 @@ import ELK from 'elkjs/lib/elk.bundled.js';
 const elkOptions = {
   'elk.algorithm': 'layered',
   'elk.layered.spacing.nodeNodeBetweenLayers': '120',
-  'elk.spacing.nodeNode': '150',
+  'elk.spacing.nodeNode': '180',
 
   'elk.layered.edgeRouting.selfLoopDistribution': 'EQUALLY',
   'elk.layered.edgeRouting.selfLoopOrdering': 'SEQUENCED',
@@ -18,10 +18,10 @@ const elkOptions = {
   'elk.layered.nodePlacement.favorStraightEdges': 'true',
   'elk.layered.nodePlacement.linearSegments.deflectionDampening': '0.3',
 
-  'elk.spacing.edgeNode': '80',
-  'elk.spacing.edgeEdge': '40',
-  'elk.layered.spacing.edgeNodeBetweenLayers': '50',
-  'elk.layered.spacing.edgeEdgeBetweenLayers': '35',
+  'elk.spacing.edgeNode': '60',
+  'elk.spacing.edgeEdge': '30',
+  'elk.layered.spacing.edgeNodeBetweenLayers': '40',
+  'elk.layered.spacing.edgeEdgeBetweenLayers': '25',
 
   'elk.portConstraints': 'FIXED_ORDER',
   'elk.layered.unnecessaryBendpoints': 'false',
@@ -100,13 +100,7 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
     });
 };
 
-export const onLayout = ({ direction, nodes, edges, setNodes, setEdges }) => {
-  const opts = {
-    'elk.direction': direction,
-    ...elkOptions,
-  };
-
-  // console.log(nodes)
+export const applyLayout = ({ nodes, edges }) => {
   const filteredEdges = edges
     .filter((f) => f.target && f.source)
     .filter((edge) => {
@@ -119,7 +113,7 @@ export const onLayout = ({ direction, nodes, edges, setNodes, setEdges }) => {
   if (edges.length > filteredEdges.length)
     console.error('got an edge with an empty source or an empty target');
 
-  return getLayoutedElements(nodes, filteredEdges, opts).then(
+  return getLayoutedElements(nodes, filteredEdges, elkOptions).then(
     ({ nodes: layoutedNodes, edges: layoutedEdges }) => {
       return { nodes: layoutedNodes, edges: layoutedEdges };
       // fitView({

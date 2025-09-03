@@ -8,6 +8,7 @@ object CategoriesInitializer {
     Node.registerCategory("core", CoreCategory())
     Node.registerCategory("transformations", TransformationsCategory())
     Node.registerCategory("functions", FunctionsCategory())
+    Node.registerCategory("udfs", UserDefinedFunctionsCategory())
     Node.registerCategory("others", OthersCategory())
   }
 }
@@ -107,8 +108,13 @@ case class TransformationsCategory(
 case class FunctionsCategory(
     name: String = "Functions",
     description: String = "Execute functions",
-    nodes: Seq[String] = Seq(
-    )
+    nodes: Seq[String] = Seq()
+) extends NodeCategory
+
+case class UserDefinedFunctionsCategory(
+    name: String = "User-defined functions",
+    description: String = "Execute your own functions",
+    nodes: Seq[String] = Seq()
 ) extends NodeCategory
 
 case class FlowCategory(

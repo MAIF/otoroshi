@@ -138,6 +138,54 @@ class SendMailFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Send an email"
   override def documentationIcon: String                  = "fas fa-envelope"
   override def documentationDescription: String           = "This function sends an email"
+  override def documentationFormSchema: Option[JsObject] = Some(Json.obj(
+      "from"      -> Json.obj(
+        "type"    -> "string",
+        "label"   -> "From",
+        "props"   -> Json.obj("description" -> "The sender email address")
+      ),
+      "to"        -> Json.obj(
+          "type"  -> "array",
+          "label" -> "To",
+          "props" -> Json.obj("description" -> "The recipient email addresses")
+        ),
+      "subject"   -> Json.obj(
+          "type"  -> "string",
+          "label" -> "Subject",
+          "props" -> Json.obj("description" -> "The email subject")
+        ),
+      "html"      -> Json.obj(
+          "type"  -> "string",
+          "label" -> "HTML",
+          "props" -> Json.obj("description" -> "The email HTML content")
+        ),
+      "mailer_config" -> Json.obj(
+          "type"    -> "form",
+          "label"   -> "Mailer config",
+          "props"   -> Json.obj("description" -> "The mailer configuration"),
+          "schema" -> Json.obj(
+            "kind" -> Json.obj(
+              "type"  -> "select",
+              "label" -> "Kind",
+              "props" -> Json.obj(
+                "options" -> Seq(
+                  Json.obj("label" -> "Mailjet", "value" -> "mailjet"),
+                  Json.obj("label" -> "Mailgun", "value" -> "mailgun"),
+                  Json.obj("label" -> "SendGrid", "value" -> "sendgrid"),
+                )
+              )
+            ),
+            "api_key" -> Json.obj(
+              "type"  -> "string",
+              "label" -> "API key"
+            ),
+            "domain"  -> Json.obj(
+              "type"  -> "string",
+              "label" -> "Domain"
+            )
+          )
+        )
+  ))
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",

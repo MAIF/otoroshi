@@ -15,12 +15,14 @@ export function Node(props) {
 
   let label = data.label || data.item?.label || data.icon;
   let name = data.display_name || data.name;
+  let nodeRenderer;
 
   if (data.content?.function) {
     const functionData = getNodeFromKind(data.content.function);
     if (functionData) {
       label = functionData.icon;
       name = functionData.display_name;
+      nodeRenderer = functionData.nodeRenderer
     }
   }
 
@@ -38,6 +40,8 @@ export function Node(props) {
         <div className="node-one-output d-flex-center">
           {data.operators ? <i className="fas fa-wrench" /> : <i className={label} />} {name}
         </div>
+
+        {nodeRenderer && nodeRenderer(props)}
 
         {data.nodeRenderer && data.nodeRenderer(props)}
 

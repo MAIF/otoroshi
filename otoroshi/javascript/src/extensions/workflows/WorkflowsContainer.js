@@ -9,6 +9,7 @@ import { ReactFlowProvider } from '@xyflow/react';
 import { WorkflowsDesigner } from './WorkflowsDesigner';
 import { WorkflowSidebar } from './WorkflowSidebar';
 import { NODES, NODES_BY_CATEGORIES, nodesCatalogSignal } from './models/Functions';
+import { UserDefinedFunction } from './functions/UserDefinedFunction';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,7 +55,7 @@ function Container(props) {
 
   const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
 
-  const workflow = useQuery(['getWorkflow', params.workflowId],
+  const workflow = useQuery(['getWorkflow', params.workflowId, params.functionId],
     () => {
       return client
         .findById(params.workflowId)
@@ -80,7 +81,14 @@ function Container(props) {
   }, [workflow.isLoading])
 
   if (!(workflow.isLoading || documentation.isLoading || workflows.isLoading)) {
-    const nodes = NODES(documentation.data)
+    let nodes = NODES(documentation.data)
+
+    Object.entries(workflow.data.functions)
+      .map(([functionName, value]) => UserDefinedFunction(functionName, value))
+      .map(functionData => {
+        nodes[functionData.name] = functionData
+      })
+
     nodesCatalogSignal.value = {
       nodes,
       categories: NODES_BY_CATEGORIES(nodes, documentation.data.categories),

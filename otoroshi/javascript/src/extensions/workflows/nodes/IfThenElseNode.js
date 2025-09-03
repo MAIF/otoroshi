@@ -12,15 +12,15 @@ export const IfThenElseNode = {
   form_schema: {
     predicate: {
       renderer: (props) => {
-        const operators =
-          nodesCatalogSignal.value.categories.find((category) => category.id === 'operators')
-            ?.nodes || [];
+        const operators = Object.values(nodesCatalogSignal.value.nodes).filter(node => node.category === 'operators') || []
 
         const field = Object.keys(props.rootValue.predicate || {})[0];
 
         const operator = operators.find((ope) => ope.name === field);
 
         const value = props.rootValue.predicate[field];
+
+        console.log(value, operator.form_schema)
 
         return (
           <>

@@ -1253,14 +1253,14 @@ class LteOperator extends WorkflowOperator {
   override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "a" -> Json.obj(
-        "type"  -> "number",
+        "type"  -> "string",
         "label" -> "A",
         "props" -> Json.obj(
           "description" -> "The first number"
         )
       ),
       "b" -> Json.obj(
-        "type"  -> "number",
+        "type"  -> "string",
         "label" -> "B",
         "props" -> Json.obj(
           "description" -> "The second number"

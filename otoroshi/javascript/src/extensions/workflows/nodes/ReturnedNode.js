@@ -16,6 +16,7 @@ export const ReturnedNode = {
 
         if (typeof value === 'object') {
           delete value.position;
+          delete value.description;
         }
 
         return (
@@ -47,7 +48,7 @@ export const ReturnedNode = {
     },
   },
   nodeRenderer: (props) => {
-    const { position, ...rest } = props.data?.content?.returned;
+    const { position, description, ...rest } = props.data?.content?.returned;
 
     return (
       <div

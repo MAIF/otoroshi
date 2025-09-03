@@ -1,6 +1,7 @@
 import React from 'react';
 import { NgCodeRenderer, NgSelectRenderer } from '../../../components/nginputs';
 import { Row } from '../../../components/Row';
+import { nodesCatalogSignal } from '../models/Functions';
 
 export const CallNode = {
   kind: 'call',
@@ -8,10 +9,11 @@ export const CallNode = {
   form_schema: {
     function: {
       renderer: (props) => {
+        const functions = Object.values(nodesCatalogSignal.value.nodes).filter(node => node.category === 'functions')
         return (
           <Row title="Select a function to execute">
             <NgSelectRenderer
-              options={props.rootValue?.coreFunctions.map((func) => ({
+              options={functions.map((func) => ({
                 label: func.display_name,
                 value: func.name,
               }))}

@@ -15,11 +15,11 @@ import {
 import { NewTask } from './flow/NewTask';
 import { nodesCatalogSignal } from './models/Functions';
 import ReportExplorer from './ReportExplorer';
-import { onLayout } from './ElkOptions';
+import { applyLayout } from './ElkOptions';
 import { TagsModal } from './TagsModal';
 import { useSignalValue } from 'signals-react-safe';
 
-const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name'];
+export const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name'];
 
 export function splitInformationAndContent(obj) {
   return Object.entries(obj).reduce(
@@ -68,7 +68,7 @@ export function WorkflowsDesigner(props) {
     const data = catalog.nodes[(information.kind || information.name).toLowerCase()];
 
     let functionData = {};
-    if (node.category === 'functions') {
+    if (node.category === 'functions' || node.category === 'udfs') {
       functionData = {
         function: node.name,
       };
@@ -403,6 +403,7 @@ export function WorkflowsDesigner(props) {
       'start',
       {
         kind: 'start',
+        description: config.description,
         position: config.position || { x: 0, y: 0 },
       },
       addInformationsToNode
@@ -423,6 +424,7 @@ export function WorkflowsDesigner(props) {
         returned: {
           ...(config.returned || {}),
         },
+        description: config.returned.description,
         kind: 'returned',
       },
       addInformationsToNode
@@ -486,8 +488,7 @@ export function WorkflowsDesigner(props) {
     const initialState = initializeGraph(workflow?.config, workflow.orphans, addInformationsToNode);
 
     if (initialState.nodes.every((node) => node.position.x === 0 && node.position.y === 0)) {
-      onLayout({
-        direction: 'RIGHT',
+      applyLayout({
         nodes: initialState.nodes,
         edges: initialState.edges,
       }).then(({ nodes, edges }) => {
@@ -503,13 +504,15 @@ export function WorkflowsDesigner(props) {
   const graphToJson = () => {
     const lastNode = nodes.find((node) => node.id === 'returned-node');
 
-    const startPosition = nodes.find((node) => node.id === 'start').position;
+    const startNode = nodes.find((node) => node.id === 'start')
+    const startPosition = startNode.position;
 
     const start = {
       kind: 'workflow',
       steps: [],
       returned: lastNode.data.content?.returned,
       id: 'start',
+      description: startNode.data.information.description,
       position: startPosition,
     };
 
@@ -527,6 +530,7 @@ export function WorkflowsDesigner(props) {
           returned: {
             ...graph[0].returned,
             position: lastNode.position,
+            description: lastNode.data.information.description,
           },
         },
         graph[1],
@@ -1061,6 +1065,7 @@ export function WorkflowsDesigner(props) {
         input: JSON.stringify({}, null, 4),
         workflow: graphToJson()[0],
         workflow_id: props.workflow.id,
+        functions: props.workflow.functions
       }),
     })
       .then((r) => r.json())
@@ -1100,8 +1105,7 @@ export function WorkflowsDesigner(props) {
   );
 
   const autoLayout = () => {
-    onLayout({
-      direction: 'RIGHT',
+    applyLayout({
       nodes: nodes,
       edges: edges,
     }).then(({ nodes, edges }) => {

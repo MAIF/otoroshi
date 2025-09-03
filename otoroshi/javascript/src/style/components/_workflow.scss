@@ -486,4 +486,32 @@
     font-size: .75rem;
     font-style: italic;
   }
+
+  .markdown-description {
+    background-color: var(--bg-color_level2);
+    color: var(--color_level2);
+    padding: 0;
+  }
+
+  .markdown-description pre {
+    height: initial;
+    margin: 0;
+  }
+
+  .relative {
+    position: relative;
+  }
+
+  .absolute {
+    position: absolute;
+    z-index: 100;
+  }
+
+  .top-2 {
+    top: 1rem;
+  }
+
+  .right-2 {
+    right: 1rem;
+  }
 }
