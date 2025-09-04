@@ -18,7 +18,7 @@ export const IfThenElseNode = {
 
         const operator = operators.find((ope) => ope.name === field);
 
-        const value = props.rootValue.predicate[field];
+        const value = props.rootValue.predicate ? props.rootValue.predicate[field] : undefined;
 
         console.log(value, operator.form_schema)
 

@@ -26,6 +26,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Custom HTTP Listeners](./http-listeners.md)
 * @ref:[Sunsetting Service Descriptors](./deprecating-sd.md)
 * @ref:[Otoroshi workflows](./workflows.md)
+* @ref:[Circuit Breaker](./circuit-breaker.md)
 
 
 @@@ index
@@ -54,5 +55,5 @@ In this sections, you will find informations about various Otoroshi topics
 * [Custom HTTP Listeners](./http-listeners.md)
 * [Sunsetting Service Descriptors](./deprecating-sd.md)
 * [Otoroshi workflows](./workflows.md)
-  
+* [Circuit Breaker](./circuit-breaker.md)
 @@@

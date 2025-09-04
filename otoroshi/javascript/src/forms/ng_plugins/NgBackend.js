@@ -2,6 +2,7 @@ import React from 'react';
 
 import explainations from '../../explainations';
 import { LoadBalancingSelector } from '../../pages/ApiEditor/LoadBalancingSelector';
+import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 
 export default {
   id: 'Backend',
@@ -223,6 +224,27 @@ export default {
       collapsable: true,
       collapsed: true,
       schema: {
+        description: {
+          renderer: () => {
+            return <MarkdownInput
+              readOnly
+              className="form-description"
+              preview
+              value={`
+**Tips**
+
+Send back the numeric value received in the request header defined by \`otoroshi.headers.healthcheck.test\`, 
+appending 42 in the response header defined by \`otoroshi.headers.healthcheck.testresult\`.
+
+👉 Example with defaults:
+
+  - Request: Otoroshi-Health-Check-Logic-Test: 123
+  - Response: Otoroshi-Health-Check-Logic-Test-Result: 165 (123 + 42)
+`
+              }
+            />
+          }
+        },
         enabled: {
           label: 'Enabled',
           type: 'box-bool',
@@ -250,7 +272,7 @@ export default {
           label: 'Unhealthy statuses',
         },
       },
-      flow: ['enabled', 'url', 'timeout', 'healthyStatuses', 'unhealthyStatuses'],
+      flow: ['description', 'enabled', 'url', 'timeout', 'healthyStatuses', 'unhealthyStatuses'],
     },
     targets: {
       array: true,
