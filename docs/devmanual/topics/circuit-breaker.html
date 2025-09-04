@@ -588,7 +588,8 @@ Otoroshi stops calling the backend temporarily to protect users &amp; infra.
 <p>Backend responds, but the response header is missing, malformed, or contains an incorrect value.</p>
 <h4><a href="#red-unhealthy-" name="red-unhealthy-" class="anchor"><span class="anchor-link"></span></a>Red (unhealthy)</h4>
 <p>Backend times out or returns a status code <strong>&lt;199</strong> or <strong>&gt;500</strong>.</p>
-<p>When a backend is marked <strong>red</strong>, the circuit breaker will <strong>open</strong>, cutting traffic to that service until it recovers.</p>
+<p>When a backend is marked <strong>red</strong> and the flag <code>BlockOnRed</code> is enabled, the circuit breaker will <strong>open</strong>, cutting traffic to that host until it recovers.</p>
+<p>The <code>Block on red</code> flag can be enabled in the healthcheck section of the backend configuration or by using the corresponding environment variable.</p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/index.html">How to&rsquo;s</a></p>
 </div>
