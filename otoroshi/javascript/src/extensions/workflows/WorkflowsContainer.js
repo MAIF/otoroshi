@@ -55,16 +55,23 @@ function Container(props) {
 
   const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
 
-  const workflow = useQuery(['getWorkflow', params.workflowId, params.functionId],
+  const workflow = useQuery(['getWorkflow', params.workflowId, params.functionName],
     () => {
       return client
         .findById(params.workflowId)
         .then(workflow => {
           setRawWorkflow(workflow)
-          if (params.functionId)
-            return Object
-              .values(workflow.functions)
-              .find(func => func.id === params.functionId)
+          if (params.functionName)
+            return {
+              name: params.functionName,
+              functions: {},
+              orphans: {
+                nodes: [],
+                edges: []
+              },
+              tags: [],
+              config: workflow.functions[params.functionName]
+            }
           return workflow
         })
     })
@@ -98,19 +105,23 @@ function Container(props) {
   }
 
   const handleSave = (config, orphans) => {
-    if (params.functionId)
+    if (params.functionName)
       return client.update({
         ...rawWorkflow,
         functions: Object.fromEntries(
           Object
             .entries(rawWorkflow.functions)
             .map(([key, value]) => {
-              if (value.id === params.functionId) {
-                return [key, {
-                  ...value,
-                  config,
-                  orphans
-                }]
+              if (key === params.functionName) {
+                return [
+                  key,
+                  config
+                  // {
+                  //   ...value,
+                  //   config,
+                  //   orphans
+                  // }
+                ]
               }
               return [key, value]
             })

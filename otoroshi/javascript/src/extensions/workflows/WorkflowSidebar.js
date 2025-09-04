@@ -34,16 +34,16 @@ const LINKS = (id) => [
   },
 ]
 
-const FUNCTION_LINKS = (id, functionId) => [
+const FUNCTION_LINKS = (id, functionName) => [
   {
-    to: `/extensions/workflows/${id}/functions/${functionId}/designer`,
+    to: `/extensions/workflows/${id}/functions/${functionName}/designer`,
     icon: 'fa-pencil-ruler',
     title: 'Overview',
     tooltip: { ...createTooltip(`Show overview tab`) },
     isActive: (pathname) => pathname.endsWith('designer') && pathname.includes('functions'),
   },
   {
-    to: `/extensions/workflows/${id}/functions/${functionId}/informations`,
+    to: `/extensions/workflows/${id}/functions/${functionName}/informations`,
     icon: 'fa-file-alt',
     title: 'Informations',
     tooltip: { ...createTooltip(`Show information tab`) },
@@ -90,10 +90,10 @@ export const WorkflowSidebar = ({ params }) => {
             openedSidebar={openedSidebar} />
         })}
 
-        {params.functionId && <>
+        {params.functionName && <>
           {openedSidebar && <p className="sidebar-title">Function</p>}
 
-          {FUNCTION_LINKS(workflowId, params.functionId).map(link => {
+          {FUNCTION_LINKS(workflowId, params.functionName).map(link => {
             return <Item {...link}
               key={link.to}
               location={location}

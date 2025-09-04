@@ -26,9 +26,9 @@ export function WorkflowFunctions(props) {
 
   const columns = [
     {
-      title: 'Description',
-      filterId: 'description',
-      cell: (_, item) => item.description,
+      title: 'Name',
+      filterId: 'name',
+      cell: (_, item) => item.name
     }
   ];
 
@@ -36,7 +36,7 @@ export function WorkflowFunctions(props) {
     const newWorkflow = {
       ...workflow,
       functions: Object.fromEntries(
-        Object.entries(workflow.functions).filter(item => item[1].id !== removedItem.id)
+        Object.entries(workflow.functions).filter(([key, _]) => key !== removedItem.name),
       )
     }
     return client.update(newWorkflow)
@@ -45,17 +45,15 @@ export function WorkflowFunctions(props) {
       })
   }
 
-  console.log(workflow)
-
   return (
     <Loader loading={!workflow}>
       <Table
         parentProps={{ params }}
         navigateTo={(item) =>
-          history.push(`/extensions/workflows/${workflow.id}/functions/${item.id}/designer`)
+          history.push(`/extensions/workflows/${workflow.id}/functions/${item.name}/designer`)
         }
         navigateOnEdit={(item) =>
-          history.push(`/extensions/workflows/${workflow.id}/functions/${item.id}/designer`)
+          history.push(`/extensions/workflows/${workflow.id}/functions/${item.name}/designer`)
         }
         selfUrl="extensions/workflows"
         defaultTitle="Functions"
@@ -66,20 +64,23 @@ export function WorkflowFunctions(props) {
         deleteItem={(item) => deleteItem(item)}
         defaultSort="metadata.updated_at"
         defaultSortDesc="true"
-        fetchItems={() => Promise.resolve(Object.values(workflow.functions))}
+        fetchItems={() => Promise.resolve(Object.entries(workflow.functions).map(([key, value]) => ({
+          ...value,
+          name: key
+        })))}
         showActions={true}
         showLink={false}
-        extractKey={(item) => item.id}
+        extractKey={(item) => item.name}
         rowNavigation={true}
         hideAddItemAction={true}
         itemUrl={(i) =>
-          `/bo/dashboard/extensions/workflows/${workflow.id}/functions/${i.id}/designer`
+          `/bo/dashboard/extensions/workflows/${workflow.id}/functions/${i.name}/designer`
         }
         rawEditUrl={true}
         injectTopBar={() => (
           <div className="btn-group input-group-btn">
             <Link className="btn btn-primary btn-sm" to={`functions/new`}>
-              <i className="fas fa-plus-circle" /> Create new function
+              <i className="fas fa-plus-circle" /> Add function
             </Link>
             {props.injectTopBar}
           </div>

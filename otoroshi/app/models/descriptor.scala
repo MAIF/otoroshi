@@ -809,14 +809,16 @@ case class HealthCheck(
     url: String,
     timeout: Int = 5000,
     healthyStatuses: Seq[Int] = Seq.empty,
-    unhealthyStatuses: Seq[Int] = Seq.empty
+    unhealthyStatuses: Seq[Int] = Seq.empty,
+    blockOnRed: Boolean = false
 ) {
   def toJson = Json.obj(
     "enabled"           -> enabled,
     "url"               -> url,
     "timeout"           -> timeout,
     "healthyStatuses"   -> healthyStatuses,
-    "unhealthyStatuses" -> unhealthyStatuses
+    "unhealthyStatuses" -> unhealthyStatuses,
+    "blockOnRed"        -> blockOnRed
   )
 }
 
@@ -828,7 +830,8 @@ object HealthCheck {
         url = json.select("url").asOpt[String].getOrElse(""),
         timeout = json.select("timeout").asOpt[Int].getOrElse(5000),
         healthyStatuses = json.select("healthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty),
-        unhealthyStatuses = json.select("unhealthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+        unhealthyStatuses = json.select("unhealthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty),
+        blockOnRed = json.select("blockOnRed").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)

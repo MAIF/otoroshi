@@ -23,11 +23,17 @@ export function WorkflowNewFunction(props) {
         props.setSidebarContent(<WorkflowSidebar {...props} params={params} />)
         setWorkflow(workflow)
 
-        if (params.functionId) {
-          setFunction(Object.values(workflow.functions).find(func => func.id === params.functionId))
-          props.setTitle(`${workflow.name}`)
+        if (params.functionName) {
+          setFunction({
+            name: params.functionName,
+            config: workflow.functions[params.functionName]
+          })
+          props.setTitle(params.functionName)
         } else {
-          setFunction(template)
+          setFunction({
+            name: 'new_function',
+            config: template.config
+          })
           props.setTitle('New function')
         }
       }
@@ -40,12 +46,7 @@ export function WorkflowNewFunction(props) {
       type: 'string',
       label: 'Name',
       props: { placeholder: 'New Workflow' },
-      disabled: params.functionId
-    },
-    description: {
-      type: 'string',
-      label: 'Description',
-      props: { placeholder: 'New Workflow' },
+      disabled: params.functionName
     },
     config: {
       type: 'code',
@@ -60,14 +61,6 @@ export function WorkflowNewFunction(props) {
         editorOnly: true,
         height: '40vh',
       },
-    },
-    metadata: {
-      type: 'object',
-      label: 'Metadata'
-    },
-    tags: {
-      type: 'array',
-      label: 'Tags'
     }
   }
 
@@ -76,32 +69,24 @@ export function WorkflowNewFunction(props) {
       type: 'group',
       name: 'Configuration',
       collapsable: false,
-      fields: ['name', 'description', 'config']
-    },
-    {
-      type: 'group',
-      name: 'Misc.',
-      collapsed: true,
-      fields: [
-        'tags',
-        'metadata'
-      ],
-    }]
+      fields: ['name', 'config']
+    }
+  ]
 
   const create = () => {
-    const name = `self.${newFunction.name.toLowerCase().replace(/\s/g, '_')}`
+    const name = newFunction.name.toLowerCase().replace(/\s/g, '_')
 
-    if (Object.keys(workflow.functions).includes(name)) {
-      window.newAlert("The function already exists - renamed")
+    if (workflow.functions[name]) {
+      window.newAlert("The function already exists - Renamed it")
     } else {
       return client.update({
         ...workflow,
         functions: {
           ...workflow.functions,
-          [name]: newFunction,
+          [name]: newFunction.config,
         },
       })
-        .then(() => history.push(`/extensions/workflows/${params.workflowId}/functions/${newFunction.id}/designer`))
+        .then(() => history.push(`/extensions/workflows/${params.workflowId}/functions/${newFunction.name}/designer`))
     }
   }
 
@@ -117,7 +102,7 @@ export function WorkflowNewFunction(props) {
         className="d-flex ms-auto"
         onPress={create}
         text={
-          params.functionId ? 'Save' : 'Create'
+          params.functionName ? 'Save' : 'Create'
         } />
     </Loader>
   );

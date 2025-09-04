@@ -650,13 +650,13 @@ export function setupWorkflowsExtension(registerExtension) {
           },
         },
         {
-          path: '/extensions/workflows/:workflowId/functions/:functionId/designer',
+          path: '/extensions/workflows/:workflowId/functions/:functionName/designer',
           component: (props) => {
             return <WorkflowFunctionsDesigner {...props} />;
           },
         },
         {
-          path: '/extensions/workflows/:workflowId/functions/:functionId/informations',
+          path: '/extensions/workflows/:workflowId/functions/:functionName/informations',
           component: (props) => {
             return <WorkflowNewFunction {...props} />;
           },

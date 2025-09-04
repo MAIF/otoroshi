@@ -69,6 +69,7 @@ object HealthCheck {
           Some("HealthChecker")
         )
         .serialize(desc.algoInfoFromOtoToBack)(env)
+
       env.MtlsWs
         .url(url, target.mtlsConfig)
         .withRequestTimeout(Duration(desc.healthCheck.timeout, TimeUnit.MILLISECONDS))
@@ -126,7 +127,7 @@ object HealthCheck {
             )
             hce.toAnalytics()
             hce.pushToRedis()
-            if (env.healtCheckBlockOnRed && health.contains("RED")) {
+            if ((desc.healthCheck.blockOnRed || env.healtCheckBlockOnRed) && health.contains("RED")) {
               env.datastores.rawDataStore.set(
                 s"${env.storageRoot}:targets:bad-health:${target.asCleanTarget}",
                 ByteString(DateTime.now().toString()),
@@ -295,6 +296,7 @@ class HealthCheckJob extends Job {
       .flatMap(s => s.targets.map(t => (t, s)))
       .distinct
       .toList
+
     Source(targets)
       .mapAsync(parallelChecks) { case (target, service) =>
         logger.debug(s"checking health of ${service.name} - ${target.asTargetStr}")

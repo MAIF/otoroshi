@@ -350,15 +350,11 @@ case class CallNode(json: JsObject) extends Node {
     } else {
       if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
       if (functionName.startsWith("self.")) {
-        println(wfr.functions.keys, functionName)
-        wfr.functions
-          .get(functionName.substring(5))
-          .orElse(wfr.functions.get(functionName)) match {
+        wfr.functions.get(functionName.substring(5)) match {
           case None           => WorkflowError(s"self function '${functionName}' not supported in task '${id}'", None, None).leftf
           case Some(function) =>
             wfr.memory.set("function_args", WorkflowOperator.processOperators(args, wfr, env))
-            println(args)
-            Node.from(function.selectAsOptObject("config").getOrElse(function)).run(wfr, prefix, from).andThen { case _ =>
+            Node.from(function).run(wfr, prefix, from).andThen { case _ =>
               wfr.memory.remove("function_args")
             }
         }

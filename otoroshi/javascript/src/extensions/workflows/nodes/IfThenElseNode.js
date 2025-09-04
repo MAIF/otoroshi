@@ -20,8 +20,6 @@ export const IfThenElseNode = {
 
         const value = props.rootValue.predicate ? props.rootValue.predicate[field] : undefined;
 
-        console.log(value, operator.form_schema)
-
         return (
           <>
             <Row title="Operator">

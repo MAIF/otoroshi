@@ -68,10 +68,14 @@ export function WorkflowsDesigner(props) {
     const data = catalog.nodes[(information.kind || information.name).toLowerCase()];
 
     let functionData = {};
-    if (node.category === 'functions' || node.category === 'udfs') {
+    if (node.category === 'functions') {
       functionData = {
         function: node.name,
-      };
+      }
+    } else if (node.category === 'udfs') {
+      functionData = {
+        function: `self.${node.name}`
+      }
     }
 
     return {
@@ -859,7 +863,7 @@ export function WorkflowsDesigner(props) {
           updateData: updateData,
           appendSourceHandle: appendSourceHandle,
           handleDataChange: handleDataChange,
-          deleteHandle: deleteHandle,
+          deleteHandle: deleteHandle
         },
       },
     };
@@ -950,7 +954,6 @@ export function WorkflowsDesigner(props) {
 
   const onConnectEnd = useCallback((event, connectionState) => {
     event.stopPropagation();
-    console.log('on connect end');
     if (!connectionState.isValid) {
       setActiveNode({
         ...connectionState.fromNode,
@@ -961,7 +964,6 @@ export function WorkflowsDesigner(props) {
   }, []);
 
   const onConnect = useCallback((connection) => {
-    console.log('on connect');
     const edge = {
       ...connection,
       type: 'customEdge',
@@ -1116,7 +1118,7 @@ export function WorkflowsDesigner(props) {
 
   if (nodes.length === 0) return null;
 
-  console.log(nodes, edges);
+  // console.log(nodes, edges);
 
   return (
     <div className="workflow">

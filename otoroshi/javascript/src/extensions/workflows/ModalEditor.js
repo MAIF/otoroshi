@@ -178,7 +178,7 @@ export function ModalEditor({ node }) {
     <div className="modal-editor d-flex flex-column" style={{ flex: 1 }}>
       <p className="p-3 m-0 whats-next-title">
         {functionData
-          ? functionData.display_name
+          ? (functionData.display_name ? functionData.display_name : functionData.name)
           : node.data.display_name
             ? node.data.display_name
             : node.data.name}

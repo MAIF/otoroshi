@@ -46,7 +46,6 @@ export const WorkflowFunction = {
                   );
                 },
                 SingleValue: (props) => {
-                  console.log(props)
                   return (
                     <div className="d-flex align-items-center m-0" style={{ gap: '.5rem' }}>
                       <span

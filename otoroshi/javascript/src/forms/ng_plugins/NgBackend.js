@@ -252,6 +252,13 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
             description: 'To help failing fast, you can activate healthcheck on a specific URL.',
           },
         },
+        blockOnRed: {
+          label: 'Block on red',
+          type: 'box-bool',
+          props: {
+            description: 'If enabled, Otoroshi will block requests when the healthcheck status is considered unhealthy (red)',
+          },
+        },
         url: {
           label: 'URL',
           type: 'string',
@@ -272,7 +279,7 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
           label: 'Unhealthy statuses',
         },
       },
-      flow: ['description', 'enabled', 'url', 'timeout', 'healthyStatuses', 'unhealthyStatuses'],
+      flow: ['description', 'enabled', 'blockOnRed', 'url', 'timeout', 'healthyStatuses', 'unhealthyStatuses'],
     },
     targets: {
       array: true,

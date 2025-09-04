@@ -21,7 +21,7 @@ export function Node(props) {
     const functionData = getNodeFromKind(data.content.function);
     if (functionData) {
       label = functionData.icon;
-      name = functionData.display_name;
+      name = functionData.display_name || functionData.name;
       nodeRenderer = functionData.nodeRenderer
     }
   }
@@ -45,7 +45,7 @@ export function Node(props) {
 
         {data.nodeRenderer && data.nodeRenderer(props)}
 
-        {props.id !== 'returned-node' && <NodeTrashButton {...props} />}
+        {props.id !== 'returned-node' && props.id !== 'start' && <NodeTrashButton {...props} />}
 
         <div className="node-description">{data.information.description}</div>
       </button>
