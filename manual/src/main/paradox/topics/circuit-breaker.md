@@ -263,5 +263,7 @@ Backend responds, but the response header is missing, malformed, or contains an 
 
 Backend times out or returns a status code **<199** or **>500**.
 
-When a backend is marked **red**, the circuit breaker will **open**, cutting traffic to that service until it recovers.
+When a backend is marked **red** and the flag `BlockOnRed` is enabled, the circuit breaker will **open**, cutting traffic to that host until it recovers.
+
+The `Block on red` flag can be enabled in the healthcheck section of the backend configuration or by using the corresponding environment variable.
 
