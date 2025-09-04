@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>🛡️ Circuit Breaker in Otoroshi · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/ngplugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<script type="text/javascript" src="../search/pagefind-ui.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+<link rel="stylesheet" type="text/css" href="../search/pagefind-ui.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+latest
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/http-listeners.html" class="page">Custom HTTP Listeners</a></li>
+    <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
+    <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
+    <li><a href="../topics/circuit-breaker.html" class="active page">🛡️ Circuit Breaker in Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+    <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column" style="height: 100dvh">
+<nav class="site-nav">
+<div class="title-logo"></div>
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+latest
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/http-listeners.html" class="page">Custom HTTP Listeners</a></li>
+    <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
+    <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
+    <li><a href="../topics/circuit-breaker.html" class="active page">🛡️ Circuit Breaker in Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+    <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column with-responsive-left-padding-5-rem">
+
+<header class="site-header expanded row">
+<div class="small-12 column" style="padding: 0">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title"><a href="../index.html">Otoroshi</a> <div>DOCS</div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>🛡️ Circuit Breaker in Otoroshi</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#circuit-breaker-in-otoroshi" name="circuit-breaker-in-otoroshi" class="anchor"><span class="anchor-link"></span></a>🛡️ Circuit Breaker in Otoroshi</h1>
+<p>In Otoroshi, the circuit breaker is built into the gateway to protect both your users and your infrastructure. When a backend starts failing, timing out, or returning too many errors, Otoroshi doesn’t endlessly retry: it tracks errors over time, and if thresholds are exceeded, it “opens the circuit.” While the circuit is open, requests are blocked before reaching the failing backend, preventing overload. After a cooldown, Otoroshi will automatically test the backend again to decide whether to close the circuit and resume traffic</p>
+<h2><a href="#full-request-lifecycle-with-otoroshi-circuit-breaker" name="full-request-lifecycle-with-otoroshi-circuit-breaker" class="anchor"><span class="anchor-link"></span></a>Full Request Lifecycle with Otoroshi Circuit Breaker</h2>
+<pre class="prettyprint"><code class="nocode">[ Start Request ]
+      |
+      |-- Try to connect ----------------------------X if &gt; 10s [⏱ connectionTimeout]
+      |
+      |-- Send request ------------------------------|
+      |                                              |
+      |   |-- Wait response ------------------X if &gt; 30s [⏱ callTimeout]
+      |   |
+      |   |-- If streaming --------------------------X if &gt;120s inactivity [⏱ callAndStreamTimeout]
+      |
+      |-- If failure (❌) → retry with delays:
+      |     Retry1 after 50ms
+      |     Retry2 after 100ms
+      |     Retry3 after 200ms ...
+      |
+      |-- All retries + calls cannot exceed --------X [⏱ globalTimeout = 30s]
+      |
+      |-- If connection stays open but idle --------X after 60s [⏱ idleTimeout]
+      |
+      |-- Errors tracked in 2s windows
+      |   If &gt;20 consecutive ❌ errors → Circuit opens 🔒
+      |
+[ End Request or Circuit Opened ]
+
+</code></pre>
+<h2><a href="#parameters-overview" name="parameters-overview" class="anchor"><span class="anchor-link"></span></a>Parameters Overview</h2>
+<table>
+  <tbody>
+    <tr>
+      <td align="left">Parameter</td>
+      <td align="center">Example Value </td>
+      <td align="left">Meaning </td>
+    </tr>
+    <tr>
+      <td align="left">retries </td>
+      <td align="center">2 </td>
+      <td align="left">Number of extra attempts after a failure</td>
+    </tr>
+    <tr>
+      <td align="left">retryInitialDelay </td>
+      <td align="center">50 ms</td>
+      <td align="left">Delay before the first retry</td>
+    </tr>
+    <tr>
+      <td align="left">backoffFactor </td>
+      <td align="center">2</td>
+      <td align="left">Exponential growth of retry delays (50ms → 100ms → 200ms …)</td>
+    </tr>
+    <tr>
+      <td align="left">maxErrors </td>
+      <td align="center">20 </td>
+      <td align="left">Consecutive errors tolerated before opening the circuit</td>
+    </tr>
+    <tr>
+      <td align="left">callTimeout </td>
+      <td align="center">30 000 ms </td>
+      <td align="left">Max time to receive a full response (non-streaming)</td>
+    </tr>
+    <tr>
+      <td align="left">callAndStreamTimeout </td>
+      <td align="center">120 000 ms</td>
+      <td align="left">Max time to handle a streaming response (SSE, gRPC, WebSocket)</td>
+    </tr>
+    <tr>
+      <td align="left">connectionTimeout </td>
+      <td align="center">10 000 ms</td>
+      <td align="left">Max time to establish TCP/SSL connection</td>
+    </tr>
+    <tr>
+      <td align="left">idleTimeout </td>
+      <td align="center">60 000 ms</td>
+      <td align="left">Max idle time before closing a keep-alive connection</td>
+    </tr>
+    <tr>
+      <td align="left">globalTimeout </td>
+      <td align="center">30 000 ms</td>
+      <td align="left">Max total request duration including retries</td>
+    </tr>
+    <tr>
+      <td align="left">sampleInterval </td>
+      <td align="center">2000 ms </td>
+      <td align="left">Observation window for errors/successes</td>
+    </tr>
+  </tbody>
+</table>
+<hr/>
+<h3><a href="#retries" name="retries" class="anchor"><span class="anchor-link"></span></a>Retries</h3>
+<ul>
+  <li><strong>Definition:</strong> Number of additional attempts after a failure.</li>
+  <li><strong>Example:</strong> If <code>retries = 1</code> and your call fails once (timeout, 5xx, etc.), Otoroshi retries <strong>one more time</strong>.</li>
+  <li><strong>Use case:</strong> Helps absorb temporary errors (like a short backend overload).</li>
+</ul>
+<pre class="prettyprint"><code class="nocode">Parameters:
+  retries = 2
+  retryInitialDelay = 50ms
+  backoffFactor = 2
+  globalTimeout = 30 000ms
+
+Timeline:
+t=0ms        50ms          100ms          200ms                    30 000ms
+|--- Req1 ❌ --|             |--- Req2 ❌ --|             |--- Req3 ❌ --|   [⏱ Global Timeout]
+
+Explanation:
+Req1 fails → wait 50ms → Req2 fails → wait 100ms → Req3 fails
+Even with retries, the total time cannot exceed 30s.
+
+</code></pre>
+<hr/>
+<h3><a href="#max-errors" name="max-errors" class="anchor"><span class="anchor-link"></span></a>❌ Max Errors</h3>
+<ul>
+  <li><strong>Definition:</strong> Maximum number of consecutive errors before Otoroshi opens the circuit.</li>
+  <li><strong>Example:</strong> If your backend keeps returning <code>500</code>, after 20 such errors, Otoroshi will stop calling it for a while → the circuit is <strong>opened</strong> to protect your users and infrastructure.</li>
+</ul>
+<hr/>
+<h3><a href="#retry-initial-delay" name="retry-initial-delay" class="anchor"><span class="anchor-link"></span></a>Retry Initial Delay</h3>
+<ul>
+  <li><strong>Definition:</strong> Time to wait before the first retry attempt.</li>
+  <li><strong>Example:</strong> With <code>50 ms</code>, if a request fails, the retry is triggered <strong>after 50 ms</strong>, not immediately.</li>
+</ul>
+<hr/>
+<h3><a href="#backoff-factor" name="backoff-factor" class="anchor"><span class="anchor-link"></span></a>Backoff Factor</h3>
+<ul>
+  <li><strong>Definition:</strong> Exponential growth factor for retry delays.</li>
+  <li><strong>Example with initial delay = 50 ms:</strong></li>
+  <li>Retry 1 → after <strong>50 ms</strong></li>
+  <li>Retry 2 → after <strong>100 ms</strong></li>
+  <li>Retry 3 → after <strong>200 ms</strong> …</li>
+  <li><strong>Purpose:</strong> Prevents hammering a backend that’s already in trouble.</li>
+</ul>
+<hr/>
+<h3><a href="#call-timeout" name="call-timeout" class="anchor"><span class="anchor-link"></span></a>Call Timeout</h3>
+<ul>
+  <li><strong>Definition:</strong> Maximum time to receive a full response from the backend (non-streaming).</li>
+  <li><strong>Example:</strong> If your API takes more than <strong>30s</strong> for a <code>GET</code>, Otoroshi will terminate the request.</li>
+</ul>
+<pre class="prettyprint"><code class="nocode">Parameters:
+  callTimeout = 30 000ms
+
+Timeline:
+t=0ms                                     30 000ms
+|---- Waiting for full response ----------X [⏱ Call Timeout]
+
+Explanation:
+If the backend does not send the complete response within 30s → Otoroshi closes the request.
+
+</code></pre>
+<hr/>
+<h3><a href="#call-and-stream-timeout" name="call-and-stream-timeout" class="anchor"><span class="anchor-link"></span></a>Call and Stream Timeout</h3>
+<ul>
+  <li><strong>Definition:</strong> Maximum time for handling a <strong>streaming response</strong> (SSE, WebSocket, gRPC stream).</li>
+  <li><strong>Example:</strong> If a log streaming API runs continuously, the connection is cut after <strong>2 minutes</strong> of inactivity.</li>
+</ul>
+<pre class="prettyprint"><code class="nocode">Parameters:
+  callAndStreamTimeout = 120 000ms
+
+Timeline:
+0ms     20s     45s     70s     90s                        120s
+|Msg 🟢| |Msg 🟢| |Msg 🟢| |Msg 🟢| |Msg 🟢| ---- inactivity ----X [⏱ Stream Timeout]
+
+Explanation:
+If no data is received for 120s → Otoroshi stops the stream.
+</code></pre>
+<hr/>
+<h3><a href="#connection-timeout" name="connection-timeout" class="anchor"><span class="anchor-link"></span></a>Connection Timeout</h3>
+<ul>
+  <li><strong>Definition:</strong> Maximum time to establish a TCP/SSL connection.</li>
+  <li><strong>Example:</strong> If the backend takes longer than <strong>10s</strong> to accept, Otoroshi gives up.</li>
+</ul>
+<pre class="prettyprint"><code class="nocode">Parameters:
+  connectionTimeout = 10 000ms
+
+Timeline:
+t=0ms                                  10 000ms
+|---- Trying to connect ---------------X [⏱ Connection Timeout]
+
+Explanation:
+If the backend does not accept the TCP/SSL connection within 10s → Otoroshi aborts.
+
+</code></pre>
+<hr/>
+<h3><a href="#idle-timeout-akka-http-client-only-" name="idle-timeout-akka-http-client-only-" class="anchor"><span class="anchor-link"></span></a>Idle Timeout (Akka http client only)</h3>
+<ul>
+  <li><strong>Definition:</strong> Maximum time a connection can stay open <strong>without activity</strong>.</li>
+  <li><strong>Example:</strong> If a keep-alive connection has no traffic for <strong>60s</strong>, Otoroshi closes it.</li>
+</ul>
+<pre class="prettyprint"><code class="nocode">Parameters:
+  idleTimeout = 60 000ms
+
+Timeline:
+0ms       12s                                      60s
+|--- Activity 🟢 ---| ....... no activity .........X [⏱ Idle Timeout]
+
+Explanation:
+A keep-alive connection with no data for 60s is closed → prevents zombie sockets.
+
+</code></pre>
+<hr/>
+<h3><a href="#global-timeout" name="global-timeout" class="anchor"><span class="anchor-link"></span></a>Global Timeout</h3>
+<ul>
+  <li><strong>Definition:</strong> Maximum total time a request (including retries) can take.</li>
+</ul>
+<p>Distinction between <code>callTimeout</code> and <code>globalTimeout</code></p>
+<pre class="prettyprint"><code class="nocode">Parameters:
+  retries = 2
+  retryInitialDelay = 50ms
+  backoffFactor = 2
+  callTimeout = 10 000ms
+  globalTimeout = 25 000ms
+
+Timeline:
+t=0ms          10 000ms          20 000ms          25 000ms
+|-- Attempt1 ❌ |-- Attempt2 ❌ |-- Attempt3 ❌ | [⏱ Global Timeout reached]
+</code></pre>
+<p>Explanation:</p>
+<ul>
+  <li>Each attempt cannot exceed callTimeout (10s) → X marks when a single call fails.</li>
+  <li>All retries combined cannot exceed globalTimeout (25s).</li>
+  <li>After 25s, no further attempts are made, even if retries remain.</li>
+</ul><div class="callout note "><div class="callout-title">Note</div>
+<ul>
+  <li>callTimeout stops a single request attempt if it takes too long.</li>
+  <li>globalTimeout stops all retries combined, enforcing a hard upper limit on the total request duration.</li>
+</ul></div>
+<hr/>
+<h3><a href="#sample-interval" name="sample-interval" class="anchor"><span class="anchor-link"></span></a>Sample Interval</h3>
+<ul>
+  <li><strong>Definition:</strong> Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted</li>
+</ul>
+<pre class="prettyprint"><code class="nocode">Parameters:
+  sampleInterval = 2000ms
+  maxErrors = 20
+
+Timeline:
+Errors: ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌ ❌
+Time →  |-- 2s window --|-- 2s window --|-- 2s window --|
+
+Explanation:
+After 20 consecutive errors in observed intervals → Circuit opens
+Otoroshi stops calling the backend temporarily to protect users &amp; infra.
+</code></pre>
+<h2><a href="#healthcheck-on-routes" name="healthcheck-on-routes" class="anchor"><span class="anchor-link"></span></a>Healthcheck on routes</h2>
+<p>Otoroshi continuously checks the health of backend services to decide whether they are safe to receive traffic. The circuit breaker uses these results to move between healthy (green), degraded (yellow), and unhealthy (red) states.</p>
+<h3><a href="#parameters" name="parameters" class="anchor"><span class="anchor-link"></span></a>Parameters</h3>
+<ul>
+  <li><strong>Enabled</strong>: Enable or disable health checks.</li>
+  <li><strong>URL</strong>: The endpoint on the backend that Otoroshi will call to verify health.</li>
+  <li><strong>Timeout</strong>: Maximum time allowed for the health check request (**default: 5 seconds**).</li>
+  <li><strong>Healthy statuses</strong>: By default, HTTP response codes in the range <strong>200–499</strong> (excluding 500) are considered healthy.</li>
+  <li><strong>Unhealthy statuses</strong>: HTTP status codes <strong>&lt;199</strong> or <strong>&gt;500</strong> are considered unhealthy.</li>
+  <li><strong>Per-route overrides</strong>: Both healthy and unhealthy status code lists can be overridden for each route, allowing fine-grained control depending on the service behavior.</li>
+</ul>
+<h3><a href="#custom-header-validation" name="custom-header-validation" class="anchor"><span class="anchor-link"></span></a>Custom Header Validation</h3>
+<p>For each health check, Otoroshi sends a header:</p>
+<pre><code>Otoroshi-Health-Check-Logic-Test: &lt;numeric_value&gt;
+</code></pre>
+<p>where <code>&lt;numeric_value&gt;</code> is a number dynamically generated by Otoroshi for that specific request.</p>
+<p>Your backend must respond with:</p>
+<pre><code>Otoroshi-Health-Check-Logic-Test-Result: &lt;numeric_value&gt; + 42
+</code></pre>
+<p>Example:</p>
+<ul>
+  <li>Request header → <code>Otoroshi-Health-Check-Logic-Test: 735</code></li>
+  <li>Expected response header → <code>Otoroshi-Health-Check-Logic-Test-Result: 777</code></li>
+</ul>
+<h3><a href="#outcomes" name="outcomes" class="anchor"><span class="anchor-link"></span></a>Outcomes</h3>
+<h4><a href="#green-healthy-" name="green-healthy-" class="anchor"><span class="anchor-link"></span></a>Green (healthy)</h4>
+<ul>
+  <li>Backend responds within the timeout.</li>
+  <li>Status code is in the healthy range (200–499).</li>
+  <li>Header <code>Otoroshi-Health-Check-Logic-Test-Result</code> is present and correct.</li>
+</ul>
+<h4><a href="#yellow-degraded-" name="yellow-degraded-" class="anchor"><span class="anchor-link"></span></a>Yellow (degraded)</h4>
+<p>Backend responds, but the response header is missing, malformed, or contains an incorrect value.</p>
+<h4><a href="#red-unhealthy-" name="red-unhealthy-" class="anchor"><span class="anchor-link"></span></a>Red (unhealthy)</h4>
+<p>Backend times out or returns a status code <strong>&lt;199</strong> or <strong>&gt;500</strong>.</p>
+<p>When a backend is marked <strong>red</strong>, the circuit breaker will <strong>open</strong>, cutting traffic to that service until it recovers.</p>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../how-to-s/index.html">How to&rsquo;s</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">
+<h3>On this page</h3>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/circuit-breaker.html#circuit-breaker-in-otoroshi" class="header">🛡️ Circuit Breaker in Otoroshi</a>
+  <ul>
+    <li><a href="../topics/circuit-breaker.html#full-request-lifecycle-with-otoroshi-circuit-breaker" class="header">Full Request Lifecycle with Otoroshi Circuit Breaker</a></li>
+    <li><a href="../topics/circuit-breaker.html#parameters-overview" class="header">Parameters Overview</a></li>
+    <li><a href="../topics/circuit-breaker.html#healthcheck-on-routes" class="header">Healthcheck on routes</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2025</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
