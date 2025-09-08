@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import otoroshi.actions.ApiAction
 import akka.NotUsed
 import akka.stream.scaladsl.Source
+import otoroshi.cluster.CpuInfo.tmbs
 import otoroshi.cluster.StatsView
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Audit}
@@ -18,6 +19,7 @@ import play.api.mvc.{AbstractController, ControllerComponents}
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration.FiniteDuration
+import scala.util.{Failure, Success, Try}
 
 class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
@@ -96,18 +98,22 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
         val appId          = Option(System.getenv("APP_ID")).getOrElse("--")
         val instanceId     = Option(System.getenv("INSTANCE_ID")).getOrElse("--")
 
-        val mbs = ManagementFactory.getPlatformMBeanServer
+        val tmbs = Try(ManagementFactory.getPlatformMBeanServer)
         val rt  = Runtime.getRuntime
 
         def getProcessCpuLoad(): Double = {
-          val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
-          val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))
-          if (list.isEmpty) return 0.0
-          val att   = list.get(0).asInstanceOf[Attribute]
-          val value = att.getValue.asInstanceOf[Double]
-          if (value == -1.0) return 0.0
-          (value * 1000) / 10.0
-          // ManagementFactory.getOperatingSystemMXBean.getSystemLoadAverage
+          tmbs match {
+            case Failure(_) => 0.0
+            case Success(mbs) => {
+              val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
+              val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))
+              if (list.isEmpty) return 0.0
+              val att   = list.get(0).asInstanceOf[Attribute]
+              val value = att.getValue.asInstanceOf[Double]
+              if (value == -1.0) return 0.0
+              (value * 1000) / 10.0
+            }
+          }
         }
 
         val source = Source

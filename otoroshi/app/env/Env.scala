@@ -1279,12 +1279,16 @@ class Env(
   lazy val jmxPort    = configuration.getOptionalWithFileSupport[Int]("otoroshi.jmx.port").getOrElse(16000)
 
   if (jmxEnabled) {
-    LocateRegistry.createRegistry(jmxPort)
-    val mbs = ManagementFactory.getPlatformMBeanServer
-    val url = new JMXServiceURL(s"service:jmx:rmi://localhost/jndi/rmi://localhost:$jmxPort/jmxrmi")
-    val svr = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs)
-    svr.start()
-    logger.info(s"Starting JMX remote server at 127.0.0.1:$jmxPort")
+    try {
+      LocateRegistry.createRegistry(jmxPort)
+      val mbs = ManagementFactory.getPlatformMBeanServer
+      val url = new JMXServiceURL(s"service:jmx:rmi://localhost/jndi/rmi://localhost:$jmxPort/jmxrmi")
+      val svr = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs)
+      svr.start()
+      logger.info(s"Starting JMX remote server at 127.0.0.1:$jmxPort")
+    } catch {
+      case t: Throwable => logger.error(s"Error starting JMX remote server at 127.0.0.1:$jmxPort", t)
+    }
   }
 
   val ocspResponder = OcspResponder(this, otoroshiExecutionContext)
