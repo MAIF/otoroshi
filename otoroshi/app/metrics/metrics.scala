@@ -88,13 +88,13 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   // metricRegistry.register("jvm.classloading", new ClassLoadingGaugeSet())
   // metricRegistry.register("jvm.files", new FileDescriptorRatioGauge())
 
-  registerSet("jvm.memory", new MemoryUsageGaugeSet())
-  registerSet("jvm.thread", new ThreadStatesGaugeSet())
-  registerSet("jvm.gc", new GarbageCollectorMetricSet())
-  registerSet("jvm.attr", new JvmAttributeGaugeSet())
+  Try(registerSet("jvm.memory", new MemoryUsageGaugeSet()))
+  Try(registerSet("jvm.thread", new ThreadStatesGaugeSet()))
+  Try(registerSet("jvm.gc", new GarbageCollectorMetricSet()))
+  Try(registerSet("jvm.attr", new JvmAttributeGaugeSet()))
 
-  metricRegistry.register(MetricId.build("jvm.cpu"), CpuGaugeSet.create)
-  metricRegistry.register(MetricId.build("jvm.fd-ratio"), new FileDescriptorGaugeSet)
+  Try(metricRegistry.register(MetricId.build("jvm.cpu"), CpuGaugeSet.create))
+  Try(metricRegistry.register(MetricId.build("jvm.fd-ratio"), new FileDescriptorGaugeSet))
 
   /*  metricRegistry.register(MetricId.build("jvm.memory"), new MemoryUsageGaugeSet())
   metricRegistry.register(MetricId.build("jvm.thread"), new ThreadStatesMetricSet())
