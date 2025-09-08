@@ -1547,16 +1547,18 @@ class GtOperator extends WorkflowOperator {
   override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "a" -> Json.obj(
-        "type"  -> "number",
+        "type"  -> "code",
         "label" -> "A",
         "props" -> Json.obj(
+          "editorOnly" -> true,
           "description" -> "The first number"
         )
       ),
       "b" -> Json.obj(
-        "type"  -> "number",
+        "type"  -> "code",
         "label" -> "B",
         "props" -> Json.obj(
+          "editorOnly" -> true,
           "description" -> "The second number"
         )
       )

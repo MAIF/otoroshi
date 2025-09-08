@@ -1,5 +1,6 @@
 import React from 'react';
 import { NgCodeRenderer } from '../../../components/nginputs';
+import { JsonObjectAsCodeInputUpdatable } from '../../../components/inputs/CodeInput';
 
 export const AssignNode = {
   kind: 'assign',
@@ -18,20 +19,16 @@ export const AssignNode = {
         },
         value: {
           renderer: (props) => (
-            <NgCodeRenderer
+            <JsonObjectAsCodeInputUpdatable
               ngOptions={{ spread: true }}
-              rawSchema={{
-                props: {
-                  showGutter: false,
-                  ace_config: {
-                    mode: 'json',
-                    onLoad: (editor) => editor.renderer.setPadding(10),
-                    fontSize: 14,
-                  },
-                  editorOnly: true,
-                  height: '10rem',
-                },
+              showGutter={false}
+              ace_config={{
+                mode: 'json',
+                onLoad: (editor) => editor.renderer.setPadding(10),
+                fontSize: 14,
               }}
+              editorOnly
+              height='10rem'
               value={props.value}
               onChange={props.onChange}
             />
