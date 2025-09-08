@@ -1204,21 +1204,31 @@ object ClusterAgent {
 
 object CpuInfo {
 
-  private val mbs      = ManagementFactory.getPlatformMBeanServer
-  private val osMXBean = ManagementFactory.getOperatingSystemMXBean
+  private val tmbs      = Try(ManagementFactory.getPlatformMBeanServer)
+  private val tosMXBean = Try(ManagementFactory.getOperatingSystemMXBean)
 
   def cpuLoad(): Double = {
-    val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
-    val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))
-    if (list.isEmpty) return 0.0
-    val att   = list.get(0).asInstanceOf[Attribute]
-    val value = att.getValue.asInstanceOf[Double]
-    if (value == -1.0) return 0.0
-    (value * 1000) / 10.0
+    tmbs match {
+      case Failure(_) => 0.0
+      case Success(mbs) => {
+        val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
+        val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))
+        if (list.isEmpty) return 0.0
+        val att   = list.get(0).asInstanceOf[Attribute]
+        val value = att.getValue.asInstanceOf[Double]
+        if (value == -1.0) return 0.0
+        (value * 1000) / 10.0
+      }
+    }
   }
 
   def loadAverage(): Double = {
-    osMXBean.getSystemLoadAverage
+    tosMXBean match {
+      case Failure(_) => 0.0
+      case Success(osMXBean) => {
+        osMXBean.getSystemLoadAverage
+      }
+    }
   }
 }
 
