@@ -25,6 +25,40 @@ object NodesInitializer {
     Node.registerNode("error", json => ErrorNode(json))
     Node.registerNode("value", json => ValueNode(json))
     Node.registerNode("pause", json => PauseNode(json))
+    Node.registerNode("end", json => EndNode(json))
+    //Node.registerNode("while", json => WhileNode(json))
+    //Node.registerNode("jump", json => JumpNode(json))
+  }
+}
+
+case class EndNode(json: JsObject) extends Node {
+  override def subNodes: Seq[NodeLike]                    = Seq.empty
+  override def documentationName: String                  = "end"
+  override def documentationDisplayName: String           = "End"
+  override def documentationIcon: String                  = "fas da-door-open"
+  override def documentationDescription: String           = "This node end the workflow"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
+    .deepMerge(
+      Json.obj()
+    )
+    .some
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"        -> "exit",
+      "description" -> "End the workflow at this point."
+    )
+  )
+  override def run(
+    wfr: WorkflowRun,
+    prefix: Seq[Int],
+    from: Seq[Int]
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    // println("end now !!!")
+    WorkflowError(
+      message = "_____otoroshi_workflow_ended",
+      details = None,
+      exception = None
+    ).leftf
   }
 }
 
@@ -275,8 +309,10 @@ case class WorkflowNode(json: JsObject) extends Node {
       head
         .internalRun(wfr, prefix :+ idx, from)
         .flatMap {
-          case Left(err) if err.message == "_____otoroshi_workflow_paused" =>
-            err.details.get.select("access_token").asValue.rightf
+          // case Left(err) if err.message == "_____otoroshi_workflow_paused" =>
+          //   err.details.get.select("access_token").asValue.rightf
+          // case Left(err) if err.message == "_____otoroshi_workflow_ended" =>
+          //   Right(wfr.memory.get("input").getOrElse(JsNull)).vfuture
           case Left(err)                                                   => Left(err).vfuture
           case Right(_)                                                    => next(nodes.tail, wfr, prefix, from, idx + 1)
         }

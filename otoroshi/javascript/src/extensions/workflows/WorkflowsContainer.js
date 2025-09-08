@@ -90,7 +90,7 @@ function Container(props) {
   if (!(workflow.isLoading || documentation.isLoading || workflows.isLoading)) {
     let nodes = NODES(documentation.data)
 
-    Object.entries(workflow.data.functions)
+    Object.entries(workflow.data.functions || {})
       .map(([functionName, value]) => UserDefinedFunction(functionName, value))
       .map(functionData => {
         nodes[functionData.name] = functionData

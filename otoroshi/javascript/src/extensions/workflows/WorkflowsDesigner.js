@@ -428,7 +428,7 @@ export function WorkflowsDesigner(props) {
         returned: {
           ...(config.returned || {}),
         },
-        description: config.returned.description,
+        description: config?.returned?.description,
         kind: 'returned',
       },
       addInformationsToNode

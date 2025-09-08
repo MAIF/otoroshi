@@ -41,6 +41,12 @@ class WorkflowEngine(env: Env) {
     node
       .internalRun(wfRun, Seq(0), Seq.empty)(env, executorContext)
       .map {
+        case Left(err) if err.message == "_____otoroshi_workflow_paused" =>
+          //println("caught _____otoroshi_workflow_paused")
+          WorkflowResult(err.details.get.select("access_token").asOpt[JsValue], None, wfRun)
+        case Left(err) if err.message == "_____otoroshi_workflow_ended" =>
+          //println("caught _____otoroshi_workflow_ended")
+          WorkflowResult(wfRun.memory.get("input"), None, wfRun)
         case Left(err)     => WorkflowResult(None, err.some, wfRun)
         case Right(result) => WorkflowResult(result.some, None, wfRun)
       }
@@ -303,6 +309,11 @@ trait Node extends NodeLike {
             wfr.log(s"pausing '${id}'", this)
             val res = err.details.get.select("access_token").asValue
             result.foreach(name => wfr.memory.set(name, res))
+            Left(err)
+          }
+          case Left(err) if err.message == "_____otoroshi_workflow_ended" => {
+            // println(s"ending at '${id}'")
+            wfr.log(s"ending at '${id}'", this)
             Left(err)
           }
           case Left(err)                                                   => {
