@@ -24,7 +24,6 @@ export function Node(props) {
       name = functionData.display_name || functionData.name;
       nodeRenderer = functionData.nodeRenderer
     }
-    console.log(functionData)
   }
 
 

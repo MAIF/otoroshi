@@ -1,39 +1,27 @@
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import { ReportView } from '../../components/ReportView';
-import { Button } from '../../components/Button';
 import { NgCodeRenderer } from '../../components/nginputs';
-import { SidebarContext } from '../../apps/BackOfficeApp';
 
-export default function ReportExplorer({ report, handleClose, isOpen }) {
-  const sidebar = useContext(SidebarContext);
+export default function ReportInformation({ report }) {
   const [unit, setUnit] = useState('ms');
 
-  if (!report || !isOpen) return null;
-
   if (report.done === false || report.error) {
-    return (
-      <div className="report-explorer">
-        <h3 className="pt-3 ps-2">Report</h3>
-        <NgCodeRenderer
-          ngOptions={{ spread: true }}
-          rawSchema={{
-            props: {
-              showGutter: false,
-              ace_config: {
-                fontSize: 14,
-                readOnly: true,
-              },
-              editorOnly: true,
-              height: '100%',
-            },
-          }}
-          value={report.error}
-        />
-      </div>
-    );
+    return <NgCodeRenderer
+      ngOptions={{ spread: true }}
+      rawSchema={{
+        props: {
+          ace_config: {
+            fontSize: 14,
+            readOnly: true,
+          },
+          editorOnly: true,
+        }
+      }}
+      value={report.error}
+    />
   }
 
-  const steps = report.run.log.reduce((acc, log) => {
+  const steps = report?.run.log.reduce((acc, log) => {
     if (log.message.includes('ending')) return acc;
 
     const matches = log.message.match(/^starting '([a-zA-Z0-9-]+)'/);
@@ -99,32 +87,20 @@ export default function ReportExplorer({ report, handleClose, isOpen }) {
   const start = report.run.log[0]?.timestamp;
   const end = report.run.log[report.run.log.length - 1]?.timestamp;
 
-  return (
-    <div className="report-explorer">
-      <h3 className="pt-3 ps-2">Report</h3>
-      <div style={{ position: 'relative', flex: 1 }} className="d-flex flex-column mt-1">
-        <div className="tryIt">
-          <ReportView
-            report={{
-              steps: Object.values(stepsByCategory),
-              duration_ns: (end - start) * 1_000_000,
-              returned: report.returned,
-            }}
-            isWorkflowView
-            unit={unit}
-            setUnit={setUnit}
-          />
-        </div>
-        <Button
-          type="primaryColor"
-          className="p-2 px-4 report-explorer-action"
-          style={{ left: sidebar.openedSidebar ? 250 : 48 }}
-          onClick={handleClose}
-        >
-          <i className="fas fa-check me-1" />
-          Close
-        </Button>
+  return <>
+    <div style={{ position: 'relative', flex: 1 }} className="d-flex flex-column mt-1">
+      <div className="tryIt">
+        <ReportView
+          report={{
+            steps: Object.values(stepsByCategory),
+            duration_ns: (end - start) * 1_000_000,
+            returned: report.returned,
+          }}
+          isWorkflowView
+          unit={unit}
+          setUnit={setUnit}
+        />
       </div>
     </div>
-  );
+  </>
 }

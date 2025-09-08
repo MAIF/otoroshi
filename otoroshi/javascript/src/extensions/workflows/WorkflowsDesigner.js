@@ -14,10 +14,11 @@ import {
 } from '@xyflow/react';
 import { NewTask } from './flow/NewTask';
 import { nodesCatalogSignal } from './models/Functions';
-import ReportExplorer from './ReportExplorer';
+
 import { applyLayout } from './ElkOptions';
 import { TagsModal } from './TagsModal';
 import { useSignalValue } from 'signals-react-safe';
+import { Tester } from './Tester';
 
 export const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name'];
 
@@ -1058,6 +1059,11 @@ export function WorkflowsDesigner(props) {
   };
 
   function run() {
+    setReport(null)
+    setReportStatus(true);
+  }
+
+  function runTester(input) {
     fetch('/extensions/workflows/_test', {
       method: 'POST',
       credentials: 'include',
@@ -1065,7 +1071,7 @@ export function WorkflowsDesigner(props) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        input: JSON.stringify({}, null, 4),
+        input: JSON.stringify(input, null, 4),
         workflow: graphToJson()[0],
         workflow_id: props.workflow.id,
         functions: props.workflow.functions
@@ -1128,7 +1134,8 @@ export function WorkflowsDesigner(props) {
 
       <NewTask onClick={() => setActiveNode(true)} />
 
-      <ReportExplorer
+      <Tester
+        run={runTester}
         report={report}
         isOpen={reportIsOpen}
         handleClose={() => setReportStatus(false)}

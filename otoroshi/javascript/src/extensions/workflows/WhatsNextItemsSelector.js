@@ -99,7 +99,7 @@ export function Items({
       .filter(
         (value) =>
           value.name.toLowerCase().includes(lowercaseQuery) ||
-          value.description.toLowerCase().includes(lowercaseQuery) ||
+          value.description?.toLowerCase().includes(lowercaseQuery) ||
           value.kind.toLowerCase().includes(lowercaseQuery) ||
           value.display_name?.toLowerCase().includes(lowercaseQuery)
       )
