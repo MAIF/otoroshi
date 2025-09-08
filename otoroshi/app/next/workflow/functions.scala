@@ -43,6 +43,154 @@ object WorkflowFunctionsInitializer {
     WorkflowFunction.registerFunction("core.env_get", new EnvGetFunction())
     WorkflowFunction.registerFunction("core.config_read", new ConfigReadFunction())
     WorkflowFunction.registerFunction("core.compute_resume_token", new ComputeResumeTokenFunction())
+    WorkflowFunction.registerFunction("core.memory_get", new MemoryGetFunction())
+    WorkflowFunction.registerFunction("core.memory_set", new MemorySetFunction())
+    WorkflowFunction.registerFunction("core.memory_del", new MemoryDelFunction())
+    WorkflowFunction.registerFunction("core.memory_rename", new MemoryRenameFunction())
+  }
+}
+
+class MemoryRenameFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.memory_rename"
+  override def documentationDisplayName: String           = "Rename a value in the memory"
+  override def documentationIcon: String                  = "fas fa-layer-group"
+  override def documentationDescription: String           = "This function renames a value in the memory"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("old_name", "new_name"),
+      "properties" -> Json.obj(
+        "old_name" -> Json.obj("type" -> "string", "description" -> "The old name of the memory"),
+        "new_name" -> Json.obj("type" -> "string", "description" -> "The new name of the memory")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.memory_rename",
+      "args"     -> Json.obj(
+        "old_name" -> "my_memory",
+        "new_name" -> "my_new_memory"
+      )
+    )
+  )
+  override def callWithRun(
+      args: JsObject
+  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
+    val oldName = args.select("old_name").asString
+    val newName = args.select("new_name").asString
+    if (wfr.memory.contains(oldName)) {
+      wfr.memory.set(newName, wfr.memory.get(oldName).get)
+      wfr.memory.remove(oldName)
+    } 
+    JsNull.rightf    
+  } 
+}
+
+class MemoryDelFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.memory_del"
+  override def documentationDisplayName: String           = "Delete a value from the memory"
+  override def documentationIcon: String                  = "fas fa-layer-group"
+  override def documentationDescription: String           = "This function deletes a value from the memory"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("name"),
+      "properties" -> Json.obj(
+        "name" -> Json.obj("type" -> "string", "description" -> "The name of the memory")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.memory_del",
+      "args"     -> Json.obj(
+        "name" -> "my_memory",
+      )
+    )
+  )
+  override def callWithRun(
+      args: JsObject
+  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
+    val name = args.select("name").asString
+    wfr.memory.remove(name)
+    JsNull.rightf
+  }
+}
+
+class MemorySetFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.memory_set"
+  override def documentationDisplayName: String           = "Set a value in the memory"
+  override def documentationIcon: String                  = "fas fa-layer-group"
+  override def documentationDescription: String           = "This function sets a value in the memory"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("name", "value"),
+      "properties" -> Json.obj(
+        "name" -> Json.obj("type" -> "string", "description" -> "The name of the memory"),
+        "value" -> Json.obj("type" -> "any", "description" -> "The value to set in the memory")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.memory_set",
+      "args"     -> Json.obj(
+        "name" -> "my_memory",
+        "value" -> "my_value"
+      )
+    )
+  )
+  override def callWithRun(
+      args: JsObject
+  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
+    val name = args.select("name").asString
+    val value = args.select("value").asValue
+    wfr.memory.set(name, value)
+    JsNull.rightf
+  }
+}
+
+class MemoryGetFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.memory_get"
+  override def documentationDisplayName: String           = "Get a value from the memory"
+  override def documentationIcon: String                  = "fas fa-layer-group"
+  override def documentationDescription: String           = "This function gets a value from the memory"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("name", "path"),
+      "properties" -> Json.obj(
+        "name" -> Json.obj("type" -> "string", "description" -> "The name of the memory"),
+        "path" -> Json.obj("type" -> "string", "description" -> "The path of the memory")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.memory_get",
+      "args"     -> Json.obj(
+        "name" -> "my_memory",
+        "path" -> "my_path"
+      )
+    )
+  )
+  override def callWithRun(
+      args: JsObject
+  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
+    val name = args.select("name").asString
+    val path = args.select("path").asOptString
+    val value = wfr.memory.get(name) match {
+      case None                          => JsNull
+      case Some(value) if path.isEmpty   => value
+      case Some(value) if path.isDefined => value.at(path.get).asValue
+    }
+    value.rightf
   }
 }
 

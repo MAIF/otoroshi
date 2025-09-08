@@ -32,6 +32,7 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$map_put", new MapPutOperator())
     WorkflowOperator.registerOperator("$map_get", new MapGetOperator())
     WorkflowOperator.registerOperator("$map_del", new MapDelOperator())
+    WorkflowOperator.registerOperator("$map_rename", new MapRenameOperator())
     WorkflowOperator.registerOperator("$map_is_empty", new MapIsEmptyOperator())
     WorkflowOperator.registerOperator("$map_length", new MapLengthOperator())
     WorkflowOperator.registerOperator("$json_parse", new JsonParseOperator())
@@ -68,6 +69,55 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$str_replace", new StringReplaceOperator())
     WorkflowOperator.registerOperator("$str_replace_all", new StringReplaceAllOperator())
     WorkflowOperator.registerOperator("$jq", new JqOperator())
+  }
+}
+
+class MapRenameOperator extends WorkflowOperator {
+  override def documentationName: String = "$map_rename"
+  override def documentationDescription: String = "This operator renames a key in a map"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("map", "old_key", "new_key"),
+    "properties" -> Json.obj(
+      "map" -> Json.obj("type" -> "object", "description" -> "The map to rename a key in"),
+      "old_key" -> Json.obj("type" -> "string", "description" -> "The old key"),
+      "new_key" -> Json.obj("type" -> "string", "description" -> "The new key"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$map_rename" -> Json.obj(
+      "map" -> Json.obj(),
+      "old_key" -> "old_key",
+      "new_key" -> "new_key",
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("map").asOpt[JsObject] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsObject(obj) => {
+        val old_key = opts.select("old_key").asString
+        val new_key = opts.select("new_key").asString
+        obj.get(old_key) match {
+          case None => JsObject(obj - old_key)
+          case Some(old_value) => {
+            val map = obj - old_key + (new_key -> old_value)
+            JsObject(map)
+          }
+        }
+      }
+      case _             => JsNull
+    }
   }
 }
 
