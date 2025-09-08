@@ -29,12 +29,66 @@ object NodesInitializer {
     Node.registerNode("pause", json => PauseNode(json))
     Node.registerNode("end", json => EndNode(json))
     Node.registerNode("while", json => WhileNode(json))
-    //Node.registerNode("jump", json => JumpNode(json))
+    Node.registerNode("jump", json => JumpNode(json))
+  }
+}
+
+
+case class JumpNode(json: JsObject) extends Node {
+  override def subNodes: Seq[NodeLike]                    = Seq.empty
+  override def documentationName: String                  = "jump"
+  override def documentationDisplayName: String           = "Jump"
+  override def documentationIcon: String                  = "fas fa-share"
+  override def documentationDescription: String           = "This node jumps to another node with a specific id"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
+    .deepMerge(
+      Json.obj(
+        "properties" -> Json.obj(
+          "predicate" -> Json
+            .obj("type" -> "boolean", "description" -> "The predicate defining if the jump is done or not"),
+          "to"   -> Json.obj("type" -> "string", "description" -> "the node id to jump to")
+        )
+      )
+    )
+    .some
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"        -> "jump",
+      "description" -> "Jump to the 'incr' node if count value is not 4",
+      "predicate"   -> Json.obj(
+        "$neq" -> Json.obj(
+          "a" -> "${count}",
+          "b" -> 4
+        )
+      ),
+      "to" -> "incr"
+    )
+  )
+  override def run(
+                    wfr: WorkflowRun,
+                    prefix: Seq[Int],
+                    from: Seq[Int]
+                  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val predicate = WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(true)
+    val to = json.select("to").asOpt[String].getOrElse("--")
+    val path = json.select("path").asOpt[String].getOrElse("--")
+    if (predicate) {
+      WorkflowError(
+        message = "_____otoroshi_workflow_jump",
+        details = Some(Json.obj("path" -> path, "to" -> to)),
+        exception = None
+      ).leftf
+    } else {
+      JsNull.rightf
+    }
   }
 }
 
 case class WhileNode(json: JsObject) extends Node {
-  override def subNodes: Seq[NodeLike]                    = Seq.empty
+
+  lazy val node = Node.from(json.select("node").asObject)
+
+  override def subNodes: Seq[NodeLike]                    = Seq(node)
   override def documentationName: String                  = "while"
   override def documentationDisplayName: String           = "While"
   override def documentationIcon: String                  = "fas fa-rotate-right"
@@ -55,7 +109,7 @@ case class WhileNode(json: JsObject) extends Node {
       "kind"        -> "while",
       "description" -> "This loop until value is 5",
       "predicate"   -> Json.obj(
-        "$eq" -> Json.obj(
+        "$neq" -> Json.obj(
           "a" -> "${count}",
           "b" -> 5
         )
@@ -83,7 +137,6 @@ case class WhileNode(json: JsObject) extends Node {
                   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
 
     val promise = Promise[Either[WorkflowError, JsValue]]()
-    val node = Node.from(json.select("node").asObject)
     val maxBudget = json.select("max_budget").asOpt[Int].getOrElse(999)
     val count = new AtomicInteger(0)
 
@@ -542,7 +595,7 @@ case class AssignNode(json: JsObject) extends Node {
           "name"  -> "count",
           "value" -> Json.obj(
             "$incr" -> Json.obj(
-              "value"     -> "count",
+              "value"     -> "${count}",
               "increment" -> 2
             )
           )

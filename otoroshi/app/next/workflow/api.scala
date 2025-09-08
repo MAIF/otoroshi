@@ -40,15 +40,26 @@ class WorkflowEngine(env: Env) {
     wfRun.memory.set("input", input)
     node
       .internalRun(wfRun, Seq(0), Seq.empty)(env, executorContext)
-      .map {
+      .flatMap {
         case Left(err) if err.message == "_____otoroshi_workflow_paused" =>
-          //println("caught _____otoroshi_workflow_paused")
-          WorkflowResult(err.details.get.select("access_token").asOpt[JsValue], None, wfRun)
+          WorkflowResult(err.details.get.select("access_token").asOpt[JsValue], None, wfRun).future
         case Left(err) if err.message == "_____otoroshi_workflow_ended" =>
-          //println("caught _____otoroshi_workflow_ended")
-          WorkflowResult(wfRun.memory.get("input"), None, wfRun)
-        case Left(err)     => WorkflowResult(None, err.some, wfRun)
-        case Right(result) => WorkflowResult(result.some, None, wfRun)
+          WorkflowResult(wfRun.memory.get("input"), None, wfRun).future
+        case Left(err) if err.message == "_____otoroshi_workflow_jump" =>
+          err.details.flatMap(_.select("to").asOptString) match {
+            case None => err.details.flatMap(_.select("path").asOpt[Seq[Int]]) match {
+              case None => WorkflowResult(None, Some(WorkflowError(s"'to' not specified", None, None)), wfRun).future
+              case Some(path) => resume(node, wfRun, path, attrs)
+            }
+            case Some(to) => {
+              node.collectSubNodes(Seq(0)).find(_._1.id == to) match {
+                case None => WorkflowResult(None, Some(WorkflowError(s"unable to find node with id '${to}'", None, None)), wfRun).future
+                case Some((_, path)) => resume(node, wfRun, path, attrs)
+              }
+            }
+          }
+        case Left(err)     => WorkflowResult(None, err.some, wfRun).future
+        case Right(result) => WorkflowResult(result.some, None, wfRun).future
       }
       .recover { case t: Throwable =>
         WorkflowResult(
@@ -67,9 +78,26 @@ class WorkflowEngine(env: Env) {
     val input = wfr.memory.get("workflow_input").map(_.asObject).getOrElse(Json.obj())
     node
       .internalRun(wfRun, Seq(0), from.tail)(env, executorContext)
-      .map {
-        case Left(err)     => WorkflowResult(None, err.some, wfRun)
-        case Right(result) => WorkflowResult(result.some, None, wfRun)
+      .flatMap {
+        case Left(err) if err.message == "_____otoroshi_workflow_paused" =>
+          WorkflowResult(err.details.get.select("access_token").asOpt[JsValue], None, wfRun).future
+        case Left(err) if err.message == "_____otoroshi_workflow_ended" =>
+          WorkflowResult(wfRun.memory.get("input"), None, wfRun).future
+        case Left(err) if err.message == "_____otoroshi_workflow_jump" =>
+          err.details.flatMap(_.select("to").asOptString) match {
+            case None => err.details.flatMap(_.select("path").asOpt[Seq[Int]]) match {
+              case None => WorkflowResult(None, Some(WorkflowError(s"'to' not specified", None, None)), wfRun).future
+              case Some(path) => resume(node, wfRun, path, attrs)
+            }
+            case Some(to) => {
+              node.collectSubNodes(Seq(0)).find(_._1.id == to) match {
+                case None => WorkflowResult(None, Some(WorkflowError(s"unable to find node with id '${to}'", None, None)), wfRun).future
+                case Some((_, path)) => resume(node, wfRun, path, attrs)
+              }
+            }
+          }
+        case Left(err)     => WorkflowResult(None, err.some, wfRun).future
+        case Right(result) => WorkflowResult(result.some, None, wfRun).future
       }
       .recover { case t: Throwable =>
         WorkflowResult(
@@ -270,6 +298,12 @@ trait NodeLike {
   def kind: String
   def enabled: Boolean
   def subNodes: Seq[NodeLike]
+  def collectSubNodes(path: Seq[Int] = Seq.empty): Seq[(NodeLike, Seq[Int])] = {
+    subNodes.zipWithIndex.flatMap { case (child, idx) =>
+      val currentPath = path :+ idx
+      (child, currentPath) +: child.collectSubNodes(currentPath)
+    }
+  }
 }
 
 trait Node extends NodeLike {
