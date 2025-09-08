@@ -5,12 +5,7 @@ import akka.http.scaladsl.util.FastFuture
 import com.codahale.metrics._
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule
-import com.codahale.metrics.jvm.{
-  GarbageCollectorMetricSet,
-  JvmAttributeGaugeSet,
-  MemoryUsageGaugeSet,
-  ThreadStatesGaugeSet
-}
+import com.codahale.metrics.jvm.{GarbageCollectorMetricSet, JvmAttributeGaugeSet, MemoryUsageGaugeSet, ThreadStatesGaugeSet}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry, SemanticMetricSet}
 import com.spotify.metrics.jvm.{CpuGaugeSet, FileDescriptorGaugeSet}
@@ -38,6 +33,7 @@ import javax.management.{Attribute, ObjectName}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.{mapAsJavaMapConverter, mapAsScalaMapConverter}
+import scala.util.{Failure, Success, Try}
 
 trait TimerMetrics {
   def withTimer[T](name: String, display: Boolean = false)(f: => T): T = f
@@ -67,7 +63,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   private val jmxRegistry: MetricRegistry            = new MetricRegistry
   private lazy val openTelemetryRegistry             = initOpenTelemetryMetrics()
 
-  private val mbs = ManagementFactory.getPlatformMBeanServer
+  private val tmbs = Try(ManagementFactory.getPlatformMBeanServer)
   private val rt  = Runtime.getRuntime
 
   private val appEnv         = Option(System.getenv("APP_ENV")).getOrElse("--")
@@ -375,14 +371,19 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     }
 
   private def getProcessCpuLoad(): Double = {
-    val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
-    val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))
-    if (list.isEmpty) return 0.0
-    val att   = list.get(0).asInstanceOf[Attribute]
-    val value = att.getValue.asInstanceOf[Double]
-    if (value == -1.0) return 0.0
-    (value * 1000) / 10.0
-    // ManagementFactory.getOperatingSystemMXBean.getSystemLoadAverage
+    tmbs match {
+      case Failure(_) => 0.0
+      case Success(mbs) => {
+        val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
+        val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))
+        if (list.isEmpty) return 0.0
+        val att   = list.get(0).asInstanceOf[Attribute]
+        val value = att.getValue.asInstanceOf[Double]
+        if (value == -1.0) return 0.0
+        (value * 1000) / 10.0
+        // ManagementFactory.getOperatingSystemMXBean.getSystemLoadAverage
+      }
+    }
   }
 
   private def sumDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
