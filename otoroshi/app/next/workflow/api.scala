@@ -457,6 +457,7 @@ trait WorkflowOperator {
 }
 
 object WorkflowOperator {
+  val pattern = """\$\{([^}]+)\}""".r
   val operators                                                             = new TrieMap[String, WorkflowOperator]()
   def registerOperator(name: String, operator: WorkflowOperator): Unit = {
     operators.put(name, operator)
@@ -466,7 +467,7 @@ object WorkflowOperator {
       operators.get(map.head._1) match {
         case None           => value
         case Some(operator) => {
-          val opts = WorkflowOperator.processOperators(map.head._2.asObject, wfr, env)
+          val opts = processOperators(map.head._2.asObject, wfr, env)
           operator.process(opts, wfr, env)
         }
       }
@@ -499,6 +500,32 @@ object WorkflowOperator {
     case JsString(str) if str.contains("${session_id}")                                   => JsString(str.replace("${session_id}", wfr.id))
     case JsString(str) if str.contains("${resume_token}")                                 =>
       JsString(str.replace("${resume_token}", PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env)))
+    case JsString(str) if str.contains("${") && str.contains("}")                         => {
+      val res = pattern.replaceAllIn(str, m => {
+        val key = m.group(1)
+        if (key.contains(".")) {
+          val parts = key.split("\\.")
+          val name  = parts.head
+          val path  = parts.tail.mkString(".")
+          wfr.memory.get(name).map(obj => obj.at(path).asOpt[JsValue].getOrElse(JsNull) match {
+            case JsNull => "null"
+            case JsNumber(n) => n.toString
+            case JsBoolean(n) => n.toString
+            case JsString(n) => n
+            case j => j.stringify
+          }).getOrElse("--")
+        } else {
+          wfr.memory.get(key).map {
+            case JsNull => "null"
+            case JsNumber(n) => n.toString
+            case JsBoolean(n) => n.toString
+            case JsString(n) => n
+            case j => j.stringify
+          }.getOrElse("--")
+        }
+      })
+      res.json
+    }
     case _                                                                                => value
   }
 }
