@@ -809,6 +809,7 @@ export function WorkflowsDesigner(props) {
     const orphans = nodes.filter(
       (node) => node.id !== 'start' && node.id !== 'returned-node' && !alreadySeen.includes(node.id)
     )
+
     const orphansEdges = orphans
       .flatMap((orphan) =>
         edges.filter((edge) => edge.target === orphan.id || edge.source === orphan.id)
@@ -825,10 +826,10 @@ export function WorkflowsDesigner(props) {
       {
         nodes: orphans.map((r) => ({
           id: r.id,
-          position: r.position,
-          kind: r.data.kind,
           ...r.data.content,
           ...r.data.information,
+          position: r.position,
+          kind: r.data.kind
         })),
         edges: orphansEdges,
       }

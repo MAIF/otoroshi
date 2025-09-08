@@ -18,13 +18,15 @@ export function Node(props) {
   let nodeRenderer;
 
   if (data.content?.function) {
-    const functionData = getNodeFromKind(data.content.function);
+    const functionData = getNodeFromKind(data.content.function) || getNodeFromKind(data.content.function.substring(5));
     if (functionData) {
       label = functionData.icon;
       name = functionData.display_name || functionData.name;
       nodeRenderer = functionData.nodeRenderer
     }
+    console.log(functionData)
   }
+
 
   return (
     <>

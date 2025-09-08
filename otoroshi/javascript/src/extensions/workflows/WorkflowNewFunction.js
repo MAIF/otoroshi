@@ -31,7 +31,7 @@ export function WorkflowNewFunction(props) {
           props.setTitle(params.functionName)
         } else {
           setFunction({
-            name: 'new_function',
+            name: 'NewFunction',
             config: template.config
           })
           props.setTitle('New function')
@@ -74,7 +74,7 @@ export function WorkflowNewFunction(props) {
   ]
 
   const create = () => {
-    const name = newFunction.name.toLowerCase().replace(/\s/g, '_')
+    const name = newFunction.name.replace(/\s/g, '_')
 
     if (workflow.functions[name]) {
       window.newAlert("The function already exists - Renamed it")

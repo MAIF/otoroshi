@@ -357,6 +357,7 @@ class BackOfficeAppContainer extends Component {
               <TopBar
                 reloadEnv={this.reloadEnv}
                 shortMenu={this.state.shortMenu}
+                setSidebarContent={(c) => DynamicSidebar.setContent(c)}
                 // setTitle={(t) => DynamicTitle.setContent(t)}
                 // getTitle={() => DynamicTitle.getContent()}
                 setTitle={(t) => (dynamicTitleContent.value = t)}
