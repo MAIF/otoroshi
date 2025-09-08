@@ -6,8 +6,10 @@ import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationLong
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.Success
 
 object NodesInitializer {
   def initDefaults(): Unit = {
@@ -26,8 +28,91 @@ object NodesInitializer {
     Node.registerNode("value", json => ValueNode(json))
     Node.registerNode("pause", json => PauseNode(json))
     Node.registerNode("end", json => EndNode(json))
-    //Node.registerNode("while", json => WhileNode(json))
+    Node.registerNode("while", json => WhileNode(json))
     //Node.registerNode("jump", json => JumpNode(json))
+  }
+}
+
+case class WhileNode(json: JsObject) extends Node {
+  override def subNodes: Seq[NodeLike]                    = Seq.empty
+  override def documentationName: String                  = "while"
+  override def documentationDisplayName: String           = "While"
+  override def documentationIcon: String                  = "fas fa-rotate-right"
+  override def documentationDescription: String           = "This node executes a node while the predicate is true"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
+    .deepMerge(
+      Json.obj(
+        "properties" -> Json.obj(
+          "predicate" -> Json
+            .obj("type" -> "boolean", "description" -> "The predicate defining if the node is run or not"),
+          "node"   -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array")
+        )
+      )
+    )
+    .some
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"        -> "while",
+      "description" -> "This loop until value is 5",
+      "predicate"   -> Json.obj(
+        "$eq" -> Json.obj(
+          "a" -> "${count}",
+          "b" -> 5
+        )
+      ),
+      "node"        -> Json.obj(
+        "kind"     -> "assign",
+        "values" -> Json.arr(
+          Json.obj(
+            "name"  -> "count",
+            "value" -> Json.obj(
+              "$incr" -> Json.obj(
+                "value"     -> "count",
+                "increment" -> 1
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+  override def run(
+                    wfr: WorkflowRun,
+                    prefix: Seq[Int],
+                    from: Seq[Int]
+                  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+
+    val promise = Promise[Either[WorkflowError, JsValue]]()
+    val node = Node.from(json.select("node").asObject)
+    val maxBudget = json.select("max_budget").asOpt[Int].getOrElse(999)
+    val count = new AtomicInteger(0)
+
+    def next(): Unit = {
+      if (count.get() == maxBudget) {
+        promise.trySuccess(WorkflowError(
+          s"while loop '${maxBudget}' exceeds maximum budget",
+          None, None
+        ).left)
+      }
+      count.incrementAndGet()
+      val predicate = WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
+      if (predicate) {
+        node
+          .internalRun(wfr, prefix :+ 0, from)
+          .andThen {
+            case Success(_) => next()
+          }
+          .recover { case t: Throwable =>
+            val e: Either[WorkflowError, JsValue] = WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+            promise.trySuccess(e)
+          }
+      } else {
+        promise.trySuccess(JsNull.right)
+      }
+    }
+
+    next()
+    promise.future
   }
 }
 
@@ -35,7 +120,7 @@ case class EndNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike]                    = Seq.empty
   override def documentationName: String                  = "end"
   override def documentationDisplayName: String           = "End"
-  override def documentationIcon: String                  = "fas da-door-open"
+  override def documentationIcon: String                  = "fas fa-door-open"
   override def documentationDescription: String           = "This node end the workflow"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(

@@ -485,7 +485,9 @@ class IncrementOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    JsNumber(opts.select("value").as[BigDecimal].+(opts.select("increment").as[BigDecimal]))
+    val value = opts.select("value").asOpt[BigDecimal].getOrElse(BigDecimal(0))
+    val inc = opts.select("increment").asOpt[BigDecimal].getOrElse(BigDecimal(0))
+    JsNumber(value.+(inc))
   }
 }
 
