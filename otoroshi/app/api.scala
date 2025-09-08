@@ -551,7 +551,11 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
+    try {
+      ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
+    } catch {
+      case e: Throwable => components.env.logger.error("error while starting netty server", e)
+    }
     server.httpPort.get + 1
     this
   }
@@ -563,7 +567,11 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
+    try {
+      ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
+    } catch {
+      case e: Throwable => components.env.logger.error("error while starting netty server", e)
+    }
     server.httpPort.get + 1
     stopOnShutdown()
   }
