@@ -356,7 +356,9 @@ trait Node extends NodeLike {
           }
           case Right(res)                                                  => {
             wfr.log(s"ending '${id}'", this)
-            wfr.memory.set("input", res)
+            if (id != "start")
+              wfr.memory.set("input", res)
+
             result.foreach(name => wfr.memory.set(name, res))
             returned
               .map {
