@@ -18,10 +18,22 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$array_at", new ArrayAtOperator())
     WorkflowOperator.registerOperator("$array_del", new ArrayDelOperator())
     WorkflowOperator.registerOperator("$array_page", new ArrayPageOperator())
+    WorkflowOperator.registerOperator("$array_head", new ArrayHeadOperator())
+    WorkflowOperator.registerOperator("$array_tail", new ArrayTailOperator())
+    WorkflowOperator.registerOperator("$array_init", new ArrayInitOperator())
+    WorkflowOperator.registerOperator("$array_length", new ArrayLengthOperator())
+    WorkflowOperator.registerOperator("$array_join", new ArrayJoinOperator())
+    WorkflowOperator.registerOperator("$array_drop", new ArrayDropOperator())
+    WorkflowOperator.registerOperator("$array_take", new ArrayTakeOperator())
+    WorkflowOperator.registerOperator("$array_reverse", new ArrayReverseOperator())
+    WorkflowOperator.registerOperator("$array_distinct", new ArrayDistinctOperator())
+    WorkflowOperator.registerOperator("$array_is_empty", new ArrayIsEmptyOperator())
     WorkflowOperator.registerOperator("$projection", new ProjectionOperator())
     WorkflowOperator.registerOperator("$map_put", new MapPutOperator())
     WorkflowOperator.registerOperator("$map_get", new MapGetOperator())
     WorkflowOperator.registerOperator("$map_del", new MapDelOperator())
+    WorkflowOperator.registerOperator("$map_is_empty", new MapIsEmptyOperator())
+    WorkflowOperator.registerOperator("$map_length", new MapLengthOperator())
     WorkflowOperator.registerOperator("$json_parse", new JsonParseOperator())
     WorkflowOperator.registerOperator("$str_concat", new StrConcatOperator())
     WorkflowOperator.registerOperator("$is_truthy", new IsTruthyOperator())
@@ -56,6 +68,432 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$str_replace", new StringReplaceOperator())
     WorkflowOperator.registerOperator("$str_replace_all", new StringReplaceAllOperator())
     WorkflowOperator.registerOperator("$jq", new JqOperator())
+  }
+}
+
+class MapLengthOperator extends WorkflowOperator {
+  override def documentationName: String = "$map_length"
+  override def documentationDescription: String = "This operator returns the length of a map"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("map"),
+    "properties" -> Json.obj(
+      "map" -> Json.obj("type" -> "object", "description" -> "The map to get the length of"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$map_length" -> Json.obj(
+      "map" -> Json.obj()
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("map").asOpt[JsObject] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsObject(obj) => JsNumber(obj.values.size)
+      case _             => JsNull
+    }
+  }
+}
+
+class MapIsEmptyOperator extends WorkflowOperator {
+  override def documentationName: String = "$map_is_empty"
+  override def documentationDescription: String = "This operator checks if a map is empty"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("map"),
+    "properties" -> Json.obj(
+      "map" -> Json.obj("type" -> "object", "description" -> "The map to check"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$map_is_empty" -> Json.obj(
+      "map" -> Json.obj()
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("map").asOpt[JsObject] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsObject(obj) => JsBoolean(obj.values.isEmpty)
+      case _             => JsNull
+    }
+  }
+}
+
+class ArrayIsEmptyOperator extends WorkflowOperator {
+  override def documentationName: String = "$array_is_empty"
+  override def documentationDescription: String = "This operator checks if an array is empty"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("array"),
+    "properties" -> Json.obj(
+      "array" -> Json.obj("type" -> "array", "description" -> "The array to check"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$array_is_empty" -> Json.obj(
+      "array" -> Seq("my_value", "other_value")
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("array").asOpt[JsArray] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsArray(arr) => JsBoolean(arr.isEmpty)
+      case _            => JsNull
+    }
+  }
+}
+
+class ArrayDistinctOperator extends WorkflowOperator {
+  override def documentationName: String = "$array_distinct"
+  override def documentationDescription: String = "This operator removes duplicate elements from an array"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("array"),
+    "properties" -> Json.obj(
+      "array" -> Json.obj("type" -> "array", "description" -> "The array to remove duplicates from"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$array_distinct" -> Json.obj(
+      "array" -> Seq("my_value", "other_value", "my_value")
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("array").asOpt[JsArray] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsArray(arr) => JsArray(arr.distinct)
+      case _            => JsNull
+    }
+  }
+}
+
+class ArrayReverseOperator extends WorkflowOperator {
+  override def documentationName: String = "$array_reverse"
+  override def documentationDescription: String = "This operator reverses an array"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("array"),
+    "properties" -> Json.obj(
+      "array" -> Json.obj("type" -> "array", "description" -> "The array to reverse"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$array_reverse" -> Json.obj(
+      "array" -> Seq("my_value", "other_value")
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("array").asOpt[JsArray] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsArray(arr) => JsArray(arr.reverse)
+      case _            => JsNull
+    }
+  }
+}
+
+class ArrayTakeOperator extends WorkflowOperator {
+  override def documentationName: String = "$array_take"
+  override def documentationDescription: String = "This operator takes the first n elements of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("array", "n"),
+    "properties" -> Json.obj(
+      "array" -> Json.obj("type" -> "array", "description" -> "The array to take elements from"),
+      "n"     -> Json.obj("type" -> "integer", "description" -> "The number of elements to take"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$array_take" -> Json.obj(
+      "array" -> Seq("my_value", "other_value"),
+      "n"     -> 1
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("array").asOpt[JsArray] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsArray(arr) => JsArray(arr.take(opts.select("n").asInt))
+      case _            => JsNull
+    }
+  }
+}
+
+class ArrayDropOperator extends WorkflowOperator {
+  override def documentationName: String = "$array_drop"
+  override def documentationDescription: String = "This operator drops the first n elements of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("array", "n"),
+    "properties" -> Json.obj(
+      "array" -> Json.obj("type" -> "array", "description" -> "The array to drop elements from"),
+      "n"     -> Json.obj("type" -> "integer", "description" -> "The number of elements to drop"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$array_drop" -> Json.obj(
+      "array" -> Seq("my_value", "other_value"),
+      "n"     -> 1
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("array").asOpt[JsArray] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsArray(arr) => JsArray(arr.drop(opts.select("n").asInt))
+      case _            => JsNull
+    }
+  }
+}
+
+class ArrayJoinOperator extends WorkflowOperator {
+  override def documentationName: String = "$array_join"
+  override def documentationDescription: String = "This operator joins an array into a string"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("array", "separator"),
+    "properties" -> Json.obj(
+      "array"     -> Json.obj("type" -> "array", "description" -> "The array to join"),
+      "separator" -> Json.obj("type" -> "string", "description" -> "The separator to use"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$array_join" -> Json.obj(
+      "array"     -> Seq("my_value", "other_value"),
+      "separator" -> ","
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("array").asOpt[JsArray] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsArray(arr) => JsString(arr.mkString(opts.select("separator").asString))
+      case _            => JsNull
+    }
+  }
+}
+
+class ArrayLengthOperator extends WorkflowOperator {
+  override def documentationName: String = "$array_length"
+  override def documentationDescription: String = "This operator gets the length of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("array"),
+    "properties" -> Json.obj(
+      "array" -> Json.obj("type" -> "array", "description" -> "The array to get the length from"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$array_length" -> Json.obj(
+      "array" -> Seq("my_value", "other_value")
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("array").asOpt[JsArray] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsArray(arr) => JsNumber(arr.length)
+      case _            => JsNull
+    }
+  }
+}
+
+class ArrayInitOperator extends WorkflowOperator {
+  override def documentationName: String = "$array_init"
+  override def documentationDescription: String = "This operator gets the init of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("array"),
+    "properties" -> Json.obj(
+      "array" -> Json.obj("type" -> "array", "description" -> "The array to get the init from"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$array_init" -> Json.obj(
+      "array" -> Seq("my_value", "other_value")
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("array").asOpt[JsArray] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsArray(arr) => JsArray(arr.init)
+      case _            => JsNull
+    }
+  }
+}
+
+class ArrayTailOperator extends WorkflowOperator {
+  override def documentationName: String = "$array_tail"
+  override def documentationDescription: String = "This operator gets the tail of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("array"),
+    "properties" -> Json.obj(
+      "array" -> Json.obj("type" -> "array", "description" -> "The array to get the tail from"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$array_tail" -> Json.obj(
+      "array" -> Seq("my_value", "other_value")
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("array").asOpt[JsArray] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsArray(arr) => JsArray(arr.tail)
+      case _            => JsNull
+    }
+  }
+}
+
+class ArrayHeadOperator extends WorkflowOperator {
+  override def documentationName: String = "$array_head"
+  override def documentationDescription: String = "This operator gets the head of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "required" -> Seq("array"),
+    "properties" -> Json.obj(
+      "array" -> Json.obj("type" -> "array", "description" -> "The array to get the head from"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$array_head" -> Json.obj(
+      "array" -> Seq("my_value", "other_value")
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: JsValue = opts.select("array").asOpt[JsArray] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => JsNull
+          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isDefined => value.at(path.get).asValue
+        }
+      }
+    }
+    value match {
+      case JsArray(arr) => arr.headOption.getOrElse(JsNull)
+      case _            => JsNull
+    }
   }
 }
 
