@@ -303,9 +303,12 @@ class SendMailFunction extends WorkflowFunction {
           "props" -> Json.obj("description" -> "The email subject")
         ),
       "html"      -> Json.obj(
-          "type"  -> "string",
+          "type"  -> "code",
           "label" -> "HTML",
-          "props" -> Json.obj("description" -> "The email HTML content")
+          "props" -> Json.obj(
+            "editorOnly"  -> true,
+            "description" -> "The email HTML content"
+          )
         ),
       "mailer_config" -> Json.obj(
           "type"    -> "form",
