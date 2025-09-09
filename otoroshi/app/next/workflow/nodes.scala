@@ -31,6 +31,56 @@ object NodesInitializer {
     Node.registerNode("while", json => WhileNode(json))
     Node.registerNode("jump", json => JumpNode(json))
     Node.registerNode("try", json => TryNode(json))
+    Node.registerNode("async", json => AsyncNode(json))
+  }
+}
+
+case class AsyncNode(json: JsObject) extends Node {
+
+  lazy val node = Node.from(json.select("node").asObject)
+
+  override def subNodes: Seq[NodeLike]                    = Seq(node)
+  override def documentationName: String                  = "async"
+  override def documentationDisplayName: String           = "Async"
+  override def documentationIcon: String                  = "fas fa-code-merge"
+  override def documentationDescription: String           = "This node runs a node asynchronously and does not wait for the end."
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
+    .deepMerge(
+      Json.obj(
+        "properties" -> Json.obj(
+          "node" -> Json
+            .obj("type" -> "object", "description" -> "The node to run"),
+        )
+      )
+    )
+    .some
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"        -> "try",
+      "description" -> "Jump to the 'incr' node if count value is not 4",
+      "node"   -> Json.obj(
+        "kind" -> "error",
+        "message"     -> "an error occurred",
+        "details"     -> Json.obj("foo" -> "bar")
+      )
+    )
+  )
+
+  override def run(
+    wfr: WorkflowRun,
+    prefix: Seq[Int],
+    from: Seq[Int]
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    if (from.nonEmpty && from.head > 0) {
+      WorkflowError(
+        s"Async Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
+        None,
+        None
+      ).leftf
+    } else {
+      node.internalRun(wfr, prefix :+ 0, from)
+      JsNull.rightf
+    }
   }
 }
 
