@@ -1,8 +1,6 @@
 import React from 'react';
 
-import { NgForm, NgSelectRenderer } from '../../../components/nginputs';
-import { Row } from '../../../components/Row';
-import { nodesCatalogSignal } from '../models/Functions';
+import { OperatorSelector } from '../OperatorSelector';
 
 export const IfThenElseNode = {
   type: 'group',
@@ -12,58 +10,16 @@ export const IfThenElseNode = {
   form_schema: {
     predicate: {
       renderer: (props) => {
-        const operators = Object.values(nodesCatalogSignal.value.nodes).filter(node => node.category === 'operators') || []
+        const { predicate } = props.rootValue
 
-        const field = Object.keys(props.rootValue.predicate || {})[0];
-
-        const operator = operators.find((ope) => ope.name === field);
-
-        const value = props.rootValue.predicate ? props.rootValue.predicate[field] : undefined;
-
-        return (
-          <>
-            <Row title="Operator">
-              <NgSelectRenderer
-                isClearable
-                ngOptions={{
-                  spread: true,
-                }}
-                options={operators.map((r) => r.name)}
-                value={field}
-                onChange={(operator) => {
-                  props.rootOnChange({
-                    ...props.rootValue,
-                    predicate: {
-                      [operator]: {},
-                    },
-                  });
-                }}
-              />
-            </Row>
-
-            {operator && (
-              <NgForm
-                flow={operator.flow || Object.keys(operator.form_schema || {})}
-                schema={operator.form_schema || {}}
-                value={value}
-                onChange={(newValue) => {
-                  props.rootOnChange({
-                    ...props.rootValue,
-                    predicate: {
-                      [field]: newValue,
-                    },
-                  });
-                }}
-              />
-            )}
-          </>
-        );
-      },
-    },
-  },
-  // nodeRenderer: props => {
-  //     return <div className='assign-node'>
-  //         <span>{Object.keys(props.data.content.predicate || {})[0]}</span>
-  //     </div>
-  // }
-};
+        return <OperatorSelector
+          predicate={predicate}
+          handleOperatorChange={newOperator => props.rootOnChange({
+            ...props.rootValue,
+            ...newOperator
+          })}
+        />
+      }
+    }
+  }
+}

@@ -20,7 +20,8 @@ export function Tester({ isOpen, report, handleClose, run }) {
             type: 'code',
             label: 'Input',
             props: {
-                editorOnly: true
+                editorOnly: true,
+                height: '10rem',
             }
         },
         run: {
@@ -55,8 +56,6 @@ export function Tester({ isOpen, report, handleClose, run }) {
 
     if (!isOpen)
         return null
-
-    console.log(state)
 
     return <div className="report-explorer p-3">
         <h3>Tester</h3>

@@ -103,7 +103,7 @@ export function Items({
           value.kind.toLowerCase().includes(lowercaseQuery) ||
           value.display_name?.toLowerCase().includes(lowercaseQuery)
       )
-      .reduce((acc, node) => (acc.find((f) => f.namee === node.name) ? acc : [...acc, node]), [])
+      .reduce((acc, node) => (acc.find((f) => f.name === node.name) ? acc : [...acc, node]), [])
       .map((node, i) => (
         <Node
           node={node}

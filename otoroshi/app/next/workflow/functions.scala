@@ -659,6 +659,16 @@ class EmitEventFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Emit an event"
   override def documentationIcon: String                  = "fas fa-bullhorn"
   override def documentationDescription: String           = "This function emits an event"
+  override def documentationFormSchema: Option[JsObject] = Some(Json.obj(
+    "event" -> Json.obj(
+      "type"  -> "object",
+      "label" -> "Event",
+      "props" -> Json.obj(
+        "description" -> "The event to emit"
+      )
+    )
+  ))
+  
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",

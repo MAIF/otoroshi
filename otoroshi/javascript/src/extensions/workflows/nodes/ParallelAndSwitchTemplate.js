@@ -2,6 +2,7 @@ import React from 'react';
 import { Row } from '../../../components/Row';
 import { NgForm, NgSelectRenderer } from '../../../components/nginputs';
 import { nodesCatalogSignal } from '../models/Functions';
+import { OperatorSelector } from '../OperatorSelector';
 
 export const ParallelAndSwitchTemplate = (kind) => {
   return {
@@ -26,51 +27,13 @@ export const ParallelAndSwitchTemplate = (kind) => {
         schema: {
           predicate: {
             renderer: (props) => {
-              const operators =
-                nodesCatalogSignal.value.categories.find((category) => category.id === 'operators')
-                  ?.nodes || [];
-
               const predicate = props.value || {};
 
-              const field = Object.keys(predicate || {})[0];
-
-              const operator = operators.find((ope) => ope.name === field);
-
-              const value = predicate[field];
-
-              return (
-                <>
-                  <Row title="Operator">
-                    <NgSelectRenderer
-                      isClearable
-                      ngOptions={{
-                        spread: true,
-                      }}
-                      options={operators.map((r) => r.name)}
-                      value={field}
-                      onChange={(operator) => {
-                        props.onChange({
-                          [operator]: {},
-                        });
-                      }}
-                    />
-                  </Row>
-
-                  {operator && (
-                    <NgForm
-                      flow={operator.flow || Object.keys(operator.form_schema || {})}
-                      schema={operator.form_schema || {}}
-                      value={value}
-                      onChange={(newValue) => {
-                        props.onChange({
-                          [field]: newValue,
-                        });
-                      }}
-                    />
-                  )}
-                </>
-              );
-            },
+              return <OperatorSelector
+                predicate={predicate}
+                handleOperatorChange={newOperator => props.onChange(newOperator.predicate)}
+              />
+            }
           },
         },
       },
