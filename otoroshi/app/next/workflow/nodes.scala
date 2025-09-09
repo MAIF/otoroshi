@@ -30,9 +30,91 @@ object NodesInitializer {
     Node.registerNode("end", json => EndNode(json))
     Node.registerNode("while", json => WhileNode(json))
     Node.registerNode("jump", json => JumpNode(json))
+    Node.registerNode("try", json => TryNode(json))
   }
 }
 
+case class TryNode(json: JsObject) extends Node {
+
+  lazy val node = Node.from(json.select("node").asObject)
+  lazy val catchNode = Node.from(json.select("catch").asObject)
+  lazy val finallyNode = json.select("finally").asOpt[JsObject].map(n => Node.from(n))
+
+  override def subNodes: Seq[NodeLike]                    = Seq(node, catchNode) ++ finallyNode.toSeq
+  override def documentationName: String                  = "try"
+  override def documentationDisplayName: String           = "Try/catch"
+  override def documentationIcon: String                  = "fas fa-hand-sparkles"
+  override def documentationDescription: String           = "This node catch errors and can return something else"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
+    .deepMerge(
+      Json.obj(
+        "properties" -> Json.obj(
+          "node" -> Json
+            .obj("type" -> "object", "description" -> "The node to run"),
+          "catch"   -> Json.obj("type" -> "object", "description" -> "the node executed when an error is caught"),
+          "finally"   -> Json.obj("type" -> "object", "description" -> "the node executed after everything")
+        )
+      )
+    )
+    .some
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"        -> "try",
+      "description" -> "Jump to the 'incr' node if count value is not 4",
+      "node"   -> Json.obj(
+        "kind" -> "error",
+        "message"     -> "an error occurred",
+        "details"     -> Json.obj("foo" -> "bar")
+      ),
+      "catch" -> Json.obj(
+        "kind" -> "call",
+        "function"   -> "core.log",
+        "args" -> Json.obj(
+          "message" -> "caught an error",
+          "params" -> Json.obj(
+            "error" -> "${caught_error}"
+          )
+        )
+      )
+    )
+  )
+
+  def runCatch(
+                    wfr: WorkflowRun,
+                    prefix: Seq[Int],
+                    from: Seq[Int],
+                    error: WorkflowError
+                  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    wfr.memory.set("caught_error", error.json)
+    catchNode
+      .internalRun(wfr, prefix :+ 1, from)
+      .recover { case t: Throwable =>
+        WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+      }
+      .andThen { case _ =>
+        wfr.memory.remove("caught_error")
+      }
+  }
+
+  override def run(
+    wfr: WorkflowRun,
+    prefix: Seq[Int],
+    from: Seq[Int]
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    node
+      .internalRun(wfr, prefix :+ 0, from)
+      .recover { case t: Throwable =>
+        WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+      }
+      .flatMap {
+        case Left(error) => runCatch(wfr, prefix, from, error)
+        case Right(res) => Right(res).future
+      }
+      .andThen {
+        case _ => finallyNode.foreach(_.internalRun(wfr, prefix :+ 2, from))
+      }
+  }
+}
 
 case class JumpNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike]                    = Seq.empty
