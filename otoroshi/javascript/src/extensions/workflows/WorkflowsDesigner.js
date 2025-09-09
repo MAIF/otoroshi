@@ -609,8 +609,8 @@ export function WorkflowsDesigner(props) {
       if (commonEnd !== -1) {
         nextNode = nodes.find((n) => n.id === thenNode.steps[commonEnd].id);
 
-        thenNode = thenNode.steps.slice(0, commonEnd);
-        elseNode = elseNode.steps.slice(
+        thenNode.steps = thenNode.steps.slice(0, commonEnd);
+        elseNode.steps = elseNode.steps.slice(
           0,
           elseNode.steps.findIndex((node) => thenNodeIds.includes(node.id))
         );
