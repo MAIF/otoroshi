@@ -946,7 +946,7 @@ class WorkflowCallFunction extends WorkflowFunction {
       args: JsObject
   )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val workflowId = args.select("workflow_id").asString
-    val input      = args.select("input").asObject
+    val input      = args.selectAsOptObject("input").getOrElse(Json.obj())
     val extension  = env.adminExtensions.extension[WorkflowAdminExtension].get
     extension.states.workflow(workflowId) match {
       case None           => Left(WorkflowError("workflow not found", Some(Json.obj("workflow_id" -> workflowId)), None)).vfuture
