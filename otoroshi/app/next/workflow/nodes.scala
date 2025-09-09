@@ -101,18 +101,26 @@ case class TryNode(json: JsObject) extends Node {
     prefix: Seq[Int],
     from: Seq[Int]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    node
-      .internalRun(wfr, prefix :+ 0, from)
-      .recover { case t: Throwable =>
-        WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
-      }
-      .flatMap {
-        case Left(error) => runCatch(wfr, prefix, from, error)
-        case Right(res) => Right(res).future
-      }
-      .andThen {
-        case _ => finallyNode.foreach(_.internalRun(wfr, prefix :+ 2, from))
-      }
+    if (from.nonEmpty && from.head > 0) {
+      WorkflowError(
+        s"Try Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
+        None,
+        None
+      ).leftf
+    } else {
+      node
+        .internalRun(wfr, prefix :+ 0, from)
+        .recover { case t: Throwable =>
+          WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+        }
+        .flatMap {
+          case Left(error) => runCatch(wfr, prefix, from, error)
+          case Right(res) => Right(res).future
+        }
+        .andThen {
+          case _ => finallyNode.foreach(_.internalRun(wfr, prefix :+ 2, from))
+        }
+    }
   }
 }
 
@@ -217,37 +225,45 @@ case class WhileNode(json: JsObject) extends Node {
                     prefix: Seq[Int],
                     from: Seq[Int]
                   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    if (from.nonEmpty) {
+      WorkflowError(
+        s"While Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
+        None,
+        None
+      ).leftf
+    } else {
 
-    val promise = Promise[Either[WorkflowError, JsValue]]()
-    val maxBudget = json.select("max_budget").asOpt[Int].getOrElse(999)
-    val count = new AtomicInteger(0)
+      val promise = Promise[Either[WorkflowError, JsValue]]()
+      val maxBudget = json.select("max_budget").asOpt[Int].getOrElse(999)
+      val count = new AtomicInteger(0)
 
-    def next(): Unit = {
-      if (count.get() == maxBudget) {
-        promise.trySuccess(WorkflowError(
-          s"while loop '${maxBudget}' exceeds maximum budget",
-          None, None
-        ).left)
+      def next(): Unit = {
+        if (count.get() == maxBudget) {
+          promise.trySuccess(WorkflowError(
+            s"while loop '${maxBudget}' exceeds maximum budget",
+            None, None
+          ).left)
+        }
+        count.incrementAndGet()
+        val predicate = WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
+        if (predicate) {
+          node
+            .internalRun(wfr, prefix :+ 0, from)
+            .andThen {
+              case Success(_) => next()
+            }
+            .recover { case t: Throwable =>
+              val e: Either[WorkflowError, JsValue] = WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+              promise.trySuccess(e)
+            }
+        } else {
+          promise.trySuccess(JsNull.right)
+        }
       }
-      count.incrementAndGet()
-      val predicate = WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
-      if (predicate) {
-        node
-          .internalRun(wfr, prefix :+ 0, from)
-          .andThen {
-            case Success(_) => next()
-          }
-          .recover { case t: Throwable =>
-            val e: Either[WorkflowError, JsValue] = WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
-            promise.trySuccess(e)
-          }
-      } else {
-        promise.trySuccess(JsNull.right)
-      }
+
+      next()
+      promise.future
     }
-
-    next()
-    promise.future
   }
 }
 
@@ -273,7 +289,6 @@ case class EndNode(json: JsObject) extends Node {
     prefix: Seq[Int],
     from: Seq[Int]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    // println("end now !!!")
     WorkflowError(
       message = "_____otoroshi_workflow_ended",
       details = None,
@@ -475,7 +490,7 @@ case class NoopNode(json: JsObject) extends Node {
       from: Seq[Int]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
-    println("noop, doing nothing")
+    // println("noop, doing nothing")
     JsNull.rightf
   }
 }

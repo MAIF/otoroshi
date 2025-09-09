@@ -337,50 +337,58 @@ trait Node extends NodeLike {
       JsNull.rightf
     } else {
       wfr.log(s"starting '${id}'", this)
-      run(wfr, prefix, from)
-        .map {
-          case Left(err) if err.message == "_____otoroshi_workflow_paused" => {
-            wfr.log(s"pausing '${id}'", this)
-            val res = err.details.get.select("access_token").asValue
-            result.foreach(name => wfr.memory.set(name, res))
-            Left(err)
-          }
-          case Left(err) if err.message == "_____otoroshi_workflow_ended" => {
-            // println(s"ending at '${id}'")
-            wfr.log(s"ending at '${id}'", this)
-            Left(err)
-          }
-          case Left(err)                                                   => {
-            wfr.log(s"ending with error '${id}'", this, err.some)
-            Left(err)
-          }
-          case Right(res)                                                  => {
-            wfr.log(s"ending '${id}'", this)
-            if (id != "start")
-              wfr.memory.set("input", res)
+      try {
+        run(wfr, prefix, from)
+          .map {
+            case Left(err) if err.message == "_____otoroshi_workflow_paused" => {
+              wfr.log(s"pausing '${id}'", this)
+              val res = err.details.get.select("access_token").asValue
+              result.foreach(name => wfr.memory.set(name, res))
+              Left(err)
+            }
+            case Left(err) if err.message == "_____otoroshi_workflow_ended" => {
+              // println(s"ending at '${id}'")
+              wfr.log(s"ending at '${id}'", this)
+              Left(err)
+            }
+            case Left(err) => {
+              wfr.log(s"ending with error '${id}'", this, err.some)
+              Left(err)
+            }
+            case Right(res) => {
+              wfr.log(s"ending '${id}'", this)
+              if (id != "start")
+                wfr.memory.set("input", res)
 
-            result.foreach(name => wfr.memory.set(name, res))
-            returned
-              .map {
-                case obj @ JsObject(_) =>
-                  val returnedObject = obj - "position" - "description"
-                  WorkflowOperator.processOperators(returnedObject, wfr, env)
-                case value             => WorkflowOperator.processOperators(value, wfr, env)
-              }
-              .map { v =>
-                wfr.memory.set("input", v)
-                Right(v)
-              }
-              .getOrElse(Right(res)) // TODO: el like
+              result.foreach(name => wfr.memory.set(name, res))
+              returned
+                .map {
+                  case obj@JsObject(_) =>
+                    val returnedObject = obj - "position" - "description"
+                    WorkflowOperator.processOperators(returnedObject, wfr, env)
+                  case value => WorkflowOperator.processOperators(value, wfr, env)
+                }
+                .map { v =>
+                  wfr.memory.set("input", v)
+                  Right(v)
+                }
+                .getOrElse(Right(res)) // TODO: el like
+            }
           }
-        }
-        .recover {
-          case t: Throwable => {
-            val error = WorkflowError(s"caught exception on task: '${id}'", None, Some(t))
-            wfr.log(s"ending with exception '${id}'", this, error.some)
-            Left(error)
+          .recover {
+            case t: Throwable => {
+              val error = WorkflowError(s"caught exception on task: '${id}'", None, Some(t))
+              wfr.log(s"ending with exception '${id}'", this, error.some)
+              Left(error)
+            }
           }
+      } catch {
+        case t: Throwable => {
+          val error = WorkflowError(s"caught sync exception on task: '${id}'", None, Some(t))
+          wfr.log(s"ending with sync exception '${id}'", this, error.some)
+          Left(error).future
         }
+      }
     }
   }
 }
