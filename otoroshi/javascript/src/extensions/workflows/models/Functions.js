@@ -34,6 +34,7 @@ import { MapDelOperator } from '../operators/MapDelOperator';
 import { ArrayDelOperator } from '../operators/ArrayDelOperator';
 import { WorkflowFunction } from '../functions/WorkflowFunction';
 import { signal } from 'signals-react-safe';
+import { EndNode } from '../nodes/EndNode';
 
 export const nodesCatalogSignal = signal({
   nodes: [],
@@ -76,6 +77,7 @@ const OVERLOADED_NODES = {
   $not: NotOperator,
   $str_split: StrSplitOperator,
   'core.workflow_call': WorkflowFunction,
+  end: EndNode
 };
 
 function getNodeCategory(categories, node) {

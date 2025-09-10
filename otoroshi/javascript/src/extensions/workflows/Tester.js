@@ -17,10 +17,19 @@ export function Tester({ isOpen, report, handleClose, run }) {
     const [running, setRunning] = useState(false);
 
     const runTest = () => {
-        setRunning(true);
-        run(state.input).then(() => {
-            setRunning(false);
-        });
+        if (!running) {
+            setRunning(true)
+            const minDelay = new Promise(resolve => setTimeout(resolve, 250));
+            const operation = run(state.input);
+
+            Promise.all([minDelay, operation])
+                .then(() => {
+                    setRunning(false);
+                })
+                .catch(() => {
+                    setRunning(false);
+                });
+        }
     }
 
     const schema = {
