@@ -637,6 +637,7 @@ case class CallNode(json: JsObject) extends Node {
     .deepMerge(
       Json.obj(
         "properties" -> Json.obj(
+          "async" -> Json.obj("type" -> "bool", "description" -> "if true, the call do not block"),
           "function" -> Json.obj("type" -> "string", "description" -> "the function name"),
           "args"     -> Json.obj("type" -> "object", "description" -> "the arguments of the call")
         )
@@ -656,6 +657,7 @@ case class CallNode(json: JsObject) extends Node {
 
   lazy val functionName: String = json.select("function").asString
   lazy val args: JsObject       = json.selectAsOptObject("args").getOrElse(Json.obj())
+  lazy val async: Boolean       = json.select("async").asOptBoolean.getOrElse(false)
 
   override def run(
       wfr: WorkflowRun,
@@ -675,15 +677,25 @@ case class CallNode(json: JsObject) extends Node {
           case None           => WorkflowError(s"self function '${functionName}' not supported in task '${id}'", None, None).leftf
           case Some(function) =>
             wfr.memory.set("function_args", WorkflowOperator.processOperators(args, wfr, env))
-            Node.from(function).run(wfr, prefix, from).andThen { case _ =>
+            val r = Node.from(function).run(wfr, prefix, from).andThen { case _ =>
               wfr.memory.remove("function_args")
+            }
+            if (async) {
+              JsNull.rightf
+            } else {
+              r
             }
         }
       } else {
         WorkflowFunction.get(functionName) match {
           case None           => WorkflowError(s"function '${functionName}' not supported in task '${id}'", None, None).leftf
           case Some(function) =>
-            function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
+            val r = function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
+            if (async) {
+              JsNull.rightf
+            } else {
+              r
+            }
         }
       }
     }
