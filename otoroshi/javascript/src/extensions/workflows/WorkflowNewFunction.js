@@ -49,18 +49,8 @@ export function WorkflowNewFunction(props) {
       disabled: params.functionName
     },
     config: {
-      type: 'code',
-      label: 'Configuration',
-      props: {
-        showGutter: false,
-        ace_config: {
-          mode: 'json',
-          onLoad: (editor) => editor.renderer.setPadding(10),
-          fontSize: 14,
-        },
-        editorOnly: true,
-        height: '40vh',
-      },
+      type: 'json',
+      label: 'Configuration'
     }
   }
 
@@ -78,6 +68,7 @@ export function WorkflowNewFunction(props) {
 
     if (workflow.functions[name]) {
       window.newAlert("The function already exists - Renamed it")
+      return Promise.resolve()
     } else {
       return client.update({
         ...workflow,

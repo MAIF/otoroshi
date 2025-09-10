@@ -9,11 +9,8 @@ export const ArrayAppendOperator = {
     ...FromMemory({ isArray: true }),
     value: ValueToCheck('Value to Append'),
     array: {
-      type: 'code',
+      type: 'json',
       label: 'Target Array',
-      props: {
-        editorOnly: true,
-      },
       visible: (props) => !props?.fromMemory,
     },
   },

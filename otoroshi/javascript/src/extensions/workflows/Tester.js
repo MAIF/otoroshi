@@ -11,7 +11,7 @@ export function Tester({ isOpen, report, handleClose, run }) {
     const sidebar = useContext(SidebarContext)
 
     const [state, setState] = useState({
-        input: JSON.stringify(nodesCatalogSignal.value.rawWorkflow.test_payload, null, 2)
+        input: nodesCatalogSignal.value.rawWorkflow.test_payload
     });
 
     const [running, setRunning] = useState(false);
@@ -34,7 +34,7 @@ export function Tester({ isOpen, report, handleClose, run }) {
 
     const schema = {
         input: {
-            type: 'code',
+            type: 'json',
             label: 'Input',
             props: {
                 editorOnly: true,
@@ -84,7 +84,7 @@ export function Tester({ isOpen, report, handleClose, run }) {
             onChange={newState => {
                 try {
                     nodesCatalogSignal.value.updateWorkflow({
-                        test_payload: JSON.parse(newState.input)
+                        test_payload: newState.input
                     })
                     setState(newState)
                 } catch (err) {

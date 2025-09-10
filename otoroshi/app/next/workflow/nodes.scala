@@ -1077,12 +1077,8 @@ case class ForEachNode(json: JsObject) extends Node {
   override def documentationFormSchema: Option[JsObject]  = Json
     .obj(
       "values" -> Json.obj(
-        "type"  -> "code",
-        "label" -> "Values to iterate",
-        "props" -> Json.obj(
-          "editorOnly" -> true,
-          "mode" -> "json"
-        )
+        "type"  -> "json",
+        "label" -> "Values to iterate"
       )
     )
     .some

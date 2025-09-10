@@ -171,9 +171,8 @@ export default class CodeInput extends Component {
     if (this.props.mode === 'json' && typeof code !== 'string') {
       code = JSON.stringify(code, null, 2);
     }
-
     // avoid to send json to Ace
-    if (typeof code === 'object' && !Array.isArray(code) && code !== null) {
+    if (typeof code === 'object' && code !== null) {
       code = JSON.stringify(code, null, 2);
     }
 

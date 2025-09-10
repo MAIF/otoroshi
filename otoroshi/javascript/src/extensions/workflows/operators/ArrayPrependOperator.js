@@ -9,11 +9,8 @@ export const ArrayPrependOperator = {
     ...FromMemory({ isArray: true }),
     value: ValueToCheck('Value to Prepend'),
     array: {
-      type: 'code',
+      type: 'json',
       label: 'Target Array',
-      props: {
-        editorOnly: true,
-      },
       visible: (props) => !props?.fromMemory,
     },
   },

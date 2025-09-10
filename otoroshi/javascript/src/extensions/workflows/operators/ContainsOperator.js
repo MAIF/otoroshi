@@ -9,15 +9,8 @@ export const ContainsOperator = {
     ...FromMemory(),
     value: ValueToCheck(),
     container: {
-      type: 'code',
+      type: 'json',
       label: 'Container',
-      props: {
-        ace_config: {
-          maxLines: 1,
-          fontSize: 14,
-        },
-        editorOnly: true,
-      },
       visible: (props) => !props?.fromMemory,
     },
   },

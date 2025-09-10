@@ -10,15 +10,8 @@ export const IsFalsyOperator = {
       },
     },
     value: {
-      type: 'code',
+      type: 'json',
       label: 'Value to check',
-      props: {
-        ace_config: {
-          maxLines: 1,
-          fontSize: 14,
-        },
-        editorOnly: true,
-      },
       visible: (props) => !props?.fromMemory,
     },
     name: {

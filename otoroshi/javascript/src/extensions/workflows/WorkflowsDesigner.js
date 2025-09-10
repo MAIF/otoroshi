@@ -1132,7 +1132,7 @@ export function WorkflowsDesigner(props) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        input,
+        input: JSON.stringify(input),
         workflow: graphToJson()[0],
         workflow_id: props.workflow.id,
         functions: props.workflow.functions
