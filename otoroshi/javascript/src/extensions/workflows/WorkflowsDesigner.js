@@ -244,7 +244,8 @@ export function WorkflowsDesigner(props) {
     } else if (
       workflow.kind === 'foreach' ||
       workflow.kind === 'flatmap' ||
-      workflow.kind === 'map'
+      workflow.kind === 'map' ||
+      workflow.kind === 'async'
     ) {
       if (workflow.node) {
         const subGraph = buildGraph([workflow.node], addInformationsToNode);
@@ -691,19 +692,20 @@ export function WorkflowsDesigner(props) {
         finally: finallyNode
       };
 
-    } else if (kind === 'foreach') {
-      const foreachFlow = node.data.content;
-      const foreachLoop = connections.find((conn) => conn.sourceHandle.startsWith('ForEachLoop'));
+    } else if (kind === 'foreach' || kind === 'async') {
+      const handleName = kind === 'foreach' ? 'ForEachLoop' : 'Async Task'
+      const flow = node.data.content;
+      const item = connections.find((conn) => conn.sourceHandle.startsWith(handleName));
 
       subflow = {
-        ...foreachFlow,
+        ...flow,
         kind,
       };
 
-      if (foreachLoop) {
+      if (item) {
         subflow = {
           ...subflow,
-          node: getNode(foreachLoop, alreadySeen)
+          node: getNode(item, alreadySeen)
         }
       }
     } else if (kind === 'map' || kind === 'flatmap') {

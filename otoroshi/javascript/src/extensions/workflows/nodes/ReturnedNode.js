@@ -1,5 +1,5 @@
 import React from 'react';
-import { NgCodeRenderer } from '../../../components/nginputs';
+import { NgCodeRenderer, NgJsonRenderer } from '../../../components/nginputs';
 import { Row } from '../../../components/Row';
 
 export const ReturnedNode = {
@@ -21,26 +21,11 @@ export const ReturnedNode = {
 
         return (
           <Row title="Returned operator (optional)">
-            <NgCodeRenderer
-              ngOptions={{ spread: true }}
-              rawSchema={{
-                props: {
-                  showGutter: false,
-                  ace_config: {
-                    mode: 'json',
-                    onLoad: (editor) => editor.renderer.setPadding(10),
-                    fontSize: 14,
-                  },
-                  editorOnly: true,
-                  height: '10rem',
-                },
-              }}
+            <NgJsonRenderer
+              label="Value"
+              height="100%"
               value={value}
-              onChange={(e) => {
-                try {
-                  props.onChange(JSON.parse(e));
-                } catch (_) {}
-              }}
+              onChange={props.onChange}
             />
           </Row>
         );
