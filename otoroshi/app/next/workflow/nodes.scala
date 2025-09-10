@@ -42,7 +42,7 @@ case class AsyncNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike]                    = Seq(node)
   override def documentationName: String                  = "async"
   override def documentationDisplayName: String           = "Async"
-  override def documentationIcon: String                  = "fas fa-code-merge"
+  override def documentationIcon: String                  = "fas fa-code-branch"
   override def documentationDescription: String           = "This node runs a node asynchronously and does not wait for the end."
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
@@ -93,7 +93,7 @@ case class TryNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike]                    = Seq(node, catchNode) ++ finallyNode.toSeq
   override def documentationName: String                  = "try"
   override def documentationDisplayName: String           = "Try/catch"
-  override def documentationIcon: String                  = "fas fa-hand-sparkles"
+  override def documentationIcon: String                  = "fas fa-hand-paper"
   override def documentationDescription: String           = "This node catch errors and can return something else"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
