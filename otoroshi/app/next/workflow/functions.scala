@@ -971,6 +971,13 @@ class SystemCallFunction extends WorkflowFunction {
   override def documentationDescription: String           = "This function calls a system command"
   override def documentationFormSchema: Option[JsObject]  = Json
     .obj(
+      "async" -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "async",
+        "props" -> Json.obj(
+          "description" -> "Do not block until the end of the process"
+        )
+      ),
       "command" -> Json.obj(
         "type"  -> "array",
         "label" -> "Command",
@@ -985,7 +992,8 @@ class SystemCallFunction extends WorkflowFunction {
       "type"       -> "object",
       "required"   -> Seq("command"),
       "properties" -> Json.obj(
-        "command" -> Json.obj("type" -> "array", "description" -> "The command to execute")
+        "command" -> Json.obj("type" -> "array", "description" -> "The command to execute"),
+        "async" -> Json.obj("type" -> "bool", "description" -> "Run the command in async mode"),
       )
     )
   )
@@ -1004,6 +1012,7 @@ class SystemCallFunction extends WorkflowFunction {
       var stdout        = ""
       var stderr        = ""
       val command       = args.select("command").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val async         = args.select("async").asOpt[Boolean].getOrElse(false)
       val processLogger = ProcessLogger(
         out => {
           stdout = stdout + out
@@ -1014,8 +1023,13 @@ class SystemCallFunction extends WorkflowFunction {
           println(s"[stderr] $err")
         }
       )
-      val code          = command.!(processLogger)
-      Json.obj("stdout" -> stdout, "stderr" -> stderr, "code" -> code).rightf
+      if (async) {
+        command.run(processLogger)
+        Json.obj("running" -> true).rightf
+      } else {
+        val code = command.!(processLogger)
+        Json.obj("stdout" -> stdout, "stderr" -> stderr, "code" -> code).rightf
+      }
     } catch {
       case t: Throwable => Left(WorkflowError(t.getMessage, None, None)).vfuture
     }
