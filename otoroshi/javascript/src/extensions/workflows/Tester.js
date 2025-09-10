@@ -12,7 +12,16 @@ export function Tester({ isOpen, report, handleClose, run }) {
 
     const [state, setState] = useState({
         input: nodesCatalogSignal.value.rawWorkflow.test_payload
-    })
+    });
+
+    const [running, setRunning] = useState(false);
+
+    const runTest = () => {
+        setRunning(true);
+        run(state.input).then(() => {
+            setRunning(false);
+        });
+    }
 
     const schema = {
         input: {
@@ -25,8 +34,9 @@ export function Tester({ isOpen, report, handleClose, run }) {
         },
         run: {
             renderer: () => {
-                return <Button type="primaryColor" className="btn-xl ms-auto d-flex items-center m-2" onClick={() => run(state.input)}>
-                    <i className="fas fa-flask me-1" />Run Test
+                return <Button type="primaryColor" className="btn-xl ms-auto d-flex items-center m-2" disabled={running} onClick={runTest}>
+                    {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
+                    {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
                 </Button>
             }
         },

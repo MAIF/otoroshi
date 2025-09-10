@@ -1064,7 +1064,7 @@ export function WorkflowsDesigner(props) {
   }
 
   function runTester(input) {
-    fetch('/extensions/workflows/_test', {
+    return fetch('/extensions/workflows/_test', {
       method: 'POST',
       credentials: 'include',
       headers: {
