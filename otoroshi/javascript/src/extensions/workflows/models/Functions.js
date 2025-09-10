@@ -37,6 +37,7 @@ import { signal } from 'signals-react-safe';
 import { EndNode } from '../nodes/EndNode';
 import { TryCatchNode } from '../nodes/TryCatchNode';
 import { StopAndErrorNode } from '../nodes/StopAndErrorNode';
+import { AsyncNode } from '../nodes/AsyncNode';
 
 export const nodesCatalogSignal = signal({
   nodes: [],
@@ -81,6 +82,7 @@ const OVERLOADED_NODES = {
   $str_split: StrSplitOperator,
   'core.workflow_call': WorkflowFunction,
   end: EndNode,
+  async: AsyncNode,
   error: StopAndErrorNode
 };
 

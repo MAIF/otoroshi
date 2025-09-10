@@ -63,7 +63,7 @@ export default function Handles(props) {
               handle={handle}
               key={handle.id}
               selected={selected}
-              deleteHandle={() => props.data.functions.deleteHandle(props.id, handle.id)}
+              deleteHandle={props.data.sourcesIsArray ? () => props.data.functions.deleteHandle(props.id, handle.id) : undefined}
             />
           );
         })}

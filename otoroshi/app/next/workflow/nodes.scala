@@ -57,7 +57,7 @@ case class AsyncNode(json: JsObject) extends Node {
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
       "kind"        -> "try",
-      "description" -> "Jump to the 'incr' node if count value is not 4",
+      "description" -> "This node runs a node asynchronously and does not wait for the end.",
       "node"   -> Json.obj(
         "kind" -> "error",
         "message"     -> "an error occurred",
@@ -110,7 +110,7 @@ case class TryNode(json: JsObject) extends Node {
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
       "kind"        -> "try",
-      "description" -> "Jump to the 'incr' node if count value is not 4",
+      "description" -> "This node catch errors and can return something else",
       "node"   -> Json.obj(
         "kind" -> "error",
         "message"     -> "an error occurred",
@@ -1080,7 +1080,8 @@ case class ForEachNode(json: JsObject) extends Node {
         "type"  -> "code",
         "label" -> "Values to iterate",
         "props" -> Json.obj(
-          "editorOnly" -> true
+          "editorOnly" -> true,
+          "mode" -> "json"
         )
       )
     )

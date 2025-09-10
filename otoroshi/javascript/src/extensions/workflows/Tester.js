@@ -11,7 +11,7 @@ export function Tester({ isOpen, report, handleClose, run }) {
     const sidebar = useContext(SidebarContext)
 
     const [state, setState] = useState({
-        input: nodesCatalogSignal.value.rawWorkflow.test_payload
+        input: JSON.stringify(nodesCatalogSignal.value.rawWorkflow.test_payload, null, 2)
     });
 
     const [running, setRunning] = useState(false);
@@ -86,12 +86,10 @@ export function Tester({ isOpen, report, handleClose, run }) {
                     nodesCatalogSignal.value.updateWorkflow({
                         test_payload: JSON.parse(newState.input)
                     })
+                    setState(newState)
                 } catch (err) {
-                    nodesCatalogSignal.value.updateWorkflow({
-                        test_payload: newState.input
-                    })
+
                 }
-                setState(newState)
             }}
         />
         <Button

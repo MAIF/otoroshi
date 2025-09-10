@@ -573,6 +573,19 @@ export function WorkflowsDesigner(props) {
     return [start, []];
   };
 
+  function getNode(item, alreadySeen) {
+    const [node, seen] = removeReturnedFromWorkflow(
+      nodeToJson(
+        nodes.find((n) => n.id === item.target),
+        emptyWorkflow,
+        false,
+        alreadySeen
+      )
+    );
+    alreadySeen = alreadySeen.concat([seen]);
+    return node
+  }
+
   const nodeToJson = (node, currentWorkflow, disableRecursion, alreadySeen, isStart) => {
     const connections = edges.filter((edge) => edge.source === node.id);
 
@@ -658,29 +671,16 @@ export function WorkflowsDesigner(props) {
 
       let tryNode, catchNode, finallyNode;
 
-      function getNode(item) {
-        const [node, seen] = removeReturnedFromWorkflow(
-          nodeToJson(
-            nodes.find((n) => n.id === item.target),
-            emptyWorkflow,
-            false,
-            alreadySeen
-          )
-        );
-        alreadySeen = alreadySeen.concat([seen]);
-        return node
-      }
-
       if (tryItem) {
-        tryNode = getNode(tryItem)
+        tryNode = getNode(tryItem, alreadySeen)
       }
 
       if (catchItem) {
-        catchNode = getNode(catchItem)
+        catchNode = getNode(catchItem, alreadySeen)
       }
 
       if (finallyItem) {
-        finallyNode = getNode(finallyItem)
+        finallyNode = getNode(finallyItem, alreadySeen)
       }
 
       subflow = {
@@ -695,27 +695,16 @@ export function WorkflowsDesigner(props) {
       const foreachFlow = node.data.content;
       const foreachLoop = connections.find((conn) => conn.sourceHandle.startsWith('ForEachLoop'));
 
-      if (foreachLoop) {
-        const [node, seen] = removeReturnedFromWorkflow(
-          nodeToJson(
-            nodes.find((n) => n.id === foreachLoop.target),
-            emptyWorkflow,
-            false,
-            alreadySeen
-          )
-        );
-        alreadySeen = alreadySeen.concat([seen]);
+      subflow = {
+        ...foreachFlow,
+        kind,
+      };
 
+      if (foreachLoop) {
         subflow = {
-          ...foreachFlow,
-          node,
-          kind,
-        };
-      } else {
-        subflow = {
-          ...foreachFlow,
-          kind,
-        };
+          ...subflow,
+          node: getNode(foreachLoop, alreadySeen)
+        }
       }
     } else if (kind === 'map' || kind === 'flatmap') {
       const flow = node.data.content;
@@ -881,6 +870,7 @@ export function WorkflowsDesigner(props) {
     )
 
     const orphansEdges = orphans
+      .filter(orphan => edges.find((edge) => edge.source === orphan.id))
       .flatMap((orphan) =>
         edges.filter((edge) => edge.target === orphan.id || edge.source === orphan.id)
       )
@@ -894,13 +884,15 @@ export function WorkflowsDesigner(props) {
     return props.handleSave(
       config,
       {
-        nodes: orphans.map((r) => ({
-          id: r.id,
-          ...r.data.content,
-          ...r.data.information,
-          position: r.position,
-          kind: r.data.kind
-        })),
+        nodes: orphans
+          .filter(orphan => edges.find((edge) => edge.source === orphan.id))
+          .map((r) => ({
+            id: r.id,
+            ...r.data.content,
+            ...r.data.information,
+            position: r.position,
+            kind: r.data.kind
+          })),
         edges: orphansEdges,
       }
     )
@@ -1140,7 +1132,7 @@ export function WorkflowsDesigner(props) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        input: JSON.stringify(input, null, 4),
+        input,
         workflow: graphToJson()[0],
         workflow_id: props.workflow.id,
         functions: props.workflow.functions
