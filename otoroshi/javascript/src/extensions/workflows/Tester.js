@@ -4,15 +4,14 @@ import ReportInformation from './ReportInformation'
 import { NgForm } from '../../components/nginputs'
 import { Button } from '../../components/Button'
 import { SidebarContext } from '../../apps/BackOfficeApp'
+import { nodesCatalogSignal } from './models/Functions'
 
 export function Tester({ isOpen, report, handleClose, run }) {
 
     const sidebar = useContext(SidebarContext)
 
     const [state, setState] = useState({
-        input: {
-            workflow_input: {},
-        }
+        input: nodesCatalogSignal.value.rawWorkflow.test_payload
     })
 
     const schema = {
@@ -63,7 +62,18 @@ export function Tester({ isOpen, report, handleClose, run }) {
             schema={schema}
             flow={flow}
             value={state}
-            onChange={setState}
+            onChange={newState => {
+                try {
+                    nodesCatalogSignal.value.updateWorkflow({
+                        test_payload: JSON.parse(newState.input)
+                    })
+                } catch (err) {
+                    nodesCatalogSignal.value.updateWorkflow({
+                        test_payload: newState.input
+                    })
+                }
+                setState(newState)
+            }}
         />
         <Button
             type="primaryColor"

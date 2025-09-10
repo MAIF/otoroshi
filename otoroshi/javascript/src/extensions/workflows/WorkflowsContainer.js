@@ -101,13 +101,21 @@ function Container(props) {
       categories: NODES_BY_CATEGORIES(nodes, documentation.data.categories),
       workflows: workflows.data,
       workflow: workflow.data,
+      rawWorkflow,
+      updateWorkflow: data => {
+        const newWorkflow = {
+          ...nodesCatalogSignal.value.rawWorkflow,
+          ...data,
+        }
+        nodesCatalogSignal.value.rawWorkflow = newWorkflow
+      }
     }
   }
 
   const handleSave = (config, orphans) => {
     if (params.functionName)
       return client.update({
-        ...rawWorkflow,
+        ...nodesCatalogSignal.value.rawWorkflow ,
         functions: Object.fromEntries(
           Object
             .entries(rawWorkflow.functions)
@@ -129,7 +137,7 @@ function Container(props) {
       })
     else
       return client.update({
-        ...rawWorkflow,
+        ...nodesCatalogSignal.value.rawWorkflow ,
         config,
         orphans
       })
@@ -141,7 +149,8 @@ function Container(props) {
         workflow.isLoading ||
         documentation.isLoading ||
         workflows.isLoading ||
-        nodesCatalogSignal.value.categories.length === 0
+        nodesCatalogSignal.value.categories.length === 0 || 
+        !nodesCatalogSignal.value.rawWorkflow
       }
     >
       <ReactFlowProvider>
