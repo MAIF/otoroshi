@@ -357,22 +357,40 @@ trait Node extends NodeLike {
             }
             case Right(res) => {
               wfr.log(s"ending '${id}'", this)
-              if (id != "start")
-                wfr.memory.set("input", res)
-
               result.foreach(name => wfr.memory.set(name, res))
-              returned
-                .map {
-                  case obj@JsObject(_) =>
-                    val returnedObject = obj - "position" - "description"
-                    WorkflowOperator.processOperators(returnedObject, wfr, env)
-                  case value => WorkflowOperator.processOperators(value, wfr, env)
+              returned match {
+                case Some(res) => {
+                  val finalRes = res match {
+                    case obj@JsObject(_) =>
+                      val returnedObject = obj - "position" - "description"
+                      WorkflowOperator.processOperators(returnedObject, wfr, env)
+                    case value => WorkflowOperator.processOperators(value, wfr, env)
+                  }
+                  wfr.memory.set("input", finalRes)
+                  Right(finalRes)
                 }
-                .map { v =>
-                  wfr.memory.set("input", v)
-                  Right(v)
+                case None => {
+                  if (id != "start")
+                    wfr.memory.set("input", res)
+                  Right(res) // TODO: el like
                 }
-                .getOrElse(Right(res)) // TODO: el like
+              }
+              // returned
+              //   .map {
+              //     case obj@JsObject(_) =>
+              //       val returnedObject = obj - "position" - "description"
+              //       WorkflowOperator.processOperators(returnedObject, wfr, env)
+              //     case value => WorkflowOperator.processOperators(value, wfr, env)
+              //   }
+              //   .map { v =>
+              //     wfr.memory.set("input", v)
+              //     Right(v)
+              //   }
+              //   .getOrElse {
+              //     if (id != "start")
+              //       wfr.memory.set("input", res)
+              //     Right(res)
+              //   }
             }
           }
           .recover {
@@ -438,11 +456,21 @@ object Node {
   def registerNode(name: String, f: (JsObject) => Node): Unit = {
     nodes.put(name, f)
   }
-  def from(json: JsObject): Node = {
-    val kind = json.select("kind").asOpt[String].getOrElse("--").toLowerCase()
+  def fromObject(obj: JsObject): Node = {
+    val kind = obj.select("kind").asOpt[String].getOrElse("--").toLowerCase()
     nodes.get(kind) match {
-      case None       => NoopNode(json)
-      case Some(node) => node(json)
+      case None       => NoopNode(obj)
+      case Some(node) => node(obj)
+    }
+  }
+  def fromArray(arr: JsArray): Node = {
+    WorkflowNode(Json.obj("steps" -> arr))
+  }
+  def from(json: JsValue): Node = {
+    json match {
+      case obj @ JsObject(_) => fromObject(obj)
+      case arr @ JsArray(_) => fromArray(arr)
+      case _ => NoopNode(Json.obj())
     }
   }
   def flattenTree(node: NodeLike, path: String = "0"): List[(String, NodeLike)] = {
