@@ -266,6 +266,34 @@ export function WorkflowsDesigner(props) {
           });
         }
       }
+    } else if (workflow.kind === 'try') {
+
+      function loadSubNode(field, handle) {
+        if (workflow[field]) {
+          const subGraph = buildGraph([workflow[field]], addInformationsToNode, targetId);
+
+          if (subGraph.nodes.length > 0) {
+            nodes = nodes.concat(subGraph.nodes);
+            edges = edges.concat(subGraph.edges);
+
+            const handleName = handle ? handle : field
+
+            edges.push({
+              id: `${me}-${handleName}`,
+              source: me,
+              sourceHandle: `${handleName}-${me}`,
+              target: subGraph.nodes[0].id,
+              targetHandle: `input-${subGraph.nodes[0].id}`,
+              type: 'customEdge',
+              animated: true,
+            });
+          }
+        }
+      }
+
+      loadSubNode('node', 'try')
+      loadSubNode('catch')
+      loadSubNode('finally')
     } else if (workflow.kind === 'switch' || workflow.kind === 'parallel') {
       let paths = [];
 
@@ -622,6 +650,47 @@ export function WorkflowsDesigner(props) {
         else: elseNode,
         kind,
       };
+    } else if (kind === 'try') {
+      const tryFlow = node.data.content;
+      const tryItem = connections.find((conn) => conn.sourceHandle.startsWith('try'));
+      const catchItem = connections.find((conn) => conn.sourceHandle.startsWith('catch'));
+      const finallyItem = connections.find((conn) => conn.sourceHandle.startsWith('finally'));
+
+      let tryNode, catchNode, finallyNode;
+
+      function getNode(item) {
+        const [node, seen] = removeReturnedFromWorkflow(
+          nodeToJson(
+            nodes.find((n) => n.id === item.target),
+            emptyWorkflow,
+            false,
+            alreadySeen
+          )
+        );
+        alreadySeen = alreadySeen.concat([seen]);
+        return node
+      }
+
+      if (tryItem) {
+        tryNode = getNode(tryItem)
+      }
+
+      if (catchItem) {
+        catchNode = getNode(catchItem)
+      }
+
+      if (finallyItem) {
+        finallyNode = getNode(finallyItem)
+      }
+
+      subflow = {
+        ...tryFlow,
+        kind,
+        node: tryNode,
+        catch: catchNode,
+        finally: finallyNode
+      };
+
     } else if (kind === 'foreach') {
       const foreachFlow = node.data.content;
       const foreachLoop = connections.find((conn) => conn.sourceHandle.startsWith('ForEachLoop'));
@@ -648,7 +717,7 @@ export function WorkflowsDesigner(props) {
           kind,
         };
       }
-    } else if (kind === 'map' || kind === 'flatmap' || kind === 'foreach') {
+    } else if (kind === 'map' || kind === 'flatmap') {
       const flow = node.data.content;
       const nodeLoop = connections.find((conn) => conn.sourceHandle.startsWith('Item'));
 
