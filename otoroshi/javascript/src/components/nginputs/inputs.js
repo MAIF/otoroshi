@@ -143,9 +143,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
-                  } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -358,6 +357,8 @@ export class NgStringRenderer extends Component {
     // avoid to have both value and defaultValue props
     const { defaultValue, ...inputProps } = props;
 
+    const { className, ...rest } = inputProps
+
     return (
       <LabelAndInput {...this.props}>
         {readOnly ? (
@@ -366,7 +367,7 @@ export class NgStringRenderer extends Component {
           <>
             <input
               type="text"
-              className="form-control"
+              className={`form-control ${className || ""}`}
               placeholder={props.placeholder}
               title={props.help}
               autoFocus={props.autoFocus}
@@ -378,7 +379,7 @@ export class NgStringRenderer extends Component {
 
                 if (!this.state.touched) this.setState({ touched: true });
               }}
-              {...inputProps}
+              {...rest}
             />
             {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}
           </>
@@ -606,13 +607,13 @@ export class NgBoxBooleanRenderer extends Component {
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-          <div className={`row mb-${margin} ${className || ''}`}>
-            <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-              {label}
-            </label>
-            <div className="col-sm-10">{children}</div>
-          </div>
-        );
+        <div className={`row mb-${margin} ${className || ''}`}>
+          <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+            {label}
+          </label>
+          <div className="col-sm-10">{children}</div>
+        </div>
+      );
 
     return (
       <Container>
@@ -686,8 +687,8 @@ export class NgArrayRenderer extends Component {
       form: () => ({
         ...this.generateDefaultValue(current.schema),
       }),
-      object: () => {},
-      json: () => {},
+      object: () => { },
+      json: () => { },
     };
 
     if (values[idx]) return values[idx]();
@@ -856,6 +857,8 @@ export class NgObjectRenderer extends Component {
     const ItemRenderer =
       schema.itemRenderer || (this.props.rawSchema ? this.props.rawSchema.itemRenderer : undefined);
 
+    const ngOptions = props.ngOptions || props.rawSchema?.props?.ngOptions || {};
+
     if (readOnly && Object.entries(this.props.value || {}).length === 0) return null;
 
     return (
@@ -875,6 +878,7 @@ export class NgObjectRenderer extends Component {
           <ObjectInput
             ngOptions={{
               spread: true,
+              ...ngOptions
             }}
             bcryptable={props.bcryptable}
             label={null}
@@ -890,22 +894,25 @@ export class NgObjectRenderer extends Component {
             }}
             itemRenderer={
               ItemRenderer
-                ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                ? (key, value, idx, onChangeKey, onChangeValue) => {
+                  return <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={`field${idx}`}
+                    entry={[key, value]}
+                    idx={idx}
+                    onChangeKey={key => onChangeKey({ target: { value: key } })}
+                    onChangeValue={value => onChangeValue({ target: { value } })}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                }
                 : null
             }
           />

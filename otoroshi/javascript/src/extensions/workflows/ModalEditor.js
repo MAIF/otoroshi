@@ -1,10 +1,11 @@
-import React, { Suspense, useState } from 'react';
-import { NgForm } from '../../components/nginputs';
+import React, { Suspense, useCallback, useState } from 'react';
+import { NgForm, NgStringRenderer } from '../../components/nginputs';
 import { PillButton } from '../../components/PillButton';
 import CodeInput from '../../components/inputs/CodeInput';
 import { INFORMATION_FIELDS, splitInformationAndContent } from './WorkflowsDesigner';
 import { getNodeFromKind } from './models/Functions';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
+import { TextInput } from '../../components/inputs';
 
 function setEnabled(state) {
   if (state?.enabled === undefined)
@@ -75,9 +76,31 @@ export function ModalEditor({ node }) {
         schema: functionData?.form_schema || {},
       } : {
         type: 'object',
-        label: 'Arguments'
+        label: 'Arguments',
+        itemRenderer: useCallback(({ entry, onChangeValue, onChangeKey, idx }) => {
+          const [key, value] = entry
+          return <div className='d-flex flex-column' style={{ flex: 1 }} key={idx}>
+            <TextInput
+              flex={true}
+              value={key}
+              onChange={onChangeKey} />
+            <CodeInput
+              value={value}
+              editorOnly
+              rawSchema={{
+                props: {
+                  height: '100%',
+                  ace_config: {
+                    fontSize: 14,
+                  },
+                },
+              }}
+              onChange={onChangeValue} />
+          </div>
+        }, [])
       },
-    };
+    }
+
     data.schema = functionData?.form_schema;
   } else {
     schema = {
