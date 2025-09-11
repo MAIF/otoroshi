@@ -1208,7 +1208,7 @@ export function WorkflowsDesigner(props) {
                     if (event_id) {
                       // use setTimeout to see the path ???
                       setHighlightedNodes(n => {
-                        // delete n[event_id];
+                        // delete n[event_id]; // TODO: delete or not for better ux ????
                         return n;
                       });
                     }

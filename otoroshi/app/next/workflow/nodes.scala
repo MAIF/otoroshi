@@ -677,7 +677,7 @@ case class CallNode(json: JsObject) extends Node {
           case None           => WorkflowError(s"self function '${functionName}' not supported in task '${id}'", None, None).leftf
           case Some(function) =>
             wfr.memory.set("function_args", WorkflowOperator.processOperators(args, wfr, env))
-            val r = Node.from(function).run(wfr, prefix, from).andThen { case _ =>
+            val r = Node.from(function).internalRun(wfr, prefix, from).andThen { case _ =>
               wfr.memory.remove("function_args")
             }
             if (async) {
