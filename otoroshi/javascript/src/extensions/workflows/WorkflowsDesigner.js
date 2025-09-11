@@ -58,6 +58,7 @@ export function WorkflowsDesigner(props) {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const [workflow, setWorkflow] = useState(props.workflow);
+  const [highlightedNodes, setHighlightedNodes] = useState({});
 
   const catalog = useSignalValue(nodesCatalogSignal);
 
@@ -1147,6 +1148,20 @@ export function WorkflowsDesigner(props) {
       });
   }
 
+  useEffect(() => {
+    if (nodes.length > 0) {
+      setNodes(nodes.map(node => {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            highlighted_live: !!highlightedNodes[node.id],
+          }
+        }
+      }));
+    }
+  }, [highlightedNodes]);
+
   function runLiveTest(input) {
     return new Promise(resolve => {
       fetch('/extensions/workflows/_test?live=true', {
@@ -1182,14 +1197,25 @@ export function WorkflowsDesigner(props) {
               try {
                 const event = JSON.parse(json);
                 if (event.kind === 'progress') {
-                  console.log('Progress:', event);
+                  // console.log('Progress:', event);
+                  const event_id = event?.data?.node?.id;
+                  console.log('event_id', event_id, event.data.node.kind);
                   if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
-                    // TODO: change color of node event.data.node.id to yellow
+                    if (event_id) {
+                      setHighlightedNodes(n => ({...n, [event_id]: true}));
+                    }
                   } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
-                    // TODO: change color of node event.data.node.id back to grey
+                    if (event_id) {
+                      // use setTimeout to see the path ???
+                      setHighlightedNodes(n => {
+                        // delete n[event_id];
+                        return n;
+                      });
+                    }
                   }
                 } else if (event.kind === 'result') {
-                  console.log('Result:', event);
+                  // console.log('Result:', event);
+                  setHighlightedNodes({});
                   resolve(event.data);
                   setReport(event.data);
                   setReportStatus(true);
@@ -1277,6 +1303,7 @@ export function WorkflowsDesigner(props) {
         onGroupNodeClick={handleGroupNodeClick}
         nodes={nodes}
         edges={edges}
+        highlightedNodes={highlightedNodes}
       />
     </div>
   );

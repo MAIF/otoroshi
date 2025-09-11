@@ -33,6 +33,7 @@ export function Node(props) {
 
       <button
         className="d-flex-center m-0 node"
+        style={data.highlighted_live ? { border: '6px solid lightgreen' } : null}
         onDoubleClick={(e) => {
           e.stopPropagation();
           data.functions.onDoubleClick(props);
