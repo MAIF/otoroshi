@@ -3,11 +3,13 @@ package otoroshi.next.workflow
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.cloud.apim.otoroshi.extensions.aigateway.ChatResponseChunk
 import io.azam.ulidj.ULID
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocation, EntityLocationSupport}
 import otoroshi.next.extensions._
+import otoroshi.next.models.NgBackend
 import otoroshi.next.plugins.{WasmJob, WasmJobsConfig}
 import otoroshi.script.{Job, JobInstantiation, JobKind}
 import otoroshi.security.IdGenerator
@@ -17,7 +19,9 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.WasmConfig
 import play.api.libs.json._
+import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{RequestHeader, Result, Results}
+import reactor.core.publisher.{Flux, Sinks}
 
 import java.io.File
 import java.nio.file.Files
@@ -198,6 +202,10 @@ class WorkflowConfigAdminExtensionState(env: Env) {
   private[workflow] def updateWorkflows(values: Seq[Workflow]): Unit = {
     configs.addAll(values.map(v => (v.id, v))).remAll(configs.keySet.toSeq.diff(values.map(_.id)))
   }
+}
+
+object WorkflowAdminExtension {
+  val debugSourceKey = TypedKey[Sinks.Many[JsObject]]("otoroshi.extensions.workflows.DebugSourceKey")
 }
 
 class WorkflowAdminExtension(val env: Env) extends AdminExtension {
@@ -435,9 +443,23 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             val functions   = payload.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
             val workflow_id = payload.select("workflow_id").asString
             val workflow    = payload.select("workflow").asObject
+            val live        = req.getQueryString("live").contains("true")
             val node        = Node.from(workflow)
-            engine.run(workflow_id, node, input, TypedMap.empty, functions).map { res =>
-              Results.Ok(res.json)
+            if (live) {
+              val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
+              val hotFlux: Flux[JsObject] = hotSource.asFlux()
+              val attrs = TypedMap.empty
+              attrs.put(WorkflowAdminExtension.debugSourceKey -> hotSource)
+              engine.run(workflow_id, node, input, attrs, functions).map { res =>
+                hotSource.tryEmitNext(Json.obj("kind" -> "result", "data" -> res.json))
+                hotSource.tryEmitComplete()
+              }
+              val source = Source.fromPublisher(hotFlux)
+              Results.Ok.chunked(source.map(obj => s"data: ${obj.stringify}\n\n")).as("text/event-stream").future
+            } else {
+              engine.run(workflow_id, node, input, TypedMap.empty, functions).map { res =>
+                Results.Ok(res.json)
+              }
             }
           }
         }

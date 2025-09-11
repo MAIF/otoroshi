@@ -6,7 +6,7 @@ import { Button } from '../../components/Button'
 import { SidebarContext } from '../../apps/BackOfficeApp'
 import { nodesCatalogSignal } from './models/Functions'
 
-export function Tester({ isOpen, report, handleClose, run }) {
+export function Tester({ isOpen, report, handleClose, run, runLive }) {
 
     const sidebar = useContext(SidebarContext)
 
@@ -32,6 +32,22 @@ export function Tester({ isOpen, report, handleClose, run }) {
         }
     }
 
+    const runLiveTest = () => {
+        if (!running) {
+            setRunning(true)
+            const minDelay = new Promise(resolve => setTimeout(resolve, 250));
+            const operation = runLive(state.input);
+
+            Promise.all([minDelay, operation])
+              .then(() => {
+                  setRunning(false);
+              })
+              .catch(() => {
+                  setRunning(false);
+              });
+        }
+    }
+
     const schema = {
         input: {
             type: 'json',
@@ -43,10 +59,15 @@ export function Tester({ isOpen, report, handleClose, run }) {
         },
         run: {
             renderer: () => {
-                return <Button type="primaryColor" className="btn-xl ms-auto d-flex items-center m-2" disabled={running} onClick={runTest}>
-                    {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
-                    {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
-                </Button>
+                return (
+                  <div>
+                    <Button type="primaryColor" className="btn-xl ms-auto d-flex items-center m-2" disabled={running} onClick={runTest}>
+                        {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
+                        {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
+                    </Button>
+                    <Button type="primaryColor" className="btn-xl ms-auto d-flex items-center m-2" disabled={running} onClick={runLiveTest}><i className="fas fa-play me-1" /> Run Live !</Button>
+                  </div>
+                );
             }
         },
         report: {
@@ -75,6 +96,7 @@ export function Tester({ isOpen, report, handleClose, run }) {
     if (!isOpen)
         return null
 
+    // TODO: make the tester smaller ?
     return <div className="report-explorer p-3">
         <h3>Tester</h3>
         <NgForm

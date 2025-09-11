@@ -36,6 +36,13 @@ class WorkflowEngine(env: Env) {
       workflow_ref = wfRef,
       workflow = node.json
     )
+    if (attrs.contains(WorkflowAdminExtension.debugSourceKey)) {
+      attrs.get(WorkflowAdminExtension.debugSourceKey).foreach { source =>
+        wfRun.runlog.addCallback("debug") { item =>
+          source.tryEmitNext(Json.obj("kind" -> "progress", "data" -> item.json))
+        }
+      }
+    }
     wfRun.memory.set("workflow_input", input)
     wfRun.memory.set("input", input)
     node
@@ -196,9 +203,17 @@ object WorkflowLogItem {
 }
 
 class WorkflowLog {
+  private val callbacks                = new TrieMap[String, (WorkflowLogItem) => Unit]()
   private val queue                    = new ConcurrentLinkedQueue[WorkflowLogItem]()
   def json: JsValue                    = JsArray(queue.asScala.map(_.json).toSeq)
-  def log(item: WorkflowLogItem): Unit = queue.offer(item)
+  def log(item: WorkflowLogItem): Unit = {
+    queue.offer(item)
+    if (callbacks.nonEmpty) {
+      callbacks.values.foreach(_(item))
+    }
+  }
+  def addCallback(name: String)(f: WorkflowLogItem => Unit): Unit = callbacks.put(name, f)
+  def removeCallback(name: String): Unit = callbacks.remove(name)
 }
 
 object WorkflowLog {

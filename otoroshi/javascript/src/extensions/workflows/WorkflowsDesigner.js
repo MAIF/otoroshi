@@ -1147,6 +1147,65 @@ export function WorkflowsDesigner(props) {
       });
   }
 
+  function runLiveTest(input) {
+    return new Promise(resolve => {
+      fetch('/extensions/workflows/_test?live=true', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input: JSON.stringify(input),
+          workflow: graphToJson()[0],
+          workflow_id: props.workflow.id,
+          functions: props.workflow.functions
+        }),
+      }).then(async response => {
+        if (!response.ok || !response.body) {
+          console.error('Network response was not OK');
+          return;
+        }
+        const reader = response.body
+          .pipeThrough(new TextDecoderStream())
+          .getReader();
+        let buffer = '';
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += value;
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const json = line.slice(6).trim();
+              try {
+                const event = JSON.parse(json);
+                if (event.kind === 'progress') {
+                  console.log('Progress:', event);
+                  if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
+                    // TODO: change color of node event.data.node.id to yellow
+                  } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
+                    // TODO: change color of node event.data.node.id back to grey
+                  }
+                } else if (event.kind === 'result') {
+                  console.log('Result:', event);
+                  resolve(event.data);
+                  setReport(event.data);
+                  setReportStatus(true);
+                } else {
+                  console.warn('Unknown kind:', event.kind);
+                }
+              } catch (e) {
+                console.error('Error parsing JSON:', json, e);
+              }
+            }
+          }
+        }
+      });
+    });
+  }
+
   const closeAllModals = () => {
     setActiveNode(false);
     setReportStatus(false);
@@ -1199,6 +1258,7 @@ export function WorkflowsDesigner(props) {
 
       <Tester
         run={runTester}
+        runLive={runLiveTest}
         report={report}
         isOpen={reportIsOpen}
         handleClose={() => setReportStatus(false)}
