@@ -25,7 +25,10 @@ export const ReturnedNode = {
               label="Value"
               height="100%"
               value={value}
-              onChange={props.onChange}
+              onChange={e => {
+                console.log('changed', e)
+                props.onChange(e)
+              }}
             />
           </Row>
         );
@@ -33,8 +36,6 @@ export const ReturnedNode = {
     },
   },
   nodeRenderer: (props) => {
-    const { position, description, ...rest } = props.data?.content?.returned;
-
     return (
       <div
         style={{
@@ -47,7 +48,7 @@ export const ReturnedNode = {
           overflow: 'hidden',
         }}
       >
-        <NgCodeRenderer
+        <NgJsonRenderer
           ngOptions={{ spread: true }}
           rawSchema={{
             props: {
@@ -58,10 +59,9 @@ export const ReturnedNode = {
               },
               editorOnly: true,
               height: '100%',
-              mode: 'json',
             },
           }}
-          value={rest}
+          value={props.data?.content?.returned}
         />
       </div>
     );

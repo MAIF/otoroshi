@@ -332,7 +332,8 @@ export class NgJsonRenderer extends Component {
             try {
               this.props.onChange(JSON.parse(e));
             } catch (ex) {
-              // console.log(ex);
+              if (e === '')
+                this.props.onChange(e)
               // if (e.length === 0)
               //   this.props.onChange({});
             }

@@ -455,10 +455,9 @@ export function WorkflowsDesigner(props) {
     let returnedNode = createNode(
       'returned-node',
       {
-        returned: {
-          ...(config.returned || {}),
-        },
-        description: config?.returned?.description,
+        returned: config.returned,
+        description: config?.returnedInformation?.description,
+        position: config?.returnedInformation?.position,
         kind: 'returned',
       },
       addInformationsToNode
@@ -466,7 +465,7 @@ export function WorkflowsDesigner(props) {
 
     returnedNode = {
       ...returnedNode,
-      position: config.returned?.position || returnedNode.position,
+      position: config.returnedInformation?.position || returnedNode.position,
       data: {
         ...returnedNode.data,
         targetHandles: [{ id: `input-returned-node` }],
@@ -561,11 +560,11 @@ export function WorkflowsDesigner(props) {
             ...graph[0],
             position: startPosition,
           },
-          returned: {
-            ...graph[0].returned,
+          returned: graph[0].returned,
+          returnedInformation: {
             position: lastNode.position,
             description: lastNode.data.information.description,
-          },
+          }
         },
         graph[1],
       ];
@@ -583,7 +582,7 @@ export function WorkflowsDesigner(props) {
         alreadySeen
       )
     );
-    alreadySeen = alreadySeen.concat([seen]);
+    alreadySeen.push(...seen);
     return node
   }
 
@@ -708,6 +707,7 @@ export function WorkflowsDesigner(props) {
           node: getNode(item, alreadySeen)
         }
       }
+
     } else if (kind === 'map' || kind === 'flatmap') {
       const flow = node.data.content;
       const nodeLoop = connections.find((conn) => conn.sourceHandle.startsWith('Item'));

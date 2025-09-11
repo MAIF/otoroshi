@@ -361,9 +361,7 @@ trait Node extends NodeLike {
               returned match {
                 case Some(res) => {
                   val finalRes = res match {
-                    case obj@JsObject(_) =>
-                      val returnedObject = obj - "position" - "description"
-                      WorkflowOperator.processOperators(returnedObject, wfr, env)
+                    case obj@JsObject(_) => WorkflowOperator.processOperators(obj, wfr, env)
                     case value => WorkflowOperator.processOperators(value, wfr, env)
                   }
                   wfr.memory.set("input", finalRes)
