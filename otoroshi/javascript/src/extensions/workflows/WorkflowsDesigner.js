@@ -1209,17 +1209,28 @@ export function WorkflowsDesigner(props) {
                     if (event_id) {
                       // use setTimeout to see the path ???
                       // setHighlightedNodes(n => {
-                        // delete n[event_id]; // TODO: delete or not for better ux ????
+                      // delete n[event_id]; // TODO: delete or not for better ux ????
                       //   return n;
                       // });
                     }
                   }
                 } else if (event.kind === 'result') {
                   nodes.find(node => node.id === "returned-node").data.highlighted_live = true
+
+                  setTimeout(() => {
+
+                    setNodes(nodes.map(node => ({
+                      ...node,
+                      data: {
+                        ...node.data,
+                        highlighted_live: false
+                      }
+                    })))
+                  }, 2000)
                   // console.log('Result:', event);
                   resolve(event.data);
                   setReport(event.data);
-                  // setReportStatus(true);
+                  setReportStatus(true);
                 } else {
                   console.warn('Unknown kind:', event.kind);
                 }
