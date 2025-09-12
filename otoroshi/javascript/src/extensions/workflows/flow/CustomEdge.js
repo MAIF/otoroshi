@@ -5,8 +5,8 @@ import {
   getSimpleBezierPath,
   useReactFlow,
 } from '@xyflow/react';
-import { useSignalValue } from 'signals-react-safe';
-import { edgeHighlights } from '../WorkflowsDesigner';
+// import { useSignalValue } from 'signals-react-safe';
+// import { edgeHighlights } from '../WorkflowsDesigner';
 
 const listeners = (id) => {
   const sourceEl = document.querySelector(`[data-id="${id}"]`);
@@ -122,8 +122,8 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
 
   useEffect(() => listeners(id), [id]);
 
-  // const { highlighted_loading, highlighted_ending } = data || {}
-  const highlighted = useSignalValue(edgeHighlights)[id]
+  const { highlighted } = data || {}
+  // const highlighted = useSignalValue(edgeHighlights)[id]
 
   const length = useMemo(() => bezierPathLength(edgePath), [sourceX, sourceY, targetX, targetY])
 

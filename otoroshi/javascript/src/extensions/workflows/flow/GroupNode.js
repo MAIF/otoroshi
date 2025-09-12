@@ -2,8 +2,6 @@ import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { Panel } from '@xyflow/react';
 import NodeTrashButton from './NodeTrashButton';
 import Handles from './Handles';
-import { useSignalValue } from 'signals-react-safe';
-import { nodeHighlights } from '../WorkflowsDesigner';
 
 export const GroupNode = (props) => {
   const { position, data } = props;
@@ -20,13 +18,13 @@ export const GroupNode = (props) => {
   }, [props.data]);
 
 
-  const highlighted = useSignalValue(nodeHighlights).get(props.id)
+  // const highlighted = useSignalValue(nodeHighlights).get(props.id)
 
-  const highlightRef = useRef(highlighted)
+  const highlightRef = useRef(data.highlighted)
 
   useEffect(() => {
-    highlightRef.current = highlighted
-  }, [highlighted])
+    highlightRef.current = data.highlighted
+  }, [data.highlighted])
 
   const highlight = () => {
     if (highlightRef.current !== "END")
@@ -36,14 +34,14 @@ export const GroupNode = (props) => {
   useLayoutEffect(() => {
     const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
 
-    if (highlighted) {
-      if (highlighted === 'END') {
+    if (data.highlighted) {
+      if (data.highlighted === 'END') {
         sourceEl.classList.remove("loading-gradient")
       } else {
-        setTimeout(highlight, (highlighted + 1.25) * 1000)
+        setTimeout(highlight, (data.highlighted + 1.25) * 1000)
       }
     }
-  }, [highlighted])
+  }, [data.highlighted])
 
   return (
     <>

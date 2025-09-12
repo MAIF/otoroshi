@@ -22,9 +22,6 @@ import { Tester } from './Tester';
 
 export const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name'];
 
-export const nodeHighlights = signal(new Map())
-export const edgeHighlights = signal({})
-
 export function splitInformationAndContent(obj) {
   return Object.entries(obj).reduce(
     (acc, [key, value]) => {
@@ -1221,15 +1218,39 @@ export function WorkflowsDesigner(props) {
                         count: (count + 1.25) * 1000,
                         time: Date.now()
                       }
-                      if (!nodeHighlights.value.get(event_id))
-                        nodeHighlights.value.set(event_id, count)
+                      setNodes(nds => nds.map(node => {
+                        if (node.id === event_id)
+                          return {
+                            ...node,
+                            data: {
+                              ...node.data,
+                              highlighted: count
+                            }
+                          }
+                        return node
+                      })
+                      )
 
-                      edges
-                        .filter(edge => edge.target === event_id)
-                        .forEach(edge => {
-                          if (!edgeHighlights.value[edge.id])
-                            edgeHighlights.value[edge.id] = count
-                        })
+                      setEdges(edgs => edgs.map(edge => {
+                        if (edge.target === event_id)
+                          return {
+                            ...edge,
+                            data: {
+                              highlighted: count
+                            }
+                          }
+                        return edge
+                      })
+                      )
+                      // if (!nodeHighlights.value.get(event_id))
+                      //   nodeHighlights.value.set(event_id, count)
+
+                      // edges
+                      //   .filter(edge => edge.target === event_id)
+                      //   .forEach(edge => {
+                      //     if (!edgeHighlights.value[edge.id])
+                      //       edgeHighlights.value[edge.id] = count
+                      //   })
                     }
                   } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
                     if (event_id) {
@@ -1245,13 +1266,39 @@ export function WorkflowsDesigner(props) {
                   }
                 } else if (event.kind === 'result') {
                   // console.log('Result:', event);
-                  nodeHighlights.value.set('returned-node', count + 1)
-                  edges
-                    .filter(edge => edge.target === 'returned-node')
-                    .forEach(edge => {
-                      if (!edgeHighlights.value[edge.id])
-                        edgeHighlights.value[edge.id] = count + 1
+                  setNodes(nds =>
+                    nds.map(node => {
+                      if (node.id === 'returned-node')
+                        return {
+                          ...node,
+                          data: {
+                            ...node.data,
+                            highlighted: count + 1
+                          }
+                        }
+                      return node
                     })
+                  )
+
+                  setEdges(edgs =>
+                    edgs.map(edge => {
+                      if (edge.target === 'returned-node')
+                        return {
+                          ...edge,
+                          data: {
+                            highlighted: count + 1
+                          }
+                        }
+                      return edge
+                    })
+                  )
+                  // nodeHighlights.value.set('returned-node', count + 1)
+                  // edges
+                  //   .filter(edge => edge.target === 'returned-node')
+                  //   .forEach(edge => {
+                  //     if (!edgeHighlights.value[edge.id])
+                  //       edgeHighlights.value[edge.id] = count + 1
+                  //   })
                   resolve(event.data);
                   setReport(event.data);
                   // setReportStatus(true);
@@ -1271,9 +1318,22 @@ export function WorkflowsDesigner(props) {
   const unhighlighNode = (event_id, timeout) => {
     setTimeout(() => {
       // nodeHighlights.value.remove(event_id, "END")
-      const newMap = new Map(nodeHighlights.value);
-      newMap.set(event_id, "END");
-      nodeHighlights.value = newMap
+      // const newMap = new Map(nodeHighlights.value);
+      // newMap.set(event_id, "END");
+      // nodeHighlights.value = newMap
+      setNodes(nds =>
+        nds.map(node => {
+          if (node.id === event_id)
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                highlighted: "END"
+              }
+            }
+          return node
+        })
+      )
     }, timeout)
   }
 

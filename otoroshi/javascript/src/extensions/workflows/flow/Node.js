@@ -4,8 +4,8 @@ import Handles from './Handles';
 import NodeTrashButton from './NodeTrashButton';
 import { getNodeFromKind } from '../models/Functions';
 import { useStore } from '@xyflow/react';
-import { useSignalValue } from 'signals-react-safe';
-import { nodeHighlights } from '../WorkflowsDesigner';
+// import { useSignalValue } from 'signals-react-safe';
+// import { nodeHighlights } from '../WorkflowsDesigner';
 
 export function Node(props) {
   const { data } = props;
@@ -31,15 +31,13 @@ export function Node(props) {
 
   const ref = useRef()
 
-  const highlighted = useSignalValue(nodeHighlights).get(props.id)
+  // const highlighted = useSignalValue(nodeHighlights).get(props.id)
 
-  console.log(highlighted)
-
-  const highlightRef = useRef(highlighted)
+  const highlightRef = useRef(data.highlighted)
 
   useEffect(() => {
-    highlightRef.current = highlighted
-  }, [highlighted])
+    highlightRef.current = data.highlighted
+  }, [data.highlighted])
 
   const highlight = () => {
     if (highlightRef.current !== "END")
@@ -47,20 +45,19 @@ export function Node(props) {
   }
 
   useLayoutEffect(() => {
-    if (!highlighted || highlighted === 'END') {
+    if (!data.highlighted || data.highlighted === 'END') {
       console.log("on delete pour ", props.id)
       ref.current.classList.remove("loading-gradient")
     }
-    else if (highlighted) {
+    else if (data.highlighted) {
       console.log("on enable pour ", props.id)
       if (props.id === 'start') {
         ref.current?.classList.add('loading-gradient')
         ref.current?.classList.add('loading-gradient--start')
       } else
-        setTimeout(highlight, (highlighted + 1.25) * 1000)
+        setTimeout(highlight, (data.highlighted + 1.25) * 1000)
     }
-  }, [highlighted])
-
+  }, [data.highlighted])
 
   const zoom = useStore((state) => state.transform[2]);
   // 2 in, 0,5 out
