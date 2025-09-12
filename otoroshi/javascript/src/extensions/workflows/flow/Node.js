@@ -32,7 +32,7 @@ export function Node(props) {
 
       <button
         className={`d-flex-center m-0 node ${data.highlighted_loading ? 'loading-gradient' : ''}`}
-        style={{ outline: data.highlighted_ending ? '2px ridge #4ecdc4' : null }}
+        style={{ outline: data.highlighted_ending ? '4px ridge #47FF0F' : null }}
         onDoubleClick={(e) => {
           e.stopPropagation();
           data.functions.onDoubleClick(props);
