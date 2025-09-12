@@ -519,12 +519,12 @@
     content: '';
     position: absolute;
     z-index: 1000;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 12px;
-    padding: 3px;
+    top: -12px;
+    left: -12px;
+    right: -12px;
+    bottom: -12px;
+    border-radius: 24px;
+    padding: .5rem;
     background: linear-gradient(45deg, #f9b000, #4ecdc4, #f9b000, #4ecdc4);
     background-size: 400% 400%;
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
