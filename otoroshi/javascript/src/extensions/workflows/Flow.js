@@ -29,6 +29,7 @@ export function Flow({
         fitView
         fitViewOptions={{
           padding: 0.5,
+          minZoom: 0
         }}
         connectionLineType="simplebezier"
         nodeTypes={{

@@ -39,12 +39,12 @@ export function Tester({ isOpen, report, handleClose, run, runLive }) {
             const operation = runLive(state.input);
 
             Promise.all([minDelay, operation])
-              .then(() => {
-                  setRunning(false);
-              })
-              .catch(() => {
-                  setRunning(false);
-              });
+                .then(() => {
+                    setRunning(false);
+                })
+                .catch(() => {
+                    setRunning(false);
+                });
         }
     }
 
@@ -60,13 +60,15 @@ export function Tester({ isOpen, report, handleClose, run, runLive }) {
         run: {
             renderer: () => {
                 return (
-                  <div>
-                    <Button type="primaryColor" className="btn-xl ms-auto d-flex items-center m-2" disabled={running} onClick={runTest}>
-                        {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
-                        {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
-                    </Button>
-                    <Button type="primaryColor" className="btn-xl ms-auto d-flex items-center m-2" disabled={running} onClick={runLiveTest}><i className="fas fa-play me-1" /> Run Live !</Button>
-                  </div>
+                    <div>
+                        <Button type="primaryColor" className="btn-xl ms-auto d-flex items-center m-2" disabled={running} onClick={runTest}>
+                            {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
+                            {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
+                        </Button>
+                        <Button type="primaryColor" className="btn-xl ms-auto d-flex items-center m-2" disabled={running} onClick={runLiveTest}>
+                            <i className="fas fa-play me-1" /> Run Live !
+                        </Button>
+                    </div>
                 );
             }
         },

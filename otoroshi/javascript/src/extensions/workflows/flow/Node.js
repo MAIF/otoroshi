@@ -26,14 +26,13 @@ export function Node(props) {
     }
   }
 
-
   return (
     <>
       <Handles {...props} />
 
       <button
         className="d-flex-center m-0 node"
-        style={data.highlighted_live ? { border: '6px solid lightgreen' } : null}
+        style={{ outline: data.highlighted_live ? '2px ridge #47FF0F' : null }}
         onDoubleClick={(e) => {
           e.stopPropagation();
           data.functions.onDoubleClick(props);

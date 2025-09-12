@@ -58,7 +58,6 @@ export function WorkflowsDesigner(props) {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const [workflow, setWorkflow] = useState(props.workflow);
-  const [highlightedNodes, setHighlightedNodes] = useState({});
 
   const catalog = useSignalValue(nodesCatalogSignal);
 
@@ -1148,19 +1147,19 @@ export function WorkflowsDesigner(props) {
       });
   }
 
-  useEffect(() => {
-    if (nodes.length > 0) {
-      setNodes(nodes.map(node => {
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            highlighted_live: !!highlightedNodes[node.id],
-          }
-        }
-      }));
-    }
-  }, [highlightedNodes]);
+  // useEffect(() => {
+  //   if (nodes.length > 0) {
+  //     setNodes(nodes.map(node => {
+  //       return {
+  //         ...node,
+  //         data: {
+  //           ...node.data,
+  //           highlighted_live: !!highlightedNodes[node.id],
+  //         }
+  //       }
+  //     }));
+  //   }
+  // }, [highlightedNodes]);
 
   function runLiveTest(input) {
     return new Promise(resolve => {
@@ -1181,6 +1180,7 @@ export function WorkflowsDesigner(props) {
           console.error('Network response was not OK');
           return;
         }
+        setReportStatus(false);
         const reader = response.body
           .pipeThrough(new TextDecoderStream())
           .getReader();
@@ -1202,23 +1202,24 @@ export function WorkflowsDesigner(props) {
                   console.log('event_id', event_id, event.data.node.kind);
                   if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
                     if (event_id) {
-                      setHighlightedNodes(n => ({...n, [event_id]: true}));
+                      nodes.find(node => node.id === event_id).data.highlighted_live = true
+                      // setHighlightedNodes(n => ({...n, [event_id]: true}));
                     }
                   } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
                     if (event_id) {
                       // use setTimeout to see the path ???
-                      setHighlightedNodes(n => {
+                      // setHighlightedNodes(n => {
                         // delete n[event_id]; // TODO: delete or not for better ux ????
-                        return n;
-                      });
+                      //   return n;
+                      // });
                     }
                   }
                 } else if (event.kind === 'result') {
+                  nodes.find(node => node.id === "returned-node").data.highlighted_live = true
                   // console.log('Result:', event);
-                  setHighlightedNodes({});
                   resolve(event.data);
                   setReport(event.data);
-                  setReportStatus(true);
+                  // setReportStatus(true);
                 } else {
                   console.warn('Unknown kind:', event.kind);
                 }
@@ -1273,7 +1274,7 @@ export function WorkflowsDesigner(props) {
 
   if (nodes.length === 0) return null;
 
-  // console.log(nodes, edges);
+  console.log(nodes);
 
   return (
     <div className="workflow">
@@ -1303,7 +1304,6 @@ export function WorkflowsDesigner(props) {
         onGroupNodeClick={handleGroupNodeClick}
         nodes={nodes}
         edges={edges}
-        highlightedNodes={highlightedNodes}
       />
     </div>
   );

@@ -3,7 +3,6 @@ package otoroshi.next.workflow
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.cloud.apim.otoroshi.extensions.aigateway.ChatResponseChunk
 import io.azam.ulidj.ULID
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env

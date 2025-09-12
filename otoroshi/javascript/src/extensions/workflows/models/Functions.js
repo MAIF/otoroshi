@@ -38,6 +38,7 @@ import { EndNode } from '../nodes/EndNode';
 import { TryCatchNode } from '../nodes/TryCatchNode';
 import { StopAndErrorNode } from '../nodes/StopAndErrorNode';
 import { AsyncNode } from '../nodes/AsyncNode';
+import { WhileNode } from '../nodes/WhileNode';
 
 export const nodesCatalogSignal = signal({
   nodes: [],
@@ -82,6 +83,7 @@ const OVERLOADED_NODES = {
   $str_split: StrSplitOperator,
   'core.workflow_call': WorkflowFunction,
   end: EndNode,
+  while: WhileNode,
   async: AsyncNode,
   error: StopAndErrorNode
 };

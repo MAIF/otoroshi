@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { Panel } from '@xyflow/react';
 import NodeTrashButton from './NodeTrashButton';
 import Handles from './Handles';
@@ -9,13 +9,23 @@ export const GroupNode = (props) => {
   useLayoutEffect(() => {
     const height = props.data.height;
 
+    const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
     if (height) {
-      const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
       setTimeout(() => {
         sourceEl.style.height = height(props.data);
       }, 150);
     }
   }, [props.data]);
+
+  useLayoutEffect(() => {
+    console.log(props.data.highlighted_live)
+    const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
+    if (props.data.highlighted_live) {
+      sourceEl.style.outline = '2px ridge #47FF0F'
+    } else {
+      sourceEl.style.outline = null
+    }
+  }, [props.data.highlighted_live])
 
   return (
     <>
