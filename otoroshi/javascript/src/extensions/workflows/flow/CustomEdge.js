@@ -64,7 +64,7 @@ const listeners = (id) => {
   };
 };
 
-export function CustomEdge({ id, sourceX, sourceY, targetX, targetY }) {
+export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
   const { setEdges } = useReactFlow();
   const [edgePath, labelX, labelY] = getSimpleBezierPath({
     sourceX,
@@ -75,6 +75,8 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY }) {
 
   useEffect(() => listeners(id), [id]);
 
+  console.log(data)
+
   return (
     <>
       <BaseEdge id={id} path={edgePath} />
@@ -84,6 +86,7 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY }) {
             position: 'absolute',
             transform: `translate(-50%, -120%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: 'all',
+            color: 'red'
           }}
           className="nodrag nopan d-flex-center gap-1 edge-label-renderer"
           id={`react-flow__edgelabel-renderer-data-${id}`}

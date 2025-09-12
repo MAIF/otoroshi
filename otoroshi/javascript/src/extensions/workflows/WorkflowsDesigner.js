@@ -1202,7 +1202,23 @@ export function WorkflowsDesigner(props) {
                   console.log('event_id', event_id, event.data.node.kind);
                   if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
                     if (event_id) {
-                      nodes.find(node => node.id === event_id).data.highlighted_live = true
+                      setNodes(nds => nds.map(node => {
+                        if (node.id === event_id)
+                          return {
+                            ...node,
+                            data: {
+                              ...node.data,
+                              highlighted_live: true
+                            }
+                          }
+                          return node
+                      }))
+                      // nodes.find(node => node.id === event_id).data.highlighted_live = true
+                      edges.filter(edge => edge.target === event_id).forEach(e => {
+                        e.data = {
+                          highlighted_live: true
+                        }
+                      })
                       // setHighlightedNodes(n => ({...n, [event_id]: true}));
                     }
                   } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
@@ -1218,15 +1234,14 @@ export function WorkflowsDesigner(props) {
                   nodes.find(node => node.id === "returned-node").data.highlighted_live = true
 
                   setTimeout(() => {
-
-                    setNodes(nodes.map(node => ({
+                    setNodes(nds => nds.map(node => ({
                       ...node,
                       data: {
                         ...node.data,
                         highlighted_live: false
                       }
                     })))
-                  }, 2000)
+                  }, 5000)
                   // console.log('Result:', event);
                   resolve(event.data);
                   setReport(event.data);
