@@ -21,7 +21,7 @@ export const GroupNode = (props) => {
     console.log(props.data.highlighted_ending)
     const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
     if (props.data.highlighted_ending) {
-      sourceEl.style.outline = '2px ridge #4ecdc4'
+      sourceEl.style.outline = '2px ridge #47FF0F'
     } else {
       sourceEl.style.outline = null
     }
