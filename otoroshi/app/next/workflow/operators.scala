@@ -15,6 +15,7 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$mem_ref", new MemRefOperator())
     WorkflowOperator.registerOperator("$array_append", new ArrayAppendOperator())
     WorkflowOperator.registerOperator("$array_prepend", new ArrayPrependOperator())
+    WorkflowOperator.registerOperator("$merge_objects", new MergeObjectsOperator())
     WorkflowOperator.registerOperator("$array_at", new ArrayAtOperator())
     WorkflowOperator.registerOperator("$array_del", new ArrayDelOperator())
     WorkflowOperator.registerOperator("$array_page", new ArrayPageOperator())
@@ -69,6 +70,43 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$str_replace", new StringReplaceOperator())
     WorkflowOperator.registerOperator("$str_replace_all", new StringReplaceAllOperator())
     WorkflowOperator.registerOperator("$jq", new JqOperator())
+  }
+}
+
+class MergeObjectsOperator extends WorkflowOperator {
+
+  override def documentationName: String = "$merge_objects"
+  override def documentationDescription: String = "This operator merges objects together"
+  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
+    "type" -> "object",
+    "properties" -> Json.obj(
+      "deep" -> Json.obj("type" -> "boolean", "description" -> "Deep merge"),
+      "values" -> Json.obj("type" -> "array", "description" -> "An array of values to merge"),
+    )
+  ))
+  override def documentationExample: Option[JsObject] = Some(Json.obj(
+    "$merge_object" -> Json.obj(
+      "values" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "baz")),
+    )
+  ))
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val value: Seq[JsObject] = opts.select("values").asOpt[Seq[JsObject]] match {
+      case Some(v) => v
+      case None    => {
+        val name = opts.select("name").asString
+        val path = opts.select("path").asOptString
+        wfr.memory.get(name) match {
+          case None                          => Seq.empty
+          case Some(value) if path.isEmpty   => value.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          case Some(value) if path.isDefined => value.at(path.get).asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+        }
+      }
+    }
+    if (opts.select("deep").asOptBoolean.getOrElse(false)) {
+      value.foldLeft(Json.obj())(_ ++ _)
+    } else {
+      value.foldLeft(Json.obj())((a, b) => a.deepMerge(b))
+    }
   }
 }
 
@@ -2331,7 +2369,10 @@ class MapDelOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val key            = opts.select("key").asString
+    val keys: Seq[String] = opts.select("key").asOptString.map(s => Seq(s))
+      .orElse(opts.select("key").asOpt[Seq[String]])
+      .orElse(opts.select("keys").asOpt[Seq[String]])
+      .getOrElse(Seq.empty)
     val value: JsValue = opts.select("map").asOpt[JsObject] match {
       case Some(v) => v
       case None    => {
@@ -2345,7 +2386,7 @@ class MapDelOperator extends WorkflowOperator {
       }
     }
     value match {
-      case obj @ JsObject(_) => obj - key
+      case obj @ JsObject(_) => keys.foldLeft(obj)(_ - _)
       case _                 => JsNull
     }
   }
