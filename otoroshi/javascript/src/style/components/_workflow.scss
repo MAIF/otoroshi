@@ -514,4 +514,32 @@
   .right-2 {
     right: 1rem;
   }
+
+  .loading-gradient::before {
+    content: '';
+    position: absolute;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 12px;
+    padding: 3px;
+    background: linear-gradient(45deg, #f9b000, #4ecdc4, #f9b000, #4ecdc4);
+    background-size: 400% 400%;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    animation: movingBorder 10s linear infinite;
+  }
+
+  @keyframes movingBorder {
+    0% {
+      background-position: 0% 0%;
+    }
+
+    100% {
+      background-position: 400% 400%;
+    }
+  }
 }

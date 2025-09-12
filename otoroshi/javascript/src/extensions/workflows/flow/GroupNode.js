@@ -18,14 +18,24 @@ export const GroupNode = (props) => {
   }, [props.data]);
 
   useLayoutEffect(() => {
-    console.log(props.data.highlighted_live)
+    console.log(props.data.highlighted_ending)
     const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
-    if (props.data.highlighted_live) {
-      sourceEl.style.outline = '2px ridge #47FF0F'
+    if (props.data.highlighted_ending) {
+      sourceEl.style.outline = '2px ridge #4ecdc4'
     } else {
       sourceEl.style.outline = null
     }
-  }, [props.data.highlighted_live])
+  }, [props.data.highlighted_ending])
+
+  useLayoutEffect(() => {
+    console.log(props.data.highlighted_loading)
+    const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
+    if (props.data.highlighted_loading) {
+      sourceEl.classList.add('loading-gradient')
+    } else {
+      sourceEl.classList.remove('loading-gradient')
+    }
+  }, [props.data.highlighted_loading])
 
   return (
     <>

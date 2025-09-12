@@ -1208,21 +1208,33 @@ export function WorkflowsDesigner(props) {
                             ...node,
                             data: {
                               ...node.data,
-                              highlighted_live: true
+                              highlighted_loading: true
                             }
                           }
-                          return node
+                        return node
                       }))
                       // nodes.find(node => node.id === event_id).data.highlighted_live = true
-                      edges.filter(edge => edge.target === event_id).forEach(e => {
-                        e.data = {
-                          highlighted_live: true
-                        }
-                      })
+                      // edges.filter(edge => edge.target === event_id).forEach(e => {
+                      //   e.data = {
+                      //     highlighted_live: true
+                      //   }
+                      // })
                       // setHighlightedNodes(n => ({...n, [event_id]: true}));
                     }
                   } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
                     if (event_id) {
+                      setNodes(nds => nds.map(node => {
+                        if (node.id === event_id)
+                          return {
+                            ...node,
+                            data: {
+                              ...node.data,
+                              highlighted_loading: false,
+                              highlighted_ending: true
+                            }
+                          }
+                        return node
+                      }))
                       // use setTimeout to see the path ???
                       // setHighlightedNodes(n => {
                       // delete n[event_id]; // TODO: delete or not for better ux ????
@@ -1238,7 +1250,8 @@ export function WorkflowsDesigner(props) {
                       ...node,
                       data: {
                         ...node.data,
-                        highlighted_live: false
+                        highlighted_loading: false,
+                        highlighted_ending: false
                       }
                     })))
                   }, 5000)
