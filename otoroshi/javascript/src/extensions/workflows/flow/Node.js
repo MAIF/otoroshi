@@ -1,8 +1,11 @@
-import React, { useEffect, useLayoutEffect, useState } from 'react';
+import React, { use, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import Handles from './Handles';
 import NodeTrashButton from './NodeTrashButton';
 import { getNodeFromKind } from '../models/Functions';
+import { useStore } from '@xyflow/react';
+import { useSignalValue } from 'signals-react-safe';
+import { nodeHighlights } from '../WorkflowsDesigner';
 
 export function Node(props) {
   const { data } = props;
@@ -11,7 +14,7 @@ export function Node(props) {
     const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
 
     if (data.operators) sourceEl?.classList.add('operator');
-  });
+  }, []);
 
   let label = data.label || data.item?.label || data.icon;
   let name = data.display_name || data.name;
@@ -26,13 +29,66 @@ export function Node(props) {
     }
   }
 
+  const ref = useRef()
+
+  const highlighted = useSignalValue(nodeHighlights).get(props.id)
+
+  console.log(highlighted)
+
+  const highlightRef = useRef(highlighted)
+
+  useEffect(() => {
+    highlightRef.current = highlighted
+  }, [highlighted])
+
+  const highlight = () => {
+    if (highlightRef.current !== "END")
+      ref.current?.classList.add('loading-gradient')
+  }
+
+  useLayoutEffect(() => {
+    if (!highlighted || highlighted === 'END') {
+      console.log("on delete pour ", props.id)
+      ref.current.classList.remove("loading-gradient")
+    }
+    else if (highlighted) {
+      console.log("on enable pour ", props.id)
+      if (props.id === 'start') {
+        ref.current?.classList.add('loading-gradient')
+        ref.current?.classList.add('loading-gradient--start')
+      } else
+        setTimeout(highlight, (highlighted + 1.25) * 1000)
+    }
+  }, [highlighted])
+
+
+  const zoom = useStore((state) => state.transform[2]);
+  // 2 in, 0,5 out
+  const factor = .5 / zoom
+  const padding = factor / 2 < .25 ? .25 : factor / 2
+  const offset = (-0.6 * factor) > -.5 ? -.5 : (-0.6 * factor)
+
+  const styles = {
+    '--loading-top': `${offset}rem`,
+    '--loading-left': `${offset}rem`,
+    '--loading-right': `${offset}rem`,
+    '--loading-bottom': `${offset}rem`,
+    '--loading-radius': `1rem`, // 1rem
+    '--loading-padding': `${Math.min(.4, padding)}rem`, // 0.25rem
+  }
+
   return (
     <>
       <Handles {...props} />
 
       <button
-        className={`d-flex-center m-0 node ${data.highlighted_loading ? 'loading-gradient' : ''}`}
-        style={{ outline: data.highlighted_ending ? '4px ridge #47FF0F' : null }}
+        ref={ref}
+        className="d-flex-center m-0 node"
+        style={{
+          // outline: data.highlighted_ending ? '4px ridge #47FF0F' : null,
+          animationDelay: `${data.highlighted_loading}s`,
+          ...styles
+        }}
         onDoubleClick={(e) => {
           e.stopPropagation();
           data.functions.onDoubleClick(props);

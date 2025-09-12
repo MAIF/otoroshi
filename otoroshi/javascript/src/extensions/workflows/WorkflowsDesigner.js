@@ -17,10 +17,13 @@ import { nodesCatalogSignal } from './models/Functions';
 
 import { applyLayout } from './ElkOptions';
 import { TagsModal } from './TagsModal';
-import { useSignalValue } from 'signals-react-safe';
+import { signal, useSignalValue } from 'signals-react-safe';
 import { Tester } from './Tester';
 
 export const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name'];
+
+export const nodeHighlights = signal(new Map())
+export const edgeHighlights = signal({})
 
 export function splitInformationAndContent(obj) {
   return Object.entries(obj).reduce(
@@ -1181,17 +1184,28 @@ export function WorkflowsDesigner(props) {
           return;
         }
         setReportStatus(false);
+
+        setEdges(eds => eds.map(e => ({ ...e, animated: false })))
+
         const reader = response.body
           .pipeThrough(new TextDecoderStream())
           .getReader();
+
         let buffer = '';
+        let count = -.9
+        let countId = {}
+        let endingCount = 0
+
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
           buffer += value;
           const lines = buffer.split('\n');
           buffer = lines.pop();
-          for (const line of lines) {
+
+
+          for (let idx = 0; idx < lines.length; idx++) {
+            const line = lines[idx]
             if (line.startsWith('data: ')) {
               const json = line.slice(6).trim();
               try {
@@ -1199,66 +1213,48 @@ export function WorkflowsDesigner(props) {
                 if (event.kind === 'progress') {
                   // console.log('Progress:', event);
                   const event_id = event?.data?.node?.id;
-                  console.log('event_id', event_id, event.data.node.kind);
+                  console.log('event_id', event_id, event.data.node.kind, count + 1);
                   if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
+                    count += 1
                     if (event_id) {
-                      setNodes(nds => nds.map(node => {
-                        if (node.id === event_id)
-                          return {
-                            ...node,
-                            data: {
-                              ...node.data,
-                              highlighted_loading: true
-                            }
-                          }
-                        return node
-                      }))
-                      // nodes.find(node => node.id === event_id).data.highlighted_live = true
-                      // edges.filter(edge => edge.target === event_id).forEach(e => {
-                      //   e.data = {
-                      //     highlighted_live: true
-                      //   }
-                      // })
-                      // setHighlightedNodes(n => ({...n, [event_id]: true}));
+                      countId[event_id] = {
+                        count: (count + 1.25) * 1000,
+                        time: Date.now()
+                      }
+                      if (!nodeHighlights.value.get(event_id))
+                        nodeHighlights.value.set(event_id, count)
+
+                      edges
+                        .filter(edge => edge.target === event_id)
+                        .forEach(edge => {
+                          if (!edgeHighlights.value[edge.id])
+                            edgeHighlights.value[edge.id] = count
+                        })
                     }
                   } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
                     if (event_id) {
-                      setNodes(nds => nds.map(node => {
-                        if (node.id === event_id)
-                          return {
-                            ...node,
-                            data: {
-                              ...node.data,
-                              highlighted_loading: false,
-                              highlighted_ending: true
-                            }
-                          }
-                        return node
-                      }))
-                      // use setTimeout to see the path ???
-                      // setHighlightedNodes(n => {
-                      // delete n[event_id]; // TODO: delete or not for better ux ????
-                      //   return n;
-                      // });
+                      endingCount += 1
+                      console.log(countId[event_id])
+                      const remainingTime = Math.max(
+                        0,
+                        countId[event_id].count - (Date.now() - countId[event_id].time)
+                      )
+                      console.log(remainingTime)
+                      unhighlighNode(event_id, remainingTime + endingCount * 1000)
                     }
                   }
                 } else if (event.kind === 'result') {
-                  nodes.find(node => node.id === "returned-node").data.highlighted_live = true
-
-                  setTimeout(() => {
-                    setNodes(nds => nds.map(node => ({
-                      ...node,
-                      data: {
-                        ...node.data,
-                        highlighted_loading: false,
-                        highlighted_ending: false
-                      }
-                    })))
-                  }, 5000)
                   // console.log('Result:', event);
+                  nodeHighlights.value.set('returned-node', count + 1)
+                  edges
+                    .filter(edge => edge.target === 'returned-node')
+                    .forEach(edge => {
+                      if (!edgeHighlights.value[edge.id])
+                        edgeHighlights.value[edge.id] = count + 1
+                    })
                   resolve(event.data);
                   setReport(event.data);
-                  setReportStatus(true);
+                  // setReportStatus(true);
                 } else {
                   console.warn('Unknown kind:', event.kind);
                 }
@@ -1270,6 +1266,15 @@ export function WorkflowsDesigner(props) {
         }
       });
     });
+  }
+
+  const unhighlighNode = (event_id, timeout) => {
+    setTimeout(() => {
+      // nodeHighlights.value.remove(event_id, "END")
+      const newMap = new Map(nodeHighlights.value);
+      newMap.set(event_id, "END");
+      nodeHighlights.value = newMap
+    }, timeout)
   }
 
   const closeAllModals = () => {
@@ -1313,7 +1318,7 @@ export function WorkflowsDesigner(props) {
 
   if (nodes.length === 0) return null;
 
-  console.log(nodes);
+  // console.log(nodes);
 
   return (
     <div className="workflow">

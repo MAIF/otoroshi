@@ -2,6 +2,8 @@ import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { Panel } from '@xyflow/react';
 import NodeTrashButton from './NodeTrashButton';
 import Handles from './Handles';
+import { useSignalValue } from 'signals-react-safe';
+import { nodeHighlights } from '../WorkflowsDesigner';
 
 export const GroupNode = (props) => {
   const { position, data } = props;
@@ -17,25 +19,31 @@ export const GroupNode = (props) => {
     }
   }, [props.data]);
 
-  useLayoutEffect(() => {
-    console.log(props.data.highlighted_ending)
-    const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
-    if (props.data.highlighted_ending) {
-      sourceEl.style.outline = '2px ridge #47FF0F'
-    } else {
-      sourceEl.style.outline = null
-    }
-  }, [props.data.highlighted_ending])
+
+  const highlighted = useSignalValue(nodeHighlights).get(props.id)
+
+  const highlightRef = useRef(highlighted)
+
+  useEffect(() => {
+    highlightRef.current = highlighted
+  }, [highlighted])
+
+  const highlight = () => {
+    if (highlightRef.current !== "END")
+      document.querySelector(`[data-id="${props.id}"]`).classList.add('loading-gradient')
+  }
 
   useLayoutEffect(() => {
-    console.log(props.data.highlighted_loading)
     const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
-    if (props.data.highlighted_loading) {
-      sourceEl.classList.add('loading-gradient')
-    } else {
-      sourceEl.classList.remove('loading-gradient')
+
+    if (highlighted) {
+      if (highlighted === 'END') {
+        sourceEl.classList.remove("loading-gradient")
+      } else {
+        setTimeout(highlight, (highlighted + 1.25) * 1000)
+      }
     }
-  }, [props.data.highlighted_loading])
+  }, [highlighted])
 
   return (
     <>
