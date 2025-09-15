@@ -519,20 +519,12 @@
     content: '';
     position: absolute;
     z-index: 1000;
-    // top: calc(-1 * var(--loading-gradient--factor, .5rem));
-    // left: calc(-1 * var(--loading-gradient--factor, .5rem));
-    // right: calc(-1 * var(--loading-gradient--factor, .5rem));
-    // bottom: calc(-1 * var(--loading-gradient--factor, .5rem));
-    // border-radius: var(--loading-gradient--factor*2, 1rem);
-    // padding: calc(var(--loading-gradient--factor, .5rem) / 2);
     top: var(--loading-top, -0.5rem);
     left: var(--loading-left, -0.5rem);
     right: var(--loading-right, -0.5rem);
     bottom: var(--loading-bottom, -0.5rem);
     border-radius: var(--loading-radius, 1rem);
     padding: var(--loading-padding, 0.25rem);
-    // background: linear-gradient(45deg, #f9b000, #47FF0F, #f9b000, #47FF0F);
-    
     background: linear-gradient(45deg, #ff0080, #00ff80, #8000ff, #ff8000, #0080ff);
     background-size: 400% 400%;
     filter: blur(0.5px) saturate(1.2);
@@ -544,17 +536,22 @@
   }
 
   @keyframes movingBorder {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-}
+
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+  }
 
   .animate-edge {
     stroke: #47FF0F !important;
     stroke-width: 2;
     fill: none;
-    // stroke-dasharray: 400;
-    // stroke-dashoffset: 400;
-    animation: draw-line 2s forwards;
+    animation: draw-line .200s forwards;
   }
 
   .loading-gradient--start::before {

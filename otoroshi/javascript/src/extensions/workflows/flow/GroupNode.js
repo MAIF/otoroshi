@@ -38,7 +38,7 @@ export const GroupNode = (props) => {
       if (data.highlighted === 'END') {
         sourceEl.classList.remove("loading-gradient")
       } else {
-        setTimeout(highlight, (data.highlighted + 1.25) * 1000)
+        setTimeout(highlight, ((data.highlighted)) * 1000)
       }
     }
   }, [data.highlighted])

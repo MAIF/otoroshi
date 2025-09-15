@@ -55,7 +55,7 @@ export function Node(props) {
         ref.current?.classList.add('loading-gradient')
         ref.current?.classList.add('loading-gradient--start')
       } else
-        setTimeout(highlight, (data.highlighted + 1.25) * 1000)
+        setTimeout(highlight, (data.highlighted) * 1000)
     }
   }, [data.highlighted])
 

@@ -1208,14 +1208,14 @@ export function WorkflowsDesigner(props) {
               try {
                 const event = JSON.parse(json);
                 if (event.kind === 'progress') {
-                  // console.log('Progress:', event);
                   const event_id = event?.data?.node?.id;
-                  console.log('event_id', event_id, event.data.node.kind, count + 1);
+                  console.log(`[${event.data.node.kind}]`, event_id);
+
                   if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
-                    count += 1
+                    count += .1
                     if (event_id) {
                       countId[event_id] = {
-                        count: (count + 1.25) * 1000,
+                        count: (count + .25) * 1000,
                         time: Date.now()
                       }
                       setNodes(nds => nds.map(node => {
@@ -1228,11 +1228,10 @@ export function WorkflowsDesigner(props) {
                             }
                           }
                         return node
-                      })
-                      )
+                      }))
 
                       setEdges(edgs => edgs.map(edge => {
-                        if (edge.target === event_id)
+                        if (edge.source === event_id)
                           return {
                             ...edge,
                             data: {
@@ -1240,27 +1239,15 @@ export function WorkflowsDesigner(props) {
                             }
                           }
                         return edge
-                      })
-                      )
-                      // if (!nodeHighlights.value.get(event_id))
-                      //   nodeHighlights.value.set(event_id, count)
-
-                      // edges
-                      //   .filter(edge => edge.target === event_id)
-                      //   .forEach(edge => {
-                      //     if (!edgeHighlights.value[edge.id])
-                      //       edgeHighlights.value[edge.id] = count
-                      //   })
+                      }))
                     }
                   } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
                     if (event_id) {
                       endingCount += 1
-                      console.log(countId[event_id])
                       const remainingTime = Math.max(
                         0,
                         countId[event_id].count - (Date.now() - countId[event_id].time)
                       )
-                      console.log(remainingTime)
                       unhighlighNode(event_id, remainingTime + endingCount * 1000)
                     }
                   }
@@ -1273,7 +1260,7 @@ export function WorkflowsDesigner(props) {
                           ...node,
                           data: {
                             ...node.data,
-                            highlighted: count + 1
+                            highlighted: count + .1
                           }
                         }
                       return node
@@ -1286,22 +1273,17 @@ export function WorkflowsDesigner(props) {
                         return {
                           ...edge,
                           data: {
-                            highlighted: count + 1
+                            highlighted: count + .1
                           }
                         }
                       return edge
-                    })
-                  )
-                  // nodeHighlights.value.set('returned-node', count + 1)
-                  // edges
-                  //   .filter(edge => edge.target === 'returned-node')
-                  //   .forEach(edge => {
-                  //     if (!edgeHighlights.value[edge.id])
-                  //       edgeHighlights.value[edge.id] = count + 1
-                  //   })
+                    }))
+
                   resolve(event.data);
                   setReport(event.data);
-                  // setReportStatus(true);
+                  setReportStatus(true);
+
+                  unhighlighNode("returned-node", (count + .3) * 1000)
                 } else {
                   console.warn('Unknown kind:', event.kind);
                 }

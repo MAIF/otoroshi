@@ -123,7 +123,6 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
   useEffect(() => listeners(id), [id]);
 
   const { highlighted } = data || {}
-  // const highlighted = useSignalValue(edgeHighlights)[id]
 
   const length = useMemo(() => bezierPathLength(edgePath), [sourceX, sourceY, targetX, targetY])
 
@@ -132,7 +131,7 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
       <BaseEdge id={id} path={edgePath}
         className={highlighted ? 'animate-edge' : ''}
         style={{
-          animationDelay: `${highlighted || 1}s`,
+          animationDelay: `${(highlighted) || .1}s`,
           strokeDasharray: highlighted ? length : 'initial',
           strokeDashoffset: highlighted ? length : 'initial',
         }}
@@ -142,8 +141,7 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
           style={{
             position: 'absolute',
             transform: `translate(-50%, -120%) translate(${labelX}px,${labelY}px)`,
-            pointerEvents: 'all',
-            color: 'red'
+            pointerEvents: 'all'
           }}
           className="nodrag nopan d-flex-center gap-1 edge-label-renderer"
           id={`react-flow__edgelabel-renderer-data-${id}`}
