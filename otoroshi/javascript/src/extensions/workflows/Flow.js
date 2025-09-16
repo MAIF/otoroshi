@@ -27,10 +27,8 @@ export function Flow({
         onConnect={onConnect}
         onConnectEnd={onConnectEnd}
         fitView
-        fitViewOptions={{
-          padding: 0.1,
-          minZoom: 0
-        }}
+        minZoom={0.1}
+        maxZoom={2}
         connectionLineType="simplebezier"
         nodeTypes={{
           simple: Node,
