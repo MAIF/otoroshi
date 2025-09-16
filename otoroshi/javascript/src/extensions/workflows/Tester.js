@@ -69,6 +69,10 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
                     data: getTestPayload(state.input)
                 }));
                 setRunning(true)
+            } else if (action === "stop") {
+                wsRef.current.send(JSON.stringify({ kind: action, data: {} }));
+                setRunning(false)
+                wsRef.current = null;
             } else {
                 wsRef.current.send(JSON.stringify({ kind: action, data: {} }));
             }
@@ -124,10 +128,11 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
 
     if (!isOpen) {
       return (
-        <div style={{position: 'fixed', bottom: 10, right: 10, zIndex: 9999}}>
-          <Button type="primaryColor" className="d-flex items-center" onClick={() => runWs('start')}>Debug</Button>
-          <Button type="primaryColor" className="d-flex items-center" onClick={() => runWs('next')}>Next</Button>
-          <Button type="primaryColor" className="d-flex items-center" onClick={() => runWs('resume')}>Resume</Button>
+        <div style={{position: 'fixed', bottom: 10, right: 10, zIndex: 9999, display: 'flex', flexDirection: 'row', gap: 10 }}>
+          <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start')}>Debug</Button>
+          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('next')}>Next</Button>
+          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('resume')}>Resume</Button>
+          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('stop')}>Stop</Button>
         </div>
       )
     }
