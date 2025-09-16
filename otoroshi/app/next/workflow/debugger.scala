@@ -10,11 +10,11 @@ object WorkflowDebugger {
   val debuggers = new TrieMap[String, WorkflowDebugger]
 }
 
-class WorkflowDebugger(initialStepByStep: Boolean) {
+class WorkflowDebugger() {
 
   private val started: AtomicBoolean = new AtomicBoolean(false)
   private val runRef = new AtomicReference[WorkflowRun](null)
-  private val promiseRef = new AtomicReference[Promise[Unit]](if (initialStepByStep) Promise[Unit]() else null)
+  private val promiseRef = new AtomicReference[Promise[Unit]](null)
 
   private def wfRun: Option[WorkflowRun] = Option(runRef.get())
 
@@ -33,9 +33,7 @@ class WorkflowDebugger(initialStepByStep: Boolean) {
   }
 
   def pause(): Unit = {
-    if (started.get()) {
-      promiseRef.set(Promise[Unit]())
-    }
+    promiseRef.set(Promise[Unit]())
   }
 
   def next(): Unit = {

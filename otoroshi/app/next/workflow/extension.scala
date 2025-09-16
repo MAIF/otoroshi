@@ -429,7 +429,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
     implicit val ec = env.otoroshiExecutionContext
     val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
     val hotFlux: Flux[JsObject] = hotSource.asFlux()
-    val debugger = new WorkflowDebugger(true)
+    val debugger = new WorkflowDebugger()
 
     def start(body: JsObject): Unit = {
       val payload_raw = body.stringify
@@ -442,10 +442,14 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         val functions   = payload.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         val workflow_id = payload.select("workflow_id").asString
         val workflow    = payload.select("workflow").asObject
+        val stepByStep   = payload.select("step_by_step").asOptBoolean.getOrElse(false)
         val node        = Node.from(workflow)
         val attrs = TypedMap.empty
         attrs.put(WorkflowAdminExtension.workflowDebuggerKey -> debugger)
         attrs.put(WorkflowAdminExtension.liveUpdatesSourceKey -> hotSource)
+        if (stepByStep) {
+          debugger.pause()
+        }
         engine.run(workflow_id, node, input, attrs, functions).map { res =>
           hotSource.tryEmitNext(Json.obj("kind" -> "result", "data" -> res.json))
           hotSource.tryEmitComplete()
@@ -506,7 +510,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             if (live) {
               val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
               val hotFlux: Flux[JsObject] = hotSource.asFlux()
-              val debugger = new WorkflowDebugger(false)
+              val debugger = new WorkflowDebugger()
               val attrs = TypedMap.empty
               attrs.put(WorkflowAdminExtension.workflowDebuggerKey -> debugger)
               attrs.put(WorkflowAdminExtension.liveUpdatesSourceKey -> hotSource)
