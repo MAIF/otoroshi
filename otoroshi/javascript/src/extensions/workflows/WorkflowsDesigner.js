@@ -1341,6 +1341,8 @@ export function WorkflowsDesigner(props) {
         run={runTester}
         runLive={runLiveTest}
         eventCallback={eventCallback}
+        setReport={setReport}
+        setReportStatus={setReportStatus}
         getTestPayload={(input) => ({
           input: JSON.stringify(input),
           workflow: graphToJson()[0],

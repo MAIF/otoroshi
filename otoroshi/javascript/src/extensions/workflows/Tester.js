@@ -7,7 +7,7 @@ import { SidebarContext } from '../../apps/BackOfficeApp'
 import { nodesCatalogSignal } from './models/Functions'
 import {message} from "antd";
 
-export function Tester({ isOpen, report, handleClose, run, runLive, getTestPayload, eventCallback }) {
+export function Tester({ isOpen, report, handleClose, run, runLive, getTestPayload, eventCallback, setReport, setReportStatus }) {
 
     const sidebar = useContext(SidebarContext)
 
@@ -18,6 +18,7 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
     });
 
     const [running, setRunning] = useState(false);
+    const [debug, setDebug] = useState(false);
 
     const runTest = () => {
         if (!running) {
@@ -51,9 +52,27 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
         }
     }
 
+    const runWsAction = (action, data = {}) => {
+        if (action === "start" || action === "step_by_step") {
+            wsRef.current.send(JSON.stringify({
+                kind: 'start',
+                data: { ...getTestPayload(state.input), ...data }
+            }));
+            setRunning(true)
+        } else if (action === "stop") {
+            wsRef.current.send(JSON.stringify({ kind: action, data: {} }));
+            setRunning(false)
+            wsRef.current = null;
+        } else {
+            wsRef.current.send(JSON.stringify({ kind: action, data: {} }));
+        }
+    }
+
     const runWs = (action, data = {}) => {
         if (!wsRef.current) {
-            wsRef.current = new WebSocket("ws://otoroshi.oto.tools:9999/extensions/workflows/_debugger");
+            const location = window.location;
+            const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+            wsRef.current = new WebSocket(`${scheme}://${location.host}/extensions/workflows/_debugger`);
             wsRef.current.onmessage = (message) => {
                 const json = JSON.parse(message.data);
                 console.log('received message 1', json);
@@ -61,26 +80,21 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
                     eventCallback(json);
                 }
                 if (json.kind === 'result') {
-                    setRunning(false)
+                    setRunning(false);
+                    setDebug(false);
+                    setReport(json.data);
+                    setReportStatus(true)
                     wsRef.current = null;
                 }
             }
+            setTimeout(() => {
+                setDebug(true);
+                handleClose();
+                runWsAction(action, data);
+            }, 1000)
+        } else {
+            runWsAction(action, data);
         }
-        setTimeout(() => {
-            if (action === "start" || action === "step_by_step") {
-                wsRef.current.send(JSON.stringify({
-                    kind: 'start',
-                    data: { ...getTestPayload(state.input), ...data }
-                }));
-                setRunning(true)
-            } else if (action === "stop") {
-                wsRef.current.send(JSON.stringify({ kind: action, data: {} }));
-                setRunning(false)
-                wsRef.current = null;
-            } else {
-                wsRef.current.send(JSON.stringify({ kind: action, data: {} }));
-            }
-        }, 1000)
     }
 
     const schema = {
@@ -95,13 +109,22 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
         run: {
             renderer: () => {
                 return (
-                    <div className='d-flex gap-2 ms-auto justify-content-end m-2'>
-                        <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={runTest}>
+                    <div className='d-flex gap-2 ms-auto justify-content-end m-2' style={{ flexDirection: 'row'}}>
+                        {/*<Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={runTest}>
                             {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
                             {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
                         </Button>
                         <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={runLiveTest}>
-                            <i className="fas fa-play me-1" /> Run Live !
+                            {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
+                            {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
+                        </Button>*/}
+                        <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start')}>
+                            {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
+                            {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
+                        </Button>
+                        <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start', { step_by_step: true })}>
+                            {!running && <span><i className="fas fa-flask me-1" />Run Test Step by Step</span>}
+                            {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
                         </Button>
                     </div>
                 );
@@ -130,14 +153,18 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
         }
     ]
 
-    if (!isOpen) {
+    if (!isOpen && !debug) {
+        return null;
+    }
+
+    if (!isOpen && debug) {
       return (
-        <div style={{position: 'fixed', bottom: 10, right: 10, zIndex: 9999, display: 'flex', flexDirection: 'row', gap: 10 }}>
-          <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start')}>Debug</Button>
-          <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start', { step_by_step: true })}>Step by step</Button>
-          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('next')}>Next</Button>
-          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('resume')}>Resume</Button>
-          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('stop')}>Stop</Button>
+        <div style={{position: 'fixed', bottom: 20, right: 20, zIndex: 9999, display: 'flex', flexDirection: 'row', gap: 10 }}>
+         {/*<Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start')}>Debug</Button>
+          <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start', { step_by_step: true })}>Step by step</Button>*/}
+          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('next')}><i   style={{ marginRight: 5 }} className="fas fa-step-forward"/> Next step</Button>
+          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('resume')}><i style={{ marginRight: 5 }} className="fas fa-play"/> Continue</Button>
+          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('stop')}><i   style={{ marginRight: 5 }} className="fas fa-stop"/> Stop</Button>
         </div>
       )
     }
