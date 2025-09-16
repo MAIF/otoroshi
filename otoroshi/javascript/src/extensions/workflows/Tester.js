@@ -60,12 +60,12 @@ export function Tester({ isOpen, report, handleClose, run, runLive }) {
         run: {
             renderer: () => {
                 return (
-                    <div>
-                        <Button type="primaryColor" className="btn-xl ms-auto d-flex items-center m-2" disabled={running} onClick={runTest}>
+                    <div className='d-flex gap-2 ms-auto justify-content-end m-2'>
+                        <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={runTest}>
                             {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
                             {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
                         </Button>
-                        <Button type="primaryColor" className="btn-xl ms-auto d-flex items-center m-2" disabled={running} onClick={runLiveTest}>
+                        <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={runLiveTest}>
                             <i className="fas fa-play me-1" /> Run Live !
                         </Button>
                     </div>

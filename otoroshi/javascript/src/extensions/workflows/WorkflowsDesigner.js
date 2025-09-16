@@ -17,7 +17,7 @@ import { nodesCatalogSignal } from './models/Functions';
 
 import { applyLayout } from './ElkOptions';
 import { TagsModal } from './TagsModal';
-import { useSignalValue } from 'signals-react-safe';
+import { signal, useSignalValue } from 'signals-react-safe';
 import { Tester } from './Tester';
 
 export const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name'];
@@ -1181,81 +1181,47 @@ export function WorkflowsDesigner(props) {
           return;
         }
         setReportStatus(false);
+
+        setEdges(eds => eds.map(e => ({ ...e, animated: false })))
+
         const reader = response.body
           .pipeThrough(new TextDecoderStream())
           .getReader();
+
         let buffer = '';
+
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
           buffer += value;
           const lines = buffer.split('\n');
           buffer = lines.pop();
-          for (const line of lines) {
+
+
+          for (let idx = 0; idx < lines.length; idx++) {
+            const line = lines[idx]
             if (line.startsWith('data: ')) {
               const json = line.slice(6).trim();
               try {
                 const event = JSON.parse(json);
                 if (event.kind === 'progress') {
-                  // console.log('Progress:', event);
                   const event_id = event?.data?.node?.id;
-                  console.log('event_id', event_id, event.data.node.kind);
+                  console.log(`[${event.data.node.kind}]`, event_id);
+
                   if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
                     if (event_id) {
-                      setNodes(nds => nds.map(node => {
-                        if (node.id === event_id)
-                          return {
-                            ...node,
-                            data: {
-                              ...node.data,
-                              highlighted_loading: true
-                            }
-                          }
-                        return node
-                      }))
-                      // nodes.find(node => node.id === event_id).data.highlighted_live = true
-                      // edges.filter(edge => edge.target === event_id).forEach(e => {
-                      //   e.data = {
-                      //     highlighted_live: true
-                      //   }
-                      // })
-                      // setHighlightedNodes(n => ({...n, [event_id]: true}));
+                      highlightNode(event_id)
+                      highlightEdge(event_id)
                     }
                   } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
                     if (event_id) {
-                      setNodes(nds => nds.map(node => {
-                        if (node.id === event_id)
-                          return {
-                            ...node,
-                            data: {
-                              ...node.data,
-                              highlighted_loading: false,
-                              highlighted_ending: true
-                            }
-                          }
-                        return node
-                      }))
-                      // use setTimeout to see the path ???
-                      // setHighlightedNodes(n => {
-                      // delete n[event_id]; // TODO: delete or not for better ux ????
-                      //   return n;
-                      // });
+                      unhighlighNode(event_id)
                     }
                   }
                 } else if (event.kind === 'result') {
-                  nodes.find(node => node.id === "returned-node").data.highlighted_live = true
-
-                  setTimeout(() => {
-                    setNodes(nds => nds.map(node => ({
-                      ...node,
-                      data: {
-                        ...node.data,
-                        highlighted_loading: false,
-                        highlighted_ending: false
-                      }
-                    })))
-                  }, 5000)
                   // console.log('Result:', event);
+                  highlightEdge("returned-node")
+                  unhighlighNode("returned-node")
                   resolve(event.data);
                   setReport(event.data);
                   setReportStatus(true);
@@ -1270,6 +1236,49 @@ export function WorkflowsDesigner(props) {
         }
       });
     });
+  }
+
+  const highlightNode = nodeId => {
+    setNodes(nds => nds.map(node => {
+      if (node.id === nodeId)
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            highlighted: true
+          }
+        }
+      return node
+    }))
+  }
+
+  const highlightEdge = targetId => {
+    setEdges(edgs => edgs.map(edge => {
+      if (edge.target === targetId)
+        return {
+          ...edge,
+          data: {
+            highlighted: true
+          }
+        }
+      return edge
+    }))
+  }
+
+  const unhighlighNode = (event_id) => {
+    setNodes(nds =>
+      nds.map(node => {
+        if (node.id === event_id)
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              highlighted: "END"
+            }
+          }
+        return node
+      })
+    )
   }
 
   const closeAllModals = () => {
@@ -1313,7 +1322,7 @@ export function WorkflowsDesigner(props) {
 
   if (nodes.length === 0) return null;
 
-  console.log(nodes);
+  // console.log(nodes);
 
   return (
     <div className="workflow">

@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   BaseEdge,
   EdgeLabelRenderer,
-  getBezierPath,
   getSimpleBezierPath,
-  getSmoothStepPath,
   useReactFlow,
 } from '@xyflow/react';
+// import { useSignalValue } from 'signals-react-safe';
+// import { edgeHighlights } from '../WorkflowsDesigner';
 
 const listeners = (id) => {
   const sourceEl = document.querySelector(`[data-id="${id}"]`);
@@ -64,6 +64,53 @@ const listeners = (id) => {
   };
 };
 
+function bezierPathLength(d, steps = 10) {
+  // Extract numbers from path string
+  const nums = d.match(/-?\d+(\.\d+)?/g).map(Number);
+
+  if (nums.length !== 8) {
+    throw new Error("Expected path like Mx,y Cx1,y1 x2,y2 x3,y3");
+  }
+
+  const [x0, y0, x1, y1, x2, y2, x3, y3] = nums;
+
+  function x(t) {
+    return (
+      Math.pow(1 - t, 3) * x0 +
+      3 * Math.pow(1 - t, 2) * t * x1 +
+      3 * (1 - t) * Math.pow(t, 2) * x2 +
+      Math.pow(t, 3) * x3
+    );
+  }
+
+  function y(t) {
+    return (
+      Math.pow(1 - t, 3) * y0 +
+      3 * Math.pow(1 - t, 2) * t * y1 +
+      3 * (1 - t) * Math.pow(t, 2) * y2 +
+      Math.pow(t, 3) * y3
+    );
+  }
+
+  let length = 0;
+  let prevX = x(0);
+  let prevY = y(0);
+
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const currX = x(t);
+    const currY = y(t);
+    const dx = currX - prevX;
+    const dy = currY - prevY;
+    length += Math.sqrt(dx * dx + dy * dy);
+    prevX = currX;
+    prevY = currY;
+  }
+
+  return length;
+}
+
+
 export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
   const { setEdges } = useReactFlow();
   const [edgePath, labelX, labelY] = getSimpleBezierPath({
@@ -75,18 +122,26 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
 
   useEffect(() => listeners(id), [id]);
 
-  console.log(data)
+  const { highlighted } = data || {}
+
+  const length = useMemo(() => bezierPathLength(edgePath), [sourceX, sourceY, targetX, targetY])
 
   return (
     <>
-      <BaseEdge id={id} path={edgePath} />
+      <BaseEdge id={id} path={edgePath}
+        className={highlighted ? 'animate-edge' : ''}
+        style={{
+          animationDelay: `${(highlighted) || .1}s`,
+          strokeDasharray: highlighted ? length : 'initial',
+          strokeDashoffset: highlighted ? length : 'initial',
+        }}
+      />
       <EdgeLabelRenderer>
         <div
           style={{
             position: 'absolute',
             transform: `translate(-50%, -120%) translate(${labelX}px,${labelY}px)`,
-            pointerEvents: 'all',
-            color: 'red'
+            pointerEvents: 'all'
           }}
           className="nodrag nopan d-flex-center gap-1 edge-label-renderer"
           id={`react-flow__edgelabel-renderer-data-${id}`}

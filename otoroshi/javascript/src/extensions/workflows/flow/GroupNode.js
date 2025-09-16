@@ -17,25 +17,35 @@ export const GroupNode = (props) => {
     }
   }, [props.data]);
 
-  useLayoutEffect(() => {
-    console.log(props.data.highlighted_ending)
-    const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
-    if (props.data.highlighted_ending) {
-      sourceEl.style.outline = '4px ridge #47FF0F'
-    } else {
-      sourceEl.style.outline = null
+
+  // const highlighted = useSignalValue(nodeHighlights).get(props.id)
+
+  const highlightRef = useRef(data.highlighted)
+
+  useEffect(() => {
+    highlightRef.current = data.highlighted
+  }, [data.highlighted])
+
+  const highlight = () => {
+    if (highlightRef.current !== "END") {
+      document.querySelector(`[data-id="${props.id}"]`)
+        .classList
+        .add('loading-gradient')
     }
-  }, [props.data.highlighted_ending])
+  }
 
   useLayoutEffect(() => {
-    console.log(props.data.highlighted_loading)
     const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
-    if (props.data.highlighted_loading) {
-      sourceEl.classList.add('loading-gradient')
-    } else {
-      sourceEl.classList.remove('loading-gradient')
+
+    if (data.highlighted) {
+      if (data.highlighted === 'END') {
+        sourceEl.classList.remove("loading-gradient")
+        sourceEl.classList.add('node--successfull')
+      } else {
+        setTimeout(highlight, ((data.highlighted)) * 1000)
+      }
     }
-  }, [props.data.highlighted_loading])
+  }, [data.highlighted])
 
   return (
     <>
