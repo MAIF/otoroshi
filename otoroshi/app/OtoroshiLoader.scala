@@ -15,6 +15,7 @@ import otoroshi.loader.modules._
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
 import otoroshi.next.controllers.adminapi._
 import otoroshi.next.tunnel.TunnelController
+import otoroshi.next.workflow.WorkflowsController
 import play.api.ApplicationLoader.Context
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -147,6 +148,7 @@ package object modules {
     lazy val genericApiController          = wire[GenericApiController]
     lazy val infosApiController            = wire[InfosApiController]
     lazy val apisController                = wire[ApisController]
+    lazy val workflowsController           = wire[WorkflowsController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

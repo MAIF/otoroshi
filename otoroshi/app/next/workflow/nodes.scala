@@ -32,6 +32,41 @@ object NodesInitializer {
     Node.registerNode("jump", json => JumpNode(json))
     Node.registerNode("try", json => TryNode(json))
     Node.registerNode("async", json => AsyncNode(json))
+    Node.registerNode("breakpoint", json => BreakPointNode(json))
+  }
+}
+
+case class BreakPointNode(json: JsObject) extends Node {
+
+  override def subNodes: Seq[NodeLike]                    = Seq.empty
+  override def documentationName: String                  = "breakpoint"
+  override def documentationDisplayName: String           = "Breakpoint"
+  override def documentationIcon: String                  = "fas fa-pause"
+  override def documentationDescription: String           = "This node pause the workflow when running inside the designer"
+  override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
+    .deepMerge(
+      Json.obj(
+        "properties" -> Json.obj( )
+      )
+    )
+    .some
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"        -> "breakpoint"
+    )
+  )
+
+  override def run(
+    wfr: WorkflowRun,
+    prefix: Seq[Int],
+    from: Seq[Int]
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    wfr.attrs.get(WorkflowAdminExtension.workflowDebuggerKey) match {
+      case None => JsNull.rightf
+      case Some(debugger) =>
+        debugger.pause()
+        debugger.waitForNextStep().map(_ => JsNull.right)
+    }
   }
 }
 

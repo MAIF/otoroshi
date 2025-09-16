@@ -1,9 +1,11 @@
 package otoroshi.next.workflow
 
+import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
 import io.azam.ulidj.ULID
+import otoroshi.actions.{ApiAction, BackOfficeActionContext}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocation, EntityLocationSupport}
@@ -17,9 +19,11 @@ import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.WasmConfig
+import play.api.Logger
+import play.api.http.websocket.{Message, TextMessage}
 import play.api.libs.json._
 import play.api.libs.typedmap.TypedKey
-import play.api.mvc.{RequestHeader, Result, Results}
+import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result, Results, WebSocket}
 import reactor.core.publisher.{Flux, Sinks}
 
 import java.io.File
@@ -204,7 +208,8 @@ class WorkflowConfigAdminExtensionState(env: Env) {
 }
 
 object WorkflowAdminExtension {
-  val debugSourceKey = TypedKey[Sinks.Many[JsObject]]("otoroshi.extensions.workflows.DebugSourceKey")
+  val liveUpdatesSourceKey = TypedKey[Sinks.Many[JsObject]]("otoroshi.extensions.workflows.LiveUpdatesSourceKey")
+  val workflowDebuggerKey = TypedKey[WorkflowDebugger]("otoroshi.extensions.workflows.WorkflowDebuggerKey")
 }
 
 class WorkflowAdminExtension(val env: Env) extends AdminExtension {
@@ -419,6 +424,60 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
 
   def workflow(id: String): Option[Workflow] = states.workflow(id)
 
+  def handleWorkflowDebug(): Flow[Message, Message, NotUsed] = {
+
+    implicit val ec = env.otoroshiExecutionContext
+    val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
+    val hotFlux: Flux[JsObject] = hotSource.asFlux()
+    val debugger = new WorkflowDebugger(true)
+
+    def start(body: JsObject): Unit = {
+      val payload_raw = body.stringify
+      val secretFillFuture =
+        if (payload_raw.contains("${vault://")) env.vaults.fillSecretsAsync("workflow-test", payload_raw)
+        else payload_raw.vfuture
+      secretFillFuture.flatMap { payload_filled =>
+        val payload     = payload_filled.parseJson
+        val input       = payload.select("input").asString.parseJson.asObject
+        val functions   = payload.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
+        val workflow_id = payload.select("workflow_id").asString
+        val workflow    = payload.select("workflow").asObject
+        val node        = Node.from(workflow)
+        val attrs = TypedMap.empty
+        attrs.put(WorkflowAdminExtension.workflowDebuggerKey -> debugger)
+        attrs.put(WorkflowAdminExtension.liveUpdatesSourceKey -> hotSource)
+        engine.run(workflow_id, node, input, attrs, functions).map { res =>
+          hotSource.tryEmitNext(Json.obj("kind" -> "result", "data" -> res.json))
+          hotSource.tryEmitComplete()
+        }
+      }
+    }
+
+    Flow.fromSinkAndSource[Message, Message](
+      Sink.foreach[Message] {
+        case tm: TextMessage => {
+          val json = tm.data.parseJson
+          val kind = json.select("kind").asOptString.getOrElse("noop")
+          val data = json.select("data").asOpt[JsObject].getOrElse(Json.obj())
+          kind match {
+            case "start" =>
+              start(data)
+            case "next" =>
+              // TODO: if new memory in data, update memory
+              debugger.next()
+            case "resume" =>
+              // TODO: if new memory in data, update memory
+              debugger.resume()
+            case "stop" => debugger.shutdown()
+            case _ => println(s"unknown message: '${kind}'")
+          }
+        }
+        case m => println(s"unknown ws message: '${m.getClass.getName}'")
+      },
+      Source.fromPublisher[Message](hotFlux.map(o => TextMessage(o.stringify)))
+    )
+  }
+
   def handleWorkflowTest(
       ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
       req: RequestHeader,
@@ -447,8 +506,10 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             if (live) {
               val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
               val hotFlux: Flux[JsObject] = hotSource.asFlux()
+              val debugger = new WorkflowDebugger(false)
               val attrs = TypedMap.empty
-              attrs.put(WorkflowAdminExtension.debugSourceKey -> hotSource)
+              attrs.put(WorkflowAdminExtension.workflowDebuggerKey -> debugger)
+              attrs.put(WorkflowAdminExtension.liveUpdatesSourceKey -> hotSource)
               engine.run(workflow_id, node, input, attrs, functions).map { res =>
                 hotSource.tryEmitNext(Json.obj("kind" -> "result", "data" -> res.json))
                 hotSource.tryEmitComplete()
@@ -484,6 +545,31 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
       if (!currentIds.contains(id)) {
         handledJobs.remove(id)
         env.jobManager.unregisterJob(job)
+      }
+    }
+  }
+}
+
+class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
+
+  implicit lazy val ec  = env.otoroshiExecutionContext
+  implicit lazy val mat = env.otoroshiMaterializer
+
+  def handleWorkflowDebug() = WebSocket.acceptOrResult[Message, Message] { request =>
+    request.session.get("bousr") match {
+      case None => Results.Unauthorized(Json.obj("error" -> "unauthorized")).leftf
+      case Some(id) => {
+        env.datastores.backOfficeUserDataStore.findById(id).flatMap {
+          case None       => Results.Unauthorized(Json.obj("error" -> "unauthorized")).leftf
+          case Some(user) => {
+            env.adminExtensions.extension[WorkflowAdminExtension] match {
+              case None => Results.NotFound(Json.obj("error" -> "extension not found")).leftf
+              case Some(ext) => {
+                ext.handleWorkflowDebug().rightf
+              }
+            }
+          }
+        }
       }
     }
   }

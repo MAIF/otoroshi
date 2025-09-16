@@ -11,6 +11,8 @@ GET     /live                                                 otoroshi.controlle
 GET     /ready                                                otoroshi.controllers.HealthController.ready()
 GET     /startup                                              otoroshi.controllers.HealthController.startup()
 
+GET     /extensions/workflows/_debugger                       otoroshi.next.workflow.WorkflowsController.handleWorkflowDebug()
+
 # WebAuthn URLs
 POST    /bo/webauthn/register/start                           otoroshi.controllers.U2FController.webAuthnRegistrationStart()
 POST    /bo/webauthn/register/finish                          otoroshi.controllers.U2FController.webAuthnRegistrationFinish()
