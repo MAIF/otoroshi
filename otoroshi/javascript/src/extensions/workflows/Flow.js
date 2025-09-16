@@ -28,7 +28,7 @@ export function Flow({
         onConnectEnd={onConnectEnd}
         fitView
         fitViewOptions={{
-          padding: 0.5,
+          padding: 0.1,
           minZoom: 0
         }}
         connectionLineType="simplebezier"

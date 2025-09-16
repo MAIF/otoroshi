@@ -7,7 +7,7 @@ export const MemRefOperator = {
   nodeRenderer: (props) => {
     const memRef = props.data.content ? props.data.content['$mem_ref'] : {};
     return (
-      <div className="assign-node">
+      <div className="node-text-renderer">
         <span>{memRef?.name}</span>
       </div>
     );

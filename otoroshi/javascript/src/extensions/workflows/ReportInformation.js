@@ -21,23 +21,34 @@ export default function ReportInformation({ report }) {
     />
   }
 
-  const steps = report?.run.log.reduce((acc, log) => {
-    if (log.message.includes('ending')) return acc;
+  console.log(report.run)
 
+  const { starting, ending } = report.run.log.reduce((acc, log) => {
+    if (log.message.includes('ending')) {
+      return { ...acc, ending: [...acc.ending, log] }
+    };
+    return { ...acc, starting: [...acc.starting, log] }
+  }, { starting: [], ending: [] })
+
+  const steps = starting.reduce((acc, log) => {
     const matches = log.message.match(/^starting '([a-zA-Z0-9-]+)'/);
 
     if (matches) {
       const id = matches[1];
-      const re = new RegExp(`^ending '${id}'$`);
 
-      const stop = report.run.log.find((l) => re.test(l.message))?.timestamp;
+      const stop = ending.find((l) => l.node.id === id)?.timestamp;
+
+      if (!stop) {
+        console.log(log.node)
+      }
+
       return [
         ...acc,
         {
           task: log.node?.kind || log.message,
           start: log.timestamp,
           stop,
-          duration_ns: (stop ? stop - log.timestamp : 0) * 1_000_000,
+          duration_ns: Math.abs((stop ? stop - log.timestamp : 0) * 1_000_000),
           ctx: {
             error: log.error,
             node: log.node,
@@ -86,6 +97,8 @@ export default function ReportInformation({ report }) {
 
   const start = report.run.log[0]?.timestamp;
   const end = report.run.log[report.run.log.length - 1]?.timestamp;
+
+  console.log(stepsByCategory)
 
   return <>
     <div style={{ position: 'relative', flex: 1 }} className="d-flex flex-column mt-1">

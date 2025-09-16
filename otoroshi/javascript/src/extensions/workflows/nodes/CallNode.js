@@ -55,7 +55,7 @@ export const CallNode = {
   },
   sources: ['output'],
   // nodeRenderer: props => {
-  //     return <div className='assign-node'>
+  //     return <div className='node-text-renderer'>
   //         <span >{props.data.content?.function}</span>
   //     </div>
   // }

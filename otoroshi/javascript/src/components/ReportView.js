@@ -22,8 +22,6 @@ export const ReportView = ({
   const [steps, setSteps] = useState([]);
   const [informations, setInformations] = useState({});
 
-  console.log(report);
-
   useEffect(() => {
     const { steps, ...informations } = report;
     setSteps(report.steps);
@@ -42,17 +40,18 @@ export const ReportView = ({
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-        [...(step?.ctx?.plugins || [])].find((plugin) =>
-          search.length <= 0 ? true : plugin.name.includes(search)
-        );
+      [...(step?.ctx?.plugins || [])].find((plugin) =>
+        search.length <= 0 ? true : plugin.name.includes(search)
+      );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
 
   const sortByFlow = (a, b) => (sort === 'flow' ? 0 : a.duration_ns < b.duration_ns ? 1 : -1);
 
-  const durationInPercentage = (pluginDuration, totalDuration) =>
-    Number.parseFloat((pluginDuration / totalDuration) * 100).toFixed(3);
+  const durationInPercentage = (pluginDuration, totalDuration) => {
+    return Number.parseFloat((pluginDuration / totalDuration) * 100).toFixed(3);
+  }
 
   const reportDuration = () => {
     if (flow === 'all')
@@ -69,8 +68,8 @@ export const ReportView = ({
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                  .filter(isPluginNameMatchingSearch)
-                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                .filter(isPluginNameMatchingSearch)
+                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -163,9 +162,8 @@ export const ReportView = ({
                     <div className="d-flex align-items-center">
                       {displaySubList && (
                         <i
-                          className={`fas fa-chevron-${
-                            step.open || flow === 'user' ? 'down' : 'right'
-                          } me-1`}
+                          className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
+                            } me-1`}
                           onClick={() =>
                             setSteps(
                               steps.map((s) =>
@@ -215,11 +213,7 @@ export const ReportView = ({
                           >
                             <span>{firstLetterUppercase(pluginName)}</span>
                             <span style={{ maxWidth: '100px', textAlign: 'right' }}>
-                              {unit === 'ms'
-                                ? roundNsTo(plugin.duration_ns)
-                                : unit === 'ns'
-                                  ? plugin.duration_ns
-                                  : pluginPercentage}{' '}
+                              {unit === 'ms' ? roundNsTo(plugin.duration_ns) : unit === 'ns' ? plugin.duration_ns : pluginPercentage}{' '}
                               {unit}
                             </span>
                           </div>
@@ -243,15 +237,15 @@ export const ReportView = ({
             mode: 'json',
           },
         }}
-        onChange={() => {}}
+        onChange={() => { }}
         value={JSON.stringify(
           selectedPlugin === -1
             ? selectedStep === -1
               ? informations
               : steps.find((t) => t.task === selectedStep)
             : steps
-                .find((t) => t.task === selectedStep)
-                ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+              .find((t) => t.task === selectedStep)
+              ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
           null,
           4
         )}

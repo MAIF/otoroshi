@@ -40,7 +40,7 @@ export const AssignNode = {
   sources: ['output'],
   nodeRenderer: (props) => {
     return (
-      <div className="assign-node">
+      <div className="node-text-renderer">
         {props.data.content?.values?.map((value) => {
           return <span key={value.name}>{value.name}</span>;
         })}

@@ -40,7 +40,7 @@ export const UserDefinedFunction = (functionName, value) => {
         // },
         icon: "fas fa-code", // TODO - let user defines an icon,
         nodeRenderer: props => {
-            return <div className="assign-node">
+            return <div className="node-text-renderer">
                 <div className="d-flex align-items-center m-0" style={{ gap: '.5rem' }}>
                     <span className="badge bg-success">
                         LOCAL

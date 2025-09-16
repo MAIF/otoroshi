@@ -32,8 +32,11 @@ import { MapPutOperator } from '../operators/MapPutOperator';
 import { IsTruthyOperator } from '../operators/IsTruthyOperator';
 import { MapDelOperator } from '../operators/MapDelOperator';
 import { ArrayDelOperator } from '../operators/ArrayDelOperator';
+
 import { WorkflowFunction } from '../functions/WorkflowFunction';
 import { SendMailFunction } from '../functions/SendMailFunction';
+import { LogFunction } from '../functions/LogFunction';
+
 import { signal } from 'signals-react-safe';
 import { EndNode } from '../nodes/EndNode';
 import { TryCatchNode } from '../nodes/TryCatchNode';
@@ -84,6 +87,7 @@ const OVERLOADED_NODES = {
   $str_split: StrSplitOperator,
   'core.workflow_call': WorkflowFunction,
   'core.send_mail': SendMailFunction,
+  'core.log': LogFunction,
   end: EndNode,
   while: WhileNode,
   async: AsyncNode,
