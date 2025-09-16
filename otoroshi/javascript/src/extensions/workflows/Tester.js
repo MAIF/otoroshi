@@ -1,14 +1,17 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, {useContext, useEffect, useRef, useState} from 'react'
 import ReportInformation from './ReportInformation'
 
 import { NgForm } from '../../components/nginputs'
 import { Button } from '../../components/Button'
 import { SidebarContext } from '../../apps/BackOfficeApp'
 import { nodesCatalogSignal } from './models/Functions'
+import {message} from "antd";
 
-export function Tester({ isOpen, report, handleClose, run, runLive }) {
+export function Tester({ isOpen, report, handleClose, run, runLive, getTestPayload, eventCallback }) {
 
     const sidebar = useContext(SidebarContext)
+
+    const wsRef = useRef(null)
 
     const [state, setState] = useState({
         input: nodesCatalogSignal.value.rawWorkflow.test_payload
@@ -46,6 +49,30 @@ export function Tester({ isOpen, report, handleClose, run, runLive }) {
                     setRunning(false);
                 });
         }
+    }
+
+    const runWs = (action) => {
+        if (!wsRef.current) {
+            wsRef.current = new WebSocket("ws://otoroshi.oto.tools:9999/extensions/workflows/_debugger");
+            wsRef.current.onmessage = (message) => {
+                const json = JSON.parse(message.data);
+                console.log('received message 1', json);
+                if (eventCallback) {
+                    eventCallback(json);
+                }
+            }
+        }
+        setTimeout(() => {
+            if (action === "start") {
+                wsRef.current.send(JSON.stringify({
+                    kind: 'start',
+                    data: getTestPayload(state.input)
+                }));
+                setRunning(true)
+            } else {
+                wsRef.current.send(JSON.stringify({ kind: action, data: {} }));
+            }
+        }, 1000)
     }
 
     const schema = {
@@ -95,8 +122,15 @@ export function Tester({ isOpen, report, handleClose, run, runLive }) {
         }
     ]
 
-    if (!isOpen)
-        return null
+    if (!isOpen) {
+      return (
+        <div style={{position: 'fixed', bottom: 10, right: 10, zIndex: 9999}}>
+          <Button type="primaryColor" className="d-flex items-center" onClick={() => runWs('start')}>Debug</Button>
+          <Button type="primaryColor" className="d-flex items-center" onClick={() => runWs('next')}>Next</Button>
+          <Button type="primaryColor" className="d-flex items-center" onClick={() => runWs('resume')}>Resume</Button>
+        </div>
+      )
+    }
 
     // TODO: make the tester smaller ?
     return <div className="report-explorer p-3">

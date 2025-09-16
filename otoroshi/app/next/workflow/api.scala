@@ -36,8 +36,11 @@ class WorkflowEngine(env: Env) {
       workflow_ref = wfRef,
       workflow = node.json
     )
-    if (attrs.contains(WorkflowAdminExtension.debugSourceKey)) {
-      attrs.get(WorkflowAdminExtension.debugSourceKey).foreach { source =>
+    attrs.get(WorkflowAdminExtension.workflowDebuggerKey).foreach { debugger =>
+      debugger.initialize(wfRun)
+    }
+    if (attrs.contains(WorkflowAdminExtension.liveUpdatesSourceKey)) {
+      attrs.get(WorkflowAdminExtension.liveUpdatesSourceKey).foreach { source =>
         wfRun.runlog.addCallback("debug") { item =>
           source.tryEmitNext(Json.obj("kind" -> "progress", "data" -> item.json))
         }
@@ -74,6 +77,11 @@ class WorkflowEngine(env: Env) {
           WorkflowError("exception on root run", None, t.some).some,
           wfRun
         )
+      }
+      .andThen {
+        case _ => attrs.get(WorkflowAdminExtension.workflowDebuggerKey).foreach { debugger =>
+          debugger.shutdown()
+        }
       }
       .andThen { case Success(value) =>
         WorkflowRunEvent(node, input, value, env).toAnalytics()(env)
@@ -352,73 +360,79 @@ trait Node extends NodeLike {
       JsNull.rightf
     } else {
       wfr.log(s"starting '${id}'", this)
-      try {
-        run(wfr, prefix, from)
-          .map {
-            case Left(err) if err.message == "_____otoroshi_workflow_paused" => {
-              wfr.log(s"pausing '${id}'", this)
-              val res = err.details.get.select("access_token").asValue
-              result.foreach(name => wfr.memory.set(name, res))
-              Left(err)
-            }
-            case Left(err) if err.message == "_____otoroshi_workflow_ended" => {
-              // println(s"ending at '${id}'")
-              wfr.log(s"ending at '${id}'", this)
-              Left(err)
-            }
-            case Left(err) => {
-              wfr.log(s"ending with error '${id}'", this, err.some)
-              Left(err)
-            }
-            case Right(res) => {
-              wfr.log(s"ending '${id}'", this)
-              result.foreach(name => wfr.memory.set(name, res))
-              returned match {
-                case Some(res) => {
-                  val finalRes = res match {
-                    case obj@JsObject(_) => WorkflowOperator.processOperators(obj, wfr, env)
-                    case value => WorkflowOperator.processOperators(value, wfr, env)
-                  }
-                  wfr.memory.set("input", finalRes)
-                  Right(finalRes)
-                }
-                case None => {
-                  if (id != "start")
-                    wfr.memory.set("input", res)
-                  Right(res) // TODO: el like
-                }
+      def go(): Future[Either[WorkflowError, JsValue]] = {
+        try {
+          run(wfr, prefix, from)
+            .map {
+              case Left(err) if err.message == "_____otoroshi_workflow_paused" => {
+                wfr.log(s"pausing '${id}'", this)
+                val res = err.details.get.select("access_token").asValue
+                result.foreach(name => wfr.memory.set(name, res))
+                Left(err)
               }
-              // returned
-              //   .map {
-              //     case obj@JsObject(_) =>
-              //       val returnedObject = obj - "position" - "description"
-              //       WorkflowOperator.processOperators(returnedObject, wfr, env)
-              //     case value => WorkflowOperator.processOperators(value, wfr, env)
-              //   }
-              //   .map { v =>
-              //     wfr.memory.set("input", v)
-              //     Right(v)
-              //   }
-              //   .getOrElse {
-              //     if (id != "start")
-              //       wfr.memory.set("input", res)
-              //     Right(res)
-              //   }
+              case Left(err) if err.message == "_____otoroshi_workflow_ended" => {
+                // println(s"ending at '${id}'")
+                wfr.log(s"ending at '${id}'", this)
+                Left(err)
+              }
+              case Left(err) => {
+                wfr.log(s"ending with error '${id}'", this, err.some)
+                Left(err)
+              }
+              case Right(res) => {
+                wfr.log(s"ending '${id}'", this)
+                result.foreach(name => wfr.memory.set(name, res))
+                returned match {
+                  case Some(res) => {
+                    val finalRes = res match {
+                      case obj@JsObject(_) => WorkflowOperator.processOperators(obj, wfr, env)
+                      case value => WorkflowOperator.processOperators(value, wfr, env)
+                    }
+                    wfr.memory.set("input", finalRes)
+                    Right(finalRes)
+                  }
+                  case None => {
+                    if (id != "start")
+                      wfr.memory.set("input", res)
+                    Right(res) // TODO: el like
+                  }
+                }
+                // returned
+                //   .map {
+                //     case obj@JsObject(_) =>
+                //       val returnedObject = obj - "position" - "description"
+                //       WorkflowOperator.processOperators(returnedObject, wfr, env)
+                //     case value => WorkflowOperator.processOperators(value, wfr, env)
+                //   }
+                //   .map { v =>
+                //     wfr.memory.set("input", v)
+                //     Right(v)
+                //   }
+                //   .getOrElse {
+                //     if (id != "start")
+                //       wfr.memory.set("input", res)
+                //     Right(res)
+                //   }
+              }
             }
-          }
-          .recover {
-            case t: Throwable => {
-              val error = WorkflowError(s"caught exception on task: '${id}'", None, Some(t))
-              wfr.log(s"ending with exception '${id}'", this, error.some)
-              Left(error)
+            .recover {
+              case t: Throwable => {
+                val error = WorkflowError(s"caught exception on task: '${id}'", None, Some(t))
+                wfr.log(s"ending with exception '${id}'", this, error.some)
+                Left(error)
+              }
             }
+        } catch {
+          case t: Throwable => {
+            val error = WorkflowError(s"caught sync exception on task: '${id}'", None, Some(t))
+            wfr.log(s"ending with sync exception '${id}'", this, error.some)
+            Left(error).future
           }
-      } catch {
-        case t: Throwable => {
-          val error = WorkflowError(s"caught sync exception on task: '${id}'", None, Some(t))
-          wfr.log(s"ending with sync exception '${id}'", this, error.some)
-          Left(error).future
         }
+      }
+      wfr.attrs.get(WorkflowAdminExtension.workflowDebuggerKey) match {
+        case None => go()
+        case Some(debugger) =>  debugger.waitForNextStep().flatMap { _ => go() }
       }
     }
   }

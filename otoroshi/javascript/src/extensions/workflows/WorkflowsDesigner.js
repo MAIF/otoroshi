@@ -1198,30 +1198,7 @@ export function WorkflowsDesigner(props) {
               const json = line.slice(6).trim();
               try {
                 const event = JSON.parse(json);
-                if (event.kind === 'progress') {
-                  const event_id = event?.data?.node?.id;
-                  console.log(`[${event.data.node.kind}]`, event_id);
-
-                  if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
-                    if (event_id) {
-                      highlightNode(event_id)
-                      highlightEdge(event_id)
-                    }
-                  } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
-                    if (event_id) {
-                      unhighlighNode(event_id)
-                    }
-                  }
-                } else if (event.kind === 'result') {
-                  // console.log('Result:', event);
-                  highlightEdge("returned-node")
-                  unhighlighNode("returned-node")
-                  resolve(event.data);
-                  setReport(event.data);
-                  setReportStatus(true);
-                } else {
-                  console.warn('Unknown kind:', event.kind);
-                }
+                eventCallback(event);
               } catch (e) {
                 console.error('Error parsing JSON:', json, e);
               }
@@ -1230,6 +1207,35 @@ export function WorkflowsDesigner(props) {
         }
       });
     });
+  }
+
+  function eventCallback(event, resolve) {
+    if (event.kind === 'progress') {
+      const event_id = event?.data?.node?.id;
+      console.log(`[${event.data.node.kind}]`, event_id);
+
+      if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
+        if (event_id) {
+          highlightNode(event_id)
+          highlightEdge(event_id)
+        }
+      } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
+        if (event_id) {
+          unhighlighNode(event_id)
+        }
+      }
+    } else if (event.kind === 'result') {
+      // console.log('Result:', event);
+      highlightEdge("returned-node")
+      unhighlighNode("returned-node")
+      if (resolve) {
+        resolve(event.data);
+      }
+      setReport(event.data);
+      setReportStatus(true);
+    } else {
+      console.warn('Unknown kind:', event.kind);
+    }
   }
 
   const highlightNode = nodeId => {
@@ -1328,6 +1334,13 @@ export function WorkflowsDesigner(props) {
       <Tester
         run={runTester}
         runLive={runLiveTest}
+        eventCallback={eventCallback}
+        getTestPayload={(input) => ({
+          input: JSON.stringify(input),
+          workflow: graphToJson()[0],
+          workflow_id: props.workflow.id,
+          functions: props.workflow.functions
+        })}
         report={report}
         isOpen={reportIsOpen}
         handleClose={() => setReportStatus(false)}

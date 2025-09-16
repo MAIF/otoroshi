@@ -29,6 +29,7 @@ import otoroshi.next.controllers.{NgPluginsController, TryItController}
 import otoroshi.next.controllers.adminapi._
 import otoroshi.next.proxy.NgProxyStateLoaderJob
 import otoroshi.next.tunnel.TunnelController
+import otoroshi.next.workflow.WorkflowsController
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
 import otoroshi.utils.syntax.implicits._
@@ -530,6 +531,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val genericApiController          = wire[GenericApiController]
   lazy val infosApiController            = wire[InfosApiController]
   lazy val apisController                = wire[ApisController]
+  lazy val workflowsController           = wire[WorkflowsController]
 
   override lazy val assets: Assets = wire[Assets]
 
