@@ -286,57 +286,6 @@ class SendMailFunction extends WorkflowFunction {
   override def documentationDisplayName: String           = "Send an email"
   override def documentationIcon: String                  = "fas fa-envelope"
   override def documentationDescription: String           = "This function sends an email"
-  override def documentationFormSchema: Option[JsObject] = Some(Json.obj(
-      "from"      -> Json.obj(
-        "type"    -> "string",
-        "label"   -> "From",
-        "props"   -> Json.obj("description" -> "The sender email address")
-      ),
-      "to"        -> Json.obj(
-          "type"  -> "array",
-          "label" -> "To",
-          "props" -> Json.obj("description" -> "The recipient email addresses")
-        ),
-      "subject"   -> Json.obj(
-          "type"  -> "string",
-          "label" -> "Subject",
-          "props" -> Json.obj("description" -> "The email subject")
-        ),
-      "html"      -> Json.obj(
-          "type"  -> "code",
-          "label" -> "HTML",
-          "props" -> Json.obj(
-            "editorOnly"  -> true,
-            "description" -> "The email HTML content"
-          )
-        ),
-      "mailer_config" -> Json.obj(
-          "type"    -> "form",
-          "label"   -> "Mailer config",
-          "props"   -> Json.obj("description" -> "The mailer configuration"),
-          "schema" -> Json.obj(
-            "kind" -> Json.obj(
-              "type"  -> "select",
-              "label" -> "Kind",
-              "props" -> Json.obj(
-                "options" -> Seq(
-                  Json.obj("label" -> "Mailjet", "value" -> "mailjet"),
-                  Json.obj("label" -> "Mailgun", "value" -> "mailgun"),
-                  Json.obj("label" -> "SendGrid", "value" -> "sendgrid"),
-                )
-              )
-            ),
-            "api_key" -> Json.obj(
-              "type"  -> "string",
-              "label" -> "API key"
-            ),
-            "domain"  -> Json.obj(
-              "type"  -> "string",
-              "label" -> "Domain"
-            )
-          )
-        )
-  ))
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -371,9 +320,16 @@ class SendMailFunction extends WorkflowFunction {
     val config                 = args.select("mailer_config").asOpt[JsObject].getOrElse(Json.obj())
     val from: EmailLocation    = EmailLocation.format.reads(args.select("from").asValue).get
     val to: Seq[EmailLocation] =
-      args.select("from").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty)
+      args.select("to").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty)
     val subject                = args.select("subject").asString
     val html                   = args.select("html").asString
+
+    def sendMail(mailer: Mailer) = {
+      mailer.send(from, to, subject, html).map { _ =>
+        Json.obj("sent" -> true).right
+      }
+    }
+
     args.select("mailer_config").select("kind").asOptString.getOrElse("mailgun").toLowerCase match {
       case "mailgun"  => {
         val mailer = new MailgunMailer(
@@ -381,9 +337,7 @@ class SendMailFunction extends WorkflowFunction {
           env.datastores.globalConfigDataStore.latest(),
           MailgunSettings.format.reads(config).get
         )
-        mailer.send(from, to, subject, html).map { _ =>
-          Json.obj("sent" -> true).right
-        }
+        sendMail(mailer)
       }
       case "mailjet"  => {
         val mailer = new MailjetMailer(
@@ -391,9 +345,7 @@ class SendMailFunction extends WorkflowFunction {
           env.datastores.globalConfigDataStore.latest(),
           MailjetSettings.format.reads(config).get
         )
-        mailer.send(from, to, subject, html).map { _ =>
-          Json.obj("sent" -> true).right
-        }
+        sendMail(mailer)
       }
       case "sendgrid" => {
         val mailer = new SendgridMailer(
@@ -401,9 +353,15 @@ class SendMailFunction extends WorkflowFunction {
           env.datastores.globalConfigDataStore.latest(),
           SendgridSettings.format.reads(config).get
         )
-        mailer.send(from, to, subject, html).map { _ =>
-          Json.obj("sent" -> true).right
-        }
+        sendMail(mailer)
+      }
+      case "generic" => {
+        val mailer = new GenericMailer(
+          env,
+          env.datastores.globalConfigDataStore.latest(),
+          GenericMailerSettings.format.reads(config).get
+        )
+        sendMail(mailer)
       }
       case v          => WorkflowError(s"mailer '${v}' not supported", None, None).leftf
     }

@@ -117,9 +117,8 @@ class CustomMetrics extends Component {
                   name="Selector"
                   creatable={true}
                   value={props?.value}
-                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
-                    props?.rootValue?.eventType || 'GatewayEvent'
-                  }`}
+                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'
+                    }`}
                   optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
                   onChange={props.onChange}
                 />
@@ -158,14 +157,15 @@ class CustomMetrics extends Component {
   }
 }
 
-class Mailer extends Component {
-  genericFormFlow = ['url', 'headers', 'to'];
-  mailgunFormFlow = ['eu', 'apiKey', 'domain', 'to'];
-  mailjetFormFlow = ['apiKeyPublic', 'apiKeyPrivate', 'to'];
-  sendgridFormFlow = ['apiKey', 'to'];
-  genericFormSchema = {
+export const MAILERS_FORM = {
+  genericFormFlow: ['url', 'headers', 'to'],
+  mailgunFormFlow: ['eu', 'apiKey', 'domain', 'to'],
+  mailjetFormFlow: ['apiKeyPublic', 'apiKeyPrivate', 'to'],
+  sendgridFormFlow: ['apiKey', 'to'],
+  genericFormSchema: {
     url: {
       type: 'string',
+      label: 'Mailer url',
       props: {
         label: 'Mailer url',
         placeholder: 'Mailer url',
@@ -173,12 +173,14 @@ class Mailer extends Component {
     },
     headers: {
       type: 'object',
+      label: 'Headers',
       props: {
         label: 'Headers',
       },
     },
     to: {
       type: 'array',
+      label: 'Email addresses',
       props: {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
@@ -186,10 +188,11 @@ class Mailer extends Component {
         initTransform: (values) => values.map((value) => value.email),
       },
     },
-  };
-  sendgridFormSchema = {
+  },
+  sendgridFormSchema: {
     apiKey: {
       type: 'string',
+      label: 'Sendgrid api key',
       props: {
         label: 'Sendgrid api key',
         placeholder: 'Sendgrid api key',
@@ -197,6 +200,7 @@ class Mailer extends Component {
     },
     to: {
       type: 'array',
+      label: 'Email addresses',
       props: {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
@@ -204,16 +208,18 @@ class Mailer extends Component {
         initTransform: (values) => values.map((value) => value.email),
       },
     },
-  };
-  mailgunFormSchema = {
+  },
+  mailgunFormSchema: {
     eu: {
       type: 'bool',
+      label: 'EU',
       props: {
         label: 'EU',
       },
     },
     apiKey: {
       type: 'string',
+      label: 'Mailgun api key',
       props: {
         label: 'Mailgun api key',
         placeholder: 'Mailgun api key',
@@ -221,6 +227,7 @@ class Mailer extends Component {
     },
     domain: {
       type: 'string',
+      label: 'Mailgun domain',
       props: {
         label: 'Mailgun domain',
         placeholder: 'Mailgun domain',
@@ -228,6 +235,7 @@ class Mailer extends Component {
     },
     to: {
       type: 'array',
+      label: 'Email addresses',
       props: {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
@@ -235,10 +243,11 @@ class Mailer extends Component {
         initTransform: (values) => values.map((value) => value.email),
       },
     },
-  };
-  mailjetFormSchema = {
+  },
+  mailjetFormSchema: {
     apiKeyPublic: {
       type: 'string',
+      label: 'Public api key',
       props: {
         label: 'Public api key',
         placeholder: 'Public api key',
@@ -246,6 +255,7 @@ class Mailer extends Component {
     },
     apiKeyPrivate: {
       type: 'string',
+      label: 'Private api key',
       props: {
         label: 'Private api key',
         placeholder: 'Private api key',
@@ -253,6 +263,7 @@ class Mailer extends Component {
     },
     to: {
       type: 'array',
+      label: 'Email addresses',
       props: {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
@@ -260,12 +271,14 @@ class Mailer extends Component {
         initTransform: (values) => values.map((value) => value.email),
       },
     },
-  };
+  }
+}
+
+class Mailer extends Component {
   render() {
     const settings = this.props.value;
     const type = settings.type;
 
-    console.debug({ settings });
     return (
       <div>
         <SelectInput
@@ -322,8 +335,8 @@ class Mailer extends Component {
           <Form
             value={settings}
             onChange={this.props.onChange}
-            flow={this.genericFormFlow}
-            schema={this.genericFormSchema}
+            flow={MAILERS_FORM.genericFormFlow}
+            schema={MAILERS_FORM.genericFormSchema}
             style={{ marginTop: 5 }}
           />
         )}
@@ -331,8 +344,8 @@ class Mailer extends Component {
           <Form
             value={settings}
             onChange={this.props.onChange}
-            flow={this.mailgunFormFlow}
-            schema={this.mailgunFormSchema}
+            flow={MAILERS_FORM.mailgunFormFlow}
+            schema={MAILERS_FORM.mailgunFormSchema}
             style={{ marginTop: 5 }}
           />
         )}
@@ -340,8 +353,8 @@ class Mailer extends Component {
           <Form
             value={settings}
             onChange={this.props.onChange}
-            flow={this.mailjetFormFlow}
-            schema={this.mailjetFormSchema}
+            flow={MAILERS_FORM.mailjetFormFlow}
+            schema={MAILERS_FORM.mailjetFormSchema}
             style={{ marginTop: 5 }}
           />
         )}
@@ -349,8 +362,8 @@ class Mailer extends Component {
           <Form
             value={settings}
             onChange={this.props.onChange}
-            flow={this.sendgridFormFlow}
-            schema={this.sendgridFormSchema}
+            flow={MAILERS_FORM.sendgridFormFlow}
+            schema={MAILERS_FORM.sendgridFormSchema}
             style={{ marginTop: 5 }}
           />
         )}
