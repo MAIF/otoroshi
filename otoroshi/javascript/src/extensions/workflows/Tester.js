@@ -51,7 +51,7 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
         }
     }
 
-    const runWs = (action) => {
+    const runWs = (action, data = {}) => {
         if (!wsRef.current) {
             wsRef.current = new WebSocket("ws://otoroshi.oto.tools:9999/extensions/workflows/_debugger");
             wsRef.current.onmessage = (message) => {
@@ -60,13 +60,17 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
                 if (eventCallback) {
                     eventCallback(json);
                 }
+                if (json.kind === 'result') {
+                    setRunning(false)
+                    wsRef.current = null;
+                }
             }
         }
         setTimeout(() => {
-            if (action === "start") {
+            if (action === "start" || action === "step_by_step") {
                 wsRef.current.send(JSON.stringify({
                     kind: 'start',
-                    data: getTestPayload(state.input)
+                    data: { ...getTestPayload(state.input), ...data }
                 }));
                 setRunning(true)
             } else if (action === "stop") {
@@ -130,6 +134,7 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
       return (
         <div style={{position: 'fixed', bottom: 10, right: 10, zIndex: 9999, display: 'flex', flexDirection: 'row', gap: 10 }}>
           <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start')}>Debug</Button>
+          <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start', { step_by_step: true })}>Step by step</Button>
           <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('next')}>Next</Button>
           <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('resume')}>Resume</Button>
           <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('stop')}>Stop</Button>
