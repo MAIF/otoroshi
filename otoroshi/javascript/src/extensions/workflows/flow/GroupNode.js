@@ -27,8 +27,11 @@ export const GroupNode = (props) => {
   }, [data.highlighted])
 
   const highlight = () => {
-    if (highlightRef.current !== "END")
-      document.querySelector(`[data-id="${props.id}"]`).classList.add('loading-gradient')
+    if (highlightRef.current !== "END") {
+      document.querySelector(`[data-id="${props.id}"]`)
+        .classList
+        .add('loading-gradient')
+    }
   }
 
   useLayoutEffect(() => {
@@ -37,6 +40,7 @@ export const GroupNode = (props) => {
     if (data.highlighted) {
       if (data.highlighted === 'END') {
         sourceEl.classList.remove("loading-gradient")
+        sourceEl.classList.add('node--successfull')
       } else {
         setTimeout(highlight, ((data.highlighted)) * 1000)
       }

@@ -548,7 +548,7 @@
   }
 
   .animate-edge {
-    stroke: #47FF0F !important;
+    stroke: #00ff80 !important;
     stroke-width: 2;
     fill: none;
     animation: draw-line .200s forwards;
@@ -560,7 +560,7 @@
   }
 
   .animate-edge--end {
-    stroke: #47FF0F !important;
+    stroke: #00ff80 !important;
     stroke-width: 2;
     stroke-dashoffset: 0;
   }
@@ -569,5 +569,9 @@
     to {
       stroke-dashoffset: 0;
     }
+  }
+
+  .node--successfull {
+    border: 2px solid #00ff80 !important;
   }
 }

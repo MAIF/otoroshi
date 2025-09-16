@@ -45,12 +45,11 @@ export function Node(props) {
   }
 
   useLayoutEffect(() => {
-    if (!data.highlighted || data.highlighted === 'END') {
-      console.log("on delete pour ", props.id)
+    if (data.highlighted === 'END') {
+      ref.current.classList.add('node--successfull')
       ref.current.classList.remove("loading-gradient")
     }
     else if (data.highlighted) {
-      console.log("on enable pour ", props.id)
       if (props.id === 'start') {
         ref.current?.classList.add('loading-gradient')
         ref.current?.classList.add('loading-gradient--start')
@@ -82,7 +81,7 @@ export function Node(props) {
         ref={ref}
         className="d-flex-center m-0 node"
         style={{
-          // outline: data.highlighted_ending ? '4px ridge #47FF0F' : null,
+          // outline: data.highlighted_ending ? '4px ridge #00ff80' : null,
           animationDelay: `${data.highlighted_loading}s`,
           ...styles
         }}

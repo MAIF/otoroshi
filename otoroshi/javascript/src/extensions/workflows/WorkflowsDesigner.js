@@ -1189,9 +1189,6 @@ export function WorkflowsDesigner(props) {
           .getReader();
 
         let buffer = '';
-        let count = -.9
-        let countId = {}
-        let endingCount = 0
 
         while (true) {
           const { value, done } = await reader.read();
@@ -1212,78 +1209,22 @@ export function WorkflowsDesigner(props) {
                   console.log(`[${event.data.node.kind}]`, event_id);
 
                   if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
-                    count += .1
                     if (event_id) {
-                      countId[event_id] = {
-                        count: (count + .25) * 1000,
-                        time: Date.now()
-                      }
-                      setNodes(nds => nds.map(node => {
-                        if (node.id === event_id)
-                          return {
-                            ...node,
-                            data: {
-                              ...node.data,
-                              highlighted: count
-                            }
-                          }
-                        return node
-                      }))
-
-                      setEdges(edgs => edgs.map(edge => {
-                        if (edge.source === event_id)
-                          return {
-                            ...edge,
-                            data: {
-                              highlighted: count
-                            }
-                          }
-                        return edge
-                      }))
+                      highlightNode(event_id)
+                      highlightEdge(event_id)
                     }
                   } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
                     if (event_id) {
-                      endingCount += 1
-                      const remainingTime = Math.max(
-                        0,
-                        countId[event_id].count - (Date.now() - countId[event_id].time)
-                      )
-                      unhighlighNode(event_id, remainingTime + endingCount * 1000)
+                      unhighlighNode(event_id)
                     }
                   }
                 } else if (event.kind === 'result') {
                   // console.log('Result:', event);
-                  setNodes(nds =>
-                    nds.map(node => {
-                      if (node.id === 'returned-node')
-                        return {
-                          ...node,
-                          data: {
-                            ...node.data,
-                            highlighted: count + .1
-                          }
-                        }
-                      return node
-                    })
-                  )
-
-                  setEdges(edgs =>
-                    edgs.map(edge => {
-                      if (edge.target === 'returned-node')
-                        return {
-                          ...edge,
-                          data: {
-                            highlighted: count + .1
-                          }
-                        }
-                      return edge
-                    }))
-
+                  highlightEdge("returned-node")
+                  unhighlighNode("returned-node")
                   resolve(event.data);
                   setReport(event.data);
                   setReportStatus(true);
-
-                  unhighlighNode("returned-node", (count + .3) * 1000)
                 } else {
                   console.warn('Unknown kind:', event.kind);
                 }
@@ -1297,26 +1238,47 @@ export function WorkflowsDesigner(props) {
     });
   }
 
-  const unhighlighNode = (event_id, timeout) => {
-    setTimeout(() => {
-      // nodeHighlights.value.remove(event_id, "END")
-      // const newMap = new Map(nodeHighlights.value);
-      // newMap.set(event_id, "END");
-      // nodeHighlights.value = newMap
-      setNodes(nds =>
-        nds.map(node => {
-          if (node.id === event_id)
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                highlighted: "END"
-              }
+  const highlightNode = nodeId => {
+    setNodes(nds => nds.map(node => {
+      if (node.id === nodeId)
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            highlighted: true
+          }
+        }
+      return node
+    }))
+  }
+
+  const highlightEdge = targetId => {
+    setEdges(edgs => edgs.map(edge => {
+      if (edge.target === targetId)
+        return {
+          ...edge,
+          data: {
+            highlighted: true
+          }
+        }
+      return edge
+    }))
+  }
+
+  const unhighlighNode = (event_id) => {
+    setNodes(nds =>
+      nds.map(node => {
+        if (node.id === event_id)
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              highlighted: "END"
             }
-          return node
-        })
-      )
-    }, timeout)
+          }
+        return node
+      })
+    )
   }
 
   const closeAllModals = () => {
