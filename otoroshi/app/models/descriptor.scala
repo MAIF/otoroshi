@@ -16,7 +16,7 @@ import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.models.HttpProtocols.{HTTP_1_0, HTTP_1_1, HTTP_2_0, HTTP_3_0}
-import otoroshi.next.models.{NgOverflowStrategy, NgTarget}
+import otoroshi.next.models.{NgOverflowStrategy, NgRoute, NgTarget}
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
@@ -1619,6 +1619,7 @@ case class Restrictions(
   def handleRestrictions(
       id: String,
       descriptor: Option[ServiceDescriptor],
+      route: Option[NgRoute],
       apk: Option[ApiKey],
       req: RequestHeader,
       attrs: TypedMap
@@ -1648,7 +1649,8 @@ case class Restrictions(
                   descriptor,
                   Some("errors.not.found"),
                   emptyBody = true,
-                  attrs = attrs
+                  attrs = attrs,
+                  maybeRoute = route,
                 )
               )
             } else if (isForbidden(method, domain, path)) {
@@ -1661,7 +1663,8 @@ case class Restrictions(
                   descriptor,
                   Some("errors.forbidden"),
                   emptyBody = true,
-                  attrs = attrs
+                  attrs = attrs,
+                  maybeRoute = route,
                 )
               )
             } else if (isNotAllowed(method, domain, path)) {
@@ -1674,7 +1677,8 @@ case class Restrictions(
                   descriptor,
                   Some("errors.not.found"),
                   emptyBody = true,
-                  attrs = attrs
+                  attrs = attrs,
+                  maybeRoute = route,
                 )
               )
             } else {
@@ -1692,7 +1696,8 @@ case class Restrictions(
                   descriptor,
                   Some("errors.not.found"),
                   emptyBody = true,
-                  attrs = attrs
+                  attrs = attrs,
+                  maybeRoute = route,
                 )
               )
             } else if (!allowed && isForbidden(method, domain, path)) {
@@ -1705,7 +1710,8 @@ case class Restrictions(
                   descriptor,
                   Some("errors.forbidden"),
                   emptyBody = true,
-                  attrs = attrs
+                  attrs = attrs,
+                  maybeRoute = route,
                 )
               )
             } else if (isNotAllowed(method, domain, path)) {
@@ -1718,7 +1724,8 @@ case class Restrictions(
                   descriptor,
                   Some("errors.not.found"),
                   emptyBody = true,
-                  attrs = attrs
+                  attrs = attrs,
+                  maybeRoute = route,
                 )
               )
             } else {
