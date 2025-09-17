@@ -70,6 +70,7 @@ case class NgPluginHttpRequest(
   lazy val contentEncoding: Option[String]          = header("Content-Encoding")
   lazy val typedContentType: Option[ContentType]    = contentType.flatMap(ct => ContentType.parse(ct).toOption)
   lazy val contentLengthStr: Option[String]         = header("Content-Length")
+  lazy val contentLength: Option[Long]              = contentLengthStr.map(_.toLong)
   lazy val transferEncoding: Option[String]         = header("Transfer-Encoding")
   lazy val host: String                             = header("Host").getOrElse("")
   lazy val uri: Uri                                 = Uri(url)
