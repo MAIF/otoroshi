@@ -1147,21 +1147,18 @@ export function WorkflowsDesigner(props) {
       });
   }
 
-  // useEffect(() => {
-  //   if (nodes.length > 0) {
-  //     setNodes(nodes.map(node => {
-  //       return {
-  //         ...node,
-  //         data: {
-  //           ...node.data,
-  //           highlighted_live: !!highlightedNodes[node.id],
-  //         }
-  //       }
-  //     }));
-  //   }
-  // }, [highlightedNodes]);
-
   function runLiveTest(input) {
+    setReportStatus(false)
+    
+    setEdges(eds => eds.map(e => ({ ...e, animated: false })))
+    setNodes(nds => nds.map(n => ({
+      ...n,
+      data: {
+        ...n.data,
+        highlighted: false
+      }
+    })))
+
     return new Promise(resolve => {
       fetch('/extensions/workflows/_test?live=true', {
         method: 'POST',
@@ -1180,9 +1177,6 @@ export function WorkflowsDesigner(props) {
           console.error('Network response was not OK');
           return;
         }
-        setReportStatus(false);
-
-        setEdges(eds => eds.map(e => ({ ...e, animated: false })))
 
         const reader = response.body
           .pipeThrough(new TextDecoderStream())

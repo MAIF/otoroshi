@@ -1,11 +1,27 @@
-import React, { use, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 
 import Handles from './Handles';
 import NodeTrashButton from './NodeTrashButton';
 import { getNodeFromKind } from '../models/Functions';
 import { useStore } from '@xyflow/react';
-// import { useSignalValue } from 'signals-react-safe';
-// import { nodeHighlights } from '../WorkflowsDesigner';
+
+export const getNodeStyles = zoom => {
+  const factor = .5 / zoom
+  const padding = factor / 2 < .25 ? .25 : factor / 2
+  let offset = (-0.6 * factor) > -.5 ? -.5 : (-0.6 * factor)
+
+  if (offset < -1)
+    offset = -1
+
+  return {
+    '--loading-top': `${offset}rem`,
+    '--loading-left': `${offset}rem`,
+    '--loading-right': `${offset}rem`,
+    '--loading-bottom': `${offset}rem`,
+    '--loading-radius': `1rem`,
+    '--loading-padding': `${Math.min(.4, padding)}rem`
+  }
+}
 
 export function Node(props) {
   const { data } = props;
@@ -45,7 +61,10 @@ export function Node(props) {
   }
 
   useLayoutEffect(() => {
-    if (data.highlighted === 'END') {
+    if (!data.highlighted) {
+      ref.current.classList.remove("node--successfull'")
+    }
+    else if (data.highlighted === 'END') {
       ref.current.classList.add('node--successfull')
       ref.current.classList.remove("loading-gradient")
     }
@@ -59,19 +78,7 @@ export function Node(props) {
   }, [data.highlighted])
 
   const zoom = useStore((state) => state.transform[2]);
-  // 2 in, 0,5 out
-  const factor = .5 / zoom
-  const padding = factor / 2 < .25 ? .25 : factor / 2
-  const offset = (-0.6 * factor) > -.5 ? -.5 : (-0.6 * factor)
-
-  const styles = {
-    '--loading-top': `${offset}rem`,
-    '--loading-left': `${offset}rem`,
-    '--loading-right': `${offset}rem`,
-    '--loading-bottom': `${offset}rem`,
-    '--loading-radius': `1rem`, // 1rem
-    '--loading-padding': `${Math.min(.4, padding)}rem`, // 0.25rem
-  }
+  const styles = getNodeStyles(zoom)
 
   return (
     <>
@@ -81,7 +88,6 @@ export function Node(props) {
         ref={ref}
         className="d-flex-center m-0 node"
         style={{
-          // outline: data.highlighted_ending ? '4px ridge #00ff80' : null,
           animationDelay: `${data.highlighted_loading}s`,
           ...styles
         }}
