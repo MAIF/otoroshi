@@ -432,7 +432,17 @@ trait Node extends NodeLike {
       }
       wfr.attrs.get(WorkflowAdminExtension.workflowDebuggerKey) match {
         case None => go()
-        case Some(debugger) =>  debugger.waitForNextStep().flatMap { _ => go() }
+        case Some(debugger) =>  debugger.waitForNextStep().flatMap { _ =>
+          if (debugger.isStopped) {
+            WorkflowError(
+              message = "_____otoroshi_workflow_ended",
+              details = None,
+              exception = None
+            ).leftf
+          } else {
+            go()
+          }
+        }
       }
     }
   }

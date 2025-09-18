@@ -13,6 +13,7 @@ object WorkflowDebugger {
 class WorkflowDebugger() {
 
   private val started: AtomicBoolean = new AtomicBoolean(false)
+  private val stopped: AtomicBoolean = new AtomicBoolean(false)
   private val runRef = new AtomicReference[WorkflowRun](null)
   private val promiseRef = new AtomicReference[Promise[Unit]](null)
 
@@ -26,11 +27,14 @@ class WorkflowDebugger() {
 
   def shutdown(): Unit = {
     started.set(false)
+    stopped.set(true)
     wfRun.foreach(wfr => WorkflowDebugger.debuggers.remove(wfr.id))
-//    Option(promiseRef.get).foreach(_.trySuccess(()))
+    Option(promiseRef.get).foreach(_.trySuccess(()))
     promiseRef.set(null)
     runRef.set(null)
   }
+
+  def isStopped: Boolean = stopped.get()
 
   def pause(): Unit = {
     promiseRef.set(Promise[Unit]())
