@@ -41,7 +41,7 @@ case class BreakPointNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike]                    = Seq.empty
   override def documentationName: String                  = "breakpoint"
   override def documentationDisplayName: String           = "Breakpoint"
-  override def documentationIcon: String                  = "fas fa-pause"
+  override def documentationIcon: String                  = "fas fa-bug"
   override def documentationDescription: String           = "This node pause the workflow when running inside the designer"
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(

@@ -424,7 +424,8 @@ trait Node extends NodeLike {
             }
         } catch {
           case t: Throwable => {
-            val error = WorkflowError(s"caught sync exception on task: '${id}'", None, Some(t))
+            t.printStackTrace()
+            val error = WorkflowError(s"caught sync exception on task1: '${id}'", None, Some(t))
             wfr.log(s"ending with sync exception '${id}'", this, error.some)
             Left(error).future
           }

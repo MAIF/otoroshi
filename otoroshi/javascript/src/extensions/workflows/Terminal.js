@@ -2246,7 +2246,8 @@ function Terminal({
 
     const debug = () => {
         setAction('debug')
-        runWs('start', { step_by_step: true })
+        runWs('start')
+        // runWs('start', { step_by_step: true })
     }
 
     const minimize = () => changeTerminalSize(0)

@@ -29,11 +29,11 @@ export function DesignerActions({ run, action, debug, running, handleFlowStop, n
         <Button type="primaryColor"
           className="react-flow__controls-button"
           disabled={running && running !== 'play'}
-          onClick={run}>
+          onClick={debug}>
           <i className={running === 'play' ? 'fas fa-square' : 'fas fa-play'} />
         </Button>
         <Button type="primaryColor"
-          className="react-flow__controls-button"
+          className="hide react-flow__controls-button"
           onClick={debug}>
           <i className="fas fa-bug" />
         </Button>
