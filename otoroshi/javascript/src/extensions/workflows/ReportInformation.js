@@ -5,6 +5,8 @@ import { NgCodeRenderer } from '../../components/nginputs';
 export default function ReportInformation({ report }) {
   const [unit, setUnit] = useState('ms');
 
+  console.log(report)
+
   if (report.done === false || report.error) {
     return <NgCodeRenderer
       ngOptions={{ spread: true }}

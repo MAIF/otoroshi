@@ -27,7 +27,7 @@ class WorkflowDebugger() {
   def shutdown(): Unit = {
     started.set(false)
     wfRun.foreach(wfr => WorkflowDebugger.debuggers.remove(wfr.id))
-    Option(promiseRef.get).foreach(_.trySuccess(()))
+//    Option(promiseRef.get).foreach(_.trySuccess(()))
     promiseRef.set(null)
     runRef.set(null)
   }

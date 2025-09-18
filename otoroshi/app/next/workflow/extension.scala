@@ -425,7 +425,6 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
   def workflow(id: String): Option[Workflow] = states.workflow(id)
 
   def handleWorkflowDebug(): Flow[Message, Message, NotUsed] = {
-
     implicit val ec = env.otoroshiExecutionContext
     val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
     val hotFlux: Flux[JsObject] = hotSource.asFlux()
@@ -463,6 +462,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
           val json = tm.data.parseJson
           val kind = json.select("kind").asOptString.getOrElse("noop")
           val data = json.select("data").asOpt[JsObject].getOrElse(Json.obj())
+
           kind match {
             case "start" =>
               start(data)

@@ -27,12 +27,16 @@ export const GroupNode = (props) => {
   const zoom = useStore((state) => state.transform[2]);
   const styles = getNodeStyles(zoom)
 
+  useLayoutEffect(() => {
+    const el = document.querySelector(`[data-id="${props.id}"]`)
+    Object
+      .entries(styles)
+      .forEach(([key, value]) => el.style.setProperty(key, value))
+  }, [zoom])
+
   const highlight = () => {
     if (highlightRef.current !== "END") {
       const el = document.querySelector(`[data-id="${props.id}"]`)
-      Object
-        .entries(styles)
-        .forEach(([key, value]) => el.style.setProperty(key, value))
       el
         .classList
         .add('loading-gradient')
@@ -50,7 +54,8 @@ export const GroupNode = (props) => {
         setTimeout(highlight, ((data.highlighted)) * 1000)
       }
     } else {
-      sourceEl.classList.remove("node--successfull'")
+      sourceEl.classList.remove("node--successfull")
+      sourceEl.classList.remove("loading-gradient")
     }
   }, [data.highlighted])
 

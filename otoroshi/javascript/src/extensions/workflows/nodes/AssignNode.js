@@ -1,5 +1,4 @@
 import React from 'react';
-import { NgCodeRenderer } from '../../../components/nginputs';
 import { JsonObjectAsCodeInputUpdatable } from '../../../components/inputs/CodeInput';
 
 export const AssignNode = {

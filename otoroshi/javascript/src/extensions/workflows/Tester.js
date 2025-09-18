@@ -1,16 +1,14 @@
-import React, {useContext, useEffect, useRef, useState} from 'react'
+import React, { useContext, useRef, useState } from 'react'
 import ReportInformation from './ReportInformation'
 
 import { NgForm } from '../../components/nginputs'
 import { Button } from '../../components/Button'
 import { SidebarContext } from '../../apps/BackOfficeApp'
 import { nodesCatalogSignal } from './models/Functions'
-import {message} from "antd";
 
-export function Tester({ isOpen, report, handleClose, run, runLive, getTestPayload, eventCallback, setReport, setReportStatus }) {
+export function Tester({ isOpen, report, handleClose, getTestPayload, eventCallback, setReport, setReportStatus, resetFlow }) {
 
     const sidebar = useContext(SidebarContext)
-
     const wsRef = useRef(null)
 
     const [state, setState] = useState({
@@ -19,38 +17,6 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
 
     const [running, setRunning] = useState(false);
     const [debug, setDebug] = useState(false);
-
-    const runTest = () => {
-        if (!running) {
-            setRunning(true)
-            const minDelay = new Promise(resolve => setTimeout(resolve, 250));
-            const operation = run(state.input);
-
-            Promise.all([minDelay, operation])
-                .then(() => {
-                    setRunning(false);
-                })
-                .catch(() => {
-                    setRunning(false);
-                });
-        }
-    }
-
-    const runLiveTest = () => {
-        if (!running) {
-            setRunning(true)
-            const minDelay = new Promise(resolve => setTimeout(resolve, 250));
-            const operation = runLive(state.input);
-
-            Promise.all([minDelay, operation])
-                .then(() => {
-                    setRunning(false);
-                })
-                .catch(() => {
-                    setRunning(false);
-                });
-        }
-    }
 
     const runWsAction = (action, data = {}) => {
         if (action === "start" || action === "step_by_step") {
@@ -69,6 +35,8 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
     }
 
     const runWs = (action, data = {}) => {
+        resetFlow()
+
         if (!wsRef.current) {
             const location = window.location;
             const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -109,22 +77,18 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
         run: {
             renderer: () => {
                 return (
-                    <div className='d-flex gap-2 ms-auto justify-content-end m-2' style={{ flexDirection: 'row'}}>
-                        {/*<Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={runTest}>
-                            {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
-                            {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
+                    <div className='d-flex gap-2 ms-auto justify-content-end m-2' style={{ flexDirection: 'row' }}>
+                        <Button type="primaryColor"
+                            className="d-flex items-center"
+                            disabled={running}
+                            onClick={() => runWs('start')}>
+                            <i className="fas fa-play me-1" />{running ? 'Running ...' : 'Play'}
                         </Button>
-                        <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={runLiveTest}>
-                            {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
-                            {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
-                        </Button>*/}
-                        <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start')}>
-                            {!running && <span><i className="fas fa-flask me-1" />Run Test</span>}
-                            {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
-                        </Button>
-                        <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start', { step_by_step: true })}>
-                            {!running && <span><i className="fas fa-flask me-1" />Run Test Step by Step</span>}
-                            {running && <span><i className="fas fa-flask me-1" />Running ...</span>}
+                        <Button type="primaryColor"
+                            className="d-flex items-center"
+                            disabled={running}
+                            onClick={() => runWs('start', { step_by_step: true })}>
+                            <i className="fas fa-play me-1" />{running ? 'Running ...' : 'Debug'}
                         </Button>
                     </div>
                 );
@@ -158,15 +122,30 @@ export function Tester({ isOpen, report, handleClose, run, runLive, getTestPaylo
     }
 
     if (!isOpen && debug) {
-      return (
-        <div style={{position: 'fixed', bottom: 20, right: 20, zIndex: 9999, display: 'flex', flexDirection: 'row', gap: 10 }}>
-         {/*<Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start')}>Debug</Button>
+        return (
+            <div className="d-flex" style={{
+                position: 'fixed',
+                bottom: '.75rem',
+                right: '.5rem',
+                zIndex: 9999,
+                gap: 10
+            }}>
+                {/*<Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start')}>Debug</Button>
           <Button type="primaryColor" className="d-flex items-center" disabled={running} onClick={() => runWs('start', { step_by_step: true })}>Step by step</Button>*/}
-          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('next')}><i   style={{ marginRight: 5 }} className="fas fa-step-forward"/> Next step</Button>
-          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('resume')}><i style={{ marginRight: 5 }} className="fas fa-play"/> Continue</Button>
-          <Button type="primaryColor" className="d-flex items-center" disabled={!running} onClick={() => runWs('stop')}><i   style={{ marginRight: 5 }} className="fas fa-stop"/> Stop</Button>
-        </div>
-      )
+                <Button type="primaryColor"
+                    disabled={!running}
+                    onClick={() => runWs('next')}>
+                    <i className="fas fa-step-forward" /> Next step</Button>
+                <Button type="primaryColor"
+                    disabled={!running}
+                    onClick={() => runWs('resume')}>
+                    <i className="fas fa-play" /> Continue</Button>
+                <Button type="primaryColor"
+                    disabled={!running}
+                    onClick={() => runWs('stop')}>
+                    <i className="fas fa-stop" /> Stop</Button>
+            </div>
+        )
     }
 
     // TODO: make the tester smaller ?

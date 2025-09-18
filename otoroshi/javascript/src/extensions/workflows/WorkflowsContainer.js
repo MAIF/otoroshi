@@ -115,7 +115,7 @@ function Container(props) {
   const handleSave = (config, orphans) => {
     if (params.functionName)
       return client.update({
-        ...nodesCatalogSignal.value.rawWorkflow ,
+        ...nodesCatalogSignal.value.rawWorkflow,
         functions: Object.fromEntries(
           Object
             .entries(rawWorkflow.functions)
@@ -137,7 +137,7 @@ function Container(props) {
       })
     else
       return client.update({
-        ...nodesCatalogSignal.value.rawWorkflow ,
+        ...nodesCatalogSignal.value.rawWorkflow,
         config,
         orphans
       })

@@ -128,7 +128,9 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
 
   return (
     <>
-      <BaseEdge id={id} path={edgePath}
+      <BaseEdge
+        id={id}
+        path={edgePath}
         className={highlighted ? 'animate-edge' : ''}
         style={{
           animationDelay: `${(highlighted) || .1}s`,

@@ -47,33 +47,34 @@ export function Node(props) {
 
   const ref = useRef()
 
-  // const highlighted = useSignalValue(nodeHighlights).get(props.id)
-
   const highlightRef = useRef(data.highlighted)
+  highlightRef.current = data.highlighted
 
-  useEffect(() => {
-    highlightRef.current = data.highlighted
-  }, [data.highlighted])
-
-  const highlight = () => {
-    if (highlightRef.current !== "END")
+  const addClassList = () => {
+    if (!highlightRef.current) {
+      ref.current?.classList.remove("node--successfull'")
+      ref.current?.classList.remove("loading-gradient")
+    }
+    else if (highlightRef.current === 'END') {
+      ref.current?.classList.add('node--successfull')
+      ref.current?.classList.remove("loading-gradient")
+    }
+    else {
+      if (props.id === 'start') {
+        ref.current?.classList.add('loading-gradient--start')
+      }
       ref.current?.classList.add('loading-gradient')
+    }
   }
 
   useLayoutEffect(() => {
-    if (!data.highlighted) {
-      ref.current.classList.remove("node--successfull'")
-    }
-    else if (data.highlighted === 'END') {
-      ref.current.classList.add('node--successfull')
-      ref.current.classList.remove("loading-gradient")
-    }
-    else if (data.highlighted) {
+    if (data.highlighted) {
       if (props.id === 'start') {
-        ref.current?.classList.add('loading-gradient')
-        ref.current?.classList.add('loading-gradient--start')
+        addClassList()
       } else
-        setTimeout(highlight, (data.highlighted) * 1000)
+        setTimeout(addClassList, (data.highlighted) * 1000)
+    } else {
+      addClassList()
     }
   }, [data.highlighted])
 

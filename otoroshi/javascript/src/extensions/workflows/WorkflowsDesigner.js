@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Flow } from './Flow';
-import { DesignerActions } from './DesignerActions';
 import { Navbar } from './Navbar';
 import { NodesExplorer } from './NodesExplorer';
 import { v4 as uuid } from 'uuid';
@@ -17,8 +16,9 @@ import { nodesCatalogSignal } from './models/Functions';
 
 import { applyLayout } from './ElkOptions';
 import { TagsModal } from './TagsModal';
-import { signal, useSignalValue } from 'signals-react-safe';
-import { Tester } from './Tester';
+import { useSignalValue } from 'signals-react-safe';
+import debounce from 'lodash/debounce';
+import Terminal from './Terminal';
 
 export const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name'];
 
@@ -44,6 +44,9 @@ const emptyWorkflow = {
   steps: [],
 };
 
+const LOCAL_STORAGE_TERMINAL_KEY = "io.otoroshi.next.workflow.designer.terminal_size"
+const LOCAL_STORAGE_TERMINAL_TAB_KEY = "io.otoroshi.next.workflow.designer.terminal_tab"
+
 export function WorkflowsDesigner(props) {
   const updateNodeInternals = useUpdateNodeInternals();
   const { screenToFlowPosition } = useReactFlow();
@@ -51,15 +54,39 @@ export function WorkflowsDesigner(props) {
   const [activeNode, setActiveNode] = useState(false);
   const [showTagModal, openTagModal] = useState(false);
 
-  const [report, setReport] = useState();
-  const [reportIsOpen, setReportStatus] = useState(false);
-
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  const [terminalSize, _changeTerminalSize] = useState(0)
+  const [resizingTerminal, toggleResizingTerminal] = useState(false)
+  const [initialTerminalTab, setInitialTerminalTab] = useState()
 
   const [workflow, setWorkflow] = useState(props.workflow);
 
   const catalog = useSignalValue(nodesCatalogSignal);
+
+  const saveTerminalSize = debounce(newSize => {
+    localStorage.setItem(LOCAL_STORAGE_TERMINAL_KEY, newSize)
+  }, 200)
+
+  const saveTerminalTab = newTab => localStorage.setItem(LOCAL_STORAGE_TERMINAL_TAB_KEY, newTab)
+
+  const changeTerminalSize = newSize => {
+    _changeTerminalSize(newSize)
+    saveTerminalSize(newSize)
+  }
+
+  const loadTerminalSettings = () => {
+    const savedSize = localStorage.getItem(LOCAL_STORAGE_TERMINAL_KEY)
+
+    if (savedSize)
+      _changeTerminalSize(savedSize)
+
+    const savedTab = localStorage.getItem(LOCAL_STORAGE_TERMINAL_TAB_KEY)
+
+    if (savedTab)
+      setInitialTerminalTab(Number(savedTab))
+  }
 
   function createNodeFromUI(node) {
     console.log('createNodeFromUI', node);
@@ -518,6 +545,7 @@ export function WorkflowsDesigner(props) {
   };
 
   useEffect(() => {
+
     const initialState = initializeGraph(workflow?.config, workflow.orphans, addInformationsToNode);
 
     if (initialState.nodes.every((node) => node.position.x === 0 && node.position.y === 0)) {
@@ -527,10 +555,12 @@ export function WorkflowsDesigner(props) {
       }).then(({ nodes, edges }) => {
         setNodes(nodes);
         setEdges(edges);
+        loadTerminalSettings()
       });
     } else {
       setNodes(initialState.nodes);
       setEdges(initialState.edges);
+      loadTerminalSettings()
     }
   }, []);
 
@@ -1121,126 +1151,10 @@ export function WorkflowsDesigner(props) {
     setActiveNode(false);
   };
 
-  function run() {
-    setReport(null)
-    setReportStatus(true);
-  }
-
-  function runTester(input) {
-    return fetch('/extensions/workflows/_test', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        input: JSON.stringify(input),
-        workflow: graphToJson()[0],
-        workflow_id: props.workflow.id,
-        functions: props.workflow.functions
-      }),
-    })
-      .then((r) => r.json())
-      .then((report) => {
-        setReport(report);
-        setReportStatus(true);
-      });
-  }
-
-  function runLiveTest(input) {
-    setReportStatus(false)
-    
-    setEdges(eds => eds.map(e => ({ ...e, animated: false })))
-    setNodes(nds => nds.map(n => ({
-      ...n,
-      data: {
-        ...n.data,
-        highlighted: false
-      }
-    })))
-
-    return new Promise(resolve => {
-      fetch('/extensions/workflows/_test?live=true', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          input: JSON.stringify(input),
-          workflow: graphToJson()[0],
-          workflow_id: props.workflow.id,
-          functions: props.workflow.functions
-        }),
-      }).then(async response => {
-        if (!response.ok || !response.body) {
-          console.error('Network response was not OK');
-          return;
-        }
-
-        const reader = response.body
-          .pipeThrough(new TextDecoderStream())
-          .getReader();
-
-        let buffer = '';
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buffer += value;
-          const lines = buffer.split('\n');
-          buffer = lines.pop();
-
-
-          for (let idx = 0; idx < lines.length; idx++) {
-            const line = lines[idx]
-            if (line.startsWith('data: ')) {
-              const json = line.slice(6).trim();
-              try {
-                const event = JSON.parse(json);
-                eventCallback(event);
-              } catch (e) {
-                console.error('Error parsing JSON:', json, e);
-              }
-            }
-          }
-        }
-      });
-    });
-  }
-
-  function eventCallback(event, resolve) {
-    if (event.kind === 'progress') {
-      const event_id = event?.data?.node?.id;
-      console.log(`[${event.data.node.kind}]`, event_id);
-
-      if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
-        if (event_id) {
-          highlightNode(event_id)
-          highlightEdge(event_id)
-        }
-      } else if ((event?.data?.message || '').toLowerCase().startsWith("ending")) {
-        if (event_id) {
-          unhighlighNode(event_id)
-        }
-      }
-    } else if (event.kind === 'result') {
-      // console.log('Result:', event);
-      highlightEdge("returned-node")
-      unhighlighNode("returned-node")
-      if (resolve) {
-        resolve(event.data);
-      }
-      setReport(event.data);
-      setReportStatus(true);
-    } else {
-      console.warn('Unknown kind:', event.kind);
-    }
-  }
-
   const highlightNode = nodeId => {
+    console.log('highlightNode', nodeId)
     setNodes(nds => nds.map(node => {
-      if (node.id === nodeId)
+      if (node.id === nodeId && !node.data.highlighted)
         return {
           ...node,
           data: {
@@ -1253,8 +1167,9 @@ export function WorkflowsDesigner(props) {
   }
 
   const highlightEdge = targetId => {
+    console.log('highlightEdge', targetId)
     setEdges(edgs => edgs.map(edge => {
-      if (edge.target === targetId)
+      if (edge.target === targetId && !edge.target.data?.highlighted)
         return {
           ...edge,
           data: {
@@ -1266,6 +1181,7 @@ export function WorkflowsDesigner(props) {
   }
 
   const unhighlighNode = (event_id) => {
+    console.log('unhighlighNode', event_id)
     setNodes(nds =>
       nds.map(node => {
         if (node.id === event_id)
@@ -1281,9 +1197,11 @@ export function WorkflowsDesigner(props) {
     )
   }
 
+  const minimizeTerminal = () => changeTerminalSize(0);
+
   const closeAllModals = () => {
     setActiveNode(false);
-    setReportStatus(false);
+    minimizeTerminal()
     openTagModal(false);
   };
 
@@ -1320,48 +1238,92 @@ export function WorkflowsDesigner(props) {
     });
   };
 
+  const resetFlow = () => {
+    minimizeTerminal()
+
+    console.log('reset flow')
+
+    setEdges(eds => eds.map(e => ({ ...e, animated: false })))
+    setNodes(nds => nds.map(n => ({
+      ...n,
+      data: {
+        ...n.data,
+        highlighted: false
+      }
+    })))
+  }
+
+  const getTestPayload = (input) => ({
+    input: JSON.stringify(input),
+    workflow: graphToJson()[0],
+    workflow_id: props.workflow.id,
+    functions: props.workflow.functions
+  })
+
   if (nodes.length === 0) return null;
 
-  // console.log(nodes);
-
   return (
-    <div className="workflow">
-      <DesignerActions run={run} />
-      <Navbar workflow={workflow} save={handleSave} manageTags={manageTags} />
+    <div className="workflow"
+      onMouseLeave={e => {
+        if (resizingTerminal) {
+          e.stopPropagation()
+          toggleResizingTerminal(false)
+        }
+      }}
+      onMouseUp={e => {
+        if (resizingTerminal) {
+          e.stopPropagation()
+          toggleResizingTerminal(false)
+        }
+      }}
+      onMouseMove={e => {
+        if (resizingTerminal) {
+          e.stopPropagation()
+          const r = 1 - (e.clientY / window.innerHeight)
+          changeTerminalSize(r > .75 ? .75 : r)
+        }
+      }}>
+      <div className='d-flex flex-column scroll-container' style={{
+        flex: 1 - terminalSize,
+        overflow: 'scroll'
+      }}>
+        <Navbar workflow={workflow} save={handleSave} manageTags={manageTags} />
 
-      <NewTask onClick={() => setActiveNode(true)} />
+        <NewTask onClick={() => setActiveNode(true)} />
 
-      <Tester
-        run={runTester}
-        runLive={runLiveTest}
-        eventCallback={eventCallback}
-        setReport={setReport}
-        setReportStatus={setReportStatus}
-        getTestPayload={(input) => ({
-          input: JSON.stringify(input),
-          workflow: graphToJson()[0],
-          workflow_id: props.workflow.id,
-          functions: props.workflow.functions
-        })}
-        report={report}
-        isOpen={reportIsOpen}
-        handleClose={() => setReportStatus(false)}
-      />
+        <TagsModal isOpen={showTagModal} tags={workflow} setTags={setTags} />
 
-      <TagsModal isOpen={showTagModal} tags={workflow} setTags={setTags} />
+        {activeNode && <NodesExplorer activeNode={activeNode} handleSelectNode={handleSelectNode} />}
+        <Flow
+          autoLayout={autoLayout}
+          onConnectEnd={onConnectEnd}
+          onConnect={onConnect}
+          onEdgesChange={onEdgesChange}
+          onNodesChange={onNodesChange}
+          onClick={handleFlowClick}
+          onGroupNodeClick={handleGroupNodeClick}
+          nodes={nodes}
+          edges={edges}
+        />
+      </div>
 
-      {activeNode && <NodesExplorer activeNode={activeNode} handleSelectNode={handleSelectNode} />}
-      <Flow
-        autoLayout={autoLayout}
-        onConnectEnd={onConnectEnd}
-        onConnect={onConnect}
-        onEdgesChange={onEdgesChange}
-        onNodesChange={onNodesChange}
-        onClick={handleFlowClick}
-        onGroupNodeClick={handleGroupNodeClick}
-        nodes={nodes}
-        edges={edges}
+      <Terminal
+        terminalSize={terminalSize}
+        changeTerminalSize={changeTerminalSize}
+        toggleResizingTerminal={toggleResizingTerminal}
+        saveTerminalTab={saveTerminalTab}
+        initialTerminalTab={initialTerminalTab}
+        getTestPayload={getTestPayload}
+        flowOperators={{
+          highlightNode,
+          highlightEdge,
+          unhighlighNode,
+          resetFlow
+        }}
       />
     </div>
   );
 }
+
+
+

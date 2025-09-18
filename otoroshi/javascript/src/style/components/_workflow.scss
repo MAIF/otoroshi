@@ -1,9 +1,23 @@
 .workflow {
   position: relative;
 
-  // p {
-  //   margin: 0;
-  // }
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 52px);
+
+  .scroll-container {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+    overflow-y: scroll;
+    flex: 1 1 auto;
+    height: 0px;
+    position: relative;
+  }
+
+  .scroll-container::-webkit-scrollbar {
+    display: none;
+  }
+
 
   .node {
     background: var(--bg-color_level3);
@@ -42,14 +56,17 @@
   }
 
   .designer-actions {
-    position: fixed;
-    bottom: 1rem;
-    right: 0;
-    margin: auto;
+    position: absolute;
+    top: calc(-42px - .75rem);
+    right: .75rem;
     display: flex;
     justify-content: center;
     z-index: 2;
-    width: fit-content;
+    gap: .75rem;
+  }
+
+  .designer-actions button {
+    background: var(--bg-color_level1);
   }
 
   .workflow-navbar {
@@ -59,8 +76,9 @@
     border-left: 0;
     border-right: 0;
     z-index: 1;
-    padding: 0 1.5rem;
-    height: 56px;
+    padding-left: 1.5rem;
+    padding-right: .75rem;
+    min-height: 56px;
   }
 
   .d-flex-center {
@@ -212,8 +230,8 @@
 
   .new-task {
     position: absolute;
-    top: calc(56px + 1rem);
-    right: 1rem;
+    top: calc(52px + .75rem);
+    right: .75rem;
     z-index: 1;
   }
 
@@ -259,8 +277,10 @@
   }
 
   .react-flow__panel.bottom {
-    bottom: 52px;
-    gap: 1rem;
+    bottom: .75rem;
+    left: .75rem;
+    margin: 0;
+    gap: .75rem;
   }
 
   .react-flow__node-IfThenElse,
@@ -573,5 +593,20 @@
 
   .node--successfull {
     border: 2px solid #00ff80 !important;
+  }
+
+  .terminal {
+    position: relative;
+    background: var(--bg-color_level2);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .terminal-memory-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
   }
 }
