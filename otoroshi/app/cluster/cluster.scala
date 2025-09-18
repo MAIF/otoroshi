@@ -102,6 +102,7 @@ object Cluster {
     key.startsWith(s"${env.storageRoot}:cache:") ||
     key.startsWith(s"${env.storageRoot}:users:alreadyloggedin") ||
     key.startsWith(s"${env.storageRoot}:migrations") ||
+    key.startsWith(s"${env.storageRoot}:local-plugins:") ||
     key.startsWith(s"${env.storageRoot}:dev:")
   }
 }
