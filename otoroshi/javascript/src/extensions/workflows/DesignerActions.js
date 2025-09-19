@@ -1,5 +1,6 @@
 import React from 'react'
 import { Button } from '../../components/Button'
+import { OffSwitch, OnSwitch } from "../../components/inputs";
 
 const StopButton = ({ onClick, running }) => {
   return <Button type="primaryColor"
@@ -13,6 +14,8 @@ const StopButton = ({ onClick, running }) => {
 export function DesignerActions({ run, action, debug, running, handleFlowStop, next, resume }) {
 
   const isDebug = action === 'debug'
+
+  const [step_by_step, setStep_by_step] = React.useState(false)
 
   return (
     <div className="designer-actions">
@@ -29,9 +32,14 @@ export function DesignerActions({ run, action, debug, running, handleFlowStop, n
         <Button type="primaryColor"
           className="react-flow__controls-button"
           disabled={running && running !== 'play'}
-          onClick={debug}>
+          onClick={e => debug(step_by_step)}>
           <i className={running === 'play' ? 'fas fa-square' : 'fas fa-play'} />
         </Button>
+        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+          {step_by_step && <OnSwitch onChange={e => setStep_by_step(!step_by_step)} />}
+          {!step_by_step && <OffSwitch onChange={e => setStep_by_step(!step_by_step)} />}
+          <span style={{ marginLeft: 8, height: 17 }}>step by step</span>
+        </div>
         <Button type="primaryColor"
           className="hide react-flow__controls-button"
           onClick={debug}>
