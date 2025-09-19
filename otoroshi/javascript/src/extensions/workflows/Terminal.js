@@ -2141,7 +2141,7 @@ function Terminal({
     const [running, setRunning] = useState(false)
 
     const [input, setInput] = useState(nodesCatalogSignal.value.rawWorkflow.test_payload)
-    const [log, setLog] = useState([REPORT_DEMO.error])
+    const [log, setLog] = useState([])
     const [memory, setMemory] = useState()
     const [report, setReport] = useState(REPORT_DEMO)
 
@@ -2160,8 +2160,7 @@ function Terminal({
 
     function eventCallback(event, resolve) {
         if (event.kind === 'progress') {
-
-            console.log(event)
+            setLog(log => [...log, event])
 
             const event_id = event?.data?.node?.id;
             console.log(`[${event.data.node.kind}]`, event_id);
@@ -2345,18 +2344,23 @@ function Terminal({
 const LogTab = ({ log }) => {
     return <div>
         {log.map((item, i) => {
-            return <CodeInput
-                ace_config={{
-                    readOnly: true,
-                    fontSize: 14,
-                    maxLines: Infinity,
-                    minLines: 1
-                }}
-                key={`debug${i}`}
-                value={item}
-                editorOnly={true}
-                label={null}
-            />
+            return <div key={`debug${i}`} className='d-flex'>
+                <span>{item.kind}</span>
+                <span>{item.data.timestamp}</span>
+                <span>{item.data.message}</span>
+            </div>
+            // return <CodeInput
+            //     ace_config={{
+            //         readOnly: true,
+            //         fontSize: 14,
+            //         // maxLines: Infinity,
+            //         minLines: 1
+            //     }}
+            //     key={`debug${i}`}
+            //     value={item}
+            //     editorOnly={true}
+            //     label={null}
+            // />
         })}
     </div>
 }

@@ -1152,7 +1152,7 @@ export function WorkflowsDesigner(props) {
   };
 
   const highlightNode = nodeId => {
-    console.log('highlightNode', nodeId)
+    // console.log('highlightNode', nodeId)
     setNodes(nds => nds.map(node => {
       if (node.id === nodeId && !node.data.highlighted)
         return {
@@ -1167,7 +1167,7 @@ export function WorkflowsDesigner(props) {
   }
 
   const highlightEdge = targetId => {
-    console.log('highlightEdge', targetId)
+    // console.log('highlightEdge', targetId)
     setEdges(edgs => edgs.map(edge => {
       if (edge.target === targetId && !edge.target.data?.highlighted)
         return {
@@ -1181,7 +1181,7 @@ export function WorkflowsDesigner(props) {
   }
 
   const unhighlighNode = (event_id) => {
-    console.log('unhighlighNode', event_id)
+    // console.log('unhighlighNode', event_id)
     setNodes(nds =>
       nds.map(node => {
         if (node.id === event_id)
