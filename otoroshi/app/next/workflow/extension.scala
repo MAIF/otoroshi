@@ -446,7 +446,9 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         val attrs = TypedMap.empty
         attrs.put(WorkflowAdminExtension.workflowDebuggerKey -> debugger)
         attrs.put(WorkflowAdminExtension.liveUpdatesSourceKey -> hotSource)
+        println(s"step_by_step: ${stepByStep}")
         if (stepByStep) {
+          println("pausing !!!!")
           debugger.pause()
         }
         engine.run(workflow_id, node, input, attrs, functions).map { res =>
