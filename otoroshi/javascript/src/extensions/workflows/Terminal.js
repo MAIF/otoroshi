@@ -84,6 +84,7 @@ function Terminal({
 
     const handleReportChange = newReport => {
         setReport(newReport)
+        setTab('report')
     }
 
     const runWsAction = (action, data = {}) => {
@@ -105,6 +106,7 @@ function Terminal({
     const runWs = (action, data = {}) => {
         if (action === 'start') {
             flowOperators.resetFlow()
+            setTab('memory')
         }
 
         if (!wsRef.current) {
