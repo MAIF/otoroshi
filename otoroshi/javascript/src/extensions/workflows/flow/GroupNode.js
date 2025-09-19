@@ -59,6 +59,8 @@ export const GroupNode = (props) => {
     }
   }, [data.highlighted])
 
+  console.log(data)
+
   return (
     <>
       <Handles {...props} />
@@ -66,7 +68,7 @@ export const GroupNode = (props) => {
       {data.nodeRenderer && data.nodeRenderer(props)}
 
       <Panel className="m-0 node-one-output" position={position}>
-        <i className={data.label || data.icon} /> {data.display_name || data.name}
+        <i className={data.label || data.icon} /> {data.display_name || data.name} {data?.content?.breakpoint ? <span style={{ color: 'red' }}>(breakpoint <i className="fas fa-bug" />)</span> : ''}
       </Panel>
 
       <NodeTrashButton {...props} />

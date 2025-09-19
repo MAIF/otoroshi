@@ -98,7 +98,7 @@ export function Node(props) {
         }}
       >
         <div className="node-one-output d-flex-center">
-          {data.operators ? <i className="fas fa-wrench" /> : <i className={label} />} {name}
+          {data.operators ? <i className="fas fa-wrench" /> : <i className={label} />} {name} {data?.content?.breakpoint ? <span style={{ color: 'red' }}>(breakpoint <i className="fas fa-bug" />)</span> : ''}
         </div>
 
         {nodeRenderer && nodeRenderer(props)}
