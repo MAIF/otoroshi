@@ -819,6 +819,17 @@ export function discardAllPrivateAppsSessions() {
   }).then((r) => r.json());
 }
 
+export function discardAllPrivateAppsSessionsFor(authId) {
+  // return fetch(`/bo/api/papps/sessions`, {
+  return fetch(`/bo/api/proxy/api/apps-sessions-module/${authId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
 export function discardPrivateAppsSession(id) {
   // return fetch(`/bo/api/papps/sessions/${id}`, {
   return fetch(`/bo/api/proxy/api/apps-sessions/${id}`, {

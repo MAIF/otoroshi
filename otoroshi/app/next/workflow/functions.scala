@@ -13,11 +13,13 @@ import otoroshi.utils.http.ResponseImplicits._
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
 import play.api.libs.json._
+import play.api.libs.ws.WSAuthScheme
 
 import java.io.File
 import java.nio.file.Files
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 object WorkflowFunctionsInitializer {
   def initDefaults(): Unit = {
@@ -47,6 +49,8 @@ object WorkflowFunctionsInitializer {
     WorkflowFunction.registerFunction("core.memory_set", new MemorySetFunction())
     WorkflowFunction.registerFunction("core.memory_del", new MemoryDelFunction())
     WorkflowFunction.registerFunction("core.memory_rename", new MemoryRenameFunction())
+
+//    WorkflowFunction.registerFunction("integrations.jira", new JiraWorkflowFunction())
   }
 }
 
@@ -1358,6 +1362,574 @@ class StoreMatchFunction extends WorkflowFunction {
     }
   }
 }
+
+//class JiraWorkflowFunction extends WorkflowFunction {
+//
+//  override def documentationName: String = "integrations.jira"
+//  override def documentationDisplayName: String = "Jira Software"
+//  override def documentationIcon: String = "fas fa-ticket-alt"
+//  override def documentationDescription: String = "This function interacts with Jira Software API to manage issues, attachments, comments and users"
+//
+//  override def documentationFormSchema: Option[JsObject] = Json.obj(
+//    "jira_url" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Jira URL",
+//      "props" -> Json.obj(
+//        "description" -> "Base URL of your Jira instance (e.g., https://your-domain.atlassian.net)"
+//      )
+//    ),
+//    "username" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Username",
+//      "props" -> Json.obj(
+//        "description" -> "Jira username or email"
+//      )
+//    ),
+//    "token" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "API Token",
+//      "props" -> Json.obj(
+//        "description" -> "Jira API token or password",
+//        "type" -> "password"
+//      )
+//    ),
+//    "resource" -> Json.obj(
+//      "type" -> "select",
+//      "label" -> "Resource",
+//      "props" -> Json.obj(
+//        "options" -> Json.arr(
+//          Json.obj("label" -> "Issue", "value" -> "issue"),
+//          Json.obj("label" -> "Issue Attachment", "value" -> "issueAttachment"),
+//          Json.obj("label" -> "Issue Comment", "value" -> "issueComment"),
+//          Json.obj("label" -> "User", "value" -> "user")
+//        )
+//      )
+//    ),
+//    "operation" -> Json.obj(
+//      "type" -> "select",
+//      "label" -> "Operation",
+//      "props" -> Json.obj(
+//        "options" -> Json.arr(
+//          Json.obj("label" -> "Create", "value" -> "create"),
+//          Json.obj("label" -> "Update", "value" -> "update"),
+//          Json.obj("label" -> "Get", "value" -> "get"),
+//          Json.obj("label" -> "Get All", "value" -> "getAll"),
+//          Json.obj("label" -> "Delete", "value" -> "delete")
+//        )
+//      )
+//    ),
+//    "project_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Project ID",
+//      "props" -> Json.obj(
+//        "description" -> "Project ID (for issue creation)"
+//      )
+//    ),
+//    "issue_type_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Issue Type ID",
+//      "props" -> Json.obj(
+//        "description" -> "Issue type ID"
+//      )
+//    ),
+//    "issue_key" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Issue Key",
+//      "props" -> Json.obj(
+//        "description" -> "Issue key (e.g., PROJ-123)"
+//      )
+//    ),
+//    "summary" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Summary",
+//      "props" -> Json.obj(
+//        "description" -> "Issue summary"
+//      )
+//    ),
+//    "description" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Description",
+//      "props" -> Json.obj(
+//        "description" -> "Issue description"
+//      )
+//    ),
+//    "assignee_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Assignee ID",
+//      "props" -> Json.obj(
+//        "description" -> "Assignee account ID"
+//      )
+//    ),
+//    "priority_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Priority ID",
+//      "props" -> Json.obj(
+//        "description" -> "Priority ID"
+//      )
+//    ),
+//    "labels" -> Json.obj(
+//      "type" -> "array",
+//      "label" -> "Labels",
+//      "props" -> Json.obj(
+//        "description" -> "Issue labels"
+//      )
+//    ),
+//    "comment" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Comment",
+//      "props" -> Json.obj(
+//        "description" -> "Comment text"
+//      )
+//    ),
+//    "comment_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Comment ID",
+//      "props" -> Json.obj(
+//        "description" -> "Comment ID"
+//      )
+//    ),
+//    "attachment_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Attachment ID",
+//      "props" -> Json.obj(
+//        "description" -> "Attachment ID"
+//      )
+//    ),
+//    "account_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Account ID",
+//      "props" -> Json.obj(
+//        "description" -> "User account ID"
+//      )
+//    ),
+//    "email_address" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Email Address",
+//      "props" -> Json.obj(
+//        "description" -> "User email address"
+//      )
+//    ),
+//    "display_name" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Display Name",
+//      "props" -> Json.obj(
+//        "description" -> "User display name"
+//      )
+//    ),
+//    "jql" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "JQL Query",
+//      "props" -> Json.obj(
+//        "description" -> "JQL query for issue search"
+//      )
+//    ),
+//    "max_results" -> Json.obj(
+//      "type" -> "number",
+//      "label" -> "Max Results",
+//      "props" -> Json.obj(
+//        "description" -> "Maximum results to return"
+//      ),
+//      "default" -> 50
+//    )
+//  ).some
+//
+//  override def documentationInputSchema: Option[JsObject] = Some(
+//    Json.obj(
+//      "type" -> "object",
+//      "required" -> Seq("jira_url", "username", "token", "resource", "operation"),
+//      "properties" -> Json.obj(
+//        "jira_url" -> Json.obj("type" -> "string", "description" -> "Base URL of Jira instance"),
+//        "username" -> Json.obj("type" -> "string", "description" -> "Jira username"),
+//        "token" -> Json.obj("type" -> "string", "description" -> "API token"),
+//        "resource" -> Json.obj("type" -> "string", "enum" -> Json.arr("issue", "issueAttachment", "issueComment", "user")),
+//        "operation" -> Json.obj("type" -> "string", "enum" -> Json.arr("create", "update", "get", "getAll", "delete")),
+//        "project_id" -> Json.obj("type" -> "string", "description" -> "Project ID (for issue creation)"),
+//        "issue_type_id" -> Json.obj("type" -> "string", "description" -> "Issue type ID"),
+//        "issue_key" -> Json.obj("type" -> "string", "description" -> "Issue key (e.g., PROJ-123)"),
+//        "summary" -> Json.obj("type" -> "string", "description" -> "Issue summary"),
+//        "description" -> Json.obj("type" -> "string", "description" -> "Issue description"),
+//        "assignee_id" -> Json.obj("type" -> "string", "description" -> "Assignee account ID"),
+//        "priority_id" -> Json.obj("type" -> "string", "description" -> "Priority ID"),
+//        "labels" -> Json.obj("type" -> "array", "items" -> Json.obj("type" -> "string"), "description" -> "Issue labels"),
+//        "comment" -> Json.obj("type" -> "string", "description" -> "Comment text"),
+//        "comment_id" -> Json.obj("type" -> "string", "description" -> "Comment ID"),
+//        "attachment_id" -> Json.obj("type" -> "string", "description" -> "Attachment ID"),
+//        "account_id" -> Json.obj("type" -> "string", "description" -> "User account ID"),
+//        "email_address" -> Json.obj("type" -> "string", "description" -> "User email address"),
+//        "display_name" -> Json.obj("type" -> "string", "description" -> "User display name"),
+//        "jql" -> Json.obj("type" -> "string", "description" -> "JQL query for issue search"),
+//        "max_results" -> Json.obj("type" -> "number", "description" -> "Maximum results to return", "default" -> 50)
+//      )
+//    )
+//  )
+//
+//  override def documentationExample: Option[JsObject] = Some(
+//    Json.obj(
+//      "kind" -> "call",
+//      "function" -> "integrations.jira",
+//      "args" -> Json.obj(
+//        "jira_url" -> "https://your-domain.atlassian.net",
+//        "username" -> "user@example.com",
+//        "token" -> "your-api-token",
+//        "resource" -> "issue",
+//        "operation" -> "create",
+//        "project_id" -> "10001",
+//        "issue_type_id" -> "10004",
+//        "summary" -> "Test issue from Otoroshi",
+//        "description" -> "This is a test issue created via Otoroshi workflow"
+//      )
+//    )
+//  )
+//
+//  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+//
+//    val jiraUrl = args.select("jira_url").asString
+//    val username = args.select("username").asString
+//    val token = args.select("token").asString
+//    val resource = args.select("resource").asString
+//    val operation = args.select("operation").asString
+//
+//    if (jiraUrl.isEmpty || username.isEmpty || token.isEmpty) {
+//      return Future.successful(Left(WorkflowError(
+//        "Missing required Jira credentials",
+//        Some(Json.obj("resource" -> resource, "operation" -> operation)),
+//        None
+//      )))
+//    }
+//
+//    val baseUrl = if (jiraUrl.endsWith("/")) jiraUrl.dropRight(1) else jiraUrl
+//    val wsClient = env.Ws
+//
+//    def makeRequest(endpoint: String, method: String = "GET", body: Option[JsValue] = None): Future[Either[WorkflowError, JsValue]] = {
+//      val url = s"$baseUrl$endpoint"
+//      val request = wsClient.url(url)
+//        .withAuth(username, token, WSAuthScheme.BASIC)
+//        .withHttpHeaders("Content-Type" -> "application/json", "Accept" -> "application/json")
+//
+//      val finalRequest = method.toUpperCase match {
+//        case "GET" => request.get()
+//        case "POST" => request.post(body.getOrElse(Json.obj()))
+//        case "PUT" => request.put(body.getOrElse(Json.obj()))
+//        case "DELETE" => request.delete()
+//        case _ => request.get()
+//      }
+//
+//      finalRequest.map { response =>
+//        if (response.status >= 200 && response.status < 300) {
+//          Try(response.json) match {
+//            case Success(json) => Right(json)
+//            case Failure(_) => Right(Json.obj("success" -> true, "status" -> response.status))
+//          }
+//        } else {
+//          Left(WorkflowError(
+//            s"Jira API error: ${response.status} - ${response.body}",
+//            Some(Json.obj("status" -> response.status, "url" -> url)),
+//            None
+//          ))
+//        }
+//      }.recover {
+//        case ex: Exception => Left(WorkflowError(
+//          s"Request failed: ${ex.getMessage}",
+//          Some(Json.obj("url" -> url, "method" -> method, "exception" -> ex.getClass.getSimpleName)),
+//          None
+//        ))
+//      }
+//    }
+//
+//    (resource, operation) match {
+//
+//      // Issue operations
+//      case ("issue", "create") =>
+//        val projectId = args.select("project_id").asString
+//        val issueTypeId = args.select("issue_type_id").asString
+//        val summary = args.select("summary").asString
+//
+//        if (projectId.isEmpty || issueTypeId.isEmpty || summary.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for issue creation",
+//            Some(Json.obj("required" -> Json.arr("project_id", "issue_type_id", "summary"))),
+//            None
+//          )))
+//        } else {
+//          val fields = Json.obj(
+//            "project" -> Json.obj("key" -> projectId),
+//            "issuetype" -> Json.obj("id" -> issueTypeId),
+//            "summary" -> summary
+//          ) ++ {
+//            val description = args.select("description")
+//              .asOpt[String]
+//              .map(d => Json.obj("description" -> d))
+//              .getOrElse(Json.obj())
+//
+//            val assigneeId = args.select("assignee_id")
+//              .asOpt[String]
+//              .map(a => Json.obj("assignee" -> Json.obj("id" -> a)))
+//              .getOrElse(Json.obj())
+////            val priorityId = args.select("priority_id")
+////              .asOpt[String]
+////              .map(p => Json.obj("priority" -> Json.obj("id" -> p)))
+////              .getOrElse(Json.obj())
+//            val labels = args.select("labels")
+//              .asOpt[JsArray]
+//              .map(l => Json.obj("labels" -> l))
+//              .getOrElse(Json.obj())
+//
+//            description ++ assigneeId ++ labels
+//          }
+//
+//          val body = Json.obj("fields" -> fields)
+//          println(body)
+//          makeRequest("/rest/api/2/issue", "POST", Some(body))
+//        }
+//
+//      case ("issue", "update") =>
+//        val issueKey = args.select("issue_key").asString
+//        if (issueKey.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for issue update",
+//            Some(Json.obj("required" -> "issue_key", "operation" -> "update")),
+//            None
+//          )))
+//        } else {
+//          val fields = Json.obj() ++ {
+//            val updates = Json.obj()
+//            args.select("summary").asOpt[String].foreach(s => updates.asInstanceOf[JsObject] + ("summary" -> JsString(s)))
+//            args.select("description").asOpt[String].foreach(d => updates.asInstanceOf[JsObject] + ("description" -> JsString(d)))
+//            args.select("assignee_id").asOpt[String].foreach(a => updates.asInstanceOf[JsObject] + ("assignee" -> Json.obj("id" -> a)))
+//            args.select("priority_id").asOpt[String].foreach(p => updates.asInstanceOf[JsObject] + ("priority" -> Json.obj("id" -> p)))
+//            args.select("labels").asOpt[JsArray].foreach(l => updates.asInstanceOf[JsObject] + ("labels" -> l))
+//            updates
+//          }
+//
+//          val body = Json.obj("fields" -> fields)
+//          makeRequest(s"/rest/api/2/issue/$issueKey", "PUT", Some(body))
+//        }
+//
+//      case ("issue", "get") =>
+//        val issueKey = args.select("issue_key").asString
+//        if (issueKey.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for issue retrieval",
+//            Some(Json.obj("required" -> "issue_key", "operation" -> "get")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/2/issue/$issueKey")
+//        }
+//
+//      case ("issue", "getAll") =>
+//        val jql = args.select("jql").asOpt[String].getOrElse("created >= \"1970-01-01\"")
+//        val maxResults = args.select("max_results").asOpt[Int].getOrElse(50)
+//        val body = Json.obj(
+//          "jql" -> jql,
+//          "maxResults" -> maxResults,
+//          "fields" -> Json.arr("*navigable")
+//        )
+//        makeRequest("/rest/api/2/search", "POST", Some(body))
+//
+//      case ("issue", "delete") =>
+//        val issueKey = args.select("issue_key").asString
+//        if (issueKey.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for issue deletion",
+//            Some(Json.obj("required" -> "issue_key", "operation" -> "delete")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/2/issue/$issueKey", "DELETE")
+//        }
+//
+//      // Issue Comment operations
+//      case ("issueComment", "create") =>
+//        val issueKey = args.select("issue_key").asString
+//        val comment = args.select("comment").asString
+//        if (issueKey.isEmpty || comment.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for comment creation",
+//            Some(Json.obj("required" -> Json.arr("issue_key", "comment"))),
+//            None
+//          )))
+//        } else {
+//          val body = Json.obj(
+//            "body" -> Json.obj(
+//              "type" -> "doc",
+//              "version" -> 1,
+//              "content" -> Json.arr(
+//                Json.obj(
+//                  "type" -> "paragraph",
+//                  "content" -> Json.arr(
+//                    Json.obj("type" -> "text", "text" -> comment)
+//                  )
+//                )
+//              )
+//            )
+//          )
+//          makeRequest(s"/rest/api/3/issue/$issueKey/comment", "POST", Some(body))
+//        }
+//
+//      case ("issueComment", "get") =>
+//        val issueKey = args.select("issue_key").asString
+//        val commentId = args.select("comment_id").asString
+//        if (issueKey.isEmpty || commentId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for comment retrieval",
+//            Some(Json.obj("required" -> Json.arr("issue_key", "comment_id"))),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/issue/$issueKey/comment/$commentId")
+//        }
+//
+//      case ("issueComment", "getAll") =>
+//        val issueKey = args.select("issue_key").asString
+//        if (issueKey.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for comment retrieval",
+//            Some(Json.obj("required" -> "issue_key")),
+//            None
+//          )))
+//        } else {
+//          val maxResults = args.select("max_results").asOpt[Int].getOrElse(50)
+//          makeRequest(s"/rest/api/3/issue/$issueKey/comment?maxResults=$maxResults")
+//        }
+//
+//      case ("issueComment", "update") =>
+//        val issueKey = args.select("issue_key").asString
+//        val commentId = args.select("comment_id").asString
+//        val comment = args.select("comment").asString
+//        if (issueKey.isEmpty || commentId.isEmpty || comment.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for comment update",
+//            Some(Json.obj("required" -> Json.arr("issue_key", "comment_id", "comment"))),
+//            None
+//          )))
+//        } else {
+//          val body = Json.obj(
+//            "body" -> Json.obj(
+//              "type" -> "doc",
+//              "version" -> 1,
+//              "content" -> Json.arr(
+//                Json.obj(
+//                  "type" -> "paragraph",
+//                  "content" -> Json.arr(
+//                    Json.obj("type" -> "text", "text" -> comment)
+//                  )
+//                )
+//              )
+//            )
+//          )
+//          makeRequest(s"/rest/api/3/issue/$issueKey/comment/$commentId", "PUT", Some(body))
+//        }
+//
+//      case ("issueComment", "delete") =>
+//        val issueKey = args.select("issue_key").asString
+//        val commentId = args.select("comment_id").asString
+//        if (issueKey.isEmpty || commentId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for comment deletion",
+//            Some(Json.obj("required" -> Json.arr("issue_key", "comment_id"))),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/issue/$issueKey/comment/$commentId", "DELETE")
+//        }
+//
+//      // User operations
+//      case ("user", "get") =>
+//        val accountId = args.select("account_id").asString
+//        if (accountId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for user retrieval",
+//            Some(Json.obj("required" -> "account_id")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/user?accountId=$accountId")
+//        }
+//
+//      case ("user", "create") =>
+//        val emailAddress = args.select("email_address").asString
+//        val displayName = args.select("display_name").asString
+//        if (emailAddress.isEmpty || displayName.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for user creation",
+//            Some(Json.obj("required" -> Json.arr("email_address", "display_name"))),
+//            None
+//          )))
+//        } else {
+//          val body = Json.obj(
+//            "emailAddress" -> emailAddress,
+//            "displayName" -> displayName
+//          )
+//          makeRequest("/rest/api/3/user", "POST", Some(body))
+//        }
+//
+//      case ("user", "delete") =>
+//        val accountId = args.select("account_id").asString
+//        if (accountId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for user deletion",
+//            Some(Json.obj("required" -> "account_id")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/user?accountId=$accountId", "DELETE")
+//        }
+//
+//      // Issue Attachment operations
+//      case ("issueAttachment", "get") =>
+//        val attachmentId = args.select("attachment_id").asString
+//        if (attachmentId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for attachment retrieval",
+//            Some(Json.obj("required" -> "attachment_id")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/attachment/$attachmentId")
+//        }
+//
+//      case ("issueAttachment", "getAll") =>
+//        val issueKey = args.select("issue_key").asString
+//        if (issueKey.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for attachment retrieval",
+//            Some(Json.obj("required" -> "issue_key")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/2/issue/$issueKey?fields=attachment").map {
+//            case Right(response) =>
+//              (response \ "fields" \ "attachment").asOpt[JsArray] match {
+//                case Some(attachments) => Right(attachments)
+//                case None => Right(Json.arr())
+//              }
+//            case Left(error) => Left(error)
+//          }
+//        }
+//
+//      case ("issueAttachment", "delete") =>
+//        val attachmentId = args.select("attachment_id").asString
+//        if (attachmentId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for attachment deletion",
+//            Some(Json.obj("required" -> "attachment_id")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/attachment/$attachmentId", "DELETE")
+//        }
+//
+//      case _ =>
+//        Future.successful(Left(WorkflowError(
+//          s"Unsupported resource or operation",
+//          Some(Json.obj("resource" -> resource, "operation" -> operation)),
+//          None
+//        )))
+//    }
+//  }
+//}
+
 
 case class WorkflowEmitEvent(
     payload: JsObject,

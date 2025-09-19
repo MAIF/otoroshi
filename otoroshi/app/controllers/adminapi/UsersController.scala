@@ -141,6 +141,50 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     }
 
+  def discardPrivateAppsSessionFor(id: String) =
+    ApiAction.async { ctx =>
+      ctx.checkRights(TenantAdminOnly) {
+        env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
+          env.datastores.authConfigsDataStore.findById(id).flatMap {
+            case None                                        => Results.NotFound(Json.obj("error" -> "auth module not found")).future
+            case Some(_)                                     =>
+              env.datastores.privateAppsUserDataStore
+                .findAll()
+                .map(sessions => sessions.filter(_.authConfigId == id))
+                .map(sessions => sessions.map(_.delete()))
+                .map { _ =>
+                  val event = AdminApiEvent(
+                    env.snowflakeGenerator.nextIdStr(),
+                    env.env,
+                    Some(ctx.apiKey),
+                    None,
+                    "DISCARD_AUTH_MODULE_SESSIONS",
+                    s"Admin discarded all private app sessions for auth module",
+                    ctx.from,
+                    ctx.ua,
+                    Json.obj("authModuleId" -> id)
+                  )
+                  Audit.send(event)
+                  Alerts
+                    .send(
+                      SessionDiscardedAlert(
+                        env.snowflakeGenerator.nextIdStr(),
+                        env.env,
+                        fakeBackOfficeUser,
+                        event,
+                        ctx.from,
+                        ctx.ua
+                      )
+                    )
+                  Ok(Json.obj("done" -> true))
+                }
+          }
+          }
+        } recover { case _ =>
+          Ok(Json.obj("done" -> false))
+        }
+      }
+
   def discardPrivateAppsSession(id: String) =
     ApiAction.async { ctx =>
       ctx.checkRights(TenantAdminOnly) {
@@ -148,7 +192,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           env.datastores.privateAppsUserDataStore.findById(id).flatMap {
             case None                                        => Results.NotFound(Json.obj("error" -> "Session not found")).future
             case Some(session) if !ctx.canUserWrite(session) => ctx.fforbidden
-            case Some(_)                                     => {
+            case Some(_)                                     =>
               env.datastores.privateAppsUserDataStore.delete(id) map { _ =>
                 val event = AdminApiEvent(
                   env.snowflakeGenerator.nextIdStr(),
@@ -175,7 +219,6 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
                   )
                 Ok(Json.obj("done" -> true))
               }
-            }
           }
         } recover { case _ =>
           Ok(Json.obj("done" -> false))

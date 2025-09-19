@@ -582,6 +582,7 @@ DELETE  /api/admin-sessions                                   otoroshi.controlle
 GET     /api/apps-sessions                                    otoroshi.controllers.adminapi.UsersController.privateAppsSessions()
 DELETE  /api/apps-sessions/:id                                otoroshi.controllers.adminapi.UsersController.discardPrivateAppsSession(id)
 DELETE  /api/apps-sessions                                    otoroshi.controllers.adminapi.UsersController.discardAllPrivateAppsSessions()
+DELETE  /api/apps-sessions-module/:id                         otoroshi.controllers.adminapi.UsersController.discardPrivateAppsSessionFor(id)
 
 GET     /api/audit/events                                     otoroshi.controllers.adminapi.EventsController.auditEvents()
 # TODO: PAGINATE
