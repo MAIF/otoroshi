@@ -49,7 +49,7 @@ const LOCAL_STORAGE_TERMINAL_TAB_KEY = "io.otoroshi.next.workflow.designer.termi
 
 export function WorkflowsDesigner(props) {
   const updateNodeInternals = useUpdateNodeInternals();
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, setCenter, ...reactFlow } = useReactFlow();
 
   const [activeNode, setActiveNode] = useState(false);
   const [showTagModal, openTagModal] = useState(false);
@@ -60,6 +60,7 @@ export function WorkflowsDesigner(props) {
   const [terminalSize, _changeTerminalSize] = useState(0)
   const [resizingTerminal, toggleResizingTerminal] = useState(false)
   const [initialTerminalTab, setInitialTerminalTab] = useState()
+
 
   const [workflow, setWorkflow] = useState(props.workflow);
 
@@ -1240,7 +1241,13 @@ export function WorkflowsDesigner(props) {
   const resetFlow = () => {
     console.log('reset flow')
 
-    setEdges(eds => eds.map(e => ({ ...e, animated: false })))
+    setEdges(eds => eds.map(e => ({
+      ...e,
+      data: {
+        highlighted: false
+      },
+      animated: false
+    })))
     setNodes(nds => nds.map(n => ({
       ...n,
       data: {
@@ -1256,6 +1263,17 @@ export function WorkflowsDesigner(props) {
     workflow_id: props.workflow.id,
     functions: props.workflow.functions
   })
+
+  const scrollToNode = (selectedNode) => {
+    const node = reactFlow.getNode(selectedNode.id);
+    if (node) {
+      const nodeWidth = 150;
+      const rightX = node.position.x + nodeWidth / 2;
+      const centerY = node.position.y + 25;
+
+      setCenter(rightX, centerY, { zoom: 1.5, duration: 1200 });
+    }
+  }
 
   if (nodes.length === 0) return null;
 
@@ -1315,7 +1333,8 @@ export function WorkflowsDesigner(props) {
           highlightNode,
           highlightEdge,
           unhighlighNode,
-          resetFlow
+          resetFlow,
+          scrollToNode
         }}
       />
     </div>

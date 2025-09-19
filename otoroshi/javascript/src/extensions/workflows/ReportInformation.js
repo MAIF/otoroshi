@@ -1,29 +1,23 @@
 import React, { useState } from 'react';
 import { ReportView } from '../../components/ReportView';
-import { NgCodeRenderer } from '../../components/nginputs';
 
-export default function ReportInformation({ report }) {
+export default function ReportInformation(props) {
   const [unit, setUnit] = useState('ms');
 
-  console.log(report)
+  console.log(props.report)
+  let report = props.report
 
   if (report.done === false || report.error) {
-    return <NgCodeRenderer
-      ngOptions={{ spread: true }}
-      rawSchema={{
-        props: {
-          ace_config: {
-            fontSize: 14,
-            readOnly: true,
-          },
-          editorOnly: true,
-        }
-      }}
-      value={report.error}
-    />
+    report = {
+      ...report,
+      run: {
+        log: [...report.run.log, {
+          "timestamp": Date.now(),
+          ...report.error
+        }]
+      }
+    }
   }
-
-  console.log(report.run)
 
   const { starting, ending } = report.run.log.reduce((acc, log) => {
     if (log.message.includes('ending')) {
@@ -100,10 +94,9 @@ export default function ReportInformation({ report }) {
   const start = report.run.log[0]?.timestamp;
   const end = report.run.log[report.run.log.length - 1]?.timestamp;
 
-  console.log(stepsByCategory)
-
   return <>
-    <div style={{ position: 'relative', flex: 1 }} className="d-flex flex-column mt-1">
+    < div style={{ position: 'relative', flex: 1 }
+    } className="d-flex flex-column mt-1" >
       <div className="tryIt">
         <ReportView
           report={{
@@ -114,8 +107,9 @@ export default function ReportInformation({ report }) {
           isWorkflowView
           unit={unit}
           setUnit={setUnit}
+          onClick={props.handleStep}
         />
       </div>
-    </div>
+    </div >
   </>
 }

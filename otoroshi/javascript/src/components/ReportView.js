@@ -16,6 +16,7 @@ export const ReportView = ({
   flow = 'all',
   setFlow,
   isWorkflowView,
+  onClick
 }) => {
   const [selectedStep, setSelectedStep] = useState(-1);
   const [selectedPlugin, setSelectedPlugin] = useState(-1);
@@ -133,6 +134,9 @@ export const ReportView = ({
             onClick={() => {
               setSelectedStep(-1);
               setSelectedPlugin(-1);
+
+              if (onClick)
+                onClick(-1)
             }}
             className={`d-flex-between report-step ${selectedStep === -1 && selectedPlugin === -1 ? 'btn-primaryColor' : 'btn-quiet'}`}
           >
@@ -156,6 +160,9 @@ export const ReportView = ({
                     onClick={() => {
                       setSelectedPlugin(-1);
                       setSelectedStep(step.task);
+
+                      if (onClick)
+                        onClick(step)
                     }}
                     className={`d-flex-between report-step ${step.task === selectedStep && selectedPlugin === -1 ? 'btn-primaryColor' : 'btn-quiet'}`}
                   >
@@ -164,13 +171,13 @@ export const ReportView = ({
                         <i
                           className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
                             } me-1`}
-                          onClick={() =>
+                          onClick={() => {
                             setSteps(
                               steps.map((s) =>
                                 s.task === step.task ? { ...s, open: !step.open } : s
                               )
                             )
-                          }
+                          }}
                         />
                       )}
                       <span>{firstLetterUppercase(name)}</span>
@@ -208,6 +215,9 @@ export const ReportView = ({
                             onClick={() => {
                               setSelectedStep(step.task);
                               setSelectedPlugin(plugin.name);
+
+                              if (onClick)
+                                onClick(step)
                             }}
                             className={`d-flex-between report-step ${step.task === selectedStep && plugin.name === selectedPlugin ? 'btn-primary' : 'btn-quiet'}`}
                           >

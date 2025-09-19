@@ -37,7 +37,8 @@ export function Flow({
         edgeTypes={{
           customEdge: CustomEdge,
         }}
-        onNodeDoubleClick={(_, group) => onGroupNodeClick(group)}>
+        onNodeDoubleClick={(_, group) => onGroupNodeClick(group)}
+      >
         <Background />
         <Controls orientation="horizontal" showInteractive={false}>
           <button

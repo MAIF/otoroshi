@@ -618,9 +618,9 @@
     cursor: pointer;
   }
 
-  .terminal-log-header div:nth-child(2),
-  .terminal-log-header div:nth-child(3),
-  .terminal-log-header div:first-child {
+  .terminal-log-header>div:nth-child(2),
+  .terminal-log-header>div:nth-child(3),
+  .terminal-log-header>div:first-child {
     border-right: 1px solid var(--bg-color_level3);
     text-align: center;
   }

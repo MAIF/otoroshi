@@ -46,16 +46,21 @@ export function Node(props) {
   }
 
   const ref = useRef()
+  let timeout
 
   const highlightRef = useRef(data.highlighted)
   highlightRef.current = data.highlighted
 
   const addClassList = () => {
     if (!highlightRef.current) {
-      ref.current?.classList.remove("node--successfull'")
+      if (timeout)
+        clearTimeout(timeout)
+      ref.current?.classList.remove("node--successfull")
       ref.current?.classList.remove("loading-gradient")
     }
     else if (highlightRef.current === 'END') {
+      if (timeout)
+        clearTimeout(timeout)
       ref.current?.classList.add('node--successfull')
       ref.current?.classList.remove("loading-gradient")
     }
@@ -72,7 +77,7 @@ export function Node(props) {
       if (props.id === 'start') {
         addClassList()
       } else
-        setTimeout(addClassList, (data.highlighted) * 1000)
+        timeout = setTimeout(addClassList, (data.highlighted) * 1000)
     } else {
       addClassList()
     }
