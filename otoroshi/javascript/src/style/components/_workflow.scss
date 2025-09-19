@@ -109,7 +109,7 @@
     top: 56px;
     width: 0;
     height: 100%;
-    z-index: 10;
+    z-index: 1000;
     background: var(--bg-color_level3);
     transition: width 0.3s;
     padding-bottom: 4rem;
@@ -637,5 +637,18 @@
 
   .flex-grow {
     flex: 1;
+  }
+
+  .breakpoint {
+    color: red;
+    opacity: .5;
+  }
+
+  .breakpoint--enabled {
+    opacity: 1;
+  }
+
+  .breakpoint:hover {
+    opacity: 1;
   }
 }

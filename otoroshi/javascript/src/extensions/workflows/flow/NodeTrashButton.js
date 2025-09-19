@@ -1,9 +1,9 @@
 import React from 'react';
 
 export default function NodeTrashButton(props) {
-  return (
-    <i
-      className="fas fa-trash node-trash"
+  return <div className='d-flex node-trash' style={{ gap: '.75rem' }}>
+    {!props.isStart && <i
+      className="fas fa-trash"
       onClick={(e) => {
         e.stopPropagation();
         window
@@ -16,6 +16,7 @@ export default function NodeTrashButton(props) {
             }
           });
       }}
-    />
-  );
+    />}
+    <i className={`fas fa-circle breakpoint ${props.breakpoint ? 'breakpoint--enabled' : ''}`} onClick={props.toggleBreakPoint} />
+  </div>
 }

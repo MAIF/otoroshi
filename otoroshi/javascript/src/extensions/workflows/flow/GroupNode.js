@@ -73,10 +73,12 @@ export const GroupNode = (props) => {
       {data.nodeRenderer && data.nodeRenderer(props)}
 
       <Panel className="m-0 node-one-output" position={position}>
-        <i className={data.label || data.icon} /> {data.display_name || data.name} {data?.content?.breakpoint ? <span style={{ color: 'red' }}>(breakpoint <i className="fas fa-bug" />)</span> : ''}
+        <i className={data.label || data.icon} /> {data.display_name || data.name} {data?.information?.breakpoint && <i className="fas fa-circle ms-auto" style={{ color: 'red' }} />}
       </Panel>
 
-      <NodeTrashButton {...props} />
+      <NodeTrashButton {...props}
+        breakpoint={data?.information?.breakpoint}
+        toggleBreakPoint={() => data.functions.toggleBreakPoint(props.id)} />
 
       <div className="node-description">{props.data.information.description}</div>
     </>

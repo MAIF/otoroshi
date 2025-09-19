@@ -20,7 +20,7 @@ import { useSignalValue } from 'signals-react-safe';
 import debounce from 'lodash/debounce';
 import Terminal from './Terminal';
 
-export const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name'];
+export const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name', 'breakpoint'];
 
 export function splitInformationAndContent(obj) {
   return Object.entries(obj).reduce(
@@ -467,6 +467,7 @@ export function WorkflowsDesigner(props) {
         kind: 'start',
         description: config.description,
         position: config.position || { x: 0, y: 0 },
+        breakpoint: config.breakpoint || false
       },
       addInformationsToNode
     );
@@ -577,6 +578,7 @@ export function WorkflowsDesigner(props) {
       returned: lastNode.data.content?.returned,
       id: 'start',
       description: startNode.data.information.description,
+      breakpoint: startNode.data.information.breakpoint,
       position: startPosition,
     };
 
@@ -959,10 +961,31 @@ export function WorkflowsDesigner(props) {
           updateData: updateData,
           appendSourceHandle: appendSourceHandle,
           handleDataChange: handleDataChange,
-          deleteHandle: deleteHandle
+          deleteHandle: deleteHandle,
+          toggleBreakPoint: toggleBreakPoint
         },
       },
     };
+  }
+
+  const toggleBreakPoint = (nodeId) => {
+    setNodes((eds) =>
+      eds.map((node) => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              information: {
+                ...node.data.information,
+                breakpoint: !node.data.information.breakpoint
+              }
+            },
+          };
+        }
+        return node;
+      })
+    );
   }
 
   function handleDataChange(nodeId, newData) {
@@ -1276,6 +1299,8 @@ export function WorkflowsDesigner(props) {
   }
 
   if (nodes.length === 0) return null;
+  
+  console.log(nodes)
 
   return (
     <div className="workflow"

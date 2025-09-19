@@ -103,14 +103,19 @@ export function Node(props) {
         }}
       >
         <div className="node-one-output d-flex-center">
-          {data.operators ? <i className="fas fa-wrench" /> : <i className={label} />} {name} {data?.content?.breakpoint ? <span style={{ color: 'red' }}>(breakpoint <i className="fas fa-bug" />)</span> : ''}
+          {data.operators ? <i className="fas fa-wrench" /> : <i className={label} />} {name}
+          {data?.information?.breakpoint && <i className="fas fa-circle ms-auto" style={{ color: 'red' }} />}
         </div>
 
         {nodeRenderer && nodeRenderer(props)}
 
         {data.nodeRenderer && data.nodeRenderer(props)}
 
-        {props.id !== 'returned-node' && props.id !== 'start' && <NodeTrashButton {...props} />}
+        {props.id !== 'returned-node' && <NodeTrashButton {...props}
+          isStart={props.id === 'start'}
+          breakpoint={data?.information?.breakpoint}
+          toggleBreakPoint={() => data.functions.toggleBreakPoint(props.id)}
+        />}
 
         <div className="node-description">{data.information.description}</div>
       </button>
