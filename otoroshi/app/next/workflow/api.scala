@@ -335,6 +335,7 @@ trait Node extends NodeLike {
   def description: String                        = json.select("description").asOptString.getOrElse("")
   def kind: String                               = json.select("kind").asString
   def enabled: Boolean                           = json.select("enabled").asOptBoolean.getOrElse(true)
+  def breakpoint: Boolean                        = json.select("breakpoint").asOptBoolean.getOrElse(false)
   def result: Option[String]                     = json.select("result").asOptString
   def returned: Option[JsValue]                  = json.select("returned").asOpt[JsValue]
   def run(wfr: WorkflowRun, prefix: Seq[Int], from: Seq[Int])(implicit
@@ -360,6 +361,7 @@ trait Node extends NodeLike {
       JsNull.rightf
     } else {
       wfr.log(s"starting '${id}'", this)
+
       def go(): Future[Either[WorkflowError, JsValue]] = {
         try {
           run(wfr, prefix, from)
@@ -431,9 +433,13 @@ trait Node extends NodeLike {
           }
         }
       }
+
+      if (breakpoint) {
+        wfr.attrs.get(WorkflowAdminExtension.workflowDebuggerKey).foreach(_.pause())
+      }
       wfr.attrs.get(WorkflowAdminExtension.workflowDebuggerKey) match {
         case None => go()
-        case Some(debugger) =>  debugger.waitForNextStep().flatMap { _ =>
+        case Some(debugger) => debugger.waitForNextStep().flatMap { _ =>
           if (debugger.isStopped) {
             WorkflowError(
               message = "_____otoroshi_workflow_ended",

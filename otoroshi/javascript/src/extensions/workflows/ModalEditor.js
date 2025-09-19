@@ -59,6 +59,10 @@ export function ModalEditor({ node }) {
       label: 'Enabled',
       type: 'bool',
     },
+    breakpoint: {
+      label: 'Breakpoint',
+      type: 'bool',
+    },
     result: {
       type: 'string',
       label: 'Result',
@@ -155,7 +159,7 @@ export function ModalEditor({ node }) {
       type: 'group',
       name: 'General',
       collapsable: false,
-      fields: [!isAnOperator ? 'enabled' : '', 'description'].filter((field) => field.length > 0),
+      fields: [!isAnOperator ? 'enabled' : '', 'breakpoint', 'description'].filter((field) => field.length > 0),
     },
     getConfigurationGroup(),
   ];

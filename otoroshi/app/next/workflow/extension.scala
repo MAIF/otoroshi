@@ -510,9 +510,9 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             if (live) {
               val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
               val hotFlux: Flux[JsObject] = hotSource.asFlux()
-              val debugger = new WorkflowDebugger()
+              //val debugger = new WorkflowDebugger()
               val attrs = TypedMap.empty
-              attrs.put(WorkflowAdminExtension.workflowDebuggerKey -> debugger)
+              //attrs.put(WorkflowAdminExtension.workflowDebuggerKey -> debugger)
               attrs.put(WorkflowAdminExtension.liveUpdatesSourceKey -> hotSource)
               engine.run(workflow_id, node, input, attrs, functions).map { res =>
                 hotSource.tryEmitNext(Json.obj("kind" -> "result", "data" -> res.json))

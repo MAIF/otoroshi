@@ -35,7 +35,7 @@ export function DesignerActions({ run, action, debug, running, handleFlowStop, n
           onClick={e => debug(step_by_step)}>
           <i className={running === 'play' ? 'fas fa-square' : 'fas fa-play'} />
         </Button>
-        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ display: 'none', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
           {step_by_step && <OnSwitch onChange={e => setStep_by_step(!step_by_step)} />}
           {!step_by_step && <OffSwitch onChange={e => setStep_by_step(!step_by_step)} />}
           <span style={{ marginLeft: 8, height: 17 }}>step by step</span>
