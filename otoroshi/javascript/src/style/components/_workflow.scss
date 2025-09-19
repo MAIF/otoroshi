@@ -609,4 +609,33 @@
     justify-content: center;
     flex: 1;
   }
+
+  .terminal-log-header {
+    display: grid;
+    grid-template-columns: 70px 70px 79px 1fr;
+    border: 1px solid var(--bg-color_level3);
+    font-weight: lighter;
+    cursor: pointer;
+  }
+
+  .terminal-log-header div:nth-child(2),
+  .terminal-log-header div:nth-child(3),
+  .terminal-log-header div:first-child {
+    border-right: 1px solid var(--bg-color_level3);
+    text-align: center;
+  }
+
+  .terminal-log-item-data {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .terminal-log-header div:last-child {
+    padding-left: .5rem;
+  }
+
+  .flex-grow {
+    flex: 1;
+  }
 }

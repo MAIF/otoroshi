@@ -37,12 +37,7 @@ export function Flow({
         edgeTypes={{
           customEdge: CustomEdge,
         }}
-        onNodeDoubleClick={(_, group) => onGroupNodeClick(group)}
-        onClick={e => {
-          e.preventDefault()
-          e.stopPropagation()
-        }}
-      >
+        onNodeDoubleClick={(_, group) => onGroupNodeClick(group)}>
         <Background />
         <Controls orientation="horizontal" showInteractive={false}>
           <button

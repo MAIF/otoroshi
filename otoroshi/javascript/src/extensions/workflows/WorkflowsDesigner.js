@@ -80,12 +80,12 @@ export function WorkflowsDesigner(props) {
     const savedSize = localStorage.getItem(LOCAL_STORAGE_TERMINAL_KEY)
 
     if (savedSize)
-      _changeTerminalSize(savedSize)
+      _changeTerminalSize(Number(savedSize))
 
     const savedTab = localStorage.getItem(LOCAL_STORAGE_TERMINAL_TAB_KEY)
 
     if (savedTab)
-      setInitialTerminalTab(Number(savedTab))
+      setInitialTerminalTab(savedTab)
   }
 
   function createNodeFromUI(node) {
@@ -1201,7 +1201,6 @@ export function WorkflowsDesigner(props) {
 
   const closeAllModals = () => {
     setActiveNode(false);
-    minimizeTerminal()
     openTagModal(false);
   };
 
@@ -1239,8 +1238,6 @@ export function WorkflowsDesigner(props) {
   };
 
   const resetFlow = () => {
-    minimizeTerminal()
-
     console.log('reset flow')
 
     setEdges(eds => eds.map(e => ({ ...e, animated: false })))

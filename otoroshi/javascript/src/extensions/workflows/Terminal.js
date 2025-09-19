@@ -3,6 +3,8 @@ import CodeInput from '../../components/inputs/CodeInput';
 import { nodesCatalogSignal } from './models/Functions';
 import { DesignerActions } from './DesignerActions';
 import ReportInformation from './ReportInformation';
+import moment from 'moment'
+
 
 const Tab = ({ onClick, name, selected }) => {
     return <div style={{
@@ -2160,7 +2162,7 @@ function Terminal({
 
     function eventCallback(event, resolve) {
         if (event.kind === 'progress') {
-            setLog(log => [...log, event])
+            setLog(log => [event, ...log])
 
             const event_id = event?.data?.node?.id;
             console.log(`[${event.data.node.kind}]`, event_id);
@@ -2210,8 +2212,9 @@ function Terminal({
     }
 
     const runWs = (action, data = {}) => {
-        if (action === 'start')
+        if (action === 'start') {
             flowOperators.resetFlow()
+        }
 
         if (!wsRef.current) {
             const location = window.location;
@@ -2230,7 +2233,7 @@ function Terminal({
                 }
             }
             setTimeout(() => {
-                minimize()
+                // minimize()
                 runWsAction(action, data);
             }, 1000)
         } else {
@@ -2243,9 +2246,9 @@ function Terminal({
         runWs('start')
     }
 
-    const debug = (step_by_step = false) => {
+    const debug = () => {
         setAction('debug')
-        runWs('start', { step_by_step })
+        runWs('start', { step_by_step: true })
     }
 
     const minimize = () => changeTerminalSize(0)
@@ -2257,7 +2260,8 @@ function Terminal({
     const tabContentVisible = terminalSize !== 0
 
     return <div className='terminal' style={{
-        flex: terminalSize
+        flex: terminalSize,
+        maxHeight: `${100 * terminalSize}%`
     }}>
         <DesignerActions
             run={run}
@@ -2342,12 +2346,21 @@ function Terminal({
 }
 
 const LogTab = ({ log }) => {
-    return <div>
+    return <div className='d-flex flex-column' style={{
+        overflowY: 'auto',
+    }}>
+        <div className='terminal-log-header'>
+            <div>Time</div>
+            <div>Action</div>
+            <div>ID</div>
+            <div>Message</div>
+        </div>
         {log.map((item, i) => {
-            return <div key={`debug${i}`} className='d-flex'>
-                <span>{item.kind}</span>
-                <span>{item.data.timestamp}</span>
-                <span>{item.data.message}</span>
+            return <div key={`debug${i}`} className='terminal-log-header terminal-log-item'>
+                <div>{moment(item.data.timestamp).format('hh:mm:ss')}</div>
+                <div>{item.data.message.split(' ')[0]}</div>
+                <div>{item.data.node.kind}</div>
+                <div className='terminal-log-item-data'>{JSON.stringify(item.data, null, 4)}</div>
             </div>
             // return <CodeInput
             //     ace_config={{
@@ -2362,7 +2375,7 @@ const LogTab = ({ log }) => {
             //     label={null}
             // />
         })}
-    </div>
+    </div >
 }
 
 const ReportTab = ({ report }) => {
