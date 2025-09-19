@@ -152,7 +152,7 @@ function Terminal({
 
     return <div className='terminal' style={{
         flex: terminalSize,
-        maxHeight: `${100 * terminalSize}%`,
+        maxHeight: 100 * terminalSize > 0 ? `${100 * terminalSize}%` : 'initial',
         // background: 'var(--bg-color_level2)'
     }}>
         <DesignerActions
