@@ -254,6 +254,8 @@ object GlobalExpressionLanguage {
               Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(s"no-domain-$field")
             case "route.id" if route.isDefined                                   => route.get.id
             case "route.name" if route.isDefined                                 => route.get.name
+            case "route.json.pretty" if route.isDefined                       => route.get.json.prettify
+            case "route.json" if route.isDefined                              => route.get.json.stringify
             case r"route.metadata.$field@(.*):$dv@(.*)" if route.isDefined       =>
               route.get.metadata.get(field).getOrElse(dv)
             case r"route.metadata.$field@(.*)" if route.isDefined                =>
@@ -294,6 +296,8 @@ object GlobalExpressionLanguage {
             case "apikey.name" if apiKey.isDefined                              => apiKey.get.clientName
             case "apikey.id" if apiKey.isDefined                                => apiKey.get.clientId
             case "apikey.clientId" if apiKey.isDefined                          => apiKey.get.clientId
+            case "apikey.json.pretty" if apiKey.isDefined                       => apiKey.get.lightJson.prettify
+            case "apikey.json" if apiKey.isDefined                              => apiKey.get.lightJson.stringify
             case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined    =>
               apiKey.get.metadata.get(field).getOrElse(dv)
             case r"apikey.metadata.$field@(.*)" if apiKey.isDefined             =>
