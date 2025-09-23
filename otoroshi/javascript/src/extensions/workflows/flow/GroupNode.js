@@ -37,7 +37,7 @@ export const GroupNode = (props) => {
   let timeout
 
   const highlight = () => {
-    if (highlightRef.current) {
+    if (highlightRef.current === true) {
       const el = document.querySelector(`[data-id="${props.id}"]`)
       el
         .classList
