@@ -47,7 +47,6 @@ case class CoreCategory(
       "wait",
       "error",
       "value",
-      "predicate",
       "returned",
       "start",
       "pause"

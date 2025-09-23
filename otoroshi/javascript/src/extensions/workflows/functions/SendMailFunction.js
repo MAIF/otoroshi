@@ -33,7 +33,7 @@ export const SendMailFunction = {
         mailer_config: {
             renderer: props => {
 
-                const { mailer_config } = props.rootValue
+                const mailer_config = props.rootValue?.mailer_config
                 const kind = mailer_config?.kind
 
                 const flow = ({
@@ -41,7 +41,7 @@ export const SendMailFunction = {
                     "mailgun": MAILERS_FORM.mailgunFormFlow,
                     "sendgrid": MAILERS_FORM.sendgridFormFlow,
                     "generic": MAILERS_FORM.genericFormFlow
-                }[kind])
+                }[kind]) || []
 
                 return <div className='pb-5'>
                     <NgForm

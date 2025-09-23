@@ -114,6 +114,7 @@ function Terminal({
             flowOperators.resetFlow()
             setTab('memory')
             setReport(undefined)
+            setLog([])
         }
 
         if (!wsRef.current) {

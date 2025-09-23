@@ -118,7 +118,7 @@ export function Node(props) {
 
         {nodeRenderer && nodeRenderer(props)}
 
-        {data.nodeRenderer && data.nodeRenderer(props)}
+        {data.nodeRenderer && !nodeRenderer && data.nodeRenderer(props)}
 
         {props.id !== 'returned-node' && <NodeTrashButton {...props}
           isStart={props.id === 'start'}

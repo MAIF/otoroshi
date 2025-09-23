@@ -11,7 +11,6 @@ import { ValueNode } from '../nodes/ValueNode';
 import { WaitNode } from '../nodes/WaitNode';
 import { StartNode } from '../nodes/StartNode';
 import { ReturnedNode } from '../nodes/ReturnedNode';
-import { PredicateNode } from '../nodes/PredicateNode';
 
 import { IsFalsyOperator } from '../operators/IsFalsyOperator';
 import { ArrayAppendOperator } from '../operators/ArrayAppendOperator';
@@ -43,6 +42,7 @@ import { TryCatchNode } from '../nodes/TryCatchNode';
 import { StopAndErrorNode } from '../nodes/StopAndErrorNode';
 import { AsyncNode } from '../nodes/AsyncNode';
 import { WhileNode } from '../nodes/WhileNode';
+import { JumpNode } from '../nodes/JumpNode';
 
 export const nodesCatalogSignal = signal({
   nodes: [],
@@ -55,6 +55,7 @@ const OVERLOADED_NODES = {
   parallel: ParallelFlowsNode,
   switch: SwitchNode,
   if: IfThenElseNode,
+  jump: JumpNode,
   foreach: ForEachNode,
   try: TryCatchNode,
   map: MapNode,
@@ -65,7 +66,6 @@ const OVERLOADED_NODES = {
   value: ValueNode,
   returned: ReturnedNode,
   start: StartNode,
-  predicate: PredicateNode,
   $mem_ref: MemRefOperator,
   $array_append: ArrayAppendOperator,
   $array_prepend: ArrayPrependOperator,

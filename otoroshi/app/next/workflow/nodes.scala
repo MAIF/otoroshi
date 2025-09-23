@@ -246,7 +246,8 @@ case class JumpNode(json: JsObject) extends Node {
                     prefix: Seq[Int],
                     from: Seq[Int]
                   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val predicate = WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(true)
+    val rawPredicate = json.select("predicate").asOpt[JsValue]
+    val predicate = rawPredicate.flatMap(pre => WorkflowOperator.processOperators(pre, wfr, env).asOptBoolean).getOrElse(true)
     val to = json.select("to").asOpt[String].getOrElse("--")
     val path = json.select("path").asOpt[String].getOrElse("--")
     if (predicate) {

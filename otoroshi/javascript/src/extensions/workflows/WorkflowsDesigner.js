@@ -165,13 +165,13 @@ export function WorkflowsDesigner(props) {
 
     if (!workflow || Object.keys(workflow).length === 0) return { edges: [], nodes: [] };
 
-    const me = uuid();
-
+    
     let edges = [];
     let nodes = [];
-
+    
     const useCurrent = workflow.kind !== 'workflow';
-
+    
+    const me = workflow.id ? workflow.id : uuid()
     let current = useCurrent ? createNode(me, workflow, addInformationsToNode) : undefined;
 
     if (useCurrent) nodes.push(current);
@@ -227,6 +227,17 @@ export function WorkflowsDesigner(props) {
         nodes = [...child.nodes];
         edges = edges.concat(child.edges);
       }
+    } else if (workflow.kind === 'jump') {
+      if (workflow.to)
+        edges.push({
+          id: `${me}-jump`,
+          source: me,
+          sourceHandle: `to-${me}`,
+          target: workflow.to,
+          targetHandle: `input-${workflow.to}`,
+          type: 'customEdge',
+          animated: true,
+        });
     } else if (workflow.kind === 'if') {
       const thensubGraph = workflow.then
         ? buildGraph([workflow.then], addInformationsToNode, targetId, handleId)
@@ -258,6 +269,17 @@ export function WorkflowsDesigner(props) {
           type: 'customEdge',
           animated: true,
         });
+      else if (targetId)
+        edges.push({
+          id: `${me}-then`,
+          source: me,
+          sourceHandle: `then-${me}`,
+          target: targetId,
+          targetHandle: handleId || `input-${targetId}`,
+          type: 'customEdge',
+          animated: true,
+        });
+
 
       if (hasElseGraph)
         edges.push({
@@ -269,6 +291,17 @@ export function WorkflowsDesigner(props) {
           type: 'customEdge',
           animated: true,
         });
+      else if (targetId) {
+        edges.push({
+          id: `${me}-else`,
+          source: me,
+          sourceHandle: `else-${me}`,
+          target: targetId,
+          targetHandle: handleId || `input-${targetId}`,
+          type: 'customEdge',
+          animated: true,
+        })
+      }
     } else if (
       workflow.kind === 'foreach' ||
       workflow.kind === 'flatmap' ||
@@ -640,7 +673,18 @@ export function WorkflowsDesigner(props) {
       ];
     }
 
-    if (kind === 'if') {
+    if (kind === 'jump') {
+      const ifFlow = node.data.content;
+
+      const to = connections.find((conn) => conn.sourceHandle.startsWith('to'));
+
+      subflow = {
+        ...ifFlow,
+        to: to?.target,
+        kind,
+      };
+    }
+    else if (kind === 'if') {
       const ifFlow = node.data.content;
 
       const then = connections.find((conn) => conn.sourceHandle.startsWith('then'));

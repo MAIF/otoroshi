@@ -126,17 +126,19 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
 
   const length = useMemo(() => bezierPathLength(edgePath), [sourceX, sourceY, targetX, targetY])
 
+  const styles = {
+    animationDelay: `${(highlighted || error) || .1}s`,
+    strokeDasharray: highlighted || error ? length : undefined,
+    strokeDashoffset: highlighted || error ? length : undefined,
+  }
+
   return (
     <>
       <BaseEdge
         id={id}
         path={edgePath}
         className={error ? 'edge--error' : highlighted ? 'animate-edge' : ''}
-        style={{
-          animationDelay: `${(highlighted || error) || .1}s`,
-          strokeDasharray: highlighted || error ? length : 'initial',
-          strokeDashoffset: highlighted || error ? length : 'initial',
-        }}
+        style={styles}
       />
       <EdgeLabelRenderer>
         <div
