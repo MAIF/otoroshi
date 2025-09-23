@@ -37,14 +37,13 @@ export const GroupNode = (props) => {
   let timeout
 
   const highlight = () => {
-    if (highlightRef.current !== "END") {
+    if (highlightRef.current) {
       const el = document.querySelector(`[data-id="${props.id}"]`)
       el
         .classList
         .add('loading-gradient')
     }
   }
-
 
   useLayoutEffect(() => {
     const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
@@ -65,6 +64,15 @@ export const GroupNode = (props) => {
       sourceEl.classList.remove("loading-gradient")
     }
   }, [data.highlighted])
+
+  useLayoutEffect(() => {
+    const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
+    if (data.error) {
+      sourceEl.classList.add('node--error')
+    } else {
+      sourceEl.classList.remove('node--error')
+    }
+  }, [data.error])
 
   return (
     <>

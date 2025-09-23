@@ -83,6 +83,15 @@ export function Node(props) {
     }
   }, [data.highlighted])
 
+
+  useLayoutEffect(() => {
+    if (data.error) {
+      ref.current?.classList.add('node--error')
+    } else {
+      ref.current?.classList.remove('node--error')
+    }
+  }, [data.error])
+
   const zoom = useStore((state) => state.transform[2]);
   const styles = getNodeStyles(zoom)
 

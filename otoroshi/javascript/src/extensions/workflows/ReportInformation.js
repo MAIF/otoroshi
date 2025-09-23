@@ -7,18 +7,6 @@ export default function ReportInformation(props) {
   console.log(props.report)
   let report = props.report
 
-  if (report.done === false || report.error) {
-    report = {
-      ...report,
-      run: {
-        log: [...report.run.log, {
-          "timestamp": Date.now(),
-          ...report.error
-        }]
-      }
-    }
-  }
-
   const { starting, ending } = report.run.log.reduce((acc, log) => {
     if (log.message.includes('ending')) {
       return { ...acc, ending: [...acc.ending, log] }
@@ -99,6 +87,7 @@ export default function ReportInformation(props) {
     } className="d-flex flex-column mt-1" >
       <div className="tryIt">
         <ReportView
+          error={report.error}
           report={{
             steps: Object.values(stepsByCategory),
             duration_ns: (end - start) * 1_000_000,

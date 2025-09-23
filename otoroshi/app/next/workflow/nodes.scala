@@ -110,7 +110,8 @@ case class AsyncNode(json: JsObject) extends Node {
       WorkflowError(
         s"Async Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
         None,
-        None
+        None,
+        id.some
       ).leftf
     } else {
       node.internalRun(wfr, prefix :+ 0, from)
@@ -174,7 +175,7 @@ case class TryNode(json: JsObject) extends Node {
     catchNode
       .internalRun(wfr, prefix :+ 1, from)
       .recover { case t: Throwable =>
-        WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+        WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
       }
       .andThen { case _ =>
         wfr.memory.remove("caught_error")
@@ -190,13 +191,14 @@ case class TryNode(json: JsObject) extends Node {
       WorkflowError(
         s"Try Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
         None,
-        None
+        None,
+        id.some
       ).leftf
     } else {
       node
         .internalRun(wfr, prefix :+ 0, from)
         .recover { case t: Throwable =>
-          WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+          WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
         }
         .flatMap {
           case Left(error) => runCatch(wfr, prefix, from, error)
@@ -251,7 +253,8 @@ case class JumpNode(json: JsObject) extends Node {
       WorkflowError(
         message = "_____otoroshi_workflow_jump",
         details = Some(Json.obj("path" -> path, "to" -> to)),
-        exception = None
+        exception = None,
+        id.some
       ).leftf
     } else {
       JsNull.rightf
@@ -314,7 +317,8 @@ case class WhileNode(json: JsObject) extends Node {
       WorkflowError(
         s"While Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
         None,
-        None
+        None,
+        id.some
       ).leftf
     } else {
 
@@ -326,7 +330,7 @@ case class WhileNode(json: JsObject) extends Node {
         if (count.get() == maxBudget) {
           promise.trySuccess(WorkflowError(
             s"while loop '${maxBudget}' exceeds maximum budget",
-            None, None
+            None, None, id.some
           ).left)
         }
         count.incrementAndGet()
@@ -338,7 +342,7 @@ case class WhileNode(json: JsObject) extends Node {
               case Success(_) => next()
             }
             .recover { case t: Throwable =>
-              val e: Either[WorkflowError, JsValue] = WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+              val e: Either[WorkflowError, JsValue] = WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
               promise.trySuccess(e)
             }
         } else {
@@ -377,7 +381,8 @@ case class EndNode(json: JsObject) extends Node {
     WorkflowError(
       message = "_____otoroshi_workflow_ended",
       details = None,
-      exception = None
+      exception = None,
+      nodeId = id.some
     ).leftf
   }
 }
@@ -426,7 +431,8 @@ case class PauseNode(json: JsObject) extends Node {
       WorkflowError(
         message = "_____otoroshi_workflow_paused",
         details = Some(Json.obj("access_token" -> session.token)),
-        exception = None
+        exception = None,
+        nodeId = id.some
       ).left
     }
   }
@@ -514,7 +520,8 @@ case class ErrorNode(json: JsObject) extends Node {
     WorkflowError(
       message = message,
       details = details,
-      exception = None
+      exception = None,
+      nodeId = id.some
     ).leftf
   }
 }
@@ -637,7 +644,7 @@ case class WorkflowNode(json: JsObject) extends Node {
           case Right(_)                                                    => next(nodes.tail, wfr, prefix, from, idx + 1)
         }
         .recover { case t: Throwable =>
-          WorkflowError(s"caught exception on task '${id}' at step: '${head.id}'", None, Some(t)).left
+          WorkflowError(s"caught exception on task '${id}' at step: '${head.id}'", None, Some(t), id.some).left
         }
     } else {
       JsNull.rightf
@@ -703,13 +710,14 @@ case class CallNode(json: JsObject) extends Node {
       WorkflowError(
         s"Call Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
         None,
-        None
+        None,
+        id.some
       ).leftf
     } else {
       if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
       if (functionName.startsWith("self.")) {
         wfr.functions.get(functionName.substring(5)) match {
-          case None           => WorkflowError(s"self function '${functionName}' not supported in task '${id}'", None, None).leftf
+          case None           => WorkflowError(s"self function '${functionName}' not supported in task '${id}'", None, None, id.some).leftf
           case Some(function) =>
             wfr.memory.set("function_args", WorkflowOperator.processOperators(args, wfr, env))
             val r = Node.from(function).internalRun(wfr, prefix, from).andThen { case _ =>
@@ -718,18 +726,24 @@ case class CallNode(json: JsObject) extends Node {
             if (async) {
               JsNull.rightf
             } else {
-              r
+              r.map {
+                case Left(error) => error.copy(nodeId = id.some).left
+                case Right(value) => value.right
+              }
             }
         }
       } else {
         WorkflowFunction.get(functionName) match {
-          case None           => WorkflowError(s"function '${functionName}' not supported in task '${id}'", None, None).leftf
+          case None           => WorkflowError(s"function '${functionName}' not supported in task '${id}'", None, None, id.some).leftf
           case Some(function) =>
             val r = function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
             if (async) {
               JsNull.rightf
             } else {
-              r
+              r.map {
+                case Left(error) => error.copy(nodeId = id.some).left
+                case Right(value) => value.right
+              }
             }
         }
       }
@@ -813,7 +827,8 @@ case class AssignNode(json: JsObject) extends Node {
       WorkflowError(
         s"Assign Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
         None,
-        None
+        None,
+        id.some
       ).leftf
     } else {
       if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
@@ -891,7 +906,8 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
       WorkflowError(
         s"Parallel Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",
         None,
-        None
+        None,
+        id.some
       ).leftf
     } else {
       Future
@@ -916,7 +932,7 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
             .map { case (path, idx) =>
               if (env.isDev) println(s"running: ${prefix.mkString(".")}.${idx} - ${kind} / ${id}")
               path.internalRun(wfr, prefix :+ idx, from).recover { case t: Throwable =>
-                WorkflowError(s"caught exception on task '${id}' at step: '${path.id}'", None, Some(t)).left
+                WorkflowError(s"caught exception on task '${id}' at step: '${path.id}'", None, Some(t), id.some).left
               }
             }
         )
@@ -933,7 +949,8 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
                     })
                   )
                   .some,
-                None
+                None,
+                id.some
               )
             )
           } else {
@@ -1003,7 +1020,8 @@ case class SwitchNode(json: JsObject) extends Node {
       WorkflowError(
         s"Switch Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",
         None,
-        None
+        None,
+        id.some
       ).leftf
     } else {
       val paths: Seq[JsObject] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
@@ -1015,7 +1033,7 @@ case class SwitchNode(json: JsObject) extends Node {
           if (env.isDev) println(s"running: ${prefix.mkString(".")}.${idx} - ${kind} / ${id}")
           val node = Node.from(path.select("node").asObject)
           node.internalRun(wfr, prefix :+ idx, from).recover { case t: Throwable =>
-            WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+            WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
           }
         }
       }
@@ -1085,7 +1103,7 @@ case class IfThenElseNode(json: JsObject) extends Node {
         println(s"${if (from.isEmpty) "running" else "resuming"}: ${prefix.mkString(".")} - ${kind} / ${id}")
       val node = Node.from(json.select("then").asObject)
       node.internalRun(wfr, prefix :+ 0, newFrom).recover { case t: Throwable =>
-        WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+        WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
       }
     } else {
       json.select("else").asOpt[JsObject] match {
@@ -1095,7 +1113,7 @@ case class IfThenElseNode(json: JsObject) extends Node {
             println(s"${if (from.isEmpty) "running" else "resuming"}: ${prefix.mkString(".")} - ${kind} / ${id}")
           val node = Node.from(nodeJson)
           node.internalRun(wfr, prefix :+ 1, newFrom).recover { case t: Throwable =>
-            WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+            WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
           }
         }
       }
@@ -1148,7 +1166,8 @@ case class ForEachNode(json: JsObject) extends Node {
       WorkflowError(
         s"ForEach Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",
         None,
-        None
+        None,
+        id.some
       ).leftf
     } else {
       val values         = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
@@ -1165,7 +1184,7 @@ case class ForEachNode(json: JsObject) extends Node {
             node
               .internalRun(wfr, prefix :+ idx, from)
               .recover { case t: Throwable =>
-                WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+                WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
               }
               .andThen { case _ =>
                 wfr.memory.remove("foreach_key")
@@ -1192,7 +1211,7 @@ case class ForEachNode(json: JsObject) extends Node {
             node
               .internalRun(wfr, prefix :+ idx, from)
               .recover { case t: Throwable =>
-                WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+                WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
               }
               .andThen { case _ =>
                 wfr.memory.remove("foreach_value")
@@ -1268,7 +1287,8 @@ case class MapNode(json: JsObject) extends Node {
       WorkflowError(
         s"Map Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",
         None,
-        None
+        None,
+        id.some
       ).leftf
     } else {
       val values = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
@@ -1282,7 +1302,7 @@ case class MapNode(json: JsObject) extends Node {
               node
                 .internalRun(wfr, prefix :+ idx, from)
                 .recover { case t: Throwable =>
-                  WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+                  WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
                 }
                 .andThen { case _ =>
                   wfr.memory.remove("foreach_value")
@@ -1363,7 +1383,8 @@ case class FlatMapNode(json: JsObject) extends Node {
       WorkflowError(
         s"FlatMap Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",
         None,
-        None
+        None,
+        id.some
       ).leftf
     } else {
       val values = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
@@ -1377,7 +1398,7 @@ case class FlatMapNode(json: JsObject) extends Node {
               node
                 .internalRun(wfr, prefix :+ idx, from)
                 .recover { case t: Throwable =>
-                  WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+                  WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
                 }
                 .andThen { case _ =>
                   wfr.memory.remove("foreach_value")
@@ -1461,7 +1482,8 @@ case class FilterNode(json: JsObject) extends Node {
       WorkflowError(
         s"Filter Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",
         None,
-        None
+        None,
+        id.some
       ).leftf
     } else {
       val values = WorkflowOperator.processOperators(json.select("values").asValue, wfr, env)
@@ -1476,7 +1498,7 @@ case class FilterNode(json: JsObject) extends Node {
               node
                 .internalRun(wfr, prefix :+ idx, from)
                 .recover { case t: Throwable =>
-                  WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t)).left
+                  WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
                 }
                 .andThen { case _ =>
                   wfr.memory.remove("foreach_value")

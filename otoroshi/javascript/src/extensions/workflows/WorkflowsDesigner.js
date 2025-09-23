@@ -1204,6 +1204,37 @@ export function WorkflowsDesigner(props) {
     }))
   }
 
+  const setErrorEdge = targetId => {
+    // console.log('setErrorEdge', targetId)
+    setEdges(edgs => edgs.map(edge => {
+      if (edge.target === targetId && !edge.target.data?.error)
+        return {
+          ...edge,
+          data: {
+            error: true
+          }
+        }
+      return edge
+    }))
+  }
+
+  const setErrorNode = nodeId => {
+    setNodes(nds =>
+      nds.map(node => {
+        if (node.id === nodeId)
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              highlighted: false,
+              error: true
+            }
+          }
+        return node
+      })
+    )
+  }
+
   const unhighlighNode = (event_id) => {
     // console.log('unhighlighNode', event_id)
     setNodes(nds =>
@@ -1220,8 +1251,6 @@ export function WorkflowsDesigner(props) {
       })
     )
   }
-
-  const minimizeTerminal = () => changeTerminalSize(0);
 
   const closeAllModals = () => {
     setActiveNode(false);
@@ -1267,7 +1296,8 @@ export function WorkflowsDesigner(props) {
     setEdges(eds => eds.map(e => ({
       ...e,
       data: {
-        highlighted: false
+        highlighted: false,
+        error: false
       },
       animated: false
     })))
@@ -1275,7 +1305,8 @@ export function WorkflowsDesigner(props) {
       ...n,
       data: {
         ...n.data,
-        highlighted: false
+        highlighted: false,
+        error: false
       }
     })))
   }
@@ -1287,8 +1318,39 @@ export function WorkflowsDesigner(props) {
     functions: props.workflow.functions
   })
 
+  function getCenter(nodes) {
+    if (nodes.length === 0) return { x: 0, y: 0 };
+
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+
+    nodes.forEach(node => {
+      const { x, y } = node.position;
+      const width = node.width ?? 0;
+      const height = node.height ?? 0;
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + width);
+      maxY = Math.max(maxY, y + height);
+    });
+
+    return {
+      x: (minX + maxX) / 2,
+      y: (minY + maxY) / 2,
+    };
+  }
+
   const scrollToNode = (selectedNode) => {
+    if (selectedNode.id === 'start') {
+      const center = getCenter(nodes)
+
+      setCenter(center.x + 75, center.y, { zoom: .75, duration: 1200 })
+      return
+    }
+
     const node = reactFlow.getNode(selectedNode.id);
+
     if (node) {
       const nodeWidth = 150;
       const rightX = node.position.x + nodeWidth / 2;
@@ -1299,7 +1361,7 @@ export function WorkflowsDesigner(props) {
   }
 
   if (nodes.length === 0) return null;
-  
+
   console.log(nodes)
 
   return (
@@ -1358,6 +1420,8 @@ export function WorkflowsDesigner(props) {
           highlightNode,
           highlightEdge,
           unhighlighNode,
+          setErrorNode,
+          setErrorEdge,
           resetFlow,
           scrollToNode
         }}

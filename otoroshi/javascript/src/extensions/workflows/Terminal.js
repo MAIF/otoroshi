@@ -6,10 +6,10 @@ import ReportInformation from './ReportInformation';
 import moment from 'moment'
 
 
-const Tab = ({ onClick, name, selected }) => {
+const Tab = ({ onClick, name, selected, isError }) => {
     return <div style={{
         borderBottom: '2px solid',
-        borderColor: selected ? '#f9b000' : 'transparent',
+        borderColor: selected ? isError ? 'var(--color-red)' : '#f9b000' : 'transparent',
         textTransform: 'uppercase',
         userSelect: 'none',
         cursor: 'pointer'
@@ -68,8 +68,14 @@ function Terminal({
                 }
             }
         } else if (event.kind === 'result') {
-            flowOperators.highlightEdge("returned-node")
-            flowOperators.unhighlighNode("returned-node")
+            if (!event.data?.error) {
+                flowOperators.highlightEdge("returned-node")
+                flowOperators.unhighlighNode("returned-node")
+            } else {
+                const errorNodeId = event.data.error.nodeId
+                flowOperators.setErrorNode(errorNodeId)
+            }
+
             if (resolve) {
                 resolve(event.data);
             }
@@ -107,6 +113,7 @@ function Terminal({
         if (action === 'start') {
             flowOperators.resetFlow()
             setTab('memory')
+            setReport(undefined)
         }
 
         if (!wsRef.current) {
@@ -144,8 +151,6 @@ function Terminal({
         runWs('start', { step_by_step })
     }
 
-    const minimize = () => changeTerminalSize(0)
-
     const clearLog = () => {
         setLog([])
     }
@@ -173,7 +178,7 @@ function Terminal({
         <div style={{
             minHeight: 12,
             maxHeight: 12,
-            background: 'var(--bg-color_level3)'
+            background: report?.error ? 'var(--color-red)' : 'var(--bg-color_level3)'
         }}
             className="d-flex align-items-center justify-content-center"
             onMouseDown={e => {
@@ -199,19 +204,23 @@ function Terminal({
                 <Tab
                     name="Input"
                     onClick={() => handleTabChange('input')}
-                    selected={tab === 'input'} />
+                    selected={tab === 'input'}
+                    isError={report?.error} />
                 <Tab
                     name="Log"
                     onClick={() => handleTabChange('log')}
-                    selected={tab === 'log'} />
+                    selected={tab === 'log'}
+                    isError={report?.error} />
                 <Tab
                     name="Memory"
                     onClick={() => handleTabChange('memory')}
-                    selected={tab === 'memory'} />
+                    selected={tab === 'memory'}
+                    isError={report?.error} />
                 <Tab
                     name="Report"
                     onClick={() => handleTabChange('report')}
-                    selected={tab === 'report'} />
+                    selected={tab === 'report'}
+                    isError={report?.error} />
             </div>
 
             <div className='d-flex align-items-center'>
@@ -274,15 +283,15 @@ const LogTab = ({ log }) => {
                 {
                     itemOpened ? <div onClick={e => e.stopPropagation()}>
                         <CodeInput
-                        ace_config={{
-                            readOnly: true,
-                        }}
-                        key={`debug${i}`}
-                        value={item.data}
-                        editorOnly={true}
-                        label={null}
-                    /> 
-                    </div>:
+                            ace_config={{
+                                readOnly: true,
+                            }}
+                            key={`debug${i}`}
+                            value={item.data}
+                            editorOnly={true}
+                            label={null}
+                        />
+                    </div> :
                         <div className='terminal-log-item-data'>{JSON.stringify(item.data, null, 4)}</div>
                 }
             </div>

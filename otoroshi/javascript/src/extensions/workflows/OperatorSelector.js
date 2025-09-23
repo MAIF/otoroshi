@@ -15,9 +15,7 @@ export function OperatorSelector({ predicate, handleOperatorChange }) {
     const field = isStringPredicate ? predicate : Object.keys(predicate || {})[0];
     const operator = operators.find((ope) => ope.name === field) || 'Others';
 
-    console.log(operator, field)
-
-    const value = !isStringPredicate ? predicate[field] : undefined;
+    const value = (!isStringPredicate && predicate) ? predicate[field] : undefined;
 
     return <div>
         <Row title="Operator">

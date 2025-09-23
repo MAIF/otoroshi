@@ -16,12 +16,17 @@ export const ReportView = ({
   flow = 'all',
   setFlow,
   isWorkflowView,
-  onClick
+  onClick,
+  error
 }) => {
   const [selectedStep, setSelectedStep] = useState(-1);
   const [selectedPlugin, setSelectedPlugin] = useState(-1);
   const [steps, setSteps] = useState([]);
   const [informations, setInformations] = useState({});
+
+  useEffect(() => {
+    setSelectedPlugin('error')
+  }, [error])
 
   useEffect(() => {
     const { steps, ...informations } = report;
@@ -82,7 +87,9 @@ export const ReportView = ({
       else if (unit === 'ns') return value;
       else return roundNsTo(value);
     }
-  };
+  }
+
+  console.log(selectedPlugin)
 
   return (
     <div className="d-flex border" style={{ flex: 1 }}>
@@ -145,6 +152,18 @@ export const ReportView = ({
               {reportDuration()} {unit}
             </span>
           </div>
+
+          {error && <div style={{ width: '100%' }} onClick={() => {
+            setSelectedPlugin('error')
+          }}>
+            <div className={`d-flex-between report-step ${selectedPlugin === 'error' ? 'btn-danger' : 'btn-quiet'}`}>
+              <div className="d-flex align-items-center">
+                <i className="fas fa-warning me-1" />
+                <span>{firstLetterUppercase('Error')}</span>
+              </div>
+            </div>
+          </div>}
+
           {[...steps]
             .filter(isOnFlow)
             .filter(isMatchingSearchWords)
@@ -249,13 +268,13 @@ export const ReportView = ({
         }}
         onChange={() => { }}
         value={JSON.stringify(
-          selectedPlugin === -1
-            ? selectedStep === -1
+          selectedPlugin === 'error' ? error :
+            selectedPlugin === -1 ? selectedStep === -1
               ? informations
               : steps.find((t) => t.task === selectedStep)
-            : steps
-              .find((t) => t.task === selectedStep)
-              ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+              : steps
+                .find((t) => t.task === selectedStep)
+                ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
           null,
           4
         )}

@@ -651,4 +651,15 @@
   .breakpoint:hover {
     opacity: 1;
   }
+
+  .node--error {
+    border-color: var(--color-red) !important;
+  }
+
+  .edge--error {
+    stroke: var(--color-red) !important;
+    stroke-width: 2;
+    fill: none;
+    animation: draw-line .200s forwards;
+  }
 }

@@ -106,7 +106,7 @@ class WorkflowEngine(env: Env) {
             }
             case Some(to) => {
               node.collectSubNodes(Seq(0)).find(_._1.id == to) match {
-                case None => WorkflowResult(None, Some(WorkflowError(s"unable to find node with id '${to}'", None, None)), wfRun).future
+                case None => WorkflowResult(None, Some(WorkflowError(s"unable to find node with id '${to}'", None, None, to.some)), wfRun).future
                 case Some((_, path)) => resume(node, wfRun, path, attrs)
               }
             }
@@ -142,7 +142,7 @@ case class WorkflowResult(returned: Option[JsValue], error: Option[WorkflowError
   )
 }
 
-case class WorkflowError(message: String, details: Option[JsObject] = None, exception: Option[Throwable] = None) {
+case class WorkflowError(message: String, details: Option[JsObject] = None, exception: Option[Throwable] = None, nodeId: Option[String] = None) {
   def json: JsValue = WorkflowError.format.writes(this)
 }
 
@@ -151,6 +151,7 @@ object WorkflowError {
 
     override def reads(json: JsValue): JsResult[WorkflowError] = Try {
       WorkflowError(
+        nodeId = (json \ "nodeId").asOpt[String],
         message = (json \ "message").as[String],
         details = (json \ "details").asOpt[JsObject],
         exception = None
@@ -161,6 +162,7 @@ object WorkflowError {
     }
 
     override def writes(o: WorkflowError): JsValue = Json.obj(
+      "nodeId"      -> o.nodeId,
       "message"   -> o.message,
       "details"   -> o.details,
       "exception" -> o.exception.map(_.getMessage.json).getOrElse(JsNull).asValue
@@ -419,7 +421,7 @@ trait Node extends NodeLike {
             }
             .recover {
               case t: Throwable => {
-                val error = WorkflowError(s"caught exception on task: '${id}'", None, Some(t))
+                val error = WorkflowError(s"caught exception on task: '${id}'", None, Some(t), id.some)
                 wfr.log(s"ending with exception '${id}'", this, error.some)
                 Left(error)
               }
@@ -427,7 +429,7 @@ trait Node extends NodeLike {
         } catch {
           case t: Throwable => {
             t.printStackTrace()
-            val error = WorkflowError(s"caught sync exception on task1: '${id}'", None, Some(t))
+            val error = WorkflowError(s"caught sync exception on task1: '${id}'", None, Some(t), id.some)
             wfr.log(s"ending with sync exception '${id}'", this, error.some)
             Left(error).future
           }
@@ -444,7 +446,8 @@ trait Node extends NodeLike {
             WorkflowError(
               message = "_____otoroshi_workflow_ended",
               details = None,
-              exception = None
+              exception = None,
+              nodeId = id.some
             ).leftf
           } else {
             go()
