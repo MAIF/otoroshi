@@ -29,14 +29,14 @@ function Search({ query, onChange, isOpen }) {
   );
 }
 
-export function WhatsNext({ handleSelectNode, isOpen, node }) {
+export function WhatsNext({ handleSelectNode, isOpen, close }) {
   const [query, setQuery] = useState('');
   const [title, setTitle] = useState('What happens next ?');
   const [selectedCategory, setSelectedCategory] = useState();
 
   return (
     <>
-      <div className="p-3 whats-next-title">
+      <div className="p-3 whats-next-title d-flex items-center">
         {selectedCategory && (
           <i
             className="fas fa-chevron-left me-2"
@@ -47,6 +47,8 @@ export function WhatsNext({ handleSelectNode, isOpen, node }) {
           />
         )}
         {title}
+
+        <i className='fas fa-times ms-auto' onClick={close} />
       </div>
 
       <Search query={query} onChange={setQuery} isOpen={isOpen} />

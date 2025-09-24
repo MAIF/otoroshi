@@ -165,12 +165,12 @@ export function WorkflowsDesigner(props) {
 
     if (!workflow || Object.keys(workflow).length === 0) return { edges: [], nodes: [] };
 
-    
+
     let edges = [];
     let nodes = [];
-    
+
     const useCurrent = workflow.kind !== 'workflow';
-    
+
     const me = workflow.id ? workflow.id : uuid()
     let current = useCurrent ? createNode(me, workflow, addInformationsToNode) : undefined;
 
@@ -306,7 +306,8 @@ export function WorkflowsDesigner(props) {
       workflow.kind === 'foreach' ||
       workflow.kind === 'flatmap' ||
       workflow.kind === 'map' ||
-      workflow.kind === 'async'
+      workflow.kind === 'async' || 
+      workflow.kind === 'while'
     ) {
       if (workflow.node) {
         const subGraph = buildGraph([workflow.node], addInformationsToNode);
@@ -683,8 +684,7 @@ export function WorkflowsDesigner(props) {
         to: to?.target,
         kind,
       };
-    }
-    else if (kind === 'if') {
+    } else if (kind === 'if') {
       const ifFlow = node.data.content;
 
       const then = connections.find((conn) => conn.sourceHandle.startsWith('then'));
@@ -768,8 +768,14 @@ export function WorkflowsDesigner(props) {
         finally: finallyNode
       };
 
-    } else if (kind === 'foreach' || kind === 'async') {
-      const handleName = kind === 'foreach' ? 'ForEachLoop' : 'Async Task'
+    } else if (kind === 'foreach' || kind === 'async' || kind === 'while') {
+      const handles = {
+        foreach: 'ForEachLoop',
+        async: 'Async Task',
+        while: 'Loop Body',
+      }
+
+      const handleName = handles[kind]
       const flow = node.data.content;
       const item = connections.find((conn) => conn.sourceHandle.startsWith(handleName));
 
@@ -1439,7 +1445,10 @@ export function WorkflowsDesigner(props) {
 
         <TagsModal isOpen={showTagModal} tags={workflow} setTags={setTags} />
 
-        {activeNode && <NodesExplorer activeNode={activeNode} handleSelectNode={handleSelectNode} />}
+        {activeNode && <NodesExplorer
+          activeNode={activeNode}
+          handleSelectNode={handleSelectNode} 
+          close={closeAllModals}/>}
         <Flow
           autoLayout={autoLayout}
           onConnectEnd={onConnectEnd}

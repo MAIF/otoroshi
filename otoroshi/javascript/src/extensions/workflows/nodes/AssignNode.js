@@ -1,5 +1,6 @@
 import React from 'react';
 import { JsonObjectAsCodeInputUpdatable } from '../../../components/inputs/CodeInput';
+import { OperatorSelector } from '../OperatorSelector';
 
 export const AssignNode = {
   kind: 'assign',
@@ -17,21 +18,27 @@ export const AssignNode = {
           label: 'Name',
         },
         value: {
-          renderer: (props) => (
-            <JsonObjectAsCodeInputUpdatable
-              ngOptions={{ spread: true }}
-              showGutter={false}
-              ace_config={{
-                mode: 'json',
-                onLoad: (editor) => editor.renderer.setPadding(10),
-                fontSize: 14,
-              }}
-              editorOnly
-              height='10rem'
-              value={props.value}
-              onChange={props.onChange}
+          renderer: (props) => {
+            const predicate = props.value || {};
+
+            return <OperatorSelector
+              predicate={predicate}
+              handleOperatorChange={newOperator => props.onChange(newOperator.predicate)}
             />
-          ),
+            // <JsonObjectAsCodeInputUpdatable
+            //   ngOptions={{ spread: true }}
+            //   showGutter={false}
+            //   ace_config={{
+            //     mode: 'json',
+            //     onLoad: (editor) => editor.renderer.setPadding(10),
+            //     fontSize: 14,
+            //   }}
+            //   editorOnly
+            //   height='10rem'
+            //   value={props.value}
+            //   onChange={props.onChange}
+            // />
+          }
         },
       },
     },

@@ -9,6 +9,7 @@ import { ReactSelectOverride } from '../inputs/ReactSelectOverride';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { v4 as uuid } from 'uuid';
+import MonacoEditor from 'react-monaco-editor';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -318,6 +319,43 @@ export class NgCodeRenderer extends Component {
         )}
       </LabelAndInput>
     );
+  }
+}
+
+export class NgAnyRenderer extends Component {
+  editorDidMount(editor, monaco) {
+    // Ensure the editor has proper focus
+    editor.focus();
+
+    // Add keyboard event listeners if needed
+    editor.onKeyDown((e) => {
+      // Allow space key explicitly
+      if (e.keyCode === 10) { // Space key code in Monaco
+        e.stopPropagation();
+      }
+    });
+  };
+  render() {
+    const options = {
+      selectOnLineNumbers: true,
+      // ...this.props.options || {}
+    };
+    return <LabelAndInput {...this.props}>
+      <MonacoEditor
+        height={this.props.height || '300px'}
+        width="100%"
+        language="json"
+        theme="vs-dark"
+        {...this.props.rawSchema?.props}
+        value={this.props.value}
+        options={options}
+        onChange={newValue => {
+          console.log('new value', newValue)
+          this.props.onChange(newValue)
+        }}
+        editorDidMount={this.editorDidMount}
+      />
+    </LabelAndInput>
   }
 }
 

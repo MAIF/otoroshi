@@ -15,7 +15,9 @@ export function OperatorSelector({ predicate, handleOperatorChange }) {
     const field = isStringPredicate ? predicate : Object.keys(predicate || {})[0];
     const operator = operators.find((ope) => ope.name === field) || 'Others';
 
-    const value = (!isStringPredicate && predicate) ? predicate[field] : undefined;
+    const value = (!isStringPredicate && predicate) ? predicate[field] : undefined
+
+    console.log(isStringPredicate)
 
     return <div>
         <Row title="Operator">
@@ -23,7 +25,7 @@ export function OperatorSelector({ predicate, handleOperatorChange }) {
                 isClearable
                 ngOptions={{ spread: true }}
                 options={[...operators.map((r) => r.name), 'Others']}
-                value={isStringPredicate ? 'Others' : operator}
+                value={isStringPredicate ? 'Others' : field}
                 onChange={operator => {
                     if (operator === 'Others') {
                         handleOperatorChange({
@@ -44,6 +46,7 @@ export function OperatorSelector({ predicate, handleOperatorChange }) {
                     height="120px"
                     value={predicate}
                     onChange={predicate => {
+                        console.log('json renderer sert ', predicate)
                         handleOperatorChange({ predicate })
                     }}
                 />

@@ -2,7 +2,7 @@ import React from 'react';
 import { ModalEditor } from './ModalEditor';
 import { WhatsNext } from './WhatsNext';
 
-export function NodesExplorer({ activeNode, handleSelectNode }) {
+export function NodesExplorer({ activeNode, handleSelectNode, close }) {
   const isEdition = typeof activeNode === 'object' && !activeNode.handle;
 
   return (
@@ -12,7 +12,7 @@ export function NodesExplorer({ activeNode, handleSelectNode }) {
       {isEdition && <ModalEditor node={activeNode} />}
 
       {!isEdition && (
-        <WhatsNext handleSelectNode={handleSelectNode} isOpen={activeNode} node={activeNode} />
+        <WhatsNext handleSelectNode={handleSelectNode} isOpen={activeNode} close={close} />
       )}
     </div>
   );
