@@ -110,7 +110,7 @@ class PluginsDescription extends Component {
     if (!this.props.refs) {
       return null;
     }
-    
+
     return (
       <>
         {this.props.refs

@@ -68,8 +68,10 @@ case class NgPluginHttpRequest(
     backend: Option[NgTarget]
 ) {
   lazy val contentType: Option[String]              = header("Content-Type")
+  lazy val contentEncoding: Option[String]          = header("Content-Encoding")
   lazy val typedContentType: Option[ContentType]    = contentType.flatMap(ct => ContentType.parse(ct).toOption)
   lazy val contentLengthStr: Option[String]         = header("Content-Length")
+  lazy val contentLength: Option[Long]              = contentLengthStr.map(_.toLong)
   lazy val transferEncoding: Option[String]         = header("Transfer-Encoding")
   lazy val host: String                             = header("Host").getOrElse("")
   lazy val uri: Uri                                 = Uri(url)
@@ -176,6 +178,7 @@ case class NgPluginHttpResponse(
   lazy val transferEncoding: Option[String] = header("Transfer-Encoding")
   lazy val isChunked: Boolean               = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
   lazy val contentType: Option[String]      = header("Content-Type")
+  lazy val contentEncoding: Option[String]  = header("Content-Encoding")
   lazy val contentLengthStr: Option[String] = header("Content-Length")
   lazy val contentLength: Option[Long]      = contentLengthStr.map(_.toLong)
   lazy val hasLength: Boolean               = contentLengthStr.isDefined

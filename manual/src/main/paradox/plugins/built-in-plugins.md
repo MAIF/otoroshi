@@ -1135,6 +1135,47 @@ This plugin can be used to used a target that come from an external Eureka serve
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Fail2BanPlugin }
+
+## fail2ban
+
+### Defined on steps
+
+  - `ValidateAccess`
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.Fail2BanPlugin`
+
+### Description
+
+Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like). Client is identified by the 'identifier' that can use the Otoroshi expression language to extract informations like user id, apikey, ip address, etc.
+
+
+
+### Default configuration
+
+```json
+{
+  "identifier" : "${req.ip}",
+  "detect_time" : 600000,
+  "ban_time" : 10800000,
+  "max_retry" : 4,
+  "url_regex" : [ ],
+  "status_codes" : [ "400", "401", "403-499", "500-599" ],
+  "ignored" : [ ],
+  "blocked" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ForceHttpsTraffic }
 
 ## Force HTTPS traffic
@@ -4898,6 +4939,154 @@ This plugin redirects the current request elsewhere
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexRequestBodyRewriter }
+
+## Regex request body rewriter
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RegexRequestBodyRewriter`
+
+### Description
+
+Rewrites the HTTP request body using a set of regex rules
+
+
+
+### Default configuration
+
+```json
+{
+  "content_types" : [ "text/html" ],
+  "rules" : [ ],
+  "auto_href_prefix" : null,
+  "max_body_size" : null,
+  "charset_fallback" : "UTF-8"
+}
+```
+
+
+
+### Documentation
+
+### Examples
+
+1) Rewrite a domain to another
+
+{
+  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+  "enabled": true,
+  "config": {
+    "content_types": ["text/html"],
+    "rules": [
+      { "pattern": "(?i)https?://example\.com", "replacement": "https://public.example.com" }
+    ],
+    "max_body_size": 1048576
+  }
+}
+
+
+2) Rewrite paths while keeping captured groups
+
+{
+  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+  "enabled": true,
+  "config": {
+    "content_types": ["text/html", "text/plain"],
+    "rules": [
+      { "pattern": "href=([\"'])/v1/(.+?)\1", "replacement": "href=$1/v2/$2$1", "flags": "i" }
+    ]
+  }
+}
+
+
+Note: replacement supports backrefs $1, $2, ...
+Remember to properly escape backslashes in JSON.
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexResponseBodyRewriter }
+
+## Regex response body rewriter
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RegexResponseBodyRewriter`
+
+### Description
+
+Rewrites the HTTP response body using a set of regex rules, with optional auto-prefix for relative hrefs.
+
+
+
+### Default configuration
+
+```json
+{
+  "content_types" : [ "text/html" ],
+  "rules" : [ ],
+  "auto_href_prefix" : null,
+  "max_body_size" : null,
+  "charset_fallback" : "UTF-8"
+}
+```
+
+
+
+### Documentation
+
+1) Prefix all relative hrefs with /proxy and rewrite a domain to another
+
+```json
+{
+  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+  "enabled": true,
+  "config": {
+    "content_types": ["text/html"],
+    "auto_href_prefix": "/proxy",
+    "rules": [
+      { "pattern": "(?i)https?://example\.com", "replacement": "https://public.example.com" }
+    ],
+    "max_body_size": 1048576
+  }
+}
+```
+
+2) Rewrite paths while keeping captured groups
+
+```json
+{
+  "plugin": "cp:otoroshi.next.plugins.RegexResponseBodyRewriter",
+  "enabled": true,
+  "config": {
+    "content_types": ["text/html", "text/plain"],
+    "rules": [
+      { "pattern": "href=([\"'])/v1/(.+?)\1", "replacement": "href=$1/v2/$2$1", "flags": "i" }
+    ]
+  }
+}
+```
+
+Note: replacement supports backrefs $1, $2, ...
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RejectHeaderInTooLong }
 
 ## Reject headers in too long
@@ -5565,8 +5754,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-07-20T13:50:43.341+02:00",
-  "stop" : "2025-07-21T13:50:43.341+02:00",
+  "start" : "2025-09-04T13:40:31.521Z",
+  "stop" : "2025-09-05T13:40:31.542Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
@@ -6902,6 +7091,37 @@ Transform the content of the request with a workflow
 ### Description
 
 Transform the content of a response with a workflow
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.workflow.WorkflowResumeBackend }
+
+## Workflow Resume Backend
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.workflow.WorkflowResumeBackend`
+
+### Description
+
+This plugin can be used to resume a paused workflow
 
 
 

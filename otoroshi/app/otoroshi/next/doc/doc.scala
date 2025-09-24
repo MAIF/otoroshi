@@ -21,7 +21,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
 
       import scala.jdk.CollectionConverters._
       val start                  = System.currentTimeMillis()
-      val allPackages            = Seq("otoroshi", "otoroshi_plugins")
+      val allPackages            = Seq("otoroshi") //, "otoroshi_plugins")
       val scanResult: ScanResult = new ClassGraph()
         .addClassLoader(this.getClass.getClassLoader)
         .enableClassInfo()

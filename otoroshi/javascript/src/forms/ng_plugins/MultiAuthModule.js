@@ -25,7 +25,6 @@ export default {
     },
     users_groups: {
       renderer: (props) => {
-        console.log(props);
         const [authConfigs, setAuthConfigs] = useState([]);
 
         useEffect(() => {

@@ -10,7 +10,7 @@ export const graph = (env) => {
       description: 'Some tools to help you with otoroshi',
       features: [
         {
-          title: 'Tester',
+          title: 'Route Tester',
           img: 'tester',
           description:
             'A tool for testing and validating Otoroshi components such as services, routes, and plugins.',

@@ -135,8 +135,9 @@ class RoutingRestrictions extends NgAccessValidator {
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val restrictions                                   = ctx.cachedConfig(internalName)(configReads).getOrElse(NgRestrictions())
     val (restrictionsNotPassing, restrictionsResponse) = restrictions.legacy.handleRestrictions(
-      ctx.route.serviceDescriptor.id,
-      ctx.route.serviceDescriptor.some,
+      ctx.route.id,
+      None,
+      ctx.route.some,
       None,
       ctx.request,
       ctx.attrs

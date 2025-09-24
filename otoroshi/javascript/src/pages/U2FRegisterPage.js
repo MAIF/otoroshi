@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table, Form, TextInput, ArrayInput, SelectInput } from '../components/inputs';
 import { Link } from 'react-router-dom';

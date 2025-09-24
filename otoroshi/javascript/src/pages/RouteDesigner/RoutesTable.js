@@ -27,7 +27,7 @@ export function RoutesTable(props) {
   const params = useParams();
   const history = useHistory();
 
-  const [queryFilters, setQueryFilters] = useState(undefined)
+  const [queryFilters, setQueryFilters] = useState(undefined);
 
   const [loading, setLoading] = useState(true);
   const [fields, setFields] = useState({
@@ -166,7 +166,7 @@ export function RoutesTable(props) {
   const groupsColumn = {
     title: 'Groups',
     filterId: 'groups',
-    content: (item) => (Array.isArray(item.groups) ? item.groups : []).join(',')
+    content: (item) => (Array.isArray(item.groups) ? item.groups : []).join(','),
   };
 
   const pluginsColumn = {
@@ -274,7 +274,7 @@ export function RoutesTable(props) {
 
   const onFieldsChange = (fields) => {
     if (ref.current) {
-      console.log('update table')
+      console.log('update table');
       ref.current.update();
     }
 
@@ -282,22 +282,23 @@ export function RoutesTable(props) {
   };
 
   useEffect(() => {
-    loadSearchParamsFromQuery()
+    loadSearchParamsFromQuery();
     loadFields();
   }, []);
 
   const loadSearchParamsFromQuery = () => {
     const urlParams = new URLSearchParams(window.location.search);
 
-    const rawSearch = urlParams.get('search')
+    const rawSearch = urlParams.get('search');
 
     if (rawSearch) {
       try {
-        setQueryFilters(Object.entries(JSON.parse(atob(rawSearch))).map(([id, value]) => ({ id, value })))
-      } catch (_) { }
-
+        setQueryFilters(
+          Object.entries(JSON.parse(atob(rawSearch))).map(([id, value]) => ({ id, value }))
+        );
+      } catch (_) {}
     }
-  }
+  };
 
   const loadFields = () => {
     try {
@@ -324,9 +325,9 @@ export function RoutesTable(props) {
     } catch (e) {
       // console.log(e);
     }
-  }
+  };
 
-  console.log(queryFilters)
+  console.log(queryFilters);
 
   return (
     <Loader loading={loading}>

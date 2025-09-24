@@ -251,16 +251,18 @@ object GlobalExpressionLanguage {
             case r"service.metadata.$field(.*)" if service.isDefined              =>
               service.get.metadata.getOrElse(field.s, s"no-meta-${field.s}")
 
-            case r"route.domains\['$field(.*)':'$dv(.*)'\]" if route.isDefined =>
-              Option(route.get.frontend.domains(field.s.toInt)).map(_.raw).getOrElse(dv.s)
-            case r"route.domains\['$field(.*)'\]" if route.isDefined           =>
-              Option(route.get.frontend.domains(field.s.toInt)).map(_.raw).getOrElse(s"no-domain-$field")
-            case "route.id" if route.isDefined                                 => route.get.id
-            case "route.name" if route.isDefined                               => route.get.name
-            case r"route.metadata.$field(.*):$dv(.*)" if route.isDefined       =>
-              route.get.metadata.getOrElse(field.s, dv.s)
-            case r"route.metadata.$field(.*)" if route.isDefined               =>
-              route.get.metadata.getOrElse(field.s, s"no-meta-${field.s}")
+            case r"route.domains\['$field@(.*)':'$dv@(.*)'\]" if route.isDefined =>
+              Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(dv)
+            case r"route.domains\['$field@(.*)'\]" if route.isDefined            =>
+              Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(s"no-domain-$field")
+            case "route.id" if route.isDefined                                   => route.get.id
+            case "route.name" if route.isDefined                                 => route.get.name
+            case "route.json.pretty" if route.isDefined                       => route.get.json.prettify
+            case "route.json" if route.isDefined                              => route.get.json.stringify
+            case r"route.metadata.$field@(.*):$dv@(.*)" if route.isDefined       =>
+              route.get.metadata.get(field).getOrElse(dv)
+            case r"route.metadata.$field@(.*)" if route.isDefined                =>
+              route.get.metadata.get(field).getOrElse(s"no-meta-$field")
 
             case "req.fullUrl" if req.isDefined                                           =>
               s"${req.get.theProtocol}://${req.get.theHost}${req.get.relativeUri}"
@@ -294,18 +296,20 @@ object GlobalExpressionLanguage {
             case r"req.pathparams.$field(.*)" if matchedRoute.isDefined                   =>
               matchedRoute.get.pathParams.getOrElse(field.s, s"no-path-param-${field.s}")
 
-            case "apikey.name" if apiKey.isDefined                            => apiKey.get.clientName
-            case "apikey.id" if apiKey.isDefined                              => apiKey.get.clientId
-            case "apikey.clientId" if apiKey.isDefined                        => apiKey.get.clientId
-            case r"apikey.metadata.$field(.*):$dv(.*)" if apiKey.isDefined    =>
-              apiKey.get.metadata.getOrElse(field.s, dv.s)
-            case r"apikey.metadata.$field(.*)" if apiKey.isDefined            =>
-              apiKey.get.metadata.getOrElse(field.s, s"no-meta-$field")
-            case r"apikey.tags\['$field(.*)':'$dv(.*)'\]" if apiKey.isDefined =>
-              Option(apiKey.get.tags.apply(field.s.toInt)).getOrElse(dv.s)
-            case r"apikey.tags\['$field(.*)'\]" if apiKey.isDefined           =>
-              Option(apiKey.get.tags.apply(field.s.toInt)).getOrElse(s"no-tag-$field")
-            case r"apikey.json.pretty" if apiKey.isDefined                    =>
+            case "apikey.name" if apiKey.isDefined                              => apiKey.get.clientName
+            case "apikey.id" if apiKey.isDefined                                => apiKey.get.clientId
+            case "apikey.clientId" if apiKey.isDefined                          => apiKey.get.clientId
+            case "apikey.json.pretty" if apiKey.isDefined                       => apiKey.get.lightJson.prettify
+            case "apikey.json" if apiKey.isDefined                              => apiKey.get.lightJson.stringify
+            case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined    =>
+              apiKey.get.metadata.get(field).getOrElse(dv)
+            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined             =>
+              apiKey.get.metadata.get(field).getOrElse(s"no-meta-$field")
+            case r"apikey.tags\['$field@(.*)':'$dv@(.*)'\]" if apiKey.isDefined =>
+              Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
+            case r"apikey.tags\['$field@(.*)'\]" if apiKey.isDefined            =>
+              Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
+            case r"apikey.json.pretty" if apiKey.isDefined                      =>
               apiKey.get.lightJson.prettify
             case r"apikey.json" if apiKey.isDefined                           =>
               apiKey.get.lightJson.stringify
@@ -504,28 +508,28 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(s"no-profile-$field")
-            case "consumer.id" if user.isDefined                                               => user.get.email
-            case "consumer.id" if apiKey.isDefined                                             => apiKey.get.clientId
-            case "consumer.long_id" if user.isDefined                                          => s"${user.get.realm}-${user.get.email}"
-            case "consumer.long_id" if apiKey.isDefined                                        => apiKey.get.clientId
-            case "consumer.name" if user.isDefined                                             => user.get.name
-            case "consumer.name" if apiKey.isDefined                                           => apiKey.get.clientName
-            case "consumer.kind" if user.isDefined                                             => "user"
-            case "consumer.kind" if apiKey.isDefined                                           => "apikey"
-            case "consumer.kind" if apiKey.isEmpty && user.isEmpty                             => "public"
-            case "consumer.json.pretty" if apiKey.isEmpty && user.isEmpty                      =>
+            case "consumer.id" if user.isDefined                                                 => user.get.email
+            case "consumer.id" if apiKey.isDefined                                               => apiKey.get.clientId
+            case "consumer.long_id" if user.isDefined                                            => s"${user.get.realm}-${user.get.email}"
+            case "consumer.long_id" if apiKey.isDefined                                          => apiKey.get.clientId
+            case "consumer.name" if user.isDefined                                               => user.get.name
+            case "consumer.name" if apiKey.isDefined                                             => apiKey.get.clientName
+            case "consumer.kind" if user.isDefined                                               => "user"
+            case "consumer.kind" if apiKey.isDefined                                             => "apikey"
+            case "consumer.kind" if apiKey.isEmpty && user.isEmpty                               => "public"
+            case "consumer.json.pretty" if apiKey.isEmpty && user.isEmpty                        =>
               Json.obj("kind" -> "public", "consumer" -> JsNull).prettify
-            case "consumer.json.pretty" if apiKey.isDefined                                    =>
+            case "consumer.json.pretty" if apiKey.isDefined                                      =>
               Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).prettify
-            case "consumer.json.pretty" if user.isDefined                                      =>
+            case "consumer.json.pretty" if user.isDefined                                        =>
               Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).prettify
-            case "consumer.json" if apiKey.isEmpty && user.isEmpty                             =>
+            case "consumer.json" if apiKey.isEmpty && user.isEmpty                               =>
               Json.obj("kind" -> "public", "consumer" -> JsNull).stringify
-            case "consumer.json" if apiKey.isDefined                                           =>
+            case "consumer.json" if apiKey.isDefined                                             =>
               Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).stringify
-            case "consumer.json" if user.isDefined                                             =>
+            case "consumer.json" if user.isDefined                                               =>
               Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).stringify
-            case r"consumer.metadata.$field(.*):$dv(.*)" if user.isDefined || apiKey.isDefined =>
+            case r"consumer.metadata.$field@(.*):$dv@(.*)" if user.isDefined || apiKey.isDefined =>
               user
                 .flatMap(_.otoroshiData)
                 .orElse(apiKey.map(v => JsObject(v.metadata.view.mapValues(_.json).toMap)))

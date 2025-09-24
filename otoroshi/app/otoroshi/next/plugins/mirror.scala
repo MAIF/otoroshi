@@ -15,6 +15,7 @@ import otoroshi.utils.UrlSanitizer
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
+import otoroshi.utils.http.ResponseImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.libs.ws.{EmptyBody, InMemoryBody, WSRequest, WSResponse}
@@ -113,7 +114,7 @@ case class NgMirroringEvent(
           "cookies" -> JsArray(
             ctx.mirroredResp
               .get()
-              .cookies
+              .safeCookies(_env)
               .map(c =>
                 Json.obj(
                   "name"     -> c.name,

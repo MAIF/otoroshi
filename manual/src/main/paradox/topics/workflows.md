@@ -29,7 +29,7 @@ WorkflowOperator.registerOperator("$custom_op", new MyOperator())
       "description": "Say hello to the name passed as input",
       "function": "core.hello",
       "args": {
-        "name": "${input.name}"
+        "name": "${workflow_input.name}"
       },
       "result": "call_res"
     }
@@ -76,7 +76,7 @@ Each workflow execution comes with its own **memory**, where variables can be re
 
 The `assign` node lets you manipulate memory directly, often combined with operators to compute values.
 
-At any moment you can access the memory using an expression language like `${input.name}` given a memory containing something like:
+At any moment you can access the memory using an expression language like `${workflow_input.name}` given a memory containing something like:
 
 ```json
 {
@@ -85,7 +85,6 @@ At any moment you can access the memory using an expression language like `${inp
   }
 }
 ```
-
 
 ## Nodes
 
@@ -102,7 +101,7 @@ Each node must declare a `kind` field and can optionally define:
 ### Full List of Nodes
 
 
-#### `workflow`
+#### <span class="fas fa-code-branch"></span> `Workflow (workflow)`
 
 This node executes a sequence of nodes sequentially
 
@@ -140,7 +139,7 @@ Usage example
 ---
 
 
-#### `switch`
+#### <span class="fas fa-exchange-alt"></span> `Switch paths (switch)`
 
 This node executes the first path matching a predicate
 
@@ -185,13 +184,39 @@ Usage example
 ---
 
 
-#### `wait`
+#### <span class="fas fa-pause"></span> `Pause (pause)`
+
+This node pauses the current workflow
+
+expected configuration:
+
+ - `description` (`string`) - The description of what this node does in the workflow (optional). for debug purposes only
+ - `result` (`string`) - The name of the memory that will be assigned with the result of this node (optional)
+ - `enabled` (`boolean`) - Is the node enabled (optional)
+ - `returned` (`string`) - Overrides the output of the node with the result of an operator (optional)
+ - `id` (`string`) - id of the node (optional). for debug purposes only
+ - `kind` (`string`) - The kind of the node
+ - required fields are: **kind**
+
+Usage example
+
+```json
+{
+  "kind" : "pause",
+  "description" : "Pause the workflow at this point."
+}
+```
+
+
+---
+
+
+#### <span class="fas fa-clock"></span> `Wait (wait)`
 
 This node waits a certain amount of time
 
 expected configuration:
 
- - `duration` (`number`) - the number of milliseconds to wait
  - `description` (`string`) - The description of what this node does in the workflow (optional). for debug purposes only
  - `result` (`string`) - The name of the memory that will be assigned with the result of this node (optional)
  - `enabled` (`boolean`) - Is the node enabled (optional)
@@ -214,7 +239,7 @@ Usage example
 ---
 
 
-#### `parallel`
+#### <span class="fas fa-code-branch"></span> `Parallel paths (parallel)`
 
 This node executes multiple nodes in parallel
 
@@ -224,7 +249,7 @@ expected configuration:
  - `result` (`string`) - The name of the memory that will be assigned with the result of this node (optional)
  - `enabled` (`boolean`) - Is the node enabled (optional)
  - `paths` (`array`) - the nodes to be executed
-     - `predicate` (`boolean`) - The predicate defining if the path is run or not
+
      - required fields are: 
  - `returned` (`string`) - Overrides the output of the node with the result of an operator (optional)
  - `id` (`string`) - id of the node (optional). for debug purposes only
@@ -263,7 +288,7 @@ Usage example
 ---
 
 
-#### `flatmap`
+#### <span class="fas fa-layer-group"></span> `Flatmap (flatmap)`
 
 This node transforms an array by applying a node on each value
 
@@ -274,8 +299,6 @@ expected configuration:
  - `enabled` (`boolean`) - Is the node enabled (optional)
  - `returned` (`string`) - Overrides the output of the node with the result of an operator (optional)
  - `id` (`string`) - id of the node (optional). for debug purposes only
- - `values` (`array`) - the values to iterate on
- - `node` (`object`) - the node to execute for each element in an array, should return an array to flatten it
  - `kind` (`string`) - The kind of the node
  - required fields are: **kind**
 
@@ -297,7 +320,7 @@ Usage example
 ---
 
 
-#### `map`
+#### <span class="fas fa-map"></span> `Map (map)`
 
 This node transforms an array by applying a node on each value
 
@@ -308,8 +331,6 @@ expected configuration:
  - `enabled` (`boolean`) - Is the node enabled (optional)
  - `returned` (`string`) - Overrides the output of the node with the result of an operator (optional)
  - `id` (`string`) - id of the node (optional). for debug purposes only
- - `values` (`array`) - the values to iterate on
- - `node` (`object`) - the node to execute for each element in an array
  - `kind` (`string`) - The kind of the node
  - required fields are: **kind**
 
@@ -333,7 +354,7 @@ Usage example
 ---
 
 
-#### `foreach`
+#### <span class="fas fa-sync"></span> `For each (foreach)`
 
 This node executes a node for each element in an array
 
@@ -344,8 +365,6 @@ expected configuration:
  - `enabled` (`boolean`) - Is the node enabled (optional)
  - `returned` (`string`) - Overrides the output of the node with the result of an operator (optional)
  - `id` (`string`) - id of the node (optional). for debug purposes only
- - `values` (`array`) - the values to iterate on
- - `node` (`object`) - the node to execute for each element in an array
  - `kind` (`string`) - The kind of the node
  - required fields are: **kind**
 
@@ -370,7 +389,7 @@ Usage example
 ---
 
 
-#### `assign`
+#### <span class="fas fa-dollar-sign"></span> `Assign in memory (assign)`
 
 This node with executes a sequence of memory assignation operations sequentially
 
@@ -416,9 +435,9 @@ Usage example
 ---
 
 
-#### `value`
+#### <span class="fas fa-font"></span> `Value (value)`
 
-This node executes a sequence of nodes sequentially
+This node returns a value
 
 expected configuration:
 
@@ -445,18 +464,20 @@ Usage example
 ---
 
 
-#### `if`
+#### <span class="fas fa-question"></span> `If then else (if)`
 
 This executes a node if the predicate matches or another one if not
 
 expected configuration:
 
+ - `predicate` (`boolean`) - The predicate defining if the path is run or not
  - `description` (`string`) - The description of what this node does in the workflow (optional). for debug purposes only
  - `result` (`string`) - The name of the memory that will be assigned with the result of this node (optional)
  - `enabled` (`boolean`) - Is the node enabled (optional)
+ - `else` (`object`) - The node run if the predicate does not matches
  - `returned` (`string`) - Overrides the output of the node with the result of an operator (optional)
  - `id` (`string`) - id of the node (optional). for debug purposes only
- - `properties` (`any`) - 
+ - `then` (`object`) - The node run if the predicate matches
  - `kind` (`string`) - The kind of the node
  - required fields are: **kind**
 
@@ -488,7 +509,7 @@ Usage example
 ---
 
 
-#### `error`
+#### <span class="fas fa-exclamation"></span> `Stop and Error (error)`
 
 This node returns an error
 
@@ -499,8 +520,6 @@ expected configuration:
  - `enabled` (`boolean`) - Is the node enabled (optional)
  - `returned` (`string`) - Overrides the output of the node with the result of an operator (optional)
  - `id` (`string`) - id of the node (optional). for debug purposes only
- - `details` (`object`) - the optional details of the error
- - `message` (`string`) - the error message
  - `kind` (`string`) - The kind of the node
  - required fields are: **kind**
 
@@ -521,7 +540,7 @@ Usage example
 ---
 
 
-#### `call`
+#### <span class="fas fa-code"></span> `Call (call)`
 
 This node calls a function an returns its result
 
@@ -554,19 +573,17 @@ Usage example
 ---
 
 
-#### `filter`
+#### <span class="fas fa-filter"></span> `Filter (filter)`
 
 This node transforms an array by filtering values based on a node execution
 
 expected configuration:
 
- - `predicate` (`object`) - the node to execute for each element in an array
  - `description` (`string`) - The description of what this node does in the workflow (optional). for debug purposes only
  - `result` (`string`) - The name of the memory that will be assigned with the result of this node (optional)
  - `enabled` (`boolean`) - Is the node enabled (optional)
  - `returned` (`string`) - Overrides the output of the node with the result of an operator (optional)
  - `id` (`string`) - id of the node (optional). for debug purposes only
- - `values` (`array`) - the values to iterate on
  - `kind` (`string`) - The kind of the node
  - required fields are: **kind**
 
@@ -602,7 +619,66 @@ Prototype:
 
 ### Full List of Functions
 
-#### `core.store_get`
+
+#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitForgeFunction (biscuit.extensions.cloud-apim.com.biscuit_forge)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.GenerateImageFunction (extensions.com.cloud-apim.llm-extension.image_generate)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-cogs"></span>`Read from Otoroshi config. (core.config_read)`
+
+This function retrieves values from otoroshi config.
+
+expected configuration:
+
+ - `path` (`string`) - The path of the config. to read
+ - required fields are: **path**
+
+Usage example
+
+```json
+{
+  "kind" : "call",
+  "function" : "core.config_read",
+  "args" : {
+    "path" : "otoroshi.domain"
+  }
+}
+```
+
+
+---
+
+
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.GenerateVideoFunction (extensions.com.cloud-apim.llm-extension.video_generate)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-download"></span>`Datastore get (core.store_get)`
 
 This function gets keys from the store
 
@@ -627,7 +703,7 @@ Usage example
 ---
 
 
-#### `core.file_read`
+#### <span class="fas fa-file-alt"></span>`Read a file (core.file_read)`
 
 This function reads a file
 
@@ -656,7 +732,7 @@ Usage example
 ---
 
 
-#### `core.hello`
+#### <span class="fas fa-hand-paper"></span>`Hello function (core.hello)`
 
 This function returns a hello message
 
@@ -681,9 +757,9 @@ Usage example
 ---
 
 
-#### `core.store_match`
+#### <span class="fas fa-search"></span>`Datastore matching keys (core.store_match)`
 
-This function gets keys from the store matching a pattern
+This function gets keys from the datastore matching a pattern
 
 expected configuration:
 
@@ -706,9 +782,9 @@ Usage example
 ---
 
 
-#### `core.store_set`
+#### <span class="fas fa-upload"></span>`Datastore set (core.store_set)`
 
-This function sets a key in the store
+This function sets a key in the datastore
 
 expected configuration:
 
@@ -735,7 +811,87 @@ Usage example
 ---
 
 
-#### `core.wasm_call`
+#### <span class="fas fa-leaf"></span>`Get environment variable (core.env_get)`
+
+This function retrieves values from environment variables
+
+expected configuration:
+
+ - `name` (`string`) - The environment variable name
+ - required fields are: **name**
+
+Usage example
+
+```json
+{
+  "kind" : "call",
+  "function" : "core.env_get",
+  "args" : {
+    "name" : "OPENAI_APIKEY"
+  }
+}
+```
+
+
+---
+
+
+#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitKeypairGenFunction (biscuit.extensions.cloud-apim.com.biscuit_keypair_gen)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.ModerationCallFunction (extensions.com.cloud-apim.llm-extension.moderation_call)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-cogs"></span>`Compute a resume token for the current workflow (core.compute_resume_token)`
+
+This function computes a resume token for the current workflow
+
+expected configuration:
+
+
+
+Usage example
+
+```json
+{
+  "kind" : "call",
+  "function" : "core.compute_resume_token",
+  "args" : { }
+}
+```
+
+
+---
+
+
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.CallToolFunctionFunction (extensions.com.cloud-apim.llm-extension.tool_function_call)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-cube"></span>`Wasm call (core.wasm_call)`
 
 This function calls a wasm function
 
@@ -766,7 +922,7 @@ Usage example
 ---
 
 
-#### `core.file_del`
+#### <span class="fas fa-trash"></span>`Delete a file (core.file_del)`
 
 This function deletes a file
 
@@ -791,9 +947,9 @@ Usage example
 ---
 
 
-#### `core.store_keys`
+#### <span class="fas fa-key"></span>`Datastore list keys (core.store_keys)`
 
-This function gets keys from the store
+This function lists keys from the datastore
 
 expected configuration:
 
@@ -816,7 +972,29 @@ Usage example
 ---
 
 
-#### `core.log`
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.AudioTtsFunction (extensions.com.cloud-apim.llm-extension.audio_tts)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.LlmCallFunction (extensions.com.cloud-apim.llm-extension.llm_call)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-clipboard-list"></span>`Log a message (core.log)`
 
 This function writes whatever the user want to the otoroshi logs
 
@@ -843,7 +1021,29 @@ Usage example
 ---
 
 
-#### `core.http_client`
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.ComputeEmbeddingFunction (extensions.com.cloud-apim.llm-extension.embedding_compute)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitVerifyFunction (biscuit.extensions.cloud-apim.com.biscuit_verify)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-network-wired"></span>`HTTP client (core.http_client)`
 
 This function makes a HTTP request
 
@@ -885,7 +1085,7 @@ Usage example
 ---
 
 
-#### `core.send_mail`
+#### <span class="fas fa-envelope"></span>`Send an email (core.send_mail)`
 
 This function sends an email
 
@@ -922,7 +1122,7 @@ Usage example
 ---
 
 
-#### `core.system_call`
+#### <span class="fas fa-terminal"></span>`System call (core.system_call)`
 
 This function calls a system command
 
@@ -947,7 +1147,7 @@ Usage example
 ---
 
 
-#### `core.state_get_all`
+#### <span class="fas fa-layer-group"></span>`Get all resources from the state (core.state_get_all)`
 
 This function gets all resources from the state
 
@@ -976,7 +1176,18 @@ Usage example
 ---
 
 
-#### `core.store_del`
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreAddFunction (extensions.com.cloud-apim.llm-extension.vector_store_add)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-eraser"></span>`Datastore delete (core.store_del)`
 
 This function deletes keys from the store
 
@@ -1001,7 +1212,18 @@ Usage example
 ---
 
 
-#### `core.file_write`
+#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitAttenuationFunction (biscuit.extensions.cloud-apim.com.biscuit_attenuation)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-file-signature"></span>`Write a file (core.file_write)`
 
 This function writes a file
 
@@ -1032,7 +1254,18 @@ Usage example
 ---
 
 
-#### `core.workflow_call`
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.CallMcpFunctionFunction (extensions.com.cloud-apim.llm-extension.mcp_function_call)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-project-diagram"></span>`Call a workflow (core.workflow_call)`
 
 This function calls another workflow stored in otoroshi
 
@@ -1061,7 +1294,7 @@ Usage example
 ---
 
 
-#### `core.state_get`
+#### <span class="fas fa-cube"></span>`Get a resource from the state (core.state_get)`
 
 This function gets a resource from the state
 
@@ -1092,9 +1325,9 @@ Usage example
 ---
 
 
-#### `core.store_mget`
+#### <span class="fas fa-boxes"></span>`Datastore get multiple keys (core.store_mget)`
 
-This function gets multiple keys from the store
+This function gets multiple keys from the datastore
 
 expected configuration:
 
@@ -1117,7 +1350,18 @@ Usage example
 ---
 
 
-#### `core.emit_event`
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreSearchFunction (extensions.com.cloud-apim.llm-extension.vector_store_search)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-bullhorn"></span>`Emit an event (core.emit_event)`
 
 This function emits an event
 
@@ -1145,6 +1389,28 @@ Usage example
   }
 }
 ```
+
+
+---
+
+
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.AudioSttFunction (extensions.com.cloud-apim.llm-extension.audio_stt)`
+
+no description
+
+expected configuration:
+
+
+
+---
+
+
+#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreRemoveFunction (extensions.com.cloud-apim.llm-extension.vector_store_remove)`
+
+no description
+
+expected configuration:
+
 
 
 ## Operators
@@ -1179,7 +1445,7 @@ Result: `false`
 ### Full List of Operators
 
 
-####`$basic_auth`
+#### <span class="fas fa-shield-alt"></span> `Basic Auth ($basic_auth)`
 
 This operator returns a basic authentication header
 
@@ -1204,7 +1470,7 @@ Usage example
 ---
 
 
-####`$eq`
+#### <span class="fas fa-equals"></span> `Equal to ($eq)`
 
 This operator checks if two values are equal
 
@@ -1229,7 +1495,7 @@ Usage example
 ---
 
 
-####`$now`
+#### <span class="fas fa-clock"></span> `Now ($now)`
 
 This operator returns the current timestamp
 
@@ -1249,7 +1515,7 @@ Usage example
 ---
 
 
-####`$is_falsy`
+#### <span class="fas fa-times-circle"></span> `Is falsy ($is_falsy)`
 
 This operator checks if a value is falsy
 
@@ -1272,14 +1538,14 @@ Usage example
 ---
 
 
-####`$add`
+#### <span class="fas fa-plus"></span> `Add ($add)`
 
 This operator adds a list of numbers
 
 expected configuration:
 
- - `values` (`array`) - The list of numbers to add
- - required fields are: **values**
+
+ - required fields are: 
 
 Usage example
 
@@ -1295,7 +1561,7 @@ Usage example
 ---
 
 
-####`$array_append`
+#### <span class="fas fa-arrow-right"></span> `Array append ($array_append)`
 
 This operator appends a value to an array
 
@@ -1320,7 +1586,7 @@ Usage example
 ---
 
 
-####`$neq`
+#### <span class="fas fa-not-equal"></span> `Not equal to ($neq)`
 
 This operator checks if two values are not equal
 
@@ -1345,7 +1611,7 @@ Usage example
 ---
 
 
-####`$array_at`
+#### <span class="fas fa-list-ol"></span> `Array at ($array_at)`
 
 This operator gets an element from an array
 
@@ -1370,7 +1636,7 @@ Usage example
 ---
 
 
-####`$parse_date`
+#### <span class="fas fa-calendar-alt"></span> `Parse Date ($parse_date)`
 
 This operator parses a date string into a timestamp
 
@@ -1395,7 +1661,7 @@ Usage example
 ---
 
 
-####`$parse_datetime`
+#### <span class="fas fa-clock"></span> `Parse DateTime ($parse_datetime)`
 
 This operator parses a datetime string into a timestamp
 
@@ -1420,7 +1686,7 @@ Usage example
 ---
 
 
-####`$array_page`
+#### <span class="fas fa-file-alt"></span> `Array page ($array_page)`
 
 This operator gets a page of an array
 
@@ -1447,7 +1713,34 @@ Usage example
 ---
 
 
-####`$map_get`
+#### <span class="fas fa-code"></span> `String Replace ($str_replace)`
+
+This operator replace values inside a string
+
+expected configuration:
+
+ - `value` (`string`) - The string with parts to replace
+ - `target` (`string`) - The value replaced
+ - `replacement` (`string`) - The value to replace with
+ - required fields are: **value**, **target**, **replacement**
+
+Usage example
+
+```json
+{
+  "$str_replace" : {
+    "value" : "Hello World!",
+    "target" : "Hello",
+    "replacement" : "Goodbye"
+  }
+}
+```
+
+
+---
+
+
+#### <span class="fas fa-search"></span> `Map get ($map_get)`
 
 This operator gets a value from a map
 
@@ -1474,7 +1767,7 @@ Usage example
 ---
 
 
-####`$parse_time`
+#### <span class="fas fa-clock"></span> `Parse Time ($parse_time)`
 
 This operator parses a time string into a timestamp
 
@@ -1499,15 +1792,14 @@ Usage example
 ---
 
 
-####`$mem_ref`
+#### <span class="fas fa-memory"></span> `Memory reference ($mem_ref)`
 
 This operator gets a value from the memory
 
 expected configuration:
 
- - `name` (`string`) - The name of the memory entry
- - `path` (`string`) - The path of the memory entry
- - required fields are: **name**, **path**
+
+ - required fields are: 
 
 Usage example
 
@@ -1524,7 +1816,7 @@ Usage example
 ---
 
 
-####`$str_lower_case`
+#### <span class="fas fa-arrow-down"></span> `Lowercase ($str_lower_case)`
 
 This operator converts a string to lowercase
 
@@ -1547,7 +1839,7 @@ Usage example
 ---
 
 
-####`$encode_base64`
+#### <span class="fas fa-lock"></span> `Encode Base64 ($encode_base64)`
 
 This operator encodes a string in base64
 
@@ -1570,7 +1862,32 @@ Usage example
 ---
 
 
-####`$expression_language`
+#### <span class="fas fa-code"></span> `Stringify ($stringify)`
+
+This operator stringify a json value
+
+expected configuration:
+
+ - `value` (`any`) - The json to convert to string
+ - required fields are: **value**
+
+Usage example
+
+```json
+{
+  "$stringify" : {
+    "value" : {
+      "foo" : "bar"
+    }
+  }
+}
+```
+
+
+---
+
+
+#### <span class="fas fa-code"></span> `Expression Language ($expression_language)`
 
 This operator evaluates an expression language
 
@@ -1593,7 +1910,7 @@ Usage example
 ---
 
 
-####`$not`
+#### <span class="fas fa-exclamation"></span> `Not ($not)`
 
 This operator negates a boolean value
 
@@ -1616,7 +1933,7 @@ Usage example
 ---
 
 
-####`$projection`
+#### <span class="fas fa-filter"></span> `Projection ($projection)`
 
 This operator projects a value
 
@@ -1645,7 +1962,7 @@ Usage example
 ---
 
 
-####`$lte`
+#### <span class="fas fa-less-than-equal"></span> `Less than or equal to ($lte)`
 
 This operator checks if a number is less than or equal to another number
 
@@ -1670,7 +1987,7 @@ Usage example
 ---
 
 
-####`$str_split`
+#### <span class="fas fa-cut"></span> `String Split ($str_split)`
 
 This operator splits a string into an array based on a regex
 
@@ -1695,7 +2012,7 @@ Usage example
 ---
 
 
-####`$array_prepend`
+#### <span class="fas fa-arrow-left"></span> `Array prepend ($array_prepend)`
 
 This operator prepends a value to an array
 
@@ -1720,7 +2037,7 @@ Usage example
 ---
 
 
-####`$decode_base64`
+#### <span class="fas fa-unlock"></span> `Decode Base64 ($decode_base64)`
 
 This operator decodes a base64 string
 
@@ -1743,7 +2060,7 @@ Usage example
 ---
 
 
-####`$subtract`
+#### <span class="fas fa-minus"></span> `Subtract ($subtract)`
 
 This operator subtracts a list of numbers
 
@@ -1766,7 +2083,7 @@ Usage example
 ---
 
 
-####`$json_parse`
+#### <span class="fas fa-file-code"></span> `JSON parse ($json_parse)`
 
 This operator parses a JSON string
 
@@ -1789,7 +2106,7 @@ Usage example
 ---
 
 
-####`$contains`
+#### <span class="fas fa-search-plus"></span> `Contains ($contains)`
 
 This operator checks if a value is contained in a container
 
@@ -1814,7 +2131,7 @@ Usage example
 ---
 
 
-####`$gte`
+#### <span class="fas fa-greater-than-equal"></span> `Greater than or equal to ($gte)`
 
 This operator checks if a number is greater than or equal to another number
 
@@ -1839,7 +2156,7 @@ Usage example
 ---
 
 
-####`$incr`
+#### <span class="fas fa-plus-circle"></span> `Increment ($incr)`
 
 This operator increments a value by a given amount
 
@@ -1864,7 +2181,7 @@ Usage example
 ---
 
 
-####`$lt`
+#### <span class="fas fa-less-than"></span> `Less than ($lt)`
 
 This operator checks if a number is less than another number
 
@@ -1889,7 +2206,7 @@ Usage example
 ---
 
 
-####`$divide`
+#### <span class="fas fa-divide"></span> `Divide ($divide)`
 
 This operator divides a list of numbers
 
@@ -1912,7 +2229,7 @@ Usage example
 ---
 
 
-####`$map_put`
+#### <span class="fas fa-plus-square"></span> `Map put ($map_put)`
 
 This operator puts a key-value pair in a map
 
@@ -1941,7 +2258,7 @@ Usage example
 ---
 
 
-####`$multiply`
+#### <span class="fas fa-times"></span> `Multiply ($multiply)`
 
 This operator multiplies a list of numbers
 
@@ -1964,7 +2281,7 @@ Usage example
 ---
 
 
-####`$str_concat`
+#### <span class="fas fa-link"></span> `String Concat ($str_concat)`
 
 This operator concatenates a list of strings
 
@@ -1989,7 +2306,59 @@ Usage example
 ---
 
 
-####`$gt`
+#### <span class="fas fa-code"></span> `Prettify ($prettify)`
+
+This operator prettify a json value
+
+expected configuration:
+
+ - `value` (`any`) - The json to convert to string
+ - required fields are: **value**
+
+Usage example
+
+```json
+{
+  "$prettify" : {
+    "value" : {
+      "foo" : "bar"
+    }
+  }
+}
+```
+
+
+---
+
+
+#### <span class="fas fa-code"></span> `JQ ($jq)`
+
+This operator transforms a json value using JQ
+
+expected configuration:
+
+ - `filter` (`string`) - The JQ filter applied on the JSON
+ - `value` (`any`) - The JSON passed to JQ
+ - required fields are: **value**
+
+Usage example
+
+```json
+{
+  "$jq" : {
+    "filter" : "{foo: .bar}",
+    "value" : [ {
+      "bar" : 42
+    } ]
+  }
+}
+```
+
+
+---
+
+
+#### <span class="fas fa-greater-than"></span> `Greater than ($gt)`
 
 This operator checks if a number is greater than another number
 
@@ -2014,7 +2383,7 @@ Usage example
 ---
 
 
-####`$str_upper_case`
+#### <span class="fas fa-arrow-up"></span> `String Upper Case ($str_upper_case)`
 
 This operator converts a string to uppercase
 
@@ -2037,7 +2406,7 @@ Usage example
 ---
 
 
-####`$is_truthy`
+#### <span class="fas fa-check-circle"></span> `Is truthy ($is_truthy)`
 
 This operator checks if a value is truthy
 
@@ -2060,7 +2429,34 @@ Usage example
 ---
 
 
-####`$map_del`
+#### <span class="fas fa-code"></span> `String Replace All ($str_replace_all)`
+
+This operator replace all values matching a regex inside a string
+
+expected configuration:
+
+ - `value` (`string`) - The string with parts to replace
+ - `target` (`string`) - The regex replaced
+ - `replacement` (`string`) - The value to replace with
+ - required fields are: **value**, **target**, **replacement**
+
+Usage example
+
+```json
+{
+  "$str_replace_all" : {
+    "value" : "Hello World!",
+    "target" : "Hello",
+    "replacement" : "Goodbye"
+  }
+}
+```
+
+
+---
+
+
+#### <span class="fas fa-minus-square"></span> `Map delete ($map_del)`
 
 This operator deletes a key from a map
 
@@ -2087,7 +2483,7 @@ Usage example
 ---
 
 
-####`$array_del`
+#### <span class="fas fa-trash"></span> `Array delete ($array_del)`
 
 This operator deletes an element from an array
 
@@ -2112,7 +2508,7 @@ Usage example
 ---
 
 
-####`$decr`
+#### <span class="fas fa-minus-circle"></span> `Decrement ($decr)`
 
 This operator decrements a value by a given amount
 
@@ -2132,6 +2528,7 @@ Usage example
   }
 }
 ```
+
 
 
 ## Plugins
@@ -2161,7 +2558,7 @@ Workflows can be used inside routes using:
           "name": "query_date",
           "value": {
             "$parse_datetime": {
-              "value": "${input.request.query.date.0}"
+              "value": "${workflow_input.request.query.date.0}"
             }
           }
         },
@@ -2446,7 +2843,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
       "kind": "if",
       "predicate": {
         "$is_truthy": {
-          "value": "${input.request.body_json.audio}"
+          "value": "${workflow_input.request.body_json.audio}"
         }
       },
       "then": {
@@ -2458,7 +2855,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
           "decode_base64": true,
           "payload": {
             "model": "gpt-4o-mini-transcribe",
-            "audio": "${input.request.body_json.audio}"
+            "audio": "${workflow_input.request.body_json.audio}"
           }
         },
         "result": "input_text"
@@ -2469,7 +2866,7 @@ An AI agent with persistent memory, tools and that can support audio as input an
         "values": [
           {
             "name": "input_text",
-            "value": "${input.request.body_json.text}"
+            "value": "${workflow_input.request.body_json.text}"
           }
         ]
       }

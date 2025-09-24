@@ -21,10 +21,11 @@ import {
   NgHiddenRenderer,
   NgSingleCodeLineRenderer,
   NgCodeRenderer,
+  NgAnyRenderer,
   NgLocationRenderer,
   NgDotsRenderer,
   LabelAndInput,
-  NgCustomFormsRenderer,
+  NgCustomFormsRenderer
 } from './inputs';
 
 import {
@@ -68,6 +69,8 @@ const Helpers = {
       return components.ObjectSelectRenderer;
     } else if (type === 'code') {
       return components.CodeRenderer;
+    } else if(type === 'any') {
+      return components.AnyRenderer;
     } else if (type === 'json') {
       return components.JsonRenderer;
     } else if (type === 'single-line-of-code') {
@@ -335,6 +338,7 @@ export class NgForm extends Component {
     ValidationRenderer: NgValidationRenderer,
     SingleCodeLineRenderer: NgSingleCodeLineRenderer,
     CodeRenderer: NgCodeRenderer,
+    AnyRenderer: NgAnyRenderer,
     PasswordRenderer: NgPasswordRenderer,
     JsonRenderer: NgJsonRenderer,
     LocationRenderer: NgLocationRenderer,
@@ -710,7 +714,10 @@ export class NgForm extends Component {
   ) {
     const paths = name.includes('.') ? name.split('.') : [name];
 
-    const stepSchema = paths.reduce((acc, path) => acc[path] || acc.schema[path], schema);
+    const stepSchema = paths.reduce(
+      (acc, path) => acc[path] || (acc.schema ? acc.schema[path] : {}),
+      schema
+    );
 
     if (stepSchema) {
       const visible =

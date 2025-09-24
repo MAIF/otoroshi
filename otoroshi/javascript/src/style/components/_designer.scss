@@ -1,4 +1,62 @@
 .designer {
+
+    .graphql-form {
+        position: absolute;
+        top: 1em;
+        right: 0;
+        left: 0;
+        bottom: 0;
+        background-color: var(--bg-color_level1);
+        z-index: 800;
+        border-radius: 4px;
+
+        .sub-container {
+            background: var(--bg-color_level2);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 0;
+            margin-top: 10px;
+            flex: 1;
+            padding-right: 24px;
+        }
+    }
+
+    .graphql-form-type {
+        background-color: var(--bg-color_level2);
+        border: 1px solid var(--bg-color_level1);
+    }
+
+    .graphql-form-element {
+        background-color: var(--bg-color_level3);
+        color: var(--color_level3);
+        margin: 6px;
+        display: flex;
+        align-items: center;
+        border-radius: 4px;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .endpoint {
+        // cursor: pointer;
+        background-color: var(--bg-color_level2);
+        border-radius: 4px;
+        padding: 4px 8px;
+    }
+
+    .generated-endpoint .content-switch-button-off,
+    .generated-endpoint .content-switch-button-on {
+        margin: 0;
+    }
+
+    .endpoint-helper {
+        min-width: 30px;
+    }
+
+    .endpoint-helper i {
+        margin: 0;
+    }
+
     pre {
         height: initial !important;
         white-space: pre-wrap;

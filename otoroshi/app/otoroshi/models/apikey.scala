@@ -10,19 +10,11 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.{
-  Alerts,
-  ApiKeyQuotasAlmostExceededAlert,
-  ApiKeyQuotasAlmostExceededReason,
-  ApiKeyQuotasExceededAlert,
-  ApiKeyQuotasExceededReason,
-  ApiKeySecretHasRotated,
-  ApiKeySecretWillRotate,
-  RevokedApiKeyUsageAlert
-}
+import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
+import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.NgAccess
 import play.api.Logger
 import play.api.libs.json._
@@ -32,13 +24,7 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{
-  BetterDecodedJWT,
-  BetterJsLookupResult,
-  BetterJsReadable,
-  BetterJsValue,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
 
 import java.nio.charset.StandardCharsets
 import java.security.Signature
@@ -1435,10 +1421,10 @@ object ApiKeyHelper {
           errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
         case Some(key)
             if key.restrictions
-              .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
-              ._1 =>
+              .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
+              ._1 => {
           key.restrictions
-            .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
+            .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
             ._2
             .map(v => Left(v))
         case Some(key)                                    =>
@@ -1451,6 +1437,7 @@ object ApiKeyHelper {
               sendQuotasAlmostExceededError(key, quotas)
               callDownstream(config, Some(key), None)
             case (false, _, quotas)            =>
+              attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
               sendQuotasExceededError(key, quotas)
               errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
           }
@@ -1471,9 +1458,11 @@ object ApiKeyHelper {
                 .isNotFound(req.method, req.theDomain, req.relativeUri) =>
             errorResult(NotFound, "Not Found", "errors.not.found")
           case Some(key)
-              if key.restrictions.handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)._1 =>
+              if key.restrictions
+                .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
+                ._1 => {
             key.restrictions
-              .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
+              .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
               ._2
               .map(v => Left(v))
           case Some(key)                                  =>
@@ -1486,6 +1475,7 @@ object ApiKeyHelper {
                 sendQuotasAlmostExceededError(key, quotas)
                 callDownstream(config, Some(key), None)
               case (false, _, quotas)            =>
+                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
@@ -1501,10 +1491,10 @@ object ApiKeyHelper {
             errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
           case Some(key)
               if key.restrictions
-                .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
-                ._1 =>
+                .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
+                ._1 => {
             key.restrictions
-              .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
+              .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
               ._2
               .map(v => Left(v))
           case Some(key) if key.isValid(clientSecret)     =>
@@ -1517,6 +1507,7 @@ object ApiKeyHelper {
                 sendQuotasAlmostExceededError(key, quotas)
                 callDownstream(config, Some(key), None)
               case (false, _, quotas)            =>
+                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
@@ -1535,10 +1526,10 @@ object ApiKeyHelper {
             errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
           case Some(key)
               if key.restrictions
-                .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
-                ._1 =>
+                .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
+                ._1 => {
             key.restrictions
-              .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
+              .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
               ._2
               .map(v => Left(v))
           case Some(key)                                  =>
@@ -1551,6 +1542,7 @@ object ApiKeyHelper {
                 sendQuotasAlmostExceededError(key, quotas)
                 callDownstream(config, Some(key), None)
               case (false, _, quotas)            =>
+                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
@@ -1681,10 +1673,10 @@ object ApiKeyHelper {
                           errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
                         case Success(_)
                             if apiKey.restrictions
-                              .handleRestrictions(descriptor.id, descriptor.some, Some(apiKey), req, attrs)
-                              ._1 =>
+                              .handleRestrictions(descriptor.id, descriptor.some, None, Some(apiKey), req, attrs)
+                              ._1 => {
                           apiKey.restrictions
-                            .handleRestrictions(descriptor.id, descriptor.some, Some(apiKey), req, attrs)
+                            .handleRestrictions(descriptor.id, descriptor.some, None, Some(apiKey), req, attrs)
                             ._2
                             .map(v => Left(v))
                         case Success(_)                                     =>
@@ -1701,6 +1693,7 @@ object ApiKeyHelper {
                               sendQuotasAlmostExceededError(apiKey, quotas)
                               callDownstream(config, Some(apiKey), None)
                             case (false, _, quotas)            =>
+                              attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apiKey)
                               sendQuotasExceededError(apiKey, quotas)
                               errorResult(
                                 TooManyRequests,
@@ -1739,10 +1732,10 @@ object ApiKeyHelper {
                 errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
               case Some(key)
                   if key.restrictions
-                    .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
-                    ._1 =>
+                    .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
+                    ._1 => {
                 key.restrictions
-                  .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
+                  .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
                   ._2
                   .map(v => Left(v))
               case Some(key) if key.isValid(apiKeySecret)     =>
@@ -1755,6 +1748,7 @@ object ApiKeyHelper {
                     sendQuotasAlmostExceededError(key, quotas)
                     callDownstream(config, Some(key), None)
                   case (false, _, quotas)            =>
+                    attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
                     sendQuotasExceededError(key, quotas)
                     errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                 }
@@ -2201,6 +2195,7 @@ object ApiKeyHelper {
       constraints: ApiKeyConstraints,
       attrs: TypedMap,
       service: String,
+      route: Option[NgRoute],
       incrementQuotas: Boolean,
       routingEnabled: Boolean
   )(using
@@ -2309,9 +2304,9 @@ object ApiKeyHelper {
               "errors.invalid.api.key",
               s"apikey '${apikey.clientId}' routing did not match".some
             )
-          case Right(apikey) if apikey.restrictions.handleRestrictions(service, None, Some(apikey), req, attrs)._1 =>
+          case Right(apikey) if apikey.restrictions.handleRestrictions(service, None, route, Some(apikey), req, attrs)._1 => {
             apikey.restrictions
-              .handleRestrictions(service, None, Some(apikey), req, attrs)
+              .handleRestrictions(service, None, route, Some(apikey), req, attrs)
               ._2
               .map(v => Left(v))
           case Right(apikey)                                                                                       =>
@@ -2331,6 +2326,7 @@ object ApiKeyHelper {
                   apikey.rightf
                 }
               case (false, _, quotas)            =>
+                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apikey)
                 sendQuotasExceededError(apikey, quotas)
                 error(
                   Results.TooManyRequests,

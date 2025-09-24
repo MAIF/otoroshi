@@ -1,11 +1,12 @@
 const { test, expect } = require('@playwright/test');
-const { SECTIONS } = require('../../utils');
+const { SECTIONS, validAnonymousModal } = require('../../utils');
 
 test('create an apikey', async ({ browser }) => {
     const context = await browser.newContext({ storageState: 'tests/playwright/.auth/tester.json' });
     const page = await context.newPage();
-
     await page.goto('/');
+    await validAnonymousModal(page)
+
     await page.getByText(SECTIONS.MANAGE_RESOURCES).click();
     await page
         .locator(`div[title^="Apikeys"]`).click();

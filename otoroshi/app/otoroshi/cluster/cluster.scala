@@ -29,6 +29,7 @@ import otoroshi.jobs.updates.Version
 import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.next.plugins.{NgCustomQuotas, NgCustomThrottling}
+import otoroshi.next.workflow.PausedWorkflowSession
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl._
@@ -102,6 +103,7 @@ object Cluster {
     key.startsWith(s"${env.storageRoot}:cache:") ||
     key.startsWith(s"${env.storageRoot}:users:alreadyloggedin") ||
     key.startsWith(s"${env.storageRoot}:migrations") ||
+    key.startsWith(s"${env.storageRoot}:local-plugins:") ||
     key.startsWith(s"${env.storageRoot}:dev:")
   }
 }
@@ -1198,21 +1200,31 @@ object ClusterAgent {
 
 object CpuInfo {
 
-  private val mbs      = ManagementFactory.getPlatformMBeanServer
-  private val osMXBean = ManagementFactory.getOperatingSystemMXBean
+  private val tmbs      = Try(ManagementFactory.getPlatformMBeanServer)
+  private val tosMXBean = Try(ManagementFactory.getOperatingSystemMXBean)
 
   def cpuLoad(): Double = {
-    val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
-    val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))
-    if (list.isEmpty) return 0.0
-    val att   = list.get(0).asInstanceOf[Attribute]
-    val value = att.getValue.asInstanceOf[Double]
-    if (value == -1.0) return 0.0
-    (value * 1000) / 10.0
+    tmbs match {
+      case Failure(_) => 0.0
+      case Success(mbs) => {
+        val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
+        val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))
+        if (list.isEmpty) return 0.0
+        val att   = list.get(0).asInstanceOf[Attribute]
+        val value = att.getValue.asInstanceOf[Double]
+        if (value == -1.0) return 0.0
+        (value * 1000) / 10.0
+      }
+    }
   }
 
   def loadAverage(): Double = {
-    osMXBean.getSystemLoadAverage
+    tosMXBean match {
+      case Failure(_) => 0.0
+      case Success(osMXBean) => {
+        osMXBean.getSystemLoadAverage
+      }
+    }
   }
 }
 
@@ -1493,6 +1505,108 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def cannotServeRequests(): Boolean = {
     !firstSuccessfulStateFetchDone.get()
+  }
+
+  def saveWorkflowSession(session: PausedWorkflowSession): Future[Option[JsValue]] = {
+    if (env.clusterConfig.mode.isWorker) {
+      Retry
+        .retry(
+          times = config.worker.retries,
+          delay = config.retryDelay,
+          factor = config.retryFactor,
+          ctx = "leader-save-workflow-session"
+        ) { tryCount =>
+          if (Cluster.logger.isDebugEnabled)
+            Cluster.logger.debug(s"saving workflow session '${session.workflowRef}/${session.id}' with a leader")
+          env.MtlsWs
+            .url(
+              otoroshiUrl + s"/apis/extensions/otoroshi.extensions.workflows/sessions/${session.workflowRef}",
+              config.mtlsConfig
+            )
+            .withHttpHeaders(
+              "Host"                                             -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+              ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
+              ClusterAgent.OtoroshiWorkerJavaVersionHeader       -> env.theJavaVersion.jsonStr,
+              ClusterAgent.OtoroshiWorkerOsHeader                -> env.os.jsonStr,
+              ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
+              ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader         -> env.exposedHttpsPortInt.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
+            .post(session.json)
+            .map { resp =>
+              if (resp.status == 200 && Cluster.logger.isDebugEnabled)
+                Cluster.logger.debug(s"Workflow session '${session.workflowRef}/${session.id}' has been save")
+              Some(Json.parse(resp.body))
+            }
+        }
+        .recover { case e =>
+          if (Cluster.logger.isDebugEnabled)
+            Cluster.logger.debug(
+              s"[${env.clusterConfig.mode.name}] Error while saving workflow session '${session.workflowRef}/${session.id}' with Otoroshi leader cluster"
+            )
+          None
+        }
+    } else {
+      FastFuture.successful(None)
+    }
+  }
+
+  def deleteWorkflowSession(session: PausedWorkflowSession): Future[Option[JsValue]] = {
+    if (env.clusterConfig.mode.isWorker) {
+      Retry
+        .retry(
+          times = config.worker.retries,
+          delay = config.retryDelay,
+          factor = config.retryFactor,
+          ctx = "leader-de;lete-workflow-session"
+        ) { tryCount =>
+          if (Cluster.logger.isDebugEnabled)
+            Cluster.logger.debug(s"deleting workflow session '${session.workflowRef}/${session.id}' with a leader")
+          env.MtlsWs
+            .url(
+              otoroshiUrl + s"/apis/extensions/otoroshi.extensions.workflows/sessions/${session.workflowRef}/${session.id}",
+              config.mtlsConfig
+            )
+            .withHttpHeaders(
+              "Host"                                             -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+              ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
+              ClusterAgent.OtoroshiWorkerJavaVersionHeader       -> env.theJavaVersion.jsonStr,
+              ClusterAgent.OtoroshiWorkerOsHeader                -> env.os.jsonStr,
+              ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
+              ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader         -> env.exposedHttpsPortInt.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
+            .delete()
+            .map { resp =>
+              if (resp.status == 200 && Cluster.logger.isDebugEnabled)
+                Cluster.logger.debug(s"Workflow session '${session.workflowRef}/${session.id}' has been deleted")
+              Some(Json.parse(resp.body))
+            }
+        }
+        .recover { case e =>
+          if (Cluster.logger.isDebugEnabled)
+            Cluster.logger.debug(
+              s"[${env.clusterConfig.mode.name}] Error while invalidating workflow session '${session.workflowRef}/${session.id}' with Otoroshi leader cluster"
+            )
+          None
+        }
+    } else {
+      FastFuture.successful(None)
+    }
   }
 
   def isLoginTokenValid(token: String): Future[Boolean] = {

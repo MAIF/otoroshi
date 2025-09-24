@@ -276,7 +276,7 @@ function Subscriptions(props) {
       children: <VersionBadge />,
     });
 
-    return () => props.setTitle(undefined);
+    // return () => props.setTitle(undefined);
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS);
@@ -1306,7 +1306,7 @@ function Routes(props) {
       children: <VersionBadge />,
     });
 
-    return () => props.setTitle(undefined);
+    // return () => props.setTitle(undefined);
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.APIS);
@@ -1971,7 +1971,7 @@ function Testing(props) {
   useEffect(() => {
     props.setTitle('Testing mode');
 
-    return () => props.setTitle(undefined);
+    // return () => props.setTitle(undefined);
   }, []);
 
   if (!item) return <SimpleLoader />;
@@ -2103,7 +2103,7 @@ function Deployments(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-    return () => props.setTitle(undefined);
+    // return () => props.setTitle(undefined);
   }, []);
 
   if (!item) return <SimpleLoader />;
@@ -2224,7 +2224,7 @@ function EditFlow(props) {
         });
       }
     }
-    return () => props.setTitle(undefined);
+    // return () => props.setTitle(undefined);
   }, [item]);
 
   const updateFlow = () => {
@@ -2318,7 +2318,7 @@ function NewFlow(props) {
       children: <VersionBadge />,
     });
 
-    return () => props.setTitle(undefined);
+    // return () => props.setTitle(undefined);
   }, []);
 
   const [flow, setFlow] = useState({
@@ -2446,7 +2446,7 @@ function NewAPI(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-    return () => props.setTitle(undefined);
+    // return () => props.setTitle(undefined);
   }, []);
 
   const [value, setValue] = useState();
@@ -2644,7 +2644,7 @@ function Apis(props) {
         </div>
       ),
     });
-    return () => props.setTitle(undefined);
+    // return () => props.setTitle(undefined);
   }, []);
 
   const columns = [
@@ -2859,7 +2859,7 @@ function Flows(props) {
       children: <VersionBadge />,
     });
 
-    return () => props.setTitle(undefined);
+    // return () => props.setTitle(undefined);
   }, []);
 
   const fetchItems = (_) => Promise.resolve(item.flows);
@@ -3194,7 +3194,7 @@ function Informations(props) {
         children: <VersionBadge />,
       });
 
-      return () => props.setTitle(undefined);
+      // return () => props.setTitle(undefined);
     }
   }, [item]);
 
@@ -4190,13 +4190,13 @@ function ObjectiveCard({ title, description, icon, to, onClick }) {
       <div className="objective-card-icon">{icon}</div>
       <div className="objective-card-body">
         <p>{title}</p>
-        <p
+        <div
           onClick={() => {
             onClick ? onClick() : historyPush(history, location, to);
           }}
         >
           {description}
-        </p>
+        </div>
       </div>
     </div>
   );

@@ -347,6 +347,7 @@ class BackOfficeAppContainer extends Component {
             reloadEnv: this.reloadEnv,
             openedSidebar: this.state.openedSidebar,
             toggleSibebar: (openedSidebar) => this.setState({ openedSidebar }),
+            width: () => (this.state.openedSidebar ? 250 : 52),
           }}
         >
           <ReloadNewVersion />
@@ -356,6 +357,7 @@ class BackOfficeAppContainer extends Component {
               <TopBar
                 reloadEnv={this.reloadEnv}
                 shortMenu={this.state.shortMenu}
+                setSidebarContent={(c) => DynamicSidebar.setContent(c)}
                 // setTitle={(t) => DynamicTitle.setContent(t)}
                 // getTitle={() => DynamicTitle.getContent()}
                 setTitle={(t) => (dynamicTitleContent.value = t)}
@@ -376,29 +378,22 @@ class BackOfficeAppContainer extends Component {
                 className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
                 id="sidebar"
               >
-                <i
-                  className={`fas fa-chevron-${
-                    this.state.openedSidebar ? 'left' : 'right'
-                  } sidebar-toggle`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.localStorage.setItem(
-                      'otoroshi-sidebar-open',
-                      String(!this.state.openedSidebar)
-                    );
-                    this.setState({
-                      openedSidebar: !this.state.openedSidebar,
-                    });
-                  }}
-                />
-                <div
-                  className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : 'mx-1'}`}
-                  style={
-                    {
-                      // alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
-                    }
-                  }
-                >
+                {!window.location.pathname.includes('/designer') && (
+                  <i
+                    className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'} sidebar-toggle`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.localStorage.setItem(
+                        'otoroshi-sidebar-open',
+                        String(!this.state.openedSidebar)
+                      );
+                      this.setState({
+                        openedSidebar: !this.state.openedSidebar,
+                      });
+                    }}
+                  />
+                )}
+                <div className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : 'px-1'}`}>
                   {this.state.env && (
                     <GlobalTenantSelector
                       env={this.state.env}
@@ -455,7 +450,11 @@ class BackOfficeAppContainer extends Component {
                   </div>
                 </div>
               </div>
-              <div className="flex-fill px-3" style={{ overflowX: 'auto' }}>
+              <div
+                className="flex-fill px-3"
+                style={{ overflowX: 'auto' }}
+                id="content-scroll-container-parent"
+              >
                 <div className={classes.join(' ')} id="content-scroll-container">
                   <DynamicTitleSignal env={this.state.env} reloadEnv={this.reloadEnv} />
                   {!this.state.catchedError && (

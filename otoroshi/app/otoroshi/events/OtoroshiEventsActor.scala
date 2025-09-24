@@ -1051,8 +1051,21 @@ object Exporters {
     }
   }
 
+  class SplunkCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(ec, env) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        exporter[SplunkCallSettings].map { eec =>
+          eec.call(events, config, globalConfig)
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
   class WorkflowCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(using ec, env) {
+      extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[WorkflowCallSettings].map { eec =>

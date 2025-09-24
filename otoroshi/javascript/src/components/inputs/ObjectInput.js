@@ -12,12 +12,13 @@ export class ObjectInput extends React.Component {
   };
 
   componentDidUpdate(prevProps) {
-    if (prevProps.value !== this.props.value) {
-      const newData = Object.entries(this.props.value || {}).map(([key, value], i) => ({
-        idx: i,
-        key,
-        value,
-      }));
+    if (prevProps.value !== this.props.value) { 
+      const newData = Object.entries(this.props.value || {})
+        .map(([key, value], i) => ({
+          idx: i,
+          key,
+          value,
+        }));
       this.setState({
         data: newData,
       });
@@ -99,8 +100,6 @@ export class ObjectInput extends React.Component {
           {}
         )
       );
-    } else {
-      console.log('baised');
     }
   };
 
@@ -118,6 +117,9 @@ export class ObjectInput extends React.Component {
   render() {
     const { data } = this.state;
     const props = this.props;
+
+    const ValueRenderer = props.valueRenderer || props.ngOptions?.valueRenderer;
+
     return (
       <div>
         {data.length === 0 && (
@@ -139,8 +141,8 @@ export class ObjectInput extends React.Component {
             </div>
           </div>
         )}
-        {data.map(({ key, value, idx }, i) => (
-          <div className="row mb-3" key={`keys-${idx}`}>
+        {data.map(({ key, value, idx }, i) => {
+          return <div className="row mb-3" key={idx}>
             {i === 0 && !props.ngOptions?.spread && (
               <label className="col-xs-12 col-sm-2 col-form-label">
                 {props.label} <Help text={props.help} />
@@ -169,9 +171,9 @@ export class ObjectInput extends React.Component {
                       value={key}
                       onChange={(e) => this.changeKey(idx, key, e)}
                     />
-                    {props.valueRenderer &&
-                      props.valueRenderer(key, value, idx, (e) => this.changeValue(idx, key, e))}
-                    {!props.valueRenderer && (
+                    {ValueRenderer &&
+                      ValueRenderer(key, value, idx, (e) => this.changeValue(idx, key, e))}
+                    {!ValueRenderer && (
                       <>
                         <input
                           disabled={props.disabled}
@@ -222,7 +224,7 @@ export class ObjectInput extends React.Component {
               </div>
             </div>
           </div>
-        ))}
+        })}
       </div>
     );
   }

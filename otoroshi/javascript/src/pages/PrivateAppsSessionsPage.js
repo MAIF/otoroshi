@@ -1,5 +1,4 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import React, { Component, useEffect, useState } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import moment from 'moment';
@@ -7,6 +6,48 @@ import groupBy from 'lodash/groupBy';
 import mapValues from 'lodash/mapValues';
 import values from 'lodash/values';
 import orderBy from 'lodash/orderBy';
+import { NgSelectRenderer } from '../components/nginputs';
+import { Button } from '../components/Button';
+
+function DiscardModuleSessions({ ok, cancel }) {
+  const [auths, setAuths] = useState([])
+
+  const [authModule, setAuthModule] = useState()
+
+  console.log(authModule, auths)
+
+  useEffect(() => {
+    BackOfficeServices.findAllAuthConfigs()
+      .then(raw => setAuths(raw?.data || []))
+  }, [])
+
+  return <div className='mt-3'>
+    <NgSelectRenderer
+      ngOptions={{
+        spread: true,
+      }}
+      placeholder="Select an authentication provider"
+      name="Selector"
+      value={authModule}
+      options={auths}
+      optionsTransformer={(arr) => arr.map((item) => ({ value: item.id, label: item.name }))}
+      onChange={setAuthModule} />
+
+    <Button type='danger' className='mt-3' onClick={() => {
+      window
+        .newConfirm('Are you sure you want to discard all private app sessions for this module, including your own?')
+        .then((ok) => {
+          if (ok) {
+            BackOfficeServices.discardAllPrivateAppsSessionsFor(authModule).then(() => {
+              window.location.reload();
+            });
+          }
+        });
+    }}>
+      <i className="fas fa-fire me-2" />Confirm Discard
+    </Button>
+  </div>
+}
 
 export class PrivateAppsSessionsPage extends Component {
   columns = [
@@ -152,6 +193,17 @@ export class PrivateAppsSessionsPage extends Component {
       });
   };
 
+  discardModuleSessions = e => {
+    if (e && e.preventDefault) e.preventDefault();
+
+    //'Are you sure that you want to discard the private apps sessions including yourself for a speci ?',
+    window.wizard(
+      "Discard Authentication Module Sessions",
+      (ok, cancel) => <DiscardModuleSessions ok={ok} cancel={cancel} />,
+      { additionalClass: 'modal-xl', style: { width: '100%' }, noCancel: true, okLabel: 'close' }
+    );
+  }
+
   discardOldSessions = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     window
@@ -200,6 +252,7 @@ export class PrivateAppsSessionsPage extends Component {
                 'rights',
                 'randomId',
                 'otoroshiData',
+                'token'
               ],
             })
           }
@@ -208,14 +261,23 @@ export class PrivateAppsSessionsPage extends Component {
           extractKey={(item) => item.randomId}
           injectTopBar={() => [
             window.__user.superAdmin ? (
-              <button
-                key="discard-all"
-                type="button"
-                className="btn btn-danger btn-sm ms-2"
-                onClick={this.discardSessions}
-              >
-                <i className="fas fa-fire" /> Discard all sessions
-              </button>
+              <>
+                <button
+                  key="discard-all"
+                  type="button"
+                  className="btn btn-danger btn-sm ms-2"
+                  onClick={this.discardSessions}
+                >
+                  <i className="fas fa-fire" /> Discard all sessions
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm ms-2"
+                  onClick={this.discardModuleSessions}
+                >
+                  <i className="fas fa-fire" /> Discard Module Sessions
+                </button>
+              </>
             ) : null,
             <button
               key="discard-old"

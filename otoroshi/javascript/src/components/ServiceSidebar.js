@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { createTooltip } from '../tooltips';
 import { SidebarContext } from '../apps/BackOfficeApp';

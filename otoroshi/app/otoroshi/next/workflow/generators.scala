@@ -1,35 +1,50 @@
 package otoroshi.next.workflow
 
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 
 object WorkflowGenerators {
 
   def generateJsonDescriptor(): JsValue = {
     Json.obj(
-      "nodes"     -> JsArray(Node.nodes.map { case (key, value) =>
+      "categories" -> JsArray(Node.categories.map { case (key, informations) =>
+        Json.obj("id" -> key).deepMerge(informations.json)
+      }.toSeq),
+      "nodes"      -> JsArray(Node.nodes.map { case (key, value) =>
         val node = value.apply(Json.obj())
         Json.obj(
-          "name"        -> node.documentationName,
-          "description" -> node.documentationDescription,
-          "schema"      -> node.documentationInputSchema,
-          "example"     -> node.documentationExample
+          "name"         -> node.documentationName,
+          "display_name" -> node.documentationDisplayName,
+          "icon"         -> node.documentationIcon,
+          "description"  -> node.documentationDescription,
+          "schema"       -> node.documentationInputSchema,
+          "form_schema"  -> node.documentationFormSchema,
+          "category"     -> node.documentationCategory,
+          "example"      -> node.documentationExample
         )
       }.toSeq),
-      "functions" -> JsArray(WorkflowFunction.functions.map { case (key, value) =>
+      "functions"  -> JsArray(WorkflowFunction.functions.map { case (key, value) =>
         Json.obj(
-          "name"        -> key,
-          "description" -> value.documentationDescription,
-          "schema"      -> value.documentationInputSchema,
-          "example"     -> value.documentationExample
+          "name"         -> key,
+          "description"  -> value.documentationDescription,
+          "schema"       -> value.documentationInputSchema,
+          "form_schema"  -> value.documentationFormSchema,
+          "category"     -> JsString(value.documentationCategory.getOrElse("functions")),
+          "example"      -> value.documentationExample,
+          "display_name" -> value.documentationDisplayName,
+          "icon"         -> value.documentationIcon
         )
       }.toSeq),
-      "operators" -> JsArray(WorkflowOperator.operators.map { case (key, value) =>
+      "operators"  -> JsArray(WorkflowOperator.operators.map { case (key, value) =>
         Json.obj(
-          "name"        -> key,
-          "description" -> value.documentationDescription,
-          "schema"      -> value.documentationInputSchema,
-          "example"     -> value.documentationExample
+          "name"         -> key,
+          "description"  -> value.documentationDescription,
+          "schema"       -> value.documentationInputSchema,
+          "form_schema"  -> value.documentationFormSchema,
+          "category"     -> JsString(value.documentationCategory.getOrElse("operators")),
+          "example"      -> value.documentationExample,
+          "display_name" -> value.documentationDisplayName,
+          "icon"         -> value.documentationIcon
         )
       }.toSeq)
     )
@@ -86,7 +101,7 @@ object WorkflowGenerators {
                |""".stripMargin
       }
       s"""
-           |#### `${node.documentationName}`
+           |#### <span class="${node.documentationIcon}"></span> `${node.documentationDisplayName} (${node.documentationName})`
            |
            |${node.documentationDescription}
            |
@@ -109,7 +124,7 @@ object WorkflowGenerators {
                |""".stripMargin
       }
       s"""
-           |#### `$key`
+           |#### <span class="${function.documentationIcon}"></span>`${function.documentationDisplayName} ($key)`
            |
            |${function.documentationDescription}
            |
@@ -132,7 +147,7 @@ object WorkflowGenerators {
                |""".stripMargin
       }
       s"""
-           |####`$key`
+           |#### <span class="${operator.documentationIcon}"></span> `${operator.documentationDisplayName} ($key)`
            |
            |${operator.documentationDescription}
            |
@@ -142,6 +157,8 @@ object WorkflowGenerators {
     }.toSeq
 
     s"""
+      |# Otoroshi Workflows documentation
+      |
       |## Nodes
       |
       |Each node must declare a `kind` field and can optionally define:

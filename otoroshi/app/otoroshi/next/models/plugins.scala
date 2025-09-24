@@ -5,6 +5,7 @@ import otoroshi.netty.NettyRequestKeys
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.plugins.{OverrideHost, WasmJob}
 import otoroshi.next.plugins.api._
+import otoroshi.next.workflow.WorkflowJob
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -374,6 +375,7 @@ case class NgContextualPlugins(
 
   lazy val (allPlugins, filteredPlugins) = currentListenerPLugin
     .filterNot(_.plugin.endsWith(classOf[WasmJob].getName))
+    .filterNot(_.plugin.endsWith(classOf[WorkflowJob].getName))
     .partition(_.matches(request))
 
   lazy val requestSinkPlugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestSink]] = {

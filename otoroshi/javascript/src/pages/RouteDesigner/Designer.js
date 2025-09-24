@@ -46,8 +46,6 @@ import { useSignalValue } from 'signals-react-safe';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
 import { HTTP_COLORS } from './MocksDesigner';
 
-const TryItComponent = React.lazy(() => import('./TryIt'));
-
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
     <div className="flex-column p-1" style={{ color: 'var(--color_level2)' }}>
@@ -2109,12 +2107,12 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
 );
 
 const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonClick }) => (
-  <div className="d-flex justify-content-end mb-2 me-2 dark-background">
+  <div className="d-flex justify-content-center mb-2 me-2 dark-background">
     <PillButton
       className="mt-3"
       rightEnabled={!asJsonFormat}
-      leftText="FORM"
-      rightText="RAW JSON"
+      leftText="Visual Editor"
+      rightText="Code Editor"
       onLeftClick={onFormClick}
       onRightClick={onRawJsonClick}
     />
@@ -2131,7 +2129,7 @@ const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonCli
       className="btn-sm mx-1 mt-3"
       onClick={onRawJsonClick}
       style={{ backgroundColor: asJsonFormat ? "var(--color-primary)" : '#373735' }}>
-      RAW JSON
+      Code Editor
     </Button> */}
   </div>
 );

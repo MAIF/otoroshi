@@ -28,6 +28,14 @@ import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
 import play.api.mvc.*
 import play.api.mvc.Results.{BadGateway, Forbidden, HttpVersionNotSupported, NotFound, Status}
+import play.api.mvc._
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.ResponseImplicits._
+import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
+import otoroshi.utils.http.Implicits._
+import otoroshi.utils.streams.MaxLengthLimiter
+import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
@@ -551,7 +559,7 @@ class HttpHandler()(using env: Env) {
               val rawResponse         = otoroshi.script.HttpResponse(
                 status = resp.status,
                 headers = headers.toMap,
-                cookies = resp.cookies.toSeq,
+                cookies = resp.safeCookies(env),
                 body = () => resp.bodyAsSource
               )
               val stateRespHeaderName = descriptor.secComHeaders.stateResponseName
@@ -643,7 +651,7 @@ class HttpHandler()(using env: Env) {
                   val otoroshiResponse = otoroshi.script.HttpResponse(
                     status = resp.status,
                     headers = _headersOut.toMap,
-                    cookies = resp.cookies.toSeq,
+                    cookies = resp.safeCookies(env),
                     body = () => resp.bodyAsSource
                   )
                   descriptor

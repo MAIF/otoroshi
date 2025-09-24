@@ -3,6 +3,7 @@ package otoroshi.models
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import com.google.common.hash.Hashing
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.Exporters._
 import otoroshi.events._
@@ -170,6 +171,15 @@ case class HttpCallSettings(
       ec: ExecutionContext
   ): Future[ExportResult] = {
     val finalBody = body
+      .applyOnIf(body.contains("${now_str}")) { str =>
+        str.replace("${now_str}", DateTime.now.toString)
+      }
+      .applyOnIf(body.contains("${now}")) { str =>
+        str.replace("${now}", System.currentTimeMillis.toString)
+      }
+      .applyOnIf(body.contains("${now_epoch}")) { str =>
+        str.replace("${now_epoch}", scala.math.BigDecimal(System.currentTimeMillis.toDouble / 1000.0).toString)
+      }
       .applyOnIf(body.contains("${events}")) { str =>
         str.replace("${events}", JsArray(events).stringify)
       }
@@ -178,6 +188,12 @@ case class HttpCallSettings(
       }
       .applyOnIf(body.contains("${events.prettify}")) { str =>
         str.replace("${events.prettify}", JsArray(events).prettify)
+      }
+      .applyOnIf(body.contains("${events.nd_stringify}")) { str =>
+        str.replace("${events.nd_stringify}", events.map(_.stringify).mkString("\n\n"))
+      }
+      .applyOnIf(body.contains("${events.nd_prettify}")) { str =>
+        str.replace("${events.nd_prettify}", JsArray(events).prettify)
       }
       .applyOnIf(body.contains("${events.length}")) { str =>
         str.replace("${events.length}", events.length.toString)
@@ -195,6 +211,108 @@ case class HttpCallSettings(
           ExportResult.ExportResultSuccess
         } else {
           ExportResult.ExportResultFailure(s"bad status code: $status - ${resp.body}")
+        }
+      }
+      .recover { case t: Throwable =>
+        ExportResult.ExportResultFailure(s"caught exception on http call: ${t.getMessage}")
+      }
+  }
+}
+
+object SplunkCallSettings {
+  val format = new Format[SplunkCallSettings] {
+    override def reads(json: JsValue): JsResult[SplunkCallSettings] = Try {
+      SplunkCallSettings(
+        url = json.select("url").asString,
+        headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        timeout = json.select("timeout").asOptLong.map(_.millis).getOrElse(60.seconds),
+        token = json.select("token").asOptString,
+        index = json.select("index").asOptString,
+        fields = json.select("fields").asOpt[Map[String, String]].getOrElse(Map.empty),
+        sourceType = json.select("source_type").asOptString,
+        tlsConfig = json
+          .select("tls_config")
+          .asOpt[JsObject]
+          .flatMap(v => NgTlsConfig.format.reads(v).asOpt)
+          .getOrElse(NgTlsConfig())
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: SplunkCallSettings): JsValue             = o.toJson
+  }
+}
+
+case class SplunkCallSettings(
+    url: String,
+    headers: Map[String, String],
+    token: Option[String],
+    sourceType: Option[String],
+    index: Option[String],
+    fields: Map[String, String],
+    timeout: FiniteDuration,
+    tlsConfig: NgTlsConfig
+) extends Exporter {
+
+  override def toJson: JsValue = {
+    Json
+      .obj(
+        "token"      -> token,
+        "url"        -> url,
+        "headers"    -> headers,
+        "timeout"    -> timeout.toMillis,
+        "tls_config" -> tlsConfig.json
+      )
+      .applyOnWithOpt(token) { case (obj, token) =>
+        obj ++ Json.obj("token" -> token)
+      }
+      .applyOnWithOpt(sourceType) { case (obj, sourceType) =>
+        obj ++ Json.obj("sourceType" -> sourceType)
+      }
+      .applyOnWithOpt(index) { case (obj, index) =>
+        obj ++ Json.obj("index" -> index)
+      }
+      .applyOnIf(fields.nonEmpty) { obj =>
+        obj ++ Json.obj("fields" -> fields)
+      }
+  }
+
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[ExportResult] = {
+    env.MtlsWs
+      .url(url, tlsConfig.legacy)
+      .withRequestTimeout(timeout)
+      .withMethod("POST")
+      .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
+        headers :+ ("Authorization" -> s"Splunk ${token}")
+      }: _*)
+      .withBody(
+        events
+          .map { evt =>
+            Json
+              .obj(
+                "time"       -> scala.math.BigDecimal(System.currentTimeMillis.toDouble / 1000.0).toString,
+                "host"       -> env.clusterConfig.name,
+                "source"     -> "otoroshi",
+                "sourcetype" -> sourceType,
+                "index"      -> index,
+                "fields"     -> fields,
+                "event"      -> evt
+              )
+              .prettify
+          }
+          .mkString("\n\n")
+      )
+      .execute()
+      .map { resp =>
+        val status = resp.status
+        if (resp.status > 199 && resp.status < 299) {
+          ExportResult.ExportResultSuccess
+        } else {
+          ExportResult.ExportResultFailure(s"bad status code: ${status} - ${resp.body}")
         }
       }
       .recover { case t: Throwable =>
@@ -234,7 +352,13 @@ case class WorkflowCallSettings(ref: String) extends Exporter {
       case None           => ExportResult.ExportResultFailure(s"workflow '$ref' not found").vfuture
       case Some(workflow) =>
         extension.engine
-          .run(Node.from(workflow.config), Json.obj("events" -> events, "config" -> config.json), TypedMap.empty)
+          .run(
+            ref,
+            Node.from(workflow.config),
+            Json.obj("events" -> events, "config" -> config.json),
+            TypedMap.empty,
+            workflow.functions
+          )
           .map { result =>
             if (result.hasError) {
               ExportResult.ExportResultFailure(result.error.get.json.stringify)
@@ -477,6 +601,7 @@ object DataExporterConfig {
             case "elastic"       => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
             case "webhook"       => Webhook.format.reads((json \ "config").as[JsObject]).get
             case "http"          => HttpCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "splunk"        => SplunkCallSettings.format.reads((json \ "config").as[JsObject]).get
             case "workflow"      => WorkflowCallSettings.format.reads((json \ "config").as[JsObject]).get
             case "kafka"         => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
             case "pulsar"        => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
@@ -572,6 +697,10 @@ case object DataExporterConfigTypeHttp extends DataExporterConfigType {
   def name: String = "http"
 }
 
+case object DataExporterConfigTypeSplunk extends DataExporterConfigType {
+  def name: String = "splunk"
+}
+
 case object DataExporterConfigTypeWorkflow extends DataExporterConfigType {
   def name: String = "workflow"
 }
@@ -635,6 +764,7 @@ object DataExporterConfigType {
   val Elastic       = DataExporterConfigTypeElastic
   val Webhook       = DataExporterConfigTypeWebhook
   val Http          = DataExporterConfigTypeHttp
+  val Splunk        = DataExporterConfigTypeSplunk
   val Workflow      = DataExporterConfigTypeWorkflow
   val File          = DataExporterConfigTypeFile
   val GoReplayFile  = DataExporterConfigTypeGoReplayFile
@@ -662,6 +792,7 @@ object DataExporterConfigType {
       case "webhook"       => Webhook
       case "http"          => Http
       case "workflow"      => Workflow
+      case "splunk"        => Splunk
       case "file"          => File
       case "goreplayfile"  => GoReplayFile
       case "goreplays3"    => GoReplayS3
@@ -723,6 +854,7 @@ case class DataExporterConfig(
       case c: Webhook                     => new WebhookExporter(this)
       case c: HttpCallSettings            => new HttpCallExporter(this)
       case c: WorkflowCallSettings        => new WorkflowCallExporter(this)
+      case c: SplunkCallSettings          => new SplunkCallExporter(this)
       case c: FileSettings                => new FileAppenderExporter(this)
       case c: S3ExporterSettings          => new S3Exporter(this)
       case c: GoReplayFileSettings        => new GoReplayFileAppenderExporter(this)

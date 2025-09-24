@@ -1,6 +1,5 @@
 import React, { Component, Suspense } from 'react';
 import ReactDOM from 'react-dom';
-import PropTypes from 'prop-types';
 import YAML from 'yaml';
 import moment from 'moment';
 

@@ -9,6 +9,7 @@ import { ReactSelectOverride } from '../inputs/ReactSelectOverride';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { v4 as uuid } from 'uuid';
+import MonacoEditor from '@monaco-editor/react';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -143,9 +144,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
-                  } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -322,6 +322,49 @@ export class NgCodeRenderer extends Component {
   }
 }
 
+export class NgAnyRenderer extends Component {
+  render() {
+    const schema = this.props.schema || {};
+    const props = schema.props || this.props || {};
+
+    const options = {
+      automaticLayout: true,
+      selectOnLineNumbers: true,
+      minimap: { enabled: false },
+      lineNumbers: "off",
+      glyphMargin: false,
+      folding: false,
+      lineDecorationsWidth: 0,
+      lineNumbersMinChars: 0,
+      ...this.props.options || {},
+      ...props.config || {},
+    };
+
+    let code = props.value
+
+    if (typeof code === 'object' && code !== null) {
+      code = JSON.stringify(code, null, 2);
+    }
+
+    if (!isNaN(code)) code = code + '';
+
+    return <LabelAndInput {...this.props}>
+      <MonacoEditor
+        // height={props.height}
+        width="100%"
+        theme='vs-dark'
+        defaultLanguage={props.language || "json"}
+        {...this.props.rawSchema?.props}
+        value={code}
+        options={options}
+        onChange={newValue => {
+          this.props.onChange(newValue)
+        }}
+      />
+    </LabelAndInput>
+  }
+}
+
 export class NgJsonRenderer extends Component {
   render() {
     return (
@@ -333,7 +376,8 @@ export class NgJsonRenderer extends Component {
             try {
               this.props.onChange(JSON.parse(e));
             } catch (ex) {
-              console.log(ex);
+              if (e === '')
+                this.props.onChange(e)
               // if (e.length === 0)
               //   this.props.onChange({});
             }
@@ -358,6 +402,8 @@ export class NgStringRenderer extends Component {
     // avoid to have both value and defaultValue props
     const { defaultValue, ...inputProps } = props;
 
+    const { className, ...rest } = inputProps
+
     return (
       <LabelAndInput {...this.props}>
         {readOnly ? (
@@ -366,9 +412,10 @@ export class NgStringRenderer extends Component {
           <>
             <input
               type="text"
-              className="form-control"
+              className={`form-control ${className || ""}`}
               placeholder={props.placeholder}
               title={props.help}
+              autoFocus={props.autoFocus}
               value={
                 this.state.touched ? this.props.value || '' : this.props.value || defaultValue || ''
               }
@@ -377,7 +424,7 @@ export class NgStringRenderer extends Component {
 
                 if (!this.state.touched) this.setState({ touched: true });
               }}
-              {...inputProps}
+              {...rest}
             />
             {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}
           </>
@@ -605,13 +652,13 @@ export class NgBoxBooleanRenderer extends Component {
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-          <div className={`row mb-${margin} ${className || ''}`}>
-            <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-              {label}
-            </label>
-            <div className="col-sm-10">{children}</div>
-          </div>
-        );
+        <div className={`row mb-${margin} ${className || ''}`}>
+          <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+            {label}
+          </label>
+          <div className="col-sm-10">{children}</div>
+        </div>
+      );
 
     return (
       <Container>
@@ -651,6 +698,10 @@ export class NgBoxBooleanRenderer extends Component {
 
 export class NgArrayRenderer extends Component {
   canShowActions(path) {
+    const props = this.props.rawSchema.props || {};
+
+    if (props.disableActions) return false;
+
     const breadcrumbAsArray = this.props.breadcrumb || [];
     const pathAsArray = path || this.props.path || [];
 
@@ -667,30 +718,38 @@ export class NgArrayRenderer extends Component {
 
   isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-  defaultValues = (current) => ({
-    number: () => 0,
-    boolean: () => false,
-    bool: () => false,
-    array: () => [],
-    string: () => '',
-    select: () =>
-      current && current.props && current.props.options
-        ? current && current.props && current.props.options[0]
-        : '',
-    form: () => ({
-      ...this.generateDefaultValue(current.schema),
-    }),
-    object: () => {},
-    json: () => {},
-  });
+  defaultValues = (current, idx) => {
+    const values = {
+      number: () => 0,
+      boolean: () => false,
+      bool: () => false,
+      array: () => [],
+      string: () => '',
+      select: () =>
+        current && current.props && current.props.options
+          ? current && current.props && current.props.options[0]
+          : '',
+      form: () => ({
+        ...this.generateDefaultValue(current.schema),
+      }),
+      object: () => { },
+      json: () => { },
+    };
+
+    if (values[idx]) return values[idx]();
+
+    return undefined;
+  };
 
   generateDefaultValue = (obj) => {
+    if (obj?.type) return this.defaultValues(obj, obj.type);
+
     return Object.entries(obj).reduce((acc, current) => {
       const type = current[1] ? current[1].type : undefined;
-      const value = this.defaultValues(current[1])[type];
+      const value = this.defaultValues(current[1], type);
       return {
         ...acc,
-        [current[0]]: value ? value() : '',
+        [current[0]]: value ? (typeof value === 'function' ? value() : value) : '',
       };
     }, {});
   };
@@ -703,7 +762,9 @@ export class NgArrayRenderer extends Component {
 
     const showActions = this.canShowActions();
 
-    if (readOnly && Array.isArray(this.props.value) && this.props.value.length === 0) return null;
+    if (readOnly && Array.isArray(this.props.value) && this.props.value.length === 0) {
+      return null;
+    }
 
     const customTemplate =
       this.props.rawSchema?.props?.v2?.template || this.generateDefaultValue(schema);
@@ -730,10 +791,10 @@ export class NgArrayRenderer extends Component {
                     display: 'flex',
                     alignItems: 'center',
                     width: '100%',
-                    border: showItem ? 'var(--bg-color_level2) solid 1px' : 'none',
+                    border: 'var(--bg-color_level2) solid 1px',
                     borderRadius: 6,
-                    padding: showItem ? '12px' : 0,
-                    marginBottom: showItem ? '6px' : 0,
+                    padding: 12,
+                    marginBottom: 6,
                   }}
                   key={path}
                 >
@@ -817,8 +878,9 @@ export class NgArrayRenderer extends Component {
                 if (schema.of) {
                   return this.props.onChange([...newArr, '']);
                 } else if (schema.itemRenderer) {
-                  this.props.onChange([...newArr, this.defaultValues({})[schema.type]()]);
+                  this.props.onChange([...newArr, this.defaultValues({}, schema.type)]);
                 } else {
+                  console.log('ici', customTemplate);
                   this.props.onChange([...newArr, customTemplate]);
                 }
               }}
@@ -840,6 +902,8 @@ export class NgObjectRenderer extends Component {
     const ItemRenderer =
       schema.itemRenderer || (this.props.rawSchema ? this.props.rawSchema.itemRenderer : undefined);
 
+    const ngOptions = props.ngOptions || props.rawSchema?.props?.ngOptions || {};
+
     if (readOnly && Object.entries(this.props.value || {}).length === 0) return null;
 
     return (
@@ -859,6 +923,7 @@ export class NgObjectRenderer extends Component {
           <ObjectInput
             ngOptions={{
               spread: true,
+              ...ngOptions
             }}
             bcryptable={props.bcryptable}
             label={null}
@@ -874,22 +939,25 @@ export class NgObjectRenderer extends Component {
             }}
             itemRenderer={
               ItemRenderer
-                ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                ? (key, value, idx, onChangeKey, onChangeValue) => {
+                  return <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={`field${idx}`}
+                    entry={[key, value]}
+                    idx={idx}
+                    onChangeKey={key => onChangeKey({ target: { value: key } })}
+                    onChangeValue={value => onChangeValue({ target: { value } })}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                }
                 : null
             }
           />
@@ -1208,6 +1276,11 @@ export class NgSelectRenderer extends Component {
       };
     }
 
+    const fullOptions = this.applyTransformer(
+      props || this.props,
+      this.state.options || props.options || this.props.options
+    );
+
     return (
       <LabelAndInput {...this.props}>
         {readOnly && <ReadOnlyField value={this.props.value} />}
@@ -1222,14 +1295,11 @@ export class NgSelectRenderer extends Component {
             disabled={props.disabled}
             placeholder={props.placeholder || this.props.placeholder}
             optionRenderer={props.optionRenderer}
-            options={this.applyTransformer(
-              props || this.props,
-              this.state.options || props.options || this.props.options
-            )}
+            options={fullOptions}
             onChange={(e) => {
-              if (creatable && !this.state.options.find((o) => o.value === e)) {
+              if (creatable && !fullOptions.find((o) => o.value === e)) {
                 this.setState({
-                  options: [...this.state.options, e],
+                  options: [...fullOptions, e],
                 });
               }
               this.props.onChange(e);

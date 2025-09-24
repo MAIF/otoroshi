@@ -524,7 +524,7 @@ case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri
   private lazy val _bodyAsXml: Elem        = XML.loadString(_bodyAsString)
   private lazy val _bodyAsJson: JsValue    = Json.parse(_bodyAsString)
   private lazy val _cookies: Seq[WSCookie] = resp.cookies().asScala.toSeq.flatMap { case (name, cookies) =>
-    cookies.asScala.map { cookie =>
+    cookies.asScala.filterNot(_ == null).map { cookie =>
       DefaultWSCookie(
         name = cookie.name(),
         value = cookie.value(),

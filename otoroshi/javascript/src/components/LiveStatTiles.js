@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import { converterBase2 } from 'byte-converter';
 import { Sparklines, SparklinesLine, SparklinesSpots } from 'react-sparklines';
 

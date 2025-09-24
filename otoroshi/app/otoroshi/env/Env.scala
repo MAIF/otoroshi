@@ -1273,22 +1273,25 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion             = "17.5.0-dev"
-  lazy val otoroshiVersionSem: Version = Version(otoroshiVersion)
-  lazy val checkForUpdates: Boolean    =
-    configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
+  lazy val otoroshiVersion    = "17.6.0-dev"
+  lazy val otoroshiVersionSem = Version(otoroshiVersion)
+  lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
   lazy val jmxEnabled: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.jmx.enabled").getOrElse(false)
   lazy val jmxPort: Int        = configuration.getOptionalWithFileSupport[Int]("otoroshi.jmx.port").getOrElse(16000)
 
   if (jmxEnabled) {
-    LocateRegistry.createRegistry(jmxPort)
-    val mbs = ManagementFactory.getPlatformMBeanServer
-    val url = new JMXServiceURL(s"service:jmx:rmi://localhost/jndi/rmi://localhost:$jmxPort/jmxrmi")
-    val svr = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs)
-    svr.start()
-    logger.info(s"Starting JMX remote server at 127.0.0.1:$jmxPort")
+    try {
+      LocateRegistry.createRegistry(jmxPort)
+      val mbs = ManagementFactory.getPlatformMBeanServer
+      val url = new JMXServiceURL(s"service:jmx:rmi://localhost/jndi/rmi://localhost:$jmxPort/jmxrmi")
+      val svr = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs)
+      svr.start()
+      logger.info(s"Starting JMX remote server at 127.0.0.1:$jmxPort")
+    } catch {
+      case t: Throwable => logger.error(s"Error starting JMX remote server at 127.0.0.1:$jmxPort", t)
+    }
   }
 
   val ocspResponder: OcspResponder = OcspResponder(this, otoroshiExecutionContext)

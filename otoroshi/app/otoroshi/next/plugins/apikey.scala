@@ -202,6 +202,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
               config.legacy,
               ctx.attrs,
               routeId,
+              ctx.route.some,
               config.updateQuotas,
               config.routing.enabled
             )
@@ -220,6 +221,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
               config.legacy,
               ctx.attrs,
               routeId,
+              ctx.route.some,
               config.updateQuotas,
               config.routing.enabled
             )
@@ -244,6 +246,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
               config.legacy,
               ctx.attrs,
               routeId,
+              ctx.route.some,
               config.updateQuotas,
               config.routing.enabled
             )
@@ -281,10 +284,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
               ctx.otoroshiRequest.copy(url = newUrl).right
             case ApikeyLocationKind.Cookie =>
               ctx.otoroshiRequest.copy(cookies = ctx.otoroshiRequest.cookies.filterNot(_.name == location.name)).right
-            case ApikeyLocationKind.Path   =>
-              // For path-based API keys, there's no standard way to "remove" them from the path
-              // so we just return the request as-is
-              ctx.otoroshiRequest.right
+            case _ => ctx.otoroshiRequest.right
           }
         case _                                             => ctx.otoroshiRequest.right
       }

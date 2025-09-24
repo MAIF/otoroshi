@@ -1,6 +1,8 @@
 .tryIt {
 
   flex: 1;
+  display: flex;
+  flex-direction: column;
 
   .border {
     border: 1px solid var(--bg-color_level3) !important;

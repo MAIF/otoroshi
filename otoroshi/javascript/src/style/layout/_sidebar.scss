@@ -47,6 +47,7 @@
     overflow-x: hidden;
     overflow-y: auto;
     padding-bottom: 1rem;
+    border-right: 1px solid var(--bg-color_level3);
   }
 
   .sidebar-content::-webkit-scrollbar {
@@ -125,6 +126,7 @@
   justify-content: center;
 
   cursor: pointer;
+  z-index: 10000;
 }
 
 @media screen and (max-width: 767px) {

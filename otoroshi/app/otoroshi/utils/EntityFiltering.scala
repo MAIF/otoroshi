@@ -43,13 +43,14 @@ object EntityFiltering {
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
                   // case JsArray(values) => values.contains(JsString(value))
-                  case JsArray(values) => values.exists {
-                    case JsString(v) => v.contains(value)
-                    case JsBoolean(v) => v == value.toBoolean
-                    case JsNumber(v) => v.toDouble == value.toDouble
-                    case JsArray(values) => values.contains(JsString(value))
-                    case _ => false
-                  }
+                  case JsArray(values) =>
+                    values.exists {
+                      case JsString(v)     => v.contains(value)
+                      case JsBoolean(v)    => v == value.toBoolean
+                      case JsNumber(v)     => v.toDouble == value.toDouble
+                      case JsArray(values) => values.contains(JsString(value))
+                      case _               => false
+                    }
                   case _               => false
                 }
               case (key, value) if key.contains(".")                        =>
@@ -57,13 +58,14 @@ object EntityFiltering {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
-                  case JsArray(values) => values.exists {
-                    case JsString(v) => v.contains(value)
-                    case JsBoolean(v) => v == value.toBoolean
-                    case JsNumber(v) => v.toDouble == value.toDouble
-                    case JsArray(values) => values.contains(JsString(value))
-                    case _ => false
-                  }
+                  case JsArray(values) =>
+                    values.exists {
+                      case JsString(v)     => v.contains(value)
+                      case JsBoolean(v)    => v == value.toBoolean
+                      case JsNumber(v)     => v.toDouble == value.toDouble
+                      case JsArray(values) => values.contains(JsString(value))
+                      case _               => false
+                    }
                   case _               => false
                 }
               case (key, value) if key.contains("/")                        =>
@@ -71,13 +73,14 @@ object EntityFiltering {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
-                  case JsArray(values) => values.exists {
-                    case JsString(v) => v.contains(value)
-                    case JsBoolean(v) => v == value.toBoolean
-                    case JsNumber(v) => v.toDouble == value.toDouble
-                    case JsArray(values) => values.contains(JsString(value))
-                    case _ => false
-                  }
+                  case JsArray(values) =>
+                    values.exists {
+                      case JsString(v)     => v.contains(value)
+                      case JsBoolean(v)    => v == value.toBoolean
+                      case JsNumber(v)     => v.toDouble == value.toDouble
+                      case JsArray(values) => values.contains(JsString(value))
+                      case _               => false
+                    }
                   case _               => false
                 }
               case (key, value)                                             =>
@@ -85,13 +88,14 @@ object EntityFiltering {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
-                  case JsArray(values) => values.exists {
-                    case JsString(v) => v.contains(value)
-                    case JsBoolean(v) => v == value.toBoolean
-                    case JsNumber(v) => v.toDouble == value.toDouble
-                    case JsArray(values) => values.contains(JsString(value))
-                    case _ => false
-                  }
+                  case JsArray(values) =>
+                    values.exists {
+                      case JsString(v)     => v.contains(value)
+                      case JsBoolean(v)    => v == value.toBoolean
+                      case JsNumber(v)     => v.toDouble == value.toDouble
+                      case JsArray(values) => values.contains(JsString(value))
+                      case _               => false
+                    }
                   case _               => false
                 }
             }
@@ -110,13 +114,14 @@ object EntityFiltering {
                     case JsString(v)              => v.toLowerCase().indexOf(value) != -1
                     case JsBoolean(v)             => v == value.toBoolean
                     case JsNumber(v)              => v.toDouble == value.replaceAll("[^0-9]", "").toDouble
-                    case JsArray(values)          => values.exists {
-                      case JsString(v) => v.contains(value)
-                      case JsBoolean(v) => v == value.toBoolean
-                      case JsNumber(v) => v.toDouble == value.toDouble
-                      case JsArray(values) => values.contains(JsString(value))
-                      case _ => false
-                    }
+                    case JsArray(values)          =>
+                      values.exists {
+                        case JsString(v)     => v.contains(value)
+                        case JsBoolean(v)    => v == value.toBoolean
+                        case JsNumber(v)     => v.toDouble == value.toDouble
+                        case JsArray(values) => values.contains(JsString(value))
+                        case _               => false
+                      }
                     case JsObject(v) if v.isEmpty =>
                       JsonOperationsHelper.getValueAtPath(key, elem)._2.asOpt[JsValue] match {
                         case Some(v) =>
@@ -124,13 +129,14 @@ object EntityFiltering {
                             case JsString(v)     => v.toLowerCase().indexOf(value) != -1
                             case JsBoolean(v)    => v == value.toBoolean
                             case JsNumber(v)     => v.toDouble == value.replaceAll("[^0-9]", "").toDouble
-                            case JsArray(values) => values.exists {
-                              case JsString(v) => v.contains(value)
-                              case JsBoolean(v) => v == value.toBoolean
-                              case JsNumber(v) => v.toDouble == value.toDouble
-                              case JsArray(values) => values.contains(JsString(value))
-                              case _ => false
-                            }
+                            case JsArray(values) =>
+                              values.exists {
+                                case JsString(v)     => v.contains(value)
+                                case JsBoolean(v)    => v == value.toBoolean
+                                case JsNumber(v)     => v.toDouble == value.toDouble
+                                case JsArray(values) => values.contains(JsString(value))
+                                case _               => false
+                              }
                             case _               => false
                           }
                         case _       => false

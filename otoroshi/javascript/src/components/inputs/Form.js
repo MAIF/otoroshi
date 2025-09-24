@@ -1,5 +1,4 @@
 import React, { Component, Suspense } from 'react';
-import PropTypes from 'prop-types';
 import {
   ArrayInput,
   ObjectInput,
@@ -26,12 +25,12 @@ import { TextareaInput } from './TextInput';
 import { ArraySelectInput } from './ArraySelectInput';
 
 export class Form extends Component {
-  static propTypes = {
-    value: PropTypes.object,
-    onChange: PropTypes.func,
-    schema: PropTypes.object,
-    flow: PropTypes.array,
-  };
+  // static propTypes = {
+  //   value: PropTypes.object,
+  //   onChange: PropTypes.func,
+  //   schema: PropTypes.object,
+  //   flow: PropTypes.array,
+  // };
 
   theValue = () => {
     if (isFunction(this.props.value)) {

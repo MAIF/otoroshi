@@ -309,8 +309,44 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#built-in-plugins" name="built-in-plugins" class="anchor"><span class="anchor-link"></span></a>Built-in plugins</h1>
-<p>Otoroshi next provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration.</p>
-<div id="plugins-container"></div><div id="otoroshi.next.plugins.AdditionalHeadersIn" class="ng-plugin plugin-hidden pl">
+<p>Otoroshi next provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration</p>
+<div id="plugins-container"></div><div id="otoroshi.next.plugins.AdditionalCookieIn" class="ng-plugin plugin-hidden pl">
+<h2><a href="#additional-cookies-in" name="additional-cookies-in" class="anchor"><span class="anchor-link"></span></a>Additional cookies in</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.AdditionalCookieIn</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin adds cookies in the otoroshi request</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;name&quot; : &quot;cookie&quot;,
+  &quot;value&quot; : &quot;value&quot;
+}
+</code></pre></div><div id="otoroshi.next.plugins.AdditionalCookieOut" class="ng-plugin plugin-hidden pl">
+<h2><a href="#additional-cookies-out" name="additional-cookies-out" class="anchor"><span class="anchor-link"></span></a>Additional cookies out</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.AdditionalCookieOut</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin adds cookies in the otoroshi response</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;name&quot; : &quot;cookie&quot;,
+  &quot;value&quot; : &quot;value&quot;,
+  &quot;domain&quot; : null,
+  &quot;path&quot; : null,
+  &quot;maxAge&quot; : null,
+  &quot;secure&quot; : false,
+  &quot;httpOnly&quot; : false,
+  &quot;sameSite&quot; : null
+}
+</code></pre></div><div id="otoroshi.next.plugins.AdditionalHeadersIn" class="ng-plugin plugin-hidden pl">
 <h2><a href="#additional-headers-in" name="additional-headers-in" class="anchor"><span class="anchor-link"></span></a>Additional headers in</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -386,7 +422,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;basic&quot; : {
       &quot;enabled&quot; : true,
       &quot;header_name&quot; : null,
-      &quot;query_name&quot; : null
+      &quot;query_name&quot; : null,
+      &quot;cookie_name&quot; : null,
+      &quot;path_name&quot; : null
     },
     &quot;custom_headers&quot; : {
       &quot;enabled&quot; : true,
@@ -396,7 +434,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;client_id&quot; : {
       &quot;enabled&quot; : true,
       &quot;header_name&quot; : null,
-      &quot;query_name&quot; : null
+      &quot;query_name&quot; : null,
+      &quot;cookie_name&quot; : null,
+      &quot;path_name&quot; : null
     },
     &quot;jwt&quot; : {
       &quot;enabled&quot; : true,
@@ -406,7 +446,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       &quot;max_jwt_lifespan_sec&quot; : null,
       &quot;header_name&quot; : null,
       &quot;query_name&quot; : null,
-      &quot;cookie_name&quot; : null
+      &quot;cookie_name&quot; : null,
+      &quot;path_name&quot; : null
+    },
+    &quot;oto_bearer&quot; : {
+      &quot;enabled&quot; : true,
+      &quot;header_name&quot; : null,
+      &quot;query_name&quot; : null,
+      &quot;cookie_name&quot; : null,
+      &quot;path_name&quot; : null
     }
   },
   &quot;routing&quot; : {
@@ -427,7 +475,76 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.ApikeyQuotas</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>Increments quotas for the currents apikey. Useful when &lsquo;legacy checks&rsquo; are disabled on a service/globally or when apikey are extracted in a custom fashion.</p></div><div id="otoroshi.next.plugins.AuthModule" class="ng-plugin plugin-hidden pl">
+<p>Increments quotas for the currents apikey. Useful when &lsquo;legacy checks&rsquo; are disabled on a service/globally or when apikey are extracted in a custom fashion.</p></div><div id="otoroshi.next.plugins.Auth0PasswordlessEndFlowEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#auth0-passwordless-end-flow-endpoint" name="auth0-passwordless-end-flow-endpoint" class="anchor"><span class="anchor-link"></span></a>Auth0 Passwordless end flow endpoint</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.Auth0PasswordlessEndFlowEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin provide an endpoint to end a passwordless flow</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;ref&quot; : &quot;&quot;,
+  &quot;connection&quot; : &quot;email&quot;,
+  &quot;send&quot; : &quot;code&quot;,
+  &quot;audience&quot; : null
+}
+</code></pre></div><div id="otoroshi.next.plugins.Auth0PasswordlessFlow" class="ng-plugin plugin-hidden pl">
+<h2><a href="#auth0-passwordless-start-end-flow" name="auth0-passwordless-start-end-flow" class="anchor"><span class="anchor-link"></span></a>Auth0 Passwordless start/end flow</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.Auth0PasswordlessFlow</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin provide endpoints to start and end a passwordless flow</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;ref&quot; : &quot;&quot;,
+  &quot;connection&quot; : &quot;email&quot;,
+  &quot;send&quot; : &quot;code&quot;,
+  &quot;audience&quot; : null
+}
+</code></pre></div><div id="otoroshi.next.plugins.Auth0PasswordlessStartEndFlowEndpoints" class="ng-plugin plugin-hidden pl">
+<h2><a href="#auth0-passwordless-start-end-flow-endpoints" name="auth0-passwordless-start-end-flow-endpoints" class="anchor"><span class="anchor-link"></span></a>Auth0 Passwordless start/end flow endpoints</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.Auth0PasswordlessStartEndFlowEndpoints</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin provide endpoints to start and end a passwordless flow</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;ref&quot; : &quot;&quot;,
+  &quot;connection&quot; : &quot;email&quot;,
+  &quot;send&quot; : &quot;code&quot;,
+  &quot;audience&quot; : null
+}
+</code></pre></div><div id="otoroshi.next.plugins.Auth0PasswordlessStartFlowEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#auth0-passwordless-start-flow-endpoint" name="auth0-passwordless-start-flow-endpoint" class="anchor"><span class="anchor-link"></span></a>Auth0 Passwordless start flow endpoint</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.Auth0PasswordlessStartFlowEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin provide an endpoint to start a passwordless flow</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;ref&quot; : &quot;&quot;,
+  &quot;connection&quot; : &quot;email&quot;,
+  &quot;send&quot; : &quot;code&quot;,
+  &quot;audience&quot; : null
+}
+</code></pre></div><div id="otoroshi.next.plugins.AuthModule" class="ng-plugin plugin-hidden pl">
 <h2><a href="#authentication" name="authentication" class="anchor"><span class="anchor-link"></span></a>Authentication</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -458,6 +575,37 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;passaword&quot; : null,
   &quot;headerName&quot; : &quot;Authorization&quot;,
   &quot;headerValueFormat&quot; : &quot;Basic %s&quot;
+}
+</code></pre></div><div id="otoroshi.next.plugins.BasicAuthWithAuthModule" class="ng-plugin plugin-hidden pl">
+<h2><a href="#basic-auth-from-auth-module" name="basic-auth-from-auth-module" class="anchor"><span class="anchor-link"></span></a>Basic auth. from auth. module</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.BasicAuthWithAuthModule</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin enforces basic auth. authentication with users coming from LDAP and In-memory auth. modules</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;ref&quot; : &quot;&quot;,
+  &quot;add_authenticate_header&quot; : true
+}
+</code></pre></div><div id="otoroshi.next.plugins.BlockHttpTraffic" class="ng-plugin plugin-hidden pl">
+<h2><a href="#block-non-https-traffic" name="block-non-https-traffic" class="anchor"><span class="anchor-link"></span></a>Block non HTTPS traffic</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.BlockHttpTraffic</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin blocks any incoming non HTTPS traffic and returns a nice error message because nowadays HTTPS should be deployed everywhere. Also, this plugin will revoke any apikey or user session passed in clear text if there is one. In that case, make sure this plugins comes after Apikey and Authentication plugins.</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;revoke_apikeys&quot; : true,
+  &quot;revoke_user_session&quot; : false,
+  &quot;message&quot; : null
 }
 </code></pre></div><div id="otoroshi.next.plugins.BrotliResponseCompressor" class="ng-plugin plugin-hidden pl">
 <h2><a href="#brotli-compression" name="brotli-compression" class="anchor"><span class="anchor-link"></span></a>Brotli compression</h2>
@@ -504,7 +652,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;targets&quot; : [ ],
   &quot;root&quot; : &quot;/&quot;
 }
-</code></pre></div><div id="otoroshi.next.plugins.ContextValidation" class="ng-plugin plugin-hidden pl">
+</code></pre></div><div id="otoroshi.next.plugins.ConsumerEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#consumer-endpoint" name="consumer-endpoint" class="anchor"><span class="anchor-link"></span></a>Consumer endpoint</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.ConsumerEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin returns the current consumer profile</p></div><div id="otoroshi.next.plugins.ContextValidation" class="ng-plugin plugin-hidden pl">
 <h2><a href="#context-validator" name="context-validator" class="anchor"><span class="anchor-link"></span></a>Context validator</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -567,9 +724,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;otoroshi.core.RequestWebsocket&quot; : false,
     &quot;otoroshi.core.RequestCounterOut&quot; : 0,
     &quot;otoroshi.core.RemainingQuotas&quot; : {
-      &quot;authorizedCallsPerSec&quot; : 10000000,
-      &quot;currentCallsPerSec&quot; : 0,
-      &quot;remainingCallsPerSec&quot; : 10000000,
+      &quot;authorizedCallsPerWindow&quot; : 10000000,
+      &quot;throttlingCallsPerWindow&quot; : 0,
+      &quot;remainingCallsPerWindow&quot; : 10000000,
       &quot;authorizedCallsPerDay&quot; : 10000000,
       &quot;currentCallsPerDay&quot; : 2,
       &quot;remainingCallsPerDay&quot; : 9999998,
@@ -615,6 +772,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-json">{
   &quot;validators&quot; : [ ]
 }
+</code></pre></div><div id="otoroshi.next.plugins.CookiesValidation" class="ng-plugin plugin-hidden pl">
+<h2><a href="#cookies-validation" name="cookies-validation" class="anchor"><span class="anchor-link"></span></a>Cookies validation</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.CookiesValidation</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin validates cookies content</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;cookies&quot; : { }
+}
 </code></pre></div><div id="otoroshi.next.plugins.Cors" class="ng-plugin plugin-hidden pl">
 <h2><a href="#cors" name="cors" class="anchor"><span class="anchor-link"></span></a>CORS</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -645,7 +816,21 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.DisableHttp10</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin forbids HTTP/1.0 requests</p></div><div id="otoroshi.next.plugins.EndlessHttpResponse" class="ng-plugin plugin-hidden pl">
+<p>This plugin forbids HTTP/1.0 requests</p></div><div id="otoroshi.next.plugins.EchoBackend" class="ng-plugin plugin-hidden pl">
+<h2><a href="#request-echo" name="request-echo" class="anchor"><span class="anchor-link"></span></a>Request Echo</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.EchoBackend</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin returns request content as json</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;limit&quot; : 524288
+}
+</code></pre></div><div id="otoroshi.next.plugins.EndlessHttpResponse" class="ng-plugin plugin-hidden pl">
 <h2><a href="#endless-http-responses" name="endless-http-responses" class="anchor"><span class="anchor-link"></span></a>Endless HTTP responses</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -703,6 +888,28 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-json">{
   &quot;eureka_server&quot; : null,
   &quot;eureka_app&quot; : null
+}
+</code></pre></div><div id="otoroshi.next.plugins.Fail2BanPlugin" class="ng-plugin plugin-hidden pl">
+<h2><a href="#fail2ban" name="fail2ban" class="anchor"><span class="anchor-link"></span></a>fail2ban</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.Fail2BanPlugin</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like). Client is identified by the &lsquo;identifier&rsquo; that can use the Otoroshi expression language to extract informations like user id, apikey, ip address, etc.</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;identifier&quot; : &quot;${req.ip}&quot;,
+  &quot;detect_time&quot; : 600000,
+  &quot;ban_time&quot; : 10800000,
+  &quot;max_retry&quot; : 4,
+  &quot;url_regex&quot; : [ ],
+  &quot;status_codes&quot; : [ &quot;400&quot;, &quot;401&quot;, &quot;403-499&quot;, &quot;500-599&quot; ],
+  &quot;ignored&quot; : [ ],
+  &quot;blocked&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.ForceHttpsTraffic" class="ng-plugin plugin-hidden pl">
 <h2><a href="#force-https-traffic" name="force-https-traffic" class="anchor"><span class="anchor-link"></span></a>Force HTTPS traffic</h2>
@@ -968,6 +1175,21 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-json">{
   &quot;filter&quot; : &quot;.&quot;
 }
+</code></pre></div><div id="otoroshi.next.plugins.JqWebsocketMessageTransformer" class="ng-plugin plugin-hidden pl">
+<h2><a href="#websocket-jq-transformer" name="websocket-jq-transformer" class="anchor"><span class="anchor-link"></span></a>Websocket JQ transformer</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.JqWebsocketMessageTransformer</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Transform messages JSON content using JQ filters</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;request_filter&quot; : &quot;.&quot;,
+  &quot;response_filter&quot; : &quot;.&quot;
+}
 </code></pre></div><div id="otoroshi.next.plugins.JsonToXmlRequest" class="ng-plugin plugin-hidden pl">
 <h2><a href="#request-body-json-to-xml" name="request-body-json-to-xml" class="anchor"><span class="anchor-link"></span></a>request body json-to-xml</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -995,6 +1217,62 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;filter&quot; : null
+}
+</code></pre></div><div id="otoroshi.next.plugins.JweExtractor" class="ng-plugin plugin-hidden pl">
+<h2><a href="#jwe-extractor" name="jwe-extractor" class="anchor"><span class="anchor-link"></span></a>JWE extractor</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.JweExtractor</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin validates and extracts the payload of JWE</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;keyManagementAlgorithm&quot; : &quot;RSA_OAEP_256&quot;,
+  &quot;contentEncryptionAlgorithm&quot; : &quot;A128CBC_HS256&quot;,
+  &quot;certId&quot; : null,
+  &quot;source&quot; : {
+    &quot;type&quot; : &quot;InHeader&quot;,
+    &quot;name&quot; : &quot;X-JWT-Token&quot;,
+    &quot;remove&quot; : &quot;&quot;
+  },
+  &quot;forward_location&quot; : {
+    &quot;type&quot; : &quot;InHeader&quot;,
+    &quot;name&quot; : &quot;X-JWT-Token&quot;,
+    &quot;remove&quot; : &quot;&quot;
+  },
+  &quot;strict&quot; : false,
+  &quot;metadata&quot; : { }
+}
+</code></pre></div><div id="otoroshi.next.plugins.JweSigner" class="ng-plugin plugin-hidden pl">
+<h2><a href="#jwe-signer" name="jwe-signer" class="anchor"><span class="anchor-link"></span></a>JWE signer</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.JweSigner</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin can only generate token</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;keyManagementAlgorithm&quot; : &quot;RSA_OAEP_256&quot;,
+  &quot;contentEncryptionAlgorithm&quot; : &quot;A128CBC_HS256&quot;,
+  &quot;certId&quot; : null,
+  &quot;source&quot; : {
+    &quot;type&quot; : &quot;InHeader&quot;,
+    &quot;name&quot; : &quot;X-JWT-Token&quot;,
+    &quot;remove&quot; : &quot;&quot;
+  },
+  &quot;forward_location&quot; : {
+    &quot;type&quot; : &quot;InHeader&quot;,
+    &quot;name&quot; : &quot;X-JWT-Token&quot;,
+    &quot;remove&quot; : &quot;&quot;
+  },
+  &quot;strict&quot; : false,
+  &quot;metadata&quot; : { }
 }
 </code></pre></div><div id="otoroshi.next.plugins.JwtSigner" class="ng-plugin plugin-hidden pl">
 <h2><a href="#jwt-signer" name="jwt-signer" class="anchor"><span class="anchor-link"></span></a>Jwt signer</h2>
@@ -1043,6 +1321,34 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;verifier&quot; : null,
   &quot;fail_if_absent&quot; : true
 }
+</code></pre></div><div id="otoroshi.next.plugins.LimitHeaderInTooLong" class="ng-plugin plugin-hidden pl">
+<h2><a href="#limit-headers-in-too-long" name="limit-headers-in-too-long" class="anchor"><span class="anchor-link"></span></a>Limit headers in too long</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.LimitHeaderInTooLong</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin limit all headers to backend with a length above a max</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;value&quot; : 8192
+}
+</code></pre></div><div id="otoroshi.next.plugins.LimitHeaderOutTooLong" class="ng-plugin plugin-hidden pl">
+<h2><a href="#limit-headers-out-too-long" name="limit-headers-out-too-long" class="anchor"><span class="anchor-link"></span></a>Limit headers out too long</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.LimitHeaderOutTooLong</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin limit all headers from backend with a length above a max</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;value&quot; : 8192
+}
 </code></pre></div><div id="otoroshi.next.plugins.MaintenanceMode" class="ng-plugin plugin-hidden pl">
 <h2><a href="#maintenance-mode" name="maintenance-mode" class="anchor"><span class="anchor-link"></span></a>Maintenance mode</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -1052,7 +1358,49 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.MaintenanceMode</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin displays a maintenance page</p></div><div id="otoroshi.next.plugins.MissingHeadersIn" class="ng-plugin plugin-hidden pl">
+<p>This plugin displays a maintenance page</p></div><div id="otoroshi.next.plugins.MissingCookieIn" class="ng-plugin plugin-hidden pl">
+<h2><a href="#missing-cookies-in" name="missing-cookies-in" class="anchor"><span class="anchor-link"></span></a>Missing cookies in</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.MissingCookieIn</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin adds cookies in the otoroshi request if not present</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;name&quot; : &quot;cookie&quot;,
+  &quot;value&quot; : &quot;value&quot;,
+  &quot;domain&quot; : null,
+  &quot;path&quot; : null,
+  &quot;maxAge&quot; : null,
+  &quot;secure&quot; : false,
+  &quot;httpOnly&quot; : false,
+  &quot;sameSite&quot; : null
+}
+</code></pre></div><div id="otoroshi.next.plugins.MissingCookieOut" class="ng-plugin plugin-hidden pl">
+<h2><a href="#missing-cookies-out" name="missing-cookies-out" class="anchor"><span class="anchor-link"></span></a>Missing cookies out</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.MissingCookieOut</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin adds cookies in the otoroshi response if not present</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;name&quot; : &quot;cookie&quot;,
+  &quot;value&quot; : &quot;value&quot;,
+  &quot;domain&quot; : null,
+  &quot;path&quot; : null,
+  &quot;maxAge&quot; : null,
+  &quot;secure&quot; : false,
+  &quot;httpOnly&quot; : false,
+  &quot;sameSite&quot; : null
+}
+</code></pre></div><div id="otoroshi.next.plugins.MissingHeadersIn" class="ng-plugin plugin-hidden pl">
 <h2><a href="#missing-headers-in" name="missing-headers-in" class="anchor"><span class="anchor-link"></span></a>Missing headers in</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -1109,6 +1457,34 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-json">{
   &quot;pass_with_apikey&quot; : false,
   &quot;auth_modules&quot; : [ ]
+}
+</code></pre></div><div id="otoroshi.next.plugins.NgApikeyMandatoryMetadata" class="ng-plugin plugin-hidden pl">
+<h2><a href="#apikey-mandatory-metadata" name="apikey-mandatory-metadata" class="anchor"><span class="anchor-link"></span></a>Apikey mandatory metadata</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.NgApikeyMandatoryMetadata</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin checks that if an apikey is provided, there is one or more metadata on it</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;metadata&quot; : { }
+}
+</code></pre></div><div id="otoroshi.next.plugins.NgApikeyMandatoryTags" class="ng-plugin plugin-hidden pl">
+<h2><a href="#apikey-mandatory-tags" name="apikey-mandatory-tags" class="anchor"><span class="anchor-link"></span></a>Apikey mandatory tags</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.NgApikeyMandatoryTags</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin checks that if an apikey is provided, there is one or more tags on it</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;tags&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.NgAuthModuleExpectedUser" class="ng-plugin plugin-hidden pl">
 <h2><a href="#user-logged-in-expected" name="user-logged-in-expected" class="anchor"><span class="anchor-link"></span></a>User logged in expected</h2>
@@ -1235,11 +1611,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.NgClientCredentialTokenEndpoint</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin provide the endpoint for the client_credential flow token endpoint</p>
+<p>This plugin provide the endpoint for the client_credential flow</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;expiration&quot; : 3600000,
-  &quot;default_key_pair&quot; : &quot;otoroshi-jwt-signing&quot;
+  &quot;default_key_pair&quot; : &quot;otoroshi-jwt-signing&quot;,
+  &quot;allowed_apikeys&quot; : [ ],
+  &quot;allowed_groups&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.NgClientCredentials" class="ng-plugin plugin-hidden pl">
 <h2><a href="#client-credential-service" name="client-credential-service" class="anchor"><span class="anchor-link"></span></a>Client Credential Service</h2>
@@ -1384,6 +1762,65 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;log&quot; : true,
   &quot;export&quot; : true
 }
+</code></pre></div><div id="otoroshi.next.plugins.NgExpectedConsumer" class="ng-plugin plugin-hidden pl">
+<h2><a href="#expected-consumer" name="expected-consumer" class="anchor"><span class="anchor-link"></span></a>Expected consumer</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.NgExpectedConsumer</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin expect that a user or an apikey made the call</p></div><div id="otoroshi.next.plugins.NgExternalValidator" class="ng-plugin plugin-hidden pl">
+<h2><a href="#external-request-validator" name="external-request-validator" class="anchor"><span class="anchor-link"></span></a>External request validator</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.NgExternalValidator</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin checks let requests pass based on an external validation service</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;cache_expression&quot; : null,
+  &quot;url&quot; : null,
+  &quot;ttl&quot; : 60000,
+  &quot;timeout&quot; : 30000,
+  &quot;headers&quot; : { },
+  &quot;error_message&quot; : &quot;forbidden&quot;,
+  &quot;error_status&quot; : 403
+}
+</code></pre></div><div id="otoroshi.next.plugins.NgGenericAllowedList" class="ng-plugin plugin-hidden pl">
+<h2><a href="#generic-allowed-list" name="generic-allowed-list" class="anchor"><span class="anchor-link"></span></a>Generic allowed list</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.NgGenericAllowedList</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin checks let requests pass based on an el expression</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;expression&quot; : &quot;${req.ip_address}&quot;,
+  &quot;values&quot; : [ ]
+}
+</code></pre></div><div id="otoroshi.next.plugins.NgGenericBlockList" class="ng-plugin plugin-hidden pl">
+<h2><a href="#generic-block-list" name="generic-block-list" class="anchor"><span class="anchor-link"></span></a>Generic block list</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.NgGenericBlockList</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin checks let requests is blocked based on an el expression</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;expression&quot; : &quot;${req.ip_address}&quot;,
+  &quot;values&quot; : [ ]
+}
 </code></pre></div><div id="otoroshi.next.plugins.NgGeolocationInfoEndpoint" class="ng-plugin plugin-hidden pl">
 <h2><a href="#geolocation-endpoint" name="geolocation-endpoint" class="anchor"><span class="anchor-link"></span></a>Geolocation endpoint</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -1494,7 +1931,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;append_head&quot; : [ ],
-  &quot;append_body&quot; : [ ]
+  &quot;append_body&quot; : [ ],
+  &quot;prepend_head&quot; : [ ],
+  &quot;prepend_body&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.NgHttpClientCache" class="ng-plugin plugin-hidden pl">
 <h2><a href="#http-client-cache" name="http-client-cache" class="anchor"><span class="anchor-link"></span></a>HTTP Client Cache</h2>
@@ -1513,7 +1952,25 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;status&quot; : [ 200 ],
   &quot;mime_types&quot; : [ &quot;text/html&quot; ]
 }
-</code></pre></div><div id="otoroshi.next.plugins.NgIpStackGeolocationInfoExtractor" class="ng-plugin plugin-hidden pl">
+</code></pre></div><div id="otoroshi.next.plugins.NgIncomingRequestValidatorAllowedDomainNames" class="ng-plugin plugin-hidden pl">
+<h2><a href="#globally-allowed-domain-names" name="globally-allowed-domain-names" class="anchor"><span class="anchor-link"></span></a>Globally allowed domain names</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.NgIncomingRequestValidatorAllowedDomainNames</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Globally allowed domain names plugin</p></div><div id="otoroshi.next.plugins.NgIncomingRequestValidatorDeniedDomainNames" class="ng-plugin plugin-hidden pl">
+<h2><a href="#globally-denied-domain-names" name="globally-denied-domain-names" class="anchor"><span class="anchor-link"></span></a>Globally denied domain names</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.NgIncomingRequestValidatorDeniedDomainNames</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Globally denied domain names plugin</p></div><div id="otoroshi.next.plugins.NgIpStackGeolocationInfoExtractor" class="ng-plugin plugin-hidden pl">
 <h2><a href="#geolocation-details-extractor-using-ipstack-api-" name="geolocation-details-extractor-using-ipstack-api-" class="anchor"><span class="anchor-link"></span></a>Geolocation details extractor (using IpStack api)</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -1627,7 +2084,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;basic&quot; : {
       &quot;enabled&quot; : true,
       &quot;header_name&quot; : null,
-      &quot;query_name&quot; : null
+      &quot;query_name&quot; : null,
+      &quot;cookie_name&quot; : null,
+      &quot;path_name&quot; : null
     },
     &quot;custom_headers&quot; : {
       &quot;enabled&quot; : true,
@@ -1637,7 +2096,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;client_id&quot; : {
       &quot;enabled&quot; : true,
       &quot;header_name&quot; : null,
-      &quot;query_name&quot; : null
+      &quot;query_name&quot; : null,
+      &quot;cookie_name&quot; : null,
+      &quot;path_name&quot; : null
     },
     &quot;jwt&quot; : {
       &quot;enabled&quot; : true,
@@ -1647,7 +2108,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       &quot;max_jwt_lifespan_sec&quot; : null,
       &quot;header_name&quot; : null,
       &quot;query_name&quot; : null,
-      &quot;cookie_name&quot; : null
+      &quot;cookie_name&quot; : null,
+      &quot;path_name&quot; : null
+    },
+    &quot;oto_bearer&quot; : {
+      &quot;enabled&quot; : true,
+      &quot;header_name&quot; : null,
+      &quot;query_name&quot; : null,
+      &quot;cookie_name&quot; : null,
+      &quot;path_name&quot; : null
     }
   },
   &quot;routing&quot; : {
@@ -1928,6 +2397,24 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;roles&quot; : [ ]
   }
 }
+</code></pre></div><div id="otoroshi.next.plugins.OIDCAuthToken" class="ng-plugin plugin-hidden pl">
+<h2><a href="#oidc-access-token-authentication" name="oidc-access-token-authentication" class="anchor"><span class="anchor-link"></span></a>OIDC access_token authentication</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.OIDCAuthToken</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin will authenticate a user based on it&rsquo;s OIDC access_token</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;ref&quot; : &quot;&quot;,
+  &quot;opaque&quot; : true,
+  &quot;fetch_user_profile&quot; : true,
+  &quot;validate_audience&quot; : false,
+  &quot;header_name&quot; : &quot;Authorization&quot;
+}
 </code></pre></div><div id="otoroshi.next.plugins.OIDCHeaders" class="ng-plugin plugin-hidden pl">
 <h2><a href="#oidc-headers" name="oidc-headers" class="anchor"><span class="anchor-link"></span></a>OIDC headers</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -1956,6 +2443,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;headerName&quot; : &quot;X-OIDC-Access-Token&quot;,
     &quot;jwt&quot; : true
   }
+}
+</code></pre></div><div id="otoroshi.next.plugins.OtoroshiAIAEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#otoroshi-aia-endpoint" name="otoroshi-aia-endpoint" class="anchor"><span class="anchor-link"></span></a>Otoroshi AIA endpoint</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.OtoroshiAIAEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin provide an endpoint to return Otoroshi Authority Information Access for your certificates</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;cert_ids&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.OtoroshiChallenge" class="ng-plugin plugin-hidden pl">
 <h2><a href="#otoroshi-challenge-token" name="otoroshi-challenge-token" class="anchor"><span class="anchor-link"></span></a>Otoroshi challenge token</h2>
@@ -1997,7 +2498,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.OtoroshiHeadersIn</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin adds Otoroshi specific headers to the request</p></div><div id="otoroshi.next.plugins.OtoroshiInfos" class="ng-plugin plugin-hidden pl">
+<p>This plugin adds Otoroshi specific headers to the request</p></div><div id="otoroshi.next.plugins.OtoroshiHealthEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#otoroshi-health-endpoint" name="otoroshi-health-endpoint" class="anchor"><span class="anchor-link"></span></a>Otoroshi Health endpoint</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.OtoroshiHealthEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin provide an endpoint to return Otoroshi Health informations data for the current node</p></div><div id="otoroshi.next.plugins.OtoroshiInfos" class="ng-plugin plugin-hidden pl">
 <h2><a href="#otoroshi-info-token" name="otoroshi-info-token" class="anchor"><span class="anchor-link"></span></a>Otoroshi info. token</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -2013,12 +2523,55 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;ttl&quot; : 30,
   &quot;header_name&quot; : null,
   &quot;add_fields&quot; : null,
+  &quot;projection&quot; : { },
   &quot;algo&quot; : {
     &quot;type&quot; : &quot;HSAlgoSettings&quot;,
     &quot;size&quot; : 512,
     &quot;secret&quot; : &quot;secret&quot;,
     &quot;base64&quot; : false
   }
+}
+</code></pre></div><div id="otoroshi.next.plugins.OtoroshiJWKSEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#otoroshi-jwks-endpoint" name="otoroshi-jwks-endpoint" class="anchor"><span class="anchor-link"></span></a>Otoroshi JWKS endpoint</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.OtoroshiJWKSEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin provide an endpoint to return Otoroshi JWKS data</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;cert_ids&quot; : [ ]
+}
+</code></pre></div><div id="otoroshi.next.plugins.OtoroshiMetricsEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#otoroshi-metrics-endpoint" name="otoroshi-metrics-endpoint" class="anchor"><span class="anchor-link"></span></a>Otoroshi Metrics endpoint</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.OtoroshiMetricsEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin provide an endpoint to return Otoroshi metrics data for the current node</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;filter&quot; : null
+}
+</code></pre></div><div id="otoroshi.next.plugins.OtoroshiOCSPResponderEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#otoroshi-ocsp-responder-endpoint" name="otoroshi-ocsp-responder-endpoint" class="anchor"><span class="anchor-link"></span></a>Otoroshi OCSP Responder endpoint</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.OtoroshiOCSPResponderEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin provide an endpoint to act as the Otoroshi OCSP Responder</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;cert_ids&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.OverrideHost" class="ng-plugin plugin-hidden pl">
 <h2><a href="#override-host-header" name="override-host-header" class="anchor"><span class="anchor-link"></span></a>Override host header</h2>
@@ -2029,7 +2582,34 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.OverrideHost</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin override the current Host header with the Host of the backend target</p></div><div id="otoroshi.next.plugins.PublicPrivatePaths" class="ng-plugin plugin-hidden pl">
+<p>This plugin override the current Host header with the Host of the backend target</p></div><div id="otoroshi.next.plugins.OverrideLocationHeader" class="ng-plugin plugin-hidden pl">
+<h2><a href="#override-location-header" name="override-location-header" class="anchor"><span class="anchor-link"></span></a>Override Location header</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.OverrideLocationHeader</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin override the current Location header with the Host of the backend target</p></div><div id="otoroshi.next.plugins.PolyfillIoDetector" class="ng-plugin plugin-hidden pl">
+<h2><a href="#cdn-polyfill-io-detector" name="cdn-polyfill-io-detector" class="anchor"><span class="anchor-link"></span></a>cdn.polyfill.io detector</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.PolyfillIoDetector</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin detects compromised cdn.polyfill.io script tags in html resource with the cloudflare equivalent and send an alert event. For each occurence of a cdn.polyfill.io script tag, a CdnPolyfillIoDetectedAlert will be sent</p></div><div id="otoroshi.next.plugins.PolyfillIoReplacer" class="ng-plugin plugin-hidden pl">
+<h2><a href="#cdn-polyfill-io-mitigation" name="cdn-polyfill-io-mitigation" class="anchor"><span class="anchor-link"></span></a>cdn.polyfill.io mitigation</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.PolyfillIoReplacer</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin replaces compromised cdn.polyfill.io script tags in html resource with the cloudflare equivalent. For each occurence of a cdn.polyfill.io script tag, a CdnPolyfillIoReplacedAlert will be sent</p></div><div id="otoroshi.next.plugins.PublicPrivatePaths" class="ng-plugin plugin-hidden pl">
 <h2><a href="#public-private-paths" name="public-private-paths" class="anchor"><span class="anchor-link"></span></a>Public/Private paths</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -2107,6 +2687,133 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;code&quot; : 303,
   &quot;to&quot; : &quot;https://www.otoroshi.io&quot;
 }
+</code></pre></div><div id="otoroshi.next.plugins.RegexRequestBodyRewriter" class="ng-plugin plugin-hidden pl">
+<h2><a href="#regex-request-body-rewriter" name="regex-request-body-rewriter" class="anchor"><span class="anchor-link"></span></a>Regex request body rewriter</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.RegexRequestBodyRewriter</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Rewrites the HTTP request body using a set of regex rules</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;content_types&quot; : [ &quot;text/html&quot; ],
+  &quot;rules&quot; : [ ],
+  &quot;auto_href_prefix&quot; : null,
+  &quot;max_body_size&quot; : null,
+  &quot;charset_fallback&quot; : &quot;UTF-8&quot;
+}
+</code></pre>
+<h3><a href="#documentation" name="documentation" class="anchor"><span class="anchor-link"></span></a>Documentation</h3>
+<h3><a href="#examples" name="examples" class="anchor"><span class="anchor-link"></span></a>Examples</h3>
+<p>1) Rewrite a domain to another</p>
+<p>{  &ldquo;plugin&rdquo;: &ldquo;cp:otoroshi.next.plugins.RegexResponseBodyRewriter&rdquo;,  &ldquo;enabled&rdquo;: true,  &ldquo;config&rdquo;: {  &ldquo;content_types&rdquo;: [&ldquo;text/html&rdquo;],  &ldquo;rules&rdquo;: [  { &ldquo;pattern&rdquo;: &ldquo;(?i)https?://example.com&rdquo;, &ldquo;replacement&rdquo;: &ldquo;<a href="https://public.example.com">https://public.example.com</a>&rdquo; }  ],  &ldquo;max_body_size&rdquo;: 1048576  } }</p>
+<p>2) Rewrite paths while keeping captured groups</p>
+<p>{  &ldquo;plugin&rdquo;: &ldquo;cp:otoroshi.next.plugins.RegexResponseBodyRewriter&rdquo;,  &ldquo;enabled&rdquo;: true,  &ldquo;config&rdquo;: {  &ldquo;content_types&rdquo;: [&ldquo;text/html&rdquo;, &ldquo;text/plain&rdquo;],  &ldquo;rules&rdquo;: [  { &ldquo;pattern&rdquo;: &ldquo;href=([&quot;&rsquo;])/v1/(.+?)\1&rdquo;, &ldquo;replacement&rdquo;: &ldquo;href=$1/v2/$2$1&rdquo;, &ldquo;flags&rdquo;: &ldquo;i&rdquo; }  ]  } }</p>
+<p>Note: replacement supports backrefs $1, $2, &hellip; Remember to properly escape backslashes in JSON.</p></div><div id="otoroshi.next.plugins.RegexResponseBodyRewriter" class="ng-plugin plugin-hidden pl">
+<h2><a href="#regex-response-body-rewriter" name="regex-response-body-rewriter" class="anchor"><span class="anchor-link"></span></a>Regex response body rewriter</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.RegexResponseBodyRewriter</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Rewrites the HTTP response body using a set of regex rules, with optional auto-prefix for relative hrefs.</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;content_types&quot; : [ &quot;text/html&quot; ],
+  &quot;rules&quot; : [ ],
+  &quot;auto_href_prefix&quot; : null,
+  &quot;max_body_size&quot; : null,
+  &quot;charset_fallback&quot; : &quot;UTF-8&quot;
+}
+</code></pre>
+<h3><a href="#documentation" name="documentation" class="anchor"><span class="anchor-link"></span></a>Documentation</h3>
+<p>1) Prefix all relative hrefs with /proxy and rewrite a domain to another</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.RegexResponseBodyRewriter&quot;,
+  &quot;enabled&quot;: true,
+  &quot;config&quot;: {
+    &quot;content_types&quot;: [&quot;text/html&quot;],
+    &quot;auto_href_prefix&quot;: &quot;/proxy&quot;,
+    &quot;rules&quot;: [
+      { &quot;pattern&quot;: &quot;(?i)https?://example\.com&quot;, &quot;replacement&quot;: &quot;https://public.example.com&quot; }
+    ],
+    &quot;max_body_size&quot;: 1048576
+  }
+}
+</code></pre>
+<p>2) Rewrite paths while keeping captured groups</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.RegexResponseBodyRewriter&quot;,
+  &quot;enabled&quot;: true,
+  &quot;config&quot;: {
+    &quot;content_types&quot;: [&quot;text/html&quot;, &quot;text/plain&quot;],
+    &quot;rules&quot;: [
+      { &quot;pattern&quot;: &quot;href=([\&quot;&#39;])/v1/(.+?)\1&quot;, &quot;replacement&quot;: &quot;href=$1/v2/$2$1&quot;, &quot;flags&quot;: &quot;i&quot; }
+    ]
+  }
+}
+</code></pre>
+<p>Note: replacement supports backrefs $1, $2, &hellip;</p></div><div id="otoroshi.next.plugins.RejectHeaderInTooLong" class="ng-plugin plugin-hidden pl">
+<h2><a href="#reject-headers-in-too-long" name="reject-headers-in-too-long" class="anchor"><span class="anchor-link"></span></a>Reject headers in too long</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.RejectHeaderInTooLong</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin remove all headers to backend with a length above a max</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;value&quot; : 8192
+}
+</code></pre></div><div id="otoroshi.next.plugins.RejectHeaderOutTooLong" class="ng-plugin plugin-hidden pl">
+<h2><a href="#reject-headers-out-too-long" name="reject-headers-out-too-long" class="anchor"><span class="anchor-link"></span></a>Reject headers out too long</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.RejectHeaderOutTooLong</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin remove all headers from backend with a length above a max</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;value&quot; : 8192
+}
+</code></pre></div><div id="otoroshi.next.plugins.RemoveCookiesIn" class="ng-plugin plugin-hidden pl">
+<h2><a href="#remove-cookies-in" name="remove-cookies-in" class="anchor"><span class="anchor-link"></span></a>Remove cookies in</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.RemoveCookiesIn</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin remove cookies from the otoroshi request</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;names&quot; : [ ]
+}
+</code></pre></div><div id="otoroshi.next.plugins.RemoveCookiesOut" class="ng-plugin plugin-hidden pl">
+<h2><a href="#remove-cookies-out" name="remove-cookies-out" class="anchor"><span class="anchor-link"></span></a>Remove cookies out</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.RemoveCookiesOut</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin remove cookies from the otoroshi response</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;names&quot; : [ ]
+}
 </code></pre></div><div id="otoroshi.next.plugins.RemoveHeadersIn" class="ng-plugin plugin-hidden pl">
 <h2><a href="#remove-headers-in" name="remove-headers-in" class="anchor"><span class="anchor-link"></span></a>Remove headers in</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -2134,6 +2841,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;header_names&quot; : [ ]
+}
+</code></pre></div><div id="otoroshi.next.plugins.RequestBodyEchoBackend" class="ng-plugin plugin-hidden pl">
+<h2><a href="#request-body-echo" name="request-body-echo" class="anchor"><span class="anchor-link"></span></a>Request body Echo</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.RequestBodyEchoBackend</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin returns request body content</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;limit&quot; : 524288
 }
 </code></pre></div><div id="otoroshi.next.plugins.Robots" class="ng-plugin plugin-hidden pl">
 <h2><a href="#robots" name="robots" class="anchor"><span class="anchor-link"></span></a>Robots</h2>
@@ -2224,7 +2945,22 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.SendOtoroshiHeadersBack</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin adds response header containing useful informations about the current call</p></div><div id="otoroshi.next.plugins.SnowMonkeyChaos" class="ng-plugin plugin-hidden pl">
+<p>This plugin adds response header containing useful informations about the current call</p></div><div id="otoroshi.next.plugins.SimpleBasicAuth" class="ng-plugin plugin-hidden pl">
+<h2><a href="#basic-auth" name="basic-auth" class="anchor"><span class="anchor-link"></span></a>Basic Auth</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.SimpleBasicAuth</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin can be used to protect a route with basic auth. You can use clear text passwords (not recommended for production usage) or Bcryt hashed password as password values</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;realm&quot; : &quot;authentication&quot;,
+  &quot;users&quot; : { }
+}
+</code></pre></div><div id="otoroshi.next.plugins.SnowMonkeyChaos" class="ng-plugin plugin-hidden pl">
 <h2><a href="#snow-monkey-chaos" name="snow-monkey-chaos" class="anchor"><span class="anchor-link"></span></a>Snow Monkey Chaos</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -2241,6 +2977,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;large_response_fault&quot; : null,
   &quot;latency_injection_fault&quot; : null,
   &quot;bad_responses_fault&quot; : null
+}
+</code></pre></div><div id="otoroshi.next.plugins.StaticAssetEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#http-static-asset" name="http-static-asset" class="anchor"><span class="anchor-link"></span></a>Http static asset</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.StaticAssetEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Serve any static http asset for the current request</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;url&quot; : null
 }
 </code></pre></div><div id="otoroshi.next.plugins.StaticBackend" class="ng-plugin plugin-hidden pl">
 <h2><a href="#static-backend" name="static-backend" class="anchor"><span class="anchor-link"></span></a>Static backend</h2>
@@ -2270,7 +3020,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-json">{
   &quot;status&quot; : 200,
   &quot;headers&quot; : { },
-  &quot;body&quot; : &quot;&quot;
+  &quot;body&quot; : &quot;&quot;,
+  &quot;apply_el&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.TailscaleSelectTargetByName" class="ng-plugin plugin-hidden pl">
 <h2><a href="#tailscale-select-target-by-name" name="tailscale-select-target-by-name" class="anchor"><span class="anchor-link"></span></a>Tailscale select target by name</h2>
@@ -2296,7 +3047,26 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.TcpTunnel</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin creates TCP tunnels through otoroshi</p></div><div id="otoroshi.next.plugins.UdpTunnel" class="ng-plugin plugin-hidden pl">
+<p>This plugin creates TCP tunnels through otoroshi</p></div><div id="otoroshi.next.plugins.TimeControlledCanaryMode" class="ng-plugin plugin-hidden pl">
+<h2><a href="#time-controlled-canary-mode" name="time-controlled-canary-mode" class="anchor"><span class="anchor-link"></span></a>Time controlled Canary mode</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>PreRoute</code></li>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.TimeControlledCanaryMode</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin can split a portion of the traffic to canary backends between two dates</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;start&quot; : &quot;2025-09-01T15:29:02.883Z&quot;,
+  &quot;stop&quot; : &quot;2025-09-02T15:29:02.905Z&quot;,
+  &quot;increment_percent&quot; : 1,
+  &quot;targets&quot; : [ ],
+  &quot;root&quot; : &quot;/&quot;
+}
+</code></pre></div><div id="otoroshi.next.plugins.UdpTunnel" class="ng-plugin plugin-hidden pl">
 <h2><a href="#udp-tunnel" name="udp-tunnel" class="anchor"><span class="anchor-link"></span></a>UDP Tunnel</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -2305,7 +3075,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.UdpTunnel</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin creates UDP tunnels through otoroshi</p></div><div id="otoroshi.next.plugins.W3CTracing" class="ng-plugin plugin-hidden pl">
+<p>This plugin creates UDP tunnels through otoroshi</p></div><div id="otoroshi.next.plugins.UserProfileEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#user-profile-endpoint" name="user-profile-endpoint" class="anchor"><span class="anchor-link"></span></a>User profile endpoint</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.UserProfileEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin returns the current user profile</p></div><div id="otoroshi.next.plugins.W3CTracing" class="ng-plugin plugin-hidden pl">
 <h2><a href="#w3c-trace-context" name="w3c-trace-context" class="anchor"><span class="anchor-link"></span></a>W3C Trace Context</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -2340,13 +3119,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;path&quot; : &quot;&quot;,
     &quot;opts&quot; : { }
   },
-  &quot;memoryPages&quot; : 20,
+  &quot;memoryPages&quot; : 50,
   &quot;functionName&quot; : null,
   &quot;config&quot; : { },
   &quot;allowedHosts&quot; : [ ],
   &quot;allowedPaths&quot; : { },
   &quot;wasi&quot; : false,
   &quot;opa&quot; : false,
+  &quot;httpWasm&quot; : false,
   &quot;authorizations&quot; : {
     &quot;httpAccess&quot; : false,
     &quot;proxyHttpCallTimeout&quot; : 5000,
@@ -2376,7 +3156,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;max_memory_usage&quot; : 0,
     &quot;max_avg_call_duration&quot; : 0,
     &quot;max_unused_duration&quot; : 300000
-  }
+  },
+  &quot;isJS&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.WasmBackend" class="ng-plugin plugin-hidden pl">
 <h2><a href="#wasm-backend" name="wasm-backend" class="anchor"><span class="anchor-link"></span></a>Wasm Backend</h2>
@@ -2395,13 +3176,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;path&quot; : &quot;&quot;,
     &quot;opts&quot; : { }
   },
-  &quot;memoryPages&quot; : 20,
+  &quot;memoryPages&quot; : 50,
   &quot;functionName&quot; : null,
   &quot;config&quot; : { },
   &quot;allowedHosts&quot; : [ ],
   &quot;allowedPaths&quot; : { },
   &quot;wasi&quot; : false,
   &quot;opa&quot; : false,
+  &quot;httpWasm&quot; : false,
   &quot;authorizations&quot; : {
     &quot;httpAccess&quot; : false,
     &quot;proxyHttpCallTimeout&quot; : 5000,
@@ -2431,7 +3213,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;max_memory_usage&quot; : 0,
     &quot;max_avg_call_duration&quot; : 0,
     &quot;max_unused_duration&quot; : 300000
-  }
+  },
+  &quot;isJS&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.WasmOPA" class="ng-plugin plugin-hidden pl">
 <h2><a href="#open-policy-agent-opa-" name="open-policy-agent-opa-" class="anchor"><span class="anchor-link"></span></a>Open Policy Agent (OPA)</h2>
@@ -2450,13 +3233,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;path&quot; : &quot;&quot;,
     &quot;opts&quot; : { }
   },
-  &quot;memoryPages&quot; : 20,
+  &quot;memoryPages&quot; : 50,
   &quot;functionName&quot; : null,
   &quot;config&quot; : { },
   &quot;allowedHosts&quot; : [ ],
   &quot;allowedPaths&quot; : { },
   &quot;wasi&quot; : false,
   &quot;opa&quot; : true,
+  &quot;httpWasm&quot; : false,
   &quot;authorizations&quot; : {
     &quot;httpAccess&quot; : false,
     &quot;proxyHttpCallTimeout&quot; : 5000,
@@ -2486,7 +3270,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;max_memory_usage&quot; : 0,
     &quot;max_avg_call_duration&quot; : 0,
     &quot;max_unused_duration&quot; : 300000
-  }
+  },
+  &quot;isJS&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.WasmPreRoute" class="ng-plugin plugin-hidden pl">
 <h2><a href="#wasm-pre-route" name="wasm-pre-route" class="anchor"><span class="anchor-link"></span></a>Wasm pre-route</h2>
@@ -2505,13 +3290,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;path&quot; : &quot;&quot;,
     &quot;opts&quot; : { }
   },
-  &quot;memoryPages&quot; : 20,
+  &quot;memoryPages&quot; : 50,
   &quot;functionName&quot; : null,
   &quot;config&quot; : { },
   &quot;allowedHosts&quot; : [ ],
   &quot;allowedPaths&quot; : { },
   &quot;wasi&quot; : false,
   &quot;opa&quot; : false,
+  &quot;httpWasm&quot; : false,
   &quot;authorizations&quot; : {
     &quot;httpAccess&quot; : false,
     &quot;proxyHttpCallTimeout&quot; : 5000,
@@ -2541,7 +3327,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;max_memory_usage&quot; : 0,
     &quot;max_avg_call_duration&quot; : 0,
     &quot;max_unused_duration&quot; : 300000
-  }
+  },
+  &quot;isJS&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.WasmRequestTransformer" class="ng-plugin plugin-hidden pl">
 <h2><a href="#wasm-request-transformer" name="wasm-request-transformer" class="anchor"><span class="anchor-link"></span></a>Wasm Request Transformer</h2>
@@ -2560,13 +3347,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;path&quot; : &quot;&quot;,
     &quot;opts&quot; : { }
   },
-  &quot;memoryPages&quot; : 20,
+  &quot;memoryPages&quot; : 50,
   &quot;functionName&quot; : null,
   &quot;config&quot; : { },
   &quot;allowedHosts&quot; : [ ],
   &quot;allowedPaths&quot; : { },
   &quot;wasi&quot; : false,
   &quot;opa&quot; : false,
+  &quot;httpWasm&quot; : false,
   &quot;authorizations&quot; : {
     &quot;httpAccess&quot; : false,
     &quot;proxyHttpCallTimeout&quot; : 5000,
@@ -2596,7 +3384,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;max_memory_usage&quot; : 0,
     &quot;max_avg_call_duration&quot; : 0,
     &quot;max_unused_duration&quot; : 300000
-  }
+  },
+  &quot;isJS&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.WasmResponseTransformer" class="ng-plugin plugin-hidden pl">
 <h2><a href="#wasm-response-transformer" name="wasm-response-transformer" class="anchor"><span class="anchor-link"></span></a>Wasm Response Transformer</h2>
@@ -2615,13 +3404,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;path&quot; : &quot;&quot;,
     &quot;opts&quot; : { }
   },
-  &quot;memoryPages&quot; : 20,
+  &quot;memoryPages&quot; : 50,
   &quot;functionName&quot; : null,
   &quot;config&quot; : { },
   &quot;allowedHosts&quot; : [ ],
   &quot;allowedPaths&quot; : { },
   &quot;wasi&quot; : false,
   &quot;opa&quot; : false,
+  &quot;httpWasm&quot; : false,
   &quot;authorizations&quot; : {
     &quot;httpAccess&quot; : false,
     &quot;proxyHttpCallTimeout&quot; : 5000,
@@ -2651,7 +3441,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;max_memory_usage&quot; : 0,
     &quot;max_avg_call_duration&quot; : 0,
     &quot;max_unused_duration&quot; : 300000
-  }
+  },
+  &quot;isJS&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.WasmRouteMatcher" class="ng-plugin plugin-hidden pl">
 <h2><a href="#wasm-route-matcher" name="wasm-route-matcher" class="anchor"><span class="anchor-link"></span></a>Wasm Route Matcher</h2>
@@ -2670,13 +3461,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;path&quot; : &quot;&quot;,
     &quot;opts&quot; : { }
   },
-  &quot;memoryPages&quot; : 20,
+  &quot;memoryPages&quot; : 50,
   &quot;functionName&quot; : null,
   &quot;config&quot; : { },
   &quot;allowedHosts&quot; : [ ],
   &quot;allowedPaths&quot; : { },
   &quot;wasi&quot; : false,
   &quot;opa&quot; : false,
+  &quot;httpWasm&quot; : false,
   &quot;authorizations&quot; : {
     &quot;httpAccess&quot; : false,
     &quot;proxyHttpCallTimeout&quot; : 5000,
@@ -2706,7 +3498,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;max_memory_usage&quot; : 0,
     &quot;max_avg_call_duration&quot; : 0,
     &quot;max_unused_duration&quot; : 300000
-  }
+  },
+  &quot;isJS&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.WasmRouter" class="ng-plugin plugin-hidden pl">
 <h2><a href="#wasm-router" name="wasm-router" class="anchor"><span class="anchor-link"></span></a>Wasm Router</h2>
@@ -2725,13 +3518,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;path&quot; : &quot;&quot;,
     &quot;opts&quot; : { }
   },
-  &quot;memoryPages&quot; : 20,
+  &quot;memoryPages&quot; : 50,
   &quot;functionName&quot; : null,
   &quot;config&quot; : { },
   &quot;allowedHosts&quot; : [ ],
   &quot;allowedPaths&quot; : { },
   &quot;wasi&quot; : false,
   &quot;opa&quot; : false,
+  &quot;httpWasm&quot; : false,
   &quot;authorizations&quot; : {
     &quot;httpAccess&quot; : false,
     &quot;proxyHttpCallTimeout&quot; : 5000,
@@ -2761,7 +3555,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;max_memory_usage&quot; : 0,
     &quot;max_avg_call_duration&quot; : 0,
     &quot;max_unused_duration&quot; : 300000
-  }
+  },
+  &quot;isJS&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.WasmSink" class="ng-plugin plugin-hidden pl">
 <h2><a href="#wasm-sink" name="wasm-sink" class="anchor"><span class="anchor-link"></span></a>Wasm Sink</h2>
@@ -2780,13 +3575,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;path&quot; : &quot;&quot;,
     &quot;opts&quot; : { }
   },
-  &quot;memoryPages&quot; : 20,
+  &quot;memoryPages&quot; : 50,
   &quot;functionName&quot; : null,
   &quot;config&quot; : { },
   &quot;allowedHosts&quot; : [ ],
   &quot;allowedPaths&quot; : { },
   &quot;wasi&quot; : false,
   &quot;opa&quot; : false,
+  &quot;httpWasm&quot; : false,
   &quot;authorizations&quot; : {
     &quot;httpAccess&quot; : false,
     &quot;proxyHttpCallTimeout&quot; : 5000,
@@ -2816,7 +3612,133 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;max_memory_usage&quot; : 0,
     &quot;max_avg_call_duration&quot; : 0,
     &quot;max_unused_duration&quot; : 300000
-  }
+  },
+  &quot;isJS&quot; : false
+}
+</code></pre></div><div id="otoroshi.next.plugins.WasmWebsocketTransformer" class="ng-plugin plugin-hidden pl">
+<h2><a href="#wasm-websocket-transformer" name="wasm-websocket-transformer" class="anchor"><span class="anchor-link"></span></a>Wasm Websocket transformer</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.WasmWebsocketTransformer</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Transform messages and filter websocket messages</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;source&quot; : {
+    &quot;kind&quot; : &quot;Unknown&quot;,
+    &quot;path&quot; : &quot;&quot;,
+    &quot;opts&quot; : { }
+  },
+  &quot;memoryPages&quot; : 50,
+  &quot;functionName&quot; : null,
+  &quot;config&quot; : { },
+  &quot;allowedHosts&quot; : [ ],
+  &quot;allowedPaths&quot; : { },
+  &quot;wasi&quot; : false,
+  &quot;opa&quot; : false,
+  &quot;httpWasm&quot; : false,
+  &quot;authorizations&quot; : {
+    &quot;httpAccess&quot; : false,
+    &quot;proxyHttpCallTimeout&quot; : 5000,
+    &quot;globalDataStoreAccess&quot; : {
+      &quot;read&quot; : false,
+      &quot;write&quot; : false
+    },
+    &quot;pluginDataStoreAccess&quot; : {
+      &quot;read&quot; : false,
+      &quot;write&quot; : false
+    },
+    &quot;globalMapAccess&quot; : {
+      &quot;read&quot; : false,
+      &quot;write&quot; : false
+    },
+    &quot;pluginMapAccess&quot; : {
+      &quot;read&quot; : false,
+      &quot;write&quot; : false
+    },
+    &quot;proxyStateAccess&quot; : false,
+    &quot;configurationAccess&quot; : false
+  },
+  &quot;instances&quot; : 1,
+  &quot;killOptions&quot; : {
+    &quot;immortal&quot; : false,
+    &quot;max_calls&quot; : 2147483647,
+    &quot;max_memory_usage&quot; : 0,
+    &quot;max_avg_call_duration&quot; : 0,
+    &quot;max_unused_duration&quot; : 300000
+  },
+  &quot;isJS&quot; : false
+}
+</code></pre></div><div id="otoroshi.next.plugins.WebsocketContentValidatorIn" class="ng-plugin plugin-hidden pl">
+<h2><a href="#websocket-content-validator-in" name="websocket-content-validator-in" class="anchor"><span class="anchor-link"></span></a>Websocket content validator in</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.WebsocketContentValidatorIn</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Validate the content of each frame</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;validator&quot; : {
+    &quot;kind&quot; : &quot;json-path-validator&quot;,
+    &quot;path&quot; : &quot;$.message&quot;,
+    &quot;value&quot; : &quot;foo&quot;,
+    &quot;error&quot; : null
+  },
+  &quot;reject_strategy&quot; : &quot;drop&quot;
+}
+</code></pre></div><div id="otoroshi.next.plugins.WebsocketJsonFormatValidator" class="ng-plugin plugin-hidden pl">
+<h2><a href="#websocket-json-format-validator" name="websocket-json-format-validator" class="anchor"><span class="anchor-link"></span></a>Websocket json format validator</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.WebsocketJsonFormatValidator</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Validate the json</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;schema&quot; : &quot;{ \&quot;type\&quot;: \&quot;object\&quot;, \&quot;required\&quot;: [\&quot;name\&quot;] }&quot;,
+  &quot;specification&quot; : &quot;https://json-schema.org/draft/2020-12/schema&quot;,
+  &quot;reject_strategy&quot; : &quot;drop&quot;
+}
+</code></pre></div><div id="otoroshi.next.plugins.WebsocketSizeValidator" class="ng-plugin plugin-hidden pl">
+<h2><a href="#websocket-size-validator" name="websocket-size-validator" class="anchor"><span class="anchor-link"></span></a>Websocket size validator</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.WebsocketSizeValidator</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Make sure the frame does not exceed the maximum size set.</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;client_max_payload&quot; : 4096,
+  &quot;upstream_max_payload&quot; : 4096,
+  &quot;reject_strategy&quot; : &quot;drop&quot;
+}
+</code></pre></div><div id="otoroshi.next.plugins.WebsocketTypeValidator" class="ng-plugin plugin-hidden pl">
+<h2><a href="#websocket-type-validator" name="websocket-type-validator" class="anchor"><span class="anchor-link"></span></a>Websocket type validator</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.WebsocketTypeValidator</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Validate the type of each frame</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;allowed_format&quot; : &quot;all&quot;,
+  &quot;reject_strategy&quot; : &quot;drop&quot;
 }
 </code></pre></div><div id="otoroshi.next.plugins.XForwardedHeaders" class="ng-plugin plugin-hidden pl">
 <h2><a href="#x-forwarded-headers" name="x-forwarded-headers" class="anchor"><span class="anchor-link"></span></a>X-Forwarded-* headers</h2>
@@ -2855,6 +3777,24 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-json">{
   &quot;filter&quot; : null
 }
+</code></pre></div><div id="otoroshi.next.plugins.ZipBombBackend" class="ng-plugin plugin-hidden pl">
+<h2><a href="#zip-bomb-backend" name="zip-bomb-backend" class="anchor"><span class="anchor-link"></span></a>Zip Bomb backend</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.ZipBombBackend</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin returns zip bomb responses based on predicates</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;predicates&quot; : [ ],
+  &quot;or&quot; : false,
+  &quot;size&quot; : &quot;10G&quot;,
+  &quot;status&quot; : null,
+  &quot;content_type&quot; : null
+}
 </code></pre></div><div id="otoroshi.next.plugins.ZipFileBackend" class="ng-plugin plugin-hidden pl">
 <h2><a href="#zip-file-backend" name="zip-file-backend" class="anchor"><span class="anchor-link"></span></a>Zip file backend</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -2873,7 +3813,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;prefix&quot; : null,
   &quot;ttl&quot; : 3600000
 }
-</code></pre></div><div id="otoroshi.next.tunnel.TunnelPlugin" class="ng-plugin plugin-hidden pl">
+</code></pre></div><div id="otoroshi.next.plugins.api.YesWebsocketBackend" class="ng-plugin plugin-hidden pl">
+<h2><a href="#yes" name="yes" class="anchor"><span class="anchor-link"></span></a>Yes</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.api.YesWebsocketBackend</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Outputs Ys to the client</p></div><div id="otoroshi.next.tunnel.TunnelPlugin" class="ng-plugin plugin-hidden pl">
 <h2><a href="#remote-tunnel-calls" name="remote-tunnel-calls" class="anchor"><span class="anchor-link"></span></a>Remote tunnel calls</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -2887,6 +3836,66 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-json">{
   &quot;tunnel_id&quot; : &quot;default&quot;
 }
+</code></pre></div><div id="otoroshi.next.workflow.WorkflowAccessValidator" class="ng-plugin plugin-hidden pl">
+<h2><a href="#workflow-access-control" name="workflow-access-control" class="anchor"><span class="anchor-link"></span></a>Workflow Access control</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.workflow.WorkflowAccessValidator</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Delegate route access to a worflow</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{ }
+</code></pre></div><div id="otoroshi.next.workflow.WorkflowBackend" class="ng-plugin plugin-hidden pl">
+<h2><a href="#workflow-backend" name="workflow-backend" class="anchor"><span class="anchor-link"></span></a>Workflow Backend</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.workflow.WorkflowBackend</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin uses a workflow as a backend</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{ }
+</code></pre></div><div id="otoroshi.next.workflow.WorkflowRequestTransformer" class="ng-plugin plugin-hidden pl">
+<h2><a href="#workflow-request-transformer" name="workflow-request-transformer" class="anchor"><span class="anchor-link"></span></a>Workflow Request Transformer</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.workflow.WorkflowRequestTransformer</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Transform the content of the request with a workflow</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{ }
+</code></pre></div><div id="otoroshi.next.workflow.WorkflowResponseTransformer" class="ng-plugin plugin-hidden pl">
+<h2><a href="#workflow-response-transformer" name="workflow-response-transformer" class="anchor"><span class="anchor-link"></span></a>Workflow Response Transformer</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.workflow.WorkflowResponseTransformer</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Transform the content of a response with a workflow</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{ }
+</code></pre></div><div id="otoroshi.next.workflow.WorkflowResumeBackend" class="ng-plugin plugin-hidden pl">
+<h2><a href="#workflow-resume-backend" name="workflow-resume-backend" class="anchor"><span class="anchor-link"></span></a>Workflow Resume Backend</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.workflow.WorkflowResumeBackend</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin can be used to resume a paused workflow</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{ }
 </code></pre></div><div id="otoroshi.wasm.proxywasm.NgCorazaWAF" class="ng-plugin plugin-hidden pl">
 <h2><a href="#coraza-waf" name="coraza-waf" class="anchor"><span class="anchor-link"></span></a>Coraza WAF</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -2899,6 +3908,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p><code>cp:otoroshi.wasm.proxywasm.NgCorazaWAF</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
 <p>Coraza WAF plugin</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;ref&quot; : &quot;none&quot;
+}
+</code></pre></div><div id="otoroshi.wasm.proxywasm.NgIncomingRequestValidatorCorazaWAF" class="ng-plugin plugin-hidden pl">
+<h2><a href="#coraza-waf-incoming-request-validator" name="coraza-waf-incoming-request-validator" class="anchor"><span class="anchor-link"></span></a>Coraza WAF - Incoming Request Validator</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.wasm.proxywasm.NgIncomingRequestValidatorCorazaWAF</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Coraza WAF - Incoming Request Validator plugin</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;ref&quot; : &quot;none&quot;
@@ -2918,24 +3941,36 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../plugins/built-in-plugins.html#built-in-plugins" class="header">Built-in plugins</a>
   <ul>
+    <li><a href="../plugins/built-in-plugins.html#additional-cookies-in" class="header">Additional cookies in</a></li>
+    <li><a href="../plugins/built-in-plugins.html#additional-cookies-out" class="header">Additional cookies out</a></li>
     <li><a href="../plugins/built-in-plugins.html#additional-headers-in" class="header">Additional headers in</a></li>
     <li><a href="../plugins/built-in-plugins.html#additional-headers-out" class="header">Additional headers out</a></li>
     <li><a href="../plugins/built-in-plugins.html#allowed-http-methods" class="header">Allowed HTTP methods</a></li>
     <li><a href="../plugins/built-in-plugins.html#apikey-auth-module" class="header">Apikey auth module</a></li>
     <li><a href="../plugins/built-in-plugins.html#apikeys" class="header">Apikeys</a></li>
     <li><a href="../plugins/built-in-plugins.html#apikey-quotas" class="header">Apikey quotas</a></li>
+    <li><a href="../plugins/built-in-plugins.html#auth0-passwordless-end-flow-endpoint" class="header">Auth0 Passwordless end flow endpoint</a></li>
+    <li><a href="../plugins/built-in-plugins.html#auth0-passwordless-start-end-flow" class="header">Auth0 Passwordless start/end flow</a></li>
+    <li><a href="../plugins/built-in-plugins.html#auth0-passwordless-start-end-flow-endpoints" class="header">Auth0 Passwordless start/end flow endpoints</a></li>
+    <li><a href="../plugins/built-in-plugins.html#auth0-passwordless-start-flow-endpoint" class="header">Auth0 Passwordless start flow endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#authentication" class="header">Authentication</a></li>
     <li><a href="../plugins/built-in-plugins.html#basic-auth-caller" class="header">Basic Auth. caller</a></li>
+    <li><a href="../plugins/built-in-plugins.html#basic-auth-from-auth-module" class="header">Basic auth. from auth. module</a></li>
+    <li><a href="../plugins/built-in-plugins.html#block-non-https-traffic" class="header">Block non HTTPS traffic</a></li>
     <li><a href="../plugins/built-in-plugins.html#brotli-compression" class="header">Brotli compression</a></li>
     <li><a href="../plugins/built-in-plugins.html#build-mode" class="header">Build mode</a></li>
     <li><a href="../plugins/built-in-plugins.html#canary-mode" class="header">Canary mode</a></li>
+    <li><a href="../plugins/built-in-plugins.html#consumer-endpoint" class="header">Consumer endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#context-validator" class="header">Context validator</a></li>
+    <li><a href="../plugins/built-in-plugins.html#cookies-validation" class="header">Cookies validation</a></li>
     <li><a href="../plugins/built-in-plugins.html#cors" class="header">CORS</a></li>
     <li><a href="../plugins/built-in-plugins.html#disable-http-1-0" class="header">Disable HTTP/1.0</a></li>
+    <li><a href="../plugins/built-in-plugins.html#request-echo" class="header">Request Echo</a></li>
     <li><a href="../plugins/built-in-plugins.html#endless-http-responses" class="header">Endless HTTP responses</a></li>
     <li><a href="../plugins/built-in-plugins.html#eureka-instance" class="header">Eureka instance</a></li>
     <li><a href="../plugins/built-in-plugins.html#internal-eureka-target" class="header">Internal Eureka target</a></li>
     <li><a href="../plugins/built-in-plugins.html#external-eureka-target" class="header">External Eureka target</a></li>
+    <li><a href="../plugins/built-in-plugins.html#fail2ban" class="header">fail2ban</a></li>
     <li><a href="../plugins/built-in-plugins.html#force-https-traffic" class="header">Force HTTPS traffic</a></li>
     <li><a href="../plugins/built-in-plugins.html#forwarded-header" class="header">Forwarded header</a></li>
     <li><a href="../plugins/built-in-plugins.html#global-maintenance-mode" class="header">Global Maintenance mode</a></li>
@@ -2955,16 +3990,25 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#jq" class="header">JQ</a></li>
     <li><a href="../plugins/built-in-plugins.html#jq-transform-request" class="header">JQ transform request</a></li>
     <li><a href="../plugins/built-in-plugins.html#jq-transform-response" class="header">JQ transform response</a></li>
+    <li><a href="../plugins/built-in-plugins.html#websocket-jq-transformer" class="header">Websocket JQ transformer</a></li>
     <li><a href="../plugins/built-in-plugins.html#request-body-json-to-xml" class="header">request body json-to-xml</a></li>
     <li><a href="../plugins/built-in-plugins.html#response-body-json-to-xml" class="header">response body json-to-xml</a></li>
+    <li><a href="../plugins/built-in-plugins.html#jwe-extractor" class="header">JWE extractor</a></li>
+    <li><a href="../plugins/built-in-plugins.html#jwe-signer" class="header">JWE signer</a></li>
     <li><a href="../plugins/built-in-plugins.html#jwt-signer" class="header">Jwt signer</a></li>
     <li><a href="../plugins/built-in-plugins.html#jwt-verifiers" class="header">Jwt verifiers</a></li>
     <li><a href="../plugins/built-in-plugins.html#jwt-verification-only" class="header">Jwt verification only</a></li>
+    <li><a href="../plugins/built-in-plugins.html#limit-headers-in-too-long" class="header">Limit headers in too long</a></li>
+    <li><a href="../plugins/built-in-plugins.html#limit-headers-out-too-long" class="header">Limit headers out too long</a></li>
     <li><a href="../plugins/built-in-plugins.html#maintenance-mode" class="header">Maintenance mode</a></li>
+    <li><a href="../plugins/built-in-plugins.html#missing-cookies-in" class="header">Missing cookies in</a></li>
+    <li><a href="../plugins/built-in-plugins.html#missing-cookies-out" class="header">Missing cookies out</a></li>
     <li><a href="../plugins/built-in-plugins.html#missing-headers-in" class="header">Missing headers in</a></li>
     <li><a href="../plugins/built-in-plugins.html#missing-headers-out" class="header">Missing headers out</a></li>
     <li><a href="../plugins/built-in-plugins.html#mock-responses" class="header">Mock Responses</a></li>
     <li><a href="../plugins/built-in-plugins.html#multi-authentication" class="header">Multi Authentication</a></li>
+    <li><a href="../plugins/built-in-plugins.html#apikey-mandatory-metadata" class="header">Apikey mandatory metadata</a></li>
+    <li><a href="../plugins/built-in-plugins.html#apikey-mandatory-tags" class="header">Apikey mandatory tags</a></li>
     <li><a href="../plugins/built-in-plugins.html#user-logged-in-expected" class="header">User logged in expected</a></li>
     <li><a href="../plugins/built-in-plugins.html#user-extraction-from-auth-module" class="header">User extraction from auth. module</a></li>
     <li><a href="../plugins/built-in-plugins.html#apikey-from-biscuit-token-extractor" class="header">Apikey from Biscuit token extractor</a></li>
@@ -2981,6 +4025,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#self-registration-endpoints-service-discovery-" class="header">Self registration endpoints (service discovery)</a></li>
     <li><a href="../plugins/built-in-plugins.html#service-discovery-target-selector-service-discovery-" class="header">Service discovery target selector (service discovery)</a></li>
     <li><a href="../plugins/built-in-plugins.html#error-response-rewrite" class="header">Error response rewrite</a></li>
+    <li><a href="../plugins/built-in-plugins.html#expected-consumer" class="header">Expected consumer</a></li>
+    <li><a href="../plugins/built-in-plugins.html#external-request-validator" class="header">External request validator</a></li>
+    <li><a href="../plugins/built-in-plugins.html#generic-allowed-list" class="header">Generic allowed list</a></li>
+    <li><a href="../plugins/built-in-plugins.html#generic-block-list" class="header">Generic block list</a></li>
     <li><a href="../plugins/built-in-plugins.html#geolocation-endpoint" class="header">Geolocation endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#geolocation-header" class="header">Geolocation header</a></li>
     <li><a href="../plugins/built-in-plugins.html#allowed-users-only" class="header">Allowed users only</a></li>
@@ -2990,6 +4038,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#client-certificate-only" class="header">Client Certificate Only</a></li>
     <li><a href="../plugins/built-in-plugins.html#html-patcher" class="header">Html Patcher</a></li>
     <li><a href="../plugins/built-in-plugins.html#http-client-cache" class="header">HTTP Client Cache</a></li>
+    <li><a href="../plugins/built-in-plugins.html#globally-allowed-domain-names" class="header">Globally allowed domain names</a></li>
+    <li><a href="../plugins/built-in-plugins.html#globally-denied-domain-names" class="header">Globally denied domain names</a></li>
     <li><a href="../plugins/built-in-plugins.html#geolocation-details-extractor-using-ipstack-api-" class="header">Geolocation details extractor (using IpStack api)</a></li>
     <li><a href="../plugins/built-in-plugins.html#izanami-v1-canary-campaign" class="header">Izanami V1 Canary Campaign</a></li>
     <li><a href="../plugins/built-in-plugins.html#izanami-v1-apis-proxy" class="header">Izanami v1 APIs Proxy</a></li>
@@ -3009,29 +4059,49 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#oauth2-caller" class="header">OAuth2 caller</a></li>
     <li><a href="../plugins/built-in-plugins.html#oidc-access-token-as-apikey" class="header">OIDC access_token as apikey</a></li>
     <li><a href="../plugins/built-in-plugins.html#oidc-access-token-validator" class="header">OIDC access_token validator</a></li>
+    <li><a href="../plugins/built-in-plugins.html#oidc-access-token-authentication" class="header">OIDC access_token authentication</a></li>
     <li><a href="../plugins/built-in-plugins.html#oidc-headers" class="header">OIDC headers</a></li>
+    <li><a href="../plugins/built-in-plugins.html#otoroshi-aia-endpoint" class="header">Otoroshi AIA endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#otoroshi-challenge-token" class="header">Otoroshi challenge token</a></li>
     <li><a href="../plugins/built-in-plugins.html#otoroshi-headers-in" class="header">Otoroshi headers in</a></li>
+    <li><a href="../plugins/built-in-plugins.html#otoroshi-health-endpoint" class="header">Otoroshi Health endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#otoroshi-info-token" class="header">Otoroshi info. token</a></li>
+    <li><a href="../plugins/built-in-plugins.html#otoroshi-jwks-endpoint" class="header">Otoroshi JWKS endpoint</a></li>
+    <li><a href="../plugins/built-in-plugins.html#otoroshi-metrics-endpoint" class="header">Otoroshi Metrics endpoint</a></li>
+    <li><a href="../plugins/built-in-plugins.html#otoroshi-ocsp-responder-endpoint" class="header">Otoroshi OCSP Responder endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#override-host-header" class="header">Override host header</a></li>
+    <li><a href="../plugins/built-in-plugins.html#override-location-header" class="header">Override Location header</a></li>
+    <li><a href="../plugins/built-in-plugins.html#cdn-polyfill-io-detector" class="header">cdn.polyfill.io detector</a></li>
+    <li><a href="../plugins/built-in-plugins.html#cdn-polyfill-io-mitigation" class="header">cdn.polyfill.io mitigation</a></li>
     <li><a href="../plugins/built-in-plugins.html#public-private-paths" class="header">Public/Private paths</a></li>
     <li><a href="../plugins/built-in-plugins.html#query-param-transformer" class="header">Query param transformer</a></li>
     <li><a href="../plugins/built-in-plugins.html#rbac" class="header">RBAC</a></li>
     <li><a href="../plugins/built-in-plugins.html#read-only-requests" class="header">Read only requests</a></li>
     <li><a href="../plugins/built-in-plugins.html#redirection" class="header">Redirection</a></li>
+    <li><a href="../plugins/built-in-plugins.html#regex-request-body-rewriter" class="header">Regex request body rewriter</a></li>
+    <li><a href="../plugins/built-in-plugins.html#regex-response-body-rewriter" class="header">Regex response body rewriter</a></li>
+    <li><a href="../plugins/built-in-plugins.html#reject-headers-in-too-long" class="header">Reject headers in too long</a></li>
+    <li><a href="../plugins/built-in-plugins.html#reject-headers-out-too-long" class="header">Reject headers out too long</a></li>
+    <li><a href="../plugins/built-in-plugins.html#remove-cookies-in" class="header">Remove cookies in</a></li>
+    <li><a href="../plugins/built-in-plugins.html#remove-cookies-out" class="header">Remove cookies out</a></li>
     <li><a href="../plugins/built-in-plugins.html#remove-headers-in" class="header">Remove headers in</a></li>
     <li><a href="../plugins/built-in-plugins.html#remove-headers-out" class="header">Remove headers out</a></li>
+    <li><a href="../plugins/built-in-plugins.html#request-body-echo" class="header">Request body Echo</a></li>
     <li><a href="../plugins/built-in-plugins.html#robots" class="header">Robots</a></li>
     <li><a href="../plugins/built-in-plugins.html#routing-restrictions" class="header">Routing Restrictions</a></li>
     <li><a href="../plugins/built-in-plugins.html#s3-static-backend" class="header">S3 Static backend</a></li>
     <li><a href="../plugins/built-in-plugins.html#soap-action" class="header">SOAP action</a></li>
     <li><a href="../plugins/built-in-plugins.html#send-otoroshi-headers-back" class="header">Send otoroshi headers back</a></li>
+    <li><a href="../plugins/built-in-plugins.html#basic-auth" class="header">Basic Auth</a></li>
     <li><a href="../plugins/built-in-plugins.html#snow-monkey-chaos" class="header">Snow Monkey Chaos</a></li>
+    <li><a href="../plugins/built-in-plugins.html#http-static-asset" class="header">Http static asset</a></li>
     <li><a href="../plugins/built-in-plugins.html#static-backend" class="header">Static backend</a></li>
     <li><a href="../plugins/built-in-plugins.html#static-response" class="header">Static Response</a></li>
     <li><a href="../plugins/built-in-plugins.html#tailscale-select-target-by-name" class="header">Tailscale select target by name</a></li>
     <li><a href="../plugins/built-in-plugins.html#tcp-tunnel" class="header">TCP Tunnel</a></li>
+    <li><a href="../plugins/built-in-plugins.html#time-controlled-canary-mode" class="header">Time controlled Canary mode</a></li>
     <li><a href="../plugins/built-in-plugins.html#udp-tunnel" class="header">UDP Tunnel</a></li>
+    <li><a href="../plugins/built-in-plugins.html#user-profile-endpoint" class="header">User profile endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#w3c-trace-context" class="header">W3C Trace Context</a></li>
     <li><a href="../plugins/built-in-plugins.html#wasm-access-control" class="header">Wasm Access control</a></li>
     <li><a href="../plugins/built-in-plugins.html#wasm-backend" class="header">Wasm Backend</a></li>
@@ -3042,12 +4112,25 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#wasm-route-matcher" class="header">Wasm Route Matcher</a></li>
     <li><a href="../plugins/built-in-plugins.html#wasm-router" class="header">Wasm Router</a></li>
     <li><a href="../plugins/built-in-plugins.html#wasm-sink" class="header">Wasm Sink</a></li>
+    <li><a href="../plugins/built-in-plugins.html#wasm-websocket-transformer" class="header">Wasm Websocket transformer</a></li>
+    <li><a href="../plugins/built-in-plugins.html#websocket-content-validator-in" class="header">Websocket content validator in</a></li>
+    <li><a href="../plugins/built-in-plugins.html#websocket-json-format-validator" class="header">Websocket json format validator</a></li>
+    <li><a href="../plugins/built-in-plugins.html#websocket-size-validator" class="header">Websocket size validator</a></li>
+    <li><a href="../plugins/built-in-plugins.html#websocket-type-validator" class="header">Websocket type validator</a></li>
     <li><a href="../plugins/built-in-plugins.html#x-forwarded-headers" class="header">X-Forwarded-* headers</a></li>
     <li><a href="../plugins/built-in-plugins.html#request-body-xml-to-json" class="header">request body xml-to-json</a></li>
     <li><a href="../plugins/built-in-plugins.html#response-body-xml-to-json" class="header">response body xml-to-json</a></li>
+    <li><a href="../plugins/built-in-plugins.html#zip-bomb-backend" class="header">Zip Bomb backend</a></li>
     <li><a href="../plugins/built-in-plugins.html#zip-file-backend" class="header">Zip file backend</a></li>
+    <li><a href="../plugins/built-in-plugins.html#yes" class="header">Yes</a></li>
     <li><a href="../plugins/built-in-plugins.html#remote-tunnel-calls" class="header">Remote tunnel calls</a></li>
+    <li><a href="../plugins/built-in-plugins.html#workflow-access-control" class="header">Workflow Access control</a></li>
+    <li><a href="../plugins/built-in-plugins.html#workflow-backend" class="header">Workflow Backend</a></li>
+    <li><a href="../plugins/built-in-plugins.html#workflow-request-transformer" class="header">Workflow Request Transformer</a></li>
+    <li><a href="../plugins/built-in-plugins.html#workflow-response-transformer" class="header">Workflow Response Transformer</a></li>
+    <li><a href="../plugins/built-in-plugins.html#workflow-resume-backend" class="header">Workflow Resume Backend</a></li>
     <li><a href="../plugins/built-in-plugins.html#coraza-waf" class="header">Coraza WAF</a></li>
+    <li><a href="../plugins/built-in-plugins.html#coraza-waf-incoming-request-validator" class="header">Coraza WAF - Incoming Request Validator</a></li>
   </ul></li>
 </ul>
 </div>

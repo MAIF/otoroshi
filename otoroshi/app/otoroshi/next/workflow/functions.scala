@@ -9,15 +9,18 @@ import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.BodyHelper
 import otoroshi.utils.mailer.*
 import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.http.ResponseImplicits.*
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
 import play.api.libs.json.*
 import play.api.libs.ws.WSBodyWritables.*
+import play.api.libs.ws.WSAuthScheme
 
 import java.io.File
 import java.nio.file.Files
 import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 object WorkflowFunctionsInitializer {
   def initDefaults(): Unit = {
@@ -42,18 +45,194 @@ object WorkflowFunctionsInitializer {
     WorkflowFunction.registerFunction("core.send_mail", new SendMailFunction())
     WorkflowFunction.registerFunction("core.env_get", new EnvGetFunction())
     WorkflowFunction.registerFunction("core.config_read", new ConfigReadFunction())
+    WorkflowFunction.registerFunction("core.compute_resume_token", new ComputeResumeTokenFunction())
+    WorkflowFunction.registerFunction("core.memory_get", new MemoryGetFunction())
+    WorkflowFunction.registerFunction("core.memory_set", new MemorySetFunction())
+    WorkflowFunction.registerFunction("core.memory_del", new MemoryDelFunction())
+    WorkflowFunction.registerFunction("core.memory_rename", new MemoryRenameFunction())
+
+//    WorkflowFunction.registerFunction("integrations.jira", new JiraWorkflowFunction())
+  }
+}
+
+class MemoryRenameFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.memory_rename"
+  override def documentationDisplayName: String           = "Rename a value in the memory"
+  override def documentationIcon: String                  = "fas fa-layer-group"
+  override def documentationDescription: String           = "This function renames a value in the memory"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("old_name", "new_name"),
+      "properties" -> Json.obj(
+        "old_name" -> Json.obj("type" -> "string", "description" -> "The old name of the memory"),
+        "new_name" -> Json.obj("type" -> "string", "description" -> "The new name of the memory")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.memory_rename",
+      "args"     -> Json.obj(
+        "old_name" -> "my_memory",
+        "new_name" -> "my_new_memory"
+      )
+    )
+  )
+  override def callWithRun(
+      args: JsObject
+  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
+    val oldName = args.select("old_name").asString
+    val newName = args.select("new_name").asString
+    if (wfr.memory.contains(oldName)) {
+      wfr.memory.set(newName, wfr.memory.get(oldName).get)
+      wfr.memory.remove(oldName)
+    } 
+    JsNull.rightf    
+  } 
+}
+
+class MemoryDelFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.memory_del"
+  override def documentationDisplayName: String           = "Delete a value from the memory"
+  override def documentationIcon: String                  = "fas fa-layer-group"
+  override def documentationDescription: String           = "This function deletes a value from the memory"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("name"),
+      "properties" -> Json.obj(
+        "name" -> Json.obj("type" -> "string", "description" -> "The name of the memory")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.memory_del",
+      "args"     -> Json.obj(
+        "name" -> "my_memory",
+      )
+    )
+  )
+  override def callWithRun(
+      args: JsObject
+  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
+    val name = args.select("name").asString
+    wfr.memory.remove(name)
+    JsNull.rightf
+  }
+}
+
+class MemorySetFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.memory_set"
+  override def documentationDisplayName: String           = "Set a value in the memory"
+  override def documentationIcon: String                  = "fas fa-layer-group"
+  override def documentationDescription: String           = "This function sets a value in the memory"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("name", "value"),
+      "properties" -> Json.obj(
+        "name" -> Json.obj("type" -> "string", "description" -> "The name of the memory"),
+        "value" -> Json.obj("type" -> "any", "description" -> "The value to set in the memory")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.memory_set",
+      "args"     -> Json.obj(
+        "name" -> "my_memory",
+        "value" -> "my_value"
+      )
+    )
+  )
+  override def callWithRun(
+      args: JsObject
+  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
+    val name = args.select("name").asString
+    val value = args.select("value").asValue
+    wfr.memory.set(name, value)
+    JsNull.rightf
+  }
+}
+
+class MemoryGetFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.memory_get"
+  override def documentationDisplayName: String           = "Get a value from the memory"
+  override def documentationIcon: String                  = "fas fa-layer-group"
+  override def documentationDescription: String           = "This function gets a value from the memory"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("name", "path"),
+      "properties" -> Json.obj(
+        "name" -> Json.obj("type" -> "string", "description" -> "The name of the memory"),
+        "path" -> Json.obj("type" -> "string", "description" -> "The path of the memory")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.memory_get",
+      "args"     -> Json.obj(
+        "name" -> "my_memory",
+        "path" -> "my_path"
+      )
+    )
+  )
+  override def callWithRun(
+      args: JsObject
+  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
+    val name = args.select("name").asString
+    val path = args.select("path").asOptString
+    val value = wfr.memory.get(name) match {
+      case None                          => JsNull
+      case Some(value) if path.isEmpty   => value
+      case Some(value) if path.isDefined => value.at(path.get).asValue
+    }
+    value.rightf
+  }
+}
+
+class ComputeResumeTokenFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.compute_resume_token"
+  override def documentationDisplayName: String           = "Compute a resume token for the current workflow"
+  override def documentationIcon: String                  = "fas fa-cogs"
+  override def documentationDescription: String           = "This function computes a resume token for the current workflow"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj()
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.compute_resume_token",
+      "args"     -> Json.obj()
+    )
+  )
+
+  override def callWithRun(
+      args: JsObject
+  )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
+    PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env).json.rightf
   }
 }
 
 class ConfigReadFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.config_read"
+  override def documentationDisplayName: String           = "Read from Otoroshi config."
+  override def documentationIcon: String                  = "fas fa-cogs"
   override def documentationDescription: String           = "This function retrieves values from otoroshi config."
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
       "required"   -> Seq("path"),
       "properties" -> Json.obj(
-        "path"          -> Json.obj("type" -> "string", "description" -> "The path of the config. to read"),
+        "path" -> Json.obj("type" -> "string", "description" -> "The path of the config. to read")
       )
     )
   )
@@ -62,14 +241,14 @@ class ConfigReadFunction extends WorkflowFunction {
       "kind"     -> "call",
       "function" -> "core.config_read",
       "args"     -> Json.obj(
-        "path" -> "otoroshi.domain",
+        "path" -> "otoroshi.domain"
       )
     )
   )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val path = args.select("path").asOptString.getOrElse("foo")
     env.configurationJson.at(path).asOpt[JsValue].filterNot(_ == JsNull) match {
-      case None => WorkflowError.apply("no value found", None, None).leftf
+      case None        => WorkflowError.apply("no value found", None, None).leftf
       case Some(value) => value.rightf
     }
   }
@@ -77,13 +256,15 @@ class ConfigReadFunction extends WorkflowFunction {
 
 class EnvGetFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.env_get"
+  override def documentationDisplayName: String           = "Get environment variable"
+  override def documentationIcon: String                  = "fas fa-leaf"
   override def documentationDescription: String           = "This function retrieves values from environment variables"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
       "required"   -> Seq("name"),
       "properties" -> Json.obj(
-        "name"          -> Json.obj("type" -> "string", "description" -> "The environment variable name"),
+        "name" -> Json.obj("type" -> "string", "description" -> "The environment variable name")
       )
     )
   )
@@ -92,14 +273,14 @@ class EnvGetFunction extends WorkflowFunction {
       "kind"     -> "call",
       "function" -> "core.env_get",
       "args"     -> Json.obj(
-        "name" -> "OPENAI_APIKEY",
+        "name" -> "OPENAI_APIKEY"
       )
     )
   )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val name = args.select("name").asOptString.getOrElse("--")
     sys.env.get(name) match {
-      case None => WorkflowError.apply("no value found", None, None).leftf
+      case None        => WorkflowError.apply("no value found", None, None).leftf
       case Some(value) => value.json.rightf
     }
   }
@@ -107,6 +288,8 @@ class EnvGetFunction extends WorkflowFunction {
 
 class SendMailFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.send_mail"
+  override def documentationDisplayName: String           = "Send an email"
+  override def documentationIcon: String                  = "fas fa-envelope"
   override def documentationDescription: String           = "This function sends an email"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -142,9 +325,16 @@ class SendMailFunction extends WorkflowFunction {
     val config                 = args.select("mailer_config").asOpt[JsObject].getOrElse(Json.obj())
     val from: EmailLocation    = EmailLocation.format.reads(args.select("from").asValue).get
     val to: Seq[EmailLocation] =
-      args.select("from").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty)
+      args.select("to").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty)
     val subject                = args.select("subject").asString
     val html                   = args.select("html").asString
+
+    def sendMail(mailer: Mailer) = {
+      mailer.send(from, to, subject, html).map { _ =>
+        Json.obj("sent" -> true).right
+      }
+    }
+
     args.select("mailer_config").select("kind").asOptString.getOrElse("mailgun").toLowerCase match {
       case "mailgun"  =>
         val mailer = new MailgunMailer(
@@ -152,34 +342,41 @@ class SendMailFunction extends WorkflowFunction {
           env.datastores.globalConfigDataStore.latest(),
           MailgunSettings.format.reads(config).get
         )
-        mailer.send(from, to, subject, html).map { _ =>
-          Json.obj("sent" -> true).right
-        }
-      case "mailjet"  =>
+        sendMail(mailer)
+      }
+      case "mailjet"  => {
         val mailer = new MailjetMailer(
           env,
           env.datastores.globalConfigDataStore.latest(),
           MailjetSettings.format.reads(config).get
         )
-        mailer.send(from, to, subject, html).map { _ =>
-          Json.obj("sent" -> true).right
-        }
-      case "sendgrid" =>
+        sendMail(mailer)
+      }
+      case "sendgrid" => {
         val mailer = new SendgridMailer(
           env,
           env.datastores.globalConfigDataStore.latest(),
           SendgridSettings.format.reads(config).get
         )
-        mailer.send(from, to, subject, html).map { _ =>
-          Json.obj("sent" -> true).right
-        }
-      case v          => WorkflowError(s"mailer '$v' not supported", None, None).leftf
+        sendMail(mailer)
+      }
+      case "generic" => {
+        val mailer = new GenericMailer(
+          env,
+          env.datastores.globalConfigDataStore.latest(),
+          GenericMailerSettings.format.reads(config).get
+        )
+        sendMail(mailer)
+      }
+      case v          => WorkflowError(s"mailer '${v}' not supported", None, None).leftf
     }
   }
 }
 
 class StateGetAllFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.state_get_all"
+  override def documentationDisplayName: String           = "Get all resources from the state"
+  override def documentationIcon: String                  = "fas fa-layer-group"
   override def documentationDescription: String           = "This function gets all resources from the state"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -224,6 +421,8 @@ class StateGetAllFunction extends WorkflowFunction {
 
 class StateGetOneFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.state_get"
+  override def documentationDisplayName: String           = "Get a resource from the state"
+  override def documentationIcon: String                  = "fas fa-cube"
   override def documentationDescription: String           = "This function gets a resource from the state"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -270,6 +469,8 @@ class StateGetOneFunction extends WorkflowFunction {
 
 class FileDeleteFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.file_delete"
+  override def documentationDisplayName: String           = "Delete a file"
+  override def documentationIcon: String                  = "fas fa-trash"
   override def documentationDescription: String           = "This function deletes a file"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -303,6 +504,8 @@ class FileDeleteFunction extends WorkflowFunction {
 
 class FileReadFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.file_read"
+  override def documentationDisplayName: String           = "Read a file"
+  override def documentationIcon: String                  = "fas fa-file-alt"
   override def documentationDescription: String           = "This function reads a file"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -350,6 +553,8 @@ class FileReadFunction extends WorkflowFunction {
 
 class FileWriteFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.file_write"
+  override def documentationDisplayName: String           = "Write a file"
+  override def documentationIcon: String                  = "fas fa-file-signature"
   override def documentationDescription: String           = "This function writes a file"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -415,7 +620,19 @@ class FileWriteFunction extends WorkflowFunction {
 
 class EmitEventFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.emit_event"
+  override def documentationDisplayName: String           = "Emit an event"
+  override def documentationIcon: String                  = "fas fa-bullhorn"
   override def documentationDescription: String           = "This function emits an event"
+  override def documentationFormSchema: Option[JsObject] = Some(Json.obj(
+    "event" -> Json.obj(
+      "type"  -> "object",
+      "label" -> "Event",
+      "props" -> Json.obj(
+        "description" -> "The event to emit"
+      )
+    )
+  ))
+  
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -453,7 +670,27 @@ object LogFunction {
 class LogFunction extends WorkflowFunction {
 
   override def documentationName: String                  = "core.log"
+  override def documentationDisplayName: String           = "Log a message"
+  override def documentationIcon: String                  = "fas fa-clipboard-list"
   override def documentationDescription: String           = "This function writes whatever the user want to the otoroshi logs"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "message" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Message",
+        "props" -> Json.obj(
+          "description" -> "The message to log"
+        )
+      ),
+      "params"  -> Json.obj(
+        "type"  -> "array",
+        "props" -> Json.obj(
+          "description" -> "The parameters to log"
+        ),
+        "label" -> "Parameters"
+      )
+    )
+    .some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -485,7 +722,20 @@ class LogFunction extends WorkflowFunction {
 
 class HelloFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.hello"
+  override def documentationDisplayName: String           = "Hello function"
+  override def documentationIcon: String                  = "fas fa-hand-paper"
   override def documentationDescription: String           = "This function returns a hello message"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "name" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Name",
+        "props" -> Json.obj(
+          "description" -> "The name of the person to great"
+        )
+      )
+    )
+    .some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -514,7 +764,50 @@ class HelloFunction extends WorkflowFunction {
 
 class HttpClientFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.http_client"
+  override def documentationDisplayName: String           = "HTTP client"
+  override def documentationIcon: String                  = "fas fa-network-wired"
   override def documentationDescription: String           = "This function makes a HTTP request"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "url"         -> Json.obj("label" -> "URL", "type" -> "string", "props" -> Json.obj("description" -> "The URL to call")),
+      "method"      -> Json
+        .obj("label" -> "Nethod", "type" -> "string", "props" -> Json.obj("description" -> "The HTTP method to use")),
+      "headers"     -> Json
+        .obj("label" -> "Headers", "type" -> "object", "props" -> Json.obj("description" -> "The headers to send")),
+      "timeout"     -> Json.obj(
+        "label" -> "Timeout",
+        "type"  -> "number",
+        "props" -> Json.obj("description" -> "The timeout in milliseconds")
+      ),
+      "body"        -> Json
+        .obj("label" -> "Body", "type" -> "string", "props" -> Json.obj("description" -> "The body (string) to send")),
+      "body_str"    -> Json.obj(
+        "label" -> "String Body",
+        "type"  -> "string",
+        "props" -> Json.obj("description" -> "The body (string) to send")
+      ),
+      "body_json"   -> Json.obj(
+        "label" -> "JSON Body",
+        "type"  -> "object",
+        "props" -> Json.obj("description" -> "The body (json) to send")
+      ),
+      "body_bytes"  -> Json.obj(
+        "label" -> "Bytes Body",
+        "type"  -> "array",
+        "props" -> Json.obj("description" -> "The body (bytes array) to send")
+      ),
+      "body_base64" -> Json.obj(
+        "label" -> "Base64 body",
+        "type"  -> "string",
+        "props" -> Json.obj("description" -> "The body (base64) to send")
+      ),
+      "tls_config"  -> Json.obj(
+        "label" -> "TLS Configuration",
+        "type"  -> "object",
+        "props" -> Json.obj("description" -> "The TLS configuration")
+      )
+    )
+    .some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -572,7 +865,7 @@ class HttpClientFunction extends WorkflowFunction {
           .obj(
             "status"    -> resp.status,
             "headers"   -> resp.headers,
-            "cookies"   -> JsArray(resp.cookies.map(_.json)),
+            "cookies"   -> JsArray(resp.safeCookies(env).map(_.json)),
             "body_str"  -> body_str,
             "body_json" -> body_json
           )
@@ -587,6 +880,8 @@ class HttpClientFunction extends WorkflowFunction {
 class WorkflowCallFunction extends WorkflowFunction {
 
   override def documentationName: String                  = "core.workflow_call"
+  override def documentationDisplayName: String           = "Call a workflow"
+  override def documentationIcon: String                  = "fas fa-project-diagram"
   override def documentationDescription: String           = "This function calls another workflow stored in otoroshi"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
@@ -615,13 +910,13 @@ class WorkflowCallFunction extends WorkflowFunction {
       args: JsObject
   )(using env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
     val workflowId = args.select("workflow_id").asString
-    val input      = args.select("input").asObject
+    val input      = args.selectAsOptObject("input").getOrElse(Json.obj())
     val extension  = env.adminExtensions.extension[WorkflowAdminExtension].get
     extension.states.workflow(workflowId) match {
       case None           => Left(WorkflowError("workflow not found", Some(Json.obj("workflow_id" -> workflowId)), None)).vfuture
       case Some(workflow) =>
         val node = Node.from(workflow.config)
-        extension.engine.run(node, input, wfr.attrs).map {
+        extension.engine.run(workflowId, node, input, wfr.attrs, workflow.functions).map {
           case res if res.hasError => Left(res.error.get)
           case res                 => Right(res.returned.get)
         }
@@ -634,13 +929,34 @@ class SystemCallFunction extends WorkflowFunction {
   import scala.sys.process.*
 
   override def documentationName: String                  = "core.system_call"
+  override def documentationDisplayName: String           = "System call"
+  override def documentationIcon: String                  = "fas fa-terminal"
   override def documentationDescription: String           = "This function calls a system command"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "async" -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "async",
+        "props" -> Json.obj(
+          "description" -> "Do not block until the end of the process"
+        )
+      ),
+      "command" -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Command",
+        "props" -> Json.obj(
+          "description" -> "The command to execute"
+        )
+      )
+    )
+    .some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
       "required"   -> Seq("command"),
       "properties" -> Json.obj(
-        "command" -> Json.obj("type" -> "array", "description" -> "The command to execute")
+        "command" -> Json.obj("type" -> "array", "description" -> "The command to execute"),
+        "async" -> Json.obj("type" -> "bool", "description" -> "Run the command in async mode"),
       )
     )
   )
@@ -659,6 +975,7 @@ class SystemCallFunction extends WorkflowFunction {
       var stdout        = ""
       var stderr        = ""
       val command       = args.select("command").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val async         = args.select("async").asOpt[Boolean].getOrElse(false)
       val processLogger = ProcessLogger(
         out => {
           stdout = stdout + out
@@ -669,8 +986,13 @@ class SystemCallFunction extends WorkflowFunction {
           println(s"[stderr] $err")
         }
       )
-      val code          = command.!(processLogger)
-      Json.obj("stdout" -> stdout, "stderr" -> stderr, "code" -> code).rightf
+      if (async) {
+        command.run(processLogger)
+        Json.obj("running" -> true).rightf
+      } else {
+        val code = command.!(processLogger)
+        Json.obj("stdout" -> stdout, "stderr" -> stderr, "code" -> code).rightf
+      }
     } catch {
       case t: Throwable => Left(WorkflowError(t.getMessage, None, None)).vfuture
     }
@@ -679,7 +1001,34 @@ class SystemCallFunction extends WorkflowFunction {
 
 class WasmCallFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.wasm_call"
+  override def documentationDisplayName: String           = "Wasm call"
+  override def documentationIcon: String                  = "fas fa-cube"
   override def documentationDescription: String           = "This function calls a wasm function"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "wasm_plugin" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Wasm Plugin",
+        "props" -> Json.obj(
+          "description" -> "The wasm plugin to user"
+        )
+      ),
+      "function"    -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Function",
+        "props" -> Json.obj(
+          "description" -> "The function to call"
+        )
+      ),
+      "params"      -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Parameters",
+        "props" -> Json.obj(
+          "description" -> "The parameters to passed to the function"
+        )
+      )
+    )
+    .some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -708,6 +1057,7 @@ class WasmCallFunction extends WorkflowFunction {
     val wasmSource   = args.select("wasm_plugin").asString
     val functionName = args.select("function").asOptString.getOrElse("call")
     val params       = args.select("params").asValue.stringify
+
     env.wasmIntegration
       .wasmVmFor(
         WasmConfig(
@@ -740,7 +1090,20 @@ class WasmCallFunction extends WorkflowFunction {
 
 class StoreDelFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_del"
+  override def documentationDisplayName: String           = "Datastore delete"
+  override def documentationIcon: String                  = "fas fa-eraser"
   override def documentationDescription: String           = "This function deletes keys from the store"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "keys" -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Wasm Plugin",
+        "props" -> Json.obj(
+          "description" -> "The keys to delete"
+        )
+      )
+    )
+    .some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -769,7 +1132,20 @@ class StoreDelFunction extends WorkflowFunction {
 
 class StoreGetFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_get"
+  override def documentationDisplayName: String           = "Datastore get"
+  override def documentationIcon: String                  = "fas fa-download"
   override def documentationDescription: String           = "This function gets keys from the store"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "key" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Key",
+        "props" -> Json.obj(
+          "description" -> "The key to get"
+        )
+      )
+    )
+    .some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -802,7 +1178,34 @@ class StoreGetFunction extends WorkflowFunction {
 
 class StoreSetFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_set"
-  override def documentationDescription: String           = "This function sets a key in the store"
+  override def documentationDisplayName: String           = "Datastore set"
+  override def documentationIcon: String                  = "fas fa-upload"
+  override def documentationDescription: String           = "This function sets a key in the datastore"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "key"   -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Key",
+        "props" -> Json.obj(
+          "description" -> "The key to set"
+        )
+      ),
+      "value" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Value",
+        "props" -> Json.obj(
+          "description" -> "The value to set"
+        )
+      ),
+      "ttl"   -> Json.obj(
+        "type"  -> "number",
+        "label" -> "TTL",
+        "props" -> Json.obj(
+          "description" -> "The optional time to live in seconds"
+        )
+      )
+    )
+    .some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -837,7 +1240,20 @@ class StoreSetFunction extends WorkflowFunction {
 
 class StoreKeysFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_keys"
-  override def documentationDescription: String           = "This function gets keys from the store"
+  override def documentationDisplayName: String           = "Datastore list keys"
+  override def documentationIcon: String                  = "fas fa-key"
+  override def documentationDescription: String           = "This function lists keys from the datastore"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "pattern" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Pattern",
+        "props" -> Json.obj(
+          "description" -> "The pattern to match"
+        )
+      )
+    )
+    .some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -866,7 +1282,20 @@ class StoreKeysFunction extends WorkflowFunction {
 
 class StoreMgetFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_mget"
-  override def documentationDescription: String           = "This function gets multiple keys from the store"
+  override def documentationDisplayName: String           = "Datastore get multiple keys"
+  override def documentationIcon: String                  = "fas fa-boxes"
+  override def documentationDescription: String           = "This function gets multiple keys from the datastore"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "keys" -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Keys",
+        "props" -> Json.obj(
+          "description" -> "The keys to get"
+        )
+      )
+    )
+    .some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -895,7 +1324,20 @@ class StoreMgetFunction extends WorkflowFunction {
 
 class StoreMatchFunction extends WorkflowFunction {
   override def documentationName: String                  = "core.store_match"
-  override def documentationDescription: String           = "This function gets keys from the store matching a pattern"
+  override def documentationDisplayName: String           = "Datastore matching keys"
+  override def documentationIcon: String                  = "fas fa-search"
+  override def documentationDescription: String           = "This function gets keys from the datastore matching a pattern"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "pattern" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Pattern",
+        "props" -> Json.obj(
+          "description" -> "The pattern to match"
+        )
+      )
+    )
+    .some
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -921,6 +1363,574 @@ class StoreMatchFunction extends WorkflowFunction {
     }
   }
 }
+
+//class JiraWorkflowFunction extends WorkflowFunction {
+//
+//  override def documentationName: String = "integrations.jira"
+//  override def documentationDisplayName: String = "Jira Software"
+//  override def documentationIcon: String = "fas fa-ticket-alt"
+//  override def documentationDescription: String = "This function interacts with Jira Software API to manage issues, attachments, comments and users"
+//
+//  override def documentationFormSchema: Option[JsObject] = Json.obj(
+//    "jira_url" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Jira URL",
+//      "props" -> Json.obj(
+//        "description" -> "Base URL of your Jira instance (e.g., https://your-domain.atlassian.net)"
+//      )
+//    ),
+//    "username" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Username",
+//      "props" -> Json.obj(
+//        "description" -> "Jira username or email"
+//      )
+//    ),
+//    "token" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "API Token",
+//      "props" -> Json.obj(
+//        "description" -> "Jira API token or password",
+//        "type" -> "password"
+//      )
+//    ),
+//    "resource" -> Json.obj(
+//      "type" -> "select",
+//      "label" -> "Resource",
+//      "props" -> Json.obj(
+//        "options" -> Json.arr(
+//          Json.obj("label" -> "Issue", "value" -> "issue"),
+//          Json.obj("label" -> "Issue Attachment", "value" -> "issueAttachment"),
+//          Json.obj("label" -> "Issue Comment", "value" -> "issueComment"),
+//          Json.obj("label" -> "User", "value" -> "user")
+//        )
+//      )
+//    ),
+//    "operation" -> Json.obj(
+//      "type" -> "select",
+//      "label" -> "Operation",
+//      "props" -> Json.obj(
+//        "options" -> Json.arr(
+//          Json.obj("label" -> "Create", "value" -> "create"),
+//          Json.obj("label" -> "Update", "value" -> "update"),
+//          Json.obj("label" -> "Get", "value" -> "get"),
+//          Json.obj("label" -> "Get All", "value" -> "getAll"),
+//          Json.obj("label" -> "Delete", "value" -> "delete")
+//        )
+//      )
+//    ),
+//    "project_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Project ID",
+//      "props" -> Json.obj(
+//        "description" -> "Project ID (for issue creation)"
+//      )
+//    ),
+//    "issue_type_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Issue Type ID",
+//      "props" -> Json.obj(
+//        "description" -> "Issue type ID"
+//      )
+//    ),
+//    "issue_key" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Issue Key",
+//      "props" -> Json.obj(
+//        "description" -> "Issue key (e.g., PROJ-123)"
+//      )
+//    ),
+//    "summary" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Summary",
+//      "props" -> Json.obj(
+//        "description" -> "Issue summary"
+//      )
+//    ),
+//    "description" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Description",
+//      "props" -> Json.obj(
+//        "description" -> "Issue description"
+//      )
+//    ),
+//    "assignee_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Assignee ID",
+//      "props" -> Json.obj(
+//        "description" -> "Assignee account ID"
+//      )
+//    ),
+//    "priority_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Priority ID",
+//      "props" -> Json.obj(
+//        "description" -> "Priority ID"
+//      )
+//    ),
+//    "labels" -> Json.obj(
+//      "type" -> "array",
+//      "label" -> "Labels",
+//      "props" -> Json.obj(
+//        "description" -> "Issue labels"
+//      )
+//    ),
+//    "comment" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Comment",
+//      "props" -> Json.obj(
+//        "description" -> "Comment text"
+//      )
+//    ),
+//    "comment_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Comment ID",
+//      "props" -> Json.obj(
+//        "description" -> "Comment ID"
+//      )
+//    ),
+//    "attachment_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Attachment ID",
+//      "props" -> Json.obj(
+//        "description" -> "Attachment ID"
+//      )
+//    ),
+//    "account_id" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Account ID",
+//      "props" -> Json.obj(
+//        "description" -> "User account ID"
+//      )
+//    ),
+//    "email_address" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Email Address",
+//      "props" -> Json.obj(
+//        "description" -> "User email address"
+//      )
+//    ),
+//    "display_name" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "Display Name",
+//      "props" -> Json.obj(
+//        "description" -> "User display name"
+//      )
+//    ),
+//    "jql" -> Json.obj(
+//      "type" -> "string",
+//      "label" -> "JQL Query",
+//      "props" -> Json.obj(
+//        "description" -> "JQL query for issue search"
+//      )
+//    ),
+//    "max_results" -> Json.obj(
+//      "type" -> "number",
+//      "label" -> "Max Results",
+//      "props" -> Json.obj(
+//        "description" -> "Maximum results to return"
+//      ),
+//      "default" -> 50
+//    )
+//  ).some
+//
+//  override def documentationInputSchema: Option[JsObject] = Some(
+//    Json.obj(
+//      "type" -> "object",
+//      "required" -> Seq("jira_url", "username", "token", "resource", "operation"),
+//      "properties" -> Json.obj(
+//        "jira_url" -> Json.obj("type" -> "string", "description" -> "Base URL of Jira instance"),
+//        "username" -> Json.obj("type" -> "string", "description" -> "Jira username"),
+//        "token" -> Json.obj("type" -> "string", "description" -> "API token"),
+//        "resource" -> Json.obj("type" -> "string", "enum" -> Json.arr("issue", "issueAttachment", "issueComment", "user")),
+//        "operation" -> Json.obj("type" -> "string", "enum" -> Json.arr("create", "update", "get", "getAll", "delete")),
+//        "project_id" -> Json.obj("type" -> "string", "description" -> "Project ID (for issue creation)"),
+//        "issue_type_id" -> Json.obj("type" -> "string", "description" -> "Issue type ID"),
+//        "issue_key" -> Json.obj("type" -> "string", "description" -> "Issue key (e.g., PROJ-123)"),
+//        "summary" -> Json.obj("type" -> "string", "description" -> "Issue summary"),
+//        "description" -> Json.obj("type" -> "string", "description" -> "Issue description"),
+//        "assignee_id" -> Json.obj("type" -> "string", "description" -> "Assignee account ID"),
+//        "priority_id" -> Json.obj("type" -> "string", "description" -> "Priority ID"),
+//        "labels" -> Json.obj("type" -> "array", "items" -> Json.obj("type" -> "string"), "description" -> "Issue labels"),
+//        "comment" -> Json.obj("type" -> "string", "description" -> "Comment text"),
+//        "comment_id" -> Json.obj("type" -> "string", "description" -> "Comment ID"),
+//        "attachment_id" -> Json.obj("type" -> "string", "description" -> "Attachment ID"),
+//        "account_id" -> Json.obj("type" -> "string", "description" -> "User account ID"),
+//        "email_address" -> Json.obj("type" -> "string", "description" -> "User email address"),
+//        "display_name" -> Json.obj("type" -> "string", "description" -> "User display name"),
+//        "jql" -> Json.obj("type" -> "string", "description" -> "JQL query for issue search"),
+//        "max_results" -> Json.obj("type" -> "number", "description" -> "Maximum results to return", "default" -> 50)
+//      )
+//    )
+//  )
+//
+//  override def documentationExample: Option[JsObject] = Some(
+//    Json.obj(
+//      "kind" -> "call",
+//      "function" -> "integrations.jira",
+//      "args" -> Json.obj(
+//        "jira_url" -> "https://your-domain.atlassian.net",
+//        "username" -> "user@example.com",
+//        "token" -> "your-api-token",
+//        "resource" -> "issue",
+//        "operation" -> "create",
+//        "project_id" -> "10001",
+//        "issue_type_id" -> "10004",
+//        "summary" -> "Test issue from Otoroshi",
+//        "description" -> "This is a test issue created via Otoroshi workflow"
+//      )
+//    )
+//  )
+//
+//  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+//
+//    val jiraUrl = args.select("jira_url").asString
+//    val username = args.select("username").asString
+//    val token = args.select("token").asString
+//    val resource = args.select("resource").asString
+//    val operation = args.select("operation").asString
+//
+//    if (jiraUrl.isEmpty || username.isEmpty || token.isEmpty) {
+//      return Future.successful(Left(WorkflowError(
+//        "Missing required Jira credentials",
+//        Some(Json.obj("resource" -> resource, "operation" -> operation)),
+//        None
+//      )))
+//    }
+//
+//    val baseUrl = if (jiraUrl.endsWith("/")) jiraUrl.dropRight(1) else jiraUrl
+//    val wsClient = env.Ws
+//
+//    def makeRequest(endpoint: String, method: String = "GET", body: Option[JsValue] = None): Future[Either[WorkflowError, JsValue]] = {
+//      val url = s"$baseUrl$endpoint"
+//      val request = wsClient.url(url)
+//        .withAuth(username, token, WSAuthScheme.BASIC)
+//        .withHttpHeaders("Content-Type" -> "application/json", "Accept" -> "application/json")
+//
+//      val finalRequest = method.toUpperCase match {
+//        case "GET" => request.get()
+//        case "POST" => request.post(body.getOrElse(Json.obj()))
+//        case "PUT" => request.put(body.getOrElse(Json.obj()))
+//        case "DELETE" => request.delete()
+//        case _ => request.get()
+//      }
+//
+//      finalRequest.map { response =>
+//        if (response.status >= 200 && response.status < 300) {
+//          Try(response.json) match {
+//            case Success(json) => Right(json)
+//            case Failure(_) => Right(Json.obj("success" -> true, "status" -> response.status))
+//          }
+//        } else {
+//          Left(WorkflowError(
+//            s"Jira API error: ${response.status} - ${response.body}",
+//            Some(Json.obj("status" -> response.status, "url" -> url)),
+//            None
+//          ))
+//        }
+//      }.recover {
+//        case ex: Exception => Left(WorkflowError(
+//          s"Request failed: ${ex.getMessage}",
+//          Some(Json.obj("url" -> url, "method" -> method, "exception" -> ex.getClass.getSimpleName)),
+//          None
+//        ))
+//      }
+//    }
+//
+//    (resource, operation) match {
+//
+//      // Issue operations
+//      case ("issue", "create") =>
+//        val projectId = args.select("project_id").asString
+//        val issueTypeId = args.select("issue_type_id").asString
+//        val summary = args.select("summary").asString
+//
+//        if (projectId.isEmpty || issueTypeId.isEmpty || summary.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for issue creation",
+//            Some(Json.obj("required" -> Json.arr("project_id", "issue_type_id", "summary"))),
+//            None
+//          )))
+//        } else {
+//          val fields = Json.obj(
+//            "project" -> Json.obj("key" -> projectId),
+//            "issuetype" -> Json.obj("id" -> issueTypeId),
+//            "summary" -> summary
+//          ) ++ {
+//            val description = args.select("description")
+//              .asOpt[String]
+//              .map(d => Json.obj("description" -> d))
+//              .getOrElse(Json.obj())
+//
+//            val assigneeId = args.select("assignee_id")
+//              .asOpt[String]
+//              .map(a => Json.obj("assignee" -> Json.obj("id" -> a)))
+//              .getOrElse(Json.obj())
+////            val priorityId = args.select("priority_id")
+////              .asOpt[String]
+////              .map(p => Json.obj("priority" -> Json.obj("id" -> p)))
+////              .getOrElse(Json.obj())
+//            val labels = args.select("labels")
+//              .asOpt[JsArray]
+//              .map(l => Json.obj("labels" -> l))
+//              .getOrElse(Json.obj())
+//
+//            description ++ assigneeId ++ labels
+//          }
+//
+//          val body = Json.obj("fields" -> fields)
+//          println(body)
+//          makeRequest("/rest/api/2/issue", "POST", Some(body))
+//        }
+//
+//      case ("issue", "update") =>
+//        val issueKey = args.select("issue_key").asString
+//        if (issueKey.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for issue update",
+//            Some(Json.obj("required" -> "issue_key", "operation" -> "update")),
+//            None
+//          )))
+//        } else {
+//          val fields = Json.obj() ++ {
+//            val updates = Json.obj()
+//            args.select("summary").asOpt[String].foreach(s => updates.asInstanceOf[JsObject] + ("summary" -> JsString(s)))
+//            args.select("description").asOpt[String].foreach(d => updates.asInstanceOf[JsObject] + ("description" -> JsString(d)))
+//            args.select("assignee_id").asOpt[String].foreach(a => updates.asInstanceOf[JsObject] + ("assignee" -> Json.obj("id" -> a)))
+//            args.select("priority_id").asOpt[String].foreach(p => updates.asInstanceOf[JsObject] + ("priority" -> Json.obj("id" -> p)))
+//            args.select("labels").asOpt[JsArray].foreach(l => updates.asInstanceOf[JsObject] + ("labels" -> l))
+//            updates
+//          }
+//
+//          val body = Json.obj("fields" -> fields)
+//          makeRequest(s"/rest/api/2/issue/$issueKey", "PUT", Some(body))
+//        }
+//
+//      case ("issue", "get") =>
+//        val issueKey = args.select("issue_key").asString
+//        if (issueKey.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for issue retrieval",
+//            Some(Json.obj("required" -> "issue_key", "operation" -> "get")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/2/issue/$issueKey")
+//        }
+//
+//      case ("issue", "getAll") =>
+//        val jql = args.select("jql").asOpt[String].getOrElse("created >= \"1970-01-01\"")
+//        val maxResults = args.select("max_results").asOpt[Int].getOrElse(50)
+//        val body = Json.obj(
+//          "jql" -> jql,
+//          "maxResults" -> maxResults,
+//          "fields" -> Json.arr("*navigable")
+//        )
+//        makeRequest("/rest/api/2/search", "POST", Some(body))
+//
+//      case ("issue", "delete") =>
+//        val issueKey = args.select("issue_key").asString
+//        if (issueKey.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for issue deletion",
+//            Some(Json.obj("required" -> "issue_key", "operation" -> "delete")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/2/issue/$issueKey", "DELETE")
+//        }
+//
+//      // Issue Comment operations
+//      case ("issueComment", "create") =>
+//        val issueKey = args.select("issue_key").asString
+//        val comment = args.select("comment").asString
+//        if (issueKey.isEmpty || comment.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for comment creation",
+//            Some(Json.obj("required" -> Json.arr("issue_key", "comment"))),
+//            None
+//          )))
+//        } else {
+//          val body = Json.obj(
+//            "body" -> Json.obj(
+//              "type" -> "doc",
+//              "version" -> 1,
+//              "content" -> Json.arr(
+//                Json.obj(
+//                  "type" -> "paragraph",
+//                  "content" -> Json.arr(
+//                    Json.obj("type" -> "text", "text" -> comment)
+//                  )
+//                )
+//              )
+//            )
+//          )
+//          makeRequest(s"/rest/api/3/issue/$issueKey/comment", "POST", Some(body))
+//        }
+//
+//      case ("issueComment", "get") =>
+//        val issueKey = args.select("issue_key").asString
+//        val commentId = args.select("comment_id").asString
+//        if (issueKey.isEmpty || commentId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for comment retrieval",
+//            Some(Json.obj("required" -> Json.arr("issue_key", "comment_id"))),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/issue/$issueKey/comment/$commentId")
+//        }
+//
+//      case ("issueComment", "getAll") =>
+//        val issueKey = args.select("issue_key").asString
+//        if (issueKey.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for comment retrieval",
+//            Some(Json.obj("required" -> "issue_key")),
+//            None
+//          )))
+//        } else {
+//          val maxResults = args.select("max_results").asOpt[Int].getOrElse(50)
+//          makeRequest(s"/rest/api/3/issue/$issueKey/comment?maxResults=$maxResults")
+//        }
+//
+//      case ("issueComment", "update") =>
+//        val issueKey = args.select("issue_key").asString
+//        val commentId = args.select("comment_id").asString
+//        val comment = args.select("comment").asString
+//        if (issueKey.isEmpty || commentId.isEmpty || comment.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for comment update",
+//            Some(Json.obj("required" -> Json.arr("issue_key", "comment_id", "comment"))),
+//            None
+//          )))
+//        } else {
+//          val body = Json.obj(
+//            "body" -> Json.obj(
+//              "type" -> "doc",
+//              "version" -> 1,
+//              "content" -> Json.arr(
+//                Json.obj(
+//                  "type" -> "paragraph",
+//                  "content" -> Json.arr(
+//                    Json.obj("type" -> "text", "text" -> comment)
+//                  )
+//                )
+//              )
+//            )
+//          )
+//          makeRequest(s"/rest/api/3/issue/$issueKey/comment/$commentId", "PUT", Some(body))
+//        }
+//
+//      case ("issueComment", "delete") =>
+//        val issueKey = args.select("issue_key").asString
+//        val commentId = args.select("comment_id").asString
+//        if (issueKey.isEmpty || commentId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for comment deletion",
+//            Some(Json.obj("required" -> Json.arr("issue_key", "comment_id"))),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/issue/$issueKey/comment/$commentId", "DELETE")
+//        }
+//
+//      // User operations
+//      case ("user", "get") =>
+//        val accountId = args.select("account_id").asString
+//        if (accountId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for user retrieval",
+//            Some(Json.obj("required" -> "account_id")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/user?accountId=$accountId")
+//        }
+//
+//      case ("user", "create") =>
+//        val emailAddress = args.select("email_address").asString
+//        val displayName = args.select("display_name").asString
+//        if (emailAddress.isEmpty || displayName.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required fields for user creation",
+//            Some(Json.obj("required" -> Json.arr("email_address", "display_name"))),
+//            None
+//          )))
+//        } else {
+//          val body = Json.obj(
+//            "emailAddress" -> emailAddress,
+//            "displayName" -> displayName
+//          )
+//          makeRequest("/rest/api/3/user", "POST", Some(body))
+//        }
+//
+//      case ("user", "delete") =>
+//        val accountId = args.select("account_id").asString
+//        if (accountId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for user deletion",
+//            Some(Json.obj("required" -> "account_id")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/user?accountId=$accountId", "DELETE")
+//        }
+//
+//      // Issue Attachment operations
+//      case ("issueAttachment", "get") =>
+//        val attachmentId = args.select("attachment_id").asString
+//        if (attachmentId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for attachment retrieval",
+//            Some(Json.obj("required" -> "attachment_id")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/attachment/$attachmentId")
+//        }
+//
+//      case ("issueAttachment", "getAll") =>
+//        val issueKey = args.select("issue_key").asString
+//        if (issueKey.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for attachment retrieval",
+//            Some(Json.obj("required" -> "issue_key")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/2/issue/$issueKey?fields=attachment").map {
+//            case Right(response) =>
+//              (response \ "fields" \ "attachment").asOpt[JsArray] match {
+//                case Some(attachments) => Right(attachments)
+//                case None => Right(Json.arr())
+//              }
+//            case Left(error) => Left(error)
+//          }
+//        }
+//
+//      case ("issueAttachment", "delete") =>
+//        val attachmentId = args.select("attachment_id").asString
+//        if (attachmentId.isEmpty) {
+//          Future.successful(Left(WorkflowError(
+//            "Missing required field for attachment deletion",
+//            Some(Json.obj("required" -> "attachment_id")),
+//            None
+//          )))
+//        } else {
+//          makeRequest(s"/rest/api/3/attachment/$attachmentId", "DELETE")
+//        }
+//
+//      case _ =>
+//        Future.successful(Left(WorkflowError(
+//          s"Unsupported resource or operation",
+//          Some(Json.obj("resource" -> resource, "operation" -> operation)),
+//          None
+//        )))
+//    }
+//  }
+//}
+
 
 case class WorkflowEmitEvent(
     payload: JsObject,
