@@ -21,9 +21,9 @@ export const ReturnedNode = {
 
         return (
           <Row title="Returned operator (optional)">
-            <NgJsonRenderer
-              label="Value"
-              height="100%"
+            <NgAnyRenderer
+              // height="100%"
+              ngOptions={{ spread: true }}
               value={value}
               onChange={e => {
                 console.log('changed', e)
@@ -48,20 +48,20 @@ export const ReturnedNode = {
           overflow: 'hidden',
         }}
       >
-        <NgJsonRenderer
+        <NgAnyRenderer
           ngOptions={{ spread: true }}
-          rawSchema={{
-            props: {
-              showGutter: false,
-              ace_config: {
-                fontSize: 8,
-                readOnly: true,
-              },
-              editorOnly: true,
-              height: '100%',
-            },
+          options={{
+            fontSize: 8,
+            readOnly: true,
+            minimap: { enabled: false },
+            lineNumbers: "off",
+            glyphMargin: false,
+            folding: false,
+            lineDecorationsWidth: 0,
+            lineNumbersMinChars: 0
           }}
           value={props.data?.content?.returned}
+          onChange={() => {}}
         />
       </div>
     );

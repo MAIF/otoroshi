@@ -1412,7 +1412,7 @@ export function WorkflowsDesigner(props) {
 
   if (nodes.length === 0) return null;
 
-  console.log(nodes)
+  // console.log(nodes)
 
   return (
     <div className="workflow"

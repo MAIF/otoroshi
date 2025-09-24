@@ -4,6 +4,7 @@ import { nodesCatalogSignal } from './models/Functions';
 import { DesignerActions } from './DesignerActions';
 import ReportInformation from './ReportInformation';
 import moment from 'moment'
+import { NgAnyRenderer } from '../../components/nginputs';
 
 
 const Tab = ({ onClick, name, selected, isError }) => {
@@ -55,7 +56,7 @@ function Terminal({
             setLog(log => [event, ...log])
 
             const event_id = event?.data?.node?.id;
-            console.log(`[${event.data.node.kind}]`, event_id);
+            // console.log(`[${event.data.node.kind}]`, event_id);
 
             if ((event?.data?.message || '').toLowerCase().startsWith("starting")) {
                 if (event_id) {
@@ -81,7 +82,6 @@ function Terminal({
             }
             handleReportChange(event.data);
         } else if (event.kind === 'debugger-state') {
-            console.log(event)
             setMemory(event.data.memory)
         } else {
             console.warn('Unknown kind:', event.kind);
@@ -123,7 +123,7 @@ function Terminal({
             wsRef.current = new WebSocket(`${scheme}://${location.host}/extensions/workflows/_debugger`);
             wsRef.current.onmessage = (message) => {
                 const json = JSON.parse(message.data);
-                console.log('received message 1', json);
+                // console.log('received message 1', json);
 
                 eventCallback(json);
                 if (json.kind === 'result') {
@@ -237,7 +237,16 @@ function Terminal({
         {tabContentVisible && <>
             {tab === 'input' && <InputTab
                 input={input}
-                setInput={setInput}
+                setInput={newInput => {
+                    try {
+                        nodesCatalogSignal.value.updateWorkflow({
+                            test_payload: JSON.parse(newInput)
+                        })
+                        setInput(JSON.parse(newInput))
+                    } catch (err) {
+
+                    }
+                }}
                 terminalSize={terminalSize} />}
 
             {tab === 'report' && <ReportTab
@@ -268,7 +277,6 @@ const LogTab = ({ log }) => {
         </div>
         {log.map((item, i) => {
             const itemOpened = opened[item.data.node.id]
-            console.log(item.data)
 
             return <div key={`debug${i}`}
                 className='terminal-log-header terminal-log-item'
@@ -347,7 +355,10 @@ const MemoryTab = ({ memory, setMemory }) => {
 }
 
 const InputTab = ({ input, setInput, terminalSize }) => {
-    return <CodeInput
+    return <NgAnyRenderer
+        ngOptions={{
+            spread: true
+        }}
         height={`calc(${(terminalSize) * 100}vh)`}
         value={input}
         onChange={setInput}

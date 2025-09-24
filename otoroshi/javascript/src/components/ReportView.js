@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { firstLetterUppercase } from '../util';
-import { NgCodeRenderer, NgSelectRenderer } from './nginputs';
+import { NgAnyRenderer, NgCodeRenderer, NgSelectRenderer } from './nginputs';
 
 const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(0);
 const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
@@ -25,7 +25,8 @@ export const ReportView = ({
   const [informations, setInformations] = useState({});
 
   useEffect(() => {
-    setSelectedPlugin('error')
+    if (error)
+      setSelectedPlugin('error')
   }, [error])
 
   useEffect(() => {
@@ -88,8 +89,6 @@ export const ReportView = ({
       else return roundNsTo(value);
     }
   }
-
-  console.log(selectedPlugin)
 
   return (
     <div className="d-flex border" style={{ flex: 1 }}>
@@ -253,19 +252,8 @@ export const ReportView = ({
             })}
         </div>
       </div>
-      <NgCodeRenderer
+      <NgAnyRenderer
         ngOptions={{ spread: true }}
-        rawSchema={{
-          props: {
-            ace_config: {
-              maxLines: 35,
-              fontSize: 14,
-            },
-            editorOnly: true,
-            height: '100%',
-            mode: 'json',
-          },
-        }}
         onChange={() => { }}
         value={JSON.stringify(
           selectedPlugin === 'error' ? error :

@@ -4,7 +4,7 @@ import { ReportView } from '../../components/ReportView';
 export default function ReportInformation(props) {
   const [unit, setUnit] = useState('ms');
 
-  console.log(props.report)
+  // console.log(props.report)
   let report = props.report
 
   const { starting, ending } = report.run.log.reduce((acc, log) => {
@@ -21,10 +21,6 @@ export default function ReportInformation(props) {
       const id = matches[1];
 
       const stop = ending.find((l) => l.node.id === id)?.timestamp;
-
-      if (!stop) {
-        console.log(log.node)
-      }
 
       return [
         ...acc,

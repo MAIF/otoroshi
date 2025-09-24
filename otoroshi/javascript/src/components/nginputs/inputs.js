@@ -9,7 +9,7 @@ import { ReactSelectOverride } from '../inputs/ReactSelectOverride';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { v4 as uuid } from 'uuid';
-import MonacoEditor from 'react-monaco-editor';
+import MonacoEditor from '@monaco-editor/react';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -323,37 +323,37 @@ export class NgCodeRenderer extends Component {
 }
 
 export class NgAnyRenderer extends Component {
-  editorDidMount(editor, monaco) {
-    // Ensure the editor has proper focus
-    editor.focus();
-
-    // Add keyboard event listeners if needed
-    editor.onKeyDown((e) => {
-      // Allow space key explicitly
-      if (e.keyCode === 10) { // Space key code in Monaco
-        e.stopPropagation();
-      }
-    });
-  };
   render() {
+    const schema = this.props.schema || {};
+    const props = schema.props || this.props || {};
+
     const options = {
       selectOnLineNumbers: true,
-      // ...this.props.options || {}
+      ...this.props.options || {},
+      ...props.config || {},
     };
+
+    let code = props.value
+
+    if (typeof code === 'object' && code !== null) {
+      code = JSON.stringify(code, null, 2);
+    }
+
+    if (!isNaN(code)) code = code + '';
+
     return <LabelAndInput {...this.props}>
       <MonacoEditor
-        height={this.props.height || '300px'}
+      font
+        height={props.height || '300px'}
         width="100%"
-        language="json"
-        theme="vs-dark"
+        theme='vs-dark'
+        defaultLanguage={props.language || "json"}
         {...this.props.rawSchema?.props}
-        value={this.props.value}
+        value={code}
         options={options}
         onChange={newValue => {
-          console.log('new value', newValue)
           this.props.onChange(newValue)
         }}
-        editorDidMount={this.editorDidMount}
       />
     </LabelAndInput>
   }
