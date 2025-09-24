@@ -58,7 +58,9 @@ export const WorkflowSidebar = ({ params }) => {
 
   const { openedSidebar } = useContext(SidebarContext);
 
-  if (location.pathname.endsWith('/new') && !location.pathname.endsWith('functions/new'))
+  if (window.location.pathname === '/bo/dashboard/extensions/workflows/workflows' ||
+    !window.location.pathname.includes('workflows/') ||
+    (location.pathname.endsWith('/new') && !location.pathname.endsWith('functions/new')))
     return null;
 
   return (
@@ -72,7 +74,7 @@ export const WorkflowSidebar = ({ params }) => {
         {openedSidebar && <p className="sidebar-title">Shortcuts</p>}
         <li className={`nav-item mb-3 ${openedSidebar ? 'nav-item--open' : ''}`} key="Workflows">
           <Link
-            to={`/extensions/workflows`}
+            to={`/extensions/workflows/workflows`}
             {...createTooltip(`All your workflows`)}
             className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-3' : ''} m-0`}
           >
