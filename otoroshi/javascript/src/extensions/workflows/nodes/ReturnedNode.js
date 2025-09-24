@@ -22,7 +22,6 @@ export const ReturnedNode = {
         return (
           <Row title="Returned operator (optional)">
             <NgAnyRenderer
-              // height="100%"
               ngOptions={{ spread: true }}
               value={value}
               onChange={e => {
@@ -47,21 +46,15 @@ export const ReturnedNode = {
           borderBottomRightRadius: '.75rem',
           overflow: 'hidden',
         }}
-      >
+        className='d-flex'>
         <NgAnyRenderer
           ngOptions={{ spread: true }}
           options={{
             fontSize: 8,
             readOnly: true,
-            minimap: { enabled: false },
-            lineNumbers: "off",
-            glyphMargin: false,
-            folding: false,
-            lineDecorationsWidth: 0,
-            lineNumbersMinChars: 0
           }}
           value={props.data?.content?.returned}
-          onChange={() => {}}
+          onChange={() => { }}
         />
       </div>
     );

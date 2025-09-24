@@ -149,7 +149,7 @@ function Container(props) {
         workflow.isLoading ||
         documentation.isLoading ||
         workflows.isLoading ||
-        nodesCatalogSignal.value.categories.length === 0 || 
+        nodesCatalogSignal.value.categories.length === 0 ||
         !nodesCatalogSignal.value.rawWorkflow
       }
     >

@@ -328,7 +328,14 @@ export class NgAnyRenderer extends Component {
     const props = schema.props || this.props || {};
 
     const options = {
+      automaticLayout: true,
       selectOnLineNumbers: true,
+      minimap: { enabled: false },
+      lineNumbers: "off",
+      glyphMargin: false,
+      folding: false,
+      lineDecorationsWidth: 0,
+      lineNumbersMinChars: 0,
       ...this.props.options || {},
       ...props.config || {},
     };
@@ -343,8 +350,7 @@ export class NgAnyRenderer extends Component {
 
     return <LabelAndInput {...this.props}>
       <MonacoEditor
-      font
-        height={props.height || '300px'}
+        // height={props.height}
         width="100%"
         theme='vs-dark'
         defaultLanguage={props.language || "json"}

@@ -252,21 +252,23 @@ export const ReportView = ({
             })}
         </div>
       </div>
-      <NgAnyRenderer
-        ngOptions={{ spread: true }}
-        onChange={() => { }}
-        value={JSON.stringify(
-          selectedPlugin === 'error' ? error :
-            selectedPlugin === -1 ? selectedStep === -1
-              ? informations
-              : steps.find((t) => t.task === selectedStep)
-              : steps
-                .find((t) => t.task === selectedStep)
-                ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
-          null,
-          4
-        )}
-      />
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <NgAnyRenderer
+          ngOptions={{ spread: true }}
+          onChange={() => { }}
+          value={JSON.stringify(
+            selectedPlugin === 'error' ? error :
+              selectedPlugin === -1 ? selectedStep === -1
+                ? informations
+                : steps.find((t) => t.task === selectedStep)
+                : steps
+                  .find((t) => t.task === selectedStep)
+                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+            null,
+            4
+          )}
+        />
+      </div>
     </div>
   );
 };
