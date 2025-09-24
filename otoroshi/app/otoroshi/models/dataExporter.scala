@@ -288,7 +288,7 @@ case class SplunkCallSettings(
       .withMethod("POST")
       .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
         headers :+ ("Authorization" -> s"Splunk ${token}")
-      }: _*)
+      }*)
       .withBody(
         events
           .map { evt =>

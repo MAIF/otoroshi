@@ -20,6 +20,7 @@ object Keys {
   val OtoTokenKey: TypedKey[JsObject]                     = TypedKey[JsObject]("otoroshi.core.OtoToken")
   val JwtVerifierKey: TypedKey[JwtVerifier]               = TypedKey[JwtVerifier]("otoroshi.core.JwtVerifier")
   val ApiKeyKey: TypedKey[ApiKey]                         = TypedKey[ApiKey]("otoroshi.core.ApiKey")
+  val ErrorApiKeyKey: TypedKey[ApiKey]                    = TypedKey[ApiKey]("otoroshi.core.ErrorApiKey")
   val ApiKeyJwtKey: TypedKey[JsValue]                     = TypedKey[JsValue]("otoroshi.core.ApiKeyJwt")
   val ApiKeyRotationKey: TypedKey[ApiKeyRotationInfo]     = TypedKey[ApiKeyRotationInfo]("otoroshi.core.ApiKeyRotationInfo")
   val ApiKeyRemainingQuotasKey: TypedKey[RemainingQuotas] = TypedKey[RemainingQuotas]("otoroshi.core.RemainingQuotas")
@@ -43,8 +44,7 @@ object Keys {
   val ElCtxKey: TypedKey[Map[String, String]]                = TypedKey[Map[String, String]]("otoroshi.core.ElCtx")
   val GatewayEventExtraInfosKey: TypedKey[JsObject]          = TypedKey[JsObject]("otoroshi.core.GatewayEventExtraInfos")
   val PreExtractedRequestTargetKey: TypedKey[Target]         = TypedKey[Target]("otoroshi.core.PreExtractedRequestTarget")
-  val PreExtractedRequestTargetsKey: TypedKey[Seq[NgTarget]] =
-    TypedKey[Seq[NgTarget]]("otoroshi.core.PreExtractedRequestTargets")
+  val PreExtractedRequestTargetsKey: TypedKey[Seq[NgTarget]] = TypedKey[Seq[NgTarget]]("otoroshi.core.PreExtractedRequestTargets")
   val GwErrorKey: TypedKey[GwError]                          = TypedKey[GwError]("otoroshi.core.GwError")
   val StatusOverrideKey: TypedKey[Int]                       = TypedKey[Int]("otoroshi.core.StatusOverride")
   val MatchedInputTokenKey: TypedKey[JsValue]                = TypedKey[JsValue]("otoroshi.core.MatchedInputToken")

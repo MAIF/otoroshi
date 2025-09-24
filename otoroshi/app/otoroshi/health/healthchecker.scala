@@ -68,7 +68,7 @@ object HealthCheck {
           Some(env.Headers.OtoroshiIssuer),
           Some("HealthChecker")
         )
-        .serialize(desc.algoInfoFromOtoToBack)(env)
+        .serialize(desc.algoInfoFromOtoToBack)
 
       env.MtlsWs
         .url(url, target.mtlsConfig)

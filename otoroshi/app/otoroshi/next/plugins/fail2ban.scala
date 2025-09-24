@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.IpFiltering
 import otoroshi.next.plugins.api._
@@ -69,25 +69,17 @@ case class Fail2BanConfig(
 
   def isIgnored(remoteAddress: String): Boolean = {
     ignored.exists {
-      case ip if ip.startsWith("Ip(") && ip.endsWith(")")         => {
-        otoroshi.utils.RegexPool(ip.substring(3).init).matches(remoteAddress)
-      }
-      case cidr if cidr.startsWith("Cidr(") && cidr.endsWith(")") => {
-        IpFiltering.cidr(cidr).contains(remoteAddress)
-      }
-      case identifier                                             => otoroshi.utils.RegexPool(identifier).matches(remoteAddress)
+      case ip if ip.startsWith("Ip(") && ip.endsWith(")")         => RegexPool(ip.substring(3).init).matches(remoteAddress)
+      case cidr if cidr.startsWith("Cidr(") && cidr.endsWith(")") => IpFiltering.cidr(cidr).contains(remoteAddress)
+      case identifier                                             => RegexPool(identifier).matches(remoteAddress)
     }
   }
 
   def isBlocked(remoteAddress: String): Boolean = {
     blocked.exists {
-      case ip if ip.startsWith("Ip(") && ip.endsWith(")")         => {
-        otoroshi.utils.RegexPool(ip.substring(3).init).matches(remoteAddress)
-      }
-      case cidr if cidr.startsWith("Cidr(") && cidr.endsWith(")") => {
-        IpFiltering.cidr(cidr).contains(remoteAddress)
-      }
-      case identifier                                             => otoroshi.utils.RegexPool(identifier).matches(remoteAddress)
+      case ip if ip.startsWith("Ip(") && ip.endsWith(")")         => RegexPool(ip.substring(3).init).matches(remoteAddress)
+      case cidr if cidr.startsWith("Cidr(") && cidr.endsWith(")") => IpFiltering.cidr(cidr).contains(remoteAddress)
+      case identifier                                             => RegexPool(identifier).matches(remoteAddress)
     }
   }
 
@@ -323,11 +315,11 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
-    val ip   = conf.identifier.evaluateEl(ctx.attrs)
+    val ip   = conf.identifier.evaluateEl(ctx.attrs)(using env)
     if (conf.isIgnored(ip)) {
       Right(ctx.otoroshiResponse).vfuture
     } else if (conf.isBlocked(ip)) {
@@ -352,11 +344,11 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
 
   override def transformError(
       ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
-    val ip   = conf.identifier.evaluateEl(ctx.attrs)
+    val ip   = conf.identifier.evaluateEl(ctx.attrs)(using env)
     if (conf.isIgnored(ip)) {
       ctx.otoroshiResponse.vfuture
     } else if (conf.isBlocked(ip)) {

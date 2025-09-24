@@ -343,31 +343,27 @@ class SendMailFunction extends WorkflowFunction {
           MailgunSettings.format.reads(config).get
         )
         sendMail(mailer)
-      }
-      case "mailjet"  => {
+      case "mailjet"  =>
         val mailer = new MailjetMailer(
           env,
           env.datastores.globalConfigDataStore.latest(),
           MailjetSettings.format.reads(config).get
         )
         sendMail(mailer)
-      }
-      case "sendgrid" => {
+      case "sendgrid" =>
         val mailer = new SendgridMailer(
           env,
           env.datastores.globalConfigDataStore.latest(),
           SendgridSettings.format.reads(config).get
         )
         sendMail(mailer)
-      }
-      case "generic" => {
+      case "generic" =>
         val mailer = new GenericMailer(
           env,
           env.datastores.globalConfigDataStore.latest(),
           GenericMailerSettings.format.reads(config).get
         )
         sendMail(mailer)
-      }
       case v          => WorkflowError(s"mailer '${v}' not supported", None, None).leftf
     }
   }

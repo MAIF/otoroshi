@@ -27,30 +27,30 @@ object ResponseImplicits {
     private def buildCookies(
         headers: Map[String, scala.collection.Seq[String]],
         env: Env
-    ): scala.collection.Seq[WSCookie] = {
+    ): Seq[WSCookie] = {
       val option = headers.get(SET_COOKIE2.toString).orElse(headers.get(SET_COOKIE.toString))
       option
         .map { cookiesHeaders =>
           cookiesHeaders.flatMap { header =>
             val parsed = Try(ClientCookieDecoder.LAX.decode(header)) match {
               case Success(value) if value == null =>
-                env.logger.error(s"error parsing null cookie from: '${header}', ignoring it !")
+                env.logger.error(s"error parsing null cookie from: '$header', ignoring it !")
                 None
               case Success(value)                  => Some(value)
               case Failure(ex)                     =>
-                env.logger.error(s"error parsing cookie from: '${header}', ignoring it !", ex)
+                env.logger.error(s"error parsing cookie from: '$header', ignoring it !", ex)
                 None
             }
             parsed.filterNot(_ == null).map { parsed =>
               asCookie(parsed, env)
             }
-          }
+          }.toSeq
         }
         .getOrElse(Seq.empty)
     }
 
-    def safeCookies(env: Env): scala.collection.Seq[WSCookie] = try {
-      response.cookies
+    def safeCookies(env: Env): Seq[WSCookie] = try {
+      Seq.from(response.cookies)
     } catch {
       case t: Throwable
           if t.getMessage.contains(

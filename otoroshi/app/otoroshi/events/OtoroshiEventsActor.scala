@@ -1026,7 +1026,7 @@ object Exporters {
   }
 
   class WebhookExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(using ec, env) {
+      extends DefaultDataExporter(config) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[Webhook].map { eec =>
@@ -1039,7 +1039,7 @@ object Exporters {
   }
 
   class HttpCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(using ec, env) {
+      extends DefaultDataExporter(config) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[HttpCallSettings].map { eec =>
@@ -1052,7 +1052,7 @@ object Exporters {
   }
 
   class SplunkCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+      extends DefaultDataExporter(config) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[SplunkCallSettings].map { eec =>
@@ -1065,7 +1065,7 @@ object Exporters {
   }
 
   class WorkflowCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+      extends DefaultDataExporter(config) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[WorkflowCallSettings].map { eec =>

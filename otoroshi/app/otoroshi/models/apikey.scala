@@ -1412,36 +1412,36 @@ object ApiKeyHelper {
 
     val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
     if (preExtractedApiKey.isDefined) {
-      preExtractedApiKey match {
-        case None                                         => errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
-        case Some(key) if key.isInvalid(key.clientSecret) =>
-          sendRevokedApiKeyAlert(key)
-          errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
-        case Some(key) if !key.matchRouting(descriptor)   =>
-          errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
-        case Some(key)
-            if key.restrictions
-              .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
-              ._1 => {
-          key.restrictions
-            .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
-            ._2
-            .map(v => Left(v))
-        case Some(key)                                    =>
-          key.withinQuotasAndRotationQuotas().flatMap {
-            case (true, rotationInfos, quotas) =>
-              rotationInfos.foreach { i =>
-                attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
-              }
-              attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
-              sendQuotasAlmostExceededError(key, quotas)
-              callDownstream(config, Some(key), None)
-            case (false, _, quotas)            =>
-              attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
-              sendQuotasExceededError(key, quotas)
-              errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
-          }
-      }
+        preExtractedApiKey match {
+            case None => errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
+            case Some(key) if key.isInvalid(key.clientSecret) =>
+                sendRevokedApiKeyAlert(key)
+                errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
+            case Some(key) if !key.matchRouting(descriptor) =>
+                errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
+            case Some(key)
+                if key.restrictions
+                    .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
+                    ._1 =>
+                key.restrictions
+                    .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
+                    ._2
+                    .map(v => Left(v))
+            case Some(key) =>
+                key.withinQuotasAndRotationQuotas().flatMap {
+                    case (true, rotationInfos, quotas) =>
+                        rotationInfos.foreach { i =>
+                            attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                        }
+                        attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                        sendQuotasAlmostExceededError(key, quotas)
+                        callDownstream(config, Some(key), None)
+                    case (false, _, quotas) =>
+                        attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> key)
+                        sendQuotasExceededError(key, quotas)
+                        errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
+                }
+        }
     } else if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
       val clientId = authBySimpleApiKeyClientId.get
       env.datastores.apiKeyDataStore
@@ -1460,7 +1460,7 @@ object ApiKeyHelper {
           case Some(key)
               if key.restrictions
                 .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
-                ._1 => {
+                ._1 =>
             key.restrictions
               .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
               ._2
@@ -1492,7 +1492,7 @@ object ApiKeyHelper {
           case Some(key)
               if key.restrictions
                 .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
-                ._1 => {
+                ._1 =>
             key.restrictions
               .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
               ._2
@@ -1527,7 +1527,7 @@ object ApiKeyHelper {
           case Some(key)
               if key.restrictions
                 .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
-                ._1 => {
+                ._1 =>
             key.restrictions
               .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
               ._2
@@ -1674,7 +1674,7 @@ object ApiKeyHelper {
                         case Success(_)
                             if apiKey.restrictions
                               .handleRestrictions(descriptor.id, descriptor.some, None, Some(apiKey), req, attrs)
-                              ._1 => {
+                              ._1 =>
                           apiKey.restrictions
                             .handleRestrictions(descriptor.id, descriptor.some, None, Some(apiKey), req, attrs)
                             ._2
@@ -1733,7 +1733,7 @@ object ApiKeyHelper {
               case Some(key)
                   if key.restrictions
                     .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
-                    ._1 => {
+                    ._1 =>
                 key.restrictions
                   .handleRestrictions(descriptor.id, descriptor.some, None, Some(key), req, attrs)
                   ._2
@@ -2304,7 +2304,7 @@ object ApiKeyHelper {
               "errors.invalid.api.key",
               s"apikey '${apikey.clientId}' routing did not match".some
             )
-          case Right(apikey) if apikey.restrictions.handleRestrictions(service, None, route, Some(apikey), req, attrs)._1 => {
+          case Right(apikey) if apikey.restrictions.handleRestrictions(service, None, route, Some(apikey), req, attrs)._1 =>
             apikey.restrictions
               .handleRestrictions(service, None, route, Some(apikey), req, attrs)
               ._2

@@ -4,11 +4,11 @@ import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.RequestHeader
 
 import scala.util.Try
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 import kaleidoscope.*
 import anticipation.Text
 import otoroshi.next.extensions.HttpListenerNames
@@ -16,7 +16,7 @@ import otoroshi.next.models.NgRoute
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 import otoroshi.utils.http.DN
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
@@ -251,18 +251,18 @@ object GlobalExpressionLanguage {
             case r"service.metadata.$field(.*)" if service.isDefined              =>
               service.get.metadata.getOrElse(field.s, s"no-meta-${field.s}")
 
-            case r"route.domains\['$field@(.*)':'$dv@(.*)'\]" if route.isDefined =>
-              Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(dv)
-            case r"route.domains\['$field@(.*)'\]" if route.isDefined            =>
-              Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(s"no-domain-$field")
+            case r"route.domains\['$field(.*)':'$dv(.*)'\]" if route.isDefined =>
+              Option(route.get.frontend.domains(field.s.toInt)).map(_.raw).getOrElse(dv.s)
+            case r"route.domains\['$field(.*)'\]" if route.isDefined           =>
+              Option(route.get.frontend.domains(field.s.toInt)).map(_.raw).getOrElse(s"no-domain-$field")
             case "route.id" if route.isDefined                                   => route.get.id
             case "route.name" if route.isDefined                                 => route.get.name
             case "route.json.pretty" if route.isDefined                       => route.get.json.prettify
             case "route.json" if route.isDefined                              => route.get.json.stringify
-            case r"route.metadata.$field@(.*):$dv@(.*)" if route.isDefined       =>
-              route.get.metadata.get(field).getOrElse(dv)
-            case r"route.metadata.$field@(.*)" if route.isDefined                =>
-              route.get.metadata.get(field).getOrElse(s"no-meta-$field")
+            case r"route.metadata.$field(.*):$dv(.*)" if route.isDefined       =>
+                route.get.metadata.getOrElse(field.s, dv.s)
+            case r"route.metadata.$field(.*)" if route.isDefined               =>
+                route.get.metadata.getOrElse(field.s, s"no-meta-${field.s}")
 
             case "req.fullUrl" if req.isDefined                                           =>
               s"${req.get.theProtocol}://${req.get.theHost}${req.get.relativeUri}"
@@ -301,15 +301,15 @@ object GlobalExpressionLanguage {
             case "apikey.clientId" if apiKey.isDefined                          => apiKey.get.clientId
             case "apikey.json.pretty" if apiKey.isDefined                       => apiKey.get.lightJson.prettify
             case "apikey.json" if apiKey.isDefined                              => apiKey.get.lightJson.stringify
-            case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined    =>
-              apiKey.get.metadata.get(field).getOrElse(dv)
-            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined             =>
-              apiKey.get.metadata.get(field).getOrElse(s"no-meta-$field")
-            case r"apikey.tags\['$field@(.*)':'$dv@(.*)'\]" if apiKey.isDefined =>
-              Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
-            case r"apikey.tags\['$field@(.*)'\]" if apiKey.isDefined            =>
-              Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
-            case r"apikey.json.pretty" if apiKey.isDefined                      =>
+            case r"apikey.metadata.$field(.*):$dv(.*)" if apiKey.isDefined    =>
+              apiKey.get.metadata.get(field.s).getOrElse(dv.s)
+            case r"apikey.metadata.$field(.*)" if apiKey.isDefined            =>
+              apiKey.get.metadata.get(field.s).getOrElse(s"no-meta-$field")
+            case r"apikey.tags\['$field(.*)':'$dv(.*)'\]" if apiKey.isDefined =>
+              Option(apiKey.get.tags.apply(field.s.toInt)).getOrElse(dv.s)
+            case r"apikey.tags\['$field(.*)'\]" if apiKey.isDefined           =>
+              Option(apiKey.get.tags.apply(field.s.toInt)).getOrElse(s"no-tag-$field")
+            case r"apikey.json.pretty" if apiKey.isDefined                    =>
               apiKey.get.lightJson.prettify
             case r"apikey.json" if apiKey.isDefined                           =>
               apiKey.get.lightJson.stringify
@@ -529,7 +529,7 @@ object GlobalExpressionLanguage {
               Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).stringify
             case "consumer.json" if user.isDefined                                               =>
               Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).stringify
-            case r"consumer.metadata.$field@(.*):$dv@(.*)" if user.isDefined || apiKey.isDefined =>
+            case r"consumer.metadata.$field(.*):$dv(.*)" if user.isDefined || apiKey.isDefined =>
               user
                 .flatMap(_.otoroshiData)
                 .orElse(apiKey.map(v => JsObject(v.metadata.view.mapValues(_.json).toMap)))

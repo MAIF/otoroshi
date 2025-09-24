@@ -1326,7 +1326,7 @@ class ParseDateTimeOperator extends WorkflowOperator {
       .map(p => DateTimeFormat.forPattern(p))
       .getOrElse(ISODateTimeFormat.dateTimeParser.withOffsetParsed)
 
-    println("ParseDateTimeOperator", DateTime.parse(opts.select("value").as[String], pattern).toDate.getTime.json)
+    println(s"ParseDateTimeOperator - ${DateTime.parse(opts.select("value").as[String], pattern).toDate.getTime.json}")
 
     opts.select("value").asOpt[String] match {
       case Some(dateStr) => DateTime.parse(dateStr, pattern).toDate.getTime.json

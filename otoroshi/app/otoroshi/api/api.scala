@@ -13,25 +13,26 @@ import org.apache.pekko.stream.scaladsl.{Framing, Sink, Source}
 import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
-import otoroshi.actions._
+import otoroshi.actions.*
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.api.schema.ProductionSchemaGenerator
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.cluster.{ClusterConfig, ClusterMode}
-import otoroshi.controllers._
-import otoroshi.controllers.adminapi._
+import otoroshi.controllers.*
+import otoroshi.controllers.adminapi.*
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit}
-import otoroshi.gateway._
+import otoroshi.gateway.*
 import otoroshi.metrics.Metrics
 import otoroshi.metrics.opentelemetry.OtlpSettings
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.netty.ReactorNettyServer
-import otoroshi.next.controllers.adminapi._
+import otoroshi.next.controllers.adminapi.*
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.next.proxy.NgProxyStateLoaderJob
 import otoroshi.next.tunnel.TunnelController
+import otoroshi.next.workflow.WorkflowsController
 import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
@@ -41,15 +42,15 @@ import otoroshi.utils.JsonValidator
 import otoroshi.utils.controllers.GenericAlert
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.json.{JsonOperationsHelper, JsonPatchHelpers}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 import play.api.http.{DefaultHttpFilters, HttpEntity, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.routing.Router
 import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator}
 import play.core.parsers.FormUrlEncodedParser
@@ -545,6 +546,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: ServerConfig, _configuration
   lazy val genericApiController: GenericApiController                   = wire[GenericApiController]
   lazy val infosApiController: InfosApiController                       = wire[InfosApiController]
   lazy val apisController: ApisController                               = wire[ApisController]
+  lazy val workflowsController: WorkflowsController                     = wire[WorkflowsController]
 
   override lazy val assets: Assets = wire[Assets]
 
@@ -566,7 +568,11 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
+    try {
+      ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
+    } catch {
+      case e: Throwable => components.env.logger.error("error while starting netty server", e)
+    }
     server.httpPort.get + 1
     this
   }
@@ -578,7 +584,11 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
+    try {
+      ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
+    } catch {
+      case e: Throwable => components.env.logger.error("error while starting netty server", e)
+    }
     server.httpPort.get + 1
     stopOnShutdown()
   }

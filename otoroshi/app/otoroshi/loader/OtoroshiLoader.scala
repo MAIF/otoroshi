@@ -1,7 +1,9 @@
 package otoroshi.loader
 
 import com.softwaremill.macwire._
+import otoroshi.controllers.adminapi.InfosApiController
 import controllers.{Assets, AssetsComponents}
+import otoroshi.netty.ReactorNettyServer
 import otoroshi.actions._
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.api.{GenericApiController, OtoroshiEnvHolder, OtoroshiLoaderHelper}
@@ -10,10 +12,10 @@ import otoroshi.controllers.adminapi._
 import otoroshi.env.Env
 import otoroshi.gateway._
 import otoroshi.loader.modules._
-import otoroshi.netty.ReactorNettyServer
-import otoroshi.next.controllers.adminapi._
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
+import otoroshi.next.controllers.adminapi._
 import otoroshi.next.tunnel.TunnelController
+import otoroshi.next.workflow.WorkflowsController
 import play.api.ApplicationLoader.Context
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -41,7 +43,11 @@ class OtoroshiLoader extends ApplicationLoader {
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
+    try {
+      ReactorNettyServer.classic(components.env).start(components.httpRequestHandler)
+    } catch {
+      case e: Throwable => components.env.logger.error("error while starting netty server", e)
+    }
     components.application
   }
 }
@@ -142,6 +148,7 @@ package object modules {
     lazy val genericApiController: GenericApiController                   = wire[GenericApiController]
     lazy val infosApiController: InfosApiController                       = wire[InfosApiController]
     lazy val apisController: ApisController                               = wire[ApisController]
+    lazy val workflowsController: WorkflowsController                     = wire[WorkflowsController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

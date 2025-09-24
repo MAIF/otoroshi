@@ -6,9 +6,9 @@ import com.auth0.jwt.JWT
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.BodyHelper
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.{WasmConfig, WasmUtils}
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
@@ -355,7 +355,6 @@ class WorkflowAccessValidator extends NgAccessValidator {
       }
     }
   }
-}
 
 class WorkflowResumeBackend extends NgBackendCall {
 
@@ -380,7 +379,7 @@ class WorkflowResumeBackend extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -403,7 +402,7 @@ class WorkflowResumeBackend extends NgBackendCall {
             maybeRoute = ctx.route.some
           )
           .map(r => NgProxyEngineError.NgResultProxyEngineError(r).left)
-      case Some((extension, workflow)) => {
+      case Some((extension, workflow)) =>
         ctx.request
           .header("resume-token")
           .orElse(ctx.request.queryParam("resume-token"))

@@ -6,14 +6,14 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.concurrent.TrieMap
-import scala.concurrent._
-import scala.jdk.CollectionConverters._
-import scala.util.Success
+import scala.concurrent.*
+import scala.jdk.CollectionConverters.*
+import scala.util.{Failure, Success, Try}
 
 // TODO: time budget per node
 // TODO: fuel budget per run, with fuel consumption per node
@@ -92,7 +92,7 @@ class WorkflowEngine(env: Env) {
     val wfRun = wfr.copy(attrs = attrs)
     val input = wfr.memory.get("workflow_input").map(_.asObject).getOrElse(Json.obj())
     node
-      .internalRun(wfRun, Seq(0), from.tail)(env, executorContext)
+      .internalRun(wfRun, Seq(0), from.tail)(using env, executorContext)
       .flatMap {
         case Left(err) if err.message == "_____otoroshi_workflow_paused" =>
           WorkflowResult(err.details.get.select("access_token").asOpt[JsValue], None, wfRun).future
@@ -122,7 +122,7 @@ class WorkflowEngine(env: Env) {
         )
       }
       .andThen { case Success(value) =>
-        WorkflowRunEvent(node, input, value, env).toAnalytics()(env)
+        WorkflowRunEvent(node, input, value, env).toAnalytics()(using env)
       }
   }
 }
@@ -551,7 +551,7 @@ object WorkflowOperator {
     case JsObject(map) if map.size == 1 && map.head._1.startsWith("$")                    =>
       operators.get(map.head._1) match {
         case None           => value
-        case Some(operator) => {
+        case Some(operator) =>
           val opts = processOperators(map.head._2.asObject, wfr, env)
           operator.process(opts, wfr, env)
       }
@@ -561,7 +561,7 @@ object WorkflowOperator {
     case JsString("${workflow_id}")                                                       => wfr.workflow_ref.json
     case JsString("${session_id}")                                                        => wfr.id.json
     case JsString("${resume_token}")                                                      => PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env).json
-    case JsString(str) if str.startsWith("${") && str.endsWith("}") && !str.contains(".") => {
+    case JsString(str) if str.startsWith("${") && str.endsWith("}") && !str.contains(".") =>
       val name = str.substring(2).init
       wfr.memory.get(name) match {
         case None        => JsNull
@@ -581,7 +581,7 @@ object WorkflowOperator {
     case JsString(str) if str.contains("${session_id}")                                   => JsString(str.replace("${session_id}", wfr.id))
     case JsString(str) if str.contains("${resume_token}")                                 =>
       JsString(str.replace("${resume_token}", PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env)))
-    case JsString(str) if str.contains("${") && str.contains("}")                         => {
+    case JsString(str) if str.contains("${") && str.contains("}")                         =>
       val res = pattern.replaceAllIn(str, m => {
         val key = m.group(1)
         if (key.contains(".")) {
@@ -606,7 +606,6 @@ object WorkflowOperator {
         }
       })
       res.json
-    }
     case _                                                                                => value
   }
 }

@@ -10,10 +10,11 @@ import otoroshi.events.{KafkaConfig, KafkaSettings}
 import otoroshi.next.models.{NgRoute, NgRouteComposition, NgTarget, NgTlsConfig}
 import otoroshi.next.plugins.ForceHttpsTraffic
 import otoroshi.next.utils.JsonHelpers
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.http.ResponseImplicits.EnhancedWSResponse
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.WSBodyWritables._
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 
 import java.time.temporal.ChronoUnit
@@ -192,7 +193,7 @@ class TryItController(
                     "status"       -> status,
                     "headers"      -> headers,
                     "body_base_64" -> respBodyRaw.encodeBase64.utf8String,
-                    "cookies"      -> JsArray(resp.cookies.map(c => JsonHelpers.wsCookieToJson(c))),
+                    "cookies"      -> JsArray(resp.safeCookies(env).map(c => JsonHelpers.wsCookieToJson(c))),
                     "report"       -> report,
                     "curl"         -> curl
                   )
