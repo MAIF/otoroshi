@@ -90,7 +90,7 @@ export function WorkflowsDesigner(props) {
   }
 
   function createNodeFromUI(node) {
-    console.log('createNodeFromUI', node);
+    // console.log('createNodeFromUI', node);
 
     const { information } = splitInformationAndContent(node);
 

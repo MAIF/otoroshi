@@ -388,10 +388,7 @@ trait Node extends NodeLike {
                 result.foreach(name => wfr.memory.set(name, res))
                 returned match {
                   case Some(res) => {
-                    val finalRes = res match {
-                      case obj@JsObject(_) => WorkflowOperator.processOperators(obj, wfr, env)
-                      case value => WorkflowOperator.processOperators(value, wfr, env)
-                    }
+                    val finalRes = WorkflowOperator.processOperators(res, wfr, env)
                     wfr.memory.set("input", finalRes)
                     Right(finalRes)
                   }
@@ -564,7 +561,9 @@ object WorkflowOperator {
     case JsString("${session_id}")                                                        => wfr.id.json
     case JsString("${resume_token}")                                                      => PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env).json
     case JsString(str) if str.startsWith("${") && str.endsWith("}") && !str.contains(".") => {
+      println(str, str.substring(2), str.substring(2).init)
       val name = str.substring(2).init
+      println(name, wfr.memory.get(name))
       wfr.memory.get(name) match {
         case None        => JsNull
         case Some(value) => value

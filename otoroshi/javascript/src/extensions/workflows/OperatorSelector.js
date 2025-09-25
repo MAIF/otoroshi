@@ -1,6 +1,6 @@
 import React from 'react'
 import { Row } from '../../components/Row';
-import { NgForm, NgJsonRenderer, NgSelectRenderer } from '../../components/nginputs';
+import { NgAnyRenderer, NgForm, NgJsonRenderer, NgSelectRenderer } from '../../components/nginputs';
 import { nodesCatalogSignal } from './models/Functions';
 
 const isString = value => typeof value === 'string' || value instanceof String
@@ -17,7 +17,7 @@ export function OperatorSelector({ predicate, handleOperatorChange }) {
 
     const value = (!isStringPredicate && predicate) ? predicate[field] : undefined
 
-    console.log(isStringPredicate)
+    console.log(value)
 
     return <div>
         <Row title="Operator">
@@ -41,7 +41,7 @@ export function OperatorSelector({ predicate, handleOperatorChange }) {
                 }}
             />
             {(operator === 'Others' || isStringPredicate) && <div className='mt-2'>
-                <NgJsonRenderer
+                <NgAnyRenderer
                     label="Value"
                     height="120px"
                     value={predicate}

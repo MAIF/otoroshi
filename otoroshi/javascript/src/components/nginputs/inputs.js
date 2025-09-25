@@ -340,7 +340,7 @@ export class NgAnyRenderer extends Component {
       ...props.config || {},
     };
 
-    let code = props.value
+    let code = this.props.value
 
     if (typeof code === 'object' && code !== null) {
       code = JSON.stringify(code, null, 2);
@@ -350,10 +350,10 @@ export class NgAnyRenderer extends Component {
 
     return <LabelAndInput {...this.props}>
       <MonacoEditor
-        // height={props.height}
+        height={props.height}
         width="100%"
         theme='vs-dark'
-        defaultLanguage={props.language || "json"}
+        defaultLanguage={props.language || "plaintext"}
         {...this.props.rawSchema?.props}
         value={code}
         options={options}

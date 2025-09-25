@@ -256,6 +256,7 @@ export const ReportView = ({
         <NgAnyRenderer
           ngOptions={{ spread: true }}
           onChange={() => { }}
+          language='json'
           value={JSON.stringify(
             selectedPlugin === 'error' ? error :
               selectedPlugin === -1 ? selectedStep === -1

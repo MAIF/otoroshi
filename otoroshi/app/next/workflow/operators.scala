@@ -2472,7 +2472,7 @@ class ArrayAppendOperator extends WorkflowOperator {
   override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type"  -> "json",
+        "type"  -> "any",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The value to append"
