@@ -2523,6 +2523,7 @@ class ArrayAppendOperator extends WorkflowOperator {
         }
       }
     }
+    println("array_append", value)
     value match {
       case arr @ JsArray(_) if v.isInstanceOf[JsArray] => arr ++ v.asArray
       case arr @ JsArray(_)                            => arr.append(v)

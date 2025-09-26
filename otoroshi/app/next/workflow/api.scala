@@ -559,11 +559,10 @@ object WorkflowOperator {
     case JsString("${now}")                                                               => System.currentTimeMillis().json
     case JsString("${workflow_id}")                                                       => wfr.workflow_ref.json
     case JsString("${session_id}")                                                        => wfr.id.json
+    case JsString("${memory}")                                                            => wfr.memory.json
     case JsString("${resume_token}")                                                      => PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env).json
     case JsString(str) if str.startsWith("${") && str.endsWith("}") && !str.contains(".") => {
-      println(str, str.substring(2), str.substring(2).init)
       val name = str.substring(2).init
-      println(name, wfr.memory.get(name))
       wfr.memory.get(name) match {
         case None        => JsNull
         case Some(value) => value

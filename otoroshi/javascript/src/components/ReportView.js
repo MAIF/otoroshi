@@ -30,7 +30,7 @@ export const ReportView = ({
   }, [error])
 
   useEffect(() => {
-    const { steps, ...informations } = report;
+    const { steps, duration_ns, ...informations } = report;
     setSteps(report.steps);
     setInformations(informations);
   }, [report]);

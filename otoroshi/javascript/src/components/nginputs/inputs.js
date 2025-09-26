@@ -358,7 +358,14 @@ export class NgAnyRenderer extends Component {
         value={code}
         options={options}
         onChange={newValue => {
-          this.props.onChange(newValue)
+          if (props.mode === 'jsonOrPlaintext') {
+            try {
+              this.props.onChange(JSON.parse(newValue))
+            } catch (_) {
+              this.props.onChange(newValue)
+            }
+          } else
+            this.props.onChange(newValue)
         }}
       />
     </LabelAndInput>

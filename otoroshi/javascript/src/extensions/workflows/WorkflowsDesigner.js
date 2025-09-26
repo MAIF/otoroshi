@@ -1176,8 +1176,6 @@ export function WorkflowsDesigner(props) {
     if (activeNode && activeNode.handle) {
       const sourceHandle = activeNode.handle.id;
 
-      const parent = nodes.find((node) => node.id === activeNode.id);
-
       // If the handle is on the left, we have to reverse the edge direction
       if (activeNode.handle.position === 'left') {
         newEdges.push({

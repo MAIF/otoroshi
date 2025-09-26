@@ -88,6 +88,7 @@ export default function ReportInformation(props) {
             steps: Object.values(stepsByCategory),
             duration_ns: (end - start) * 1_000_000,
             returned: report.returned,
+            memory: report.run.memory
           }}
           isWorkflowView
           unit={unit}
