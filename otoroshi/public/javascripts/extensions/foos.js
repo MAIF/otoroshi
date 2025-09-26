@@ -1,14 +1,14 @@
-(function() {
+(function () {
   const extensionId = "otoroshi.extensions.Foo";
   Otoroshi.registerExtension(extensionId, false, (ctx) => {
 
-    const dependencies = ctx.dependencies;  
-  
-    const React     = dependencies.react;
+    const dependencies = ctx.dependencies;
+
+    const React = dependencies.react;
     const Component = React.Component;
-    const uuid      = dependencies.uuid;
-    const Table     = dependencies.Components.Inputs.Table;
-    const BackOfficeServices     = dependencies.BackOfficeServices;
+    const uuid = dependencies.uuid;
+    const Table = dependencies.Components.Inputs.Table;
+    const BackOfficeServices = dependencies.BackOfficeServices;
 
     class FooTab extends Component {
 
@@ -19,20 +19,20 @@
             className: "ms-2 mb-1",
             onPress: () => console.log("onPress"),
             text: isCreation ? `Create route` : `Save route`,
-            icon: () =>  React.createElement('i', { className: "fas fa-paper-plane" }),
+            icon: () => React.createElement('i', { className: "fas fa-paper-plane" }),
           })
         );
       }
 
       render() {
         return (
-          React.createElement('div', null, React.createElement('h1', { style: { color: 'var(--color_level1)' }}, 'Tab extension !'))
+          React.createElement('div', null, React.createElement('h1', { style: { color: 'var(--color_level1)' } }, 'Tab extension !'))
         );
       }
     }
-    
+
     class FoosPage extends Component {
-  
+
       formSchema = {
         _loc: {
           type: 'location',
@@ -56,7 +56,7 @@
           props: { label: 'Tags' },
         },
       };
-    
+
       columns = [
         {
           title: 'Name',
@@ -65,46 +65,46 @@
         },
         { title: 'Description', filterId: 'description', content: (item) => item.description },
       ];
-    
+
       formFlow = ['_loc', 'id', 'name', 'description', 'tags', 'metadata'];
-    
+
       componentDidMount() {
         this.props.setTitle(`Foos`);
       }
 
       client = BackOfficeServices.apisClient('foo.extensions.otoroshi.io', 'v1', 'foos');
-    
+
       render() {
         return (
-            React.createElement(Table, {
-              parentProps: this.props,
-              selfUrl: "extensions/foo/foos",
-              defaultTitle: "All foos",
-              defaultValue: () => ({ id: 'foo_' + uuid(), name: 'Foo', description: 'New foo', tags: [], metadata: {}}),
-              itemName: "Foo",
-              formSchema: this.formSchema,
-              formFlow: this.formFlow,
-              columns: this.columns,
-              stayAfterSave: true,
-              fetchItems: (paginationState) => this.client.findAll(),
-              updateItem: this.client.update,
-              deleteItem: this.client.delete,
-              createItem: this.client.create,
-              navigateTo: (item) => {
-                window.location = `/bo/dashboard/extensions/foo/foos/edit/${item.id}`
-              },
-              itemUrl: (item) => `/bo/dashboard/extensions/foo/foos/edit/${item.id}`,
-              showActions: true,
-              showLink: true,
-              rowNavigation: true,
-              extractKey: (item) => item.id,
-              export: true,
-              kubernetesKind: "Foo"
-            }, null)
+          React.createElement(Table, {
+            parentProps: this.props,
+            selfUrl: "extensions/foo/foos",
+            defaultTitle: "All foos",
+            defaultValue: () => ({ id: 'foo_' + uuid(), name: 'Foo', description: 'New foo', tags: [], metadata: {} }),
+            itemName: "Foo",
+            formSchema: this.formSchema,
+            formFlow: this.formFlow,
+            columns: this.columns,
+            stayAfterSave: true,
+            fetchItems: (paginationState) => this.client.findAll(),
+            updateItem: this.client.update,
+            deleteItem: this.client.delete,
+            createItem: this.client.create,
+            navigateTo: (item) => {
+              window.location = `/bo/dashboard/extensions/foo/foos/edit/${item.id}`
+            },
+            itemUrl: (item) => `/bo/dashboard/extensions/foo/foos/edit/${item.id}`,
+            showActions: true,
+            showLink: true,
+            rowNavigation: true,
+            extractKey: (item) => item.id,
+            export: true,
+            kubernetesKind: "Foo"
+          }, null)
         );
       }
     }
-    
+
     return {
       id: extensionId,
       routeDesignerTabs: [
@@ -112,7 +112,7 @@
           id: "foo",
           label: "Foo",
           icon: 'fas fa-pencil',
-          render: (settings) =>  React.createElement(FooTab, { settings }),
+          render: (settings) => React.createElement(FooTab, { settings }),
         }
       ],
       pluginForms: [
@@ -191,7 +191,7 @@
         }
       ],
       dangerZoneParts: [
-        { 
+        {
           title: 'Foos',
           flow: [`extensions.${extensionId.replace(/\./g, '_')}.foos.maxSize`],
           schema: {
@@ -201,7 +201,83 @@
             }
           }
         }
-      ]
+      ],
+      workflowNodes: [
+        {
+          name: '$foo_node',
+          kind: '$foo_node',
+          description: 'Foo node',
+          display_name: "Foo node",
+          icon: 'fas fa-cookie',
+          type: 'group',
+          flow: [],
+          form_schema: {},
+          sources: ['Custom Source', 'output'],
+          nodeToJson: ({
+            edges,
+            nodes,
+            node,
+            alreadySeen,
+            connections,
+            nodeToJson,
+            removeReturnedFromWorkflow }) => {
+            const { kind } = node.data;
+            const flow = node.data.content;
+            const nodeLoop = connections.find((conn) => conn.sourceHandle.startsWith('Custom Source'));
+
+            if (nodeLoop) {
+              let [node, seen] = removeReturnedFromWorkflow(
+                nodeToJson(nodes.find((n) => n.id === nodeLoop.target))
+              );
+              alreadySeen = alreadySeen.concat([seen]);
+
+
+              if (node.steps.length === 1) node = node.steps[0];
+
+              return {
+                ...flow,
+                node,
+                kind,
+              }
+            } else {
+              return subflow = {
+                ...flow,
+                kind,
+              };
+            }
+          },
+          buildGraph: ({ workflow, addInformationsToNode, targetId, handleId, buildGraph, current, me }) => {
+
+            let nodes = []
+            let edges = []
+
+            if (workflow.node) {
+              const subGraph = buildGraph([workflow.node], addInformationsToNode);
+
+              if (subGraph.nodes.length > 0) {
+                nodes = nodes.concat(subGraph.nodes);
+                edges = edges.concat(subGraph.edges);
+
+                const handle = current.data.sources[0];
+
+                edges.push({
+                  id: `${me}-${handle}`,
+                  source: me,
+                  sourceHandle: `${handle}-${me}`,
+                  target: subGraph.nodes[0].id,
+                  targetHandle: `input-${subGraph.nodes[0].id}`,
+                  type: 'customEdge',
+                  animated: true,
+                });
+              }
+            }
+
+            return { nodes, edges }
+          }
+        }
+      ],
+      workflowFunctions: [],
+      workflowOperators: []
     }
   });
 })();
