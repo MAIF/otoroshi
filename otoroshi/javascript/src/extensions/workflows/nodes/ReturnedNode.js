@@ -55,7 +55,7 @@ export const ReturnedNode = {
             spread: true
           }}
           options={{
-            fontSize: 8,
+            fontSize: 11,
             readOnly: true,
           }}
           value={props.data?.content?.returned}

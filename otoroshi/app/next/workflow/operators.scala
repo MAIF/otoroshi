@@ -89,6 +89,18 @@ class MergeObjectsOperator extends WorkflowOperator {
       "values" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "baz")),
     )
   ))
+
+  override def documentationFormSchema: Option[JsObject] = Some(Json.obj(
+    "values" -> Json.obj(
+      "type" -> "any",
+      "label" -> "Values",
+      "props" -> Json.obj(
+        "height" -> "120px",
+        "mode" -> "jsonOrPlaintext",
+        "description" -> "The values field needs to be an array."
+      )
+    )
+  ))
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: Seq[JsObject] = opts.select("values").asOpt[Seq[JsObject]] match {
       case Some(v) => v
@@ -102,6 +114,7 @@ class MergeObjectsOperator extends WorkflowOperator {
         }
       }
     }
+
     if (opts.select("deep").asOptBoolean.getOrElse(false)) {
       value.foldLeft(Json.obj())(_ ++ _)
     } else {
