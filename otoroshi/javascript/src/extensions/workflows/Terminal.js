@@ -115,6 +115,8 @@ function Terminal({
             setTab('memory')
             setReport(undefined)
             setLog([])
+            if (terminalSize === 0)
+                changeTerminalSize(.3)
         }
 
         if (!wsRef.current) {
@@ -359,6 +361,7 @@ const InputTab = ({ input, setInput, terminalSize }) => {
         ngOptions={{
             spread: true
         }}
+        language='json'
         height={`calc(${(terminalSize) * 100}vh)`}
         value={input}
         onChange={setInput}

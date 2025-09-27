@@ -10,6 +10,7 @@ import { ReactSelectOverride } from '../inputs/ReactSelectOverride';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { v4 as uuid } from 'uuid';
 import MonacoEditor from '@monaco-editor/react';
+import { Button } from '../Button';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -340,7 +341,7 @@ export class NgAnyRenderer extends Component {
       ...props.config || {},
     };
 
-    let code = props.value
+    let code = this.props.value
 
     if (typeof code === 'object' && code !== null) {
       code = JSON.stringify(code, null, 2);
@@ -348,19 +349,56 @@ export class NgAnyRenderer extends Component {
 
     if (!isNaN(code)) code = code + '';
 
-    return <LabelAndInput {...this.props}>
-      <MonacoEditor
-        // height={props.height}
+    const createEditor = isFullscreen => {
+      return <MonacoEditor
+        height={isFullscreen ? '100%' : props.height}
         width="100%"
         theme='vs-dark'
-        defaultLanguage={props.language || "json"}
-        {...this.props.rawSchema?.props}
+        defaultLanguage={props.language || "plaintext"}
         value={code}
         options={options}
         onChange={newValue => {
-          this.props.onChange(newValue)
+          if (props.mode === 'jsonOrPlaintext') {
+            try {
+              this.props.onChange(JSON.parse(newValue))
+            } catch (err) {
+              console.log(newValue)
+              console.log(err)
+              this.props.onChange(newValue)
+            }
+          } else
+            this.props.onChange(newValue)
         }}
       />
+    }
+
+    const editor = createEditor(false)
+
+    return <LabelAndInput {...this.props}>
+      <div style={{
+        display: 'flex',
+        flex: 1,
+        height: '100%',
+        position: 'relative'
+      }}>
+        <Button type='quiet' className='d-flex items-center justify-content-center' style={{
+          position: 'absolute',
+          top: '.25rem',
+          right: '.5rem',
+          zIndex: 1000,
+          width: 24,
+          height: 24
+        }} onClick={() => {
+          window.wizard(
+            "Configuration",
+            (ok, cancel) => createEditor(true),
+            { additionalClass: 'modal-xl', style: { width: '100%' }, noCancel: true, okLabel: 'close' }
+          );
+        }}>
+          <i className='fas fa-expand' />
+        </Button>
+        {editor}
+      </div>
     </LabelAndInput>
   }
 }

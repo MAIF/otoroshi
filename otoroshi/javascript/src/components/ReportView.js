@@ -30,7 +30,7 @@ export const ReportView = ({
   }, [error])
 
   useEffect(() => {
-    const { steps, ...informations } = report;
+    const { steps, duration_ns, ...informations } = report;
     setSteps(report.steps);
     setInformations(informations);
   }, [report]);
@@ -256,6 +256,7 @@ export const ReportView = ({
         <NgAnyRenderer
           ngOptions={{ spread: true }}
           onChange={() => { }}
+          language='json'
           value={JSON.stringify(
             selectedPlugin === 'error' ? error :
               selectedPlugin === -1 ? selectedStep === -1

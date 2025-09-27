@@ -146,7 +146,7 @@ export function NODES_BY_CATEGORIES(nodes, categories) {
   );
 }
 
-export const NODES = (documentation) => {
+export const NODES = (documentation, extensionOverloads) => {
   let defaultValues = [
     ...documentation.nodes.map((n) => ({
       ...n,
@@ -172,7 +172,7 @@ export const NODES = (documentation) => {
   ];
 
   const items = Object.fromEntries(
-    Object.entries(OVERLOADED_NODES).map(([key, node]) => {
+    Object.entries({ ...OVERLOADED_NODES, ...extensionOverloads }).map(([key, node]) => {
       const defaultValue = defaultValues.find((n) => n.name === key);
 
       if (defaultValue) defaultValues = defaultValues.filter((f) => f.name !== key);
@@ -193,6 +193,15 @@ export const NODES = (documentation) => {
       kind: node.kind || node.name,
     };
   });
+
+  [...extensionOverloads.nodes, ...extensionOverloads.operators, ...extensionOverloads.functions].map(node => {
+    if (!items[node.name]) {
+      items[node.name] = {
+        ...node,
+        kind: node.kind || node.name,
+      };
+    }
+  })
 
   return items;
 };

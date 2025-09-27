@@ -5,8 +5,8 @@ export const EqOperator = {
   kind: '$eq',
   flow: ['a', 'b'],
   form_schema: {
-    a: ValueToCheck('First value', false),
-    b: ValueToCheck('Second value', false),
+    a: ValueToCheck('First value'),
+    b: ValueToCheck('Second value'),
   },
   sources: ['output'],
   operators: true,

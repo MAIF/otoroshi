@@ -16,7 +16,7 @@ export const ArrayDropOperator = {
     ...FromMemory({ isArray: true }),
     value: ValueToCheck('Value to Append'),
     array: {
-      type: 'json',
+      type: 'any',
       label: 'Target Array',
       visible: (props) => !props?.fromMemory,
     },

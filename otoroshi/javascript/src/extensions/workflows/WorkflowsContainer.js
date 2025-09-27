@@ -10,6 +10,7 @@ import { WorkflowsDesigner } from './WorkflowsDesigner';
 import { WorkflowSidebar } from './WorkflowSidebar';
 import { NODES, NODES_BY_CATEGORIES, nodesCatalogSignal } from './models/Functions';
 import { UserDefinedFunction } from './functions/UserDefinedFunction';
+import { getExtensions } from '../../backoffice'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -88,7 +89,17 @@ function Container(props) {
   }, [workflow.isLoading])
 
   if (!(workflow.isLoading || documentation.isLoading || workflows.isLoading)) {
-    let nodes = NODES(documentation.data)
+    const extensionOverloads = Object.values(getExtensions())
+      .reduce((acc, ext) => {
+        return {
+          nodes: [...acc.nodes, ...(ext.workflowNodes || [])],
+          functions: [...acc.functions, ...(ext.workflowFunctions || [])],
+          operators: [...acc.operators, ...(ext.workflowOperators || [])]
+        }
+      },
+        { nodes: [], functions: [], operators: [] })
+
+    let nodes = NODES(documentation.data, extensionOverloads)
 
     Object.entries(workflow.data.functions || {})
       .map(([functionName, value]) => UserDefinedFunction(functionName, value))
@@ -98,6 +109,14 @@ function Container(props) {
 
     nodesCatalogSignal.value = {
       nodes,
+      extensionOverloads: Object.values(getExtensions()).reduce((acc, ext) => {
+        return (ext.workflowNodes || []).reduce((ac, node) => {
+          return {
+            ...ac,
+            [node.name]: node
+          }
+        }, acc)
+      }, {}),
       categories: NODES_BY_CATEGORIES(nodes, documentation.data.categories),
       workflows: workflows.data,
       workflow: workflow.data,

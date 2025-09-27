@@ -90,7 +90,7 @@ export function WorkflowsDesigner(props) {
   }
 
   function createNodeFromUI(node) {
-    console.log('createNodeFromUI', node);
+    // console.log('createNodeFromUI', node);
 
     const { information } = splitInformationAndContent(node);
 
@@ -306,7 +306,7 @@ export function WorkflowsDesigner(props) {
       workflow.kind === 'foreach' ||
       workflow.kind === 'flatmap' ||
       workflow.kind === 'map' ||
-      workflow.kind === 'async' || 
+      workflow.kind === 'async' ||
       workflow.kind === 'while'
     ) {
       if (workflow.node) {
@@ -425,8 +425,22 @@ export function WorkflowsDesigner(props) {
           animated: true,
         });
       }
+    } else if (nodesCatalogSignal.value.extensionOverloads[workflow.kind]) {
+      const subGraph = nodesCatalogSignal.value.extensionOverloads[workflow.kind].buildGraph({
+        workflow,
+        addInformationsToNode,
+        targetId,
+        handleId,
+        buildGraph,
+        current,
+        me
+      })
+
+      nodes = nodes.concat(subGraph?.nodes || [])
+      edges = edges.concat(subGraph?.edges || [])
     }
 
+    console.log(nodes)
     for (let i = 0; i < nodes.length; i++) {
       nodes[i] = setupTargetsAndSources(nodes[i]);
     }
@@ -888,6 +902,27 @@ export function WorkflowsDesigner(props) {
           kind,
         }
       );
+    } else if (nodesCatalogSignal.value.extensionOverloads[kind]) {
+      const flow = nodesCatalogSignal.value.extensionOverloads[kind]
+        .nodeToJson({
+          edges,
+          nodes,
+          node,
+          alreadySeen,
+          connections,
+          nodeToJson: newNode => nodeToJson(
+            newNode,
+            emptyWorkflow,
+            false,
+            alreadySeen
+          ),
+          removeReturnedFromWorkflow,
+        })
+
+      if (!flow)
+        console.log(`nothing was returned from ${kind}`)
+
+      subflow = flow
     } else {
       subflow = {
         ...node.data.content,
@@ -1176,8 +1211,6 @@ export function WorkflowsDesigner(props) {
     if (activeNode && activeNode.handle) {
       const sourceHandle = activeNode.handle.id;
 
-      const parent = nodes.find((node) => node.id === activeNode.id);
-
       // If the handle is on the left, we have to reverse the edge direction
       if (activeNode.handle.position === 'left') {
         newEdges.push({
@@ -1447,8 +1480,8 @@ export function WorkflowsDesigner(props) {
 
         {activeNode && <NodesExplorer
           activeNode={activeNode}
-          handleSelectNode={handleSelectNode} 
-          close={closeAllModals}/>}
+          handleSelectNode={handleSelectNode}
+          close={closeAllModals} />}
         <Flow
           autoLayout={autoLayout}
           onConnectEnd={onConnectEnd}

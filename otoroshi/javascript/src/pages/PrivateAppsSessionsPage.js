@@ -14,8 +14,6 @@ function DiscardModuleSessions({ ok, cancel }) {
 
   const [authModule, setAuthModule] = useState()
 
-  console.log(authModule, auths)
-
   useEffect(() => {
     BackOfficeServices.findAllAuthConfigs()
       .then(raw => setAuths(raw?.data || []))

@@ -89,6 +89,18 @@ class MergeObjectsOperator extends WorkflowOperator {
       "values" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "baz")),
     )
   ))
+
+  override def documentationFormSchema: Option[JsObject] = Some(Json.obj(
+    "values" -> Json.obj(
+      "type" -> "any",
+      "label" -> "Values",
+      "props" -> Json.obj(
+        "height" -> "120px",
+        "mode" -> "jsonOrPlaintext",
+        "description" -> "The values field needs to be an array."
+      )
+    )
+  ))
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: Seq[JsObject] = opts.select("values").asOpt[Seq[JsObject]] match {
       case Some(v) => v
@@ -102,6 +114,7 @@ class MergeObjectsOperator extends WorkflowOperator {
         }
       }
     }
+
     if (opts.select("deep").asOptBoolean.getOrElse(false)) {
       value.foldLeft(Json.obj())(_ ++ _)
     } else {
@@ -2473,7 +2486,7 @@ class ArrayAppendOperator extends WorkflowOperator {
   override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type"  -> "json",
+        "type"  -> "any",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The value to append"
@@ -2524,6 +2537,7 @@ class ArrayAppendOperator extends WorkflowOperator {
           case Some(_)                       => JsNull
         }
     }
+    println("array_append", value)
     value match {
       case arr @ JsArray(_) if v.isInstanceOf[JsArray] => arr ++ v.asArray
       case arr @ JsArray(_)                            => arr.append(v)
