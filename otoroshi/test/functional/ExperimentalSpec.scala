@@ -1,12 +1,11 @@
 import java.util.concurrent.atomic.AtomicInteger
-
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.headers.Host
-import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.http.scaladsl.model.headers.Host
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.{Done, NotUsed}
 import com.typesafe.config.ConfigFactory
 import functional.OtoroshiSpec
 import otoroshi.models._
@@ -20,7 +19,7 @@ class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) e
 
   lazy val serviceHost = "websocket.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -32,9 +31,9 @@ class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) e
 
   s"[$name] Otoroshi" should {
 
-    implicit val system = ActorSystem("otoroshi-test")
-    implicit val mat    = Materializer(system)
-    implicit val http   = Http()(system)
+    given system: ActorSystem = ActorSystem("otoroshi-test")
+    given mat: Materializer = Materializer(system)
+    given http: HttpExt = Http()(using system)
 
     "warm up" in {
       startOtoroshi()
@@ -51,9 +50,7 @@ class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) e
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"echo.websocket.org",
-            scheme = "https"
-          )
+            host = s"echo.websocket.org")
         ),
         forceHttps = false,
         enforceSecureCommunication = false,
@@ -116,7 +113,7 @@ class ExperimentalSpec2(name: String, configurationSpec: => Configuration) exten
 
   lazy val serviceHost = "api.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -238,30 +235,30 @@ class ExperimentalSpec2(name: String, configurationSpec: => Configuration) exten
       {
         val (res1, status1) = otoroshiApiCall("GET", "/api/groups").futureValue
         status1 mustBe 200
-        Reads.seq[ServiceGroup](ServiceGroup._fmt).reads(res1).get.contains(testGroup) mustBe true
+        Reads.seq[ServiceGroup](using ServiceGroup._fmt).reads(res1).get.contains(testGroup) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", "/api/services").futureValue
         status1 mustBe 200
-        Reads.seq[ServiceDescriptor](ServiceDescriptor._fmt).reads(res1).get.contains(testServiceDescriptor) mustBe true
+        Reads.seq[ServiceDescriptor](using ServiceDescriptor._fmt).reads(res1).get.contains(testServiceDescriptor) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}/apikeys").futureValue
         status1 mustBe 200
-        //Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
+        //Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/apikeys").futureValue
         status1 mustBe 200
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
-        //Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
+        //Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/apikeys").futureValue
         status1 mustBe 200
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
-        Reads.seq[ApiKey](ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey) mustBe true
+        Reads.seq[ApiKey](using ApiKey._fmt).reads(res1).get.contains(testApiKey2) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}").futureValue
@@ -304,7 +301,7 @@ class ExperimentalSpec2(name: String, configurationSpec: => Configuration) exten
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/services").futureValue
         status1 mustBe 200
-        Reads.seq[ServiceDescriptor](ServiceDescriptor._fmt).reads(res1).get.contains(testServiceDescriptor) mustBe true
+        Reads.seq[ServiceDescriptor](using ServiceDescriptor._fmt).reads(res1).get.contains(testServiceDescriptor) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}").futureValue

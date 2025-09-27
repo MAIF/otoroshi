@@ -1,9 +1,8 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
-
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.hash.Hashing
@@ -12,6 +11,7 @@ import otoroshi.models._
 import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
+import otoroshi.env.Env
 import play.api.Configuration
 import play.api.libs.json.Json
 import otoroshi.security.IdGenerator
@@ -21,12 +21,12 @@ import scala.util.Try
 
 class Version1410Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system   = ActorSystem("otoroshi-test")
-  implicit lazy val env = otoroshiComponents.env
+  given system: ActorSystem = ActorSystem("otoroshi-test")
+  implicit lazy val env: Env = otoroshiComponents.env
 
   import scala.concurrent.duration._
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -63,7 +63,7 @@ class Version1410Spec(name: String, configurationSpec: => Configuration) extends
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -97,7 +97,7 @@ class Version1410Spec(name: String, configurationSpec: => Configuration) extends
       domain = "oto.tools",
       targets = Seq(
         Target(
-          host = s"127.0.0.1:${port1}",
+          host = s"127.0.0.1:$port1",
           scheme = "http"
         )
       ),
@@ -131,7 +131,7 @@ class Version1410Spec(name: String, configurationSpec: => Configuration) extends
       domain = "oto.tools",
       targets = Seq(
         Target(
-          host = s"127.0.0.1:${port1}",
+          host = s"127.0.0.1:$port1",
           scheme = "http"
         )
       ),

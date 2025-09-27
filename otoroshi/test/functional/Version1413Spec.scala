@@ -1,7 +1,7 @@
 package functional
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
@@ -22,10 +22,10 @@ import scala.concurrent.ExecutionContext
 
 class Version1413Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system   = ActorSystem("otoroshi-test")
-  implicit lazy val env = otoroshiComponents.env
+  given system: ActorSystem = ActorSystem("otoroshi-test")
+  implicit lazy val env: Env = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -70,7 +70,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -133,7 +133,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -196,7 +196,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -421,7 +421,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
       resp1.status mustBe 200
 
       val resp2 = ws
-        .url(s"http://127.0.0.1:${port}/hello")
+        .url(s"http://127.0.0.1:$port/hello")
         .withHttpHeaders("Host" -> serviceHost)
         .get()
         .futureValue
@@ -445,11 +445,10 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         id = "jwtVerifier",
         name = "jwtVerifier",
         desc = "jwtVerifier",
-        strict = true,
         source = InHeader(name = "X-JWT-Token"),
         algoSettings = HSAlgoSettings(512, "secret"),
         strategy = DefaultToken(
-          true,
+          strict = true,
           Json.obj(
             "user"   -> "bobby",
             "rights" -> Json.arr(
@@ -463,11 +462,10 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         id = "jwtVerifier2",
         name = "jwtVerifier2",
         desc = "jwtVerifier2",
-        strict = true,
         source = InHeader(name = "X-JWT-Token"),
         algoSettings = HSAlgoSettings(512, "secret"),
         strategy = DefaultToken(
-          false,
+          strict = false,
           Json.obj(
             "user"   -> "bobby",
             "rights" -> Json.arr(
@@ -512,7 +510,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -533,7 +531,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           )
         ),
@@ -614,7 +612,7 @@ object TransformersCounters {
 case class FakeUser(username: String)
 
 object Attrs {
-  val CurrentUserKey = TypedKey[FakeUser]("current-user")
+  val CurrentUserKey: TypedKey[FakeUser] = TypedKey[FakeUser]("current-user")
 }
 
 class Transformer1 extends NgRequestTransformer {
@@ -624,7 +622,7 @@ class Transformer1 extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     TransformersCounters.counter.incrementAndGet()
     ctx.attrs.put(Attrs.CurrentUserKey -> FakeUser("bobby"))
 
@@ -636,6 +634,10 @@ class Transformer1 extends NgRequestTransformer {
       )
     )
   }
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 }
 
 class Transformer2 extends NgRequestTransformer {
@@ -644,7 +646,7 @@ class Transformer2 extends NgRequestTransformer {
   override def isTransformRequestAsync                     = false
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     TransformersCounters.counter.incrementAndGet()
     ctx.attrs.get(Attrs.CurrentUserKey) match {
       case Some(FakeUser("bobby")) => TransformersCounters.attrsCounter.incrementAndGet()
@@ -660,6 +662,10 @@ class Transformer2 extends NgRequestTransformer {
       Right(ctx.otoroshiRequest)
     }
   }
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 }
 
 class Transformer3 extends NgRequestTransformer {
@@ -669,7 +675,7 @@ class Transformer3 extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     TransformersCounters.counter3.incrementAndGet()
     ctx.attrs.get(Attrs.CurrentUserKey) match {
       case Some(FakeUser("bobby")) => TransformersCounters.attrsCounter.incrementAndGet()
@@ -677,12 +683,16 @@ class Transformer3 extends NgRequestTransformer {
     }
     Right(ctx.otoroshiRequest)
   }
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 }
 
 class Validator1 extends NgAccessValidator {
   override def isAccessAsync = false
 
-  override def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess = {
+  override def accessSync(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): NgAccess = {
     TransformersCounters.counterValidator.incrementAndGet()
     NgAccess.NgAllowed
   }
@@ -690,4 +700,8 @@ class Validator1 extends NgAccessValidator {
   override def multiInstance: Boolean = true
 
   override def defaultConfigObject: Option[NgPluginConfig] = None
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 }

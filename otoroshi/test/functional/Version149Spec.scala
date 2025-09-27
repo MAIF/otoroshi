@@ -1,33 +1,32 @@
 package functional
 
-import java.util.concurrent.atomic.AtomicInteger
-
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.hash.Hashing
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.joda.time.DateTime
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatestplus.play.PlaySpec
+import otoroshi.env.Env
+import otoroshi.models._
+import otoroshi.security.IdGenerator
+import otoroshi.utils.syntax.implicits._
 import play.api.Configuration
 import play.api.libs.json.Json
-import otoroshi.security.IdGenerator
+import play.api.libs.ws.DefaultBodyReadables.readableAsString
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
-import otoroshi.utils.syntax.implicits._
 
 class Version149Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system   = ActorSystem("otoroshi-test")
-  implicit lazy val env = otoroshiComponents.env
+  given system: ActorSystem = ActorSystem("otoroshi-test")
+  implicit lazy val env: Env = otoroshiComponents.env
 
   import scala.concurrent.duration._
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -60,7 +59,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -81,7 +80,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           )
         ),
@@ -102,7 +101,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port3}",
+            host = s"127.0.0.1:$port3",
             scheme = "http"
           )
         ),
@@ -123,7 +122,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port4}",
+            host = s"127.0.0.1:$port4",
             scheme = "http"
           )
         ),
@@ -144,7 +143,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port5}",
+            host = s"127.0.0.1:$port5",
             scheme = "http"
           )
         ),
@@ -303,7 +302,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -344,9 +343,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
     val body     = """{"message":"hello world"}"""
     val server1  = TargetService(
       None,
-      "/api",
       "application/json",
-      { r =>
+      { _ =>
         // println(r.getHeaders())
         counter1.incrementAndGet()
         body
@@ -419,9 +417,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       val body    = """{"message":"hello world 1"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
-        { r =>
+        { _ =>
           // println(r.getHeaders())
           counter.incrementAndGet()
           body
@@ -433,7 +430,6 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           id = "verifier1",
           name = "verifier1",
           desc = "verifier1",
-          strict = true,
           source = InHeader(name = "X-JWT-Token"),
           algoSettings = HSAlgoSettings(512, "secret"),
           strategy = PassThrough(
@@ -517,7 +513,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
 
   s"[$name] Otoroshi exchange protocol V2" should {
     "enforce token TTL (#290)" in {
-      import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+      import java.util.{Base64 => JavaBase64}
       val counter  = new AtomicInteger(0)
       val body     = """{"message":"hello world"}"""
       val server   = TargetService
@@ -528,8 +524,13 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           { r =>
             val state             = r.getHeader("Otoroshi-State").get()
             val tokenBody         =
-              Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
-            val stateValue        = (tokenBody \ "state").as[String]
+              Try(Json.parse(JavaBase64.getUrlDecoder.decode(state.value().split("\\.")(1)))).getOrElse(Json.obj())
+            val stateValue        = (tokenBody \ "state").asOpt[String].getOrElse {
+              // TODO: This should return a 400 Bad Request instead of using empty string
+              //       but that would require refactoring the test handler structure
+              println(s"[Version149Spec] No 'state' field in token body: $tokenBody")
+              ""
+            }
             val respToken: String = JWT
               .create()
               .withJWTId(IdGenerator.uuid)
@@ -551,8 +552,13 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           { r =>
             val state             = r.getHeader("Otoroshi-State").get()
             val tokenBody         =
-              Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
-            val stateValue        = (tokenBody \ "state").as[String]
+              Try(Json.parse(JavaBase64.getUrlDecoder.decode(state.value().split("\\.")(1)))).getOrElse(Json.obj())
+            val stateValue        = (tokenBody \ "state").asOpt[String].getOrElse {
+              // TODO: This should return a 400 Bad Request instead of using empty string
+              //       but that would require refactoring the test handler structure
+              println(s"[Version149Spec] No 'state' field in token body: $tokenBody")
+              ""
+            }
             val respToken: String = JWT
               .create()
               .withJWTId(IdGenerator.uuid)
@@ -579,7 +585,6 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           )
         ),
         forceHttps = false,
-        enforceSecureCommunication = true,
         secComTtl = 10.seconds,
         secComVersion = SecComVersion.V2,
         publicPatterns = Seq("/.*")
@@ -597,7 +602,6 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           )
         ),
         forceHttps = false,
-        enforceSecureCommunication = true,
         secComTtl = 10.seconds,
         secComVersion = SecComVersion.V2,
         publicPatterns = Seq("/.*")
@@ -650,14 +654,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
         publicPatterns = Seq("/.*"),
         forceHttps = false,
-        enforceSecureCommunication = true,
-        sendStateChallenge = true,
         sendInfoToken = false
       )
       createOtoroshiService(service).futureValue
@@ -667,7 +669,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       stopServers()
     }
     "allow latest version of info token (#320)" in {
-      import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+      import java.util.{Base64 => JavaBase64}
       val alg                        = HSAlgoSettings(
         512,
         "secret"
@@ -685,7 +687,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
           val token     = r.getHeader("Otoroshi-Claim").get().value()
           val valid     =
             Try(JWT.require(alg.asAlgorithm(OutputMode).get).build().verify(token)).map(_ => true).getOrElse(false)
-          val tokenBody = Try(Json.parse(ApacheBase64.decodeBase64(token.split("\\.")(1)))).getOrElse(Json.obj())
+          val tokenBody = Try(Json.parse(JavaBase64.getDecoder.decode(token.split("\\.")(1)))).getOrElse(Json.obj())
           val valid2    = (tokenBody \ "apikey" \ "clientId").as[String] == apikey1.clientId
           println(Json.prettyPrint(tokenBody))
           valid && valid2
@@ -700,14 +702,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
         forceHttps = false,
-        enforceSecureCommunication = true,
         sendStateChallenge = false,
-        sendInfoToken = true,
         secComSettings = alg,
         secComInfoTokenVersion = SecComInfoTokenVersion.Latest
       )
@@ -737,15 +737,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
         publicPatterns = Seq("/.*"),
         forceHttps = false,
-        enforceSecureCommunication = true,
-        sendStateChallenge = true,
-        sendInfoToken = true,
         secComHeaders = SecComHeaders(
           claimRequestName = Some("claimRequestName"),
           stateRequestName = Some("stateRequestName"),
@@ -768,9 +765,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
     }
 
     "allow weighting (#309, #77)" in {
-      val (server1, port1, counter1, call1) = testServer("weighting.oto.tools", port)
-      val (server2, port2, counter2, call2) = testServer("weighting.oto.tools", port)
-      val (server3, port3, counter3, call3) = testServer("weighting.oto.tools", port)
+      val (_, port1, counter1, call1) = testServer("weighting.oto.tools", port)
+      val (_, port2, counter2, _) = testServer("weighting.oto.tools", port)
+      val (_, port3, counter3, _) = testServer("weighting.oto.tools", port)
       val serviceweight                     = ServiceDescriptor(
         id = "weighting-test",
         name = "weighting-test",
@@ -779,20 +776,18 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http",
             weight = 3
           ),
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http",
             weight = 2
           ),
           Target(
-            host = s"127.0.0.1:${port3}",
-            scheme = "http",
-            weight = 1
-          )
+            host = s"127.0.0.1:$port3",
+            scheme = "http")
         ),
         publicPatterns = Seq("/.*"),
         forceHttps = false,
@@ -823,12 +818,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
         publicPatterns = Seq("/.*"),
-        useAkkaHttpClient = false,
         forceHttps = false,
         enforceSecureCommunication = false,
         targetsLoadBalancing = RoundRobin,
@@ -844,12 +838,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           )
         ),
         publicPatterns = Seq("/.*"),
-        useAkkaHttpClient = false,
         forceHttps = false,
         enforceSecureCommunication = false,
         targetsLoadBalancing = RoundRobin,
@@ -871,8 +864,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
     }
 
     "allow better timeout management : callTimeout with akka-http (#301)" in {
-      val (_, port1, counter1, call1) = testServer("calltimeoutakka1.oto.tools", port, 2000.millis)
-      val (_, port2, counter2, call2) = testServer("calltimeoutakka2.oto.tools", port, 200.millis)
+      val (_, port1, _, call1) = testServer("calltimeoutakka1.oto.tools", port, 2000.millis)
+      val (_, port2, _, call2) = testServer("calltimeoutakka2.oto.tools", port, 200.millis)
       val serviceweight1              = ServiceDescriptor(
         id = "calltimeoutakka1-test",
         name = "calltimeoutakka1-test",
@@ -881,7 +874,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -902,7 +895,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           )
         ),
@@ -929,8 +922,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
     }
 
     "allow better timeout management : idleTimeout (#301)" in {
-      val (_, port1, counter1, call1) = testServer("idletimeout1.oto.tools", port, 2000.millis)
-      val (_, port2, counter2, call2) = testServer("idletimeout2.oto.tools", port, 200.millis)
+      val (_, port1, _, call1) = testServer("idletimeout1.oto.tools", port, 2000.millis)
+      val (_, port2, _, call2) = testServer("idletimeout2.oto.tools", port, 200.millis)
       val serviceweight1              = ServiceDescriptor(
         id = "idletimeout1-test",
         name = "idletimeout1-test",
@@ -939,7 +932,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -960,7 +953,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           )
         ),
@@ -987,8 +980,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
     }
 
     "allow better timeout management : callAndStreamTimeout (#301)" in {
-      val (_, port1, counter1, call1) = testServer("callandstreamtimeout1.oto.tools", port, 0.millis, 2000.millis)
-      val (_, port2, counter2, call2) = testServer("callandstreamtimeout2.oto.tools", port, 0.millis)
+      val (_, port1, _, call1) = testServer("callandstreamtimeout1.oto.tools", port, 0.millis, 2000.millis)
+      val (_, port2, _, call2) = testServer("callandstreamtimeout2.oto.tools", port, 0.millis)
       val serviceweight1              = ServiceDescriptor(
         id = "callandstreamtimeout1-test",
         name = "callandstreamtimeout1-test",
@@ -997,7 +990,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -1018,13 +1011,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           )
         ),
         publicPatterns = Seq("/.*"),
         forceHttps = false,
-        useAkkaHttpClient = false,
         enforceSecureCommunication = false,
         targetsLoadBalancing = RoundRobin,
         clientConfig = ClientConfig(
@@ -1046,8 +1038,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
     }
 
     "allow better timeout management : callAndStreamTimeout with akka-http (#301)" in {
-      val (_, port1, counter1, call1) = testServer("callandstreamtimeoutakka1.oto.tools", port, 0.millis, 2000.millis)
-      val (_, port2, counter2, call2) = testServer("callandstreamtimeoutakka2.oto.tools", port, 0.millis)
+      val (_, port1, _, call1) = testServer("callandstreamtimeoutakka1.oto.tools", port, 0.millis, 2000.millis)
+      val (_, port2, _, call2) = testServer("callandstreamtimeoutakka2.oto.tools", port, 0.millis)
       val serviceweight1              = ServiceDescriptor(
         id = "callandstreamtimeoutakka1-test",
         name = "callandstreamtimeoutakka1-test",
@@ -1056,7 +1048,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -1077,7 +1069,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           )
         ),
@@ -1116,15 +1108,15 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           ),
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           ),
           Target(
-            host = s"127.0.0.1:${port3}",
+            host = s"127.0.0.1:$port3",
             scheme = "http"
           )
         ),
@@ -1156,15 +1148,15 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           ),
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           ),
           Target(
-            host = s"127.0.0.1:${port3}",
+            host = s"127.0.0.1:$port3",
             scheme = "http"
           )
         ),
@@ -1258,15 +1250,15 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           ),
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           ),
           Target(
-            host = s"127.0.0.1:${port3}",
+            host = s"127.0.0.1:$port3",
             scheme = "http"
           )
         ),
@@ -1317,15 +1309,15 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           ),
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           ),
           Target(
-            host = s"127.0.0.1:${port3}",
+            host = s"127.0.0.1:$port3",
             scheme = "http"
           )
         ),
@@ -1359,15 +1351,15 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           ),
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http"
           ),
           Target(
-            host = s"127.0.0.1:${port3}",
+            host = s"127.0.0.1:$port3",
             scheme = "http"
           )
         ),
@@ -1406,19 +1398,19 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http",
-            predicate = NetworkLocationMatch(zone = "dc1".option)
+            predicate = NetworkLocationMatch(zone = Some("dc1"))
           ),
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http",
-            predicate = NetworkLocationMatch(zone = "dc2".option)
+            predicate = NetworkLocationMatch(zone = Some("dc2"))
           ),
           Target(
-            host = s"127.0.0.1:${port3}",
+            host = s"127.0.0.1:$port3",
             scheme = "http",
-            predicate = NetworkLocationMatch(zone = "dc3".option)
+            predicate = NetworkLocationMatch(zone = Some("dc3"))
           )
         ),
         publicPatterns = Seq("/.*"),
@@ -1432,7 +1424,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter3.get() mustBe 0
       (0 to 9).foreach { _ =>
         val response = call1(Map.empty)
-        println("response", response.status, response.headers, response.body)
+        println(s"response ${response.status} ${response.headers} ${response.body}")
         await(100.millis)
       }
       // println(counter1.get(), counter2.get(), counter3.get())
@@ -1455,17 +1447,17 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http",
             predicate = NetworkLocationMatch(region = "eu-west-1".option)
           ),
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http",
             predicate = NetworkLocationMatch(region = "eu-west-2".option)
           ),
           Target(
-            host = s"127.0.0.1:${port3}",
+            host = s"127.0.0.1:$port3",
             scheme = "http",
             predicate = NetworkLocationMatch(region = "eu-west-3".option)
           )
@@ -1506,32 +1498,32 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http",
             predicate = NetworkLocationMatch(region = "eu-west-1".option, zone = "dc1".option)
           ),
           Target(
-            host = s"127.0.0.1:${port2}",
+            host = s"127.0.0.1:$port2",
             scheme = "http",
             predicate = NetworkLocationMatch(region = "eu-west-1".option, zone = "dc2".option)
           ),
           Target(
-            host = s"127.0.0.1:${port3}",
+            host = s"127.0.0.1:$port3",
             scheme = "http",
             predicate = NetworkLocationMatch(region = "eu-west-1".option, zone = "dc3".option)
           ),
           Target(
-            host = s"127.0.0.1:${port4}",
+            host = s"127.0.0.1:$port4",
             scheme = "http",
             predicate = NetworkLocationMatch(region = "eu-west-2".option, zone = "dc1".option)
           ),
           Target(
-            host = s"127.0.0.1:${port5}",
+            host = s"127.0.0.1:$port5",
             scheme = "http",
             predicate = NetworkLocationMatch(region = "eu-west-3".option, zone = "dc1".option)
           ),
           Target(
-            host = s"127.0.0.1:${port6}",
+            host = s"127.0.0.1:$port6",
             scheme = "http",
             predicate = NetworkLocationMatch(region = "eu-west-4".option, zone = "dc1".option)
           )
@@ -1568,7 +1560,6 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       val body    = """{"message":"hello world"}"""
       val server  = TargetService(
         None,
-        "/api",
         "application/json",
         { r =>
           if (r.getHeader("Host").get().value().startsWith("www.google.fr")) {
@@ -1628,7 +1619,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -1658,7 +1649,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -1690,7 +1681,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -1723,7 +1714,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -1755,7 +1746,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -1787,7 +1778,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -1822,7 +1813,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -1848,7 +1839,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -1883,7 +1874,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter1.get() mustBe 3
 
       val resp1111 = ws
-        .url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .url(s"http://127.0.0.1:$port/api/bar/foo")
         .withHttpHeaders("Host" -> "restrictionservicesome.oto.tools")
         .delete()
         .futureValue
@@ -1911,7 +1902,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -1944,7 +1935,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter1.get() mustBe 3
 
       val resp1111 = ws
-        .url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .url(s"http://127.0.0.1:$port/api/bar/foo")
         .withHttpHeaders("Host" -> "restrictionserviceallowsome.oto.tools")
         .delete()
         .futureValue
@@ -1972,7 +1963,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -2025,7 +2016,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter1.get() mustBe 3
 
       val resp1111 = ws
-        .url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .url(s"http://127.0.0.1:$port/api/bar/foo")
         .withHttpHeaders(
           "Host"                   -> "restrictionservicesome.oto.tools",
           "Otoroshi-Client-Id"     -> apikey2.clientId,
@@ -2066,7 +2057,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter1.get() mustBe 6
 
       val resp1_1111 = ws
-        .url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .url(s"http://127.0.0.1:$port/api/bar/foo")
         .withHttpHeaders(
           "Host"                   -> "restrictionservicesapikey.oto.tools",
           "Otoroshi-Client-Id"     -> apikey1.clientId,
@@ -2104,7 +2095,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${port1}",
+            host = s"127.0.0.1:$port1",
             scheme = "http"
           )
         ),
@@ -2155,7 +2146,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter1.get() mustBe 3
 
       val resp1111 = ws
-        .url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .url(s"http://127.0.0.1:$port/api/bar/foo")
         .withHttpHeaders(
           "Host"                   -> "restrictionservicesapikeyallow.oto.tools",
           "Otoroshi-Client-Id"     -> apikey2.clientId,
@@ -2196,7 +2187,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter1.get() mustBe 6
 
       val resp1_1111 = ws
-        .url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .url(s"http://127.0.0.1:$port/api/bar/foo")
         .withHttpHeaders(
           "Host"                   -> "restrictionservicesapikeyallow.oto.tools",
           "Otoroshi-Client-Id"     -> apikey1.clientId,

@@ -1,14 +1,13 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
-
-import akka.{Done, NotUsed}
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.headers.Host
-import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.stream.{ActorMaterializer, Materializer}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.http.scaladsl.model.headers.Host
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
+import org.apache.pekko.stream.{ActorMaterializer, Materializer}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ServiceDescriptor, Target}
 import org.scalatest.concurrent.IntegrationPatience
@@ -22,7 +21,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration) extends O
 
   lazy val serviceHost = "websocket.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -41,9 +40,9 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration) extends O
 
     "support websockets" in {
 
-      implicit val system = ActorSystem("otoroshi-test")
-      implicit val mat    = Materializer(system)
-      implicit val http   = Http()(system)
+      given system: ActorSystem = ActorSystem("otoroshi-test")
+      given mat: Materializer = Materializer(system)
+      given http: HttpExt = Http()(using system)
 
       val service = ServiceDescriptor(
         id = "ws-test",
@@ -53,9 +52,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration) extends O
         domain = "oto.tools",
         targets = Seq(
           Target(
-            host = s"echo.websocket.org",
-            scheme = "https"
-          )
+            host = s"echo.websocket.org")
         ),
         forceHttps = false,
         enforceSecureCommunication = false,

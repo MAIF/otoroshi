@@ -4956,8 +4956,8 @@
             "array" : true,
             "format" : null
           },
-          "useAkkaHttpClient" : {
-            "label" : "useAkkaHttpClient",
+          "usePekkoHttpClient" : {
+            "label" : "usePekkoHttpClient",
             "type" : "bool"
           },
           "maintenanceMode" : {
@@ -6723,7 +6723,7 @@
             "type" : "bool"
           }
         },
-        "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "useAkkaHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
+        "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "usePekkoHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
       },
       "config" : {
         "label" : "config",
@@ -9939,8 +9939,8 @@
         "label" : "limitConcurrentRequests",
         "type" : "bool"
       },
-      "useAkkaHttpClient" : {
-        "label" : "useAkkaHttpClient",
+      "usePekkoHttpClient" : {
+        "label" : "usePekkoHttpClient",
         "type" : "bool"
       },
       "elasticWritesConfigs" : {
@@ -10680,7 +10680,7 @@
         "flow" : [ "enabled" ]
       }
     },
-    "flow" : [ "u2fLoginOnly", "alertsWebhooks", "autoLinkToDefaultGroup", "maxHttp10ResponseSize", "useCircuitBreakers", "perIpThrottlingQuota", "initWithNewEngine", "maintenanceMode", "analyticsWebhooks", "middleFingers", "extensions", "lines", "otoroshiId", "streamEntityOnly", "backOfficeAuthRef", "apiReadOnly", "metadata", "logAnalyticsOnServer", "elasticWritesConfigs", "useAkkaHttpClient", "limitConcurrentRequests", "tags", "trustXForwarded", "enableEmbeddedMetrics", "maxLogsSize", "endlessIpAddresses", "maxConcurrentRequests", "env", "maxWebhookSize", "anonymousReporting", "throttlingQuota", "alertsEmails", "geolocationSettings", "cleverSettings", "templates", "plugins", "kafkaConfig", "proxies", "elasticReadsConfig", "quotasSettings", "mailerSettings", "autoCert", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "tlsSettings", "statsdConfig", "ipFiltering", "userAgentSettings" ]
+    "flow" : [ "u2fLoginOnly", "alertsWebhooks", "autoLinkToDefaultGroup", "maxHttp10ResponseSize", "useCircuitBreakers", "perIpThrottlingQuota", "initWithNewEngine", "maintenanceMode", "analyticsWebhooks", "middleFingers", "extensions", "lines", "otoroshiId", "streamEntityOnly", "backOfficeAuthRef", "apiReadOnly", "metadata", "logAnalyticsOnServer", "elasticWritesConfigs", "usePekkoHttpClient", "limitConcurrentRequests", "tags", "trustXForwarded", "enableEmbeddedMetrics", "maxLogsSize", "endlessIpAddresses", "maxConcurrentRequests", "env", "maxWebhookSize", "anonymousReporting", "throttlingQuota", "alertsEmails", "geolocationSettings", "cleverSettings", "templates", "plugins", "kafkaConfig", "proxies", "elasticReadsConfig", "quotasSettings", "mailerSettings", "autoCert", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "tlsSettings", "statsdConfig", "ipFiltering", "userAgentSettings" ]
   },
   "otoroshi.plugins.users.HasAllowedUsersValidator" : {
     "schema" : { },
@@ -16570,8 +16570,8 @@
                 "array" : true,
                 "format" : null
               },
-              "useAkkaHttpClient" : {
-                "label" : "useAkkaHttpClient",
+              "usePekkoHttpClient" : {
+                "label" : "usePekkoHttpClient",
                 "type" : "bool"
               },
               "maintenanceMode" : {
@@ -18337,7 +18337,7 @@
                 "type" : "bool"
               }
             },
-            "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "useAkkaHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
+            "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "usePekkoHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
           },
           "index" : {
             "label" : "index",
@@ -19749,8 +19749,8 @@
             "array" : true,
             "format" : null
           },
-          "useAkkaHttpClient" : {
-            "label" : "useAkkaHttpClient",
+          "usePekkoHttpClient" : {
+            "label" : "usePekkoHttpClient",
             "type" : "bool"
           },
           "maintenanceMode" : {
@@ -21516,7 +21516,7 @@
             "type" : "bool"
           }
         },
-        "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "useAkkaHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
+        "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "usePekkoHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
       },
       "index" : {
         "label" : "index",
@@ -26220,8 +26220,8 @@
             "array" : true,
             "format" : null
           },
-          "useAkkaHttpClient" : {
-            "label" : "useAkkaHttpClient",
+          "usePekkoHttpClient" : {
+            "label" : "usePekkoHttpClient",
             "type" : "bool"
           },
           "maintenanceMode" : {
@@ -27987,7 +27987,7 @@
             "type" : "bool"
           }
         },
-        "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "useAkkaHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "secComHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "publicPatterns", "api", "issueCert", "jwtVerifier", "letsEncrypt", "additionalHeaders", "transformerConfig", "additionalHeadersOut", "matchingHeaders", "missingOnlyHeadersOut", "metadata", "missingOnlyHeadersIn", "headersVerification" ]
+        "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "usePekkoHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "secComHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "publicPatterns", "api", "issueCert", "jwtVerifier", "letsEncrypt", "additionalHeaders", "transformerConfig", "additionalHeadersOut", "matchingHeaders", "missingOnlyHeadersOut", "metadata", "missingOnlyHeadersIn", "headersVerification" ]
       },
       "globalConfigs" : {
         "label" : "globalConfigs",
@@ -28790,8 +28790,8 @@
             "label" : "limitConcurrentRequests",
             "type" : "bool"
           },
-          "useAkkaHttpClient" : {
-            "label" : "useAkkaHttpClient",
+          "usePekkoHttpClient" : {
+            "label" : "usePekkoHttpClient",
             "type" : "bool"
           },
           "elasticWritesConfigs" : {
@@ -29531,7 +29531,7 @@
             "flow" : [ "enabled" ]
           }
         },
-        "flow" : [ "geolocationSettings", "alertsEmails", "throttlingQuota", "anonymousReporting", "maxWebhookSize", "maxConcurrentRequests", "cleverSettings", "templates", "endlessIpAddresses", "plugins", "kafkaConfig", "maxLogsSize", "proxies", "enableEmbeddedMetrics", "elasticReadsConfig", "trustXForwarded", "quotasSettings", "tags", "limitConcurrentRequests", "useAkkaHttpClient", "elasticWritesConfigs", "logAnalyticsOnServer", "apiReadOnly", "backOfficeAuthRef", "streamEntityOnly", "otoroshiId", "mailerSettings", "lines", "middleFingers", "analyticsWebhooks", "autoCert", "maintenanceMode", "initWithNewEngine", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "perIpThrottlingQuota", "useCircuitBreakers", "maxHttp10ResponseSize", "tlsSettings", "statsdConfig", "autoLinkToDefaultGroup", "alertsWebhooks", "ipFiltering", "u2fLoginOnly", "userAgentSettings", "env", "metadata", "extensions" ]
+        "flow" : [ "geolocationSettings", "alertsEmails", "throttlingQuota", "anonymousReporting", "maxWebhookSize", "maxConcurrentRequests", "cleverSettings", "templates", "endlessIpAddresses", "plugins", "kafkaConfig", "maxLogsSize", "proxies", "enableEmbeddedMetrics", "elasticReadsConfig", "trustXForwarded", "quotasSettings", "tags", "limitConcurrentRequests", "usePekkoHttpClient", "elasticWritesConfigs", "logAnalyticsOnServer", "apiReadOnly", "backOfficeAuthRef", "streamEntityOnly", "otoroshiId", "mailerSettings", "lines", "middleFingers", "analyticsWebhooks", "autoCert", "maintenanceMode", "initWithNewEngine", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "perIpThrottlingQuota", "useCircuitBreakers", "maxHttp10ResponseSize", "tlsSettings", "statsdConfig", "autoLinkToDefaultGroup", "alertsWebhooks", "ipFiltering", "u2fLoginOnly", "userAgentSettings", "env", "metadata", "extensions" ]
       },
       "authModules" : {
         "label" : "authModules",
@@ -32240,8 +32240,8 @@
                 "array" : true,
                 "format" : null
               },
-              "useAkkaHttpClient" : {
-                "label" : "useAkkaHttpClient",
+              "usePekkoHttpClient" : {
+                "label" : "usePekkoHttpClient",
                 "type" : "bool"
               },
               "maintenanceMode" : {
@@ -34007,7 +34007,7 @@
                 "type" : "bool"
               }
             },
-            "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "useAkkaHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
+            "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "usePekkoHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
           },
           "config" : {
             "label" : "config",
@@ -36387,8 +36387,8 @@
             "array" : true,
             "format" : null
           },
-          "useAkkaHttpClient" : {
-            "label" : "useAkkaHttpClient",
+          "usePekkoHttpClient" : {
+            "label" : "usePekkoHttpClient",
             "type" : "bool"
           },
           "maintenanceMode" : {
@@ -38154,7 +38154,7 @@
             "type" : "bool"
           }
         },
-        "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "useAkkaHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
+        "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "usePekkoHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
       },
       "id" : {
         "label" : "id",
@@ -46663,8 +46663,8 @@
                 "array" : true,
                 "format" : null
               },
-              "useAkkaHttpClient" : {
-                "label" : "useAkkaHttpClient",
+              "usePekkoHttpClient" : {
+                "label" : "usePekkoHttpClient",
                 "type" : "bool"
               },
               "maintenanceMode" : {
@@ -48430,7 +48430,7 @@
                 "type" : "bool"
               }
             },
-            "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "useAkkaHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
+            "flow" : [ "buildMode", "hosts", "privateApp", "localScheme", "authConfigRef", "issueCertCA", "root", "name", "additionalHeaders", "domain", "clientConfig", "matchingRoot", "forceHttps", "localHost", "sendOtoroshiHeadersBack", "healthCheck", "strictlyPrivate", "detectApiKeySooner", "allowHttp10", "subdomain", "paths", "stripPath", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "env", "xForwardedHeaders", "transformerRefs", "enabled", "gzip", "sendInfoToken", "tcpUdpTunneling", "removeHeadersOut", "usePekkoHttpClient", "maintenanceMode", "id", "removeHeadersIn", "logAnalyticsOnServer", "secComAlgoInfoToken", "userFacing", "transformerConfig", "clientValidatorRef", "securityExcludedPatterns", "ipFiltering", "targets", "redirection", "tags", "restrictions", "overrideHost", "accessValidator", "sendStateChallenge", "chaosConfig", "secComInfoTokenVersion", "additionalHeadersOut", "secComHeaders", "matchingHeaders", "secComAlgoChallengeBackToOto", "secComUseSameAlgo", "useNewWSClient", "secComExcludedPatterns", "redirectToLocal", "enforceSecureCommunication", "missingOnlyHeadersOut", "secComSettings", "handleLegacyDomain", "canary", "_loc", "plugins", "secComTtl", "description", "secComVersion", "preRouting", "groups", "readOnly", "privatePatterns", "targetsLoadBalancing", "cors", "metadata", "publicPatterns", "api", "missingOnlyHeadersIn", "issueCert", "headersVerification", "jwtVerifier", "letsEncrypt" ]
           },
           "id" : {
             "label" : "id",
@@ -49735,8 +49735,8 @@
             "label" : "limitConcurrentRequests",
             "type" : "bool"
           },
-          "useAkkaHttpClient" : {
-            "label" : "useAkkaHttpClient",
+          "usePekkoHttpClient" : {
+            "label" : "usePekkoHttpClient",
             "type" : "bool"
           },
           "elasticWritesConfigs" : {
@@ -50476,7 +50476,7 @@
             "flow" : [ "enabled" ]
           }
         },
-        "flow" : [ "geolocationSettings", "alertsEmails", "throttlingQuota", "anonymousReporting", "maxWebhookSize", "env", "maxConcurrentRequests", "cleverSettings", "templates", "endlessIpAddresses", "plugins", "kafkaConfig", "maxLogsSize", "proxies", "enableEmbeddedMetrics", "elasticReadsConfig", "trustXForwarded", "quotasSettings", "tags", "limitConcurrentRequests", "useAkkaHttpClient", "elasticWritesConfigs", "logAnalyticsOnServer", "metadata", "apiReadOnly", "backOfficeAuthRef", "streamEntityOnly", "otoroshiId", "mailerSettings", "lines", "extensions", "middleFingers", "analyticsWebhooks", "autoCert", "maintenanceMode", "initWithNewEngine", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "perIpThrottlingQuota", "useCircuitBreakers", "maxHttp10ResponseSize", "tlsSettings", "statsdConfig", "autoLinkToDefaultGroup", "alertsWebhooks", "ipFiltering", "u2fLoginOnly", "userAgentSettings" ]
+        "flow" : [ "geolocationSettings", "alertsEmails", "throttlingQuota", "anonymousReporting", "maxWebhookSize", "env", "maxConcurrentRequests", "cleverSettings", "templates", "endlessIpAddresses", "plugins", "kafkaConfig", "maxLogsSize", "proxies", "enableEmbeddedMetrics", "elasticReadsConfig", "trustXForwarded", "quotasSettings", "tags", "limitConcurrentRequests", "usePekkoHttpClient", "elasticWritesConfigs", "logAnalyticsOnServer", "metadata", "apiReadOnly", "backOfficeAuthRef", "streamEntityOnly", "otoroshiId", "mailerSettings", "lines", "extensions", "middleFingers", "analyticsWebhooks", "autoCert", "maintenanceMode", "initWithNewEngine", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "perIpThrottlingQuota", "useCircuitBreakers", "maxHttp10ResponseSize", "tlsSettings", "statsdConfig", "autoLinkToDefaultGroup", "alertsWebhooks", "ipFiltering", "u2fLoginOnly", "userAgentSettings" ]
       }
     },
     "flow" : [ "config" ]
@@ -51681,8 +51681,8 @@
         "array" : true,
         "format" : null
       },
-      "useAkkaHttpClient" : {
-        "label" : "useAkkaHttpClient",
+      "usePekkoHttpClient" : {
+        "label" : "usePekkoHttpClient",
         "type" : "bool"
       },
       "maintenanceMode" : {
@@ -53448,7 +53448,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "letsEncrypt", "headersVerification", "issueCert", "missingOnlyHeadersIn", "publicPatterns", "metadata", "privatePatterns", "readOnly", "groups", "secComVersion", "description", "secComTtl", "handleLegacyDomain", "missingOnlyHeadersOut", "enforceSecureCommunication", "redirectToLocal", "secComExcludedPatterns", "useNewWSClient", "secComUseSameAlgo", "matchingHeaders", "additionalHeadersOut", "secComInfoTokenVersion", "sendStateChallenge", "overrideHost", "tags", "targets", "securityExcludedPatterns", "clientValidatorRef", "transformerConfig", "userFacing", "logAnalyticsOnServer", "removeHeadersIn", "id", "maintenanceMode", "useAkkaHttpClient", "removeHeadersOut", "tcpUdpTunneling", "sendInfoToken", "enabled", "transformerRefs", "xForwardedHeaders", "env", "stripPath", "paths", "subdomain", "allowHttp10", "detectApiKeySooner", "strictlyPrivate", "sendOtoroshiHeadersBack", "localHost", "forceHttps", "matchingRoot", "domain", "additionalHeaders", "name", "root", "issueCertCA", "authConfigRef", "localScheme", "privateApp", "hosts", "buildMode", "clientConfig", "healthCheck", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "gzip", "secComAlgoInfoToken", "ipFiltering", "redirection", "restrictions", "accessValidator", "chaosConfig", "secComHeaders", "secComAlgoChallengeBackToOto", "secComSettings", "canary", "_loc", "plugins", "preRouting", "targetsLoadBalancing", "cors", "api", "jwtVerifier" ]
+    "flow" : [ "letsEncrypt", "headersVerification", "issueCert", "missingOnlyHeadersIn", "publicPatterns", "metadata", "privatePatterns", "readOnly", "groups", "secComVersion", "description", "secComTtl", "handleLegacyDomain", "missingOnlyHeadersOut", "enforceSecureCommunication", "redirectToLocal", "secComExcludedPatterns", "useNewWSClient", "secComUseSameAlgo", "matchingHeaders", "additionalHeadersOut", "secComInfoTokenVersion", "sendStateChallenge", "overrideHost", "tags", "targets", "securityExcludedPatterns", "clientValidatorRef", "transformerConfig", "userFacing", "logAnalyticsOnServer", "removeHeadersIn", "id", "maintenanceMode", "usePekkoHttpClient", "removeHeadersOut", "tcpUdpTunneling", "sendInfoToken", "enabled", "transformerRefs", "xForwardedHeaders", "env", "stripPath", "paths", "subdomain", "allowHttp10", "detectApiKeySooner", "strictlyPrivate", "sendOtoroshiHeadersBack", "localHost", "forceHttps", "matchingRoot", "domain", "additionalHeaders", "name", "root", "issueCertCA", "authConfigRef", "localScheme", "privateApp", "hosts", "buildMode", "clientConfig", "healthCheck", "secComAlgoChallengeOtoToBack", "apiKeyConstraints", "gzip", "secComAlgoInfoToken", "ipFiltering", "redirection", "restrictions", "accessValidator", "chaosConfig", "secComHeaders", "secComAlgoChallengeBackToOto", "secComSettings", "canary", "_loc", "plugins", "preRouting", "targetsLoadBalancing", "cors", "api", "jwtVerifier" ]
   },
   "otoroshi.next.plugins.NgHasAllowedUsersValidator" : {
     "schema" : {

@@ -88,7 +88,7 @@
   <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF" />
   <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF" />
   <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
-  <logger name="akka.event.slf4j.Slf4jLogger" level="WARN" />
+  <logger name="org.apache.pekko.event.slf4j.Slf4jLogger" level="WARN" />
 
   <root level="INFO">
     <appender-ref ref="ASYNCFILE" />

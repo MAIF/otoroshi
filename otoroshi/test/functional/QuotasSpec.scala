@@ -3,7 +3,7 @@ package functional
 import java.util.Base64
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
 import org.scalatest.concurrent.IntegrationPatience
@@ -15,9 +15,9 @@ import scala.concurrent.duration._
 class QuotasSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "quotas.oto.tools"
-  implicit val system  = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -34,7 +34,6 @@ class QuotasSpec(name: String, configurationSpec: => Configuration) extends Otor
     val body                     = """{"message":"hello world"}"""
     val server                   = TargetService(
       None,
-      "/api",
       "application/json",
       { _ =>
         counter.incrementAndGet()

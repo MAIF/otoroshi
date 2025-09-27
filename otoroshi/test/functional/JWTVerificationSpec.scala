@@ -13,7 +13,7 @@ import otoroshi.models._
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import java.util.{Base64 => JavaBase64}
 import play.api.libs.json.Json
 
 import scala.util.{Failure, Success, Try}
@@ -22,7 +22,7 @@ class JWTVerification2Spec(name: String, configurationSpec: => Configuration) ex
   "blah" should {
     "very blah" in {
       def getPublicKey(value: String): ECPublicKey = {
-        val publicBytes = ApacheBase64.decodeBase64(
+        val publicBytes = JavaBase64.getDecoder.decode(
           value.replace("-----BEGIN PUBLIC KEY-----\n", "").replace("\n-----END PUBLIC KEY-----", "").trim()
         )
         val keySpec     = new X509EncodedKeySpec(publicBytes)
@@ -31,7 +31,7 @@ class JWTVerification2Spec(name: String, configurationSpec: => Configuration) ex
       }
 
       def getPrivateKey(value: String): ECPrivateKey = {
-        val publicBytes = ApacheBase64.decodeBase64(
+        val publicBytes = JavaBase64.getDecoder.decode(
           value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim()
         )
         val keySpec     = new PKCS8EncodedKeySpec(publicBytes)
@@ -94,7 +94,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
 
   lazy val serviceHost = "jwt.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -117,7 +117,6 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
       val basicTestServer1       = TargetService(
         Some(serviceHost),
-        "/api",
         "application/json",
         { _ =>
           callCounter1.incrementAndGet()
@@ -129,7 +128,6 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
         id = "verifier1",
         name = "verifier1",
         desc = "verifier1",
-        strict = true,
         source = InHeader(name = "X-JWT-Token"),
         algoSettings = HSAlgoSettings(512, "secret"),
         strategy = PassThrough(verificationSettings = VerificationSettings(Map("iss" -> "foo", "bar" -> "yo")))
@@ -222,7 +220,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
       status0 mustBe 400
       body0.contains("error.expected.token.not.found") mustBe true
 
-      println(status1, body1)
+      println(s"$status1, $body1")
 
       status1 mustBe 200
       body1.contains("hello world 1") mustBe true
@@ -262,7 +260,6 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
       val basicTestServer1       = TargetService(
         Some(serviceHost),
-        "/api",
         "application/json",
         { r =>
           r.getHeader("X-JWT-Token").asOption.map(a => a.value()).foreach { a =>
@@ -282,7 +279,6 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
         id = "verifier2",
         name = "verifier2",
         desc = "verifier2",
-        strict = true,
         source = InHeader(name = "X-JWT-Token"),
         algoSettings = HSAlgoSettings(512, "secret"),
         strategy = Sign(
@@ -408,14 +404,13 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
       val basicTestServer1       = TargetService(
         Some(serviceHost),
-        "/api",
         "application/json",
         { r =>
           r.getHeader("X-Barrr")
             .asOption
             .map(a => a.value())
             .foreach { a =>
-              import collection.JavaConverters._
+              import scala.jdk.CollectionConverters._
               val v        = JWT
                 .require(algorithm2)
                 .withIssuer("foo")
@@ -426,7 +421,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
               val verified = Try {
                 val dec = v.verify(a)
                 //println(dec.getClaim("the-host").asString())
-                //println(dec.getClaims.asScala.mapValues(v => v.asString()))
+                //println(dec.getClaims.asScala.view.mapValues(v => v.asString()))
 
               }.map(_ => true).getOrElse(false)
               verified mustEqual true
@@ -440,7 +435,6 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
         id = "verifier3",
         name = "verifier3",
         desc = "verifier3",
-        strict = true,
         source = InHeader(name = "X-JWT-Token"),
         algoSettings = HSAlgoSettings(512, "secret"),
         strategy = Transform(
@@ -576,7 +570,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
 
   lazy val serviceHost = "jwtref.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) =
+  override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(
       ConfigFactory
         .parseString(s"""
@@ -599,7 +593,6 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
       val basicTestServer1       = TargetService(
         Some(serviceHost),
-        "/api",
         "application/json",
         { _ =>
           callCounter1.incrementAndGet()
@@ -611,7 +604,6 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
         id = "verifier1",
         name = "verifier1",
         desc = "verifier1",
-        strict = true,
         source = InHeader(name = "X-JWT-Token"),
         algoSettings = HSAlgoSettings(512, "secretfake"),
         strategy = PassThrough(verificationSettings = VerificationSettings(Map("iss" -> "foo", "bar" -> "yo")))
@@ -620,7 +612,6 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
         id = "verifier2",
         name = "verifier2",
         desc = "verifier2",
-        strict = true,
         source = InHeader(name = "X-JWT-Token"),
         algoSettings = HSAlgoSettings(512, "secret"),
         strategy = PassThrough(verificationSettings = VerificationSettings(Map("iss" -> "foo", "bar" -> "yo")))
@@ -629,7 +620,6 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
         id = "verifier3",
         name = "verifier3",
         desc = "verifier3",
-        strict = true,
         source = InHeader(name = "X-JWT-Token"),
         algoSettings = HSAlgoSettings(512, "secretfake"),
         strategy = PassThrough(verificationSettings = VerificationSettings(Map("iss" -> "foo", "bar" -> "yo")))

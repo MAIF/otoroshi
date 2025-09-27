@@ -1,40 +1,41 @@
 package functional
 
-import java.net.ServerSocket
-import java.nio.file.Files
-import java.util.Optional
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import akka.NotUsed
-import akka.actor.{ActorSystem, Scheduler}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.ws.{Message, TextMessage, UpgradeToWebSocket}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Framing, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{ActorSystem, Scheduler}
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage}
+import org.apache.pekko.http.scaladsl.model.AttributeKeys
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Framing, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
-import otoroshi.env.Env
-import otoroshi.models._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{MustMatchers, OptionValues, TestSuite, WordSpec}
-import org.scalatestplus.play.components.{OneServerPerSuiteWithComponents, OneServerPerTestWithComponents}
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.OptionValues
+import org.scalatest.matchers.must.Matchers
 import org.slf4j.LoggerFactory
 import otoroshi.api.Otoroshi
-import otoroshi.models.DataExporterConfig
+import otoroshi.env.Env
 import otoroshi.loader.modules.OtoroshiComponentsInstances
+import otoroshi.models._
 import otoroshi.next.models.NgRoute
 import play.api.ApplicationLoader.Context
 import play.api.libs.json._
 import play.api.libs.ws._
 import play.api.libs.ws.ahc.{AhcWSClient, AhcWSClientConfig}
-import play.api.{Application, BuiltInComponents, Configuration, Logger}
+import play.api.{Configuration, Logger}
 import play.core.server.ServerConfig
 
+import java.net.ServerSocket
+import java.nio.file.Files
+import java.util.Optional
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent._
 import scala.util.{Random, Success, Try}
-import otoroshi.utils.syntax.implicits._
+import org.slf4j
 
 trait AddConfiguration {
   def getConfiguration(configuration: Configuration): Configuration
@@ -46,7 +47,7 @@ class OtoroshiTestComponentsInstances(
     getHttpPort: => Option[Int],
     getHttpsPort: => Option[Int]
 ) extends OtoroshiComponentsInstances(context, getHttpPort, getHttpsPort, true) {
-  override def configuration = conf(super.configuration)
+  override def configuration: Configuration = conf(super.configuration)
 }
 
 /*
@@ -108,7 +109,7 @@ trait OneServerPerTestWithMyComponents extends OneServerPerTestWithComponents wi
 /*
 trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
-  lazy implicit val ec = otoroshiComponents.env.otoroshiExecutionContext
+  lazy given ec = otoroshiComponents.env.otoroshiExecutionContext
   lazy val logger      = Logger("otoroshi-spec-helper")
 
   private var _servers: Set[TargetService] = Set.empty
@@ -120,7 +121,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       streamDelay: FiniteDuration = 0.millis,
       validate: HttpRequest => Boolean = _ => true,
       additionalHeadersOut: List[HttpHeader] = List.empty
-  )(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
+  )(using ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
     val counter = new AtomicInteger(0)
     val body    = """{"message":"hello world"}"""
     val server  = TargetService
@@ -156,7 +157,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       (headers: Map[String, String]) => {
         val finalHeaders = (Map("Host" -> host) ++ headers).toSeq
         ws.url(s"http://127.0.0.1:${port}/api")
-          .withHttpHeaders(finalHeaders: _*)
+          .withHttpHeaders(finalHeaders*)
           .get()
           .futureValue
       }
@@ -169,7 +170,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       delay: FiniteDuration = 0.millis,
       streamDelay: FiniteDuration = 0.millis,
       validate: HttpRequest => Boolean = _ => true
-  )(implicit ws: WSClient): (TargetService, Int, AtomicInteger, String => Map[String, String] => WSResponse) = {
+  )(using ws: WSClient): (TargetService, Int, AtomicInteger, String => Map[String, String] => WSResponse) = {
     val counter = new AtomicInteger(0)
     val body    = """{"message":"hello world"}"""
     val server  = TargetService
@@ -205,7 +206,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
         (headers: Map[String, String]) => {
           val finalHeaders = (Map("Host" -> host) ++ headers).toSeq
           ws.url(s"http://127.0.0.1:${port}$path")
-            .withHttpHeaders(finalHeaders: _*)
+            .withHttpHeaders(finalHeaders*)
             .get()
             .futureValue
         }
@@ -225,7 +226,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     Await.result(p.future, duration + 1.second)
   }
 
-  def awaitF(duration: FiniteDuration)(implicit system: ActorSystem): Future[Unit] = {
+  def awaitF(duration: FiniteDuration)(using system: ActorSystem): Future[Unit] = {
     val p = Promise[Unit]
     system.scheduler.scheduleOnce(duration) {
       p.trySuccess(())
@@ -246,7 +247,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     if (payload.isDefined) {
       suite.otoroshiComponents.wsClient
         .url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
-        .withHttpHeaders(headers :+ ("Content-Type" -> "application/json"): _*)
+        .withHttpHeaders(headers :+ ("Content-Type" -> "application/json")*)
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
         .withFollowRedirects(false)
         .withMethod(method)
@@ -261,7 +262,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     } else {
       suite.otoroshiComponents.wsClient
         .url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
-        .withHttpHeaders(headers: _*)
+        .withHttpHeaders(headers*)
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
         .withFollowRedirects(false)
         .withMethod(method)
@@ -383,7 +384,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .flatMap { response =>
-        val config    = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
+        val config    = [?]response.json.as[SnowMonkeyConfig](using SnowMonkeyConfig._fmt)
         val newConfig = f(config)
         suite.otoroshiComponents.wsClient
           .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/config")
@@ -395,7 +396,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .put(Json.stringify(newConfig.asJson))
           .flatMap { response =>
-            val r = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
+            val r = [?]response.json.as[SnowMonkeyConfig](using SnowMonkeyConfig._fmt)
             awaitF(100.millis)(otoroshiComponents.actorSystem).map(_ => r)
           }
       }
@@ -541,15 +542,15 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 }
  */
 
-trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with ScalaFutures with IntegrationPatience {
 
   import Implicits._
 
   def getTestConfiguration(configuration: Configuration): Configuration
 
   private lazy val logger                              = Logger("otoroshi-spec")
-  private lazy implicit val actorSystem: ActorSystem   = ActorSystem(s"test-actor-system")
-  private lazy implicit val materializer: Materializer = Materializer(actorSystem)
+  private lazy given actorSystem: ActorSystem   = ActorSystem(s"test-actor-system")
+  private lazy given materializer: Materializer = Materializer(actorSystem)
   private lazy val wsClientInstance: WSClient = {
     val parser: WSConfigParser         = new WSConfigParser(
       Configuration(
@@ -806,7 +807,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       ).underlying,
       this.getClass.getClassLoader
     )
-    val config: AhcWSClientConfig      = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
+    val config: AhcWSClientConfig      = AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
       keepAlive = true
     )
     val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
@@ -818,10 +819,10 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       config.copy(
         wsClientConfig = wsClientConfig
       )
-    )(materializer)
+    )(using materializer)
   }
-  private lazy implicit val scheduler: Scheduler       = actorSystem.scheduler
-  lazy implicit val ec: ExecutionContext               = actorSystem.dispatcher
+  private lazy given scheduler: Scheduler       = actorSystem.scheduler
+  lazy given ec: ExecutionContext               = actorSystem.dispatcher
   private lazy val httpPort: Int = {
     Try {
       val s = new ServerSocket(0)
@@ -841,7 +842,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
 
   def wsClient: WSClient             = wsClientInstance
   def ws: WSClient                   = wsClientInstance
-  lazy implicit val wsImpl: WSClient = wsClientInstance
+  lazy given wsImpl: WSClient = wsClientInstance
   def port: Int                      = httpPort
   def otoroshiComponents: Otoroshi   = otoroshiRef.get()
 
@@ -856,13 +857,12 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       streamDelay: FiniteDuration = 0.millis,
       validate: HttpRequest => Boolean = _ => true,
       additionalHeadersOut: List[HttpHeader] = List.empty
-  )(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
+  )(using ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
     val counter = new AtomicInteger(0)
     val body    = """{"message":"hello world"}"""
     val server  = TargetService
       .streamed(
         None,
-        "/api",
         "application/json",
         { r =>
           if (validate(r)) {
@@ -876,7 +876,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
             val tail = body.tail
             Source
               .single(ByteString(head))
-              .concat(Source.future(awaitF(streamDelay)(actorSystem).map(_ => ByteString(tail))))
+              .concat(Source.future(awaitF(streamDelay)(using actorSystem).map(_ => ByteString(tail))))
           } else {
             Source(List(ByteString(body)))
           }
@@ -891,8 +891,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       counter,
       (headers: Map[String, String]) => {
         val finalHeaders = (Map("Host" -> host) ++ headers).toSeq
-        ws.url(s"http://127.0.0.1:${port}/api")
-          .withHttpHeaders(finalHeaders: _*)
+        ws.url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(finalHeaders*)
           .get()
           .futureValue
       }
@@ -905,13 +905,12 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       delay: FiniteDuration = 0.millis,
       streamDelay: FiniteDuration = 0.millis,
       validate: HttpRequest => Boolean = _ => true
-  )(implicit ws: WSClient): (TargetService, Int, AtomicInteger, String => Map[String, String] => WSResponse) = {
+  )(using ws: WSClient): (TargetService, Int, AtomicInteger, String => Map[String, String] => WSResponse) = {
     val counter = new AtomicInteger(0)
     val body    = """{"message":"hello world"}"""
     val server  = TargetService
       .streamed(
         None,
-        "/api",
         "application/json",
         { r =>
           if (validate(r)) {
@@ -925,7 +924,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
             val tail = body.tail
             Source
               .single(ByteString(head))
-              .concat(Source.future(awaitF(streamDelay)(actorSystem).map(_ => ByteString(tail))))
+              .concat(Source.future(awaitF(streamDelay)(using actorSystem).map(_ => ByteString(tail))))
           } else {
             Source(List(ByteString(body)))
           }
@@ -940,8 +939,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       (path: String) =>
         (headers: Map[String, String]) => {
           val finalHeaders = (Map("Host" -> host) ++ headers).toSeq
-          ws.url(s"http://127.0.0.1:${port}$path")
-            .withHttpHeaders(finalHeaders: _*)
+          ws.url(s"http://127.0.0.1:$port$path")
+            .withHttpHeaders(finalHeaders*)
             .get()
             .futureValue
         }
@@ -1016,15 +1015,15 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
   }
 
   def await(duration: FiniteDuration): Unit = {
-    val p = Promise[Unit]
+    val p = Promise[Unit]()
     scheduler.scheduleOnce(duration) {
       p.trySuccess(())
     }
     Await.result(p.future, duration + 1.second)
   }
 
-  def awaitF(duration: FiniteDuration)(implicit system: ActorSystem): Future[Unit] = {
-    val p = Promise[Unit]
+  def awaitF(duration: FiniteDuration)(using system: ActorSystem): Future[Unit] = {
+    val p = Promise[Unit]()
     system.scheduler.scheduleOnce(duration) {
       p.trySuccess(())
     }
@@ -1044,7 +1043,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
     if (payload.isDefined) {
       wsClient
         .url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
-        .withHttpHeaders(headers :+ ("Content-Type" -> "application/json"): _*)
+        .withHttpHeaders(headers :+ ("Content-Type" -> "application/json")*)
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
         .withFollowRedirects(false)
         .withMethod(method)
@@ -1052,7 +1051,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
         .execute()
         .map { response =>
           if (response.status != 200 && response.status != 201) {
-            logger.error(response.status + " - " + response.body)
+            logger.error(s"${response.status} - ${response.body}")
           }
           (response.json, response.status)
         }
@@ -1060,14 +1059,14 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
     } else {
       wsClient
         .url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
-        .withHttpHeaders(headers: _*)
+        .withHttpHeaders(headers*)
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
         .withFollowRedirects(false)
         .withMethod(method)
         .execute()
         .map { response =>
           if (response.status != 200 && response.status != 201) {
-            logger.error(response.status + " - " + response.body)
+            logger.error(s"${response.status} - ${response.body}")
           }
           (response.json, response.status)
         }
@@ -1159,7 +1158,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       //   println(response.body)
       // }
       try {
-        response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e))
+        response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e)).toSeq
       } catch {
         case e: Throwable => Seq.empty
       }
@@ -1184,9 +1183,9 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       //   println(response.body)
       // }
       try {
-        response.json.as[JsArray].value.map(e => NgRoute.fromJsons(e))
+        response.json.as[JsArray].value.map(e => NgRoute.fromJsons(e)).toSeq
       } catch {
-        case e: Throwable => Seq.empty
+        case _: Throwable => Seq.empty
       }
     }
   }
@@ -1200,7 +1199,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .post("")
-      .map { response =>
+      .map { _ =>
         ()
       }
       .andWait(1000.millis)
@@ -1215,7 +1214,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .post("")
-      .map { response =>
+      .map { _ =>
         ()
       }
       .andWait(1000.millis)
@@ -1234,7 +1233,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .flatMap { response =>
-        val config    = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
+        val config    = response.json.as[SnowMonkeyConfig](using SnowMonkeyConfig._fmt)
         val newConfig = f(config)
         wsClient
           .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/config")
@@ -1246,8 +1245,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .put(Json.stringify(newConfig.asJson))
           .flatMap { response =>
-            val r = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
-            awaitF(100.millis)(actorSystem).map(_ => r)
+            val r = response.json.as[SnowMonkeyConfig](using SnowMonkeyConfig._fmt)
+            awaitF(100.millis)(using actorSystem).map(_ => r)
           }
       }
       .andWait(1000.millis)
@@ -1263,7 +1262,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => Outage.fmt.reads(e).get)
+        response.json.as[JsArray].value.map(e => Outage.fmt.reads(e).get).toSeq
       }
   }
 
@@ -1277,7 +1276,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => ServiceGroup.fromJsons(e))
+        response.json.as[JsArray].value.map(e => ServiceGroup.fromJsons(e)).toSeq
       }
   }
 
@@ -1291,7 +1290,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => ApiKey.fromJsons(e))
+        response.json.as[JsArray].value.map(e => ApiKey.fromJsons(e)).toSeq
       }
   }
 
@@ -1454,8 +1453,8 @@ object Implicits {
     def await(): A = {
       Await.result(fu, 60.seconds)
     }
-    def andWait(duration: FiniteDuration)(implicit scheduler: Scheduler, ec: ExecutionContext): Future[A] = {
-      val p = Promise[Unit]
+    def andWait(duration: FiniteDuration)(using scheduler: Scheduler, ec: ExecutionContext): Future[A] = {
+      val p = Promise[Unit]()
       scheduler.scheduleOnce(duration) {
         p.trySuccess(())
       }
@@ -1476,38 +1475,38 @@ object Implicits {
 
 object HttpResponses {
 
-  def NotFound(path: String) =
+  def NotFound(path: String): HttpResponse =
     HttpResponse(
       404,
       entity = HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> s"$path not found")))
     )
 
-  def GatewayTimeout() =
+  def GatewayTimeout(): HttpResponse =
     HttpResponse(
       504,
       entity =
         HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> s"Target servers timeout")))
     )
 
-  def BadGateway(message: String) =
+  def BadGateway(message: String): HttpResponse =
     HttpResponse(
       502,
       entity = HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> message)))
     )
 
-  def BadRequest(message: String) =
+  def BadRequest(message: String): HttpResponse =
     HttpResponse(
       400,
       entity = HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> message)))
     )
 
-  def Unauthorized(message: String) =
+  def Unauthorized(message: String): HttpResponse =
     HttpResponse(
       401,
       entity = HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> message)))
     )
 
-  def Ok(json: JsValue) =
+  def Ok(json: JsValue): HttpResponse =
     HttpResponse(
       200,
       entity = HttpEntity(ContentTypes.`application/json`, Json.stringify(json))
@@ -1517,21 +1516,20 @@ object HttpResponses {
 class TargetService(
     val port: Int,
     host: Option[String],
-    path: String,
     contentType: String,
-    result: HttpRequest => (Int, String, Option[Source[ByteString, _]], List[HttpHeader])
+    result: HttpRequest => (Int, String, Option[Source[ByteString, ?]], List[HttpHeader])
 ) {
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  given system: ActorSystem = ActorSystem()
+  given ec: ExecutionContextExecutor = system.dispatcher
+  given mat: Materializer = Materializer(system)
+  given http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
-      case (HttpMethods.GET, p) if host.isEmpty                                    => {
+      case (HttpMethods.GET, _) if host.isEmpty                                    =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1545,8 +1543,7 @@ class TargetService(
             entity = entity
           )
         )
-      }
-      case (HttpMethods.GET, p) if TargetService.extractHost(request) == host.get  => {
+      case (HttpMethods.GET, _) if TargetService.extractHost(request) == host.get  =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1560,8 +1557,7 @@ class TargetService(
             entity = entity
           )
         )
-      }
-      case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get => {
+      case (HttpMethods.POST, _) if TargetService.extractHost(request) == host.get =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1575,8 +1571,7 @@ class TargetService(
             entity = entity
           )
         )
-      }
-      case (HttpMethods.DELETE, p)                                                 => {
+      case (HttpMethods.DELETE, _)                                                 =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1590,14 +1585,12 @@ class TargetService(
             entity = entity
           )
         )
-      }
-      case (_, p)                                                                  => {
+      case (_, p)                                                                  =>
         FastFuture.successful(HttpResponses.NotFound(p.toString()))
-      }
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound: Future[Http.ServerBinding] =  Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): TargetService = {
     Await.result(bound, 60.seconds)
@@ -1617,20 +1610,20 @@ class TargetService(
   }
 }
 
-class SimpleTargetService(host: Option[String], path: String, contentType: String, result: HttpRequest => String) {
+class SimpleTargetService(contentType: String, result: HttpRequest => String) {
 
   val port = TargetService.freePort
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  given system: ActorSystem = ActorSystem()
+  given ec: ExecutionContextExecutor = system.dispatcher
+  given mat: Materializer = Materializer(system)
+  given http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
-      case (_, _) => {
+      case (_, _) =>
         FastFuture.successful(
           HttpResponse(
             200,
@@ -1640,11 +1633,10 @@ class SimpleTargetService(host: Option[String], path: String, contentType: Strin
             )
           )
         )
-      }
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound: Future[Http.ServerBinding] =  Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): SimpleTargetService = {
     Await.result(bound, 60.seconds)
@@ -1662,16 +1654,15 @@ class AlertServer(counter: AtomicInteger) {
 
   val port = TargetService.freePort
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  given system: ActorSystem = ActorSystem()
+  given ec: ExecutionContextExecutor = system.dispatcher
+  given mat: Materializer = Materializer(system)
+  given http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
-    request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
-      val body = bodyByteString.utf8String
+    request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { _ =>
       counter.incrementAndGet()
       HttpResponse(
         200,
@@ -1680,7 +1671,7 @@ class AlertServer(counter: AtomicInteger) {
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound: Future[Http.ServerBinding] =  Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): AlertServer = {
     Await.result(bound, 60.seconds)
@@ -1698,12 +1689,12 @@ class AnalyticsServer(counter: AtomicInteger) {
 
   val port = TargetService.freePort
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  given system: ActorSystem = ActorSystem()
+  given ec: ExecutionContextExecutor = system.dispatcher
+  given mat: Materializer = Materializer(system)
+  given http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
@@ -1718,7 +1709,7 @@ class AnalyticsServer(counter: AtomicInteger) {
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound: Future[Http.ServerBinding] =  Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): AnalyticsServer = {
     Await.result(bound, 60.seconds)
@@ -1736,14 +1727,14 @@ class WebsocketServer(counter: AtomicInteger) {
 
   val port = TargetService.freePort
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  given system: ActorSystem = ActorSystem()
+  given ec: ExecutionContextExecutor = system.dispatcher
+  given mat: Materializer = Materializer(system)
+  given http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
-  val greeterWebSocketService =
+  val greeterWebSocketService: Flow[Message,TextMessage,NotUsed] =
     Flow[Message]
       .map { message =>
         println("server received message")
@@ -1752,13 +1743,13 @@ class WebsocketServer(counter: AtomicInteger) {
       }
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
-    request.header[UpgradeToWebSocket] match {
+    request.attribute(AttributeKeys.webSocketUpgrade) match {
       case Some(upgrade) => FastFuture.successful(upgrade.handleMessages(greeterWebSocketService))
       case None          => FastFuture.successful(HttpResponse(400, entity = "Not a valid websocket request!"))
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound: Future[Http.ServerBinding] = Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): WebsocketServer = {
     Await.result(bound, 60.seconds)
@@ -1776,11 +1767,10 @@ object TargetService {
 
   import Implicits._
 
-  def apply(host: Option[String], path: String, contentType: String, result: HttpRequest => String): TargetService = {
+  def apply(host: Option[String], contentType: String, result: HttpRequest => String): TargetService = {
     new TargetService(
       TargetService.freePort,
       host,
-      path,
       contentType,
       r => (200, result(r), None, List.empty[HttpHeader])
     )
@@ -1788,12 +1778,11 @@ object TargetService {
 
   def streamed(
       host: Option[String],
-      path: String,
       contentType: String,
       result: HttpRequest => Source[ByteString, NotUsed],
       headers: List[HttpHeader] = List.empty[HttpHeader]
   ): TargetService = {
-    new TargetService(TargetService.freePort, host, path, contentType, r => (200, "", Some(result(r)), headers))
+    new TargetService(TargetService.freePort, host, contentType, r => (200, "", Some(result(r)), headers))
   }
 
   def full(
@@ -1805,7 +1794,6 @@ object TargetService {
     new TargetService(
       TargetService.freePort,
       host,
-      path,
       contentType,
       r =>
         result(r) match {
@@ -1821,7 +1809,7 @@ object TargetService {
       contentType: String,
       result: HttpRequest => String
   ): TargetService = {
-    new TargetService(port, host, path, contentType, r => (200, result(r), None, List.empty[HttpHeader]))
+    new TargetService(port, host, contentType, r => (200, result(r), None, List.empty[HttpHeader]))
   }
 
   def freePort: Int = {
@@ -1833,22 +1821,22 @@ object TargetService {
     }.toOption.getOrElse(Random.nextInt(1000) + 7000)
   }
 
-  private val AbsoluteUri = """(?is)^(https?)://([^/]+)(/.*|$)""".r
+//  private val AbsoluteUri = """(?is)^(https?)://([^/]+)(/.*|$)""".r
 
   def extractHost(request: HttpRequest): String =
     request.getHeader("Otoroshi-Proxied-Host").asOption.map(_.value()).getOrElse("--")
 }
 
-class BodySizeService() {
+class BodySizeService {
 
   val port = TargetService.freePort
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  given system: ActorSystem = ActorSystem()
+  given ec: ExecutionContextExecutor = system.dispatcher
+  given mat: Materializer = Materializer(system)
+  given http: HttpExt = Http(system)
 
-  val logger = LoggerFactory.getLogger("otoroshi-test")
+  val logger: slf4j.Logger = LoggerFactory.getLogger("otoroshi-test")
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     request.entity.withoutSizeLimit().dataBytes.runFold(ByteString.empty)(_ ++ _) map { body =>
@@ -1862,7 +1850,7 @@ class BodySizeService() {
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound: Future[Http.ServerBinding] = Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): BodySizeService = {
     Await.result(bound, 60.seconds)
@@ -1879,8 +1867,8 @@ class BodySizeService() {
 object TestRegex {
 
   import java.util.regex.Pattern
-  val pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#$^+=!*()@%&]).{8,1000}$")
-  val matches = pattern.matcher("FifouFifou1!").matches()
+  val pattern: Pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#$^+=!*()@%&]).{8,1000}$")
+  val matches: Boolean = pattern.matcher("FifouFifou1!").matches()
   println(matches)
 }
 
@@ -1927,8 +1915,8 @@ trait ApiTester[Entity] {
 
   def testingBulk: Boolean = true
 
-  def beforeTest()(implicit ec: ExecutionContext): Future[Unit] = FastFuture.successful(())
-  def afterTest()(implicit ec: ExecutionContext): Future[Unit]  = FastFuture.successful(())
+  def beforeTest(): Future[Unit] = FastFuture.successful(())
+  def afterTest(): Future[Unit]  = FastFuture.successful(())
 
   private def assertBodyJson(expected: JsValue, result: JsValue, name: String): Boolean = {
     if (result != expected) {
@@ -1955,15 +1943,14 @@ trait ApiTester[Entity] {
   private def assertBodyHasAllIds(
       entities: Seq[Entity],
       checker: Int => Boolean,
-      body: Source[ByteString, _],
-      name: String
+      body: Source[ByteString, ?]
   ): Boolean = {
-    implicit val ec           = env.otoroshiExecutionContext
-    implicit val mat          = env.otoroshiMaterializer
+    given ec: ExecutionContext = env.otoroshiExecutionContext
+    given mat: Materializer = env.otoroshiMaterializer
     val indexedEntities       = entities.map(v => (extractId(v), v)).toMap
     val indexedResultEntities = Await.result(
       body
-        .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+        .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, allowTruncation = true))
         .filter(_.utf8String.trim.nonEmpty)
         .map(bs => Try(Json.parse(bs.utf8String)))
         .collect { case Success(e) => e }
@@ -1972,7 +1959,7 @@ trait ApiTester[Entity] {
         .map(_.toMap),
       30.seconds
     )
-    indexedEntities.forall { case (k, v) =>
+    indexedEntities.forall { case (k, _) =>
       indexedResultEntities.get(k) match {
         case Some(i) => checker(i)
         case None    => false
@@ -1980,11 +1967,11 @@ trait ApiTester[Entity] {
     }
   }
 
-  private def testCreateEntity(entity: Entity)(implicit ec: ExecutionContext): Future[Boolean] = {
+  private def testCreateEntity(entity: Entity)(using ec: ExecutionContext): Future[Boolean] = {
     val path = route()
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
-      .withQueryStringParameters(queryParams: _*)
+      .withQueryStringParameters(queryParams*)
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .withHttpHeaders("Content-Type" -> "application/json")
       .withFollowRedirects(false)
@@ -2005,16 +1992,16 @@ trait ApiTester[Entity] {
         }
       }
   }
-  private def testUpdateEntity(entity: Entity, updatedEntity: Entity)(implicit
+  private def testUpdateEntity(entity: Entity, updatedEntity: Entity)(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     testFindById(entity, "testUpdateEntity pre".some).flatMap {
       case false => false.future
-      case true  => {
+      case true  =>
         val path = route() + "/" + extractId(entity)
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withHttpHeaders("Content-Type" -> "application/json")
           .withFollowRedirects(false)
@@ -2033,19 +2020,18 @@ trait ApiTester[Entity] {
               false.future
             }
           }
-      }
     }
   }
-  private def testPatchEntity(entity: Entity, updatedEntity: (Entity, JsArray))(implicit
+  private def testPatchEntity(entity: Entity, updatedEntity: (Entity, JsArray))(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     testFindById(entity, "testPatchEntity pre".some).flatMap {
       case false => false.future
-      case true  => {
+      case true  =>
         val path = route() + "/" + extractId(entity)
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withHttpHeaders("Content-Type" -> "application/json")
           .withFollowRedirects(false)
@@ -2064,17 +2050,16 @@ trait ApiTester[Entity] {
               false.future
             }
           }
-      }
     }
   }
-  private def testDeleteEntity(entity: Entity)(implicit ec: ExecutionContext): Future[Boolean] = {
+  private def testDeleteEntity(entity: Entity)(using ec: ExecutionContext): Future[Boolean] = {
     testFindById(entity, "testDeleteEntity pre".some).flatMap {
       case false => false.future
-      case true  => {
+      case true  =>
         val path = route() + "/" + extractId(entity)
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withFollowRedirects(false)
           .withMethod("DELETE")
@@ -2091,16 +2076,15 @@ trait ApiTester[Entity] {
               false.future
             }
           }
-      }
     }
   }
-  private def testFindAll(entities: Seq[Entity], ctx: Option[String])(implicit
+  private def testFindAll(entities: Seq[Entity], ctx: Option[String])(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     val path = route()
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
-      .withQueryStringParameters(queryParams: _*)
+      .withQueryStringParameters(queryParams*)
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .withFollowRedirects(false)
       .withMethod("GET")
@@ -2118,11 +2102,11 @@ trait ApiTester[Entity] {
         }
       }
   }
-  private def testFindById(entity: Entity, ctx: Option[String])(implicit ec: ExecutionContext): Future[Boolean] = {
+  private def testFindById(entity: Entity, ctx: Option[String])(using ec: ExecutionContext): Future[Boolean] = {
     val path = route() + "/" + extractId(entity)
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
-      .withQueryStringParameters(queryParams: _*)
+      .withQueryStringParameters(queryParams*)
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .withFollowRedirects(false)
       .withMethod("GET")
@@ -2140,11 +2124,11 @@ trait ApiTester[Entity] {
       }
   }
 
-  private def testCreateEntities(entities: Seq[Entity])(implicit ec: ExecutionContext): Future[Boolean] = {
+  private def testCreateEntities(entities: Seq[Entity])(using ec: ExecutionContext): Future[Boolean] = {
     val path = route() + "/_bulk"
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
-      .withQueryStringParameters(queryParams: _*)
+      .withQueryStringParameters(queryParams*)
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .withHttpHeaders("Content-Type" -> "application/x-ndjson")
       .withFollowRedirects(false)
@@ -2153,7 +2137,7 @@ trait ApiTester[Entity] {
       .execute()
       .flatMap { resp =>
         if (resp.status == 200 || resp.status == 201) {
-          if (assertBodyHasAllIds(entities, s => s == 200 || s == 201, resp.bodyAsSource, "testCreateEntities")) {
+          if (assertBodyHasAllIds(entities, s => s == 200 || s == 201, resp.bodyAsSource)) {
             testFindAll(entities, "testCreateEntities".some)
           } else {
             false.future
@@ -2164,17 +2148,17 @@ trait ApiTester[Entity] {
         }
       }
   }
-  private def testPatchEntities(entities: Seq[Entity], updatedEntities: Seq[(Entity, JsArray)])(implicit
+  private def testPatchEntities(entities: Seq[Entity], updatedEntities: Seq[(Entity, JsArray)])(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     testFindAll(entities, "testPatchEntities pre".some).flatMap {
       case false =>
         false.future
-      case true  => {
+      case true  =>
         val path = route() + "/_bulk"
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withHttpHeaders("Content-Type" -> "application/x-ndjson")
           .withFollowRedirects(false)
@@ -2193,8 +2177,7 @@ trait ApiTester[Entity] {
                 assertBodyHasAllIds(
                   updatedEntities.map(_._1),
                   s => s == 200 || s == 201,
-                  resp.bodyAsSource,
-                  "testPatchEntities"
+                  resp.bodyAsSource
                 )
               ) {
                 testFindAll(updatedEntities.map(_._1), "testPatchEntities".some)
@@ -2206,20 +2189,19 @@ trait ApiTester[Entity] {
               false.future
             }
           }
-      }
     }
   }
-  private def testUpdateEntities(entities: Seq[Entity], updatedEntities: Seq[Entity])(implicit
+  private def testUpdateEntities(entities: Seq[Entity], updatedEntities: Seq[Entity])(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     testFindAll(entities, "testUpdateEntities pre".some).flatMap {
       case false =>
         false.future
-      case true  => {
+      case true  =>
         val path = route() + "/_bulk"
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withHttpHeaders("Content-Type" -> "application/x-ndjson")
           .withFollowRedirects(false)
@@ -2231,7 +2213,7 @@ trait ApiTester[Entity] {
           .flatMap { resp =>
             if (resp.status == 200) {
               if (
-                assertBodyHasAllIds(updatedEntities, s => s == 200 || s == 201, resp.bodyAsSource, "testUpdateEntities")
+                assertBodyHasAllIds(updatedEntities, s => s == 200 || s == 201, resp.bodyAsSource)
               ) {
                 testFindAll(updatedEntities, "testPatchEntities".some)
               } else {
@@ -2242,17 +2224,16 @@ trait ApiTester[Entity] {
               false.future
             }
           }
-      }
     }
   }
-  private def testDeleteEntities(entities: Seq[Entity])(implicit ec: ExecutionContext): Future[Boolean] = {
+  private def testDeleteEntities(entities: Seq[Entity])(using ec: ExecutionContext): Future[Boolean] = {
     testFindAll(entities, "testDeleteEntities pre".some).flatMap {
       case false => false.future
-      case true  => {
+      case true  =>
         val path = route() + "/_bulk"
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withFollowRedirects(false)
           .withMethod("DELETE")
@@ -2263,7 +2244,7 @@ trait ApiTester[Entity] {
           .execute()
           .flatMap { resp =>
             if (resp.status == 200) {
-              if (assertBodyHasAllIds(entities, s => s == 200 || s == 201, resp.bodyAsSource, "testDeleteEntities")) {
+              if (assertBodyHasAllIds(entities, s => s == 200 || s == 201, resp.bodyAsSource)) {
                 testFindAll(entities, "testDeleteEntities".some).map(v => !v)
               } else {
                 false.future
@@ -2273,11 +2254,10 @@ trait ApiTester[Entity] {
               false.future
             }
           }
-      }
     }
   }
 
-  def testApi(implicit ec: ExecutionContext): Future[ApiTesterResult] = {
+  def testApi(using ec: ExecutionContext): Future[ApiTesterResult] = {
 
     for {
 
