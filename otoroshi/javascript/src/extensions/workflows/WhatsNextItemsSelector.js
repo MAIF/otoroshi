@@ -84,6 +84,14 @@ export function Items({
       const nodes = category.nodes
         .filter((kind) => !FORBIDDEN_KINDS.includes(kind))
         .map((kind) => getNodeFromKind(kind))
+        .filter((n, idx) => {
+          if (!n) {
+            console.log('missing nodes', category.nodes[idx])
+            return false
+          }
+
+          return true
+        })
 
       return {
         ...category,
@@ -97,11 +105,11 @@ export function Items({
     return items
       .flatMap((category) => category.nodes)
       .filter(
-        (value) => value && 
-          (value.name?.toLowerCase().includes(lowercaseQuery) ||
+        (value) =>
+          value.name?.toLowerCase().includes(lowercaseQuery) ||
           value.description?.toLowerCase().includes(lowercaseQuery) ||
           value.kind?.toLowerCase().includes(lowercaseQuery) ||
-          value.display_name?.toLowerCase().includes(lowercaseQuery))
+          value.display_name?.toLowerCase().includes(lowercaseQuery)
       )
       .reduce((acc, node) => (acc.find((f) => f.name === node.name) ? acc : [...acc, node]), [])
       .map((node, i) => (

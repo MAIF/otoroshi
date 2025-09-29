@@ -172,7 +172,41 @@ export const NODES = (documentation, extensionOverloads) => {
   ];
 
   const items = Object.fromEntries(
-    Object.entries({ ...OVERLOADED_NODES, ...extensionOverloads }).map(([key, node]) => {
+    Object.entries({
+      ...OVERLOADED_NODES,
+      ...extensionOverloads.nodes.reduce((acc, n) => {
+        return {
+          ...acc,
+          [n.name]: {
+            ...n,
+            node: true,
+            schema: n.form_schema,
+            kind: n.kind || n.name,
+          }
+        }
+      }, {}),
+      ...extensionOverloads.operators.reduce((acc, ope) => {
+        return {
+          ...acc,
+          [ope.name]: {
+            ...ope,
+            operators: true,
+            schema: ope.form_schema,
+            kind: ope.kind || ope.name,
+          }
+        }
+      }, {}),
+      ...extensionOverloads.functions.map((acc, func) => {
+        return {
+          ...acc,
+          [func.name]: {
+            ...func,
+            category: 'functions',
+            schema: func.form_schema,
+          }
+        }
+      }, {}),
+    }).map(([key, node]) => {
       const defaultValue = defaultValues.find((n) => n.name === key);
 
       if (defaultValue) defaultValues = defaultValues.filter((f) => f.name !== key);
@@ -189,20 +223,21 @@ export const NODES = (documentation, extensionOverloads) => {
   );
 
   defaultValues.forEach((node) => {
-    items[node.name] = {
-      ...node,
-      kind: node.kind || node.name,
-    };
-  });
-
-  [...extensionOverloads.nodes, ...extensionOverloads.operators, ...extensionOverloads.functions].map(node => {
-    if (!items[node.name]) {
+    if (!items[node.name])
       items[node.name] = {
         ...node,
         kind: node.kind || node.name,
       };
-    }
-  })
+  });
+
+  // [...extensionOverloads.nodes, ...extensionOverloads.operators, ...extensionOverloads.functions].map(node => {
+  //   if (!items[node.name]) {
+  //     items[node.name] = {
+  //       ...node,
+  //       kind: node.kind || node.name,
+  //     };
+  //   }
+  // })
 
   return items;
 };

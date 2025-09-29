@@ -101,7 +101,7 @@ function Container(props) {
 
     let nodes = NODES(documentation.data, extensionOverloads)
     
-    console.log(nodes)
+    console.log(nodes['extensions.com.cloud-apim.llm-extension.router'])
 
     Object.entries(workflow.data.functions || {})
       .map(([functionName, value]) => UserDefinedFunction(functionName, value))
