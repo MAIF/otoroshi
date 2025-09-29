@@ -97,11 +97,11 @@ export function Items({
     return items
       .flatMap((category) => category.nodes)
       .filter(
-        (value) =>
-          value.name?.toLowerCase().includes(lowercaseQuery) ||
+        (value) => value && 
+          (value.name?.toLowerCase().includes(lowercaseQuery) ||
           value.description?.toLowerCase().includes(lowercaseQuery) ||
           value.kind?.toLowerCase().includes(lowercaseQuery) ||
-          value.display_name?.toLowerCase().includes(lowercaseQuery)
+          value.display_name?.toLowerCase().includes(lowercaseQuery))
       )
       .reduce((acc, node) => (acc.find((f) => f.name === node.name) ? acc : [...acc, node]), [])
       .map((node, i) => (

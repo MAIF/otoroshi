@@ -188,12 +188,12 @@ export const NODES = (documentation, extensionOverloads) => {
     })
   );
 
-  // defaultValues.forEach((node) => {
-  //   items[node.name] = {
-  //     ...node,
-  //     kind: node.kind || node.name,
-  //   };
-  // });
+  defaultValues.forEach((node) => {
+    items[node.name] = {
+      ...node,
+      kind: node.kind || node.name,
+    };
+  });
 
   [...extensionOverloads.nodes, ...extensionOverloads.operators, ...extensionOverloads.functions].map(node => {
     if (!items[node.name]) {
