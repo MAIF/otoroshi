@@ -169,7 +169,7 @@ export function WorkflowsDesigner(props) {
     let edges = [];
     let nodes = [];
 
-    const useCurrent = workflow.kind !== 'workflow';
+    let useCurrent = workflow.kind !== 'workflow';
 
     const me = workflow.id ? workflow.id : uuid()
     let current = useCurrent ? createNode(me, workflow, addInformationsToNode) : undefined;
@@ -438,9 +438,11 @@ export function WorkflowsDesigner(props) {
 
       nodes = nodes.concat(subGraph?.nodes || [])
       edges = edges.concat(subGraph?.edges || [])
+
+      if (workflow?.paths)
+        useCurrent = false
     }
 
-    console.log(nodes)
     for (let i = 0; i < nodes.length; i++) {
       nodes[i] = setupTargetsAndSources(nodes[i]);
     }
@@ -910,6 +912,7 @@ export function WorkflowsDesigner(props) {
           node,
           alreadySeen,
           connections,
+          emptyWorkflow,
           nodeToJson: newNode => nodeToJson(
             newNode,
             emptyWorkflow,
