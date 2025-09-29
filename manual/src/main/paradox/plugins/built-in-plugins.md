@@ -6910,7 +6910,7 @@ Serves content from a zip file
 
 ```json
 {
-  "url" : "https://github.com/MAIF/otoroshi/releases/download/16.11.2/otoroshi-manual-16.11.2.zip",
+  "url" : "https://github.com/MAIF/otoroshi/releases/download/17.6.0-dev/otoroshi-manual-17.6.0-dev.zip",
   "headers" : { },
   "dir" : "./zips",
   "prefix" : null,

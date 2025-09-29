@@ -7,16 +7,16 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-leader-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         run: otoroshi-leader-deployment
-    replicas: 2
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 1
-        maxSurge: 1
     spec:
       serviceAccountName: otoroshi-admin-user
       terminationGracePeriodSeconds: 60
@@ -184,16 +184,16 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-worker-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         run: otoroshi-worker-deployment
-    replicas: 2
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 1
-        maxSurge: 1
     spec:
       serviceAccountName: otoroshi-admin-user
       terminationGracePeriodSeconds: 60

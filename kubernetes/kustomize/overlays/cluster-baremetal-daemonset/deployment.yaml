@@ -197,16 +197,16 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-worker-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         run: otoroshi-worker-deployment
-    replicas: 2
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 1
-        maxSurge: 1
     spec:
       affinity:
         nodeAffinity:

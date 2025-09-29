@@ -16,7 +16,7 @@ Below is an example of what is send by Otoroshi. You can find more information a
   "timestamp_str": "2023-03-22T20:48:57.259+01:00",
   "@id": "4edb54171-8156-4947-b821-41d6c2bd1ba7",
   "otoroshi_cluster_id": "1148aee35-a487-47b0-b494-a2a44862c618",
-  "otoroshi_version": "16.0.0-dev",
+  "otoroshi_version": "17.6.0-dev",
   "java_version": {
     "version": "11.0.16.1",
     "vendor": "Eclipse Adoptium"
@@ -71,7 +71,7 @@ Below is an example of what is send by Otoroshi. You can find more information a
           "version": "11.0.16.1",
           "vendor": "Eclipse Adoptium"
         },
-        "version": "16.0.0-dev",
+        "version": "17.6.0-dev",
         "type": "Leader",
         "cpu_usage": 10.992902320605205,
         "load_average": 44.38720703125,
