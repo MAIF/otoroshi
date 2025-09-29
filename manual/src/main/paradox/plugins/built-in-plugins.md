@@ -5285,6 +5285,43 @@ This plugin removes headers in the otoroshi response
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RequestBandwidthThrottling }
+
+## Request bandwidth throttling
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RequestBandwidthThrottling`
+
+### Description
+
+This plugin will limit request body bandwidth
+
+
+
+### Default configuration
+
+```json
+{
+  "window_millis" : "60000",
+  "throttling_quota" : "10485760",
+  "group_expr" : "${route.id}",
+  "fail" : true,
+  "kind" : "per_request"
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RequestBodyEchoBackend }
 
 ## Request body Echo
@@ -5308,6 +5345,111 @@ This plugin returns request body content
 ```json
 {
   "limit" : 524288
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RequestBodyLengthLimiter }
+
+## Request Body length limiter
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RequestBodyLengthLimiter`
+
+### Description
+
+This plugin will limit request body length
+
+
+
+### Default configuration
+
+```json
+{
+  "max_length" : null,
+  "fail" : false
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ResponseBandwidthThrottling }
+
+## Response bandwidth throttling
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ResponseBandwidthThrottling`
+
+### Description
+
+This plugin will limit response body bandwidth
+
+
+
+### Default configuration
+
+```json
+{
+  "window_millis" : "60000",
+  "throttling_quota" : "10485760",
+  "group_expr" : "${route.id}",
+  "fail" : true,
+  "kind" : "per_request"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ResponseBodyLengthLimiter }
+
+## Response Body length limiter
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ResponseBodyLengthLimiter`
+
+### Description
+
+This plugin will limit response body length
+
+
+
+### Default configuration
+
+```json
+{
+  "max_length" : null,
+  "fail" : false
 }
 ```
 
@@ -5754,8 +5896,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-09-04T13:40:31.521Z",
-  "stop" : "2025-09-05T13:40:31.542Z",
+  "start" : "2025-09-29T12:42:06.339Z",
+  "stop" : "2025-09-30T12:42:06.360Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
@@ -6910,7 +7052,7 @@ Serves content from a zip file
 
 ```json
 {
-  "url" : "https://github.com/MAIF/otoroshi/releases/download/17.6.0-dev/otoroshi-manual-17.6.0-dev.zip",
+  "url" : "https://github.com/MAIF/otoroshi/releases/download/16.11.2/otoroshi-manual-16.11.2.zip",
   "headers" : { },
   "dir" : "./zips",
   "prefix" : null,

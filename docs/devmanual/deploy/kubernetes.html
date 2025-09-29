@@ -2259,16 +2259,16 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-leader-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         run: otoroshi-leader-deployment
-    replicas: 2
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 1
-        maxSurge: 1
     spec:
       serviceAccountName: otoroshi-admin-user
       terminationGracePeriodSeconds: 60
@@ -2436,16 +2436,16 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-worker-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         run: otoroshi-worker-deployment
-    replicas: 2
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 1
-        maxSurge: 1
     spec:
       serviceAccountName: otoroshi-admin-user
       terminationGracePeriodSeconds: 60
@@ -2648,16 +2648,16 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-leader-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         run: otoroshi-leader-deployment
-    replicas: 2
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 1
-        maxSurge: 1
     spec:
       serviceAccountName: otoroshi-admin-user
       terminationGracePeriodSeconds: 60
@@ -2825,16 +2825,16 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-worker-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         run: otoroshi-worker-deployment
-    replicas: 2
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 1
-        maxSurge: 1
     spec:
       serviceAccountName: otoroshi-admin-user
       terminationGracePeriodSeconds: 60
@@ -3269,16 +3269,16 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-worker-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         run: otoroshi-worker-deployment
-    replicas: 2
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 1
-        maxSurge: 1
     spec:
       affinity:
         nodeAffinity:
@@ -3863,7 +3863,8 @@ curl -X GET \
   https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1/apikeys | jq
 </code></pre>
 <p>You can see this as better <code>Ingress</code> resources. Like any <code>Ingress</code> resource can define which controller it uses (using the <code>kubernetes.io/ingress.class</code> annotation), you can chose another kind of resource instead of <code>Ingress</code>. With Otoroshi CRDs you can even define resources like <code>Certificate</code>, <code>Apikey</code>, <code>AuthModules</code>, <code>JwtVerifier</code>, etc. It will help you to use all the power of Otoroshi while using the deployment model of kubernetes.</p><div class="callout warning "><div class="callout-title">Warning</div>
-<p>when using Otoroshi CRDs, Kubernetes becomes the single source of truth for the synced entities. It means that any value in the descriptors deployed will overrides the one in Otoroshi datastore each time it&rsquo;s synced. So be careful if you use the Otoroshi UI or the API, some changes in configuration may be overriden by CRDs sync job.</p></div>
+<p>when using Otoroshi CRDs, Kubernetes becomes the single source of truth for the synced entities. It means that any value in the descriptors deployed will overrides the one in Otoroshi datastore each time it&rsquo;s synced. So be careful if you use the Otoroshi UI or the API, some changes in configuration may be overriden by CRDs sync job.</p></div><div class="callout warning "><div class="callout-title">Warning</div>
+<p>when using Otoroshi CRDs, all the kubernetes accounts/users that need to access/write Otoroshi CRDs resources will need to be able to access those with the according rights.</p></div>
 <h3><a href="#resources-examples" name="resources-examples" class="anchor"><span class="anchor-link"></span></a>Resources examples</h3>
 <dl>
   <dt>group.yaml

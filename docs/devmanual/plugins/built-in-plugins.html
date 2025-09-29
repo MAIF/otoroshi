@@ -2844,6 +2844,24 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-json">{
   &quot;header_names&quot; : [ ]
 }
+</code></pre></div><div id="otoroshi.next.plugins.RequestBandwidthThrottling" class="ng-plugin plugin-hidden pl">
+<h2><a href="#request-bandwidth-throttling" name="request-bandwidth-throttling" class="anchor"><span class="anchor-link"></span></a>Request bandwidth throttling</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.RequestBandwidthThrottling</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin will limit request body bandwidth</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;window_millis&quot; : &quot;60000&quot;,
+  &quot;throttling_quota&quot; : &quot;10485760&quot;,
+  &quot;group_expr&quot; : &quot;${route.id}&quot;,
+  &quot;fail&quot; : true,
+  &quot;kind&quot; : &quot;per_request&quot;
+}
 </code></pre></div><div id="otoroshi.next.plugins.RequestBodyEchoBackend" class="ng-plugin plugin-hidden pl">
 <h2><a href="#request-body-echo" name="request-body-echo" class="anchor"><span class="anchor-link"></span></a>Request body Echo</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -2857,6 +2875,54 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;limit&quot; : 524288
+}
+</code></pre></div><div id="otoroshi.next.plugins.RequestBodyLengthLimiter" class="ng-plugin plugin-hidden pl">
+<h2><a href="#request-body-length-limiter" name="request-body-length-limiter" class="anchor"><span class="anchor-link"></span></a>Request Body length limiter</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.RequestBodyLengthLimiter</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin will limit request body length</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;max_length&quot; : null,
+  &quot;fail&quot; : false
+}
+</code></pre></div><div id="otoroshi.next.plugins.ResponseBandwidthThrottling" class="ng-plugin plugin-hidden pl">
+<h2><a href="#response-bandwidth-throttling" name="response-bandwidth-throttling" class="anchor"><span class="anchor-link"></span></a>Response bandwidth throttling</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.ResponseBandwidthThrottling</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin will limit response body bandwidth</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;window_millis&quot; : &quot;60000&quot;,
+  &quot;throttling_quota&quot; : &quot;10485760&quot;,
+  &quot;group_expr&quot; : &quot;${route.id}&quot;,
+  &quot;fail&quot; : true,
+  &quot;kind&quot; : &quot;per_request&quot;
+}
+</code></pre></div><div id="otoroshi.next.plugins.ResponseBodyLengthLimiter" class="ng-plugin plugin-hidden pl">
+<h2><a href="#response-body-length-limiter" name="response-body-length-limiter" class="anchor"><span class="anchor-link"></span></a>Response Body length limiter</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.ResponseBodyLengthLimiter</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin will limit response body length</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;max_length&quot; : null,
+  &quot;fail&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.Robots" class="ng-plugin plugin-hidden pl">
 <h2><a href="#robots" name="robots" class="anchor"><span class="anchor-link"></span></a>Robots</h2>
@@ -3062,8 +3128,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin can split a portion of the traffic to canary backends between two dates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;start&quot; : &quot;2025-09-04T13:40:31.521Z&quot;,
-  &quot;stop&quot; : &quot;2025-09-05T13:40:31.542Z&quot;,
+  &quot;start&quot; : &quot;2025-09-29T12:42:06.339Z&quot;,
+  &quot;stop&quot; : &quot;2025-09-30T12:42:06.360Z&quot;,
   &quot;increment_percent&quot; : 1,
   &quot;targets&quot; : [ ],
   &quot;root&quot; : &quot;/&quot;
@@ -4088,7 +4154,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#remove-cookies-out" class="header">Remove cookies out</a></li>
     <li><a href="../plugins/built-in-plugins.html#remove-headers-in" class="header">Remove headers in</a></li>
     <li><a href="../plugins/built-in-plugins.html#remove-headers-out" class="header">Remove headers out</a></li>
+    <li><a href="../plugins/built-in-plugins.html#request-bandwidth-throttling" class="header">Request bandwidth throttling</a></li>
     <li><a href="../plugins/built-in-plugins.html#request-body-echo" class="header">Request body Echo</a></li>
+    <li><a href="../plugins/built-in-plugins.html#request-body-length-limiter" class="header">Request Body length limiter</a></li>
+    <li><a href="../plugins/built-in-plugins.html#response-bandwidth-throttling" class="header">Response bandwidth throttling</a></li>
+    <li><a href="../plugins/built-in-plugins.html#response-body-length-limiter" class="header">Response Body length limiter</a></li>
     <li><a href="../plugins/built-in-plugins.html#robots" class="header">Robots</a></li>
     <li><a href="../plugins/built-in-plugins.html#routing-restrictions" class="header">Routing Restrictions</a></li>
     <li><a href="../plugins/built-in-plugins.html#s3-static-backend" class="header">S3 Static backend</a></li>
