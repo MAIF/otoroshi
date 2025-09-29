@@ -769,7 +769,7 @@ class HttpClientFunction extends WorkflowFunction {
     .obj(
       "url"         -> Json.obj("label" -> "URL", "type" -> "string", "props" -> Json.obj("description" -> "The URL to call")),
       "method"      -> Json
-        .obj("label" -> "Nethod", "type" -> "string", "props" -> Json.obj("description" -> "The HTTP method to use")),
+        .obj("label" -> "Method", "type" -> "string", "props" -> Json.obj("description" -> "The HTTP method to use")),
       "headers"     -> Json
         .obj("label" -> "Headers", "type" -> "object", "props" -> Json.obj("description" -> "The headers to send")),
       "timeout"     -> Json.obj(
@@ -803,6 +803,11 @@ class HttpClientFunction extends WorkflowFunction {
         "label" -> "TLS Configuration",
         "type"  -> "object",
         "props" -> Json.obj("description" -> "The TLS configuration")
+      ),
+      "response_selector"  -> Json.obj(
+        "label" -> "Response selector",
+        "type"  -> "string",
+        "props" -> Json.obj("description" -> "Response selector")
       )
     )
     .some
@@ -820,7 +825,8 @@ class HttpClientFunction extends WorkflowFunction {
         "body_json"   -> Json.obj("type" -> "object", "description" -> "The body (json) to send"),
         "body_bytes"  -> Json.obj("type" -> "array", "description" -> "The body (bytes array) to send"),
         "body_base64" -> Json.obj("type" -> "string", "description" -> "The body (base64) to send"),
-        "tls_config"  -> Json.obj("type" -> "object", "description" -> "The TLS configuration")
+        "tls_config"  -> Json.obj("type" -> "object", "description" -> "The TLS configuration"),
+        "response_selector" -> Json.obj("type" -> "string", "description" -> "Response selector")
       )
     )
   )
@@ -841,6 +847,7 @@ class HttpClientFunction extends WorkflowFunction {
   )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val url       = args.select("url").asString
+    val response_selector = args.select("response_selector").asOptString
     val method    = args.select("method").asOptString.getOrElse("GET")
     val headers   = args.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
     val timeout   = args.select("timeout").asOpt[Long].map(_.millis).getOrElse(30.seconds)
@@ -859,7 +866,7 @@ class HttpClientFunction extends WorkflowFunction {
       .map { resp =>
         val body_str: String   = resp.body
         val body_json: JsValue = if (resp.contentType.contains("application/json")) body_str.parseJson else JsNull
-        Json
+        val response = Json
           .obj(
             "status"    -> resp.status,
             "headers"   -> resp.headers,
@@ -867,7 +874,10 @@ class HttpClientFunction extends WorkflowFunction {
             "body_str"  -> body_str,
             "body_json" -> body_json
           )
-          .right
+        response_selector match {
+          case None => response.right
+          case Some(selector) => response.at(selector).asValue.right
+        }
       }
       .recover { case t: Throwable =>
         WorkflowError(s"caught exception on http call", None, Some(t)).left
