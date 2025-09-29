@@ -1,5 +1,5 @@
 import React, { Suspense, useCallback, useState } from 'react';
-import { NgForm, NgStringRenderer } from '../../components/nginputs';
+import { NgAnyRenderer, NgForm, NgStringRenderer } from '../../components/nginputs';
 import { PillButton } from '../../components/PillButton';
 import CodeInput from '../../components/inputs/CodeInput';
 import { INFORMATION_FIELDS, splitInformationAndContent } from './WorkflowsDesigner';
@@ -224,9 +224,11 @@ export function ModalEditor({ node }) {
         <Suspense fallback={<div>Loading ...</div>}>
           <div style={{ flex: 1 }} className="py-3">
             {getExample(functionData)}
-            <CodeInput
-              mode="json"
-              editorOnly={true}
+            <NgAnyRenderer
+              ngOptions={{
+                spread: true,
+              }}
+              mode='jsonOrPlaintext'
               height="100%"
               value={getCodeInputValue()}
               onChange={handleCodeInputChange}

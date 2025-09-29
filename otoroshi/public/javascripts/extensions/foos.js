@@ -275,9 +275,7 @@
             return { nodes, edges }
           }
         }
-      ],
-      workflowFunctions: [],
-      workflowOperators: []
+      ]
     }
-  });
+  })
 })();

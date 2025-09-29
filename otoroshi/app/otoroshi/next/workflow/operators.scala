@@ -99,6 +99,10 @@ class MergeObjectsOperator extends WorkflowOperator {
         "mode" -> "jsonOrPlaintext",
         "description" -> "The values field needs to be an array."
       )
+    ),
+    "deep" -> Json.obj(
+        "type" -> "boolean",
+        "label" -> "Deep merge"
     )
   ))
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {

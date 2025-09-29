@@ -362,8 +362,6 @@ export class NgAnyRenderer extends Component {
             try {
               this.props.onChange(JSON.parse(newValue))
             } catch (err) {
-              console.log(newValue)
-              console.log(err)
               this.props.onChange(newValue)
             }
           } else
