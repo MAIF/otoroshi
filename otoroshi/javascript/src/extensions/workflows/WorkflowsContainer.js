@@ -100,6 +100,8 @@ function Container(props) {
         { nodes: [], functions: [], operators: [] })
 
     let nodes = NODES(documentation.data, extensionOverloads)
+    
+    console.log(nodes)
 
     Object.entries(workflow.data.functions || {})
       .map(([functionName, value]) => UserDefinedFunction(functionName, value))
