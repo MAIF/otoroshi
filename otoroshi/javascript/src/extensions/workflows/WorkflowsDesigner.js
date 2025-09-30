@@ -1449,9 +1449,14 @@ export function WorkflowsDesigner(props) {
     applyLayout({
       nodes: nodes,
       edges: edges,
-    }).then(({ nodes, edges }) => {
-      setNodes(nodes);
-      setEdges(edges);
+    }).then(res => {
+      setNodes(res.nodes.map(node => {
+        if(node.data.kind === 'note') {
+          return nodes.find(n => n.id === node.id)
+        }
+        return node
+      }));
+      setEdges(res.edges);
     });
   };
 
