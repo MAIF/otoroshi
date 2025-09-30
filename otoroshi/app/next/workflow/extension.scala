@@ -56,9 +56,9 @@ object Note {
     )
     override def reads(json: JsValue): JsResult[Note] = Try {
       Note(
-        content = json.selectAsString("content"),
-        color = json.selectAsString("color"),
-        titleColor = json.selectAsString("titleColor"),
+        content = json.selectAsOptString("content").getOrElse(""),
+        color = json.selectAsOptString("color").getOrElse("#f9b000"),
+        titleColor = json.selectAsOptString("titleColor").getOrElse("#fff"),
         position = json.selectAsObject("position"),
         measured = json.selectAsObject("measured"),
         id = json.selectAsString("id"),
