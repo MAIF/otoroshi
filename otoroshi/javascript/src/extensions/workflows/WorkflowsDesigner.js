@@ -587,11 +587,12 @@ export function WorkflowsDesigner(props) {
 
     let notesNodes = notes
       .map((note) => {
+        const measured = note.measured || { width: 200, height: 200 }
         const node = createNode(note.id, note, addInformationsToNode);
         return {
           ...node,
           position: note.position,
-          measured: note.measured || { width: 200, height: 200 },
+          style: measured
         };
       });
 
@@ -687,7 +688,7 @@ export function WorkflowsDesigner(props) {
     const connections = edges.filter((edge) => edge.source === node.id);
 
     const { kind } = node.data;
-    
+
 
     let subflow = undefined;
     let nextNode = undefined;
