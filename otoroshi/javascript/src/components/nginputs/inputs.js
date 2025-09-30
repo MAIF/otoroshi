@@ -334,7 +334,7 @@ export class NgAnyRenderer extends Component {
       minimap: { enabled: false },
       lineNumbers: "off",
       glyphMargin: false,
-      folding: false,
+      folding: true,
       lineDecorationsWidth: 0,
       lineNumbersMinChars: 0,
       ...this.props.options || {},
@@ -345,6 +345,14 @@ export class NgAnyRenderer extends Component {
 
     if (typeof code === 'object' && code !== null) {
       code = JSON.stringify(code, null, 2);
+    }
+
+    if (!!!code) {
+      code = '';
+    }
+
+    if (code === 'null') {
+      code = '';
     }
 
     if (!isNaN(code)) code = code + '';
