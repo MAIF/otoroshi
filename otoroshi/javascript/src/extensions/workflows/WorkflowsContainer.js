@@ -11,6 +11,7 @@ import { WorkflowSidebar } from './WorkflowSidebar';
 import { NODES, NODES_BY_CATEGORIES, nodesCatalogSignal } from './models/Functions';
 import { UserDefinedFunction } from './functions/UserDefinedFunction';
 import { getExtensions } from '../../backoffice'
+import { NoteNode } from './nodes/Note';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,8 +101,7 @@ function Container(props) {
         { nodes: [], functions: [], operators: [] })
 
     let nodes = NODES(documentation.data, extensionOverloads)
-    
-    console.log(nodes['extensions.com.cloud-apim.llm-extension.router'])
+    nodes[NoteNode.kind] = NoteNode
 
     Object.entries(workflow.data.functions || {})
       .map(([functionName, value]) => UserDefinedFunction(functionName, value))
@@ -133,7 +133,7 @@ function Container(props) {
     }
   }
 
-  const handleSave = (config, orphans) => {
+  const handleSave = (config, orphans, notes) => {
     if (params.functionName)
       return client.update({
         ...nodesCatalogSignal.value.rawWorkflow,
@@ -145,11 +145,6 @@ function Container(props) {
                 return [
                   key,
                   config
-                  // {
-                  //   ...value,
-                  //   config,
-                  //   orphans
-                  // }
                 ]
               }
               return [key, value]
@@ -160,7 +155,8 @@ function Container(props) {
       return client.update({
         ...nodesCatalogSignal.value.rawWorkflow,
         config,
-        orphans
+        orphans,
+        notes
       })
   }
 

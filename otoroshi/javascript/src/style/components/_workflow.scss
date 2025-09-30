@@ -286,7 +286,7 @@
 
   .react-flow__node-IfThenElse,
   .react-flow__node-group {
-    background: rgba(240, 240, 240, 0.25);
+    background: var(--bg-color_level3);
     border: 2px solid hsl(220, 18%, 80%) !important;
     border-radius: .5rem;
     width: fit-content;
@@ -662,5 +662,19 @@
     stroke-width: 2;
     fill: none;
     animation: draw-line .200s forwards;
+  }
+
+  .react-flow__node-note {
+    z-index: -1 !important;
+  }
+
+  .react-flow__node-note>button {
+    min-width: 100px;
+    min-height: 100px;
+    width: 100%;
+    height: 100%;
+    padding: .5rem 1rem;
+    font-size: 1.25rem;
+    display: flex;
   }
 }

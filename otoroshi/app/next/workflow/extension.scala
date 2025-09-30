@@ -33,6 +33,44 @@ import scala.util.{Failure, Success, Try}
 
 case class Orphans(nodes: Seq[Node] = Seq.empty, edges: Seq[JsObject] = Seq.empty)
 
+case class Note(
+                 content: String,
+                 color: String,
+                 titleColor: String,
+                 position: JsValue,
+                 measured: JsValue,
+                 id: String,
+                 kind: String,
+               )
+
+object Note {
+  val format = new Format[Note] {
+    override def writes(o: Note): JsValue             = Json.obj(
+      "content" -> o.content,
+      "color" -> o.color,
+      "titleColor" -> o.titleColor,
+      "position" -> o.position,
+      "measured" -> o.measured,
+      "id" -> o.id,
+      "kind" -> o.kind
+    )
+    override def reads(json: JsValue): JsResult[Note] = Try {
+      Note(
+        content = json.selectAsString("content"),
+        color = json.selectAsString("color"),
+        titleColor = json.selectAsString("titleColor"),
+        position = json.selectAsObject("position"),
+        measured = json.selectAsObject("measured"),
+        id = json.selectAsString("id"),
+        kind = json.selectAsString("kind")
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
 object Orphans {
   val format = new Format[Orphans] {
     override def writes(o: Orphans): JsValue             = Json.obj(
@@ -62,7 +100,8 @@ case class Workflow(
     job: WorkflowJobConfig,
     functions: Map[String, JsObject],
     testPayload: JsObject,
-    orphans: Orphans
+    orphans: Orphans,
+    notes: Seq[Note] = Seq.empty
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = Workflow.format.writes(this)
@@ -97,7 +136,8 @@ object Workflow {
       "test_payload" -> o.testPayload,
       "orphans"      -> Orphans.format.writes(o.orphans),
       "job"          -> o.job.json,
-      "functions"    -> o.functions
+      "functions"    -> o.functions,
+      "notes"        -> o.notes.map(Note.format.writes)
     )
     override def reads(json: JsValue): JsResult[Workflow] = Try {
       Workflow(
@@ -114,7 +154,8 @@ object Workflow {
           .getOrElse(WorkflowJobConfig.default),
         functions = (json \ "functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
         testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo")),
-        orphans = (json \ "orphans").asOpt[Orphans](Orphans.format.reads).getOrElse(Orphans())
+        orphans = (json \ "orphans").asOpt[Orphans](Orphans.format.reads).getOrElse(Orphans()),
+        notes = (json \ "notes").asOpt(Reads.seq(Note.format)).getOrElse(Seq.empty)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

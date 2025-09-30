@@ -5,6 +5,7 @@ import { GroupNode } from './flow/GroupNode';
 import { CustomEdge } from './flow/CustomEdge';
 import { ReactFlow, Background, Controls } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { NoteNode, NoteRenderer } from './nodes/Note';
 
 export function Flow({
   nodes,
@@ -33,6 +34,7 @@ export function Flow({
         nodeTypes={{
           simple: Node,
           group: GroupNode,
+          note: NoteRenderer
         }}
         edgeTypes={{
           customEdge: CustomEdge,

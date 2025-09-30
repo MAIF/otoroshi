@@ -46,6 +46,7 @@ export function ModalEditor({ node }) {
 
   const isAnOperator = data.operators;
   const isAFunction = data.content.function;
+  const isANote = node.data.type === 'note'
 
   const functionData = isAFunction ? getNodeFromKind(isAFunction) : undefined;
 
@@ -120,6 +121,9 @@ export function ModalEditor({ node }) {
     }
   }
 
+  if (isANote)
+    schema = data.form_schema
+
   // const hasArgsSchema = Object.keys(functionData?.form_schema || {}).length > 0;
   const argsFlow = ['args', 'result'];
 
@@ -164,6 +168,15 @@ export function ModalEditor({ node }) {
     getConfigurationGroup(),
   ];
 
+  if (isANote) {
+    flow = [{
+      type: 'group',
+      name: 'General',
+      collapsable: false,
+      fields: data.flow,
+    }]
+  }
+
   const value = setEnabled({
     ...node.data.information,
     ...node.data.content,
@@ -194,12 +207,13 @@ export function ModalEditor({ node }) {
   };
 
   const getCodeInputValue = () => {
-    const fields = flow[1]?.fields;
+    const fields = flow[1] ? flow[1]?.fields : flow[0].fields;
 
     return Object.fromEntries(
       Object.entries(state).filter(([key, _]) => fields.includes(key))
     )
   };
+
 
   return (
     <div className="modal-editor d-flex flex-column" style={{ flex: 1 }}>

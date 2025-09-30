@@ -249,6 +249,12 @@ export function setupWorkflowsExtension(registerExtension) {
             label: 'Functions',
           },
         },
+        notes: {
+          type: 'jsonobjectcode',
+          props: {
+            label: 'Notes'
+          }
+        }
       };
 
       columns = [
@@ -281,6 +287,7 @@ export function setupWorkflowsExtension(registerExtension) {
         'metadata',
         '<<<Workflow',
         'config',
+        'notes',
         '>>>Local Functions',
         'functions',
         '<<<Tester',
@@ -321,6 +328,7 @@ export function setupWorkflowsExtension(registerExtension) {
               tags: [],
               metadata: {},
               functions: {},
+              notes: [],
               job: {
                 enabled: false,
                 kind: 'ScheduledEvery',

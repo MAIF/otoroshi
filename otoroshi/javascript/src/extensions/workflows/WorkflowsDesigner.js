@@ -19,6 +19,7 @@ import { TagsModal } from './TagsModal';
 import { useSignalValue } from 'signals-react-safe';
 import debounce from 'lodash/debounce';
 import Terminal from './Terminal';
+import { useSuppressResizeObserverError } from './useSuppressionResizeObserverError';
 
 export const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name', 'breakpoint'];
 
@@ -66,6 +67,8 @@ export function WorkflowsDesigner(props) {
 
   const catalog = useSignalValue(nodesCatalogSignal);
 
+  useSuppressResizeObserverError()
+
   const saveTerminalSize = debounce(newSize => {
     localStorage.setItem(LOCAL_STORAGE_TERMINAL_KEY, newSize)
   }, 200)
@@ -95,6 +98,8 @@ export function WorkflowsDesigner(props) {
     const { information } = splitInformationAndContent(node);
 
     const data = catalog.nodes[(information.kind || information.name).toLowerCase()];
+
+    console.log(catalog.nodes)
 
     let functionData = {};
     if (node.category === 'functions') {
@@ -510,7 +515,7 @@ export function WorkflowsDesigner(props) {
     return node;
   };
 
-  const initializeGraph = (config, orphans, addInformationsToNode) => {
+  const initializeGraph = (config, orphans, notes, addInformationsToNode) => {
     let startingNode = createNode(
       'start',
       {
@@ -580,6 +585,16 @@ export function WorkflowsDesigner(props) {
       };
     }
 
+    let notesNodes = notes
+      .map((note) => {
+        const node = createNode(note.id, note, addInformationsToNode);
+        return {
+          ...node,
+          position: note.position,
+          measured: note.measured || { width: 200, height: 200 },
+        };
+      });
+
     const orphansNodes = orphans.nodes
       .filter((f) => f.kind)
       .map((orphan) => {
@@ -591,14 +606,13 @@ export function WorkflowsDesigner(props) {
       });
 
     return {
-      nodes: [startingNode, ...subGraph.nodes, ...orphansNodes, returnedNode],
+      nodes: [startingNode, ...subGraph.nodes, ...orphansNodes, returnedNode, ...notesNodes],
       edges: [...subGraph.edges, ...orphans.edges, startingEdge],
     };
   };
 
   useEffect(() => {
-
-    const initialState = initializeGraph(workflow?.config, workflow.orphans, addInformationsToNode);
+    const initialState = initializeGraph(workflow?.config, workflow.orphans, workflow.notes, addInformationsToNode);
 
     if (initialState.nodes.every((node) => node.position.x === 0 && node.position.y === 0)) {
       applyLayout({
@@ -673,6 +687,7 @@ export function WorkflowsDesigner(props) {
     const connections = edges.filter((edge) => edge.source === node.id);
 
     const { kind } = node.data;
+    
 
     let subflow = undefined;
     let nextNode = undefined;
@@ -862,7 +877,7 @@ export function WorkflowsDesigner(props) {
         };
       }
     } else if (kind === 'parallel' || kind === 'switch') {
-      subflow = node.data.sourceHandles.reduce(
+      let subGraph = node.data.sourceHandles.reduce(
         (acc, source, idx) => {
           const connection = connections.find((conn) => conn.sourceHandle === source.id);
 
@@ -904,6 +919,57 @@ export function WorkflowsDesigner(props) {
           kind,
         }
       );
+
+      function findCommonIds(ids) {
+        if (!ids || ids.length === 0) return [];
+
+        let common = new Set(ids[0]);
+
+        for (let i = 1; i < ids.length; i++) {
+          const currentSet = new Set(ids[i]);
+          common = new Set([...common].filter(id => currentSet.has(id)));
+        }
+
+        return [...common];
+      }
+
+      const ids = subGraph.paths
+        .filter(path => path.node)
+        .map(path => path.node)
+        .map(node => {
+          if (node.kind === 'workflow') {
+            return node.steps?.map(n => n.id) || []
+          }
+          return [node.id]
+        })
+
+      const commonIds = findCommonIds(ids)
+
+      if (commonIds.length > 0) {
+        const commonId = commonIds[0]
+
+        nextNode = nodes.find(n => n.id === commonId)
+
+        subGraph = {
+          ...subGraph,
+          paths: subGraph.paths.map(path => {
+            if (path.node.kind === 'workflow') {
+              const commonEnd = path.node.steps.findIndex(step => step.id === commonId)
+              return {
+                node: {
+                  ...path.node,
+                  steps: path.node.steps.slice(0, commonEnd)
+                }
+              }
+            } else {
+              return emptyWorkflow
+            }
+          })
+        }
+      }
+
+      subflow = subGraph
+
     } else if (nodesCatalogSignal.value.extensionOverloads[kind]) {
       const flow = nodesCatalogSignal.value.extensionOverloads[kind]
         .nodeToJson({
@@ -989,8 +1055,13 @@ export function WorkflowsDesigner(props) {
     const alreadySeen = seen.flatMap((f) => f)
 
     const orphans = nodes.filter(
-      (node) => node.id !== 'start' && node.id !== 'returned-node' && !alreadySeen.includes(node.id)
+      (node) => node.id !== 'start' &&
+        node.kind !== 'note' &&
+        node.id !== 'returned-node' &&
+        !alreadySeen.includes(node.id)
     )
+
+    const notes = nodes.filter((node) => node.type === 'note' || node.data.kind === 'note')
 
     const orphansEdges = orphans
       .filter(orphan => edges.find((edge) => edge.source === orphan.id))
@@ -1017,7 +1088,14 @@ export function WorkflowsDesigner(props) {
             kind: r.data.kind
           })),
         edges: orphansEdges,
-      }
+      },
+      notes.map(note => ({
+        id: note.id,
+        ...note.data.content,
+        position: note.position,
+        measured: note.measured,
+        kind: note.data.kind
+      }))
     )
   }
 
@@ -1470,7 +1548,8 @@ export function WorkflowsDesigner(props) {
           const r = 1 - (e.clientY / window.innerHeight)
           changeTerminalSize(r > .75 ? .75 : r)
         }
-      }}>
+      }}
+    >
       <div className='d-flex flex-column scroll-container' style={{
         flex: 1 - terminalSize,
         overflow: 'scroll'
