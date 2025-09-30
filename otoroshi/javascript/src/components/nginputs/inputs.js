@@ -1345,6 +1345,10 @@ export class NgSelectRenderer extends Component {
               ...components,
             }}
             styles={{
+              container: (baseStyles) => ({
+                ...baseStyles,
+                width: this.props.fromArray ? '100%' : null,
+              }),
               control: (baseStyles) => ({
                 ...baseStyles,
                 border: '1px solid var(--bg-color_level3)',
