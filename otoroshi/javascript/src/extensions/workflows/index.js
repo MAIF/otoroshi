@@ -308,8 +308,7 @@ export function setupWorkflowsExtension(registerExtension) {
       client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
 
       componentDidMount() {
-        if (this.props.location.pathname === '/extensions/workflows/workflows/')
-          this.props.setSidebarContent(<WorkflowSidebar {...this.props} />)
+        this.props.setSidebarContent(<WorkflowSidebar {...this.props} />)
 
         this.props.setTitle('Workflows');
       }

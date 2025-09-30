@@ -675,7 +675,7 @@ class StringifyOperator extends WorkflowOperator {
   override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type"  -> "json",
+        "type"  -> "any",
         "props" -> Json.obj(
           "editorOnly"  -> true,
           "description" -> "The json to convert to string"
