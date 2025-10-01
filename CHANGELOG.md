@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.6.0] - 2025-10-01
+
+
+https://github.com/MAIF/otoroshi/milestone/121?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.5.1...v17.6.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.6.0
+
+
+### Added 
+
+- Add Sub-Workflows Section (#2241 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Reference Existing Workflows in CallNode (#2242 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Upgrade Code Editor to Monaco (#2243 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- improve workflow editor (#2244 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- pass node output as input to next node (#2246 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add blockOnRed option to block requests on failed healthchecks (#2248 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- ExitNode support for workflows (#2249 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- WhileNode support for workflows (#2250 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- JumpNode support for workflows (#2251 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- New operators and function to work on maps and arrays (#2252 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- TryNode support for workflows (#2255 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- AsyncNode support for workflows (#2256 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Global cleanup of private sessions for a targeted auth-module (#2259 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Plugins to limit body size (request, response) (#2261 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Plugin to throttle bandwidth (#2262 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support "while" node in the workflows UI (#2264 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- fix documentation (#2265 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- `ManagementFactory.getPlatformMBeanServer` issue on recent Linux kernel 6.12+ (#2253 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Issues when starting netty server can crash otoroshi boot (#2254 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Routing restriction plugin : Route informations missing on GatewayEvent (#2260 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Select renderer in array renderer does not render properly (#2266 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Documentation 
+
+- Add documentation for configuring circuit breaker and health checks (#2247 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+### Contributors
+
+* @Zwiterrion
+* @mathieuancelin
+* @quentinduboisconserto
+* @cbois
+
 ## [17.5.1] - 2025-09-01
 
 
