@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:34401",
+    "url" : "http://otoroshi-api.oto.tools:45011",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -21203,6 +21203,16 @@
         "title" : "S a m l signature",
         "required" : [ "algorithm", "canocalizationMethod" ]
       },
+      "trynode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Try node",
+        "required" : [ "json" ]
+      },
       "teamaccess" : {
         "type" : "object",
         "properties" : {
@@ -23273,6 +23283,16 @@
         "title" : "Kafka config",
         "required" : [ "servers", "sendEvents", "hostValidation", "topic", "mtlsConfig", "securityProtocol" ]
       },
+      "endnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "End node",
+        "required" : [ "json" ]
+      },
       "ngclientconfig" : {
         "type" : "object",
         "properties" : {
@@ -23414,6 +23434,16 @@
         "type" : "object",
         "properties" : { },
         "title" : "Sec com info token version latest"
+      },
+      "whilenode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "While node",
+        "required" : [ "json" ]
       },
       "customtimeouts" : {
         "type" : "object",
@@ -24704,6 +24734,16 @@
           "$ref" : "#/components/schemas/dataexporterconfigtypeworkflow"
         } ]
       },
+      "breakpointnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Break point node",
+        "required" : [ "json" ]
+      },
       "otoroshiadmintypewebauthnadmin" : {
         "type" : "object",
         "properties" : { },
@@ -24813,6 +24853,16 @@
         }, {
           "$ref" : "#/components/schemas/workflowcallsettings"
         } ]
+      },
+      "jumpnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Jump node",
+        "required" : [ "json" ]
       },
       "security.otoroshi.io.AuthModule" : {
         "anyOf" : [ {
@@ -26082,10 +26132,49 @@
           },
           "orphans" : {
             "$ref" : "#/components/schemas/orphans"
+          },
+          "notes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/note"
+            }
           }
         },
         "title" : "Workflow",
-        "required" : [ "location", "id", "name", "description", "tags", "metadata", "config", "job", "functions", "testPayload", "orphans" ]
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "config", "job", "functions", "testPayload", "orphans", "notes" ]
+      },
+      "note" : {
+        "type" : "object",
+        "properties" : {
+          "content" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "color" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "titleColor" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "position" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "measured" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "kind" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Note",
+        "required" : [ "content", "color", "titleColor", "position", "measured", "id", "kind" ]
       },
       "ngtarget" : {
         "type" : "object",
@@ -27417,7 +27506,13 @@
         "anyOf" : [ {
           "$ref" : "#/components/schemas/assignnode"
         }, {
+          "$ref" : "#/components/schemas/asyncnode"
+        }, {
+          "$ref" : "#/components/schemas/breakpointnode"
+        }, {
           "$ref" : "#/components/schemas/callnode"
+        }, {
+          "$ref" : "#/components/schemas/endnode"
         }, {
           "$ref" : "#/components/schemas/errornode"
         }, {
@@ -27429,6 +27524,8 @@
         }, {
           "$ref" : "#/components/schemas/ifthenelsenode"
         }, {
+          "$ref" : "#/components/schemas/jumpnode"
+        }, {
           "$ref" : "#/components/schemas/mapnode"
         }, {
           "$ref" : "#/components/schemas/noopnode"
@@ -27439,9 +27536,13 @@
         }, {
           "$ref" : "#/components/schemas/switchnode"
         }, {
+          "$ref" : "#/components/schemas/trynode"
+        }, {
           "$ref" : "#/components/schemas/valuenode"
         }, {
           "$ref" : "#/components/schemas/waitnode"
+        }, {
+          "$ref" : "#/components/schemas/whilenode"
         }, {
           "$ref" : "#/components/schemas/workflownode"
         } ]
@@ -27611,10 +27712,13 @@
           },
           "x$3" : {
             "type" : "number"
+          },
+          "x$4" : {
+            "type" : "number"
           }
         },
         "title" : "Local time",
-        "required" : [ "x$1", "x$2", "x$3" ]
+        "required" : [ "x$1", "x$2", "x$3", "x$4" ]
       },
       "mappingsettings" : {
         "type" : "object",
@@ -28343,6 +28447,16 @@
         "properties" : { },
         "title" : "Scheduled once"
       },
+      "asyncnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Async node",
+        "required" : [ "json" ]
+      },
       "transform" : {
         "type" : "object",
         "properties" : {
@@ -28383,10 +28497,13 @@
             "items" : {
               "type" : "number"
             }
+          },
+          "blockOnRed" : {
+            "type" : "boolean"
           }
         },
         "title" : "Health check",
-        "required" : [ "enabled", "url", "timeout", "healthyStatuses", "unhealthyStatuses" ]
+        "required" : [ "enabled", "url", "timeout", "healthyStatuses", "unhealthyStatuses", "blockOnRed" ]
       },
       "globaljwtverifier" : {
         "type" : "object",
