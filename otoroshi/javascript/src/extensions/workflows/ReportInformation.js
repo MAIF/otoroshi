@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ReportView } from '../../components/ReportView';
+import { getNodeFromKind } from './models/Functions';
 
 export default function ReportInformation(props) {
   const [unit, setUnit] = useState('ms');
@@ -17,7 +18,7 @@ export default function ReportInformation(props) {
     { starting: [], ending: [] }
   );
 
-  const steps = starting.reduce((acc, log) => {
+  const steps = starting.reduce((acc, log, idx) => {
     const matches = log.message.match(/^starting '([a-zA-Z0-9-]+)'/);
 
     if (matches) {
@@ -25,10 +26,17 @@ export default function ReportInformation(props) {
 
       const stop = ending.find((l) => l.node.id === id)?.timestamp;
 
+      let functionName = log.node?.function
+      const kind = log.node?.kind
+
+      if (functionName) {
+        functionName = getNodeFromKind(functionName)?.display_name
+      }
+
       return [
         ...acc,
         {
-          task: log.node?.kind || log.message,
+          task: `${idx + 1}-${functionName ? functionName : kind ? kind : log.message}`,
           start: log.timestamp,
           stop,
           duration_ns: Math.abs((stop ? stop - log.timestamp : 0) * 1_000_000),
@@ -43,11 +51,10 @@ export default function ReportInformation(props) {
     return acc;
   }, []);
 
-  const stepsByCategory = steps.reduce((acc, step) => {
+  let stepsByCategory = steps.reduce((acc, step) => {
     const existingStep = acc[step.task];
 
     if (existingStep) {
-      // return acc
       return {
         ...acc,
         [step.task]: {
@@ -77,6 +84,14 @@ export default function ReportInformation(props) {
       };
     }
   }, {});
+
+  stepsByCategory = Object.fromEntries(
+    Object.entries(stepsByCategory).map(([key, value]) => [key, {
+      ...value,
+      task: value.task.split('-')[1]
+    }])
+  )
+
 
   const start = report.run.log[0]?.timestamp;
   const end = report.run.log[report.run.log.length - 1]?.timestamp;

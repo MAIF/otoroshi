@@ -132,7 +132,7 @@ export function WorkflowsDesigner(props) {
   }
 
   function createNode(id, child, addInformationsToNode) {
-    console.log('createNode', id, child)
+    // console.log('createNode', id, child)
     const { information, content } = splitInformationAndContent(child);
 
     const template = catalog.nodes[(information.kind || information.name).toLowerCase()];
@@ -1058,11 +1058,6 @@ export function WorkflowsDesigner(props) {
         !alreadySeen.includes(node.id)
     );
 
-    console.log('handle save', alreadySeen)
-
-    console.log(orphans, orphans
-      .filter((orphan) => edges.find((edge) => edge.source === orphan.id)))
-
     const notes = nodes.filter((node) => node.type === 'note' || node.data.kind === 'note');
 
     const orphansEdges = orphans
@@ -1259,8 +1254,6 @@ export function WorkflowsDesigner(props) {
     setEdges((eds) =>
       !eds.find((e) => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, eds) : eds
     );
-
-    // console.log(edges, !edges.find(e => e.sourceHandle === edge.sourceHandle) ? addEdge(edge, edges) : edges)
   }, []);
 
   const handleSelectNode = (item) => {
@@ -1470,8 +1463,6 @@ export function WorkflowsDesigner(props) {
   };
 
   const resetFlow = () => {
-    console.log('reset flow');
-
     setEdges((eds) =>
       eds.map((e) => ({
         ...e,

@@ -713,7 +713,7 @@ class LogFunction extends WorkflowFunction {
   )
 
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val message = args.select("message").asString
+    val message = args.select("message").asOptString.getOrElse("no message")
     val params  = args.select("params").asOpt[Seq[JsValue]].getOrElse(Seq.empty).map(_.stringify).mkString(" ")
     LogFunction.logger.info(message + " " + params)
     JsNull.rightf

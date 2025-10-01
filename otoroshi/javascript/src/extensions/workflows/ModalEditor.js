@@ -240,8 +240,6 @@ export function ModalEditor({ node }) {
     }
   };
 
-  console.log(state)
-
   return (
     <div className="modal-editor d-flex flex-column" style={{ flex: 1 }}>
       <p className="p-3 m-0 whats-next-title">
