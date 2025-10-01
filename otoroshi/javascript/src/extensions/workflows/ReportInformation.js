@@ -5,14 +5,17 @@ export default function ReportInformation(props) {
   const [unit, setUnit] = useState('ms');
 
   // console.log(props.report)
-  let report = props.report
+  let report = props.report;
 
-  const { starting, ending } = report.run.log.reduce((acc, log) => {
-    if (log.message.includes('ending')) {
-      return { ...acc, ending: [...acc.ending, log] }
-    };
-    return { ...acc, starting: [...acc.starting, log] }
-  }, { starting: [], ending: [] })
+  const { starting, ending } = report.run.log.reduce(
+    (acc, log) => {
+      if (log.message.includes('ending')) {
+        return { ...acc, ending: [...acc.ending, log] };
+      }
+      return { ...acc, starting: [...acc.starting, log] };
+    },
+    { starting: [], ending: [] }
+  );
 
   const steps = starting.reduce((acc, log) => {
     const matches = log.message.match(/^starting '([a-zA-Z0-9-]+)'/);
@@ -78,24 +81,25 @@ export default function ReportInformation(props) {
   const start = report.run.log[0]?.timestamp;
   const end = report.run.log[report.run.log.length - 1]?.timestamp;
 
-  return <>
-    < div style={{ position: 'relative', flex: 1 }
-    } className="d-flex flex-column mt-1" >
-      <div className="tryIt">
-        <ReportView
-          error={report.error}
-          report={{
-            steps: Object.values(stepsByCategory),
-            duration_ns: (end - start) * 1_000_000,
-            returned: report.returned,
-            memory: report.run.memory
-          }}
-          isWorkflowView
-          unit={unit}
-          setUnit={setUnit}
-          onClick={props.handleStep}
-        />
+  return (
+    <>
+      <div style={{ position: 'relative', flex: 1 }} className="d-flex flex-column mt-1">
+        <div className="tryIt">
+          <ReportView
+            error={report.error}
+            report={{
+              steps: Object.values(stepsByCategory),
+              duration_ns: (end - start) * 1_000_000,
+              returned: report.returned,
+              memory: report.run.memory,
+            }}
+            isWorkflowView
+            unit={unit}
+            setUnit={setUnit}
+            onClick={props.handleStep}
+          />
+        </div>
       </div>
-    </div >
-  </>
+    </>
+  );
 }

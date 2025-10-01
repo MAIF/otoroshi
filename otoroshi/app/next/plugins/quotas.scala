@@ -568,14 +568,15 @@ object NgCustomThrottling {
   }
 
   def localUpdateQuotas(expr: String, group: String, increment: Long = 1L, ttl: Long)(implicit
-                                                                                 ec: ExecutionContext,
-                                                                                 env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Unit] = {
     for {
       secCalls <- env.datastores.rawDataStore.incrby(localThrottlingKey(expr, group), increment)
       secTtl   <- env.datastores.rawDataStore.pttl(localThrottlingKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
-        env.datastores.rawDataStore.pexpire(localThrottlingKey(expr, group), ttl) // env.throttlingWindow * 1000
-      }
+                    env.datastores.rawDataStore
+                      .pexpire(localThrottlingKey(expr, group), ttl) // env.throttlingWindow * 1000
+                  }
     } yield ()
   }
 }

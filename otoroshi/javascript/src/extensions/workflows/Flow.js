@@ -34,7 +34,7 @@ export function Flow({
         nodeTypes={{
           simple: Node,
           group: GroupNode,
-          note: NoteRenderer
+          note: NoteRenderer,
         }}
         edgeTypes={{
           customEdge: CustomEdge,

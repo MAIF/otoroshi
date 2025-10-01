@@ -32,7 +32,7 @@ const LINKS = (id) => [
     tooltip: { ...createTooltip(`Show sessions tab`) },
     isActive: (pathname) => pathname.endsWith('sessions'),
   },
-]
+];
 
 const FUNCTION_LINKS = (id, functionName) => [
   {
@@ -49,20 +49,22 @@ const FUNCTION_LINKS = (id, functionName) => [
     tooltip: { ...createTooltip(`Show information tab`) },
     isActive: (pathname) => pathname.includes('informations') && pathname.includes('functions'),
   },
-]
+];
 
 export const WorkflowSidebar = ({ params }) => {
-  const location = useLocation()
+  const location = useLocation();
 
-  const workflowId = params.titem || params.workflowId
+  const workflowId = params.titem || params.workflowId;
 
   const { openedSidebar } = useContext(SidebarContext);
 
-  console.log('here')
+  console.log('here');
 
-  if ((window.location.pathname === '/bo/dashboard/extensions/workflows/workflows' ||
+  if (
+    window.location.pathname === '/bo/dashboard/extensions/workflows/workflows' ||
     !window.location.pathname.includes('workflows/') ||
-    (location.pathname.endsWith('/new') && !location.pathname.endsWith('functions/new'))))
+    (location.pathname.endsWith('/new') && !location.pathname.endsWith('functions/new'))
+  )
     return null;
 
   return (
@@ -87,40 +89,39 @@ export const WorkflowSidebar = ({ params }) => {
           </Link>
         </li>
         {openedSidebar && <p className="sidebar-title">Workflow</p>}
-        {LINKS(workflowId).map(link => {
-          return <Item {...link}
-            key={link.to}
-            location={location}
-            openedSidebar={openedSidebar} />
+        {LINKS(workflowId).map((link) => {
+          return <Item {...link} key={link.to} location={location} openedSidebar={openedSidebar} />;
         })}
 
-        {params.functionName && <>
-          {openedSidebar && <p className="sidebar-title">Function</p>}
+        {params.functionName && (
+          <>
+            {openedSidebar && <p className="sidebar-title">Function</p>}
 
-          {FUNCTION_LINKS(workflowId, params.functionName).map(link => {
-            return <Item {...link}
-              key={link.to}
-              location={location}
-              openedSidebar={openedSidebar} />
-          })}
-        </>}
+            {FUNCTION_LINKS(workflowId, params.functionName).map((link) => {
+              return (
+                <Item {...link} key={link.to} location={location} openedSidebar={openedSidebar} />
+              );
+            })}
+          </>
+        )}
       </ul>
     </div>
   );
 };
 
-
 const Item = ({ openedSidebar, title, to, tooltip, location, icon, isActive }) => {
-  return <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
-    <Link
-      to={to}
-      {...(tooltip || {})}
-      className={`d-flex align-items-center nav-link ${isActive(location.pathname) ? 'active' : ''} ${openedSidebar ? 'ms-3' : ''} m-0`}
-    >
-      <div style={{ width: '20px' }} className="d-flex justify-content-center">
-        <i className={`fas ${icon}`} />
-      </div>
-      <div className="title"> {openedSidebar ? title : ''}</div>
-    </Link>
-  </li>
-}
+  return (
+    <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
+      <Link
+        to={to}
+        {...(tooltip || {})}
+        className={`d-flex align-items-center nav-link ${isActive(location.pathname) ? 'active' : ''} ${openedSidebar ? 'ms-3' : ''} m-0`}
+      >
+        <div style={{ width: '20px' }} className="d-flex justify-content-center">
+          <i className={`fas ${icon}`} />
+        </div>
+        <div className="title"> {openedSidebar ? title : ''}</div>
+      </Link>
+    </li>
+  );
+};

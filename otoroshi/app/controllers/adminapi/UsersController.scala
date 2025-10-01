@@ -146,8 +146,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
           env.datastores.authConfigsDataStore.findById(id).flatMap {
-            case None                                        => Results.NotFound(Json.obj("error" -> "auth module not found")).future
-            case Some(_)                                     =>
+            case None    => Results.NotFound(Json.obj("error" -> "auth module not found")).future
+            case Some(_) =>
               env.datastores.privateAppsUserDataStore
                 .findAll()
                 .map(sessions => sessions.filter(_.authConfigId == id))
@@ -179,11 +179,11 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
                   Ok(Json.obj("done" -> true))
                 }
           }
-          }
-        } recover { case _ =>
-          Ok(Json.obj("done" -> false))
         }
+      } recover { case _ =>
+        Ok(Json.obj("done" -> false))
       }
+    }
 
   def discardPrivateAppsSession(id: String) =
     ApiAction.async { ctx =>

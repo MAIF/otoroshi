@@ -25,7 +25,7 @@ import {
   NgLocationRenderer,
   NgDotsRenderer,
   LabelAndInput,
-  NgCustomFormsRenderer
+  NgCustomFormsRenderer,
 } from './inputs';
 
 import {
@@ -69,7 +69,7 @@ const Helpers = {
       return components.ObjectSelectRenderer;
     } else if (type === 'code') {
       return components.CodeRenderer;
-    } else if(type === 'any') {
+    } else if (type === 'any') {
       return components.AnyRenderer;
     } else if (type === 'json') {
       return components.JsonRenderer;

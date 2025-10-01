@@ -34,25 +34,25 @@ import scala.util.{Failure, Success, Try}
 case class Orphans(nodes: Seq[Node] = Seq.empty, edges: Seq[JsObject] = Seq.empty)
 
 case class Note(
-                 content: String,
-                 color: String,
-                 titleColor: String,
-                 position: JsValue,
-                 measured: JsValue,
-                 id: String,
-                 kind: String,
-               )
+    content: String,
+    color: String,
+    titleColor: String,
+    position: JsValue,
+    measured: JsValue,
+    id: String,
+    kind: String
+)
 
 object Note {
   val format = new Format[Note] {
     override def writes(o: Note): JsValue             = Json.obj(
-      "content" -> o.content,
-      "color" -> o.color,
+      "content"    -> o.content,
+      "color"      -> o.color,
       "titleColor" -> o.titleColor,
-      "position" -> o.position,
-      "measured" -> o.measured,
-      "id" -> o.id,
-      "kind" -> o.kind
+      "position"   -> o.position,
+      "measured"   -> o.measured,
+      "id"         -> o.id,
+      "kind"       -> o.kind
     )
     override def reads(json: JsValue): JsResult[Note] = Try {
       Note(
@@ -250,7 +250,7 @@ class WorkflowConfigAdminExtensionState(env: Env) {
 
 object WorkflowAdminExtension {
   val liveUpdatesSourceKey = TypedKey[Sinks.Many[JsObject]]("otoroshi.extensions.workflows.LiveUpdatesSourceKey")
-  val workflowDebuggerKey = TypedKey[WorkflowDebugger]("otoroshi.extensions.workflows.WorkflowDebuggerKey")
+  val workflowDebuggerKey  = TypedKey[WorkflowDebugger]("otoroshi.extensions.workflows.WorkflowDebuggerKey")
 }
 
 class WorkflowAdminExtension(val env: Env) extends AdminExtension {
@@ -466,13 +466,13 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
   def workflow(id: String): Option[Workflow] = states.workflow(id)
 
   def handleWorkflowDebug(): Flow[Message, Message, NotUsed] = {
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ec                     = env.otoroshiExecutionContext
     val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
-    val hotFlux: Flux[JsObject] = hotSource.asFlux()
-    val debugger = new WorkflowDebugger()
+    val hotFlux: Flux[JsObject]         = hotSource.asFlux()
+    val debugger                        = new WorkflowDebugger()
 
     def start(body: JsObject): Unit = {
-      val payload_raw = body.stringify
+      val payload_raw      = body.stringify
       val secretFillFuture =
         if (payload_raw.contains("${vault://")) env.vaults.fillSecretsAsync("workflow-test", payload_raw)
         else payload_raw.vfuture
@@ -482,10 +482,10 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         val functions   = payload.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         val workflow_id = payload.select("workflow_id").asString
         val workflow    = payload.select("workflow").asObject
-        val stepByStep   = payload.select("step_by_step").asOptBoolean.getOrElse(false)
+        val stepByStep  = payload.select("step_by_step").asOptBoolean.getOrElse(false)
         val node        = Node.from(workflow)
-        val attrs = TypedMap.empty
-        attrs.put(WorkflowAdminExtension.workflowDebuggerKey -> debugger)
+        val attrs       = TypedMap.empty
+        attrs.put(WorkflowAdminExtension.workflowDebuggerKey  -> debugger)
         attrs.put(WorkflowAdminExtension.liveUpdatesSourceKey -> hotSource)
         if (stepByStep) {
           debugger.pause()
@@ -505,19 +505,19 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
           val data = json.select("data").asOpt[JsObject].getOrElse(Json.obj())
 
           kind match {
-            case "start" =>
+            case "start"  =>
               start(data)
-            case "next" =>
+            case "next"   =>
               // TODO: if new memory in data, update memory
               debugger.next()
             case "resume" =>
               // TODO: if new memory in data, update memory
               debugger.resume()
-            case "stop" => debugger.shutdown()
-            case _ => println(s"unknown message: '${kind}'")
+            case "stop"   => debugger.shutdown()
+            case _        => println(s"unknown message: '${kind}'")
           }
         }
-        case m => println(s"unknown ws message: '${m.getClass.getName}'")
+        case m               => println(s"unknown ws message: '${m.getClass.getName}'")
       },
       Source.fromPublisher[Message](hotFlux.map(o => TextMessage(o.stringify)))
     )
@@ -550,9 +550,9 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             val node        = Node.from(workflow)
             if (live) {
               val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
-              val hotFlux: Flux[JsObject] = hotSource.asFlux()
+              val hotFlux: Flux[JsObject]         = hotSource.asFlux()
               //val debugger = new WorkflowDebugger()
-              val attrs = TypedMap.empty
+              val attrs                           = TypedMap.empty
               //attrs.put(WorkflowAdminExtension.workflowDebuggerKey -> debugger)
               attrs.put(WorkflowAdminExtension.liveUpdatesSourceKey -> hotSource)
               engine.run(workflow_id, node, input, attrs, functions).map { res =>
@@ -595,20 +595,21 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
   }
 }
 
-class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
+class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+    extends AbstractController(cc) {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
 
   def handleWorkflowDebug() = WebSocket.acceptOrResult[Message, Message] { request =>
     request.session.get("bousr") match {
-      case None => Results.Unauthorized(Json.obj("error" -> "unauthorized")).leftf
+      case None     => Results.Unauthorized(Json.obj("error" -> "unauthorized")).leftf
       case Some(id) => {
         env.datastores.backOfficeUserDataStore.findById(id).flatMap {
           case None       => Results.Unauthorized(Json.obj("error" -> "unauthorized")).leftf
           case Some(user) => {
             env.adminExtensions.extension[WorkflowAdminExtension] match {
-              case None => Results.NotFound(Json.obj("error" -> "extension not found")).leftf
+              case None      => Results.NotFound(Json.obj("error" -> "extension not found")).leftf
               case Some(ext) => {
                 ext.handleWorkflowDebug().rightf
               }

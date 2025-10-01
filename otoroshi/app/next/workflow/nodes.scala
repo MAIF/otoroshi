@@ -46,23 +46,23 @@ case class BreakPointNode(json: JsObject) extends Node {
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
-        "properties" -> Json.obj( )
+        "properties" -> Json.obj()
       )
     )
     .some
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
-      "kind"        -> "breakpoint"
+      "kind" -> "breakpoint"
     )
   )
 
   override def run(
-    wfr: WorkflowRun,
-    prefix: Seq[Int],
-    from: Seq[Int]
+      wfr: WorkflowRun,
+      prefix: Seq[Int],
+      from: Seq[Int]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     wfr.attrs.get(WorkflowAdminExtension.workflowDebuggerKey) match {
-      case None => JsNull.rightf
+      case None           => JsNull.rightf
       case Some(debugger) =>
         debugger.pause()
         debugger.waitForNextStep().map(_ => JsNull.right)
@@ -84,7 +84,7 @@ case class AsyncNode(json: JsObject) extends Node {
       Json.obj(
         "properties" -> Json.obj(
           "node" -> Json
-            .obj("type" -> "object", "description" -> "The node to run"),
+            .obj("type" -> "object", "description" -> "The node to run")
         )
       )
     )
@@ -93,18 +93,18 @@ case class AsyncNode(json: JsObject) extends Node {
     Json.obj(
       "kind"        -> "try",
       "description" -> "This node runs a node asynchronously and does not wait for the end.",
-      "node"   -> Json.obj(
-        "kind" -> "error",
-        "message"     -> "an error occurred",
-        "details"     -> Json.obj("foo" -> "bar")
+      "node"        -> Json.obj(
+        "kind"    -> "error",
+        "message" -> "an error occurred",
+        "details" -> Json.obj("foo" -> "bar")
       )
     )
   )
 
   override def run(
-    wfr: WorkflowRun,
-    prefix: Seq[Int],
-    from: Seq[Int]
+      wfr: WorkflowRun,
+      prefix: Seq[Int],
+      from: Seq[Int]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty && from.head > 0) {
       WorkflowError(
@@ -122,8 +122,8 @@ case class AsyncNode(json: JsObject) extends Node {
 
 case class TryNode(json: JsObject) extends Node {
 
-  lazy val node = Node.from(json.select("node").asObject)
-  lazy val catchNode = Node.from(json.select("catch").asObject)
+  lazy val node        = Node.from(json.select("node").asObject)
+  lazy val catchNode   = Node.from(json.select("catch").asObject)
   lazy val finallyNode = json.select("finally").asOpt[JsObject].map(n => Node.from(n))
 
   override def subNodes: Seq[NodeLike]                    = Seq(node, catchNode) ++ finallyNode.toSeq
@@ -135,10 +135,10 @@ case class TryNode(json: JsObject) extends Node {
     .deepMerge(
       Json.obj(
         "properties" -> Json.obj(
-          "node" -> Json
+          "node"    -> Json
             .obj("type" -> "object", "description" -> "The node to run"),
           "catch"   -> Json.obj("type" -> "object", "description" -> "the node executed when an error is caught"),
-          "finally"   -> Json.obj("type" -> "object", "description" -> "the node executed after everything")
+          "finally" -> Json.obj("type" -> "object", "description" -> "the node executed after everything")
         )
       )
     )
@@ -147,17 +147,17 @@ case class TryNode(json: JsObject) extends Node {
     Json.obj(
       "kind"        -> "try",
       "description" -> "This node catch errors and can return something else",
-      "node"   -> Json.obj(
-        "kind" -> "error",
-        "message"     -> "an error occurred",
-        "details"     -> Json.obj("foo" -> "bar")
+      "node"        -> Json.obj(
+        "kind"    -> "error",
+        "message" -> "an error occurred",
+        "details" -> Json.obj("foo" -> "bar")
       ),
-      "catch" -> Json.obj(
-        "kind" -> "call",
-        "function"   -> "core.log",
-        "args" -> Json.obj(
+      "catch"       -> Json.obj(
+        "kind"     -> "call",
+        "function" -> "core.log",
+        "args"     -> Json.obj(
           "message" -> "caught an error",
-          "params" -> Json.obj(
+          "params"  -> Json.obj(
             "error" -> "${caught_error}"
           )
         )
@@ -166,11 +166,11 @@ case class TryNode(json: JsObject) extends Node {
   )
 
   def runCatch(
-                    wfr: WorkflowRun,
-                    prefix: Seq[Int],
-                    from: Seq[Int],
-                    error: WorkflowError
-                  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+      wfr: WorkflowRun,
+      prefix: Seq[Int],
+      from: Seq[Int],
+      error: WorkflowError
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     wfr.memory.set("caught_error", error.json)
     catchNode
       .internalRun(wfr, prefix :+ 1, from)
@@ -183,9 +183,9 @@ case class TryNode(json: JsObject) extends Node {
   }
 
   override def run(
-    wfr: WorkflowRun,
-    prefix: Seq[Int],
-    from: Seq[Int]
+      wfr: WorkflowRun,
+      prefix: Seq[Int],
+      from: Seq[Int]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty && from.head > 0) {
       WorkflowError(
@@ -202,10 +202,10 @@ case class TryNode(json: JsObject) extends Node {
         }
         .flatMap {
           case Left(error) => runCatch(wfr, prefix, from, error)
-          case Right(res) => Right(res).future
+          case Right(res)  => Right(res).future
         }
-        .andThen {
-          case _ => finallyNode.foreach(_.internalRun(wfr, prefix :+ 2, from))
+        .andThen { case _ =>
+          finallyNode.foreach(_.internalRun(wfr, prefix :+ 2, from))
         }
     }
   }
@@ -223,7 +223,7 @@ case class JumpNode(json: JsObject) extends Node {
         "properties" -> Json.obj(
           "predicate" -> Json
             .obj("type" -> "boolean", "description" -> "The predicate defining if the jump is done or not"),
-          "to"   -> Json.obj("type" -> "string", "description" -> "the node id to jump to")
+          "to"        -> Json.obj("type" -> "string", "description" -> "the node id to jump to")
         )
       )
     )
@@ -238,18 +238,19 @@ case class JumpNode(json: JsObject) extends Node {
           "b" -> 4
         )
       ),
-      "to" -> "incr"
+      "to"          -> "incr"
     )
   )
   override def run(
-                    wfr: WorkflowRun,
-                    prefix: Seq[Int],
-                    from: Seq[Int]
-                  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+      wfr: WorkflowRun,
+      prefix: Seq[Int],
+      from: Seq[Int]
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val rawPredicate = json.select("predicate").asOpt[JsValue]
-    val predicate = rawPredicate.flatMap(pre => WorkflowOperator.processOperators(pre, wfr, env).asOptBoolean).getOrElse(true)
-    val to = json.select("to").asOpt[String].getOrElse("--")
-    val path = json.select("path").asOpt[String].getOrElse("--")
+    val predicate    =
+      rawPredicate.flatMap(pre => WorkflowOperator.processOperators(pre, wfr, env).asOptBoolean).getOrElse(true)
+    val to           = json.select("to").asOpt[String].getOrElse("--")
+    val path         = json.select("path").asOpt[String].getOrElse("--")
     if (predicate) {
       WorkflowError(
         message = "_____otoroshi_workflow_jump",
@@ -278,7 +279,7 @@ case class WhileNode(json: JsObject) extends Node {
         "properties" -> Json.obj(
           "predicate" -> Json
             .obj("type" -> "boolean", "description" -> "The predicate defining if the node is run or not"),
-          "node"   -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array")
+          "node"      -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array")
         )
       )
     )
@@ -294,7 +295,7 @@ case class WhileNode(json: JsObject) extends Node {
         )
       ),
       "node"        -> Json.obj(
-        "kind"     -> "assign",
+        "kind"   -> "assign",
         "values" -> Json.arr(
           Json.obj(
             "name"  -> "count",
@@ -310,10 +311,10 @@ case class WhileNode(json: JsObject) extends Node {
     )
   )
   override def run(
-                    wfr: WorkflowRun,
-                    prefix: Seq[Int],
-                    from: Seq[Int]
-                  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+      wfr: WorkflowRun,
+      prefix: Seq[Int],
+      from: Seq[Int]
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty) {
       WorkflowError(
         s"While Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
@@ -323,27 +324,33 @@ case class WhileNode(json: JsObject) extends Node {
       ).leftf
     } else {
 
-      val promise = Promise[Either[WorkflowError, JsValue]]()
+      val promise   = Promise[Either[WorkflowError, JsValue]]()
       val maxBudget = json.select("max_budget").asOpt[Int].getOrElse(999)
-      val count = new AtomicInteger(0)
+      val count     = new AtomicInteger(0)
 
       def next(): Unit = {
         if (count.get() == maxBudget) {
-          promise.trySuccess(WorkflowError(
-            s"while loop '${maxBudget}' exceeds maximum budget",
-            None, None, id.some
-          ).left)
+          promise.trySuccess(
+            WorkflowError(
+              s"while loop '${maxBudget}' exceeds maximum budget",
+              None,
+              None,
+              id.some
+            ).left
+          )
         }
         count.incrementAndGet()
-        val predicate = WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
+        val predicate =
+          WorkflowOperator.processOperators(json.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
         if (predicate) {
           node
             .internalRun(wfr, prefix :+ 0, from)
-            .andThen {
-              case Success(_) => next()
+            .andThen { case Success(_) =>
+              next()
             }
             .recover { case t: Throwable =>
-              val e: Either[WorkflowError, JsValue] = WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
+              val e: Either[WorkflowError, JsValue] =
+                WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
               promise.trySuccess(e)
             }
         } else {
@@ -375,9 +382,9 @@ case class EndNode(json: JsObject) extends Node {
     )
   )
   override def run(
-    wfr: WorkflowRun,
-    prefix: Seq[Int],
-    from: Seq[Int]
+      wfr: WorkflowRun,
+      prefix: Seq[Int],
+      from: Seq[Int]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     WorkflowError(
       message = "_____otoroshi_workflow_ended",
@@ -641,8 +648,8 @@ case class WorkflowNode(json: JsObject) extends Node {
           //   err.details.get.select("access_token").asValue.rightf
           // case Left(err) if err.message == "_____otoroshi_workflow_ended" =>
           //   Right(wfr.memory.get("input").getOrElse(JsNull)).vfuture
-          case Left(err)                                                   => Left(err).vfuture
-          case Right(_)                                                    => next(nodes.tail, wfr, prefix, from, idx + 1)
+          case Left(err) => Left(err).vfuture
+          case Right(_)  => next(nodes.tail, wfr, prefix, from, idx + 1)
         }
         .recover { case t: Throwable =>
           WorkflowError(s"caught exception on task '${id}' at step: '${head.id}'", None, Some(t), id.some).left
@@ -680,7 +687,7 @@ case class CallNode(json: JsObject) extends Node {
     .deepMerge(
       Json.obj(
         "properties" -> Json.obj(
-          "async" -> Json.obj("type" -> "bool", "description" -> "if true, the call do not block"),
+          "async"    -> Json.obj("type" -> "bool", "description" -> "if true, the call do not block"),
           "function" -> Json.obj("type" -> "string", "description" -> "the function name"),
           "args"     -> Json.obj("type" -> "object", "description" -> "the arguments of the call")
         )
@@ -718,7 +725,8 @@ case class CallNode(json: JsObject) extends Node {
       if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
       if (functionName.startsWith("self.")) {
         wfr.functions.get(functionName.substring(5)) match {
-          case None           => WorkflowError(s"self function '${functionName}' not supported in task '${id}'", None, None, id.some).leftf
+          case None           =>
+            WorkflowError(s"self function '${functionName}' not supported in task '${id}'", None, None, id.some).leftf
           case Some(function) =>
             wfr.memory.set("function_args", WorkflowOperator.processOperators(args, wfr, env))
             val r = Node.from(function).internalRun(wfr, prefix, from).andThen { case _ =>
@@ -728,21 +736,22 @@ case class CallNode(json: JsObject) extends Node {
               JsNull.rightf
             } else {
               r.map {
-                case Left(error) => error.copy(nodeId = id.some).left
+                case Left(error)  => error.copy(nodeId = id.some).left
                 case Right(value) => value.right
               }
             }
         }
       } else {
         WorkflowFunction.get(functionName) match {
-          case None           => WorkflowError(s"function '${functionName}' not supported in task '${id}'", None, None, id.some).leftf
+          case None           =>
+            WorkflowError(s"function '${functionName}' not supported in task '${id}'", None, None, id.some).leftf
           case Some(function) =>
             val r = function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
             if (async) {
               JsNull.rightf
             } else {
               r.map {
-                case Left(error) => error.copy(nodeId = id.some).left
+                case Left(error)  => error.copy(nodeId = id.some).left
                 case Right(value) => value.right
               }
             }

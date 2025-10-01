@@ -270,7 +270,7 @@ export function setupHttpListenersExtension(registerExtension) {
             return <HttpListenersPage {...props} />;
           },
         },
-      ]
+      ],
     };
   });
 }

@@ -1650,7 +1650,7 @@ case class Restrictions(
                   Some("errors.not.found"),
                   emptyBody = true,
                   attrs = attrs,
-                  maybeRoute = route,
+                  maybeRoute = route
                 )
               )
             } else if (isForbidden(method, domain, path)) {
@@ -1664,7 +1664,7 @@ case class Restrictions(
                   Some("errors.forbidden"),
                   emptyBody = true,
                   attrs = attrs,
-                  maybeRoute = route,
+                  maybeRoute = route
                 )
               )
             } else if (isNotAllowed(method, domain, path)) {
@@ -1678,7 +1678,7 @@ case class Restrictions(
                   Some("errors.not.found"),
                   emptyBody = true,
                   attrs = attrs,
-                  maybeRoute = route,
+                  maybeRoute = route
                 )
               )
             } else {
@@ -1697,7 +1697,7 @@ case class Restrictions(
                   Some("errors.not.found"),
                   emptyBody = true,
                   attrs = attrs,
-                  maybeRoute = route,
+                  maybeRoute = route
                 )
               )
             } else if (!allowed && isForbidden(method, domain, path)) {
@@ -1711,7 +1711,7 @@ case class Restrictions(
                   Some("errors.forbidden"),
                   emptyBody = true,
                   attrs = attrs,
-                  maybeRoute = route,
+                  maybeRoute = route
                 )
               )
             } else if (isNotAllowed(method, domain, path)) {
@@ -1725,7 +1725,7 @@ case class Restrictions(
                   Some("errors.not.found"),
                   emptyBody = true,
                   attrs = attrs,
-                  maybeRoute = route,
+                  maybeRoute = route
                 )
               )
             } else {

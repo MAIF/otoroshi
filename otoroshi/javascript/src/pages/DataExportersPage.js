@@ -117,8 +117,9 @@ class CustomMetrics extends Component {
                   name="Selector"
                   creatable={true}
                   value={props?.value}
-                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'
-                    }`}
+                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
+                    props?.rootValue?.eventType || 'GatewayEvent'
+                  }`}
                   optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
                   onChange={props.onChange}
                 />
@@ -271,8 +272,8 @@ export const MAILERS_FORM = {
         initTransform: (values) => values.map((value) => value.email),
       },
     },
-  }
-}
+  },
+};
 
 class Mailer extends Component {
   render() {

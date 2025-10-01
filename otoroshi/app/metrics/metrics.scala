@@ -5,7 +5,12 @@ import akka.http.scaladsl.util.FastFuture
 import com.codahale.metrics._
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule
-import com.codahale.metrics.jvm.{GarbageCollectorMetricSet, JvmAttributeGaugeSet, MemoryUsageGaugeSet, ThreadStatesGaugeSet}
+import com.codahale.metrics.jvm.{
+  GarbageCollectorMetricSet,
+  JvmAttributeGaugeSet,
+  MemoryUsageGaugeSet,
+  ThreadStatesGaugeSet
+}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry, SemanticMetricSet}
 import com.spotify.metrics.jvm.{CpuGaugeSet, FileDescriptorGaugeSet}
@@ -64,7 +69,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   private lazy val openTelemetryRegistry             = initOpenTelemetryMetrics()
 
   private val tmbs = Try(ManagementFactory.getPlatformMBeanServer)
-  private val rt  = Runtime.getRuntime
+  private val rt   = Runtime.getRuntime
 
   private val appEnv         = Option(System.getenv("APP_ENV")).getOrElse("--")
   private val commitId       = Option(System.getenv("COMMIT_ID")).getOrElse("--")
@@ -372,7 +377,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   private def getProcessCpuLoad(): Double = {
     tmbs match {
-      case Failure(_) => 0.0
+      case Failure(_)   => 0.0
       case Success(mbs) => {
         val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
         val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))

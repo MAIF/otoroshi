@@ -86,17 +86,17 @@ export function Items({
         .map((kind) => getNodeFromKind(kind))
         .filter((n, idx) => {
           if (!n) {
-            console.log('missing nodes', category.nodes[idx])
-            return false
+            console.log('missing nodes', category.nodes[idx]);
+            return false;
           }
 
-          return true
-        })
+          return true;
+        });
 
       return {
         ...category,
         nodes,
-      }
+      };
     })
     .filter((category) => category.nodes.length > 0);
 

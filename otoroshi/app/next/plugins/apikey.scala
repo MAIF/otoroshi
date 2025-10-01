@@ -284,7 +284,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
             }
             case ApikeyLocationKind.Cookie =>
               ctx.otoroshiRequest.copy(cookies = ctx.otoroshiRequest.cookies.filterNot(_.name == location.name)).right
-            case _ => ctx.otoroshiRequest.right
+            case _                         => ctx.otoroshiRequest.right
           }
         }
         case _                                             => ctx.otoroshiRequest.right

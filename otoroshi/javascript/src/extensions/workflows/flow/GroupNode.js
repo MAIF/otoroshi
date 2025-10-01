@@ -18,61 +18,55 @@ export const GroupNode = (props) => {
     }
   }, [props.data]);
 
-  const highlightRef = useRef(data.highlighted)
+  const highlightRef = useRef(data.highlighted);
 
   useEffect(() => {
-    highlightRef.current = data.highlighted
-  }, [data.highlighted])
+    highlightRef.current = data.highlighted;
+  }, [data.highlighted]);
 
   const zoom = useStore((state) => state.transform[2]);
-  const styles = getNodeStyles(zoom)
+  const styles = getNodeStyles(zoom);
 
   useLayoutEffect(() => {
-    const el = document.querySelector(`[data-id="${props.id}"]`)
-    Object
-      .entries(styles)
-      .forEach(([key, value]) => el.style.setProperty(key, value))
-  }, [zoom])
+    const el = document.querySelector(`[data-id="${props.id}"]`);
+    Object.entries(styles).forEach(([key, value]) => el.style.setProperty(key, value));
+  }, [zoom]);
 
-  let timeout
+  let timeout;
 
   const highlight = () => {
     if (highlightRef.current === true) {
-      const el = document.querySelector(`[data-id="${props.id}"]`)
-      el
-        .classList
-        .add('loading-gradient')
+      const el = document.querySelector(`[data-id="${props.id}"]`);
+      el.classList.add('loading-gradient');
     }
-  }
+  };
 
   useLayoutEffect(() => {
     const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
 
     if (data.highlighted) {
       if (data.highlighted === 'END') {
-        if (timeout)
-          clearTimeout(timeout)
-        sourceEl.classList.remove("loading-gradient")
-        sourceEl.classList.add('node--successfull')
+        if (timeout) clearTimeout(timeout);
+        sourceEl.classList.remove('loading-gradient');
+        sourceEl.classList.add('node--successfull');
       } else {
-        timeout = setTimeout(highlight, ((data.highlighted)) * 1000)
+        timeout = setTimeout(highlight, data.highlighted * 1000);
       }
     } else {
-      if (timeout)
-        clearTimeout(timeout)
-      sourceEl.classList.remove("node--successfull")
-      sourceEl.classList.remove("loading-gradient")
+      if (timeout) clearTimeout(timeout);
+      sourceEl.classList.remove('node--successfull');
+      sourceEl.classList.remove('loading-gradient');
     }
-  }, [data.highlighted])
+  }, [data.highlighted]);
 
   useLayoutEffect(() => {
     const sourceEl = document.querySelector(`[data-id="${props.id}"]`);
     if (data.error) {
-      sourceEl.classList.add('node--error')
+      sourceEl.classList.add('node--error');
     } else {
-      sourceEl.classList.remove('node--error')
+      sourceEl.classList.remove('node--error');
     }
-  }, [data.error])
+  }, [data.error]);
 
   return (
     <>
@@ -81,12 +75,17 @@ export const GroupNode = (props) => {
       {data.nodeRenderer && data.nodeRenderer(props)}
 
       <Panel className="m-0 node-one-output" position={position}>
-        <i className={data.label || data.icon} /> {data.display_name || data.name} {data?.information?.breakpoint && <i className="fas fa-circle ms-auto" style={{ color: 'red' }} />}
+        <i className={data.label || data.icon} /> {data.display_name || data.name}{' '}
+        {data?.information?.breakpoint && (
+          <i className="fas fa-circle ms-auto" style={{ color: 'red' }} />
+        )}
       </Panel>
 
-      <NodeTrashButton {...props}
+      <NodeTrashButton
+        {...props}
         breakpoint={data?.information?.breakpoint}
-        toggleBreakPoint={() => data.functions.toggleBreakPoint(props.id)} />
+        toggleBreakPoint={() => data.functions.toggleBreakPoint(props.id)}
+      />
 
       <div className="node-description">{props.data.information.description}</div>
     </>

@@ -21,7 +21,14 @@ import debounce from 'lodash/debounce';
 import Terminal from './Terminal';
 import { useSuppressResizeObserverError } from './useSuppressionResizeObserverError';
 
-export const INFORMATION_FIELDS = ['description', 'kind', 'enabled', 'result', 'name', 'breakpoint'];
+export const INFORMATION_FIELDS = [
+  'description',
+  'kind',
+  'enabled',
+  'result',
+  'name',
+  'breakpoint',
+];
 
 export function splitInformationAndContent(obj) {
   return Object.entries(obj).reduce(
@@ -45,8 +52,8 @@ const emptyWorkflow = {
   steps: [],
 };
 
-const LOCAL_STORAGE_TERMINAL_KEY = "io.otoroshi.next.workflow.designer.terminal_size"
-const LOCAL_STORAGE_TERMINAL_TAB_KEY = "io.otoroshi.next.workflow.designer.terminal_tab"
+const LOCAL_STORAGE_TERMINAL_KEY = 'io.otoroshi.next.workflow.designer.terminal_size';
+const LOCAL_STORAGE_TERMINAL_TAB_KEY = 'io.otoroshi.next.workflow.designer.terminal_tab';
 
 export function WorkflowsDesigner(props) {
   const updateNodeInternals = useUpdateNodeInternals();
@@ -58,39 +65,36 @@ export function WorkflowsDesigner(props) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  const [terminalSize, _changeTerminalSize] = useState(0)
-  const [resizingTerminal, toggleResizingTerminal] = useState(false)
-  const [initialTerminalTab, setInitialTerminalTab] = useState()
-
+  const [terminalSize, _changeTerminalSize] = useState(0);
+  const [resizingTerminal, toggleResizingTerminal] = useState(false);
+  const [initialTerminalTab, setInitialTerminalTab] = useState();
 
   const [workflow, setWorkflow] = useState(props.workflow);
 
   const catalog = useSignalValue(nodesCatalogSignal);
 
-  useSuppressResizeObserverError()
+  useSuppressResizeObserverError();
 
-  const saveTerminalSize = debounce(newSize => {
-    localStorage.setItem(LOCAL_STORAGE_TERMINAL_KEY, newSize)
-  }, 200)
+  const saveTerminalSize = debounce((newSize) => {
+    localStorage.setItem(LOCAL_STORAGE_TERMINAL_KEY, newSize);
+  }, 200);
 
-  const saveTerminalTab = newTab => localStorage.setItem(LOCAL_STORAGE_TERMINAL_TAB_KEY, newTab)
+  const saveTerminalTab = (newTab) => localStorage.setItem(LOCAL_STORAGE_TERMINAL_TAB_KEY, newTab);
 
-  const changeTerminalSize = newSize => {
-    _changeTerminalSize(newSize)
-    saveTerminalSize(newSize)
-  }
+  const changeTerminalSize = (newSize) => {
+    _changeTerminalSize(newSize);
+    saveTerminalSize(newSize);
+  };
 
   const loadTerminalSettings = () => {
-    const savedSize = localStorage.getItem(LOCAL_STORAGE_TERMINAL_KEY)
+    const savedSize = localStorage.getItem(LOCAL_STORAGE_TERMINAL_KEY);
 
-    if (savedSize)
-      _changeTerminalSize(Number(savedSize))
+    if (savedSize) _changeTerminalSize(Number(savedSize));
 
-    const savedTab = localStorage.getItem(LOCAL_STORAGE_TERMINAL_TAB_KEY)
+    const savedTab = localStorage.getItem(LOCAL_STORAGE_TERMINAL_TAB_KEY);
 
-    if (savedTab)
-      setInitialTerminalTab(savedTab)
-  }
+    if (savedTab) setInitialTerminalTab(savedTab);
+  };
 
   function createNodeFromUI(node) {
     // console.log('createNodeFromUI', node);
@@ -99,17 +103,17 @@ export function WorkflowsDesigner(props) {
 
     const data = catalog.nodes[(information.kind || information.name).toLowerCase()];
 
-    console.log(catalog.nodes)
+    console.log(catalog.nodes);
 
     let functionData = {};
     if (node.category === 'functions') {
       functionData = {
         function: node.name,
-      }
+      };
     } else if (node.category === 'udfs') {
       functionData = {
-        function: `self.${node.name}`
-      }
+        function: `self.${node.name}`,
+      };
     }
 
     return {
@@ -170,13 +174,12 @@ export function WorkflowsDesigner(props) {
 
     if (!workflow || Object.keys(workflow).length === 0) return { edges: [], nodes: [] };
 
-
     let edges = [];
     let nodes = [];
 
     let useCurrent = workflow.kind !== 'workflow';
 
-    const me = workflow.id ? workflow.id : uuid()
+    const me = workflow.id ? workflow.id : uuid();
     let current = useCurrent ? createNode(me, workflow, addInformationsToNode) : undefined;
 
     if (useCurrent) nodes.push(current);
@@ -285,7 +288,6 @@ export function WorkflowsDesigner(props) {
           animated: true,
         });
 
-
       if (hasElseGraph)
         edges.push({
           id: `${me}-else`,
@@ -305,7 +307,7 @@ export function WorkflowsDesigner(props) {
           targetHandle: handleId || `input-${targetId}`,
           type: 'customEdge',
           animated: true,
-        })
+        });
       }
     } else if (
       workflow.kind === 'foreach' ||
@@ -335,7 +337,6 @@ export function WorkflowsDesigner(props) {
         }
       }
     } else if (workflow.kind === 'try') {
-
       function loadSubNode(field, handle) {
         if (workflow[field]) {
           const subGraph = buildGraph([workflow[field]], addInformationsToNode, targetId);
@@ -344,7 +345,7 @@ export function WorkflowsDesigner(props) {
             nodes = nodes.concat(subGraph.nodes);
             edges = edges.concat(subGraph.edges);
 
-            const handleName = handle ? handle : field
+            const handleName = handle ? handle : field;
 
             edges.push({
               id: `${me}-${handleName}`,
@@ -359,9 +360,9 @@ export function WorkflowsDesigner(props) {
         }
       }
 
-      loadSubNode('node', 'try')
-      loadSubNode('catch')
-      loadSubNode('finally')
+      loadSubNode('node', 'try');
+      loadSubNode('catch');
+      loadSubNode('finally');
     } else if (workflow.kind === 'switch' || workflow.kind === 'parallel') {
       let paths = [];
 
@@ -438,14 +439,13 @@ export function WorkflowsDesigner(props) {
         handleId,
         buildGraph,
         current,
-        me
-      })
+        me,
+      });
 
-      nodes = nodes.concat(subGraph?.nodes || [])
-      edges = edges.concat(subGraph?.edges || [])
+      nodes = nodes.concat(subGraph?.nodes || []);
+      edges = edges.concat(subGraph?.edges || []);
 
-      if (workflow?.paths)
-        useCurrent = false
+      if (workflow?.paths) useCurrent = false;
     }
 
     for (let i = 0; i < nodes.length; i++) {
@@ -522,7 +522,7 @@ export function WorkflowsDesigner(props) {
         kind: 'start',
         description: config.description,
         position: config.position || { x: 0, y: 0 },
-        breakpoint: config.breakpoint || false
+        breakpoint: config.breakpoint || false,
       },
       addInformationsToNode
     );
@@ -585,16 +585,15 @@ export function WorkflowsDesigner(props) {
       };
     }
 
-    let notesNodes = notes
-      .map((note) => {
-        const measured = note.measured || { width: 200, height: 200 }
-        const node = createNode(note.id, note, addInformationsToNode);
-        return {
-          ...node,
-          position: note.position,
-          style: measured
-        };
-      });
+    let notesNodes = notes.map((note) => {
+      const measured = note.measured || { width: 200, height: 200 };
+      const node = createNode(note.id, note, addInformationsToNode);
+      return {
+        ...node,
+        position: note.position,
+        style: measured,
+      };
+    });
 
     const orphansNodes = orphans.nodes
       .filter((f) => f.kind)
@@ -613,7 +612,12 @@ export function WorkflowsDesigner(props) {
   };
 
   useEffect(() => {
-    const initialState = initializeGraph(workflow?.config, workflow.orphans, workflow.notes, addInformationsToNode);
+    const initialState = initializeGraph(
+      workflow?.config,
+      workflow.orphans,
+      workflow.notes,
+      addInformationsToNode
+    );
 
     if (initialState.nodes.every((node) => node.position.x === 0 && node.position.y === 0)) {
       applyLayout({
@@ -622,19 +626,19 @@ export function WorkflowsDesigner(props) {
       }).then(({ nodes, edges }) => {
         setNodes(nodes);
         setEdges(edges);
-        loadTerminalSettings()
+        loadTerminalSettings();
       });
     } else {
       setNodes(initialState.nodes);
       setEdges(initialState.edges);
-      loadTerminalSettings()
+      loadTerminalSettings();
     }
   }, []);
 
   const graphToJson = () => {
     const lastNode = nodes.find((node) => node.id === 'returned-node');
 
-    const startNode = nodes.find((node) => node.id === 'start')
+    const startNode = nodes.find((node) => node.id === 'start');
     const startPosition = startNode.position;
 
     const start = {
@@ -662,7 +666,7 @@ export function WorkflowsDesigner(props) {
           returnedInformation: {
             position: lastNode.position,
             description: lastNode.data.information.description,
-          }
+          },
         },
         graph[1],
       ];
@@ -681,14 +685,13 @@ export function WorkflowsDesigner(props) {
       )
     );
     alreadySeen.push(...seen);
-    return node
+    return node;
   }
 
   const nodeToJson = (node, currentWorkflow, disableRecursion, alreadySeen, isStart) => {
     const connections = edges.filter((edge) => edge.source === node.id);
 
     const { kind } = node.data;
-
 
     let subflow = undefined;
     let nextNode = undefined;
@@ -781,15 +784,15 @@ export function WorkflowsDesigner(props) {
       let tryNode, catchNode, finallyNode;
 
       if (tryItem) {
-        tryNode = getNode(tryItem, alreadySeen)
+        tryNode = getNode(tryItem, alreadySeen);
       }
 
       if (catchItem) {
-        catchNode = getNode(catchItem, alreadySeen)
+        catchNode = getNode(catchItem, alreadySeen);
       }
 
       if (finallyItem) {
-        finallyNode = getNode(finallyItem, alreadySeen)
+        finallyNode = getNode(finallyItem, alreadySeen);
       }
 
       subflow = {
@@ -797,17 +800,16 @@ export function WorkflowsDesigner(props) {
         kind,
         node: tryNode,
         catch: catchNode,
-        finally: finallyNode
+        finally: finallyNode,
       };
-
     } else if (kind === 'foreach' || kind === 'async' || kind === 'while') {
       const handles = {
         foreach: 'ForEachLoop',
         async: 'Async Task',
         while: 'Loop Body',
-      }
+      };
 
-      const handleName = handles[kind]
+      const handleName = handles[kind];
       const flow = node.data.content;
       const item = connections.find((conn) => conn.sourceHandle.startsWith(handleName));
 
@@ -819,10 +821,9 @@ export function WorkflowsDesigner(props) {
       if (item) {
         subflow = {
           ...subflow,
-          node: getNode(item, alreadySeen)
-        }
+          node: getNode(item, alreadySeen),
+        };
       }
-
     } else if (kind === 'map' || kind === 'flatmap') {
       const flow = node.data.content;
       const nodeLoop = connections.find((conn) => conn.sourceHandle.startsWith('Item'));
@@ -928,71 +929,63 @@ export function WorkflowsDesigner(props) {
 
         for (let i = 1; i < ids.length; i++) {
           const currentSet = new Set(ids[i]);
-          common = new Set([...common].filter(id => currentSet.has(id)));
+          common = new Set([...common].filter((id) => currentSet.has(id)));
         }
 
         return [...common];
       }
 
       const ids = subGraph.paths
-        .filter(path => path.node)
-        .map(path => path.node)
-        .map(node => {
+        .filter((path) => path.node)
+        .map((path) => path.node)
+        .map((node) => {
           if (node.kind === 'workflow') {
-            return node.steps?.map(n => n.id) || []
+            return node.steps?.map((n) => n.id) || [];
           }
-          return [node.id]
-        })
+          return [node.id];
+        });
 
-      const commonIds = findCommonIds(ids)
+      const commonIds = findCommonIds(ids);
 
       if (commonIds.length > 0) {
-        const commonId = commonIds[0]
+        const commonId = commonIds[0];
 
-        nextNode = nodes.find(n => n.id === commonId)
+        nextNode = nodes.find((n) => n.id === commonId);
 
         subGraph = {
           ...subGraph,
-          paths: subGraph.paths.map(path => {
+          paths: subGraph.paths.map((path) => {
             if (path.node.kind === 'workflow') {
-              const commonEnd = path.node.steps.findIndex(step => step.id === commonId)
+              const commonEnd = path.node.steps.findIndex((step) => step.id === commonId);
               return {
                 node: {
                   ...path.node,
-                  steps: path.node.steps.slice(0, commonEnd)
-                }
-              }
+                  steps: path.node.steps.slice(0, commonEnd),
+                },
+              };
             } else {
-              return emptyWorkflow
+              return emptyWorkflow;
             }
-          })
-        }
+          }),
+        };
       }
 
-      subflow = subGraph
-
+      subflow = subGraph;
     } else if (nodesCatalogSignal.value.extensionOverloads[kind]) {
-      const flow = nodesCatalogSignal.value.extensionOverloads[kind]
-        .nodeToJson({
-          edges,
-          nodes,
-          node,
-          alreadySeen,
-          connections,
-          emptyWorkflow,
-          nodeToJson: newNode => nodeToJson(
-            newNode,
-            emptyWorkflow,
-            false,
-            alreadySeen
-          ),
-          removeReturnedFromWorkflow,
-        })
+      const flow = nodesCatalogSignal.value.extensionOverloads[kind].nodeToJson({
+        edges,
+        nodes,
+        node,
+        alreadySeen,
+        connections,
+        emptyWorkflow,
+        nodeToJson: (newNode) => nodeToJson(newNode, emptyWorkflow, false, alreadySeen),
+        removeReturnedFromWorkflow,
+      });
 
-      if (!flow)
-        console.log(`nothing was returned from ${kind}`)
+      if (!flow) console.log(`nothing was returned from ${kind}`);
 
-      subflow = flow
+      subflow = flow;
     } else {
       subflow = {
         ...node.data.content,
@@ -1003,13 +996,13 @@ export function WorkflowsDesigner(props) {
 
     let outputWorkflow = subflow
       ? {
-        ...node.data.content,
-        ...node.data.information,
-        ...subflow,
-        id: node.id,
-        kind,
-        position: node.position,
-      }
+          ...node.data.content,
+          ...node.data.information,
+          ...subflow,
+          id: node.id,
+          kind,
+          position: node.position,
+        }
       : undefined;
 
     if (currentWorkflow && currentWorkflow.kind === 'workflow') {
@@ -1050,55 +1043,56 @@ export function WorkflowsDesigner(props) {
   };
 
   const handleSave = () => {
-    const graph = graphToJson()
+    const graph = graphToJson();
 
-    const [config, seen] = graph
-    const alreadySeen = seen.flatMap((f) => f)
+    const [config, seen] = graph;
+    const alreadySeen = seen.flatMap((f) => f);
 
     const orphans = nodes.filter(
-      (node) => node.id !== 'start' &&
+      (node) =>
+        node.id !== 'start' &&
         node.kind !== 'note' &&
         node.id !== 'returned-node' &&
         !alreadySeen.includes(node.id)
-    )
+    );
 
-    const notes = nodes.filter((node) => node.type === 'note' || node.data.kind === 'note')
+    const notes = nodes.filter((node) => node.type === 'note' || node.data.kind === 'note');
 
     const orphansEdges = orphans
-      .filter(orphan => edges.find((edge) => edge.source === orphan.id))
+      .filter((orphan) => edges.find((edge) => edge.source === orphan.id))
       .flatMap((orphan) =>
         edges.filter((edge) => edge.target === orphan.id || edge.source === orphan.id)
       )
       .reduce((edges, edge) => {
         if (!edges.find((e) => e.id === edge.id) && edge.id !== 'start-edge') {
-          return [...edges, edge]
+          return [...edges, edge];
         }
-        return edges
-      }, [])
+        return edges;
+      }, []);
 
     return props.handleSave(
       config,
       {
         nodes: orphans
-          .filter(orphan => edges.find((edge) => edge.source === orphan.id))
+          .filter((orphan) => edges.find((edge) => edge.source === orphan.id))
           .map((r) => ({
             id: r.id,
             ...r.data.content,
             ...r.data.information,
             position: r.position,
-            kind: r.data.kind
+            kind: r.data.kind,
           })),
         edges: orphansEdges,
       },
-      notes.map(note => ({
+      notes.map((note) => ({
         id: note.id,
         ...note.data.content,
         position: note.position,
         measured: note.measured,
-        kind: note.data.kind
+        kind: note.data.kind,
       }))
-    )
-  }
+    );
+  };
 
   function updateData(props, changes) {
     setNodes(
@@ -1129,7 +1123,7 @@ export function WorkflowsDesigner(props) {
           appendSourceHandle: appendSourceHandle,
           handleDataChange: handleDataChange,
           deleteHandle: deleteHandle,
-          toggleBreakPoint: toggleBreakPoint
+          toggleBreakPoint: toggleBreakPoint,
         },
       },
     };
@@ -1145,15 +1139,15 @@ export function WorkflowsDesigner(props) {
               ...node.data,
               information: {
                 ...node.data.information,
-                breakpoint: !node.data.information.breakpoint
-              }
+                breakpoint: !node.data.information.breakpoint,
+              },
             },
           };
         }
         return node;
       })
     );
-  }
+  };
 
   function handleDataChange(nodeId, newData) {
     setNodes((eds) =>
@@ -1340,82 +1334,88 @@ export function WorkflowsDesigner(props) {
     setActiveNode(false);
   };
 
-  const highlightNode = nodeId => {
+  const highlightNode = (nodeId) => {
     // console.log('highlightNode', nodeId)
-    setNodes(nds => nds.map(node => {
-      if (node.id === nodeId && !node.data.highlighted)
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            highlighted: true
-          }
-        }
-      return node
-    }))
-  }
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId && !node.data.highlighted)
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              highlighted: true,
+            },
+          };
+        return node;
+      })
+    );
+  };
 
-  const highlightEdge = targetId => {
+  const highlightEdge = (targetId) => {
     // console.log('highlightEdge', targetId)
-    setEdges(edgs => edgs.map(edge => {
-      if (edge.target === targetId && !edge.target.data?.highlighted)
-        return {
-          ...edge,
-          data: {
-            highlighted: true
-          }
-        }
-      return edge
-    }))
-  }
+    setEdges((edgs) =>
+      edgs.map((edge) => {
+        if (edge.target === targetId && !edge.target.data?.highlighted)
+          return {
+            ...edge,
+            data: {
+              highlighted: true,
+            },
+          };
+        return edge;
+      })
+    );
+  };
 
-  const setErrorEdge = targetId => {
+  const setErrorEdge = (targetId) => {
     // console.log('setErrorEdge', targetId)
-    setEdges(edgs => edgs.map(edge => {
-      if (edge.target === targetId && !edge.target.data?.error)
-        return {
-          ...edge,
-          data: {
-            error: true
-          }
-        }
-      return edge
-    }))
-  }
+    setEdges((edgs) =>
+      edgs.map((edge) => {
+        if (edge.target === targetId && !edge.target.data?.error)
+          return {
+            ...edge,
+            data: {
+              error: true,
+            },
+          };
+        return edge;
+      })
+    );
+  };
 
-  const setErrorNode = nodeId => {
-    setNodes(nds =>
-      nds.map(node => {
+  const setErrorNode = (nodeId) => {
+    setNodes((nds) =>
+      nds.map((node) => {
         if (node.id === nodeId)
           return {
             ...node,
             data: {
               ...node.data,
               highlighted: false,
-              error: true
-            }
-          }
-        return node
+              error: true,
+            },
+          };
+        return node;
       })
-    )
-  }
+    );
+  };
 
   const unhighlighNode = (event_id) => {
     // console.log('unhighlighNode', event_id)
-    setNodes(nds =>
-      nds.map(node => {
+    setNodes((nds) =>
+      nds.map((node) => {
         if (node.id === event_id)
           return {
             ...node,
             data: {
               ...node.data,
-              highlighted: "END"
-            }
-          }
-        return node
+              highlighted: 'END',
+            },
+          };
+        return node;
       })
-    )
-  }
+    );
+  };
 
   const closeAllModals = () => {
     setActiveNode(false);
@@ -1449,52 +1449,60 @@ export function WorkflowsDesigner(props) {
     applyLayout({
       nodes: nodes,
       edges: edges,
-    }).then(res => {
-      setNodes(res.nodes.map(node => {
-        if(node.data.kind === 'note') {
-          return nodes.find(n => n.id === node.id)
-        }
-        return node
-      }));
+    }).then((res) => {
+      setNodes(
+        res.nodes.map((node) => {
+          if (node.data.kind === 'note') {
+            return nodes.find((n) => n.id === node.id);
+          }
+          return node;
+        })
+      );
       setEdges(res.edges);
     });
   };
 
   const resetFlow = () => {
-    console.log('reset flow')
+    console.log('reset flow');
 
-    setEdges(eds => eds.map(e => ({
-      ...e,
-      data: {
-        highlighted: false,
-        error: false
-      },
-      animated: false
-    })))
-    setNodes(nds => nds.map(n => ({
-      ...n,
-      data: {
-        ...n.data,
-        highlighted: false,
-        error: false
-      }
-    })))
-  }
+    setEdges((eds) =>
+      eds.map((e) => ({
+        ...e,
+        data: {
+          highlighted: false,
+          error: false,
+        },
+        animated: false,
+      }))
+    );
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          highlighted: false,
+          error: false,
+        },
+      }))
+    );
+  };
 
   const getTestPayload = (input) => ({
     input: JSON.stringify(input),
     workflow: graphToJson()[0],
     workflow_id: props.workflow.id,
-    functions: props.workflow.functions
-  })
+    functions: props.workflow.functions,
+  });
 
   function getCenter(nodes) {
     if (nodes.length === 0) return { x: 0, y: 0 };
 
-    let minX = Infinity, minY = Infinity;
-    let maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      minY = Infinity;
+    let maxX = -Infinity,
+      maxY = -Infinity;
 
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       const { x, y } = node.position;
       const width = node.width ?? 0;
       const height = node.height ?? 0;
@@ -1513,10 +1521,10 @@ export function WorkflowsDesigner(props) {
 
   const scrollToNode = (selectedNode) => {
     if (selectedNode.id === 'start') {
-      const center = getCenter(nodes)
+      const center = getCenter(nodes);
 
-      setCenter(center.x + 75, center.y, { zoom: .75, duration: 1200 })
-      return
+      setCenter(center.x + 75, center.y, { zoom: 0.75, duration: 1200 });
+      return;
     }
 
     const node = reactFlow.getNode(selectedNode.id);
@@ -1528,48 +1536,55 @@ export function WorkflowsDesigner(props) {
 
       setCenter(rightX, centerY, { zoom: 1.5, duration: 1200 });
     }
-  }
+  };
 
   if (nodes.length === 0) return null;
 
   // console.log(nodes)
 
   return (
-    <div className="workflow"
-      onMouseLeave={e => {
+    <div
+      className="workflow"
+      onMouseLeave={(e) => {
         if (resizingTerminal) {
-          e.stopPropagation()
-          toggleResizingTerminal(false)
+          e.stopPropagation();
+          toggleResizingTerminal(false);
         }
       }}
-      onMouseUp={e => {
+      onMouseUp={(e) => {
         if (resizingTerminal) {
-          e.stopPropagation()
-          toggleResizingTerminal(false)
+          e.stopPropagation();
+          toggleResizingTerminal(false);
         }
       }}
-      onMouseMove={e => {
+      onMouseMove={(e) => {
         if (resizingTerminal) {
-          e.stopPropagation()
-          const r = 1 - (e.clientY / window.innerHeight)
-          changeTerminalSize(r > .75 ? .75 : r)
+          e.stopPropagation();
+          const r = 1 - e.clientY / window.innerHeight;
+          changeTerminalSize(r > 0.75 ? 0.75 : r);
         }
       }}
     >
-      <div className='d-flex flex-column scroll-container' style={{
-        flex: 1 - terminalSize,
-        overflow: 'scroll'
-      }}>
+      <div
+        className="d-flex flex-column scroll-container"
+        style={{
+          flex: 1 - terminalSize,
+          overflow: 'scroll',
+        }}
+      >
         <Navbar workflow={workflow} save={handleSave} manageTags={manageTags} />
 
         <NewTask onClick={() => setActiveNode(true)} />
 
         <TagsModal isOpen={showTagModal} tags={workflow} setTags={setTags} />
 
-        {activeNode && <NodesExplorer
-          activeNode={activeNode}
-          handleSelectNode={handleSelectNode}
-          close={closeAllModals} />}
+        {activeNode && (
+          <NodesExplorer
+            activeNode={activeNode}
+            handleSelectNode={handleSelectNode}
+            close={closeAllModals}
+          />
+        )}
         <Flow
           autoLayout={autoLayout}
           onConnectEnd={onConnectEnd}
@@ -1597,12 +1612,9 @@ export function WorkflowsDesigner(props) {
           setErrorNode,
           setErrorEdge,
           resetFlow,
-          scrollToNode
+          scrollToNode,
         }}
       />
     </div>
   );
 }
-
-
-

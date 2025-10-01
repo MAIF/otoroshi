@@ -29,11 +29,13 @@ export const ParallelAndSwitchTemplate = (kind) => {
             renderer: (props) => {
               const predicate = props.value || {};
 
-              return <OperatorSelector
-                predicate={predicate}
-                handleOperatorChange={newOperator => props.onChange(newOperator.predicate)}
-              />
-            }
+              return (
+                <OperatorSelector
+                  predicate={predicate}
+                  handleOperatorChange={(newOperator) => props.onChange(newOperator.predicate)}
+                />
+              );
+            },
           },
         },
       },

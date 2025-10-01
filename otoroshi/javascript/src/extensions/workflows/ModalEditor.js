@@ -17,26 +17,35 @@ function setEnabled(state) {
 }
 
 function getExample(functionData) {
-  const FORBIDDEN_FIELDS = ['function']
+  const FORBIDDEN_FIELDS = ['function'];
 
-  if (!functionData?.example)
-    return null
+  if (!functionData?.example) return null;
 
-  return <div className='relative mb-3'>
-    <div className="absolute top-2 right-2" style={{ gap: '.5rem' }}>
-      <span className="badge bg-warning">
-        EXAMPLE
-      </span>
+  return (
+    <div className="relative mb-3">
+      <div className="absolute top-2 right-2" style={{ gap: '.5rem' }}>
+        <span className="badge bg-warning">EXAMPLE</span>
+      </div>
+      <MarkdownInput
+        className="markdown-description mt-3"
+        readOnly={true}
+        preview={true}
+        value={
+          '```\n' +
+          JSON.stringify(
+            Object.fromEntries(
+              Object.entries(functionData.example || {}).filter(
+                ([key, _]) => !INFORMATION_FIELDS.includes(key) && !FORBIDDEN_FIELDS.includes(key)
+              )
+            ),
+            null,
+            4
+          ) +
+          '\n```\n'
+        }
+      />
     </div>
-    <MarkdownInput
-      className="markdown-description mt-3"
-      readOnly={true}
-      preview={true}
-      value={"```\n" + JSON.stringify(Object.fromEntries(
-        Object.entries(functionData.example || {}).filter(([key, _]) => !INFORMATION_FIELDS.includes(key) && !FORBIDDEN_FIELDS.includes(key))
-      ), null, 4) + "\n```\n"}
-    />
-  </div>
+  );
 }
 
 export function ModalEditor({ node }) {
@@ -46,7 +55,7 @@ export function ModalEditor({ node }) {
 
   const isAnOperator = data.operators;
   const isAFunction = data.content.function;
-  const isANote = node.data.type === 'note'
+  const isANote = node.data.type === 'note';
 
   const functionData = isAFunction ? getNodeFromKind(isAFunction) : undefined;
 
@@ -74,37 +83,39 @@ export function ModalEditor({ node }) {
   if (isAFunction) {
     schema = {
       ...schema,
-      args: functionData?.form_schema ? {
-        type: 'form',
-        label: 'Arguments',
-        flow: Object.keys(functionData?.form_schema || {}),
-        schema: functionData?.form_schema || {},
-      } : {
-        type: 'object',
-        label: 'Arguments',
-        itemRenderer: useCallback(({ entry, onChangeValue, onChangeKey, idx }) => {
-          const [key, value] = entry
-          return <div className='d-flex flex-column' style={{ flex: 1 }} key={idx}>
-            <TextInput
-              flex={true}
-              value={key}
-              onChange={onChangeKey} />
-            <CodeInput
-              value={value}
-              editorOnly
-              rawSchema={{
-                props: {
-                  height: '100%',
-                  ace_config: {
-                    fontSize: 14,
-                  },
-                },
-              }}
-              onChange={onChangeValue} />
-          </div>
-        }, [])
-      },
-    }
+      args: functionData?.form_schema
+        ? {
+            type: 'form',
+            label: 'Arguments',
+            flow: Object.keys(functionData?.form_schema || {}),
+            schema: functionData?.form_schema || {},
+          }
+        : {
+            type: 'object',
+            label: 'Arguments',
+            itemRenderer: useCallback(({ entry, onChangeValue, onChangeKey, idx }) => {
+              const [key, value] = entry;
+              return (
+                <div className="d-flex flex-column" style={{ flex: 1 }} key={idx}>
+                  <TextInput flex={true} value={key} onChange={onChangeKey} />
+                  <CodeInput
+                    value={value}
+                    editorOnly
+                    rawSchema={{
+                      props: {
+                        height: '100%',
+                        ace_config: {
+                          fontSize: 14,
+                        },
+                      },
+                    }}
+                    onChange={onChangeValue}
+                  />
+                </div>
+              );
+            }, []),
+          },
+    };
 
     data.schema = functionData?.form_schema;
   } else {
@@ -117,12 +128,11 @@ export function ModalEditor({ node }) {
   schema = {
     ...schema,
     example: {
-      renderer: () => getExample(functionData)
-    }
-  }
+      renderer: () => getExample(functionData),
+    },
+  };
 
-  if (isANote)
-    schema = data.form_schema
+  if (isANote) schema = data.form_schema;
 
   // const hasArgsSchema = Object.keys(functionData?.form_schema || {}).length > 0;
   const argsFlow = ['args', 'result'];
@@ -139,23 +149,24 @@ export function ModalEditor({ node }) {
       fields: [],
     };
 
-    let fields = defaultFlow
+    let fields = defaultFlow;
 
-    if (isAFunction)
-      fields = argsFlow
+    if (isAFunction) fields = argsFlow;
 
     return {
       ...configuration,
       fields: [
-        functionData?.example ? {
-          type: 'group',
-          name: 'Examples',
-          collapsed: true,
-          fields: ['example']
-        } : undefined,
-        ...fields
-      ].filter(f => f)
-    }
+        functionData?.example
+          ? {
+              type: 'group',
+              name: 'Examples',
+              collapsed: true,
+              fields: ['example'],
+            }
+          : undefined,
+        ...fields,
+      ].filter((f) => f),
+    };
   };
 
   let flow = [
@@ -163,18 +174,22 @@ export function ModalEditor({ node }) {
       type: 'group',
       name: 'General',
       collapsable: false,
-      fields: [!isAnOperator ? 'enabled' : '', 'breakpoint', 'description'].filter((field) => field.length > 0),
+      fields: [!isAnOperator ? 'enabled' : '', 'breakpoint', 'description'].filter(
+        (field) => field.length > 0
+      ),
     },
     getConfigurationGroup(),
   ];
 
   if (isANote) {
-    flow = [{
-      type: 'group',
-      name: 'General',
-      collapsable: false,
-      fields: data.flow,
-    }]
+    flow = [
+      {
+        type: 'group',
+        name: 'General',
+        collapsable: false,
+        fields: data.flow,
+      },
+    ];
   }
 
   const value = setEnabled({
@@ -209,17 +224,16 @@ export function ModalEditor({ node }) {
   const getCodeInputValue = () => {
     const fields = flow[1] ? flow[1]?.fields : flow[0].fields;
 
-    return Object.fromEntries(
-      Object.entries(state).filter(([key, _]) => fields.includes(key))
-    )
+    return Object.fromEntries(Object.entries(state).filter(([key, _]) => fields.includes(key)));
   };
-
 
   return (
     <div className="modal-editor d-flex flex-column" style={{ flex: 1 }}>
       <p className="p-3 m-0 whats-next-title">
         {functionData
-          ? (functionData.display_name ? functionData.display_name : functionData.name)
+          ? functionData.display_name
+            ? functionData.display_name
+            : functionData.name
           : node.data.display_name
             ? node.data.display_name
             : node.data.name}
@@ -242,7 +256,7 @@ export function ModalEditor({ node }) {
               ngOptions={{
                 spread: true,
               }}
-              mode='jsonOrPlaintext'
+              mode="jsonOrPlaintext"
               height="100%"
               value={getCodeInputValue()}
               onChange={handleCodeInputChange}

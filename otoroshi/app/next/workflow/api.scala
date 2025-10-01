@@ -53,23 +53,29 @@ class WorkflowEngine(env: Env) {
       .flatMap {
         case Left(err) if err.message == "_____otoroshi_workflow_paused" =>
           WorkflowResult(err.details.get.select("access_token").asOpt[JsValue], None, wfRun).future
-        case Left(err) if err.message == "_____otoroshi_workflow_ended" =>
+        case Left(err) if err.message == "_____otoroshi_workflow_ended"  =>
           WorkflowResult(wfRun.memory.get("input"), None, wfRun).future
-        case Left(err) if err.message == "_____otoroshi_workflow_jump" =>
+        case Left(err) if err.message == "_____otoroshi_workflow_jump"   =>
           err.details.flatMap(_.select("to").asOptString) match {
-            case None => err.details.flatMap(_.select("path").asOpt[Seq[Int]]) match {
-              case None => WorkflowResult(None, Some(WorkflowError(s"'to' not specified", None, None)), wfRun).future
-              case Some(path) => resume(node, wfRun, path, attrs)
-            }
+            case None     =>
+              err.details.flatMap(_.select("path").asOpt[Seq[Int]]) match {
+                case None       => WorkflowResult(None, Some(WorkflowError(s"'to' not specified", None, None)), wfRun).future
+                case Some(path) => resume(node, wfRun, path, attrs)
+              }
             case Some(to) => {
               node.collectSubNodes(Seq(0)).find(_._1.id == to) match {
-                case None => WorkflowResult(None, Some(WorkflowError(s"unable to find node with id '${to}'", None, None)), wfRun).future
+                case None            =>
+                  WorkflowResult(
+                    None,
+                    Some(WorkflowError(s"unable to find node with id '${to}'", None, None)),
+                    wfRun
+                  ).future
                 case Some((_, path)) => resume(node, wfRun, path, attrs)
               }
             }
           }
-        case Left(err)     => WorkflowResult(None, err.some, wfRun).future
-        case Right(result) => WorkflowResult(result.some, None, wfRun).future
+        case Left(err)                                                   => WorkflowResult(None, err.some, wfRun).future
+        case Right(result)                                               => WorkflowResult(result.some, None, wfRun).future
       }
       .recover { case t: Throwable =>
         WorkflowResult(
@@ -78,8 +84,8 @@ class WorkflowEngine(env: Env) {
           wfRun
         )
       }
-      .andThen {
-        case _ => attrs.get(WorkflowAdminExtension.workflowDebuggerKey).foreach { debugger =>
+      .andThen { case _ =>
+        attrs.get(WorkflowAdminExtension.workflowDebuggerKey).foreach { debugger =>
           debugger.shutdown()
         }
       }
@@ -96,23 +102,29 @@ class WorkflowEngine(env: Env) {
       .flatMap {
         case Left(err) if err.message == "_____otoroshi_workflow_paused" =>
           WorkflowResult(err.details.get.select("access_token").asOpt[JsValue], None, wfRun).future
-        case Left(err) if err.message == "_____otoroshi_workflow_ended" =>
+        case Left(err) if err.message == "_____otoroshi_workflow_ended"  =>
           WorkflowResult(wfRun.memory.get("input"), None, wfRun).future
-        case Left(err) if err.message == "_____otoroshi_workflow_jump" =>
+        case Left(err) if err.message == "_____otoroshi_workflow_jump"   =>
           err.details.flatMap(_.select("to").asOptString) match {
-            case None => err.details.flatMap(_.select("path").asOpt[Seq[Int]]) match {
-              case None => WorkflowResult(None, Some(WorkflowError(s"'to' not specified", None, None)), wfRun).future
-              case Some(path) => resume(node, wfRun, path, attrs)
-            }
+            case None     =>
+              err.details.flatMap(_.select("path").asOpt[Seq[Int]]) match {
+                case None       => WorkflowResult(None, Some(WorkflowError(s"'to' not specified", None, None)), wfRun).future
+                case Some(path) => resume(node, wfRun, path, attrs)
+              }
             case Some(to) => {
               node.collectSubNodes(Seq(0)).find(_._1.id == to) match {
-                case None => WorkflowResult(None, Some(WorkflowError(s"unable to find node with id '${to}'", None, None, to.some)), wfRun).future
+                case None            =>
+                  WorkflowResult(
+                    None,
+                    Some(WorkflowError(s"unable to find node with id '${to}'", None, None, to.some)),
+                    wfRun
+                  ).future
                 case Some((_, path)) => resume(node, wfRun, path, attrs)
               }
             }
           }
-        case Left(err)     => WorkflowResult(None, err.some, wfRun).future
-        case Right(result) => WorkflowResult(result.some, None, wfRun).future
+        case Left(err)                                                   => WorkflowResult(None, err.some, wfRun).future
+        case Right(result)                                               => WorkflowResult(result.some, None, wfRun).future
       }
       .recover { case t: Throwable =>
         WorkflowResult(
@@ -142,7 +154,12 @@ case class WorkflowResult(returned: Option[JsValue], error: Option[WorkflowError
   )
 }
 
-case class WorkflowError(message: String, details: Option[JsObject] = None, exception: Option[Throwable] = None, nodeId: Option[String] = None) {
+case class WorkflowError(
+    message: String,
+    details: Option[JsObject] = None,
+    exception: Option[Throwable] = None,
+    nodeId: Option[String] = None
+) {
   def json: JsValue = WorkflowError.format.writes(this)
 }
 
@@ -162,7 +179,7 @@ object WorkflowError {
     }
 
     override def writes(o: WorkflowError): JsValue = Json.obj(
-      "nodeId"      -> o.nodeId,
+      "nodeId"    -> o.nodeId,
       "message"   -> o.message,
       "details"   -> o.details,
       "exception" -> o.exception.map(_.getMessage.json).getOrElse(JsNull).asValue
@@ -213,9 +230,9 @@ object WorkflowLogItem {
 }
 
 class WorkflowLog {
-  private val callbacks                = new TrieMap[String, (WorkflowLogItem) => Unit]()
-  private val queue                    = new ConcurrentLinkedQueue[WorkflowLogItem]()
-  def json: JsValue                    = JsArray(queue.asScala.map(_.json).toSeq)
+  private val callbacks                                           = new TrieMap[String, (WorkflowLogItem) => Unit]()
+  private val queue                                               = new ConcurrentLinkedQueue[WorkflowLogItem]()
+  def json: JsValue                                               = JsArray(queue.asScala.map(_.json).toSeq)
   def log(item: WorkflowLogItem): Unit = {
     queue.offer(item)
     if (callbacks.nonEmpty) {
@@ -223,7 +240,7 @@ class WorkflowLog {
     }
   }
   def addCallback(name: String)(f: WorkflowLogItem => Unit): Unit = callbacks.put(name, f)
-  def removeCallback(name: String): Unit = callbacks.remove(name)
+  def removeCallback(name: String): Unit                          = callbacks.remove(name)
 }
 
 object WorkflowLog {
@@ -374,16 +391,16 @@ trait Node extends NodeLike {
                 result.foreach(name => wfr.memory.set(name, res))
                 Left(err)
               }
-              case Left(err) if err.message == "_____otoroshi_workflow_ended" => {
+              case Left(err) if err.message == "_____otoroshi_workflow_ended"  => {
                 // println(s"ending at '${id}'")
                 wfr.log(s"ending at '${id}'", this)
                 Left(err)
               }
-              case Left(err) => {
+              case Left(err)                                                   => {
                 wfr.log(s"ending with error '${id}'", this, err.some)
                 Left(err)
               }
-              case Right(res) => {
+              case Right(res)                                                  => {
                 wfr.log(s"ending '${id}'", this)
                 result.foreach(name => wfr.memory.set(name, res))
                 returned match {
@@ -392,7 +409,7 @@ trait Node extends NodeLike {
                     wfr.memory.set("input", finalRes)
                     Right(finalRes)
                   }
-                  case None => {
+                  case None      => {
                     if (id != "start")
                       wfr.memory.set("input", res)
                     Right(res) // TODO: el like
@@ -437,19 +454,20 @@ trait Node extends NodeLike {
         wfr.attrs.get(WorkflowAdminExtension.workflowDebuggerKey).foreach(_.pause())
       }
       wfr.attrs.get(WorkflowAdminExtension.workflowDebuggerKey) match {
-        case None => go()
-        case Some(debugger) => debugger.waitForNextStep().flatMap { _ =>
-          if (debugger.isStopped) {
-            WorkflowError(
-              message = "_____otoroshi_workflow_ended",
-              details = None,
-              exception = None,
-              nodeId = id.some
-            ).leftf
-          } else {
-            go()
+        case None           => go()
+        case Some(debugger) =>
+          debugger.waitForNextStep().flatMap { _ =>
+            if (debugger.isStopped) {
+              WorkflowError(
+                message = "_____otoroshi_workflow_ended",
+                details = None,
+                exception = None,
+                nodeId = id.some
+              ).leftf
+            } else {
+              go()
+            }
           }
-        }
       }
     }
   }
@@ -513,8 +531,8 @@ object Node {
   def from(json: JsValue): Node = {
     json match {
       case obj @ JsObject(_) => fromObject(obj)
-      case arr @ JsArray(_) => fromArray(arr)
-      case _ => NoopNode(Json.obj())
+      case arr @ JsArray(_)  => fromArray(arr)
+      case _                 => NoopNode(Json.obj())
     }
   }
   def flattenTree(node: NodeLike, path: String = "0"): List[(String, NodeLike)] = {
@@ -539,7 +557,7 @@ trait WorkflowOperator {
 }
 
 object WorkflowOperator {
-  val pattern = """\$\{([^}]+)\}""".r
+  val pattern                                                               = """\$\{([^}]+)\}""".r
   val operators                                                             = new TrieMap[String, WorkflowOperator]()
   def registerOperator(name: String, operator: WorkflowOperator): Unit = {
     operators.put(name, operator)
@@ -584,29 +602,40 @@ object WorkflowOperator {
     case JsString(str) if str.contains("${resume_token}")                                 =>
       JsString(str.replace("${resume_token}", PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env)))
     case JsString(str) if str.contains("${") && str.contains("}")                         => {
-      val res = pattern.replaceAllIn(str, m => {
-        val key = m.group(1)
-        if (key.contains(".")) {
-          val parts = key.split("\\.")
-          val name  = parts.head
-          val path  = parts.tail.mkString(".")
-          wfr.memory.get(name).map(obj => obj.at(path).asOpt[JsValue].getOrElse(JsNull) match {
-            case JsNull => "null"
-            case JsNumber(n) => n.toString
-            case JsBoolean(n) => n.toString
-            case JsString(n) => n
-            case j => j.stringify
-          }).getOrElse("--")
-        } else {
-          wfr.memory.get(key).map {
-            case JsNull => "null"
-            case JsNumber(n) => n.toString
-            case JsBoolean(n) => n.toString
-            case JsString(n) => n
-            case j => j.stringify
-          }.getOrElse("--")
+      val res = pattern.replaceAllIn(
+        str,
+        m => {
+          val key = m.group(1)
+          if (key.contains(".")) {
+            val parts = key.split("\\.")
+            val name  = parts.head
+            val path  = parts.tail.mkString(".")
+            wfr.memory
+              .get(name)
+              .map(obj =>
+                obj.at(path).asOpt[JsValue].getOrElse(JsNull) match {
+                  case JsNull       => "null"
+                  case JsNumber(n)  => n.toString
+                  case JsBoolean(n) => n.toString
+                  case JsString(n)  => n
+                  case j            => j.stringify
+                }
+              )
+              .getOrElse("--")
+          } else {
+            wfr.memory
+              .get(key)
+              .map {
+                case JsNull       => "null"
+                case JsNumber(n)  => n.toString
+                case JsBoolean(n) => n.toString
+                case JsString(n)  => n
+                case j            => j.stringify
+              }
+              .getOrElse("--")
+          }
         }
-      })
+      )
       res.json
     }
     case _                                                                                => value

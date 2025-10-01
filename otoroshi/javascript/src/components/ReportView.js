@@ -17,7 +17,7 @@ export const ReportView = ({
   setFlow,
   isWorkflowView,
   onClick,
-  error
+  error,
 }) => {
   const [selectedStep, setSelectedStep] = useState(-1);
   const [selectedPlugin, setSelectedPlugin] = useState(-1);
@@ -25,9 +25,8 @@ export const ReportView = ({
   const [informations, setInformations] = useState({});
 
   useEffect(() => {
-    if (error)
-      setSelectedPlugin('error')
-  }, [error])
+    if (error) setSelectedPlugin('error');
+  }, [error]);
 
   useEffect(() => {
     const { steps, duration_ns, ...informations } = report;
@@ -47,9 +46,9 @@ export const ReportView = ({
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-      [...(step?.ctx?.plugins || [])].find((plugin) =>
-        search.length <= 0 ? true : plugin.name.includes(search)
-      );
+        [...(step?.ctx?.plugins || [])].find((plugin) =>
+          search.length <= 0 ? true : plugin.name.includes(search)
+        );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
@@ -58,7 +57,7 @@ export const ReportView = ({
 
   const durationInPercentage = (pluginDuration, totalDuration) => {
     return Number.parseFloat((pluginDuration / totalDuration) * 100).toFixed(3);
-  }
+  };
 
   const reportDuration = () => {
     if (flow === 'all')
@@ -75,8 +74,8 @@ export const ReportView = ({
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                .filter(isPluginNameMatchingSearch)
-                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                  .filter(isPluginNameMatchingSearch)
+                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -88,7 +87,7 @@ export const ReportView = ({
       else if (unit === 'ns') return value;
       else return roundNsTo(value);
     }
-  }
+  };
 
   return (
     <div className="d-flex border" style={{ flex: 1 }}>
@@ -141,8 +140,7 @@ export const ReportView = ({
               setSelectedStep(-1);
               setSelectedPlugin(-1);
 
-              if (onClick)
-                onClick(-1)
+              if (onClick) onClick(-1);
             }}
             className={`d-flex-between report-step ${selectedStep === -1 && selectedPlugin === -1 ? 'btn-primaryColor' : 'btn-quiet'}`}
           >
@@ -152,16 +150,23 @@ export const ReportView = ({
             </span>
           </div>
 
-          {error && <div style={{ width: '100%' }} onClick={() => {
-            setSelectedPlugin('error')
-          }}>
-            <div className={`d-flex-between report-step ${selectedPlugin === 'error' ? 'btn-danger' : 'btn-quiet'}`}>
-              <div className="d-flex align-items-center">
-                <i className="fas fa-warning me-1" />
-                <span>{firstLetterUppercase('Error')}</span>
+          {error && (
+            <div
+              style={{ width: '100%' }}
+              onClick={() => {
+                setSelectedPlugin('error');
+              }}
+            >
+              <div
+                className={`d-flex-between report-step ${selectedPlugin === 'error' ? 'btn-danger' : 'btn-quiet'}`}
+              >
+                <div className="d-flex align-items-center">
+                  <i className="fas fa-warning me-1" />
+                  <span>{firstLetterUppercase('Error')}</span>
+                </div>
               </div>
             </div>
-          </div>}
+          )}
 
           {[...steps]
             .filter(isOnFlow)
@@ -179,22 +184,22 @@ export const ReportView = ({
                       setSelectedPlugin(-1);
                       setSelectedStep(step.task);
 
-                      if (onClick)
-                        onClick(step)
+                      if (onClick) onClick(step);
                     }}
                     className={`d-flex-between report-step ${step.task === selectedStep && selectedPlugin === -1 ? 'btn-primaryColor' : 'btn-quiet'}`}
                   >
                     <div className="d-flex align-items-center">
                       {displaySubList && (
                         <i
-                          className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
-                            } me-1`}
+                          className={`fas fa-chevron-${
+                            step.open || flow === 'user' ? 'down' : 'right'
+                          } me-1`}
                           onClick={() => {
                             setSteps(
                               steps.map((s) =>
                                 s.task === step.task ? { ...s, open: !step.open } : s
                               )
-                            )
+                            );
                           }}
                         />
                       )}
@@ -234,14 +239,17 @@ export const ReportView = ({
                               setSelectedStep(step.task);
                               setSelectedPlugin(plugin.name);
 
-                              if (onClick)
-                                onClick(step)
+                              if (onClick) onClick(step);
                             }}
                             className={`d-flex-between report-step ${step.task === selectedStep && plugin.name === selectedPlugin ? 'btn-primary' : 'btn-quiet'}`}
                           >
                             <span>{firstLetterUppercase(pluginName)}</span>
                             <span style={{ maxWidth: '100px', textAlign: 'right' }}>
-                              {unit === 'ms' ? roundNsTo(plugin.duration_ns) : unit === 'ns' ? plugin.duration_ns : pluginPercentage}{' '}
+                              {unit === 'ms'
+                                ? roundNsTo(plugin.duration_ns)
+                                : unit === 'ns'
+                                  ? plugin.duration_ns
+                                  : pluginPercentage}{' '}
                               {unit}
                             </span>
                           </div>
@@ -255,16 +263,18 @@ export const ReportView = ({
       <div style={{ flex: 1, minHeight: 0 }}>
         <NgAnyRenderer
           ngOptions={{ spread: true }}
-          onChange={() => { }}
-          language='json'
+          onChange={() => {}}
+          language="json"
           value={JSON.stringify(
-            selectedPlugin === 'error' ? error :
-              selectedPlugin === -1 ? selectedStep === -1
-                ? informations
-                : steps.find((t) => t.task === selectedStep)
+            selectedPlugin === 'error'
+              ? error
+              : selectedPlugin === -1
+                ? selectedStep === -1
+                  ? informations
+                  : steps.find((t) => t.task === selectedStep)
                 : steps
-                  .find((t) => t.task === selectedStep)
-                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+                    .find((t) => t.task === selectedStep)
+                    ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
             null,
             4
           )}

@@ -48,7 +48,7 @@ export function WhatsNext({ handleSelectNode, isOpen, close }) {
         )}
         {title}
 
-        <i className='fas fa-times ms-auto' onClick={close} />
+        <i className="fas fa-times ms-auto" onClick={close} />
       </div>
 
       <Search query={query} onChange={setQuery} isOpen={isOpen} />

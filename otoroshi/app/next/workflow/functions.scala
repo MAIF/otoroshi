@@ -87,9 +87,9 @@ class MemoryRenameFunction extends WorkflowFunction {
     if (wfr.memory.contains(oldName)) {
       wfr.memory.set(newName, wfr.memory.get(oldName).get)
       wfr.memory.remove(oldName)
-    } 
-    JsNull.rightf    
-  } 
+    }
+    JsNull.rightf
+  }
 }
 
 class MemoryDelFunction extends WorkflowFunction {
@@ -111,7 +111,7 @@ class MemoryDelFunction extends WorkflowFunction {
       "kind"     -> "call",
       "function" -> "core.memory_del",
       "args"     -> Json.obj(
-        "name" -> "my_memory",
+        "name" -> "my_memory"
       )
     )
   )
@@ -134,7 +134,7 @@ class MemorySetFunction extends WorkflowFunction {
       "type"       -> "object",
       "required"   -> Seq("name", "value"),
       "properties" -> Json.obj(
-        "name" -> Json.obj("type" -> "string", "description" -> "The name of the memory"),
+        "name"  -> Json.obj("type" -> "string", "description" -> "The name of the memory"),
         "value" -> Json.obj("type" -> "any", "description" -> "The value to set in the memory")
       )
     )
@@ -144,7 +144,7 @@ class MemorySetFunction extends WorkflowFunction {
       "kind"     -> "call",
       "function" -> "core.memory_set",
       "args"     -> Json.obj(
-        "name" -> "my_memory",
+        "name"  -> "my_memory",
         "value" -> "my_value"
       )
     )
@@ -152,7 +152,7 @@ class MemorySetFunction extends WorkflowFunction {
   override def callWithRun(
       args: JsObject
   )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
-    val name = args.select("name").asString
+    val name  = args.select("name").asString
     val value = args.select("value").asValue
     wfr.memory.set(name, value)
     JsNull.rightf
@@ -187,8 +187,8 @@ class MemoryGetFunction extends WorkflowFunction {
   override def callWithRun(
       args: JsObject
   )(implicit env: Env, ec: ExecutionContext, wfr: WorkflowRun): Future[Either[WorkflowError, JsValue]] = {
-    val name = args.select("name").asString
-    val path = args.select("path").asOptString
+    val name  = args.select("name").asString
+    val path  = args.select("path").asOptString
     val value = wfr.memory.get(name) match {
       case None                          => JsNull
       case Some(value) if path.isEmpty   => value
@@ -359,7 +359,7 @@ class SendMailFunction extends WorkflowFunction {
         )
         sendMail(mailer)
       }
-      case "generic" => {
+      case "generic"  => {
         val mailer = new GenericMailer(
           env,
           env.datastores.globalConfigDataStore.latest(),
@@ -617,20 +617,22 @@ class FileWriteFunction extends WorkflowFunction {
 }
 
 class EmitEventFunction extends WorkflowFunction {
-  override def documentationName: String                  = "core.emit_event"
-  override def documentationDisplayName: String           = "Emit an event"
-  override def documentationIcon: String                  = "fas fa-bullhorn"
-  override def documentationDescription: String           = "This function emits an event"
-  override def documentationFormSchema: Option[JsObject] = Some(Json.obj(
-    "event" -> Json.obj(
-      "type"  -> "object",
-      "label" -> "Event",
-      "props" -> Json.obj(
-        "description" -> "The event to emit"
+  override def documentationName: String                 = "core.emit_event"
+  override def documentationDisplayName: String          = "Emit an event"
+  override def documentationIcon: String                 = "fas fa-bullhorn"
+  override def documentationDescription: String          = "This function emits an event"
+  override def documentationFormSchema: Option[JsObject] = Some(
+    Json.obj(
+      "event" -> Json.obj(
+        "type"  -> "object",
+        "label" -> "Event",
+        "props" -> Json.obj(
+          "description" -> "The event to emit"
+        )
       )
     )
-  ))
-  
+  )
+
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
@@ -767,44 +769,44 @@ class HttpClientFunction extends WorkflowFunction {
   override def documentationDescription: String           = "This function makes a HTTP request"
   override def documentationFormSchema: Option[JsObject]  = Json
     .obj(
-      "url"         -> Json.obj("label" -> "URL", "type" -> "string", "props" -> Json.obj("description" -> "The URL to call")),
-      "method"      -> Json
+      "url"               -> Json.obj("label" -> "URL", "type" -> "string", "props" -> Json.obj("description" -> "The URL to call")),
+      "method"            -> Json
         .obj("label" -> "Method", "type" -> "string", "props" -> Json.obj("description" -> "The HTTP method to use")),
-      "headers"     -> Json
+      "headers"           -> Json
         .obj("label" -> "Headers", "type" -> "object", "props" -> Json.obj("description" -> "The headers to send")),
-      "timeout"     -> Json.obj(
+      "timeout"           -> Json.obj(
         "label" -> "Timeout",
         "type"  -> "number",
         "props" -> Json.obj("description" -> "The timeout in milliseconds")
       ),
-      "body"        -> Json
+      "body"              -> Json
         .obj("label" -> "Body", "type" -> "string", "props" -> Json.obj("description" -> "The body (string) to send")),
-      "body_str"    -> Json.obj(
+      "body_str"          -> Json.obj(
         "label" -> "String Body",
         "type"  -> "string",
         "props" -> Json.obj("description" -> "The body (string) to send")
       ),
-      "body_json"   -> Json.obj(
+      "body_json"         -> Json.obj(
         "label" -> "JSON Body",
         "type"  -> "object",
         "props" -> Json.obj("description" -> "The body (json) to send")
       ),
-      "body_bytes"  -> Json.obj(
+      "body_bytes"        -> Json.obj(
         "label" -> "Bytes Body",
         "type"  -> "array",
         "props" -> Json.obj("description" -> "The body (bytes array) to send")
       ),
-      "body_base64" -> Json.obj(
+      "body_base64"       -> Json.obj(
         "label" -> "Base64 body",
         "type"  -> "string",
         "props" -> Json.obj("description" -> "The body (base64) to send")
       ),
-      "tls_config"  -> Json.obj(
+      "tls_config"        -> Json.obj(
         "label" -> "TLS Configuration",
         "type"  -> "object",
         "props" -> Json.obj("description" -> "The TLS configuration")
       ),
-      "response_selector"  -> Json.obj(
+      "response_selector" -> Json.obj(
         "label" -> "Response selector",
         "type"  -> "string",
         "props" -> Json.obj("description" -> "Response selector")
@@ -816,16 +818,16 @@ class HttpClientFunction extends WorkflowFunction {
       "type"       -> "object",
       "required"   -> Seq("url"),
       "properties" -> Json.obj(
-        "url"         -> Json.obj("type" -> "string", "description" -> "The URL to call"),
-        "method"      -> Json.obj("type" -> "string", "description" -> "The HTTP method to use"),
-        "headers"     -> Json.obj("type" -> "object", "description" -> "The headers to send"),
-        "timeout"     -> Json.obj("type" -> "number", "description" -> "The timeout in milliseconds"),
-        "body"        -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
-        "body_str"    -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
-        "body_json"   -> Json.obj("type" -> "object", "description" -> "The body (json) to send"),
-        "body_bytes"  -> Json.obj("type" -> "array", "description" -> "The body (bytes array) to send"),
-        "body_base64" -> Json.obj("type" -> "string", "description" -> "The body (base64) to send"),
-        "tls_config"  -> Json.obj("type" -> "object", "description" -> "The TLS configuration"),
+        "url"               -> Json.obj("type" -> "string", "description" -> "The URL to call"),
+        "method"            -> Json.obj("type" -> "string", "description" -> "The HTTP method to use"),
+        "headers"           -> Json.obj("type" -> "object", "description" -> "The headers to send"),
+        "timeout"           -> Json.obj("type" -> "number", "description" -> "The timeout in milliseconds"),
+        "body"              -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
+        "body_str"          -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
+        "body_json"         -> Json.obj("type" -> "object", "description" -> "The body (json) to send"),
+        "body_bytes"        -> Json.obj("type" -> "array", "description" -> "The body (bytes array) to send"),
+        "body_base64"       -> Json.obj("type" -> "string", "description" -> "The body (base64) to send"),
+        "tls_config"        -> Json.obj("type" -> "object", "description" -> "The TLS configuration"),
         "response_selector" -> Json.obj("type" -> "string", "description" -> "Response selector")
       )
     )
@@ -846,13 +848,13 @@ class HttpClientFunction extends WorkflowFunction {
     )
   )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val url       = args.select("url").asString
+    val url               = args.select("url").asString
     val response_selector = args.select("response_selector").asOptString
-    val method    = args.select("method").asOptString.getOrElse("GET")
-    val headers   = args.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-    val timeout   = args.select("timeout").asOpt[Long].map(_.millis).getOrElse(30.seconds)
-    val body      = BodyHelper.extractBodyFromOpt(args)
-    val tlsConfig =
+    val method            = args.select("method").asOptString.getOrElse("GET")
+    val headers           = args.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+    val timeout           = args.select("timeout").asOpt[Long].map(_.millis).getOrElse(30.seconds)
+    val body              = BodyHelper.extractBodyFromOpt(args)
+    val tlsConfig         =
       args.select("tls_config").asOpt[JsObject].flatMap(v => NgTlsConfig.format.reads(v).asOpt).getOrElse(NgTlsConfig())
     env.MtlsWs
       .url(url, tlsConfig.legacy)
@@ -866,7 +868,7 @@ class HttpClientFunction extends WorkflowFunction {
       .map { resp =>
         val body_str: String   = resp.body
         val body_json: JsValue = if (resp.contentType.contains("application/json")) body_str.parseJson else JsNull
-        val response = Json
+        val response           = Json
           .obj(
             "status"    -> resp.status,
             "headers"   -> resp.headers,
@@ -875,7 +877,7 @@ class HttpClientFunction extends WorkflowFunction {
             "body_json" -> body_json
           )
         response_selector match {
-          case None => response.right
+          case None           => response.right
           case Some(selector) => response.at(selector).asValue.right
         }
       }
@@ -943,7 +945,7 @@ class SystemCallFunction extends WorkflowFunction {
   override def documentationDescription: String           = "This function calls a system command"
   override def documentationFormSchema: Option[JsObject]  = Json
     .obj(
-      "async" -> Json.obj(
+      "async"   -> Json.obj(
         "type"  -> "bool",
         "label" -> "async",
         "props" -> Json.obj(
@@ -965,7 +967,7 @@ class SystemCallFunction extends WorkflowFunction {
       "required"   -> Seq("command"),
       "properties" -> Json.obj(
         "command" -> Json.obj("type" -> "array", "description" -> "The command to execute"),
-        "async" -> Json.obj("type" -> "bool", "description" -> "Run the command in async mode"),
+        "async"   -> Json.obj("type" -> "bool", "description" -> "Run the command in async mode")
       )
     )
   )
@@ -1939,7 +1941,6 @@ class StoreMatchFunction extends WorkflowFunction {
 //    }
 //  }
 //}
-
 
 case class WorkflowEmitEvent(
     payload: JsObject,
