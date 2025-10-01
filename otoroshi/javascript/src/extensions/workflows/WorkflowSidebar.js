@@ -58,8 +58,6 @@ export const WorkflowSidebar = ({ params }) => {
 
   const { openedSidebar } = useContext(SidebarContext);
 
-  console.log('here');
-
   if (
     window.location.pathname === '/bo/dashboard/extensions/workflows/workflows' ||
     !window.location.pathname.includes('workflows/') ||

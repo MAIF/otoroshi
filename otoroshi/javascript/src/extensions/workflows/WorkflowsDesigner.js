@@ -103,8 +103,6 @@ export function WorkflowsDesigner(props) {
 
     const data = catalog.nodes[(information.kind || information.name).toLowerCase()];
 
-    console.log(catalog.nodes);
-
     let functionData = {};
     if (node.category === 'functions') {
       functionData = {
@@ -134,6 +132,7 @@ export function WorkflowsDesigner(props) {
   }
 
   function createNode(id, child, addInformationsToNode) {
+    console.log('createNode', id, child)
     const { information, content } = splitInformationAndContent(child);
 
     const template = catalog.nodes[(information.kind || information.name).toLowerCase()];
@@ -144,6 +143,7 @@ export function WorkflowsDesigner(props) {
       type: template?.type || 'simple',
       data: {
         ...template,
+        display_name: child.customDisplayName ? child.customDisplayName : template.display_name,
         information,
         content,
       },
@@ -431,7 +431,7 @@ export function WorkflowsDesigner(props) {
           animated: true,
         });
       }
-    } else if (nodesCatalogSignal.value.extensionOverloads[workflow.kind]) {
+    } else if (nodesCatalogSignal.value.extensionOverloads[workflow.kind] && nodesCatalogSignal.value.extensionOverloads[workflow.kind].buildGraph) {
       const subGraph = nodesCatalogSignal.value.extensionOverloads[workflow.kind].buildGraph({
         workflow,
         addInformationsToNode,
@@ -971,8 +971,8 @@ export function WorkflowsDesigner(props) {
       }
 
       subflow = subGraph;
-    } else if (nodesCatalogSignal.value.extensionOverloads[kind]) {
-      const flow = nodesCatalogSignal.value.extensionOverloads[kind].nodeToJson({
+    } else if (nodesCatalogSignal.value.extensionOverloads[kind] && nodesCatalogSignal.value.extensionOverloads[kind].nodeToJson) {
+      const [flow, seen] = nodesCatalogSignal.value.extensionOverloads[kind].nodeToJson({
         edges,
         nodes,
         node,
@@ -982,6 +982,8 @@ export function WorkflowsDesigner(props) {
         nodeToJson: (newNode) => nodeToJson(newNode, emptyWorkflow, false, alreadySeen),
         removeReturnedFromWorkflow,
       });
+
+      alreadySeen = seen
 
       if (!flow) console.log(`nothing was returned from ${kind}`);
 
@@ -996,13 +998,13 @@ export function WorkflowsDesigner(props) {
 
     let outputWorkflow = subflow
       ? {
-          ...node.data.content,
-          ...node.data.information,
-          ...subflow,
-          id: node.id,
-          kind,
-          position: node.position,
-        }
+        ...node.data.content,
+        ...node.data.information,
+        ...subflow,
+        id: node.id,
+        kind,
+        position: node.position,
+      }
       : undefined;
 
     if (currentWorkflow && currentWorkflow.kind === 'workflow') {
@@ -1035,18 +1037,18 @@ export function WorkflowsDesigner(props) {
     return removeReturnedFromWorkflow([outputWorkflow, alreadySeen]);
   };
 
-  const removeReturnedFromWorkflow = (output) => {
-    if (output[0].kind === 'workflow' && output[0].id !== 'start') {
-      return [{ ...output[0], returned: undefined }, output[1]];
+  const removeReturnedFromWorkflow = (nodes) => {
+    if (nodes[0].kind === 'workflow' && nodes[0].id !== 'start') {
+      return [{ ...nodes[0], returned: undefined }, nodes[1]];
     }
-    return output;
+    return nodes;
   };
 
   const handleSave = () => {
     const graph = graphToJson();
 
     const [config, seen] = graph;
-    const alreadySeen = seen.flatMap((f) => f);
+    const alreadySeen = seen.flat();
 
     const orphans = nodes.filter(
       (node) =>
@@ -1055,6 +1057,11 @@ export function WorkflowsDesigner(props) {
         node.id !== 'returned-node' &&
         !alreadySeen.includes(node.id)
     );
+
+    console.log('handle save', alreadySeen)
+
+    console.log(orphans, orphans
+      .filter((orphan) => edges.find((edge) => edge.source === orphan.id)))
 
     const notes = nodes.filter((node) => node.type === 'note' || node.data.kind === 'note');
 
@@ -1166,7 +1173,7 @@ export function WorkflowsDesigner(props) {
     );
   }
 
-  function appendSourceHandle(nodeId, handlePrefix) {
+  function appendSourceHandle(nodeId, handlePrefix, sourcesField = 'paths') {
     setNodes((eds) =>
       eds.map((node) => {
         if (node.id === nodeId) {
@@ -1180,7 +1187,7 @@ export function WorkflowsDesigner(props) {
               ],
               content: {
                 ...node.data.content,
-                paths: [...(node.data.content.paths || []), {}],
+                [sourcesField]: [...(node.data.content[sourcesField] || []), {}],
               },
             },
           };
@@ -1197,7 +1204,7 @@ export function WorkflowsDesigner(props) {
     }, 250);
   }
 
-  function deleteHandle(nodeId, handleId) {
+  function deleteHandle(nodeId, handleId, sourcesField = 'paths') {
     setNodes((eds) =>
       eds.map((node) => {
         if (node.id === nodeId) {
@@ -1210,7 +1217,7 @@ export function WorkflowsDesigner(props) {
               sourceHandles: node.data.sourceHandles.filter((ha) => ha.id !== handleId),
               content: {
                 ...node.data.content,
-                paths: node.data.content.paths.filter((_, i) => i !== index),
+                [sourcesField]: node.data.content[sourcesField].filter((_, i) => i !== index),
               },
             },
           };
