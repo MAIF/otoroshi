@@ -585,7 +585,7 @@ export function WorkflowsDesigner(props) {
       };
     }
 
-    let notesNodes = notes.map((note) => {
+    let notesNodes = (notes || []).map((note) => {
       const measured = note.measured || { width: 200, height: 200 };
       const node = createNode(note.id, note, addInformationsToNode);
       return {

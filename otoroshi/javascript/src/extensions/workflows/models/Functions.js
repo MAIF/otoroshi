@@ -18,6 +18,9 @@ import { NeqOperator } from '../operators/NeqOperator';
 import { ArrayAtOperator } from '../operators/ArrayAtOperator';
 import { ArrayPageOperator } from '../operators/ArrayPageOperator';
 import { MapGetOperator } from '../operators/MapGetOperator';
+import { MapRenameOperator } from '../operators/MapRenameOperator';
+import { MapIsEmptyOperator } from '../operators/MapIsEmptyOperator';
+import { ArrayIsEmptyOperator } from '../operators/ArrayIsEmptyOperator';
 import { MemRefOperator } from '../operators/MemRefOperator';
 import { EncodeBase64Operator } from '../operators/EncodeBase64Operator';
 import { NotOperator } from '../operators/NotOperator';
@@ -77,6 +80,9 @@ const OVERLOADED_NODES = {
   $projection: ProjectionOperator,
   $map_put: MapPutOperator,
   $map_get: MapGetOperator,
+  $map_rename: MapRenameOperator,
+  $map_is_empty: MapIsEmptyOperator,
+  $array_is_empty: ArrayIsEmptyOperator,
   $map_del: MapDelOperator,
   $json_parse: JsonParseOperator,
   $is_truthy: IsTruthyOperator,
