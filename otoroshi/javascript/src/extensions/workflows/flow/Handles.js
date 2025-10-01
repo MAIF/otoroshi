@@ -65,7 +65,7 @@ export default function Handles(props) {
               selected={selected}
               deleteHandle={
                 props.data.sourcesIsArray
-                  ? () => props.data.functions.deleteHandle(props.id, handle.id)
+                  ? () => props.data.functions.deleteHandle(props.id, handle.id, props.data.sourcesField)
                   : undefined
               }
             />
@@ -77,7 +77,7 @@ export default function Handles(props) {
             className="btn btn-primaryColor add-handle"
             onClick={(e) => {
               e.stopPropagation();
-              props.data.functions.appendSourceHandle(props.id, props.data.handlePrefix);
+              props.data.functions.appendSourceHandle(props.id, props.data.handlePrefix, props.data.sourcesField);
             }}
           >
             Add pin <i className="fas fa-plus" />

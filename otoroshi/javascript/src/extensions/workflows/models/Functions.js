@@ -93,7 +93,7 @@ const OVERLOADED_NODES = {
   end: EndNode,
   while: WhileNode,
   async: AsyncNode,
-  error: StopAndErrorNode,
+  error: StopAndErrorNode
 };
 
 function getNodeCategory(categories, node) {
