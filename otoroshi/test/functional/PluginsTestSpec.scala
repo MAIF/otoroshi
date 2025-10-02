@@ -4,11 +4,12 @@ import com.typesafe.config.ConfigFactory
 import functional.Implicits.BetterFuture
 import otoroshi.models.{ApiKey, EntityLocation, RoundRobin, RouteIdentifier, ServiceGroupIdentifier}
 import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPluginInstanceConfig, NgPlugins, NgRoute, NgTarget}
-import otoroshi.next.plugins.{AllowHttpMethods, ApikeyCalls, NgAllowedMethodsConfig, NgApikeyCallsConfig, OverrideHost, SnowMonkeyChaos}
+import otoroshi.next.plugins.{AdditionalHeadersIn, AllowHttpMethods, ApikeyCalls, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderValuesConfig, OverrideHost, SnowMonkeyChaos}
 import otoroshi.next.plugins.api.{NgPluginConfig, NgPluginHelper}
+import otoroshi.utils.syntax.implicits.BetterJsValue
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
 import play.api.Configuration
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 
 import scala.concurrent.duration.DurationInt
 
@@ -137,7 +138,6 @@ class PluginsTestSpec extends OtoroshiSpec {
       deleteOtoroshiRoute(route).await()
     }
 
-
     // FIX: test not complete
     "Apikeys" in {
       val route = createRoute(Seq(
@@ -176,6 +176,38 @@ class PluginsTestSpec extends OtoroshiSpec {
         .futureValue
 
       authorizedCall.status mustBe 200
+
+      deleteApiKeys()
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Additional headers in" in {
+      val route = createRoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
+          config = NgPluginInstanceConfig(
+            NgHeaderValuesConfig(
+              headers = Map("foo" -> "bar")
+            ).json.as[JsObject]
+          )
+        )))
+
+      createApiKeys()
+
+      val resp =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 200
+      val headers = Json.parse(resp.body).as[JsValue].select("headers").as[Map[String, String]]
+      headers.get("foo") mustBe Some("bar")
 
       deleteApiKeys()
       deleteOtoroshiRoute(route).await()
