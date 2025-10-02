@@ -2,13 +2,15 @@ package functional
 
 import com.typesafe.config.ConfigFactory
 import functional.Implicits.BetterFuture
-import otoroshi.models.{EntityLocation, RoundRobin}
+import otoroshi.models.{ApiKey, EntityLocation, RoundRobin, RouteIdentifier, ServiceGroupIdentifier}
 import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPluginInstanceConfig, NgPlugins, NgRoute, NgTarget}
-import otoroshi.next.plugins.{AllowHttpMethods, NgAllowedMethodsConfig, OverrideHost, SnowMonkeyChaos}
+import otoroshi.next.plugins.{AllowHttpMethods, ApikeyCalls, NgAllowedMethodsConfig, NgApikeyCallsConfig, OverrideHost, SnowMonkeyChaos}
 import otoroshi.next.plugins.api.{NgPluginConfig, NgPluginHelper}
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
+
+import scala.concurrent.duration.DurationInt
 
 class PluginsTestSpec extends OtoroshiSpec {
 
@@ -32,10 +34,13 @@ class PluginsTestSpec extends OtoroshiSpec {
       getOtoroshiRoutes().futureValue // WARM UP
     }
 
+    val PLUGINS_ROUTE_ID = "plugins-route"
+    val PLUGINS_HOST = "plugins.oto.tools"
+
     def createRoute(plugins: Seq[NgPluginInstance] = Seq.empty, domain: String = "plugins.oto.tools") = {
       val newRoute = NgRoute(
         location = EntityLocation.default,
-        id = "plugins-route",
+        id = PLUGINS_ROUTE_ID,
         name = "plugins-route",
         description = "plugins-route",
         enabled = true,
@@ -80,7 +85,24 @@ class PluginsTestSpec extends OtoroshiSpec {
       }
     }
 
-    "support Allowed HTTP methods" in {
+    def createApiKeys() = {
+      createOtoroshiApiKey(getValidApiKeyForPluginsRoute).await()
+    }
+
+    def deleteApiKeys() = {
+      deleteOtoroshiApiKey(getValidApiKeyForPluginsRoute).await()
+    }
+
+    def getValidApiKeyForPluginsRoute = {
+      ApiKey(
+        clientId = "apikey-test",
+        clientSecret = "1234",
+        clientName = "apikey-test",
+        authorizedEntities = Seq(RouteIdentifier(PLUGINS_ROUTE_ID))
+      )
+    }
+
+    "Allowed HTTP methods" in {
       val route = createRoute(Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -92,21 +114,71 @@ class PluginsTestSpec extends OtoroshiSpec {
           )
         )))
 
-      val resp = ws
-        .url(s"http://plugins.oto.tools:$port/")
+      val resp =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST
+        )
         .get()
         .futureValue
 
       resp.status mustBe 200
 
-      val resp2 = ws
-        .url(s"http://plugins.oto.tools:$port/")
+      val resp2 =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST
+        )
         .post(Json.obj())
         .futureValue
 
       resp2.status mustBe 405
 
-      deleteOtoroshiRoute(route)
+      deleteOtoroshiRoute(route).await()
+    }
+
+
+    // FIX: test not complete
+    "Apikeys" in {
+      val route = createRoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[ApikeyCalls],
+          config = NgPluginInstanceConfig(
+            NgApikeyCallsConfig(
+
+            ).json.as[JsObject]
+          )
+        )))
+
+      createApiKeys()
+
+      val unknownCaller =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST
+        )
+        .get()
+        .futureValue
+
+      unknownCaller.status mustBe 400
+
+      val authorizedCall =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+          "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute.clientId,
+          "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute.clientSecret
+        )
+        .get()
+        .futureValue
+
+      authorizedCall.status mustBe 200
+
+      deleteApiKeys()
+      deleteOtoroshiRoute(route).await()
     }
 
     "shutdown" in {
