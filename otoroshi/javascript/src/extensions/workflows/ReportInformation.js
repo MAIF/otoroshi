@@ -5,7 +5,7 @@ import { getNodeFromKind } from './models/Functions';
 export default function ReportInformation(props) {
   const [unit, setUnit] = useState('ms');
 
-  // console.log(props.report)
+  console.log(props.report)
   let report = props.report;
 
   const { starting, ending } = report.run.log.reduce(

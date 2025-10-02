@@ -1,0 +1,116 @@
+package functional
+
+import com.typesafe.config.ConfigFactory
+import functional.Implicits.BetterFuture
+import otoroshi.models.{EntityLocation, RoundRobin}
+import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPluginInstanceConfig, NgPlugins, NgRoute, NgTarget}
+import otoroshi.next.plugins.{AllowHttpMethods, NgAllowedMethodsConfig, OverrideHost, SnowMonkeyChaos}
+import otoroshi.next.plugins.api.{NgPluginConfig, NgPluginHelper}
+import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
+import play.api.Configuration
+import play.api.libs.json.{JsObject, Json}
+
+class PluginsTestSpec extends OtoroshiSpec {
+
+  implicit lazy val mat = otoroshiComponents.materializer
+  implicit lazy val env = otoroshiComponents.env
+
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
+           |{
+           |}
+       """.stripMargin)
+        .resolve()
+    ).withFallback(configuration)
+
+  s"plugins" should {
+
+    "warm up" in {
+      startOtoroshi()
+      getOtoroshiRoutes().futureValue // WARM UP
+    }
+
+    def createRoute(plugins: Seq[NgPluginInstance] = Seq.empty, domain: String = "plugins.oto.tools") = {
+      val newRoute = NgRoute(
+        location = EntityLocation.default,
+        id = "plugins-route",
+        name = "plugins-route",
+        description = "plugins-route",
+        enabled = true,
+        debugFlow = false,
+        capture = false,
+        exportReporting = false,
+        frontend = NgFrontend(
+          domains = Seq(NgDomainAndPath(domain)),
+          headers = Map(),
+          cookies = Map(),
+          query = Map(),
+          methods = Seq(),
+          stripPath = true,
+          exact = false
+        ),
+        backend = NgBackend(
+          targets = Seq(
+            NgTarget(
+              hostname = "request.otoroshi.io",
+              port = 443,
+              id = "request.otoroshi.io.target",
+              tls = true
+            )
+          ),
+          root = "/",
+          rewrite = false,
+          loadBalancing = RoundRobin,
+          client = NgClientConfig.default
+        ),
+        plugins = NgPlugins(plugins),
+        tags = Seq.empty,
+        metadata = Map.empty
+      )
+
+      val result = createOtoroshiRoute(newRoute)
+        .await()
+
+      if (result._2 == 201) {
+        newRoute
+      } else {
+        throw new RuntimeException("failed to create a new route")
+      }
+    }
+
+    "support Allowed HTTP methods" in {
+      val route = createRoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[AllowHttpMethods],
+          config = NgPluginInstanceConfig(
+            NgAllowedMethodsConfig(allowed = Seq("GET"), forbidden = Seq("POST")).json.as[JsObject]
+          )
+        )))
+
+      val resp = ws
+        .url(s"http://plugins.oto.tools:$port/")
+        .get()
+        .futureValue
+
+      resp.status mustBe 200
+
+      val resp2 = ws
+        .url(s"http://plugins.oto.tools:$port/")
+        .post(Json.obj())
+        .futureValue
+
+      resp2.status mustBe 405
+
+      deleteOtoroshiRoute(route)
+    }
+
+    "shutdown" in {
+      stopAll()
+    }
+  }
+}
