@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import org.joda.time.DateTime
-import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
+import otoroshi.el.{GlobalExpressionLanguage, HeadersExpressionLanguage, TargetExpressionLanguage}
 import otoroshi.env.Env
 import otoroshi.events.AlertEvent
 import otoroshi.gateway.Errors
@@ -189,7 +189,17 @@ class HeadersValidation extends NgAccessValidator {
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val validationHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.map {
-      case (key, value) => (key.toLowerCase, value)
+      case (key, value) => (key.toLowerCase, GlobalExpressionLanguage.apply(
+            value,
+            Some(ctx.request),
+            ctx.route.legacy.some,
+            ctx.route.some,
+            ctx.apikey,
+            ctx.user,
+            ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+            ctx.attrs,
+            env
+          ))
     }
     val headers           = ctx.request.headers.toSimpleMap.map { case (key, value) =>
       (key.toLowerCase, value)

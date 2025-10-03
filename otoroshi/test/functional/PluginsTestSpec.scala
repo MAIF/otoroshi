@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import functional.Implicits.BetterFuture
 import otoroshi.models.{ApiKey, EntityLocation, RoundRobin, RouteIdentifier, ServiceGroupIdentifier}
 import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPluginInstanceConfig, NgPlugins, NgRoute, NgTarget}
-import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, AllowHttpMethods, ApikeyCalls, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderValuesConfig, OverrideHost, SnowMonkeyChaos}
+import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, AllowHttpMethods, ApikeyCalls, HeadersValidation, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderValuesConfig, OverrideHost, SnowMonkeyChaos}
 import otoroshi.next.plugins.api.{NgPluginConfig, NgPluginHelper}
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
@@ -244,6 +244,61 @@ class PluginsTestSpec extends OtoroshiSpec {
 
       deleteApiKeys()
       deleteOtoroshiRoute(route).await()
+    }
+
+    "Headers validation" in {
+      val route = createRoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[HeadersValidation],
+          config = NgPluginInstanceConfig(
+            NgHeaderValuesConfig(
+              headers = Map(
+                "foo" -> "${req.headers.bar}",
+                "raw_header" -> "raw_value"
+              )
+            ).json.as[JsObject]
+          ))
+      ))
+
+      val resp =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 400
+
+      val resp2 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+          "foo"  -> "bar",
+          "bar"  -> "bar",
+          "raw_header" -> "raw_value"
+        )
+        .get()
+        .futureValue
+
+      resp2.status mustBe 200
+
+      val resp3 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+          "foo"  -> "bar",
+          "raw_value" -> "bar"
+        )
+        .get()
+        .futureValue
+
+      resp3.status mustBe 400
+
+       deleteOtoroshiRoute(route).await()
     }
 
     "shutdown" in {
