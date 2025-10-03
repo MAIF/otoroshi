@@ -89,7 +89,7 @@ export default function Handles(props) {
               );
             }}
           >
-            Add pin <i className="fas fa-plus" />
+            Add {props.data.handlePrefix || 'pin'} <i className="fas fa-plus" />
           </button>
         )}
         {sources.output && (
