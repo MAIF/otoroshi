@@ -4,12 +4,13 @@ import com.typesafe.config.ConfigFactory
 import functional.Implicits.BetterFuture
 import otoroshi.models.{ApiKey, EntityLocation, RoundRobin, RouteIdentifier, ServiceGroupIdentifier}
 import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPluginInstanceConfig, NgPlugins, NgRoute, NgTarget}
-import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, AllowHttpMethods, ApikeyCalls, HeadersValidation, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderValuesConfig, OverrideHost, SnowMonkeyChaos}
+import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, AllowHttpMethods, ApikeyCalls, HeadersValidation, MissingHeadersIn, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderValuesConfig, OverrideHost, SnowMonkeyChaos}
 import otoroshi.next.plugins.api.{NgPluginConfig, NgPluginHelper}
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.ws.WSRequest
 
 import scala.concurrent.duration.DurationInt
 
@@ -101,6 +102,17 @@ class PluginsTestSpec extends OtoroshiSpec {
         clientName = "apikey-test",
         authorizedEntities = Seq(RouteIdentifier(PLUGINS_ROUTE_ID))
       )
+    }
+
+    def getOutHeader(resp: WSRequest#Self#Response, headerName: String) = {
+      resp.headers.find { case (k, _) => k.equalsIgnoreCase(headerName) }.map(_._2).flatMap(_.headOption)
+    }
+
+    def getInHeader(resp: WSRequest#Self#Response, headerName: String) = {
+      val headers = Json.parse(resp.body)
+        .as[JsValue]
+        .select("headers").as[Map[String, String]]
+      headers.get(headerName)
     }
 
     "Allowed HTTP methods" in {
@@ -206,10 +218,7 @@ class PluginsTestSpec extends OtoroshiSpec {
         .futureValue
 
       resp.status mustBe 200
-      val headers = Json.parse(resp.body)
-        .as[JsValue]
-        .select("headers").as[Map[String, String]]
-      headers.get("foo") mustBe Some("bar")
+      getInHeader(resp, "foo") mustBe Some("bar")
 
       deleteApiKeys()
       deleteOtoroshiRoute(route).await()
@@ -240,7 +249,7 @@ class PluginsTestSpec extends OtoroshiSpec {
         .futureValue
 
       resp.status mustBe 200
-      resp.headers.find { case (k, _) => k.equalsIgnoreCase("foo") }.map(_._2).flatMap(_.headOption) mustBe Some("bar")
+      getOutHeader(resp, "foo") mustBe Some("bar")
 
       deleteApiKeys()
       deleteOtoroshiRoute(route).await()
@@ -299,6 +308,39 @@ class PluginsTestSpec extends OtoroshiSpec {
       resp3.status mustBe 400
 
        deleteOtoroshiRoute(route).await()
+    }
+
+    "Missing headers in" in {
+      val route = createRoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[MissingHeadersIn],
+          config = NgPluginInstanceConfig(
+            NgHeaderValuesConfig(
+              headers = Map(
+                "foo" -> "foo_value",
+                "foo2" -> "foo2_value"
+              )
+            ).json.as[JsObject]
+          ))
+      ))
+
+      val resp =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+          "foo2" -> "client_value"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 200
+      getInHeader(resp, "foo") mustBe Some("foo_value")
+      getInHeader(resp, "foo2") mustBe Some("client_value")
+
+      deleteOtoroshiRoute(route).await()
     }
 
     "shutdown" in {
