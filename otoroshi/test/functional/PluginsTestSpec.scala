@@ -415,6 +415,28 @@ class PluginsTestSpec extends OtoroshiSpec {
       deleteOtoroshiRoute(route).await()
     }
 
+    "Override Host Header" in {
+      val route = createRoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        )
+      ))
+
+      val resp =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+          "foo2" -> "client_value"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 200
+      getInHeader(resp, "host") mustBe Some("request.otoroshi.io")
+
+      deleteOtoroshiRoute(route).await()
+    }
+
     "shutdown" in {
       stopAll()
     }

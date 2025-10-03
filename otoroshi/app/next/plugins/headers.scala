@@ -97,6 +97,7 @@ class OverrideHost extends NgRequestTransformer {
           ctx.attrs,
           env
         )
+
         val headers = ctx.otoroshiRequest.headers.-("Host").-("host").+("Host" -> host)
         val request = ctx.otoroshiRequest.copy(headers = headers)
         Right(request)
