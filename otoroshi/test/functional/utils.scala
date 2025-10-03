@@ -1546,7 +1546,7 @@ class TargetService(
           )
         )
       }
-      case (HttpMethods.GET, p) if TargetService.extractHost(request) == host.get  => {
+      case (HttpMethods.GET, p) /*if TargetService.extractHost(request) == host.get*/  => {
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1833,10 +1833,54 @@ object TargetService {
     }.toOption.getOrElse(Random.nextInt(1000) + 7000)
   }
 
-  private val AbsoluteUri = """(?is)^(https?)://([^/]+)(/.*|$)""".r
-
   def extractHost(request: HttpRequest): String =
-    request.getHeader("Otoroshi-Proxied-Host").asOption.map(_.value()).getOrElse("--")
+    request.getHeader("Otoroshi-Proxied-Host")
+      .asOption
+      .map(_.value())
+      .orElse(request.getHeader("Host").asOption.map(_.value()))
+      .getOrElse("--")
+
+  def json(host: Option[String], path: String, result: HttpRequest => JsValue): TargetService = {
+    apply(host, path, "application/json", r => result(r).stringify)
+  }
+
+  def jsonStreamed(
+      host: Option[String],
+      path: String,
+      result: HttpRequest => (JsValue, Source[ByteString, NotUsed]),
+      headers: List[HttpHeader] = List.empty[HttpHeader]
+  ): TargetService = {
+    new TargetService(
+      freePort,
+      host,
+      path,
+      "application/json",
+      r => {
+        val (json, source) = result(r)
+        (200, json.stringify, Some(source), headers)
+      }
+    )
+  }
+
+  def jsonFull(
+      host: Option[String],
+      path: String,
+      result: HttpRequest => (Int, JsValue, List[HttpHeader])
+  ): TargetService = {
+    full(host, path, "application/json", r => {
+      val (status, json, headers) = result(r)
+      (status, json.stringify, headers)
+    })
+  }
+
+  def jsonWithPort(
+      port: Int,
+      host: Option[String],
+      path: String,
+      result: HttpRequest => JsValue
+  ): TargetService = {
+    withPort(port, host, path, "application/json", r => result(r).stringify)
+  }
 }
 
 class BodySizeService() {
