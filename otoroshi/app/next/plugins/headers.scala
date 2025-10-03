@@ -188,8 +188,11 @@ class HeadersValidation extends NgAccessValidator {
   override def isAccessAsync: Boolean                      = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val validationHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.map {
-      case (key, value) => (key.toLowerCase, GlobalExpressionLanguage.apply(
+    val validationHeaders =
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.map { case (key, value) =>
+        (
+          key.toLowerCase,
+          GlobalExpressionLanguage.apply(
             value,
             Some(ctx.request),
             ctx.route.legacy.some,
@@ -199,8 +202,9 @@ class HeadersValidation extends NgAccessValidator {
             ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
             ctx.attrs,
             env
-          ))
-    }
+          )
+        )
+      }
     val headers           = ctx.request.headers.toSimpleMap.map { case (key, value) =>
       (key.toLowerCase, value)
     }

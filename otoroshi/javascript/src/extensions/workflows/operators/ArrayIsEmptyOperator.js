@@ -10,7 +10,7 @@ export const ArrayIsEmptyOperator = {
       label: 'Array',
       visible: (props) => !props.fromMemory,
     },
-    ...FromMemory({ isArray: true })
+    ...FromMemory({ isArray: true }),
   },
   sources: ['output'],
   operators: true,

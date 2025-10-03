@@ -5,7 +5,7 @@ import { getNodeFromKind } from './models/Functions';
 export default function ReportInformation(props) {
   const [unit, setUnit] = useState('ms');
 
-  console.log(props.report)
+  console.log(props.report);
   let report = props.report;
 
   const { starting, ending } = report.run.log.reduce(
@@ -26,11 +26,11 @@ export default function ReportInformation(props) {
 
       const stop = ending.find((l) => l.node.id === id)?.timestamp;
 
-      let functionName = log.node?.function
-      const kind = log.node?.kind
+      let functionName = log.node?.function;
+      const kind = log.node?.kind;
 
       if (functionName) {
-        functionName = getNodeFromKind(functionName)?.display_name
+        functionName = getNodeFromKind(functionName)?.display_name;
       }
 
       return [
@@ -86,12 +86,14 @@ export default function ReportInformation(props) {
   }, {});
 
   stepsByCategory = Object.fromEntries(
-    Object.entries(stepsByCategory).map(([key, value]) => [key, {
-      ...value,
-      task: value.task.split('-')[1]
-    }])
-  )
-
+    Object.entries(stepsByCategory).map(([key, value]) => [
+      key,
+      {
+        ...value,
+        task: value.task.split('-')[1],
+      },
+    ])
+  );
 
   const start = report.run.log[0]?.timestamp;
   const end = report.run.log[report.run.log.length - 1]?.timestamp;

@@ -8,11 +8,11 @@ export const MapRenameOperator = {
     ...FromMemory({ isArray: true }),
     old_key: {
       type: 'string',
-      label: 'Old key'
+      label: 'Old key',
     },
     new_key: {
       type: 'string',
-      label: 'New key'
+      label: 'New key',
     },
     map: {
       type: 'object',

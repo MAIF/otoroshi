@@ -85,36 +85,36 @@ export function ModalEditor({ node }) {
       ...schema,
       args: functionData?.form_schema
         ? {
-          type: 'form',
-          label: 'Arguments',
-          flow: Object.keys(functionData?.form_schema || {}),
-          schema: functionData?.form_schema || {},
-        }
+            type: 'form',
+            label: 'Arguments',
+            flow: Object.keys(functionData?.form_schema || {}),
+            schema: functionData?.form_schema || {},
+          }
         : {
-          type: 'object',
-          label: 'Arguments',
-          itemRenderer: useCallback(({ entry, onChangeValue, onChangeKey, idx }) => {
-            const [key, value] = entry;
-            return (
-              <div className="d-flex flex-column" style={{ flex: 1 }} key={idx}>
-                <TextInput flex={true} value={key} onChange={onChangeKey} />
-                <CodeInput
-                  value={value}
-                  editorOnly
-                  rawSchema={{
-                    props: {
-                      height: '100%',
-                      ace_config: {
-                        fontSize: 14,
+            type: 'object',
+            label: 'Arguments',
+            itemRenderer: useCallback(({ entry, onChangeValue, onChangeKey, idx }) => {
+              const [key, value] = entry;
+              return (
+                <div className="d-flex flex-column" style={{ flex: 1 }} key={idx}>
+                  <TextInput flex={true} value={key} onChange={onChangeKey} />
+                  <CodeInput
+                    value={value}
+                    editorOnly
+                    rawSchema={{
+                      props: {
+                        height: '100%',
+                        ace_config: {
+                          fontSize: 14,
+                        },
                       },
-                    },
-                  }}
-                  onChange={onChangeValue}
-                />
-              </div>
-            );
-          }, []),
-        },
+                    }}
+                    onChange={onChangeValue}
+                  />
+                </div>
+              );
+            }, []),
+          },
     };
 
     data.schema = functionData?.form_schema;
@@ -158,11 +158,11 @@ export function ModalEditor({ node }) {
       fields: [
         functionData?.example
           ? {
-            type: 'group',
-            name: 'Examples',
-            collapsed: true,
-            fields: ['example'],
-          }
+              type: 'group',
+              name: 'Examples',
+              collapsed: true,
+              fields: ['example'],
+            }
           : undefined,
         ...fields,
       ].filter((f) => f),
@@ -207,9 +207,7 @@ export function ModalEditor({ node }) {
       try {
         if (newData !== null && typeof newData === 'object' && !Array.isArray(newData))
           onChange({ ...state, ...newData });
-      } catch (_) {
-
-      }
+      } catch (_) {}
     }
   };
 
@@ -232,7 +230,7 @@ export function ModalEditor({ node }) {
 
   const getCodeInputValue = () => {
     if (node.data.modalEditorRawJson) {
-      return state
+      return state;
     } else {
       const fields = flow[1] ? flow[1]?.fields : flow[0].fields;
 

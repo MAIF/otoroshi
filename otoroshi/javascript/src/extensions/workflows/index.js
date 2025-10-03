@@ -692,7 +692,7 @@ export function setupWorkflowsExtension(registerExtension) {
             return <WorkflowsPage {...props} />;
           },
         },
-      ]
+      ],
     };
   });
 }
