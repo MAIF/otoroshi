@@ -384,6 +384,37 @@ class PluginsTestSpec extends OtoroshiSpec {
       deleteOtoroshiRoute(route).await()
     }
 
+    "Missing headers out" in {
+      val route = createRoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[MissingHeadersOut],
+          config = NgPluginInstanceConfig(
+            NgHeaderValuesConfig(
+              headers = Map(
+                "foo" -> "foo_value"
+              )
+            ).json.as[JsObject]
+          ))
+      ))
+
+      val resp =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+          "foo2" -> "client_value"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 200
+      getOutHeader(resp, "foo") mustBe Some("foo_value")
+
+      deleteOtoroshiRoute(route).await()
+    }
+
     "shutdown" in {
       stopAll()
     }
