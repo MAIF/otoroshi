@@ -6,11 +6,11 @@ import com.typesafe.config.ConfigFactory
 import functional.Implicits.BetterFuture
 import otoroshi.models.{ApiKey, EntityLocation, RoundRobin, RouteIdentifier}
 import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPluginInstanceConfig, NgPlugins, NgRoute, NgTarget}
-import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, AllowHttpMethods, ApikeyCalls, HeadersValidation, MissingHeadersIn, MissingHeadersOut, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderValuesConfig, OverrideHost, OverrideLocationHeader, SnowMonkeyChaos}
+import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, AllowHttpMethods, ApikeyCalls, HeadersValidation, MissingHeadersIn, MissingHeadersOut, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderValuesConfig, NgSecurityTxt, NgSecurityTxtConfig, OverrideHost, OverrideLocationHeader, SnowMonkeyChaos}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValue
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSRequest
 
@@ -20,6 +20,8 @@ class PluginsTestSpec extends OtoroshiSpec {
 
   implicit lazy val mat = otoroshiComponents.materializer
   implicit lazy val env = otoroshiComponents.env
+
+  val logger = Logger("otoroshi-tests-plugins")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -43,10 +45,13 @@ class PluginsTestSpec extends OtoroshiSpec {
 
     val LOCAL_HOST = "local.oto.tools"
 
-    def createRequestOtoroshiIORoute(plugins: Seq[NgPluginInstance] = Seq.empty, domain: String = "plugins.oto.tools") = {
+    def createRequestOtoroshiIORoute(
+                                      plugins: Seq[NgPluginInstance] = Seq.empty,
+                                      domain: String = "plugins.oto.tools",
+                                      id: String = PLUGINS_ROUTE_ID) = {
       val newRoute = NgRoute(
         location = EntityLocation.default,
-        id = PLUGINS_ROUTE_ID,
+        id = id,
         name = "plugins-route",
         description = "plugins-route",
         enabled = true,
@@ -525,6 +530,68 @@ class PluginsTestSpec extends OtoroshiSpec {
 
       deleteOtoroshiRoute(route).await()
       deleteOtoroshiRoute(finalTargetRoute).await()
+    }
+
+    "Security Txt" in {
+      def test(config: NgSecurityTxtConfig, expected: Seq[String]) = {
+        val route = createRequestOtoroshiIORoute(Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[NgSecurityTxt],
+            config = NgPluginInstanceConfig(config.json.as[JsObject])
+          )
+        ),
+          id = IdGenerator.uuid)
+
+        val resp =  ws
+          .url(s"http://127.0.0.1:$port/.well-known/security.txt")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe 200
+        expected.foreach(str => resp.body.contains(str) mustBe true)
+
+        deleteOtoroshiRoute(route).await()
+      }
+
+      test(NgSecurityTxtConfig(
+        contact = Seq("mailto:security@example.com")
+      ), Seq("mailto:security@example.com"))
+
+      test(NgSecurityTxtConfig(
+        contact = Seq("mailto:security@example.com", "https://example.com/security-contact"),
+        expires = Some("2026-12-31T23:59:59Z"),
+        policy = Some("https://example.com/security-policy")
+      ), Seq(
+        "mailto:security@example.com",
+        "https://example.com/security-contact",
+        "https://example.com/security-policy"
+      ))
+
+      test(NgSecurityTxtConfig(
+        contact = Seq(
+          "mailto:security@example.com",
+          "https://example.com/security"
+        ),
+        expires = Some("2026-01-01T00:00:00Z"),
+        acknowledgments = Some("https://example.com/hall-of-fame"),
+        preferredLanguages = Some("en, fr, es"),
+        policy = Some("https://example.com/security-policy"),
+        hiring = Some("https://example.com/jobs/security"),
+        encryption = Some("https://example.com/pgp-key.txt"),
+        csaf = Some("https://example.com/.well-known/csaf/provider-metadata.json")
+      ), Seq(
+        "https://example.com/hall-of-fame",
+        "https://example.com/security-policy",
+        "https://example.com/jobs/security",
+        "https://example.com/pgp-key.txt",
+        "https://example.com/.well-known/csaf/provider-metadata.json",
+      ))
     }
 
     "shutdown" in {
