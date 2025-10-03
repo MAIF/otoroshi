@@ -10,7 +10,7 @@ export const MapIsEmptyOperator = {
       label: 'Source Map',
       visible: (props) => !props.fromMemory,
     },
-    ...FromMemory({ isArray: true })
+    ...FromMemory({ isArray: true }),
   },
   sources: ['output'],
   operators: true,

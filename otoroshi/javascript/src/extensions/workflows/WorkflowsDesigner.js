@@ -431,7 +431,10 @@ export function WorkflowsDesigner(props) {
           animated: true,
         });
       }
-    } else if (nodesCatalogSignal.value.extensionOverloads[workflow.kind] && nodesCatalogSignal.value.extensionOverloads[workflow.kind].buildGraph) {
+    } else if (
+      nodesCatalogSignal.value.extensionOverloads[workflow.kind] &&
+      nodesCatalogSignal.value.extensionOverloads[workflow.kind].buildGraph
+    ) {
       const subGraph = nodesCatalogSignal.value.extensionOverloads[workflow.kind].buildGraph({
         workflow,
         addInformationsToNode,
@@ -971,7 +974,10 @@ export function WorkflowsDesigner(props) {
       }
 
       subflow = subGraph;
-    } else if (nodesCatalogSignal.value.extensionOverloads[kind] && nodesCatalogSignal.value.extensionOverloads[kind].nodeToJson) {
+    } else if (
+      nodesCatalogSignal.value.extensionOverloads[kind] &&
+      nodesCatalogSignal.value.extensionOverloads[kind].nodeToJson
+    ) {
       const [flow, seen] = nodesCatalogSignal.value.extensionOverloads[kind].nodeToJson({
         edges,
         nodes,
@@ -983,7 +989,7 @@ export function WorkflowsDesigner(props) {
         removeReturnedFromWorkflow,
       });
 
-      alreadySeen = seen
+      alreadySeen = seen;
 
       if (!flow) console.log(`nothing was returned from ${kind}`);
 
@@ -998,13 +1004,13 @@ export function WorkflowsDesigner(props) {
 
     let outputWorkflow = subflow
       ? {
-        ...node.data.content,
-        ...node.data.information,
-        ...subflow,
-        id: node.id,
-        kind,
-        position: node.position,
-      }
+          ...node.data.content,
+          ...node.data.information,
+          ...subflow,
+          id: node.id,
+          kind,
+          position: node.position,
+        }
       : undefined;
 
     if (currentWorkflow && currentWorkflow.kind === 'workflow') {
