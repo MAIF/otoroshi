@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.6.2] - 2025-10-03
+
+
+https://github.com/MAIF/otoroshi/milestone/124?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.6.0...v17.6.2
+https://github.com/MAIF/otoroshi/releases/tag/v17.6.2
+
+
+### Added 
+
+- Allow pluggable node rendering in the workflow designer (#2269 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+
+
+
+### Contributors
+
+* @Zwiterrion
+* @mathieuancelin
+
 ## [17.6.0] - 2025-10-01
 
 
