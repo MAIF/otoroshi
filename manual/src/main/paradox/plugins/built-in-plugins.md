@@ -3928,7 +3928,7 @@ It also provides a debug UI at `/.well-known/otoroshi/bodylogger`.
 
 ### Description
 
-This plugin exposes a special route `/.well-known/security.txt` as proposed at [https://securitytxt.org/](https://securitytxt.org/)
+This plugin exposes a special route `/.well-known/security.txt` as defined in RFC 9116 (https://www.rfc-editor.org/rfc/rfc9116.html)
 
 
 
@@ -3936,7 +3936,9 @@ This plugin exposes a special route `/.well-known/security.txt` as proposed at [
 
 ```json
 {
-  "contact" : "contact@foo.bar"
+  "contact" : [ "contact@foo.bar" ],
+  "auto_expires" : false,
+  "expires_years" : 1
 }
 ```
 
@@ -5896,8 +5898,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-10-03T08:02:21.915Z",
-  "stop" : "2025-10-04T08:02:21.937Z",
+  "start" : "2025-10-06T13:50:36.338Z",
+  "stop" : "2025-10-07T13:50:36.359Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
