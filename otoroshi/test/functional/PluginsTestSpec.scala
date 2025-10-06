@@ -8,12 +8,15 @@ import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.AppenderBase
 import com.typesafe.config.ConfigFactory
 import functional.Implicits.BetterFuture
 import org.scalatest.BeforeAndAfterAll
+import ch.qos.logback.classic.{Level, Logger => LogbackLogger}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.time.{Minutes, Span}
+import org.slf4j.LoggerFactory
 import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
@@ -1150,6 +1153,50 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.OK
       resp.cookies.exists(_.name == "cookie") mustBe true
       resp.cookies.find(_.name == "cookie").map(_.value) mustBe Some("value")
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Limit headers in too long" in {
+      val route = createRequestOtoroshiIORoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[LimitHeaderInTooLong],
+          config = NgPluginInstanceConfig(
+            RejectHeaderConfig(
+              value = 25
+            ).json.as[JsObject]
+          )
+        )
+      ))
+
+      val logger = LoggerFactory.getLogger("otoroshi-plugin-limit-headers-in-too-long").asInstanceOf[LogbackLogger]
+
+      val events = scala.collection.mutable.ListBuffer.empty[ILoggingEvent]
+      val appender = new AppenderBase[ILoggingEvent]() {
+        override def append(eventObject: ILoggingEvent): Unit = events += eventObject
+      }
+      appender.start()
+      logger.addAppender(appender)
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+          "baz" -> "very very very very very veyr long header value"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+
+      assert(events.exists(_.getMessage.contains("limiting header")))
+      assert(events.exists(_.getMessage.contains("baz")))
+      assert(events.exists(_.getLevel == Level.ERROR))
+
+      logger.detachAppender(appender)
 
       deleteOtoroshiRoute(route).await()
     }
