@@ -26,8 +26,8 @@ case class NgSecurityTxtConfig(
 ) extends NgPluginConfig {
   override def json: JsValue = Json
     .obj(
-      "contact" -> JsArray(contact.map(JsString)),
-      "auto_expires" -> autoExpires,
+      "contact"       -> JsArray(contact.map(JsString)),
+      "auto_expires"  -> autoExpires,
       "expires_years" -> expiresYears
     )
     .applyOnWithOpt(expires) { case (obj, v) => obj ++ Json.obj("expires" -> v) }
@@ -41,7 +41,7 @@ case class NgSecurityTxtConfig(
 
 object NgSecurityTxtConfig {
   val format = new Format[NgSecurityTxtConfig] {
-    override def writes(o: NgSecurityTxtConfig): JsValue = o.json
+    override def writes(o: NgSecurityTxtConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgSecurityTxtConfig] = Try {
       NgSecurityTxtConfig(
         contact = json.select("contact").asOpt[Seq[String]].getOrElse(Seq("contact@foo.bar")),
@@ -64,15 +64,15 @@ object NgSecurityTxtConfig {
 
 class NgSecurityTxt extends NgRequestTransformer {
 
-  override def name: String = "Security Txt"
-  override def description: Option[String] =
+  override def name: String                                = "Security Txt"
+  override def description: Option[String]                 =
     "This plugin exposes a special route `/.well-known/security.txt` as defined in RFC 9116 (https://www.rfc-editor.org/rfc/rfc9116.html)".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgSecurityTxtConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security)
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Security)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest)
 
   private def generateExpiresDate(years: Int): String = {
     val expiryDate = ZonedDateTime.now(ZoneId.of("UTC")).plusYears(years)
@@ -125,8 +125,8 @@ class NgSecurityTxt extends NgRequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     (ctx.rawRequest.method, ctx.rawRequest.path) match {
       case ("GET", "/.well-known/security.txt") => {
-        val config = ctx.cachedConfig(internalName)(NgSecurityTxtConfig.format).getOrElse(NgSecurityTxtConfig())
-        val host = s"https://${ctx.route.frontend.domains.head.domainLowerCase}"
+        val config  = ctx.cachedConfig(internalName)(NgSecurityTxtConfig.format).getOrElse(NgSecurityTxtConfig())
+        val host    = s"https://${ctx.route.frontend.domains.head.domainLowerCase}"
         val content = buildSecurityTxt(config, host)
 
         // RFC 9116 specifies text/plain with charset=utf-8
@@ -135,7 +135,7 @@ class NgSecurityTxt extends NgRequestTransformer {
           .withHeaders("Content-Type" -> "text/plain; charset=utf-8")
           .leftf
       }
-      case (_, _) => Right(ctx.otoroshiRequest).future
+      case (_, _)                               => Right(ctx.otoroshiRequest).future
     }
   }
 }

@@ -1368,10 +1368,10 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
   }
 
   def createOtoroshiErrorTemplate(
-                            errorTemplate: ErrorTemplate,
-                            customPort: Option[Int] = None,
-                            ws: WSClient = wsClient
-                          ): Future[(JsValue, Int)] = {
+      errorTemplate: ErrorTemplate,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/error-templates")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.oto.tools",
@@ -1404,10 +1404,10 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
   }
 
   def deleteOtoroshiErrorTemplate(
-                              errorTemplate: ErrorTemplate,
-                              customPort: Option[Int] = None,
-                              ws: WSClient = wsClient
-                            ): Future[(JsValue, Int)] = {
+      errorTemplate: ErrorTemplate,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/error-templates/${errorTemplate.serviceId}")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.oto.tools",
@@ -1567,7 +1567,7 @@ class TargetService(
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
-      case (HttpMethods.GET, p) if host.isEmpty                                    => {
+      case (HttpMethods.GET, p) if host.isEmpty                                       => {
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1582,7 +1582,7 @@ class TargetService(
           )
         )
       }
-      case (HttpMethods.GET, p) /*if TargetService.extractHost(request) == host.get*/  => {
+      case (HttpMethods.GET, p) /*if TargetService.extractHost(request) == host.get*/ => {
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1597,7 +1597,7 @@ class TargetService(
           )
         )
       }
-      case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get => {
+      case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get    => {
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1612,7 +1612,7 @@ class TargetService(
           )
         )
       }
-      case (HttpMethods.DELETE, p)                                                 => {
+      case (HttpMethods.DELETE, p)                                                    => {
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1627,7 +1627,7 @@ class TargetService(
           )
         )
       }
-      case (_, p)                                                                  => {
+      case (_, p)                                                                     => {
         FastFuture.successful(HttpResponses.NotFound(p.toString()))
       }
     }
@@ -1870,7 +1870,8 @@ object TargetService {
   }
 
   def extractHost(request: HttpRequest): String =
-    request.getHeader("Otoroshi-Proxied-Host")
+    request
+      .getHeader("Otoroshi-Proxied-Host")
       .asOption
       .map(_.value())
       .orElse(request.getHeader("Host").asOption.map(_.value()))
@@ -1903,10 +1904,15 @@ object TargetService {
       path: String,
       result: HttpRequest => (Int, JsValue, List[HttpHeader])
   ): TargetService = {
-    full(host, path, "application/json", r => {
-      val (status, json, headers) = result(r)
-      (status, json.stringify, headers)
-    })
+    full(
+      host,
+      path,
+      "application/json",
+      r => {
+        val (status, json, headers) = result(r)
+        (status, json.stringify, headers)
+      }
+    )
   }
 
   def jsonWithPort(

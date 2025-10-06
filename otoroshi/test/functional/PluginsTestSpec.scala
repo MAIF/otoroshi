@@ -57,14 +57,15 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
   s"plugins" should {
     val PLUGINS_ROUTE_ID = "plugins-route"
-    val PLUGINS_HOST = "plugins.oto.tools"
+    val PLUGINS_HOST     = "plugins.oto.tools"
 
     val LOCAL_HOST = "local.oto.tools"
 
     def createRequestOtoroshiIORoute(
-                                      plugins: Seq[NgPluginInstance] = Seq.empty,
-                                      domain: String = "plugins.oto.tools",
-                                      id: String = PLUGINS_ROUTE_ID) = {
+        plugins: Seq[NgPluginInstance] = Seq.empty,
+        domain: String = "plugins.oto.tools",
+        id: String = PLUGINS_ROUTE_ID
+    ) = {
       val newRoute = NgRoute(
         location = EntityLocation.default,
         id = id,
@@ -112,16 +113,20 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
     }
 
-    def createLocalRoute(plugins: Seq[NgPluginInstance] = Seq.empty,
-                         responseStatus: Int = Status.OK,
-                         result: HttpRequest => JsValue,
-                         responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
-                         domain: String = "local.oto.tools") = {
-      val target = TargetService.jsonFull(
-        Some(domain),
-        "/api",
-        r => (responseStatus, result(r), responseHeaders)
-      ).await()
+    def createLocalRoute(
+        plugins: Seq[NgPluginInstance] = Seq.empty,
+        responseStatus: Int = Status.OK,
+        result: HttpRequest => JsValue,
+        responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
+        domain: String = "local.oto.tools"
+    ) = {
+      val target = TargetService
+        .jsonFull(
+          Some(domain),
+          "/api",
+          r => (responseStatus, result(r), responseHeaders)
+        )
+        .await()
 
       val newRoute = NgRoute(
         location = EntityLocation.default,
@@ -192,25 +197,30 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     def getInHeader(resp: WSRequest#Self#Response, headerName: String) = {
-      val headers = Json.parse(resp.body)
+      val headers = Json
+        .parse(resp.body)
         .as[JsValue]
-        .select("headers").as[Map[String, String]]
+        .select("headers")
+        .as[Map[String, String]]
       headers.get(headerName)
     }
 
     "Allowed HTTP methods" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[AllowHttpMethods],
-          config = NgPluginInstanceConfig(
-            NgAllowedMethodsConfig(allowed = Seq("GET"), forbidden = Seq("POST")).json.as[JsObject]
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[AllowHttpMethods],
+            config = NgPluginInstanceConfig(
+              NgAllowedMethodsConfig(allowed = Seq("GET"), forbidden = Seq("POST")).json.as[JsObject]
+            )
           )
-        )))
+        )
+      )
 
-      val resp =  ws
+      val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST
@@ -220,7 +230,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       resp.status mustBe Status.OK
 
-      val resp2 =  ws
+      val resp2 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST
@@ -234,22 +244,24 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
     // FIX: test not complete
     "Apikeys" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[ApikeyCalls],
-          config = NgPluginInstanceConfig(
-            NgApikeyCallsConfig(
-
-            ).json.as[JsObject]
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[ApikeyCalls],
+            config = NgPluginInstanceConfig(
+              NgApikeyCallsConfig(
+              ).json.as[JsObject]
+            )
           )
-        )))
+        )
+      )
 
       createApiKeys()
 
-      val unknownCaller =  ws
+      val unknownCaller = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST
@@ -259,10 +271,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       unknownCaller.status mustBe 400
 
-      val authorizedCall =  ws
+      val authorizedCall = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> PLUGINS_HOST,
+          "Host"                   -> PLUGINS_HOST,
           "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute.clientId,
           "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute.clientSecret
         )
@@ -276,22 +288,25 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Additional headers in" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
-          config = NgPluginInstanceConfig(
-            NgHeaderValuesConfig(
-              headers = Map("foo" -> "bar")
-            ).json.as[JsObject]
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
+            config = NgPluginInstanceConfig(
+              NgHeaderValuesConfig(
+                headers = Map("foo" -> "bar")
+              ).json.as[JsObject]
+            )
           )
-        )))
+        )
+      )
 
       createApiKeys()
 
-      val resp =  ws
+      val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST
@@ -307,22 +322,25 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Additional headers out" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[AdditionalHeadersOut],
-          config = NgPluginInstanceConfig(
-            NgHeaderValuesConfig(
-              headers = Map("foo" -> "bar")
-            ).json.as[JsObject]
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[AdditionalHeadersOut],
+            config = NgPluginInstanceConfig(
+              NgHeaderValuesConfig(
+                headers = Map("foo" -> "bar")
+              ).json.as[JsObject]
+            )
           )
-        )))
+        )
+      )
 
       createApiKeys()
 
-      val resp =  ws
+      val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST
@@ -338,23 +356,26 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Headers validation" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[HeadersValidation],
-          config = NgPluginInstanceConfig(
-            NgHeaderValuesConfig(
-              headers = Map(
-                "foo" -> "${req.headers.bar}",
-                "raw_header" -> "raw_value"
-              )
-            ).json.as[JsObject]
-          ))
-      ))
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[HeadersValidation],
+            config = NgPluginInstanceConfig(
+              NgHeaderValuesConfig(
+                headers = Map(
+                  "foo"        -> "${req.headers.bar}",
+                  "raw_header" -> "raw_value"
+                )
+              ).json.as[JsObject]
+            )
+          )
+        )
+      )
 
-      val resp =  ws
+      val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST
@@ -367,9 +388,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       val resp2 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> PLUGINS_HOST,
-          "foo"  -> "bar",
-          "bar"  -> "bar",
+          "Host"       -> PLUGINS_HOST,
+          "foo"        -> "bar",
+          "bar"        -> "bar",
           "raw_header" -> "raw_value"
         )
         .get()
@@ -380,8 +401,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       val resp3 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> PLUGINS_HOST,
-          "foo"  -> "bar",
+          "Host"      -> PLUGINS_HOST,
+          "foo"       -> "bar",
           "raw_value" -> "bar"
         )
         .get()
@@ -389,27 +410,30 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       resp3.status mustBe 400
 
-       deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).await()
     }
 
     "Missing headers in" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[MissingHeadersIn],
-          config = NgPluginInstanceConfig(
-            NgHeaderValuesConfig(
-              headers = Map(
-                "foo" -> "foo_value",
-                "foo2" -> "foo2_value"
-              )
-            ).json.as[JsObject]
-          ))
-      ))
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[MissingHeadersIn],
+            config = NgPluginInstanceConfig(
+              NgHeaderValuesConfig(
+                headers = Map(
+                  "foo"  -> "foo_value",
+                  "foo2" -> "foo2_value"
+                )
+              ).json.as[JsObject]
+            )
+          )
+        )
+      )
 
-      val resp =  ws
+      val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST,
@@ -426,22 +450,25 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Missing headers out" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[MissingHeadersOut],
-          config = NgPluginInstanceConfig(
-            NgHeaderValuesConfig(
-              headers = Map(
-                "foo" -> "foo_value"
-              )
-            ).json.as[JsObject]
-          ))
-      ))
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[MissingHeadersOut],
+            config = NgPluginInstanceConfig(
+              NgHeaderValuesConfig(
+                headers = Map(
+                  "foo" -> "foo_value"
+                )
+              ).json.as[JsObject]
+            )
+          )
+        )
+      )
 
-      val resp =  ws
+      val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST,
@@ -457,13 +484,15 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Override Host Header" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          )
         )
-      ))
+      )
 
-      val resp =  ws
+      val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST,
@@ -479,24 +508,26 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Override Location Header: redirect to relative path" in {
-      val route = createLocalRoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
+      val route = createLocalRoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideLocationHeader]
+          )
         ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideLocationHeader]
-        )
-      ),
         responseStatus = Status.CREATED,
         result = _ => {
           Json.obj("message" -> "creation done")
         },
-        responseHeaders = List(RawHeader("Location", "/foo")))
+        responseHeaders = List(RawHeader("Location", "/foo"))
+      )
 
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> LOCAL_HOST,
+          "Host" -> LOCAL_HOST
         )
         .get()
         .futureValue
@@ -508,14 +539,15 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Override Location Header: redirect to domain + path" in {
-      val route = createLocalRoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
+      val route = createLocalRoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideLocationHeader]
+          )
         ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideLocationHeader]
-        )
-      ),
         responseStatus = Status.FOUND,
         result = _ => {
           Json.obj("message" -> "creation done")
@@ -524,20 +556,22 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         responseHeaders = List(RawHeader("Location", s"http://location.oto.tools:$port/api"))
       )
 
-      val finalTargetRoute = createLocalRoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
+      val finalTargetRoute = createLocalRoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          )
         ),
-      ),
         result = _ => {
           Json.obj("message" -> "reached the target route")
         },
-        domain = "location.oto.tools")
+        domain = "location.oto.tools"
+      )
 
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "foo.oto.tools",
+          "Host" -> "foo.oto.tools"
         )
         .get()
         .futureValue
@@ -550,18 +584,20 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
     "Security Txt" in {
       def test(config: NgSecurityTxtConfig, expected: Seq[String]) = {
-        val route = createRequestOtoroshiIORoute(Seq(
-          NgPluginInstance(
-            plugin = NgPluginHelper.pluginId[OverrideHost]
+        val route = createRequestOtoroshiIORoute(
+          Seq(
+            NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[OverrideHost]
+            ),
+            NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[NgSecurityTxt],
+              config = NgPluginInstanceConfig(config.json.as[JsObject])
+            )
           ),
-          NgPluginInstance(
-            plugin = NgPluginHelper.pluginId[NgSecurityTxt],
-            config = NgPluginInstanceConfig(config.json.as[JsObject])
-          )
-        ),
-          id = IdGenerator.uuid)
+          id = IdGenerator.uuid
+        )
 
-        val resp =  ws
+        val resp = ws
           .url(s"http://127.0.0.1:$port/.well-known/security.txt")
           .withHttpHeaders(
             "Host" -> route.frontend.domains.head.domain
@@ -575,137 +611,152 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         deleteOtoroshiRoute(route).await()
       }
 
-      test(NgSecurityTxtConfig(
-        contact = Seq("mailto:security@example.com")
-      ), Seq("mailto:security@example.com"))
-
-      test(NgSecurityTxtConfig(
-        contact = Seq("mailto:security@example.com", "https://example.com/security-contact"),
-        expires = Some("2026-12-31T23:59:59Z"),
-        policy = Some("https://example.com/security-policy")
-      ), Seq(
-        "mailto:security@example.com",
-        "https://example.com/security-contact",
-        "https://example.com/security-policy"
-      ))
-
-      test(NgSecurityTxtConfig(
-        contact = Seq(
-          "mailto:security@example.com",
-          "https://example.com/security"
+      test(
+        NgSecurityTxtConfig(
+          contact = Seq("mailto:security@example.com")
         ),
-        expires = Some("2026-01-01T00:00:00Z"),
-        acknowledgments = Some("https://example.com/hall-of-fame"),
-        preferredLanguages = Some("en, fr, es"),
-        policy = Some("https://example.com/security-policy"),
-        hiring = Some("https://example.com/jobs/security"),
-        encryption = Some("https://example.com/pgp-key.txt"),
-        csaf = Some("https://example.com/.well-known/csaf/provider-metadata.json")
-      ), Seq(
-        "https://example.com/hall-of-fame",
-        "https://example.com/security-policy",
-        "https://example.com/jobs/security",
-        "https://example.com/pgp-key.txt",
-        "https://example.com/.well-known/csaf/provider-metadata.json",
-      ))
+        Seq("mailto:security@example.com")
+      )
+
+      test(
+        NgSecurityTxtConfig(
+          contact = Seq("mailto:security@example.com", "https://example.com/security-contact"),
+          expires = Some("2026-12-31T23:59:59Z"),
+          policy = Some("https://example.com/security-policy")
+        ),
+        Seq(
+          "mailto:security@example.com",
+          "https://example.com/security-contact",
+          "https://example.com/security-policy"
+        )
+      )
+
+      test(
+        NgSecurityTxtConfig(
+          contact = Seq(
+            "mailto:security@example.com",
+            "https://example.com/security"
+          ),
+          expires = Some("2026-01-01T00:00:00Z"),
+          acknowledgments = Some("https://example.com/hall-of-fame"),
+          preferredLanguages = Some("en, fr, es"),
+          policy = Some("https://example.com/security-policy"),
+          hiring = Some("https://example.com/jobs/security"),
+          encryption = Some("https://example.com/pgp-key.txt"),
+          csaf = Some("https://example.com/.well-known/csaf/provider-metadata.json")
+        ),
+        Seq(
+          "https://example.com/hall-of-fame",
+          "https://example.com/security-policy",
+          "https://example.com/jobs/security",
+          "https://example.com/pgp-key.txt",
+          "https://example.com/.well-known/csaf/provider-metadata.json"
+        )
+      )
     }
 
     "Yes Websocket plugin: send 'y' messages periodically to websocket clients" in {
-        val route = createRequestOtoroshiIORoute(Seq(
+      val route = createRequestOtoroshiIORoute(
+        Seq(
           NgPluginInstance(
             plugin = NgPluginHelper.pluginId[OverrideHost]
           ),
           NgPluginInstance(
-            plugin = NgPluginHelper.pluginId[YesWebsocketBackend],
+            plugin = NgPluginHelper.pluginId[YesWebsocketBackend]
           )
         ),
-          id = IdGenerator.uuid)
+        id = IdGenerator.uuid
+      )
 
-        implicit val system: ActorSystem = ActorSystem("otoroshi-test")
-        implicit val mat: Materializer = Materializer(system)
-        implicit val http: HttpExt = Http()(system)
+      implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+      implicit val mat: Materializer   = Materializer(system)
+      implicit val http: HttpExt       = Http()(system)
 
-        val yesCounter = new AtomicInteger(0)
-        val messagesPromise = Promise[Int]()
+      val yesCounter      = new AtomicInteger(0)
+      val messagesPromise = Promise[Int]()
 
-        val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
-          yesCounter.incrementAndGet()
+      val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
+        yesCounter.incrementAndGet()
 
-          if (yesCounter.get() == 3)
-            messagesPromise.trySuccess(yesCounter.get)
-        }
+        if (yesCounter.get() == 3)
+          messagesPromise.trySuccess(yesCounter.get)
+      }
 
-        val clientSource: Source[Message, Promise[Option[Message]]] = Source.maybe[Message]
+      val clientSource: Source[Message, Promise[Option[Message]]] = Source.maybe[Message]
 
-        val (_, _) = http.singleWebSocketRequest(
-          WebSocketRequest(s"ws://127.0.0.1:$port/api")
-            .copy(extraHeaders = List(Host(route.frontend.domains.head.domainLowerCase))),
-          Flow
-            .fromSinkAndSourceMat(printSink, clientSource)(Keep.both)
-            .alsoTo(Sink.onComplete { _ => })
-        )
+      val (_, _) = http.singleWebSocketRequest(
+        WebSocketRequest(s"ws://127.0.0.1:$port/api")
+          .copy(extraHeaders = List(Host(route.frontend.domains.head.domainLowerCase))),
+        Flow
+          .fromSinkAndSourceMat(printSink, clientSource)(Keep.both)
+          .alsoTo(Sink.onComplete { _ => })
+      )
 
-        val yesMessagesCounter = messagesPromise.future.futureValue(Timeout(Span(1, Minutes)))
-        yesMessagesCounter >= 3 mustBe true
+      val yesMessagesCounter = messagesPromise.future.futureValue(Timeout(Span(1, Minutes)))
+      yesMessagesCounter >= 3 mustBe true
 
-        deleteOtoroshiRoute(route).await()
-        system.terminate()
+      deleteOtoroshiRoute(route).await()
+      system.terminate()
     }
 
     "Yes Websocket plugin: reject connection with fail=yes query parameter" in {
-        val route = createRequestOtoroshiIORoute(Seq(
+      val route = createRequestOtoroshiIORoute(
+        Seq(
           NgPluginInstance(
             plugin = NgPluginHelper.pluginId[OverrideHost]
           ),
           NgPluginInstance(
-            plugin = NgPluginHelper.pluginId[YesWebsocketBackend],
+            plugin = NgPluginHelper.pluginId[YesWebsocketBackend]
           )
         ),
-          id = IdGenerator.uuid)
+        id = IdGenerator.uuid
+      )
 
-        implicit val system: ActorSystem = ActorSystem("otoroshi-test")
-        implicit val mat: Materializer = Materializer(system)
-        implicit val http: HttpExt = Http()(system)
+      implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+      implicit val mat: Materializer   = Materializer(system)
+      implicit val http: HttpExt       = Http()(system)
 
+      val printSink: Sink[Message, Future[Done]] = Sink.foreach { _ => }
 
-        val printSink: Sink[Message, Future[Done]] = Sink.foreach { _ => }
+      val clientSource: Source[Message, Promise[Option[Message]]] = Source.maybe[Message]
 
-        val clientSource: Source[Message, Promise[Option[Message]]] = Source.maybe[Message]
+      val (upgradeResponse, _) = http.singleWebSocketRequest(
+        WebSocketRequest(s"ws://127.0.0.1:$port/api?fail=yes")
+          .copy(extraHeaders = List(Host(route.frontend.domains.head.domainLowerCase))),
+        Flow
+          .fromSinkAndSourceMat(printSink, clientSource)(Keep.both)
+          .alsoTo(Sink.onComplete { _ => })
+      )
 
-        val (upgradeResponse, _) = http.singleWebSocketRequest(
-          WebSocketRequest(s"ws://127.0.0.1:$port/api?fail=yes")
-            .copy(extraHeaders = List(Host(route.frontend.domains.head.domainLowerCase))),
-          Flow
-            .fromSinkAndSourceMat(printSink, clientSource)(Keep.both)
-            .alsoTo(Sink.onComplete { _ => })
-        )
+      upgradeResponse.futureValue.response.status.intValue() mustBe 500
 
-        upgradeResponse.futureValue.response.status.intValue() mustBe 500
-
-        deleteOtoroshiRoute(route).await()
-        system.terminate()
+      deleteOtoroshiRoute(route).await()
+      system.terminate()
     }
 
     "Remove headers in" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[RemoveHeadersIn],
-          config = NgPluginInstanceConfig(
-            NgHeaderNamesConfig(
-              names = Seq("foo")
-            ).json.as[JsObject]
-          ))
-      ))
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[RemoveHeadersIn],
+            config = NgPluginInstanceConfig(
+              NgHeaderNamesConfig(
+                names = Seq("foo")
+              ).json.as[JsObject]
+            )
+          )
+        )
+      )
 
-      val resp =  ws
+      val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST,
           "foo2" -> "client_value",
-          "foo" -> "bar"
+          "foo"  -> "bar"
         )
         .get()
         .futureValue
@@ -718,24 +769,27 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Remove headers out" in {
-      val route = createLocalRoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
+      val route = createLocalRoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[RemoveHeadersOut],
+            config = NgPluginInstanceConfig(
+              NgHeaderNamesConfig(
+                names = Seq("foo")
+              ).json.as[JsObject]
+            )
+          )
         ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[RemoveHeadersOut],
-          config = NgPluginInstanceConfig(
-            NgHeaderNamesConfig(
-              names = Seq("foo")
-            ).json.as[JsObject]
-          )),
-      ),
         result = req => {
           Json.obj()
-        }, responseHeaders = List(RawHeader("foo", "bar"), RawHeader("foo2", "baz"))
+        },
+        responseHeaders = List(RawHeader("foo", "bar"), RawHeader("foo2", "baz"))
       )
 
-      val resp =  ws
+      val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> LOCAL_HOST
@@ -752,16 +806,18 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Build mode" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[BuildMode],
-        ),
-      ))
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[BuildMode]
+          )
+        )
+      )
 
-      val resp =  ws
+      val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST
@@ -776,16 +832,18 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Maintenance mode" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[MaintenanceMode],
-        ),
-      ))
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[MaintenanceMode]
+          )
+        )
+      )
 
-      val resp =  ws
+      val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST
@@ -800,29 +858,32 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Custom error template" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[BuildMode],
-        ),
-      ))
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[BuildMode]
+          )
+        )
+      )
 
-      val maintenanceRoute = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
+      val maintenanceRoute = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[MaintenanceMode]
+          )
         ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[MaintenanceMode],
-        ),
-      ),
         domain = "maintenance.oto.tools",
         id = "maintenance route"
       )
 
       val error = ErrorTemplate(
-        location =  EntityLocation.default,
+        location = EntityLocation.default,
         serviceId = "global",
         name = "global error template",
         description = "global error template description",
@@ -833,7 +894,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         genericTemplates = Map.empty,
         messages = Map(
           "errors.service.under.construction" -> "build mode enabled",
-          "errors.service.in.maintenance" -> "maintenance mode enabled"
+          "errors.service.in.maintenance"     -> "maintenance mode enabled"
         ),
         tags = Seq.empty,
         metadata = Map.empty
@@ -845,7 +906,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         val resp = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> PLUGINS_HOST,
+            "Host"   -> PLUGINS_HOST,
             "Accept" -> "text/html"
           )
           .get()
@@ -869,10 +930,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       {
-        val resp =  ws
+        val resp = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> maintenanceRoute.frontend.domains.head.domain,
+            "Host"   -> maintenanceRoute.frontend.domains.head.domain,
             "Accept" -> "text/html"
           )
           .get()
@@ -881,7 +942,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         resp.status mustBe Status.SERVICE_UNAVAILABLE
         resp.body mustEqual "maintenance mode enabled, bye"
 
-        val resp2 =  ws
+        val resp2 = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
             "Host" -> maintenanceRoute.frontend.domains.head.domain
@@ -901,25 +962,27 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Error response rewrite" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[NgErrorRewriter],
-          config = NgPluginInstanceConfig(
-            NgErrorRewriterConfig(
-              ranges = Seq(ResponseStatusRange(200, 299)),
-              templates = Map(
-                "default" -> "custom response",
-                "application/json" -> "custom json response"
-              ),
-              log = false,
-              export = false
-            ).json.as[JsObject]
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[NgErrorRewriter],
+            config = NgPluginInstanceConfig(
+              NgErrorRewriterConfig(
+                ranges = Seq(ResponseStatusRange(200, 299)),
+                templates = Map(
+                  "default"          -> "custom response",
+                  "application/json" -> "custom json response"
+                ),
+                log = false,
+                export = false
+              ).json.as[JsObject]
+            )
           )
-        ),
-      ))
+        )
+      )
 
       {
         val resp = ws
@@ -935,10 +998,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       {
-        val resp =  ws
+        val resp = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> PLUGINS_HOST,
+            "Host"   -> PLUGINS_HOST,
             "Accept" -> "application/json"
           )
           .get()
@@ -952,27 +1015,29 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Reject headers out too long" in {
-      val route = createLocalRoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[RejectHeaderOutTooLong],
-          config = NgPluginInstanceConfig(
-            RejectHeaderConfig(
-              value = 15
-            ).json.as[JsObject]
+      val route = createLocalRoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[RejectHeaderOutTooLong],
+            config = NgPluginInstanceConfig(
+              RejectHeaderConfig(
+                value = 15
+              ).json.as[JsObject]
+            )
           )
-        )
-      ),
+        ),
         responseStatus = Status.OK,
         result = _ => Json.obj(),
-        responseHeaders = List(RawHeader("foo", "bar"), RawHeader( "baz", "very very very long header value")))
+        responseHeaders = List(RawHeader("foo", "bar"), RawHeader("baz", "very very very long header value"))
+      )
 
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> LOCAL_HOST,
+          "Host" -> LOCAL_HOST
         )
         .get()
         .futureValue
@@ -985,26 +1050,28 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Reject headers in too long" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[RejectHeaderInTooLong],
-          config = NgPluginInstanceConfig(
-            RejectHeaderConfig(
-              value = 30
-            ).json.as[JsObject]
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[RejectHeaderInTooLong],
+            config = NgPluginInstanceConfig(
+              RejectHeaderConfig(
+                value = 30
+              ).json.as[JsObject]
+            )
           )
         )
-      ))
+      )
 
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST,
-          "foo" -> "bar",
-          "baz" -> "very very very very very very very very very long header value"
+          "foo"  -> "bar",
+          "baz"  -> "very very very very very very very very very long header value"
         )
         .get()
         .futureValue
@@ -1017,33 +1084,37 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Additional cookies in" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[AdditionalCookieIn],
-          config = NgPluginInstanceConfig(
-            AdditionalCookieInConfig(
-              name = "cookie",
-              value = "value"
-            ).json.as[JsObject]
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[AdditionalCookieIn],
+            config = NgPluginInstanceConfig(
+              AdditionalCookieInConfig(
+                name = "cookie",
+                value = "value"
+              ).json.as[JsObject]
+            )
           )
         )
-      ))
+      )
 
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> PLUGINS_HOST,
+          "Host" -> PLUGINS_HOST
         )
         .get()
         .futureValue
 
       resp.status mustBe Status.OK
-      val cookies = Json.parse(resp.body)
+      val cookies = Json
+        .parse(resp.body)
         .as[JsValue]
-        .select("cookies").as[Map[String, String]]
+        .select("cookies")
+        .as[Map[String, String]]
 
       cookies.get("cookie") mustBe Some("value")
 
@@ -1051,25 +1122,27 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Additional cookies out" in {
-      val route = createRequestOtoroshiIORoute(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost]
-        ),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[AdditionalCookieOut],
-          config = NgPluginInstanceConfig(
-            AdditionalCookieOutConfig(
-              name = "cookie",
-              value = "value"
-            ).json.as[JsObject]
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[AdditionalCookieOut],
+            config = NgPluginInstanceConfig(
+              AdditionalCookieOutConfig(
+                name = "cookie",
+                value = "value"
+              ).json.as[JsObject]
+            )
           )
         )
-      ))
+      )
 
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> PLUGINS_HOST,
+          "Host" -> PLUGINS_HOST
         )
         .get()
         .futureValue

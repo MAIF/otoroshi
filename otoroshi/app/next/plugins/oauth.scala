@@ -532,10 +532,10 @@ class OAuth2Caller extends NgRequestTransformer {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2CallerConfig.format)
 
     rawConfig match {
-      case None         => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
+      case None          => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
       case Some(_config) =>
         val config = _config.applyEl(ctx.attrs)
-        val key = computeKey(env, config, ctx.route)
+        val key    = computeKey(env, config, ctx.route)
         env.datastores.rawDataStore.get(key).flatMap {
           case Some(tokenBody) =>
             val jsonToken = tokenBody.utf8String.parseJson
@@ -574,10 +574,10 @@ class OAuth2Caller extends NgRequestTransformer {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2CallerConfig.format)
 
     rawConfig match {
-      case None         => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
+      case None          => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
       case Some(_config) =>
         val config = _config.applyEl(ctx.attrs)
-        val key = computeKey(env, config, ctx.route)
+        val key    = computeKey(env, config, ctx.route)
         if (ctx.otoroshiResponse.status == 401) {
           tryRenewToken(key, config).flatMap {
             case Left(_)      => {
