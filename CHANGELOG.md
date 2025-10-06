@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.6.3] - 2025-10-06
+
+
+https://github.com/MAIF/otoroshi/milestone/125?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.6.2...v17.6.3
+https://github.com/MAIF/otoroshi/releases/tag/v17.6.3
+
+
+### Added 
+
+- OAuth1Caller and OAuth2Caller plugin can use expression language (#2273 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- Admin UI API proxy can fail if x-forwarded-host defined (#2274 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [17.6.2] - 2025-10-03
 
 
