@@ -134,6 +134,14 @@ case "${1}" in
     docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" -t "maif/otoroshi:dev"  .
     cleanup
     ;;
+   build-local)
+    OTO_VERSION="local"
+    JDK_VERSION="17"
+    copy_build
+    docker build --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "oto-local"  .
+    docker tag oto-local "maif/otoroshi:local"
+    cleanup
+    ;;
   build-and-push-snapshot)
     NBR=`date +%s`
     OTO_VERSION="dev-${NBR}"

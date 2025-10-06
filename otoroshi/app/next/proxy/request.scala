@@ -145,7 +145,7 @@ class BackOfficeRequest(
 
   override def connection: RemoteConnection = new BackOfficeRemoteConnection(request)
   override def target: RequestTarget        = new BackOfficeRequestTarget(newUri)
-  override def headers: Headers             = Headers.apply(((request.headers.headers.toMap ++ addHeaders.toMap).toSeq): _*)
+  override def headers: Headers             = Headers.apply(((request.headers.headers.filterNot(_._1.toLowerCase() == "x-forwarded-host").toMap ++ addHeaders.toMap).toSeq): _*)
 
   override def version: String             = request.version
   override def attrs: TypedMap             = request.attrs
