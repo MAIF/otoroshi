@@ -10,21 +10,23 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import com.typesafe.config.ConfigFactory
 import functional.Implicits.BetterFuture
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.time.{Minutes, Span}
-import otoroshi.models.{ApiKey, EntityLocation, RoundRobin, RouteIdentifier}
+import otoroshi.models._
 import otoroshi.next.models._
-import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, AllowHttpMethods, ApikeyCalls, BuildMode, HeadersValidation, MaintenanceMode, MissingHeadersIn, MissingHeadersOut, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderNamesConfig, NgHeaderValuesConfig, NgSecurityTxt, NgSecurityTxtConfig, OverrideHost, OverrideLocationHeader, RemoveHeadersIn, RemoveHeadersOut}
 import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
+import otoroshi.next.plugins._
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits.BetterJsValue
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader}
 import play.api.http.Status
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSRequest
 import play.api.{Configuration, Logger}
 
 import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Future, Promise}
 
 class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
@@ -770,7 +772,6 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.SERVICE_UNAVAILABLE
       resp.body.contains("Service under construction") mustBe true
 
-
       deleteOtoroshiRoute(route).await()
     }
 
@@ -795,8 +796,108 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.SERVICE_UNAVAILABLE
       resp.body.contains("Service in maintenance mode") mustBe true
 
-
       deleteOtoroshiRoute(route).await()
+    }
+
+    "Custom error template" in {
+      val route = createRequestOtoroshiIORoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[BuildMode],
+        ),
+      ))
+
+      val maintenanceRoute = createRequestOtoroshiIORoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[MaintenanceMode],
+        ),
+      ),
+        domain = "maintenance.oto.tools",
+        id = "maintenance route"
+      )
+
+      val error = ErrorTemplate(
+        location =  EntityLocation.default,
+        serviceId = "global",
+        name = "global error template",
+        description = "global error template description",
+        template50x = "",
+        templateBuild = "build mode enabled, bye",
+        template40x = "",
+        templateMaintenance = "maintenance mode enabled, bye",
+        genericTemplates = Map.empty,
+        messages = Map(
+          "errors.service.under.construction" -> "build mode enabled",
+          "errors.service.in.maintenance" -> "maintenance mode enabled"
+        ),
+        tags = Seq.empty,
+        metadata = Map.empty
+      )
+
+      createOtoroshiErrorTemplate(error).await()
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> PLUGINS_HOST,
+            "Accept" -> "text/html"
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.SERVICE_UNAVAILABLE
+        resp.body mustEqual "build mode enabled, bye"
+
+        val resp2 = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> PLUGINS_HOST
+          )
+          .get()
+          .futureValue
+
+        resp2.status mustBe Status.SERVICE_UNAVAILABLE
+
+        Json.parse(resp2.body).selectAsString("otoroshi-cause") mustEqual "build mode enabled"
+        Json.parse(resp2.body).selectAsString("otoroshi-error") mustEqual "Service under construction"
+      }
+
+      {
+        val resp =  ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> maintenanceRoute.frontend.domains.head.domain,
+            "Accept" -> "text/html"
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.SERVICE_UNAVAILABLE
+        resp.body mustEqual "maintenance mode enabled, bye"
+
+        val resp2 =  ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> maintenanceRoute.frontend.domains.head.domain
+          )
+          .get()
+          .futureValue
+
+        resp2.status mustBe Status.SERVICE_UNAVAILABLE
+
+        Json.parse(resp2.body).selectAsString("otoroshi-cause") mustEqual "maintenance mode enabled"
+        Json.parse(resp2.body).selectAsString("otoroshi-error") mustEqual "Service in maintenance mode"
+      }
+
+      deleteOtoroshiErrorTemplate(error).await()
+      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(maintenanceRoute).await()
     }
   }
 }

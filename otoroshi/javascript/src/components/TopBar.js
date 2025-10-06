@@ -836,6 +836,12 @@ export class TopBar extends Component {
           label: 'Wasm Plugins',
           value: 'wasm-plugins',
         });
+        options.push({
+          action: () => this.routeTo('/error-templates'),
+          env: <span className="fas fa-bomb" />,
+          label: 'Error Templates',
+          value: 'error-templates',
+        });
         if (this.props.env.scriptingEnabled === true) {
           options.push({
             action: () => this.routeTo('/plugins'),

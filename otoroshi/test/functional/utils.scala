@@ -1367,12 +1367,48 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .andWait(2000.millis)
   }
 
+  def createOtoroshiErrorTemplate(
+                            errorTemplate: ErrorTemplate,
+                            customPort: Option[Int] = None,
+                            ws: WSClient = wsClient
+                          ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/error-templates")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(errorTemplate.toJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(2000.millis)
+  }
+
   def deleteOtoroshiVerifier(
       verifier: GlobalJwtVerifier,
       customPort: Option[Int] = None,
       ws: WSClient = wsClient
   ): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/verifiers/${verifier.id}")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def deleteOtoroshiErrorTemplate(
+                              errorTemplate: ErrorTemplate,
+                              customPort: Option[Int] = None,
+                              ws: WSClient = wsClient
+                            ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/error-templates/${errorTemplate.serviceId}")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
