@@ -15,7 +15,7 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
 import otoroshi.models.{ApiKey, EntityLocation, RoundRobin, RouteIdentifier}
 import otoroshi.next.models._
-import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, AllowHttpMethods, ApikeyCalls, HeadersValidation, MissingHeadersIn, MissingHeadersOut, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderNamesConfig, NgHeaderValuesConfig, NgSecurityTxt, NgSecurityTxtConfig, OverrideHost, OverrideLocationHeader, RemoveHeadersIn, RemoveHeadersOut}
+import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, AllowHttpMethods, ApikeyCalls, BuildMode, HeadersValidation, MaintenanceMode, MissingHeadersIn, MissingHeadersOut, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderNamesConfig, NgHeaderValuesConfig, NgSecurityTxt, NgSecurityTxtConfig, OverrideHost, OverrideLocationHeader, RemoveHeadersIn, RemoveHeadersOut}
 import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValue
@@ -745,6 +745,56 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       getOutHeader(resp, "foo") mustBe None
       getOutHeader(resp, "foo2") mustBe Some("baz")
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Build mode" in {
+      val route = createRequestOtoroshiIORoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[BuildMode],
+        ),
+      ))
+
+      val resp =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.SERVICE_UNAVAILABLE
+      resp.body.contains("Service under construction") mustBe true
+
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Maintenance mode" in {
+      val route = createRequestOtoroshiIORoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[MaintenanceMode],
+        ),
+      ))
+
+      val resp =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.SERVICE_UNAVAILABLE
+      resp.body.contains("Service in maintenance mode") mustBe true
+
 
       deleteOtoroshiRoute(route).await()
     }
