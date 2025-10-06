@@ -10,11 +10,12 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import com.typesafe.config.ConfigFactory
 import functional.Implicits.BetterFuture
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
 import otoroshi.models.{ApiKey, EntityLocation, RoundRobin, RouteIdentifier}
 import otoroshi.next.models._
-import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, AllowHttpMethods, ApikeyCalls, HeadersValidation, MissingHeadersIn, MissingHeadersOut, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderValuesConfig, NgSecurityTxt, NgSecurityTxtConfig, OverrideHost, OverrideLocationHeader}
+import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, AllowHttpMethods, ApikeyCalls, HeadersValidation, MissingHeadersIn, MissingHeadersOut, NgAllowedMethodsConfig, NgApikeyCallsConfig, NgHeaderNamesConfig, NgHeaderValuesConfig, NgSecurityTxt, NgSecurityTxtConfig, OverrideHost, OverrideLocationHeader, RemoveHeadersIn, RemoveHeadersOut}
 import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValue
@@ -26,7 +27,7 @@ import play.api.{Configuration, Logger}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{Future, Promise}
 
-class PluginsTestSpec extends OtoroshiSpec {
+class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
   implicit lazy val mat = otoroshiComponents.materializer
   implicit lazy val env = otoroshiComponents.env
@@ -43,13 +44,16 @@ class PluginsTestSpec extends OtoroshiSpec {
         .resolve()
     ).withFallback(configuration)
 
+  override def beforeAll(): Unit = {
+    startOtoroshi()
+    getOtoroshiRoutes().futureValue // WARM UP
+  }
+
+  override def afterAll(): Unit = {
+    stopAll()
+  }
+
   s"plugins" should {
-
-    "warm up" in {
-      startOtoroshi()
-      getOtoroshiRoutes().futureValue // WARM UP
-    }
-
     val PLUGINS_ROUTE_ID = "plugins-route"
     val PLUGINS_HOST = "plugins.oto.tools"
 
@@ -680,8 +684,69 @@ class PluginsTestSpec extends OtoroshiSpec {
         system.terminate()
     }
 
-    "shutdown" in {
-      stopAll()
+    "Remove headers in" in {
+      val route = createRequestOtoroshiIORoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[RemoveHeadersIn],
+          config = NgPluginInstanceConfig(
+            NgHeaderNamesConfig(
+              names = Seq("foo")
+            ).json.as[JsObject]
+          ))
+      ))
+
+      val resp =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+          "foo2" -> "client_value",
+          "foo" -> "bar"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      getInHeader(resp, "foo") mustBe None
+      getInHeader(resp, "foo2") mustBe Some("client_value")
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Remove headers out" in {
+      val route = createLocalRoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[RemoveHeadersOut],
+          config = NgPluginInstanceConfig(
+            NgHeaderNamesConfig(
+              names = Seq("foo")
+            ).json.as[JsObject]
+          )),
+      ),
+        result = req => {
+          Json.obj()
+        }, responseHeaders = List(RawHeader("foo", "bar"), RawHeader("foo2", "baz"))
+      )
+
+      val resp =  ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> LOCAL_HOST
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+
+      getOutHeader(resp, "foo") mustBe None
+      getOutHeader(resp, "foo2") mustBe Some("baz")
+
+      deleteOtoroshiRoute(route).await()
     }
   }
 }
