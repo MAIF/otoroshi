@@ -1200,5 +1200,51 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).await()
     }
+
+    "Limit headers out too long" in {
+      val route = createLocalRoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[LimitHeaderOutTooLong],
+          config = NgPluginInstanceConfig(
+            RejectHeaderConfig(
+              value = 20
+            ).json.as[JsObject]
+          )
+        )
+      ),
+        responseStatus = Status.OK,
+        result = _ => Json.obj(),
+        responseHeaders = List(RawHeader("foo", "bar"), RawHeader( "baz", "very very very very very long header value")))
+
+      val logger = LoggerFactory.getLogger("otoroshi-plugin-limit-headers-out-too-long").asInstanceOf[LogbackLogger]
+
+      val events = scala.collection.mutable.ListBuffer.empty[ILoggingEvent]
+      val appender = new AppenderBase[ILoggingEvent]() {
+        override def append(eventObject: ILoggingEvent): Unit = events += eventObject
+      }
+      appender.start()
+      logger.addAppender(appender)
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> LOCAL_HOST,
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+
+      assert(events.exists(_.getMessage.contains("limiting header")))
+      assert(events.exists(_.getMessage.contains("baz")))
+      assert(events.exists(_.getLevel == Level.ERROR))
+
+      logger.detachAppender(appender)
+
+      deleteOtoroshiRoute(route).await()
+    }
   }
 }
