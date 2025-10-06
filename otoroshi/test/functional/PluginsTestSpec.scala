@@ -17,7 +17,7 @@ import org.scalatest.time.{Minutes, Span}
 import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.{RejectHeaderOutTooLong, _}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader}
 import play.api.http.Status
@@ -951,5 +951,37 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       deleteOtoroshiRoute(route).await()
     }
 
+    "Reject headers out too long" in {
+      val route = createLocalRoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[RejectHeaderOutTooLong],
+          config = NgPluginInstanceConfig(
+            RejectHeaderConfig(
+              value = 15
+            ).json.as[JsObject]
+          )
+        )
+      ),
+        responseStatus = Status.OK,
+        result = _ => Json.obj(),
+        responseHeaders = List(RawHeader("foo", "bar"), RawHeader( "baz", "very very very long header value")))
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> LOCAL_HOST,
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      getOutHeader(resp, "foo") mustBe Some("bar")
+      getOutHeader(resp, "baz") mustBe None
+
+      deleteOtoroshiRoute(route).await()
+    }
   }
 }
