@@ -1015,5 +1015,39 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).await()
     }
+
+    "Additional cookies in" in {
+      val route = createRequestOtoroshiIORoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[AdditionalCookieIn],
+          config = NgPluginInstanceConfig(
+            AdditionalCookieInConfig(
+              name = "cookie",
+              value = "value"
+            ).json.as[JsObject]
+          )
+        )
+      ))
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      val cookies = Json.parse(resp.body)
+        .as[JsValue]
+        .select("cookies").as[Map[String, String]]
+
+      cookies.get("cookie") mustBe Some("value")
+
+      deleteOtoroshiRoute(route).await()
+    }
   }
 }
