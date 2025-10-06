@@ -983,5 +983,37 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).await()
     }
+
+    "Reject headers in too long" in {
+      val route = createRequestOtoroshiIORoute(Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[RejectHeaderInTooLong],
+          config = NgPluginInstanceConfig(
+            RejectHeaderConfig(
+              value = 30
+            ).json.as[JsObject]
+          )
+        )
+      ))
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+          "foo" -> "bar",
+          "baz" -> "very very very very very very very very very long header value"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      getInHeader(resp, "foo") mustBe Some("bar")
+      getInHeader(resp, "baz") mustBe None
+
+      deleteOtoroshiRoute(route).await()
+    }
   }
 }
