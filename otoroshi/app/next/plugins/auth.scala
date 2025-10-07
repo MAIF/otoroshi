@@ -596,7 +596,7 @@ object BasicAuthCallerConfig {
   val format: Format[BasicAuthCallerConfig] = new Format[BasicAuthCallerConfig] {
     override def writes(o: BasicAuthCallerConfig): JsValue = Json.obj(
       "username"          -> o.username,
-      "passaword"         -> o.password,
+      "password"         -> o.password,
       "headerName"        -> o.headerName,
       "headerValueFormat" -> o.headerValueFormat
     )

@@ -22,7 +22,7 @@ import otoroshi.next.models._
 import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
 import otoroshi.next.plugins.{RejectHeaderOutTooLong, _}
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader}
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSRequest
@@ -1243,6 +1243,41 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       assert(events.exists(_.getLevel == Level.ERROR))
 
       logger.detachAppender(appender)
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Basic Auth. caller" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[BasicAuthCaller],
+            config = NgPluginInstanceConfig(
+              BasicAuthCallerConfig(
+                username = "foo".some,
+                password = "bar".some,
+                headerName = "foo",
+                headerValueFormat = "Foo %s"
+              ).json.as[JsObject]
+            )
+          )
+        )
+      )
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST
+        )
+        .get()
+        .futureValue
+
+      println(resp.body)
+      resp.status mustBe Status.OK
+      getInHeader(resp, "foo") mustBe Some("Foo Zm9vOmJhcg==")
 
       deleteOtoroshiRoute(route).await()
     }
