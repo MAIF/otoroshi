@@ -157,7 +157,7 @@ class ReactivePgDataStores(
       .setUser(configuration.getOptionalWithFileSupport[String]("app.pg.user").getOrElse("otoroshi"))
       .setPassword(configuration.getOptionalWithFileSupport[String]("app.pg.password").getOrElse("otoroshi"))
       .applyOnIf(sslEnabled) { pgopt =>
-        val mode              = SslMode.of(ssl.betterGetOptional[String]("mode").getOrElse("verify_ca"))
+        val mode              = SslMode.of(ssl.betterGetOptional[String]("mode").getOrElse("verify-ca"))
         val pemTrustOptions   = new PemTrustOptions()
         val pemKeyCertOptions = new PemKeyCertOptions()
         pgopt.setSslMode(mode)
