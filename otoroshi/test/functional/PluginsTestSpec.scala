@@ -1310,5 +1310,34 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).await()
     }
+
+    "Forwarded header" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[ForwardedHeader]
+          )
+        ))
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withFollowRedirects(false)
+        .withHttpHeaders(
+          "X-Forwarded-For" -> "1.1.1.2",
+          "Host" -> route.frontend.domains.head.domain
+        )
+        .get()
+        .futureValue
+
+      getInHeader(resp, "x-forwarded-proto") mustBe Some("https")
+      getInHeader(resp, "x-forwarded-for").contains("1.1.1.2") mustBe false
+      getInHeader(resp, "x-forwarded-port") mustBe Some("443")
+      getInHeader(resp, "forwarded").isDefined mustBe true
+
+      deleteOtoroshiRoute(route).await()
+    }
   }
 }
