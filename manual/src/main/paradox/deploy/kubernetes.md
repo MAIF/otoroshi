@@ -18,7 +18,7 @@ You can also create a `kustomization.yaml` file with a remote base
 
 ```yaml
 bases:
-- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v17.6.0-dev
+- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v17.7.0-dev
 ```
 
 Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 
@@ -87,7 +87,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:17.6.0-dev
+      - image: maif/otoroshi:17.7.0-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi
         args: ['-Dconfig.file=/usr/app/otoroshi/conf/oto.conf']
@@ -666,6 +666,10 @@ You can see this as better `Ingress` resources. Like any `Ingress` resource can 
  
 @@@ warning
 when using Otoroshi CRDs, Kubernetes becomes the single source of truth for the synced entities. It means that any value in the descriptors deployed will overrides the one in Otoroshi datastore each time it's synced. So be careful if you use the Otoroshi UI or the API, some changes in configuration may be overriden by CRDs sync job.
+@@@
+
+@@@ warning
+when using Otoroshi CRDs, all the kubernetes accounts/users that need to access/write Otoroshi CRDs resources will need to be able to access those with the according rights.
 @@@
 
 ### Resources examples

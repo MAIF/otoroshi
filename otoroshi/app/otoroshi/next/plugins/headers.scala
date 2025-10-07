@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
-import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
+import otoroshi.el.{GlobalExpressionLanguage, HeadersExpressionLanguage, TargetExpressionLanguage}
 import otoroshi.env.Env
 import otoroshi.events.AlertEvent
 import otoroshi.gateway.Errors
@@ -86,7 +86,7 @@ class OverrideHost extends NgRequestTransformer {
     ctx.attrs.get(Keys.BackendKey) match {
       case None          => Right(ctx.otoroshiRequest)
       case Some(backend) =>
-        val host    = TargetExpressionLanguage(
+        val host = TargetExpressionLanguage(
           backend.hostname,
           Some(ctx.request),
           ctx.route.serviceDescriptor.some,
@@ -97,6 +97,7 @@ class OverrideHost extends NgRequestTransformer {
           ctx.attrs,
           env
         )
+
         val headers = ctx.otoroshiRequest.headers.-("Host").-("host").+("Host" -> host)
         val request = ctx.otoroshiRequest.copy(headers = headers)
         Right(request)
@@ -186,9 +187,23 @@ class HeadersValidation extends NgAccessValidator {
   override def isAccessAsync: Boolean                      = true
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val validationHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.map {
-      case (key, value) => (key.toLowerCase, value)
-    }
+    val validationHeaders =
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.map { case (key, value) =>
+        (
+          key.toLowerCase,
+          GlobalExpressionLanguage.apply(
+            value,
+            Some(ctx.request),
+            ctx.route.legacy.some,
+            ctx.route.some,
+            ctx.apikey,
+            ctx.user,
+            ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+            ctx.attrs,
+            env
+          )
+        )
+      }
     val headers           = ctx.request.headers.toSimpleMap.map { case (key, value) =>
       (key.toLowerCase, value)
     }

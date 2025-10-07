@@ -21,10 +21,12 @@ export const AssignNode = {
           renderer: (props) => {
             const predicate = props.value || {};
 
-            return <OperatorSelector
-              predicate={predicate}
-              handleOperatorChange={newOperator => props.onChange(newOperator.predicate)}
-            />
+            return (
+              <OperatorSelector
+                predicate={predicate}
+                handleOperatorChange={(newOperator) => props.onChange(newOperator.predicate)}
+              />
+            );
             // <JsonObjectAsCodeInputUpdatable
             //   ngOptions={{ spread: true }}
             //   showGutter={false}
@@ -38,7 +40,7 @@ export const AssignNode = {
             //   value={props.value}
             //   onChange={props.onChange}
             // />
-          }
+          },
         },
       },
     },

@@ -24,11 +24,11 @@ export const ReturnedNode = {
             <NgAnyRenderer
               ngOptions={{ spread: true }}
               value={value}
-              onChange={e => {
+              onChange={(e) => {
                 try {
-                  props.onChange(JSON.parse(e))
+                  props.onChange(JSON.parse(e));
                 } catch (err) {
-                  props.onChange(e)
+                  props.onChange(e);
                 }
               }}
             />
@@ -49,17 +49,18 @@ export const ReturnedNode = {
           borderBottomRightRadius: '.75rem',
           overflow: 'hidden',
         }}
-        className='d-flex'>
+        className="d-flex"
+      >
         <NgAnyRenderer
           ngOptions={{
-            spread: true
+            spread: true,
           }}
           options={{
             fontSize: 11,
             readOnly: true,
           }}
           value={props.data?.content?.returned}
-          onChange={() => { }}
+          onChange={() => {}}
         />
       </div>
     );

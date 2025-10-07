@@ -1205,7 +1205,7 @@ object CpuInfo {
 
   def cpuLoad(): Double = {
     tmbs match {
-      case Failure(_) => 0.0
+      case Failure(_)   => 0.0
       case Success(mbs) => {
         val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
         val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))
@@ -1220,7 +1220,7 @@ object CpuInfo {
 
   def loadAverage(): Double = {
     tosMXBean match {
-      case Failure(_) => 0.0
+      case Failure(_)        => 0.0
       case Success(osMXBean) => {
         osMXBean.getSystemLoadAverage
       }

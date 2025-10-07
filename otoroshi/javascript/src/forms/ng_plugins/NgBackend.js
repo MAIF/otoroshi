@@ -226,11 +226,12 @@ export default {
       schema: {
         description: {
           renderer: () => {
-            return <MarkdownInput
-              readOnly
-              className="form-description"
-              preview
-              value={`
+            return (
+              <MarkdownInput
+                readOnly
+                className="form-description"
+                preview
+                value={`
 **Tips**
 
 Send back the numeric value received in the request header defined by \`otoroshi.headers.healthcheck.test\`, 
@@ -240,10 +241,10 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
 
   - Request: Otoroshi-Health-Check-Logic-Test: 123
   - Response: Otoroshi-Health-Check-Logic-Test-Result: 165 (123 + 42)
-`
-              }
-            />
-          }
+`}
+              />
+            );
+          },
         },
         enabled: {
           label: 'Enabled',
@@ -256,7 +257,8 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
           label: 'Block on red',
           type: 'box-bool',
           props: {
-            description: 'If enabled, Otoroshi will block requests when the healthcheck status is considered unhealthy (red)',
+            description:
+              'If enabled, Otoroshi will block requests when the healthcheck status is considered unhealthy (red)',
           },
         },
         url: {
@@ -279,7 +281,15 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
           label: 'Unhealthy statuses',
         },
       },
-      flow: ['description', 'enabled', 'blockOnRed', 'url', 'timeout', 'healthyStatuses', 'unhealthyStatuses'],
+      flow: [
+        'description',
+        'enabled',
+        'blockOnRed',
+        'url',
+        'timeout',
+        'healthyStatuses',
+        'unhealthyStatuses',
+      ],
     },
     targets: {
       array: true,

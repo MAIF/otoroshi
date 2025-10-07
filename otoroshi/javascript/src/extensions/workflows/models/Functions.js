@@ -18,6 +18,9 @@ import { NeqOperator } from '../operators/NeqOperator';
 import { ArrayAtOperator } from '../operators/ArrayAtOperator';
 import { ArrayPageOperator } from '../operators/ArrayPageOperator';
 import { MapGetOperator } from '../operators/MapGetOperator';
+import { MapRenameOperator } from '../operators/MapRenameOperator';
+import { MapIsEmptyOperator } from '../operators/MapIsEmptyOperator';
+import { ArrayIsEmptyOperator } from '../operators/ArrayIsEmptyOperator';
 import { MemRefOperator } from '../operators/MemRefOperator';
 import { EncodeBase64Operator } from '../operators/EncodeBase64Operator';
 import { NotOperator } from '../operators/NotOperator';
@@ -68,32 +71,35 @@ const OVERLOADED_NODES = {
   returned: ReturnedNode,
   start: StartNode,
   $mem_ref: MemRefOperator,
-  '$array_append': ArrayAppendOperator,
-  '$array_drop': ArrayDropOperator,
-  '$array_prepend': ArrayPrependOperator,
-  '$array_at': ArrayAtOperator,
-  '$array_del': ArrayDelOperator,
-  '$array_page': ArrayPageOperator,
-  '$projection': ProjectionOperator,
-  '$map_put': MapPutOperator,
-  '$map_get': MapGetOperator,
-  '$map_del': MapDelOperator,
-  '$json_parse': JsonParseOperator,
-  '$is_truthy': IsTruthyOperator,
-  '$is_falsy': IsFalsyOperator,
-  '$contains': ContainsOperator,
-  '$neq': NeqOperator,
-  '$encode_base64': EncodeBase64Operator,
-  '$decode_base64': DecodeBase64Operator,
-  '$not': NotOperator,
-  '$str_split': StrSplitOperator,
+  $array_append: ArrayAppendOperator,
+  $array_drop: ArrayDropOperator,
+  $array_prepend: ArrayPrependOperator,
+  $array_at: ArrayAtOperator,
+  $array_del: ArrayDelOperator,
+  $array_page: ArrayPageOperator,
+  $projection: ProjectionOperator,
+  $map_put: MapPutOperator,
+  $map_get: MapGetOperator,
+  $map_rename: MapRenameOperator,
+  $map_is_empty: MapIsEmptyOperator,
+  $array_is_empty: ArrayIsEmptyOperator,
+  $map_del: MapDelOperator,
+  $json_parse: JsonParseOperator,
+  $is_truthy: IsTruthyOperator,
+  $is_falsy: IsFalsyOperator,
+  $contains: ContainsOperator,
+  $neq: NeqOperator,
+  $encode_base64: EncodeBase64Operator,
+  $decode_base64: DecodeBase64Operator,
+  $not: NotOperator,
+  $str_split: StrSplitOperator,
   'core.workflow_call': WorkflowFunction,
   'core.send_mail': SendMailFunction,
   'core.log': LogFunction,
   end: EndNode,
   while: WhileNode,
   async: AsyncNode,
-  error: StopAndErrorNode
+  error: StopAndErrorNode,
 };
 
 function getNodeCategory(categories, node) {
@@ -182,8 +188,8 @@ export const NODES = (documentation, extensionOverloads) => {
             node: true,
             schema: n.form_schema,
             kind: n.kind || n.name,
-          }
-        }
+          },
+        };
       }, {}),
       ...extensionOverloads.operators.reduce((acc, ope) => {
         return {
@@ -193,8 +199,8 @@ export const NODES = (documentation, extensionOverloads) => {
             operators: true,
             schema: ope.form_schema,
             kind: ope.kind || ope.name,
-          }
-        }
+          },
+        };
       }, {}),
       ...extensionOverloads.functions.map((acc, func) => {
         return {
@@ -203,8 +209,8 @@ export const NODES = (documentation, extensionOverloads) => {
             ...func,
             category: 'functions',
             schema: func.form_schema,
-          }
-        }
+          },
+        };
       }, {}),
     }).map(([key, node]) => {
       const defaultValue = defaultValues.find((n) => n.name === key);

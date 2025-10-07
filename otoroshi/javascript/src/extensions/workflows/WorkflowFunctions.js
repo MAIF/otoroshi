@@ -28,22 +28,21 @@ export function WorkflowFunctions(props) {
     {
       title: 'Name',
       filterId: 'name',
-      cell: (_, item) => item.name
-    }
+      cell: (_, item) => item.name,
+    },
   ];
 
   const deleteItem = (removedItem) => {
     const newWorkflow = {
       ...workflow,
       functions: Object.fromEntries(
-        Object.entries(workflow.functions).filter(([key, _]) => key !== removedItem.name),
-      )
-    }
-    return client.update(newWorkflow)
-      .then(() => {
-        setWorkflow(newWorkflow)
-      })
-  }
+        Object.entries(workflow.functions).filter(([key, _]) => key !== removedItem.name)
+      ),
+    };
+    return client.update(newWorkflow).then(() => {
+      setWorkflow(newWorkflow);
+    });
+  };
 
   return (
     <Loader loading={!workflow}>
@@ -64,10 +63,14 @@ export function WorkflowFunctions(props) {
         deleteItem={(item) => deleteItem(item)}
         defaultSort="metadata.updated_at"
         defaultSortDesc="true"
-        fetchItems={() => Promise.resolve(Object.entries(workflow.functions).map(([key, value]) => ({
-          ...value,
-          name: key
-        })))}
+        fetchItems={() =>
+          Promise.resolve(
+            Object.entries(workflow.functions).map(([key, value]) => ({
+              ...value,
+              name: key,
+            }))
+          )
+        }
         showActions={true}
         showLink={false}
         extractKey={(item) => item.name}

@@ -3928,7 +3928,7 @@ It also provides a debug UI at `/.well-known/otoroshi/bodylogger`.
 
 ### Description
 
-This plugin exposes a special route `/.well-known/security.txt` as proposed at [https://securitytxt.org/](https://securitytxt.org/)
+This plugin exposes a special route `/.well-known/security.txt` as defined in RFC 9116 (https://www.rfc-editor.org/rfc/rfc9116.html)
 
 
 
@@ -3936,7 +3936,9 @@ This plugin exposes a special route `/.well-known/security.txt` as proposed at [
 
 ```json
 {
-  "contact" : "contact@foo.bar"
+  "contact" : [ "contact@foo.bar" ],
+  "auto_expires" : false,
+  "expires_years" : 1
 }
 ```
 
@@ -5285,6 +5287,43 @@ This plugin removes headers in the otoroshi response
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RequestBandwidthThrottling }
+
+## Request bandwidth throttling
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RequestBandwidthThrottling`
+
+### Description
+
+This plugin will limit request body bandwidth
+
+
+
+### Default configuration
+
+```json
+{
+  "window_millis" : "60000",
+  "throttling_quota" : "10485760",
+  "group_expr" : "${route.id}",
+  "fail" : true,
+  "kind" : "per_request"
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RequestBodyEchoBackend }
 
 ## Request body Echo
@@ -5308,6 +5347,111 @@ This plugin returns request body content
 ```json
 {
   "limit" : 524288
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RequestBodyLengthLimiter }
+
+## Request Body length limiter
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RequestBodyLengthLimiter`
+
+### Description
+
+This plugin will limit request body length
+
+
+
+### Default configuration
+
+```json
+{
+  "max_length" : null,
+  "fail" : false
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ResponseBandwidthThrottling }
+
+## Response bandwidth throttling
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ResponseBandwidthThrottling`
+
+### Description
+
+This plugin will limit response body bandwidth
+
+
+
+### Default configuration
+
+```json
+{
+  "window_millis" : "60000",
+  "throttling_quota" : "10485760",
+  "group_expr" : "${route.id}",
+  "fail" : true,
+  "kind" : "per_request"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ResponseBodyLengthLimiter }
+
+## Response Body length limiter
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ResponseBodyLengthLimiter`
+
+### Description
+
+This plugin will limit response body length
+
+
+
+### Default configuration
+
+```json
+{
+  "max_length" : null,
+  "fail" : false
 }
 ```
 
@@ -5754,8 +5898,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-09-04T13:40:31.521Z",
-  "stop" : "2025-09-05T13:40:31.542Z",
+  "start" : "2025-10-06T13:50:36.338Z",
+  "stop" : "2025-10-07T13:50:36.359Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"

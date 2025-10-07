@@ -162,17 +162,7 @@ class ReactivePgDataStores(
       .setUser(configuration.getOptionalWithFileSupport[String]("app.pg.user").getOrElse("otoroshi"))
       .setPassword(configuration.getOptionalWithFileSupport[String]("app.pg.password").getOrElse("otoroshi"))
       .applyOnIf(sslEnabled) { pgopt =>
-        val mode = SslMode.of(ssl.betterGetOptional[String]("mode").getOrElse("verify_ca"))
-        pgopt.setSslMode(mode)
-        pgopt
-      }
-
-    // TCP-level options INCLUDING ALL SSL configuration now go in NetClientOptions
-    val netOpts = new NetClientOptions()
-      .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
-      .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
-      .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
-      .applyOnIf(sslEnabled) { netopt =>
+        val mode              = SslMode.of(ssl.betterGetOptional[String]("mode").getOrElse("verify-ca"))
         val pemTrustOptions   = new PemTrustOptions()
         val pemKeyCertOptions = new PemKeyCertOptions()
 

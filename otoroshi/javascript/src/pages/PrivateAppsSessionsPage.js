@@ -10,41 +10,50 @@ import { NgSelectRenderer } from '../components/nginputs';
 import { Button } from '../components/Button';
 
 function DiscardModuleSessions({ ok, cancel }) {
-  const [auths, setAuths] = useState([])
+  const [auths, setAuths] = useState([]);
 
-  const [authModule, setAuthModule] = useState()
+  const [authModule, setAuthModule] = useState();
 
   useEffect(() => {
-    BackOfficeServices.findAllAuthConfigs()
-      .then(raw => setAuths(raw?.data || []))
-  }, [])
+    BackOfficeServices.findAllAuthConfigs().then((raw) => setAuths(raw?.data || []));
+  }, []);
 
-  return <div className='mt-3'>
-    <NgSelectRenderer
-      ngOptions={{
-        spread: true,
-      }}
-      placeholder="Select an authentication provider"
-      name="Selector"
-      value={authModule}
-      options={auths}
-      optionsTransformer={(arr) => arr.map((item) => ({ value: item.id, label: item.name }))}
-      onChange={setAuthModule} />
+  return (
+    <div className="mt-3">
+      <NgSelectRenderer
+        ngOptions={{
+          spread: true,
+        }}
+        placeholder="Select an authentication provider"
+        name="Selector"
+        value={authModule}
+        options={auths}
+        optionsTransformer={(arr) => arr.map((item) => ({ value: item.id, label: item.name }))}
+        onChange={setAuthModule}
+      />
 
-    <Button type='danger' className='mt-3' onClick={() => {
-      window
-        .newConfirm('Are you sure you want to discard all private app sessions for this module, including your own?')
-        .then((ok) => {
-          if (ok) {
-            BackOfficeServices.discardAllPrivateAppsSessionsFor(authModule).then(() => {
-              window.location.reload();
+      <Button
+        type="danger"
+        className="mt-3"
+        onClick={() => {
+          window
+            .newConfirm(
+              'Are you sure you want to discard all private app sessions for this module, including your own?'
+            )
+            .then((ok) => {
+              if (ok) {
+                BackOfficeServices.discardAllPrivateAppsSessionsFor(authModule).then(() => {
+                  window.location.reload();
+                });
+              }
             });
-          }
-        });
-    }}>
-      <i className="fas fa-fire me-2" />Confirm Discard
-    </Button>
-  </div>
+        }}
+      >
+        <i className="fas fa-fire me-2" />
+        Confirm Discard
+      </Button>
+    </div>
+  );
 }
 
 export class PrivateAppsSessionsPage extends Component {
@@ -191,16 +200,16 @@ export class PrivateAppsSessionsPage extends Component {
       });
   };
 
-  discardModuleSessions = e => {
+  discardModuleSessions = (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
     //'Are you sure that you want to discard the private apps sessions including yourself for a speci ?',
     window.wizard(
-      "Discard Authentication Module Sessions",
+      'Discard Authentication Module Sessions',
       (ok, cancel) => <DiscardModuleSessions ok={ok} cancel={cancel} />,
       { additionalClass: 'modal-xl', style: { width: '100%' }, noCancel: true, okLabel: 'close' }
     );
-  }
+  };
 
   discardOldSessions = (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -250,7 +259,7 @@ export class PrivateAppsSessionsPage extends Component {
                 'rights',
                 'randomId',
                 'otoroshiData',
-                'token'
+                'token',
               ],
             })
           }

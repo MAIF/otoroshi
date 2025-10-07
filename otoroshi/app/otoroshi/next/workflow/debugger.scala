@@ -14,8 +14,8 @@ class WorkflowDebugger() {
 
   private val started: AtomicBoolean = new AtomicBoolean(false)
   private val stopped: AtomicBoolean = new AtomicBoolean(false)
-  private val runRef = new AtomicReference[WorkflowRun](null)
-  private val promiseRef = new AtomicReference[Promise[Unit]](null)
+  private val runRef                 = new AtomicReference[WorkflowRun](null)
+  private val promiseRef             = new AtomicReference[Promise[Unit]](null)
 
   private def wfRun: Option[WorkflowRun] = Option(runRef.get())
 

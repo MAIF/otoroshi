@@ -1366,12 +1366,48 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       .andWait(2000.millis)
   }
 
+  def createOtoroshiErrorTemplate(
+      errorTemplate: ErrorTemplate,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/error-templates")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(errorTemplate.toJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(2000.millis)
+  }
+
   def deleteOtoroshiVerifier(
       verifier: GlobalJwtVerifier,
       customPort: Option[Int] = None,
       ws: WSClient = wsClient
   ): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/verifiers/${verifier.id}")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def deleteOtoroshiErrorTemplate(
+      errorTemplate: ErrorTemplate,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/error-templates/${errorTemplate.serviceId}")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
@@ -1529,7 +1565,7 @@ class TargetService(
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
-      case (HttpMethods.GET, _) if host.isEmpty                                    =>
+      case (HttpMethods.GET, p) if host.isEmpty                                       => {
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1543,7 +1579,7 @@ class TargetService(
             entity = entity
           )
         )
-      case (HttpMethods.GET, _) if TargetService.extractHost(request) == host.get  =>
+      case (HttpMethods.GET, p) /*if TargetService.extractHost(request) == host.get*/ =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1557,7 +1593,7 @@ class TargetService(
             entity = entity
           )
         )
-      case (HttpMethods.POST, _) if TargetService.extractHost(request) == host.get =>
+      case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get    =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1571,7 +1607,7 @@ class TargetService(
             entity = entity
           )
         )
-      case (HttpMethods.DELETE, _)                                                 =>
+      case (HttpMethods.DELETE, p)                                                    =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1585,7 +1621,7 @@ class TargetService(
             entity = entity
           )
         )
-      case (_, p)                                                                  =>
+      case (_, p)                                                                     =>
         FastFuture.successful(HttpResponses.NotFound(p.toString()))
     }
   }
@@ -1821,10 +1857,60 @@ object TargetService {
     }.toOption.getOrElse(Random.nextInt(1000) + 7000)
   }
 
-//  private val AbsoluteUri = """(?is)^(https?)://([^/]+)(/.*|$)""".r
-
   def extractHost(request: HttpRequest): String =
-    request.getHeader("Otoroshi-Proxied-Host").asOption.map(_.value()).getOrElse("--")
+    request
+      .getHeader("Otoroshi-Proxied-Host")
+      .asOption
+      .map(_.value())
+      .orElse(request.getHeader("Host").asOption.map(_.value()))
+      .getOrElse("--")
+
+  def json(host: Option[String], path: String, result: HttpRequest => JsValue): TargetService = {
+    apply(host, path, "application/json", r => result(r).stringify)
+  }
+
+  def jsonStreamed(
+      host: Option[String],
+      path: String,
+      result: HttpRequest => (JsValue, Source[ByteString, NotUsed]),
+      headers: List[HttpHeader] = List.empty[HttpHeader]
+  ): TargetService = {
+    new TargetService(
+      freePort,
+      host,
+      path,
+      "application/json",
+      r => {
+        val (json, source) = result(r)
+        (200, json.stringify, Some(source), headers)
+      }
+    )
+  }
+
+  def jsonFull(
+      host: Option[String],
+      path: String,
+      result: HttpRequest => (Int, JsValue, List[HttpHeader])
+  ): TargetService = {
+    full(
+      host,
+      path,
+      "application/json",
+      r => {
+        val (status, json, headers) = result(r)
+        (status, json.stringify, headers)
+      }
+    )
+  }
+
+  def jsonWithPort(
+      port: Int,
+      host: Option[String],
+      path: String,
+      result: HttpRequest => JsValue
+  ): TargetService = {
+    withPort(port, host, path, "application/json", r => result(r).stringify)
+  }
 }
 
 class BodySizeService {

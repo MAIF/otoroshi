@@ -138,8 +138,10 @@ export function DefaultSidebar(props) {
       .sort((a, b) => a.title.localeCompare(b.title))
   );
 
-  if (window.location.pathname.startsWith('/bo/dashboard/extensions/workflows/') &&
-    window.location.pathname !== '/bo/dashboard/extensions/workflows/workflows') {
+  if (
+    window.location.pathname.startsWith('/bo/dashboard/extensions/workflows/') &&
+    window.location.pathname !== '/bo/dashboard/extensions/workflows/workflows'
+  ) {
     return null;
   }
 
@@ -203,8 +205,8 @@ export function DefaultSidebar(props) {
                   dragging={
                     draggingIndex === initialIndex
                       ? {
-                        clientY: client.clientY - start.clientY,
-                      }
+                          clientY: client.clientY - start.clientY,
+                        }
                       : undefined
                   }
                   startDragging={(clientY) => {
@@ -498,8 +500,9 @@ function SidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''
-        }`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
+        openedSidebar ? 'nav-item--open' : ''
+      }`}
       draggable={false}
       style={{
         position: dragging ? 'asbolute' : 'relative',

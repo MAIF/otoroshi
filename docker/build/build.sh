@@ -86,7 +86,7 @@ build_and_push_jar_templates () {
   build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "11"
   build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "17"
   build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "21"
-  build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "24"
+  build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "25"
 }
 
 setup_docker_builder () {
@@ -110,7 +110,7 @@ case "${1}" in
     OTO_VERSION="$2"
     prepare_build
     build_and_push_jar_templates "$OTO_VERSION"
-    build_and_push_jar_template_version_multi_arch_latest "$OTO_VERSION" "21"
+    build_and_push_jar_template_version_multi_arch_latest "$OTO_VERSION" "25"
     # build_graal "$OTO_VERSION"
     cleanup
     # push_graal "$OTO_VERSION"
@@ -124,7 +124,7 @@ case "${1}" in
   build-and-push-dev)
     OTO_VERSION="dev"
     copy_build
-    build_and_push_jar_template_version_multi_arch_temurin_and_dev "$OTO_VERSION" "21"
+    build_and_push_jar_template_version_multi_arch_temurin_and_dev "$OTO_VERSION" "25"
     cleanup
     ;;
   build-dev)
@@ -134,12 +134,20 @@ case "${1}" in
     docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" -t "maif/otoroshi:dev"  .
     cleanup
     ;;
+   build-local)
+    OTO_VERSION="local"
+    JDK_VERSION="17"
+    copy_build
+    docker build --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "oto-local"  .
+    docker tag oto-local "maif/otoroshi:local"
+    cleanup
+    ;;
   build-and-push-snapshot)
     NBR=`date +%s`
     OTO_VERSION="dev-${NBR}"
     echo "Will build version $OTO_VERSION"
     copy_build
-    build_and_push_jar_template_version_multi_arch_temurin_and_dev "$OTO_VERSION" "21"
+    build_and_push_jar_template_version_multi_arch_temurin_and_dev "$OTO_VERSION" "25"
     cleanup
     ;;
   build-snapshots)

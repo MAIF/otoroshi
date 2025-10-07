@@ -10,7 +10,16 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
+import otoroshi.events.{
+  Alerts,
+  ApiKeyQuotasAlmostExceededAlert,
+  ApiKeyQuotasAlmostExceededReason,
+  ApiKeyQuotasExceededAlert,
+  ApiKeyQuotasExceededReason,
+  ApiKeySecretHasRotated,
+  ApiKeySecretWillRotate,
+  RevokedApiKeyUsageAlert
+}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
@@ -24,7 +33,13 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{
+  BetterDecodedJWT,
+  BetterJsLookupResult,
+  BetterJsReadable,
+  BetterJsValue,
+  BetterSyntax
+}
 
 import java.nio.charset.StandardCharsets
 import java.security.Signature
@@ -2292,12 +2307,12 @@ object ApiKeyHelper {
         error(Results.BadRequest, "no apikey", "errors.no.api.key", "no apikey detected in the http request".some)
       case Some(apikeyTuple) =>
         validateApikeyTuple(req, apikeyTuple, constraints, service, attrs) match {
-          case Left((None, additionalMessage))                                                                     =>
+          case Left((None, additionalMessage))                                      =>
             error(Results.BadRequest, "invalid apikey", "errors.invalid.api.key", additionalMessage)
-          case Left((Some(apikey), additionalMessage))                                                             =>
+          case Left((Some(apikey), additionalMessage))                              =>
             sendRevokedApiKeyAlert(apikey)
             error(Results.Unauthorized, "bad apikey", "errors.bad.api.key", additionalMessage)
-          case Right(apikey) if routingEnabled && !apikey.matchRouting(constraints)                                =>
+          case Right(apikey) if routingEnabled && !apikey.matchRouting(constraints) =>
             error(
               Results.Unauthorized,
               "invalid apikey",

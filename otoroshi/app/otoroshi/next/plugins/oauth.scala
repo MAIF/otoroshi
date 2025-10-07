@@ -10,6 +10,7 @@ import otoroshi.models.{GlobalConfig, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api._
 import otoroshi.plugins.authcallers.{ForceRetryException, OAuth2Kind}
+import otoroshi.utils.TypedMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterString, BetterSyntax}
@@ -57,6 +58,9 @@ case class OAuth1CallerConfig(
     algo: Option[String] = None
 ) extends NgPluginConfig {
   override def json: JsValue = OAuth1CallerConfig.format.writes(this)
+  def applyEl(attrs: TypedMap)(implicit env: Env): OAuth1CallerConfig = {
+    OAuth1CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(env).parseJson).get
+  }
 }
 
 object OAuth1CallerConfig {
@@ -206,7 +210,7 @@ class OAuth1Caller extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val oAuth1CallerConfig =
-      ctx.cachedConfig(internalName)(OAuth1CallerConfig.format).getOrElse(OAuth1CallerConfig())
+      ctx.cachedConfig(internalName)(OAuth1CallerConfig.format).getOrElse(OAuth1CallerConfig()).applyEl(ctx.attrs)
 
     val metadata         = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.metadata).getOrElse(Map.empty)
     val consumerKey      = getOrElse(oAuth1CallerConfig.consumerKey, metadata, OAuth1Caller.Keys.consumerKey)
@@ -271,6 +275,9 @@ case class OAuth2CallerConfig(
     tlsConfig: MtlsConfig = MtlsConfig()
 ) extends NgPluginConfig {
   override def json: JsValue = OAuth2CallerConfig.format.writes(this)
+  def applyEl(attrs: TypedMap)(implicit env: Env): OAuth2CallerConfig = {
+    OAuth2CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(env).parseJson).get
+  }
 }
 
 object OAuth2CallerConfig {
@@ -525,9 +532,10 @@ class OAuth2Caller extends NgRequestTransformer {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2CallerConfig.format)
 
     rawConfig match {
-      case None         => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
-      case Some(config) =>
-        val key = computeKey(env, config, ctx.route)
+      case None          => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
+      case Some(_config) =>
+        val config = _config.applyEl(ctx.attrs)
+        val key    = computeKey(env, config, ctx.route)
         env.datastores.rawDataStore.get(key).flatMap {
           case Some(tokenBody) =>
             val jsonToken = tokenBody.utf8String.parseJson
@@ -566,9 +574,10 @@ class OAuth2Caller extends NgRequestTransformer {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2CallerConfig.format)
 
     rawConfig match {
-      case None         => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
-      case Some(config) =>
-        val key = computeKey(env, config, ctx.route)
+      case None          => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
+      case Some(_config) =>
+        val config = _config.applyEl(ctx.attrs)
+        val key    = computeKey(env, config, ctx.route)
         if (ctx.otoroshiResponse.status == 401) {
           tryRenewToken(key, config).flatMap {
             case Left(_)      =>
