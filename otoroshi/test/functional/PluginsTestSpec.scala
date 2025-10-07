@@ -37,17 +37,16 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
   implicit lazy val mat = otoroshiComponents.materializer
   implicit lazy val env = otoroshiComponents.env
 
+  def configurationSpec: Configuration = Configuration.empty
+
   val logger = Logger("otoroshi-tests-plugins")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
       ConfigFactory
-        .parseString(s"""
-           |{
-           |}
-       """.stripMargin)
+        .parseString("{}".stripMargin)
         .resolve()
-    ).withFallback(configuration)
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   override def beforeAll(): Unit = {
     startOtoroshi()
@@ -121,7 +120,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         responseStatus: Int = Status.OK,
         result: HttpRequest => JsValue,
         responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
-        domain: String = "local.oto.tools"
+        domain: String = "local.oto.tools",
+        https: Boolean = false
     ) = {
       val target = TargetService
         .jsonFull(
@@ -155,7 +155,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
               hostname = "127.0.0.1",
               port = target.port,
               id = "local.target",
-              tls = false
+              tls = https
             )
           ),
           root = "/",
@@ -1275,9 +1275,38 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .get()
         .futureValue
 
-      println(resp.body)
       resp.status mustBe Status.OK
       getInHeader(resp, "foo") mustBe Some("Foo Zm9vOmJhcg==")
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Force HTTPS traffic" in {
+      val route = createLocalRoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[ForceHttpsTraffic]
+          )
+        ),
+        result = _ => Json.obj(),
+        domain = "force.oto.tools",
+        https = true
+      )
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withFollowRedirects(false)
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.SEE_OTHER
+      getOutHeader(resp, "Location") mustBe Some("https://force.oto.tools:8443/api")
 
       deleteOtoroshiRoute(route).await()
     }
