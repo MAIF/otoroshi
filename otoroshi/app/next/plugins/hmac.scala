@@ -101,16 +101,21 @@ class HMACValidator extends NgAccessValidator {
         if (logger.isDebugEnabled) logger.debug("No api key found and no secret found in configuration of the plugin")
         NgAccess.NgDenied(BadRequest)
       case Some(secret) =>
-        authorizationHeader match {
-          case Some(authorization) => checkHMACSignature(authorization, ctx, secret)
-          case None => (ctx.request.headers.get("Authorization"), ctx.request.headers.get("Proxy-Authorization")) match {
-            case (Some(authorization), None) => checkHMACSignature(authorization, ctx, secret)
-            case (None, Some(authorization)) => checkHMACSignature(authorization, ctx, secret)
-            case (_, _)                      =>
-              if (logger.isDebugEnabled) logger.debug("Missing authorization header")
-              NgAccess.NgDenied(BadRequest)
+        Try {
+          authorizationHeader match {
+            case Some(authorization) if ctx.request.headers.get(authorization).isDefined =>
+              checkHMACSignature(ctx.request.headers.get(authorization).get, ctx, secret)
+            case None => (ctx.request.headers.get("Authorization"), ctx.request.headers.get("Proxy-Authorization")) match {
+              case (Some(authorization), None) => checkHMACSignature(authorization, ctx, secret)
+              case (None, Some(authorization)) => checkHMACSignature(authorization, ctx, secret)
+              case (_, _)                      =>
+                if (logger.isDebugEnabled) logger.debug("Missing authorization header")
+                NgAccess.NgDenied(BadRequest)
+            }
           }
-        }
+        } recover {
+          case _ => NgAccess.NgDenied(BadRequest)
+        } get
     }).vfuture
   }
 }
