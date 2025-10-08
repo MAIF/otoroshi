@@ -1454,6 +1454,21 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .andWait(1000.millis)
   }
 
+  def updateOtoroshiRoute(route: NgRoute, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
+    wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${route.id}")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .put(Json.stringify(route.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
   def deleteOtoroshiRoute(route: NgRoute, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
     wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${route.id}")

@@ -1455,5 +1455,76 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       deleteOtoroshiApiKey(apikey).await()
       deleteOtoroshiRoute(route).await()
     }
+
+    "Consumer endpoint with apikey" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[ApikeyCalls]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[ConsumerEndpoint]
+          )
+        )
+      )
+
+      val apikey = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
+        clientName = "apikey1",
+        authorizedEntities = Seq.empty,
+        metadata = Map("foo" -> "bar"),
+        tags = Seq("foo")
+      )
+      createOtoroshiApiKey(apikey).await()
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+          "Otoroshi-Client-Id"     -> apikey.clientId,
+          "Otoroshi-Client-Secret" -> apikey.clientSecret
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+
+      Json.parse(resp.body).selectAsString("access_type") mustEqual "apikey"
+      Json.parse(resp.body).selectAsString("clientId") mustEqual apikey.clientId
+      Json.parse(resp.body).selectAsString("clientName") mustEqual apikey.clientName
+
+      deleteOtoroshiApiKey(apikey).await()
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Consumer endpoint without apikey" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[ConsumerEndpoint]
+          )
+        )
+      )
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      Json.parse(resp.body).selectAsString("access_type") mustEqual "public"
+
+      deleteOtoroshiRoute(route).await()
+    }
   }
 }
