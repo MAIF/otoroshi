@@ -1868,5 +1868,56 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).await()
     }
+
+    "Http static asset" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[StaticAssetEndpoint],
+            include = Seq("/api/assets/.*"),
+            config = NgPluginInstanceConfig(
+              StaticAssetEndpointConfiguration(
+                url = Some(s"http://static-asset.oto.tools:$port")
+              ).json.as[JsObject]
+            )
+          )
+        ))
+
+      val staticAssetRoute = createLocalRoute(
+        Seq(),
+        domain = "static-asset.oto.tools",
+        result = _ => Json.obj("foo" -> "bar_from_child")
+      )
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api/assets/foo")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      Json.parse(resp.body) mustEqual Json.obj("foo" -> "bar_from_child")
+
+      {
+        val resp = ws
+        .url(s"http://127.0.0.1:$port/api/")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain
+        )
+        .get()
+        .futureValue
+
+        resp.status mustBe Status.OK
+        Json.parse(resp.body).selectAsOptString("path").isDefined mustBe true
+      }
+
+      deleteOtoroshiRoute(staticAssetRoute).await()
+      deleteOtoroshiRoute(route).await()
+    }
   }
 }
