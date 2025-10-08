@@ -23,13 +23,16 @@ import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
 import otoroshi.next.plugins.{RejectHeaderOutTooLong, _}
+import otoroshi.plugins.hmac.HMACUtils
 import otoroshi.security.IdGenerator
+import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.{DefaultWSCookie, WSRequest}
 import play.api.{Configuration, Logger}
 
+import java.util.Base64
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Future, Promise}
@@ -1712,6 +1715,40 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       Json.parse(resp2.body).selectAsObject("body") mustEqual Json.obj("body_from_client" -> true)
 
       deleteOtoroshiRoute(localRoute).await()
+    }
+
+    "HMAC caller plugin" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[HMACCaller],
+            config = NgPluginInstanceConfig(
+              HMACCallerConfig(
+                secret = "secret".some,
+                algo = "HMAC-SHA512",
+                authorizationHeader = "foo".some
+              ).json.as[JsObject]
+            )
+          )
+        ))
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      getInHeader(resp, "foo").get.contains(Base64
+        .getEncoder
+        .encodeToString(Signatures.hmac(HMACUtils.Algo("HMAC-SHA512"), getInHeader(resp, "date").get, "secret")))
+
+      deleteOtoroshiRoute(route).await()
     }
   }
 }

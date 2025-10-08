@@ -15,12 +15,9 @@ export default {
       },
     },
     authorizationHeader: {
-      type: 'select',
+      type: 'string',
       label: 'Header used to send HMAC signature',
-      props: {
-        defaultValue: 'Authorization',
-        options: ['Authorization', 'Proxy-Authorization'],
-      },
+      placeholder: 'Authorization, Proxy-Authorization, ...'
     },
   },
   config_flow: ['secret', 'algo', 'authorizationHeader'],

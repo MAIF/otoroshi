@@ -15,7 +15,7 @@ import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class HMACValidatorConfig(secret: Option[String] = None) extends NgPluginConfig {
+case class HMACValidatorConfig(secret: Option[String] = None, authorizationHeader: Option[String] = None) extends NgPluginConfig {
   def json: JsValue = HMACValidatorConfig.format.writes(this)
 }
 
@@ -23,14 +23,18 @@ object HMACValidatorConfig {
   val format = new Format[HMACValidatorConfig] {
     override def reads(json: JsValue): JsResult[HMACValidatorConfig] = Try {
       HMACValidatorConfig(
-        secret = json.select("secret").asOpt[String]
+        secret = json.select("secret").asOpt[String],
+        authorizationHeader = json.select("authorizationHeader").asOpt[String]
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: HMACValidatorConfig): JsValue             =
-      Json.obj("secret" -> o.secret)
+      Json.obj(
+        "secret" -> o.secret,
+        "authorizationHeader" -> o.authorizationHeader
+      )
   }
 }
 
@@ -85,24 +89,27 @@ class HMACValidator extends NgAccessValidator {
       NgAccess.NgDenied(BadRequest)
   }
 
-  override def access(context: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val HMACValidatorConfig(secret) =
-      context.cachedConfig(internalName)(HMACValidatorConfig.format).getOrElse(HMACValidatorConfig())
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val HMACValidatorConfig(secret, authorizationHeader) =
+      ctx.cachedConfig(internalName)(HMACValidatorConfig.format).getOrElse(HMACValidatorConfig())
 
     ((secret match {
       case Some(value) if value.nonEmpty => Some(value)
-      case _                             => context.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.clientSecret)
+      case _                             => ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.clientSecret)
     }) match {
       case None         =>
         if (logger.isDebugEnabled) logger.debug("No api key found and no secret found in configuration of the plugin")
         NgAccess.NgDenied(BadRequest)
       case Some(secret) =>
-        (context.request.headers.get("Authorization"), context.request.headers.get("Proxy-Authorization")) match {
-          case (Some(authorization), None) => checkHMACSignature(authorization, context, secret)
-          case (None, Some(authorization)) => checkHMACSignature(authorization, context, secret)
-          case (_, _)                      =>
-            if (logger.isDebugEnabled) logger.debug("Missing authorization header")
-            NgAccess.NgDenied(BadRequest)
+        authorizationHeader match {
+          case Some(authorization) => checkHMACSignature(authorization, ctx, secret)
+          case None => (ctx.request.headers.get("Authorization"), ctx.request.headers.get("Proxy-Authorization")) match {
+            case (Some(authorization), None) => checkHMACSignature(authorization, ctx, secret)
+            case (None, Some(authorization)) => checkHMACSignature(authorization, ctx, secret)
+            case (_, _)                      =>
+              if (logger.isDebugEnabled) logger.debug("Missing authorization header")
+              NgAccess.NgDenied(BadRequest)
+          }
         }
     }).vfuture
   }
