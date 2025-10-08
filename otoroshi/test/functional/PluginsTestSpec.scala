@@ -1353,22 +1353,15 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
               MockResponsesConfig(
                 responses = Seq(
                   MockResponse(
-                    path = "/",
-                    method = "GET",
-                    status = 200,
                     headers = Map.empty,
-                    body = Json.stringify(Json.obj("foo" -> "bar"))
+                    body = Json.obj("foo" -> "bar").stringify
                   ),
                   MockResponse(
-                    path = "/users",
-                    method = "GET",
-                    status = 200,
+                    path = "/users/:id",
+                    method = "POST",
+                    status = 201,
                     headers = Map.empty,
-                    body = Json.stringify(Json.arr(
-                      Json.obj("username" -> "foo"),
-                      Json.obj("username" -> "bar"),
-                      Json.obj("username" -> "baz")
-                    ))
+                    body = Json.obj("message" -> "done").stringify
                   )
                 )
               ).json.as[JsObject]
@@ -1394,19 +1387,15 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       {
         val resp = ws
-          .url(s"http://127.0.0.1:$port/users")
+          .url(s"http://127.0.0.1:$port/users/foo")
           .withHttpHeaders(
             "Host" -> route.frontend.domains.head.domain
           )
-          .get()
+          .post("")
           .futureValue
 
-        resp.status mustBe Status.OK
-        Json.parse(resp.body) mustBe Json.arr(
-          Json.obj("username" -> "foo"),
-          Json.obj("username" -> "bar"),
-          Json.obj("username" -> "baz")
-        )
+        resp.status mustBe Status.CREATED
+        Json.parse(resp.body) mustBe Json.obj("message" -> "done")
       }
 
       deleteOtoroshiRoute(route).await()
