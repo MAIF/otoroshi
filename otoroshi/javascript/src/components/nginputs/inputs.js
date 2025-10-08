@@ -935,7 +935,6 @@ export class NgArrayRenderer extends Component {
                 } else if (schema.itemRenderer) {
                   this.props.onChange([...newArr, this.defaultValues({}, schema.type)]);
                 } else {
-                  console.log('ici', customTemplate);
                   this.props.onChange([...newArr, customTemplate]);
                 }
               }}

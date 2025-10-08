@@ -118,15 +118,16 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     def createLocalRoute(
         plugins: Seq[NgPluginInstance] = Seq.empty,
         responseStatus: Int = Status.OK,
-        result: HttpRequest => JsValue,
+        result: HttpRequest => JsValue = _ => Json.obj(),
         responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
         domain: String = "local.oto.tools",
-        https: Boolean = false
+        https: Boolean = false,
+        frontendPath: String = "/api"
     ) = {
       val target = TargetService
         .jsonFull(
           Some(domain),
-          "/api",
+          frontendPath,
           r => (responseStatus, result(r), responseHeaders)
         )
         .await()
@@ -1336,6 +1337,77 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       getInHeader(resp, "x-forwarded-for").contains("1.1.1.2") mustBe false
       getInHeader(resp, "x-forwarded-port") mustBe Some("443")
       getInHeader(resp, "forwarded").isDefined mustBe true
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Mock responses" in {
+      val route = createLocalRoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[MockResponses],
+            config = NgPluginInstanceConfig(
+              MockResponsesConfig(
+                responses = Seq(
+                  MockResponse(
+                    path = "/",
+                    method = "GET",
+                    status = 200,
+                    headers = Map.empty,
+                    body = Json.stringify(Json.obj("foo" -> "bar"))
+                  ),
+                  MockResponse(
+                    path = "/users",
+                    method = "GET",
+                    status = 200,
+                    headers = Map.empty,
+                    body = Json.stringify(Json.arr(
+                      Json.obj("username" -> "foo"),
+                      Json.obj("username" -> "bar"),
+                      Json.obj("username" -> "baz")
+                    ))
+                  )
+                )
+              ).json.as[JsObject]
+            )
+          )
+        ),
+        domain = "mock.oto.tools",
+        frontendPath = "/"
+      )
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.OK
+        Json.parse(resp.body) mustBe Json.obj("foo" -> "bar")
+      }
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/users")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.OK
+        Json.parse(resp.body) mustBe Json.arr(
+          Json.obj("username" -> "foo"),
+          Json.obj("username" -> "bar"),
+          Json.obj("username" -> "baz")
+        )
+      }
 
       deleteOtoroshiRoute(route).await()
     }

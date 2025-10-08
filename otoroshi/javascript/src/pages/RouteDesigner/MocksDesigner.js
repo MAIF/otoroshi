@@ -14,6 +14,193 @@ import { PillButton } from '../../components/PillButton';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
+export const HTTP_COLORS = {
+  GET: 'var(--http_color-get)',
+  POST: 'var(--http_color-post)',
+  DELETE: 'var(--http_color-delete)',
+  PUT: 'var(--http_color-put)',
+  HEAD: 'var(--http_color-others)',
+  PATCH: 'var(--http_color-others)',
+  OPTIONS: 'var(--http_color-others)',
+};
+
+const FakerOptions = [
+  { value: 'address.zipCode', label: 'Zip code' },
+  { value: 'address.zipCodeByState', label: 'Zip code by state' },
+  { value: 'address.city', label: 'City' },
+  { value: 'address.cityPrefix', label: 'City prefix' },
+  { value: 'address.citySuffix', label: 'City suffix' },
+  { value: 'address.cityName', label: 'City name' },
+  { value: 'address.streetName', label: 'Street name' },
+  { value: 'address.streetAddress', label: 'Street address' },
+  { value: 'address.streetSuffix', label: 'Street suffix' },
+  { value: 'address.streetPrefix', label: 'Street prefix' },
+  { value: 'address.secondaryAddress', label: 'Secondary address' },
+  { value: 'address.county', label: 'County' },
+  { value: 'address.country', label: 'Country' },
+  { value: 'address.countryCode', label: 'Country code' },
+  { value: 'address.state', label: 'State' },
+  { value: 'address.stateAbbr', label: 'State abbreviated' },
+  { value: 'address.latitude', label: 'Latitude' },
+  { value: 'address.longitude', label: 'Longitude' },
+  { value: 'address.direction', label: 'Direction' },
+  { value: 'address.cardinalDirection', label: 'Cardinal direction' },
+  { value: 'address.ordinalDirection', label: 'Ordinal direction' },
+  { value: 'address.nearbyGPSCoordinate', label: 'Nearby GPS coordinate' },
+  { value: 'address.timeZone', label: 'Time zone' },
+  { value: 'animal.dog', label: 'Dog' },
+  { value: 'animal.cat', label: 'Cat' },
+  { value: 'animal.snake', label: 'Snake' },
+  { value: 'animal.bear', label: 'Bear' },
+  { value: 'animal.lion', label: 'Lion' },
+  { value: 'animal.cetacean', label: 'Cetacean' },
+  { value: 'animal.horse', label: 'Horse' },
+  { value: 'animal.bird', label: 'Bird' },
+  { value: 'animal.cow', label: 'Cow' },
+  { value: 'animal.fish', label: 'Fish' },
+  { value: 'animal.crocodilia', label: 'Crocodilia' },
+  { value: 'animal.insect', label: 'Insect' },
+  { value: 'animal.rabbit', label: 'Rabbit' },
+  { value: 'animal.type', label: 'Type' },
+  { value: 'commerce.color', label: 'Color' },
+  { value: 'commerce.department', label: 'Department' },
+  { value: 'commerce.productName', label: 'Product name' },
+  { value: 'commerce.price', label: 'Price' },
+  { value: 'commerce.productAdjective', label: 'Product adjective' },
+  { value: 'commerce.productMaterial', label: 'Product material' },
+  { value: 'commerce.product', label: 'Product' },
+  { value: 'commerce.productDescription', label: 'Product description' },
+  { value: 'company.suffixes', label: 'Suffixes' },
+  { value: 'company.companyName', label: 'Company name' },
+  { value: 'company.companySuffix', label: 'Company suffix' },
+  { value: 'company.catchPhrase', label: 'Catch phrase' },
+  { value: 'company.bs', label: 'BS' },
+  { value: 'company.catchPhraseAdjective', label: 'Catch phrase adjective' },
+  { value: 'company.catchPhraseDescriptor', label: 'Catch phrase descriptor' },
+  { value: 'company.catchPhraseNoun', label: 'Catch phrase noun' },
+  { value: 'company.bsAdjective', label: 'BS adjective' },
+  { value: 'company.bsBuzz', label: 'BS buzz' },
+  { value: 'company.bsNoun', label: 'BS noun' },
+  { value: 'database.column', label: 'Column' },
+  { value: 'database.type', label: 'Type' },
+  { value: 'database.collation', label: 'Collation' },
+  { value: 'database.engine', label: 'Engine' },
+  { value: 'date.past', label: 'Past' },
+  { value: 'date.future', label: 'Future' },
+  { value: 'date.recent', label: 'Recent' },
+  { value: 'date.soon', label: 'Soon' },
+  { value: 'date.month', label: 'Month' },
+  { value: 'date.weekday', label: 'Weekday' },
+  { value: 'finance.account', label: 'Account' },
+  { value: 'finance.accountName', label: 'Account name' },
+  { value: 'finance.routingNumber', label: 'Routing number' },
+  { value: 'finance.mask', label: 'Mask' },
+  { value: 'finance.amount', label: 'Amount' },
+  { value: 'finance.transactionType', label: 'Transaction type' },
+  { value: 'finance.currencyCode', label: 'Currency code' },
+  { value: 'finance.currencyName', label: 'Currency name' },
+  { value: 'finance.currencySymbol', label: 'Currency symbol' },
+  { value: 'finance.bitcoinAddress', label: 'Bitcoin address' },
+  { value: 'finance.litecoinAddress', label: 'Litecoin address' },
+  { value: 'finance.creditCardNumber', label: 'Credit card number' },
+  { value: 'finance.creditCardCVV', label: 'Credit card CVV' },
+  { value: 'finance.ethereumAddress', label: 'Ethereum address' },
+  { value: 'finance.iban', label: 'IBAN' },
+  { value: 'finance.bic', label: 'BIC' },
+  { value: 'finance.transactionDescription', label: 'Transaction description' },
+  { value: 'git.branch', label: 'Branch' },
+  { value: 'git.commitEntry', label: 'Commit entry' },
+  { value: 'git.commitMessage', label: 'Commit message' },
+  { value: 'git.commitSha', label: 'Commit sha' },
+  { value: 'git.shortSha', label: 'Short sha' },
+  { value: 'hacker.abbreviation', label: 'Abbreviation' },
+  { value: 'hacker.adjective', label: 'Adjective' },
+  { value: 'hacker.noun', label: 'Noun' },
+  { value: 'hacker.verb', label: 'Verb' },
+  { value: 'hacker.ingverb', label: 'Ingverb' },
+  { value: 'hacker.phrase', label: 'Phrase' },
+  { value: 'image.image', label: 'Image' },
+  { value: 'image.avatar', label: 'Avatar' },
+  { value: 'image.imageUrl', label: 'Image url' },
+  { value: 'image.abstract', label: 'Abstract' },
+  { value: 'image.animals', label: 'Animals' },
+  { value: 'image.business', label: 'Business' },
+  { value: 'image.cats', label: 'Cats' },
+  { value: 'image.city', label: 'City' },
+  { value: 'image.food', label: 'Food' },
+  { value: 'image.nightlife', label: 'Nightlife' },
+  { value: 'image.fashion', label: 'Fashion' },
+  { value: 'image.people', label: 'People' },
+  { value: 'image.nature', label: 'Nature' },
+  { value: 'image.sports', label: 'Sports' },
+  { value: 'image.technics', label: 'Technics' },
+  { value: 'image.transport', label: 'Transport' },
+  { value: 'image.dataUri', label: 'Data uri' },
+  { value: 'internet.avatar', label: 'Avatar' },
+  { value: 'internet.email', label: 'Email' },
+  { value: 'internet.exampleEmail', label: 'Example email' },
+  { value: 'internet.userName', label: 'User name' },
+  { value: 'internet.protocol', label: 'Protocol' },
+  { value: 'internet.httpMethod', label: 'HTTP method' },
+  { value: 'internet.url', label: 'URL' },
+  { value: 'internet.domainName', label: 'Domain name' },
+  { value: 'internet.domainSuffix', label: 'Domain suffix' },
+  { value: 'internet.domainWord', label: 'Domain word' },
+  { value: 'internet.ip', label: 'IP' },
+  { value: 'internet.ipv6', label: 'IPV6' },
+  { value: 'internet.port', label: 'Port' },
+  { value: 'internet.userAgent', label: 'User agent' },
+  { value: 'internet.color', label: 'Color' },
+  { value: 'internet.mac', label: 'Mac' },
+  { value: 'internet.password', label: 'Password' },
+  { value: 'lorem.word', label: 'Word' },
+  { value: 'lorem.words', label: 'Words' },
+  { value: 'lorem.sentence', label: 'Sentence' },
+  { value: 'lorem.slug', label: 'Slug' },
+  { value: 'lorem.sentences', label: 'Sentences' },
+  { value: 'lorem.paragraph', label: 'Paragraph' },
+  { value: 'lorem.paragraphs', label: 'Paragraphs' },
+  { value: 'lorem.text', label: 'Text' },
+  { value: 'lorem.lines', label: 'Lines' },
+  { value: 'mersenne.rand', label: 'Rand' },
+  { value: 'music.genre', label: 'Genre' },
+  { value: 'name.firstName', label: 'First name' },
+  { value: 'name.lastName', label: 'Last name' },
+  { value: 'name.middleName', label: 'Middle name' },
+  { value: 'name.findName', label: 'Find name' },
+  { value: 'name.jobTitle', label: 'Job title' },
+  { value: 'name.gender', label: 'Gender' },
+  { value: 'name.prefix', label: 'Prefix' },
+  { value: 'name.suffix', label: 'Suffix' },
+  { value: 'name.jobTitle', label: 'Title' },
+  { value: 'name.jobDescriptor', label: 'Job descriptor' },
+  { value: 'name.jobArea', label: 'Job area' },
+  { value: 'name.jobType', label: 'Job type' },
+  { value: 'phone.phoneNumber', label: 'Phone number' },
+  { value: 'phone.phoneNumberFormat', label: 'Phone number format' },
+  { value: 'phone.phoneFormats', label: 'Phone formats' },
+  { value: 'system.fileName', label: 'File name' },
+  { value: 'system.commonFileName', label: 'Common file name' },
+  { value: 'system.mimeType', label: 'Mime type' },
+  { value: 'system.commonFileType', label: 'Common file type' },
+  { value: 'system.commonFileExt', label: 'Common file ext' },
+  { value: 'system.fileType', label: 'File type' },
+  { value: 'system.fileExt', label: 'File ext' },
+  { value: 'system.directoryPath', label: 'Directory path' },
+  { value: 'system.filePath', label: 'File path' },
+  { value: 'system.semver', label: 'Semver' },
+  { value: 'time.recent', label: 'Recent' },
+  { value: 'vehicle.vehicle', label: 'Vehicle' },
+  { value: 'vehicle.manufacturer', label: 'Manufacturer' },
+  { value: 'vehicle.model', label: 'Model' },
+  { value: 'vehicle.type', label: 'Type' },
+  { value: 'vehicle.fuel', label: 'Fuel' },
+  { value: 'vehicle.vin', label: 'Vin' },
+  { value: 'vehicle.color', label: 'Color' },
+  { value: 'vehicle.vrm', label: 'Vrm' },
+  { value: 'vehicle.bicycle', label: 'Bicycle' },
+];
+
 const castValue = (value, type) => {
   if (type === 'String') return value;
   else {
@@ -172,7 +359,7 @@ function PushView({ endpoints, resources }) {
 function CharlatanActions({ generateData, resetData, endpoints }) {
   return (
     <div className="d-flex mt-auto ms-auto">
-      {endpoints.find((endpoint) => !endpoint.body && !endpoint.model) && (
+      {endpoints.find((endpoint) => !endpoint.body) && (
         <FeedbackButton
           className="btn-sm"
           onPress={generateData}
@@ -182,7 +369,7 @@ function CharlatanActions({ generateData, resetData, endpoints }) {
       )}
       <button className="btn btn-sm btn-success mx-1" onClick={resetData}>
         <i className="fas fa-times me-1" />
-        Reset all override data and generate new ones
+        Reset generated data
       </button>
     </div>
   );
@@ -199,53 +386,38 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
             New model
           </button>
         </div>
-        <div className="mt-3 d-flex">
+        <div className="mt-3">
           {resources.map((resource, idx) => {
-            return (
-              <div
-                className="d-flex-between endpoint me-2"
-                key={resource.name}
-                style={{
-                  width: '125px',
-                  height: '125px',
-                  flexDirection: 'column',
-                  gap: '12px',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
-                {!endpoints.find((e) => e.model === resource.name) &&
-                  !resources.find((e) =>
-                    e.schema?.find((f) => f.field_type === 'Model' && f.value === resource.name)
-                  ) && (
-                    <span
-                      style={{ color: 'var(--color-red)' }}
-                      {...createTooltip('Model not used')}
-                    >
-                      <i className="fas fa-exclamation-triangle" />
-                    </span>
-                  )}
-                <div>
-                  <button
-                    className="btn btn-sm btn-success me-2"
-                    onClick={() => {
-                      showResourceForm(idx, true);
-                    }}
-                  >
-                    <i className="fas fa-pencil-alt" />
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeResource(idx);
-                    }}
-                  >
-                    <i className="fas fa-trash" />
-                  </button>
-                </div>
+            return <div className="d-flex-between endpoint me-2 py-2 px-3" key={resource.name} style={{ flex: 1 }}>
+              <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
+              {!endpoints.find((e) => e.model === resource.name) &&
+                !resources.find((e) => e.schema?.find((f) => f.field_type === 'Model' && f.value === resource.name)) &&
+                <span
+                  style={{ color: 'var(--color-red)' }}
+                  {...createTooltip('Model not used')}
+                >
+                  <i className="fas fa-exclamation-triangle" />
+                </span>}
+              <div>
+                <button
+                  className="btn btn-sm btn-success me-2"
+                  onClick={() => {
+                    showResourceForm(idx, true);
+                  }}
+                >
+                  <i className="fas fa-pencil-alt" />
+                </button>
+                <button
+                  className="btn btn-sm btn-quiet"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeResource(idx);
+                  }}
+                >
+                  <i className="fas fa-trash" />
+                </button>
               </div>
-            );
+            </div>
           })}
         </div>
         {resources.length === 0 && <span>No entities available</span>}
@@ -254,7 +426,7 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
   );
 }
 
-function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, openResource }) {
+function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, openResource, actions }) {
   return (
     <>
       <div className="d-flex">
@@ -263,6 +435,7 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
           <i className="fas fa-plus-circle me-1" />
           New endpoint(s)
         </button>
+        {actions}
       </div>
       <div className="mt-3">
         <div
@@ -290,13 +463,16 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
             <span className="ms-3" style={{ maxWidth: '50%', flex: 3 }}>
               DESCRIPTION
             </span>
-            <span className="badge bg-dark ms-3 me-auto">MODEL</span>
+            <span className="me-auto">MODEL</span>
           </div>
-          <div style={{ minWidth: '40px' }}></div>
+          <div className='text-end' style={{ minWidth: '60px' }}>Actions</div>
         </div>
         {endpoints
           .sort((a, b) => a.path.localeCompare(b.path))
           .map((endpoint, idx) => {
+
+            const hasModel = endpoint.model && endpoint.use_generation
+
             return (
               <div
                 className="d-flex-between mb-2 endpoint"
@@ -341,7 +517,7 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                     {endpoint.description}
                   </span>
 
-                  {!endpoint.body && !endpoint.model && (
+                  {!endpoint.body && !hasModel && (
                     <div className="mx-1 d-flex-between endpoint-helper">
                       <span
                         style={{ color: 'var(--color-red)' }}
@@ -352,8 +528,8 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                     </div>
                   )}
 
-                  {!endpoint.model && <span className="btn btn-sm ms-3 me-3"></span>}
-                  {endpoint.model && (
+                  {!hasModel && <span className="btn btn-sm ms-3 me-3"></span>}
+                  {hasModel && (
                     <span
                       className="btn btn-sm btn-primary ms-3 me-3"
                       onClick={(e) => {
@@ -365,22 +541,21 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                     </span>
                   )}
                 </div>
-                <div className="d-flex-between" style={{ minWidth: '32px' }}>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.newConfirm('Delete this endpoint ?').then((ok) => {
-                        if (ok) {
-                          e.stopPropagation();
-                          removeEndpoint(idx);
-                        }
-                      });
-                    }}
-                  >
-                    <i className="fas fa-trash" />
-                  </button>
-                </div>
+
+                <button
+                  className="btn btn-sm btn-quiet"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.newConfirm('Delete this endpoint ?').then((ok) => {
+                      if (ok) {
+                        e.stopPropagation();
+                        removeEndpoint(idx);
+                      }
+                    });
+                  }}
+                >
+                  <i className="fas fa-trash" />
+                </button>
               </div>
             );
           })}
@@ -450,7 +625,7 @@ export default class MocksDesigner extends React.Component {
       };
     } else {
       return {
-        resources: ['output'],
+        resources: [],
         endpoints: [],
       };
     }
@@ -502,18 +677,18 @@ export default class MocksDesigner extends React.Component {
                 : this.getState().resources,
               endpoints: Number.isFinite(idx)
                 ? this.getState()[elementName].map((r, i) => {
-                    if (i === idx) return newEndpoint;
-                    return r;
-                  })
+                  if (i === idx) return newEndpoint;
+                  return r;
+                })
                 : [...this.getState()[elementName], newEndpoint, ...additionalEndpoints],
             });
           } else {
             this.setAndSave({
               resources: Number.isFinite(idx)
                 ? this.getState().resources.map((r, i) => {
-                    if (i === idx) return value;
-                    return r;
-                  })
+                  if (i === idx) return value;
+                  return r;
+                })
                 : [...this.getState().resources, value],
             });
           }
@@ -606,6 +781,8 @@ export default class MocksDesigner extends React.Component {
 
     if (!route) return null;
 
+    console.log(resources, endpoints)
+
     return (
       <div
         className="graphql-form p-3 pe-2 flex-column"
@@ -613,44 +790,46 @@ export default class MocksDesigner extends React.Component {
           overflowX: 'hidden',
         }}
       >
-        <Header
-          hide={hide}
-          setDesigner={(value) => this.setState({ onDesigner: value })}
-          onDesigner={this.state.onDesigner}
-        />
+        <div style={{ maxWidth: 820, minWidth: 640 }} className='mx-auto'>
+          <Header
+            hide={hide}
+            setDesigner={(value) => this.setState({ onDesigner: value })}
+            onDesigner={this.state.onDesigner}
+          />
 
-        {this.state.onDesigner && (
-          <>
-            <div className="row">
-              <CharlatanEndpointsList
-                showEndpointForm={this.showEndpointForm}
-                endpoints={endpoints}
-                removeEndpoint={this.removeEndpoint}
-                openResource={(model) =>
-                  this.showResourceForm(
-                    resources.findIndex((f) => f.name === model),
-                    true
-                  )
-                }
-              />
-              <CharlatanResourcesList
-                showResourceForm={this.showResourceForm}
-                resources={resources}
-                endpoints={endpoints}
-                removeResource={this.removeResource}
-              />
-            </div>
-            {resources.length > 0 && (
-              <CharlatanActions
-                endpoints={endpoints}
-                generateData={this.generateData}
-                resetData={this.resetData}
-              />
-            )}
-          </>
-        )}
+          {this.state.onDesigner && (
+            <>
+              <div className="row mt-3">
+                <CharlatanEndpointsList
+                  showEndpointForm={this.showEndpointForm}
+                  endpoints={endpoints}
+                  removeEndpoint={this.removeEndpoint}
+                  openResource={(model) =>
+                    this.showResourceForm(
+                      resources.findIndex((f) => f.name === model),
+                      true
+                    )
+                  }
+                  actions={resources.length > 0 ? (
+                    <CharlatanActions
+                      endpoints={endpoints}
+                      generateData={this.generateData}
+                      resetData={this.resetData}
+                    />
+                  ) : null}
+                />
+                <CharlatanResourcesList
+                  showResourceForm={this.showResourceForm}
+                  resources={resources}
+                  endpoints={endpoints}
+                  removeResource={this.removeResource}
+                />
+              </div>
+            </>
+          )}
 
-        {!this.state.onDesigner && <PushView endpoints={endpoints} resources={resources} />}
+          {!this.state.onDesigner && <PushView endpoints={endpoints} resources={resources} />}
+        </div>
       </div>
     );
   }
@@ -713,7 +892,7 @@ function OpenAPIResponse({ body, status, description, model, resource_list }) {
             <p>{resource_list ? `List of ${model || 'Model'}` : model || 'Model'}</p>
           </div>
           <Suspense fallback={<div>Loading ....</div>}>
-            <CodeInput value={body} onChange={() => {}} mode="json" editorOnly={true} />
+            <CodeInput value={body} onChange={() => { }} mode="json" editorOnly={true} />
           </Suspense>
         </div>
       </div>
@@ -1150,212 +1329,23 @@ class NewEndpoint extends React.Component {
 }
 
 function Header({ hide, onDesigner, setDesigner }) {
-  return (
-    <>
-      <div className="d-flex-between">
-        <h3>Mock responses</h3>
-        <button
-          className="btn btn-quiet btn-sm"
-          type="button"
-          style={{ minWidth: '36px' }}
-          onClick={hide}
-        >
-          <i className="fas fa-times" />
-        </button>
-      </div>
-      <PillButton
-        rightEnabled={onDesigner}
-        onChange={setDesigner}
-        leftText="Design"
-        rightText="Content"
-      />
-    </>
-  );
+  return <div className="d-flex-between mb-5">
+    <h3>Responses</h3>
+
+    <PillButton
+      rightEnabled={onDesigner}
+      onChange={setDesigner}
+      leftText="Design"
+      rightText="Content"
+    />
+
+    <button
+      className="btn btn-quiet btn-sm"
+      type="button"
+      style={{ minWidth: '36px' }}
+      onClick={hide}
+    >
+      <i className="fas fa-times" />
+    </button>
+  </div>
 }
-
-export const HTTP_COLORS = {
-  GET: 'var(--http_color-get)',
-  POST: 'var(--http_color-post)',
-  DELETE: 'var(--http_color-delete)',
-  PUT: 'var(--http_color-put)',
-  HEAD: 'var(--http_color-others)',
-  PATCH: 'var(--http_color-others)',
-  OPTIONS: 'var(--http_color-others)',
-};
-
-const FakerOptions = [
-  { value: 'address.zipCode', label: 'Zip code' },
-  { value: 'address.zipCodeByState', label: 'Zip code by state' },
-  { value: 'address.city', label: 'City' },
-  { value: 'address.cityPrefix', label: 'City prefix' },
-  { value: 'address.citySuffix', label: 'City suffix' },
-  { value: 'address.cityName', label: 'City name' },
-  { value: 'address.streetName', label: 'Street name' },
-  { value: 'address.streetAddress', label: 'Street address' },
-  { value: 'address.streetSuffix', label: 'Street suffix' },
-  { value: 'address.streetPrefix', label: 'Street prefix' },
-  { value: 'address.secondaryAddress', label: 'Secondary address' },
-  { value: 'address.county', label: 'County' },
-  { value: 'address.country', label: 'Country' },
-  { value: 'address.countryCode', label: 'Country code' },
-  { value: 'address.state', label: 'State' },
-  { value: 'address.stateAbbr', label: 'State abbreviated' },
-  { value: 'address.latitude', label: 'Latitude' },
-  { value: 'address.longitude', label: 'Longitude' },
-  { value: 'address.direction', label: 'Direction' },
-  { value: 'address.cardinalDirection', label: 'Cardinal direction' },
-  { value: 'address.ordinalDirection', label: 'Ordinal direction' },
-  { value: 'address.nearbyGPSCoordinate', label: 'Nearby GPS coordinate' },
-  { value: 'address.timeZone', label: 'Time zone' },
-  { value: 'animal.dog', label: 'Dog' },
-  { value: 'animal.cat', label: 'Cat' },
-  { value: 'animal.snake', label: 'Snake' },
-  { value: 'animal.bear', label: 'Bear' },
-  { value: 'animal.lion', label: 'Lion' },
-  { value: 'animal.cetacean', label: 'Cetacean' },
-  { value: 'animal.horse', label: 'Horse' },
-  { value: 'animal.bird', label: 'Bird' },
-  { value: 'animal.cow', label: 'Cow' },
-  { value: 'animal.fish', label: 'Fish' },
-  { value: 'animal.crocodilia', label: 'Crocodilia' },
-  { value: 'animal.insect', label: 'Insect' },
-  { value: 'animal.rabbit', label: 'Rabbit' },
-  { value: 'animal.type', label: 'Type' },
-  { value: 'commerce.color', label: 'Color' },
-  { value: 'commerce.department', label: 'Department' },
-  { value: 'commerce.productName', label: 'Product name' },
-  { value: 'commerce.price', label: 'Price' },
-  { value: 'commerce.productAdjective', label: 'Product adjective' },
-  { value: 'commerce.productMaterial', label: 'Product material' },
-  { value: 'commerce.product', label: 'Product' },
-  { value: 'commerce.productDescription', label: 'Product description' },
-  { value: 'company.suffixes', label: 'Suffixes' },
-  { value: 'company.companyName', label: 'Company name' },
-  { value: 'company.companySuffix', label: 'Company suffix' },
-  { value: 'company.catchPhrase', label: 'Catch phrase' },
-  { value: 'company.bs', label: 'BS' },
-  { value: 'company.catchPhraseAdjective', label: 'Catch phrase adjective' },
-  { value: 'company.catchPhraseDescriptor', label: 'Catch phrase descriptor' },
-  { value: 'company.catchPhraseNoun', label: 'Catch phrase noun' },
-  { value: 'company.bsAdjective', label: 'BS adjective' },
-  { value: 'company.bsBuzz', label: 'BS buzz' },
-  { value: 'company.bsNoun', label: 'BS noun' },
-  { value: 'database.column', label: 'Column' },
-  { value: 'database.type', label: 'Type' },
-  { value: 'database.collation', label: 'Collation' },
-  { value: 'database.engine', label: 'Engine' },
-  { value: 'date.past', label: 'Past' },
-  { value: 'date.future', label: 'Future' },
-  { value: 'date.recent', label: 'Recent' },
-  { value: 'date.soon', label: 'Soon' },
-  { value: 'date.month', label: 'Month' },
-  { value: 'date.weekday', label: 'Weekday' },
-  { value: 'finance.account', label: 'Account' },
-  { value: 'finance.accountName', label: 'Account name' },
-  { value: 'finance.routingNumber', label: 'Routing number' },
-  { value: 'finance.mask', label: 'Mask' },
-  { value: 'finance.amount', label: 'Amount' },
-  { value: 'finance.transactionType', label: 'Transaction type' },
-  { value: 'finance.currencyCode', label: 'Currency code' },
-  { value: 'finance.currencyName', label: 'Currency name' },
-  { value: 'finance.currencySymbol', label: 'Currency symbol' },
-  { value: 'finance.bitcoinAddress', label: 'Bitcoin address' },
-  { value: 'finance.litecoinAddress', label: 'Litecoin address' },
-  { value: 'finance.creditCardNumber', label: 'Credit card number' },
-  { value: 'finance.creditCardCVV', label: 'Credit card CVV' },
-  { value: 'finance.ethereumAddress', label: 'Ethereum address' },
-  { value: 'finance.iban', label: 'IBAN' },
-  { value: 'finance.bic', label: 'BIC' },
-  { value: 'finance.transactionDescription', label: 'Transaction description' },
-  { value: 'git.branch', label: 'Branch' },
-  { value: 'git.commitEntry', label: 'Commit entry' },
-  { value: 'git.commitMessage', label: 'Commit message' },
-  { value: 'git.commitSha', label: 'Commit sha' },
-  { value: 'git.shortSha', label: 'Short sha' },
-  { value: 'hacker.abbreviation', label: 'Abbreviation' },
-  { value: 'hacker.adjective', label: 'Adjective' },
-  { value: 'hacker.noun', label: 'Noun' },
-  { value: 'hacker.verb', label: 'Verb' },
-  { value: 'hacker.ingverb', label: 'Ingverb' },
-  { value: 'hacker.phrase', label: 'Phrase' },
-  { value: 'image.image', label: 'Image' },
-  { value: 'image.avatar', label: 'Avatar' },
-  { value: 'image.imageUrl', label: 'Image url' },
-  { value: 'image.abstract', label: 'Abstract' },
-  { value: 'image.animals', label: 'Animals' },
-  { value: 'image.business', label: 'Business' },
-  { value: 'image.cats', label: 'Cats' },
-  { value: 'image.city', label: 'City' },
-  { value: 'image.food', label: 'Food' },
-  { value: 'image.nightlife', label: 'Nightlife' },
-  { value: 'image.fashion', label: 'Fashion' },
-  { value: 'image.people', label: 'People' },
-  { value: 'image.nature', label: 'Nature' },
-  { value: 'image.sports', label: 'Sports' },
-  { value: 'image.technics', label: 'Technics' },
-  { value: 'image.transport', label: 'Transport' },
-  { value: 'image.dataUri', label: 'Data uri' },
-  { value: 'internet.avatar', label: 'Avatar' },
-  { value: 'internet.email', label: 'Email' },
-  { value: 'internet.exampleEmail', label: 'Example email' },
-  { value: 'internet.userName', label: 'User name' },
-  { value: 'internet.protocol', label: 'Protocol' },
-  { value: 'internet.httpMethod', label: 'HTTP method' },
-  { value: 'internet.url', label: 'URL' },
-  { value: 'internet.domainName', label: 'Domain name' },
-  { value: 'internet.domainSuffix', label: 'Domain suffix' },
-  { value: 'internet.domainWord', label: 'Domain word' },
-  { value: 'internet.ip', label: 'IP' },
-  { value: 'internet.ipv6', label: 'IPV6' },
-  { value: 'internet.port', label: 'Port' },
-  { value: 'internet.userAgent', label: 'User agent' },
-  { value: 'internet.color', label: 'Color' },
-  { value: 'internet.mac', label: 'Mac' },
-  { value: 'internet.password', label: 'Password' },
-  { value: 'lorem.word', label: 'Word' },
-  { value: 'lorem.words', label: 'Words' },
-  { value: 'lorem.sentence', label: 'Sentence' },
-  { value: 'lorem.slug', label: 'Slug' },
-  { value: 'lorem.sentences', label: 'Sentences' },
-  { value: 'lorem.paragraph', label: 'Paragraph' },
-  { value: 'lorem.paragraphs', label: 'Paragraphs' },
-  { value: 'lorem.text', label: 'Text' },
-  { value: 'lorem.lines', label: 'Lines' },
-  { value: 'mersenne.rand', label: 'Rand' },
-  { value: 'music.genre', label: 'Genre' },
-  { value: 'name.firstName', label: 'First name' },
-  { value: 'name.lastName', label: 'Last name' },
-  { value: 'name.middleName', label: 'Middle name' },
-  { value: 'name.findName', label: 'Find name' },
-  { value: 'name.jobTitle', label: 'Job title' },
-  { value: 'name.gender', label: 'Gender' },
-  { value: 'name.prefix', label: 'Prefix' },
-  { value: 'name.suffix', label: 'Suffix' },
-  { value: 'name.jobTitle', label: 'Title' },
-  { value: 'name.jobDescriptor', label: 'Job descriptor' },
-  { value: 'name.jobArea', label: 'Job area' },
-  { value: 'name.jobType', label: 'Job type' },
-  { value: 'phone.phoneNumber', label: 'Phone number' },
-  { value: 'phone.phoneNumberFormat', label: 'Phone number format' },
-  { value: 'phone.phoneFormats', label: 'Phone formats' },
-  { value: 'system.fileName', label: 'File name' },
-  { value: 'system.commonFileName', label: 'Common file name' },
-  { value: 'system.mimeType', label: 'Mime type' },
-  { value: 'system.commonFileType', label: 'Common file type' },
-  { value: 'system.commonFileExt', label: 'Common file ext' },
-  { value: 'system.fileType', label: 'File type' },
-  { value: 'system.fileExt', label: 'File ext' },
-  { value: 'system.directoryPath', label: 'Directory path' },
-  { value: 'system.filePath', label: 'File path' },
-  { value: 'system.semver', label: 'Semver' },
-  { value: 'time.recent', label: 'Recent' },
-  { value: 'vehicle.vehicle', label: 'Vehicle' },
-  { value: 'vehicle.manufacturer', label: 'Manufacturer' },
-  { value: 'vehicle.model', label: 'Model' },
-  { value: 'vehicle.type', label: 'Type' },
-  { value: 'vehicle.fuel', label: 'Fuel' },
-  { value: 'vehicle.vin', label: 'Vin' },
-  { value: 'vehicle.color', label: 'Color' },
-  { value: 'vehicle.vrm', label: 'Vrm' },
-  { value: 'vehicle.bicycle', label: 'Bicycle' },
-];
