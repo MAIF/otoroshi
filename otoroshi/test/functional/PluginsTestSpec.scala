@@ -2,7 +2,7 @@ package functional
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.{Host, RawHeader}
+import akka.http.scaladsl.model.headers.{Host, HttpCookie, RawHeader, `Set-Cookie`}
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
 import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
 import akka.http.scaladsl.{Http, HttpExt}
@@ -62,15 +62,15 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
   s"plugins" should {
     val PLUGINS_ROUTE_ID = "plugins-route"
-    val PLUGINS_HOST     = "plugins.oto.tools"
+    val PLUGINS_HOST = "plugins.oto.tools"
 
     val LOCAL_HOST = "local.oto.tools"
 
     def createRequestOtoroshiIORoute(
-        plugins: Seq[NgPluginInstance] = Seq.empty,
-        domain: String = "plugins.oto.tools",
-        id: String = PLUGINS_ROUTE_ID
-    ) = {
+                                      plugins: Seq[NgPluginInstance] = Seq.empty,
+                                      domain: String = "plugins.oto.tools",
+                                      id: String = PLUGINS_ROUTE_ID
+                                    ) = {
       val newRoute = NgRoute(
         location = EntityLocation.default,
         id = id,
@@ -119,14 +119,14 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     def createLocalRoute(
-        plugins: Seq[NgPluginInstance] = Seq.empty,
-        responseStatus: Int = Status.OK,
-        result: HttpRequest => JsValue = _ => Json.obj(),
-        responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
-        domain: String = "local.oto.tools",
-        https: Boolean = false,
-        frontendPath: String = "/api"
-    ) = {
+                          plugins: Seq[NgPluginInstance] = Seq.empty,
+                          responseStatus: Int = Status.OK,
+                          result: HttpRequest => JsValue = _ => Json.obj(),
+                          responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
+                          domain: String = "local.oto.tools",
+                          https: Boolean = false,
+                          frontendPath: String = "/api"
+                        ) = {
       val target = TargetService
         .jsonFull(
           Some(domain),
@@ -281,8 +281,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       val authorizedCall = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"                   -> PLUGINS_HOST,
-          "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute.clientId,
+          "Host" -> PLUGINS_HOST,
+          "Otoroshi-Client-Id" -> getValidApiKeyForPluginsRoute.clientId,
           "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute.clientSecret
         )
         .get()
@@ -373,7 +373,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
             config = NgPluginInstanceConfig(
               NgHeaderValuesConfig(
                 headers = Map(
-                  "foo"        -> "${req.headers.bar}",
+                  "foo" -> "${req.headers.bar}",
                   "raw_header" -> "raw_value"
                 )
               ).json.as[JsObject]
@@ -395,9 +395,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       val resp2 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"       -> PLUGINS_HOST,
-          "foo"        -> "bar",
-          "bar"        -> "bar",
+          "Host" -> PLUGINS_HOST,
+          "foo" -> "bar",
+          "bar" -> "bar",
           "raw_header" -> "raw_value"
         )
         .get()
@@ -408,8 +408,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       val resp3 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"      -> PLUGINS_HOST,
-          "foo"       -> "bar",
+          "Host" -> PLUGINS_HOST,
+          "foo" -> "bar",
           "raw_value" -> "bar"
         )
         .get()
@@ -431,7 +431,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
             config = NgPluginInstanceConfig(
               NgHeaderValuesConfig(
                 headers = Map(
-                  "foo"  -> "foo_value",
+                  "foo" -> "foo_value",
                   "foo2" -> "foo2_value"
                 )
               ).json.as[JsObject]
@@ -676,10 +676,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       )
 
       implicit val system: ActorSystem = ActorSystem("otoroshi-test")
-      implicit val mat: Materializer   = Materializer(system)
-      implicit val http: HttpExt       = Http()(system)
+      implicit val mat: Materializer = Materializer(system)
+      implicit val http: HttpExt = Http()(system)
 
-      val yesCounter      = new AtomicInteger(0)
+      val yesCounter = new AtomicInteger(0)
       val messagesPromise = Promise[Int]()
 
       val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
@@ -720,8 +720,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       )
 
       implicit val system: ActorSystem = ActorSystem("otoroshi-test")
-      implicit val mat: Materializer   = Materializer(system)
-      implicit val http: HttpExt       = Http()(system)
+      implicit val mat: Materializer = Materializer(system)
+      implicit val http: HttpExt = Http()(system)
 
       val printSink: Sink[Message, Future[Done]] = Sink.foreach { _ => }
 
@@ -763,7 +763,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST,
           "foo2" -> "client_value",
-          "foo"  -> "bar"
+          "foo" -> "bar"
         )
         .get()
         .futureValue
@@ -901,7 +901,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         genericTemplates = Map.empty,
         messages = Map(
           "errors.service.under.construction" -> "build mode enabled",
-          "errors.service.in.maintenance"     -> "maintenance mode enabled"
+          "errors.service.in.maintenance" -> "maintenance mode enabled"
         ),
         tags = Seq.empty,
         metadata = Map.empty
@@ -913,7 +913,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         val resp = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host"   -> PLUGINS_HOST,
+            "Host" -> PLUGINS_HOST,
             "Accept" -> "text/html"
           )
           .get()
@@ -940,7 +940,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         val resp = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host"   -> maintenanceRoute.frontend.domains.head.domain,
+            "Host" -> maintenanceRoute.frontend.domains.head.domain,
             "Accept" -> "text/html"
           )
           .get()
@@ -980,7 +980,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
               NgErrorRewriterConfig(
                 ranges = Seq(ResponseStatusRange(200, 299)),
                 templates = Map(
-                  "default"          -> "custom response",
+                  "default" -> "custom response",
                   "application/json" -> "custom json response"
                 ),
                 log = false,
@@ -1008,7 +1008,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         val resp = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host"   -> PLUGINS_HOST,
+            "Host" -> PLUGINS_HOST,
             "Accept" -> "application/json"
           )
           .get()
@@ -1077,8 +1077,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST,
-          "foo"  -> "bar",
-          "baz"  -> "very very very very very very very very very long header value"
+          "foo" -> "bar",
+          "baz" -> "very very very very very very very very very long header value"
         )
         .get()
         .futureValue
@@ -1221,7 +1221,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       ),
         responseStatus = Status.OK,
         result = _ => Json.obj(),
-        responseHeaders = List(RawHeader("foo", "bar"), RawHeader( "baz", "very very very very very long header value")))
+        responseHeaders = List(RawHeader("foo", "bar"), RawHeader("baz", "very very very very very long header value")))
 
       val logger = LoggerFactory.getLogger("otoroshi-plugin-limit-headers-out-too-long").asInstanceOf[LogbackLogger]
 
@@ -1440,7 +1440,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST,
-          "Otoroshi-Client-Id"     -> apikey.clientId,
+          "Otoroshi-Client-Id" -> apikey.clientId,
           "Otoroshi-Client-Secret" -> apikey.clientSecret
         )
         .get()
@@ -1485,7 +1485,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> PLUGINS_HOST,
-          "Otoroshi-Client-Id"     -> apikey.clientId,
+          "Otoroshi-Client-Id" -> apikey.clientId,
           "Otoroshi-Client-Secret" -> apikey.clientSecret
         )
         .get()
@@ -1579,17 +1579,95 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .get()
           .futureValue
 
-      resp.status mustBe Status.OK
-      val cookies = Json
-        .parse(resp.body)
-        .as[JsValue]
-        .select("cookies")
-        .as[Map[String, String]]
+        resp.status mustBe Status.OK
+        val cookies = Json
+          .parse(resp.body)
+          .as[JsValue]
+          .select("cookies")
+          .as[Map[String, String]]
 
-      cookies.get("foo") mustBe Some("bar")
+        cookies.get("foo") mustBe Some("bar")
       }
 
       deleteOtoroshiRoute(route).await()
+    }
+
+    "Missing cookies out" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[MissingCookieOut],
+            config = NgPluginInstanceConfig(
+              AdditionalCookieOutConfig(
+                name = "foo",
+                value = "baz",
+                domain = PLUGINS_HOST.some
+              ).json.as[JsObject]
+            )
+          )
+        )
+      )
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> PLUGINS_HOST
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.OK
+        resp.cookies.find(_.name == "foo").get.value mustBe "baz"
+      }
+
+      val localRoute = createLocalRoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[MissingCookieOut],
+            config = NgPluginInstanceConfig(
+              AdditionalCookieOutConfig(
+                name = "foo",
+                value = "baz",
+                domain = "missing.oto.tools".some
+              ).json.as[JsObject]
+            )
+          )
+        ),
+        domain = "missing.oto.tools",
+        responseHeaders = List(`Set-Cookie`(cookie = HttpCookie(
+          name = "foo",
+          value = "bar",
+          domain = "missing.oto.tools".some
+        )))
+      )
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withCookies(DefaultWSCookie(
+            name = "foo",
+            value = "bar",
+            domain = "missing.oto.tools".some
+          ))
+          .withHttpHeaders(
+            "Host" -> "missing.oto.tools"
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.OK
+        resp.cookies.find(_.name == "foo").get.value mustBe "bar"
+
+        deleteOtoroshiRoute(localRoute).await()
+        deleteOtoroshiRoute(route).await()
+      }
     }
   }
 }
