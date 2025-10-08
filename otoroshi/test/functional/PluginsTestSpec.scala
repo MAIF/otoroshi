@@ -14,6 +14,7 @@ import com.typesafe.config.ConfigFactory
 import functional.Implicits.BetterFuture
 import org.scalatest.BeforeAndAfterAll
 import ch.qos.logback.classic.{Level, Logger => LogbackLogger}
+import org.joda.time.DateTime
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
 import org.slf4j.LoggerFactory
@@ -29,7 +30,7 @@ import play.api.libs.ws.WSRequest
 import play.api.{Configuration, Logger}
 
 import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Future, Promise}
 
 class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
@@ -40,6 +41,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
   def configurationSpec: Configuration = Configuration.empty
 
   val logger = Logger("otoroshi-tests-plugins")
+  implicit val system  = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -54,6 +56,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
   }
 
   override def afterAll(): Unit = {
+    system.terminate()
     stopAll()
   }
 
@@ -1398,6 +1401,58 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         Json.parse(resp.body) mustBe Json.obj("message" -> "done")
       }
 
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Block non HTTPS traffic" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[ApikeyCalls]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[BlockHttpTraffic],
+            config = NgPluginInstanceConfig(
+              BlockHttpTrafficConfig(
+                revokeApikeys = true,
+                message = "you shall not pass".some,
+                revokeUserSession = false
+              ).json.as[JsObject]
+            )
+          )
+        )
+      )
+
+      val apikey = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
+        clientName = "apikey1",
+        authorizedEntities = Seq.empty
+      )
+      createOtoroshiApiKey(apikey).await()
+
+      apikey.enabled mustBe true
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST,
+          "Otoroshi-Client-Id"     -> apikey.clientId,
+          "Otoroshi-Client-Secret" -> apikey.clientSecret
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.UPGRADE_REQUIRED
+      Json.parse(resp.body) mustBe Json.obj("message" -> "you shall not pass")
+
+      env.proxyState.apikey(apikey.clientId)
+        .map(_.enabled mustBe false)
+
+      deleteOtoroshiApiKey(apikey).await()
       deleteOtoroshiRoute(route).await()
     }
   }
