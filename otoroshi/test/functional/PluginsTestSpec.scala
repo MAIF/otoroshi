@@ -26,7 +26,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json.{JsObject, JsValue, Json}
-import play.api.libs.ws.WSRequest
+import play.api.libs.ws.{DefaultWSCookie, WSRequest}
 import play.api.{Configuration, Logger}
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -1523,6 +1523,71 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       resp.status mustBe Status.OK
       Json.parse(resp.body).selectAsString("access_type") mustEqual "public"
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Missing cookies in" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[MissingCookieIn],
+            config = NgPluginInstanceConfig(
+              AdditionalCookieOutConfig(
+                name = "foo",
+                value = "baz",
+                domain = PLUGINS_HOST.some
+              ).json.as[JsObject]
+            )
+          )
+        )
+      )
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> PLUGINS_HOST
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.OK
+        val cookies = Json
+          .parse(resp.body)
+          .as[JsValue]
+          .select("cookies")
+          .as[Map[String, String]]
+
+        cookies.get("foo") mustBe Some("baz")
+      }
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withCookies(DefaultWSCookie(
+            name = "foo",
+            value = "bar",
+            domain = PLUGINS_HOST.some
+          ))
+          .withHttpHeaders(
+            "Host" -> PLUGINS_HOST
+          )
+          .get()
+          .futureValue
+
+      resp.status mustBe Status.OK
+      val cookies = Json
+        .parse(resp.body)
+        .as[JsValue]
+        .select("cookies")
+        .as[Map[String, String]]
+
+      cookies.get("foo") mustBe Some("bar")
+      }
 
       deleteOtoroshiRoute(route).await()
     }
