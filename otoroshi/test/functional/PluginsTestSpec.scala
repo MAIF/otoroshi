@@ -1833,5 +1833,40 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       deleteOtoroshiApiKey(apikey)
       deleteOtoroshiRoute(route).await()
     }
+
+    "Static Response" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[StaticResponse],
+            config = NgPluginInstanceConfig(
+              StaticResponseConfig(
+                status = Status.OK,
+                headers = Map("baz" -> "bar"),
+                body = Json.obj("foo" -> "${req.headers.foo}").stringify,
+                applyEl = true
+              ).json.as[JsObject]
+            )
+          )
+        ))
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+          "foo" -> "client value"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      getOutHeader(resp, "baz") mustBe Some("bar")
+      Json.parse(resp.body) mustEqual Json.obj("foo" -> "client value")
+
+      deleteOtoroshiRoute(route).await()
+    }
   }
 }
