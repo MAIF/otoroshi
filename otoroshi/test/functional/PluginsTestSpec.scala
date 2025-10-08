@@ -8,6 +8,7 @@ import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.util.ByteString
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
 import com.typesafe.config.ConfigFactory
@@ -1668,6 +1669,49 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         deleteOtoroshiRoute(localRoute).await()
         deleteOtoroshiRoute(route).await()
       }
+    }
+
+    "Default request body" in {
+      val localRoute = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[NgDefaultRequestBody],
+            config = NgPluginInstanceConfig(
+              NgDefaultRequestBodyConfig(
+                body = ByteString(Json.obj("foo" -> "bar").stringify),
+                contentType = "application/json",
+                contentEncoding = None
+              ).json.as[JsObject]
+            )
+          )
+        ))
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      Json.parse(resp.body).selectAsObject("body") mustEqual Json.obj("foo" -> "bar")
+
+      val resp2 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> PLUGINS_HOST
+        )
+        .post(Json.obj("body_from_client" -> true))
+        .futureValue
+
+      resp2.status mustBe Status.OK
+      Json.parse(resp2.body).selectAsObject("body") mustEqual Json.obj("body_from_client" -> true)
+
+      deleteOtoroshiRoute(localRoute).await()
     }
   }
 }
