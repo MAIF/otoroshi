@@ -812,7 +812,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
     val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
       compressionEnabled = false,
       idleTimeout = (2 * 60 * 1000).millis,
-      connectionTimeout = (2 * 60 * 1000).millis
+      connectionTimeout = (2 * 60 * 1000).millis,
     )
     AhcWSClient(
       config.copy(
