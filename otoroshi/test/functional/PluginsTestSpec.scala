@@ -2207,5 +2207,41 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).await()
     }
+
+    "Request body xml-to-json" in {
+      val route = createRequestOtoroshiIORoute(
+         Seq(
+          NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
+          NgPluginInstance(NgPluginHelper.pluginId[XmlToJsonRequest]
+          ))
+      )
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+          "Content-Type" -> "text/xml"
+        )
+        .post(
+          """
+            |<?xml version="1.0" encoding="UTF-8" ?>
+            |<book category="web" cover="paperback">
+            |   <title lang="en">Learning XML</title>
+            | </book>
+            |""".stripMargin)
+        .futureValue
+
+      println(resp.status)
+      println(resp.body)
+      val body = Json.parse(resp.body).selectAsObject("body")
+
+      body.selectAsOptObject("book").isDefined mustBe true
+      body.selectAsObject("book").selectAsString("category") mustBe "web"
+      body.selectAsObject("book").selectAsString("cover") mustBe "paperback"
+      body.selectAsObject("book").selectAsOptObject("title").isDefined mustBe true
+
+      deleteOtoroshiRoute(route).await()
+    }
+
   }
 }
