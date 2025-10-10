@@ -2332,5 +2332,119 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       deleteOtoroshiVerifier(verifier)
       deleteOtoroshiRoute(route).await()
     }
+
+    "Jwt verification only (without verifier)" in {
+      val route = createRequestOtoroshiIORoute(
+         Seq(
+          NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
+          NgPluginInstance(NgPluginHelper.pluginId[JwtVerificationOnly],
+            config = NgPluginInstanceConfig(
+              NgJwtVerificationOnlyConfig(
+                verifier = None,
+                failIfAbsent = true
+              ).json.as[JsObject]
+            )
+          ))
+      )
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.BAD_REQUEST
+      }
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Jwt verification only (without token)" in {
+      val verifier = GlobalJwtVerifier(
+        id = "verifier",
+        name = "verifier",
+        desc = "verifier",
+        strict = true,
+        source = InHeader(name = "foo"),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = PassThrough(
+          verificationSettings = VerificationSettings(Map("iss" -> "foo"))
+        )
+      )
+      createOtoroshiVerifier(verifier).futureValue
+
+      val route = createRequestOtoroshiIORoute(
+         Seq(
+          NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
+          NgPluginInstance(NgPluginHelper.pluginId[JwtVerificationOnly],
+            config = NgPluginInstanceConfig(
+              NgJwtVerificationOnlyConfig(
+                verifier = verifier.id.some,
+                failIfAbsent = true
+              ).json.as[JsObject]
+            )
+          ))
+      )
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.BAD_REQUEST
+
+      deleteOtoroshiVerifier(verifier).await()
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Jwt verification only with token" in {
+      val verifier = GlobalJwtVerifier(
+        id = "verifier",
+        name = "verifier",
+        desc = "verifier",
+        strict = true,
+        source = InHeader(name = "foo"),
+        algoSettings = HSAlgoSettings(256, "secret"),
+        strategy = PassThrough(
+          verificationSettings = VerificationSettings(Map("iss" -> "foo"))
+        )
+      )
+      createOtoroshiVerifier(verifier).futureValue
+
+      val route = createRequestOtoroshiIORoute(
+         Seq(
+          NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
+          NgPluginInstance(NgPluginHelper.pluginId[JwtVerificationOnly],
+            config = NgPluginInstanceConfig(
+              NgJwtVerificationOnlyConfig(
+                verifier = verifier.id.some,
+                failIfAbsent = true
+              ).json.as[JsObject]
+            )
+          ))
+      )
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain,
+            "foo" -> "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmb28iLCJpYXQiOjE3NjAxMDM1MzN9.TAj08m-Ax3dUFrZ2NU3oG3tPdIFOGvJdpO3Yhas63rw"
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.OK
+      }
+
+      deleteOtoroshiVerifier(verifier).await()
+      deleteOtoroshiRoute(route).await()
+    }
   }
 }
