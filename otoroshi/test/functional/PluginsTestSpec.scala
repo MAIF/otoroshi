@@ -2,7 +2,7 @@ package functional
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.{Host, HttpCookie, RawHeader, `Set-Cookie`}
+import akka.http.scaladsl.model.headers.{Host, HttpCookie, RawHeader, `Content-Type`, `Set-Cookie`}
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
 import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
 import akka.http.scaladsl.{Http, HttpExt}
@@ -28,7 +28,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.libs.ws.{DefaultWSCookie, WSRequest}
 import play.api.{Configuration, Logger}
 
@@ -129,14 +129,23 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
                           responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
                           domain: String = "local.oto.tools",
                           https: Boolean = false,
-                          frontendPath: String = "/api"
+                          frontendPath: String = "/api",
+                          jsonAPI: Boolean = true,
+                          responseContentType: String = "application/json",
+                          stringResult: HttpRequest => String = _ => ""
                         ) = {
-      val target = TargetService
+      val target = (if (jsonAPI) TargetService
         .jsonFull(
           Some(domain),
           frontendPath,
           r => (responseStatus, result(r), responseHeaders)
-        )
+        ) else TargetService
+        .full(
+          Some(domain),
+          frontendPath,
+          contentType = responseContentType,
+          r => (responseStatus, stringResult(r), responseHeaders)
+        ))
         .await()
 
       val newRoute = NgRoute(
@@ -2058,6 +2067,121 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .patch("")
           .futureValue
           .status mustBe Status.METHOD_NOT_ALLOWED
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Response body xml-to-json" in {
+      import akka.http.scaladsl.model.{ContentType, MediaTypes, HttpCharsets}
+      import akka.http.scaladsl.model.headers.`Content-Type`
+
+      val route = createLocalRoute(
+         Seq(
+          NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
+          NgPluginInstance(NgPluginHelper.pluginId[XmlToJsonResponse],
+          config = NgPluginInstanceConfig(
+            JsonTransformConfig(
+
+            ).json.as[JsObject]
+          ))
+        ),
+        responseHeaders = List(`Content-Type`(ContentType(MediaTypes.`text/xml`, HttpCharsets.`UTF-8`))),
+        stringResult = _ => {
+            ByteString("""
+            |<?xml version="1.0" encoding="UTF-8" ?>
+            |     <book category="web" cover="paperback">
+            |         <title lang="en">Learning XML</title>
+            |         <author>Erik T. Ray</author>
+            |         <year>2003</year>
+            |         <price>39.95</price>
+            |     </book>
+            |""".stripMargin, "utf-8").utf8String
+        },
+        jsonAPI = false,
+        responseContentType = "text/xml"
+       )
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+        )
+        .get()
+        .futureValue
+
+      Json.parse(resp.body) mustEqual Json.obj(
+        "book" -> Json.obj(
+            "category" -> "web",
+            "cover"-> "paperback",
+            "title" -> Json.obj(
+                "lang" -> "en",
+                "#text" -> "Learning XML"
+            ),
+            "author" -> "Erik T. Ray",
+            "year" -> "2003",
+            "price" -> "39.95"
+        )
+      )
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "User-Agent details extractor" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[NgUserAgentExtractor]
+          )
+        ))
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      getInHeader(resp, "user-agent").isDefined mustBe true
+
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "User-Agent details extractor + User-Agent header" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[NgUserAgentExtractor]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[NgUserAgentInfoHeader],
+            config = NgPluginInstanceConfig(
+              NgUserAgentInfoHeaderConfig(
+                headerName = "foo"
+              ).json.as[JsObject]
+            )
+          ),
+        ))
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+          "User-Agent" -> "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/119.0"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      getInHeader(resp, "foo").isDefined mustBe true
+      getInHeader(resp, "foo").map(foo => Json.parse(foo).selectAsString("browser") mustBe "Firefox")
 
       deleteOtoroshiRoute(route).await()
     }

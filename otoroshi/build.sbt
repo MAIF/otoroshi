@@ -111,7 +111,7 @@ libraryDependencies ++= Seq(
   "com.yubico"                       % "webauthn-server-attestation"               % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.yubico"                       % "yubico-util"                               % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.maxmind.geoip2"               % "geoip2"                                    % "3.0.1",
-  "com.blueconic"                    % "browscap-java"                             % "1.3.13",
+  "com.blueconic"                    % "browscap-java"                             % "1.4.3",
   "javax.xml.bind"                   % "jaxb-api"                                  % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "com.sun.xml.bind"                 % "jaxb-core"                                 % "2.3.0.1",
   if (scalaLangVersion.startsWith("2.12")) {

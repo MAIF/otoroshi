@@ -169,7 +169,8 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
     if (ctx.otoroshiResponse.contentType.exists(_.contains("text/xml"))) {
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val xmlBody  = scala.xml.XML.loadString(bodyRaw.utf8String)
+        val cleanXml = bodyRaw.utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
+        val xmlBody = scala.xml.XML.loadString(cleanXml)
         val jsonBody = otoroshi.utils.xml.Xml.toJson(xmlBody).stringify
         transform(jsonBody, config) match {
           case Left(err)   => Results.InternalServerError(err).as("application/json").left

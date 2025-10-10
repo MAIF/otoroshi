@@ -422,9 +422,9 @@ object UserAgentSettings {
 
 case class UserAgentSettings(enabled: Boolean) {
   def json: JsValue = Json.obj("enabled" -> enabled)
-  def find(ua: String)(implicit env: Env): Option[JsValue] = {
+  def find(ua: String)(implicit env: Env): Future[Option[JsValue]] = {
     enabled match {
-      case false => None
+      case false => None.future
       case true  => UserAgentHelper.userAgentDetails(ua)
     }
   }

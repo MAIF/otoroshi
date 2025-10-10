@@ -19,7 +19,7 @@ import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.utils.json.JsonImplicits._
-import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue}
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
@@ -178,16 +178,16 @@ trait AnalyticEvent extends OtoroshiEvent {
   override def toEnrichedJson(implicit _env: Env, ec: ExecutionContext): Future[JsValue] = {
     val jsonObject = toJson(_env).as[JsObject]
     val uaDetails  = (jsonObject \ "userAgentInfo").asOpt[JsValue] match {
-      case Some(details) => details
+      case Some(details) => details.future
       case None          =>
         fromUserAgent match {
-          case None     => JsNull
+          case None     => JsNull.future
           case Some(ua) =>
             _env.datastores.globalConfigDataStore.latestSafe match {
-              case None                                              => JsNull
-              case Some(config) if !config.userAgentSettings.enabled => JsNull
+              case None                                              => JsNull.future
+              case Some(config) if !config.userAgentSettings.enabled => JsNull.future
               case Some(config)                                      =>
-                config.userAgentSettings.find(ua) match {
+                config.userAgentSettings.find(ua).map {
                   case None          => JsNull
                   case Some(details) => details
                 }
@@ -212,9 +212,13 @@ trait AnalyticEvent extends OtoroshiEvent {
           }
         }
     }
-    fOrigin.map(originDetails =>
+
+    for {
+      originDetails <- fOrigin
+      ua <- uaDetails
+    } yield {
       jsonObject ++ Json.obj(
-        "user-agent-details" -> uaDetails,
+        "user-agent-details" -> ua,
         "origin-details"     -> originDetails,
         "instance-number"    -> _env.number,
         "instance-name"      -> _env.name,
@@ -230,7 +234,7 @@ trait AnalyticEvent extends OtoroshiEvent {
           case _                  => "none"
         })
       )
-    )
+    }
   }
 
   def toAnalytics()(implicit env: Env): Unit = {

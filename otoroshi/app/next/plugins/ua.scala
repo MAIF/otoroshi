@@ -53,14 +53,14 @@ class NgUserAgentExtractor extends NgPreRouting {
     ctx.request.headers.get("User-Agent") match {
       case None     => Done.rightf
       case Some(ua) =>
-        otoroshi.plugins.useragent.UserAgentHelper.userAgentDetails(ua) match {
-          case None       => Done.rightf
+        otoroshi.plugins.useragent.UserAgentHelper.userAgentDetails(ua).map {
+          case None       => Done.right
           case Some(info) => {
             val config =
               ctx.cachedConfig(internalName)(NgUserAgentExtractorConfig.format).getOrElse(NgUserAgentExtractorConfig())
             if (config.log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
             ctx.attrs.putIfAbsent(otoroshi.plugins.Keys.UserAgentInfoKey -> info)
-            Done.rightf
+            Done.right
           }
         }
     }
