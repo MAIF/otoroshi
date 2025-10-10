@@ -1,12 +1,11 @@
 package otoroshi.storage.drivers.reactivepg
 
 import com.typesafe.config.ConfigFactory
-import io.vertx.core.Vertx.vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.{JsonArray, JsonObject}
-import io.vertx.core.net.{NetClientOptions, PemKeyCertOptions, PemTrustOptions}
-import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
-import io.vertx.sqlclient.{Pool, PoolOptions, Row}
+import io.vertx.core.net.{PemKeyCertOptions, PemTrustOptions}
+import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import io.vertx.sqlclient.{PoolOptions, Row}
 import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Cancellable}
@@ -21,7 +20,7 @@ import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
 import otoroshi.next.models._
-import otoroshi.script._
+import otoroshi.script.{JobContext, JobId, KvScriptDataStore, OneTimeJob, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
 import otoroshi.storage._
 import otoroshi.storage.stores._
@@ -117,11 +116,11 @@ object pgimplicits {
 }
 
 class ReactivePgDataStores(
-    configuration: Configuration,
-    environment: Environment,
-    lifecycle: ApplicationLifecycle,
-    env: Env
-) extends DataStores {
+                            configuration: Configuration,
+                            environment: Environment,
+                            lifecycle: ApplicationLifecycle,
+                            env: Env
+                          ) extends DataStores {
 
   import pgimplicits._
 
@@ -139,22 +138,17 @@ class ReactivePgDataStores(
         .getOrElse(ConfigFactory.empty)
     )
 
-  private lazy val (connectOptions, netClientOptions) = if (configuration.betterHas("app.pg.uri")) {
-    val pgOpts = PgConnectOptions.fromUri(configuration.betterGet[String]("app.pg.uri"))
+  private lazy val connectOptions = if (configuration.betterHas("app.pg.uri")) {
+    val opts = PgConnectOptions.fromUri(configuration.betterGet[String]("app.pg.uri"))
 
-    // Extract TCP-level options from configuration even when using URI
-    val netOpts = new NetClientOptions()
-      .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
-      .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
-      .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
-
-    (pgOpts, netOpts)
+    opts
   } else {
     val ssl        = configuration.betterGetOptional[Configuration]("app.pg.ssl").getOrElse(Configuration.empty)
     val sslEnabled = ssl.betterGetOptional[Boolean]("enabled").getOrElse(false)
-
-    // Database-specific options stay in PgConnectOptions
-    val pgOpts = new PgConnectOptions()
+    new PgConnectOptions()
+      .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
+      .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
+      .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
       .applyOnWithOpt(configuration.betterGetOptional[Int]("pipelining-limit"))((p, v) => p.setPipeliningLimit(v))
       .setPort(configuration.getOptionalWithFileSupport[Int]("app.pg.port").getOrElse(5432))
       .setHost(configuration.getOptionalWithFileSupport[String]("app.pg.host").getOrElse("localhost"))
@@ -165,75 +159,61 @@ class ReactivePgDataStores(
         val mode              = SslMode.of(ssl.betterGetOptional[String]("mode").getOrElse("verify-ca"))
         val pemTrustOptions   = new PemTrustOptions()
         val pemKeyCertOptions = new PemKeyCertOptions()
-
-        // SSL handshake timeout
-        netopt.applyOnWithOpt(ssl.betterGetOptional[Int]("ssl-handshake-timeout"))((p, v) =>
-          p.setSslHandshakeTimeout(v)
-        )
-
-        // Trust options
+        pgopt.setSslMode(mode)
+        pgopt.applyOnWithOpt(ssl.betterGetOptional[Int]("ssl-handshake-timeout"))((p, v) => p.setSslHandshakeTimeout(v))
         ssl.betterGetOptional[Seq[String]]("trusted-certs-path").map { pathes =>
-          pathes.foreach(p => pemTrustOptions.addCertPath(p))
-          netopt.setTrustOptions(pemTrustOptions)
+          pathes.map(p => pemTrustOptions.addCertPath(p))
+          pgopt.setPemTrustOptions(pemTrustOptions)
         }
         ssl.betterGetOptional[String]("trusted-cert-path").map { path =>
           pemTrustOptions.addCertPath(path)
-          netopt.setTrustOptions(pemTrustOptions)
+          pgopt.setPemTrustOptions(pemTrustOptions)
         }
         ssl.betterGetOptional[Seq[String]]("trusted-certs").map { certs =>
-          certs.foreach(p => pemTrustOptions.addCertValue(Buffer.buffer(p)))
-          netopt.setTrustOptions(pemTrustOptions)
+          certs.map(p => pemTrustOptions.addCertValue(Buffer.buffer(p)))
+          pgopt.setPemTrustOptions(pemTrustOptions)
         }
         ssl.betterGetOptional[String]("trusted-cert").map { path =>
           pemTrustOptions.addCertValue(Buffer.buffer(path))
-          netopt.setTrustOptions(pemTrustOptions)
+          pgopt.setPemTrustOptions(pemTrustOptions)
         }
-
-        // Key/cert options
         ssl.betterGetOptional[Seq[String]]("client-certs-path").map { pathes =>
-          pathes.foreach(p => pemKeyCertOptions.addCertPath(p))
-          netopt.setKeyCertOptions(pemKeyCertOptions)
+          pathes.map(p => pemKeyCertOptions.addCertPath(p))
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[Seq[String]]("client-certs").map { certs =>
-          certs.foreach(p => pemKeyCertOptions.addCertValue(Buffer.buffer(p)))
-          netopt.setKeyCertOptions(pemKeyCertOptions)
+          certs.map(p => pemKeyCertOptions.addCertValue(Buffer.buffer(p)))
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[String]("client-cert-path").map { path =>
           pemKeyCertOptions.addCertPath(path)
-          netopt.setKeyCertOptions(pemKeyCertOptions)
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[String]("client-cert").map { path =>
           pemKeyCertOptions.addCertValue(Buffer.buffer(path))
-          netopt.setKeyCertOptions(pemKeyCertOptions)
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[Seq[String]]("client-keys-path").map { pathes =>
-          pathes.foreach(p => pemKeyCertOptions.addKeyPath(p))
-          netopt.setKeyCertOptions(pemKeyCertOptions)
+          pathes.map(p => pemKeyCertOptions.addKeyPath(p))
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[Seq[String]]("client-keys").map { certs =>
-          certs.foreach(p => pemKeyCertOptions.addKeyValue(Buffer.buffer(p)))
-          netopt.setKeyCertOptions(pemKeyCertOptions)
+          certs.map(p => pemKeyCertOptions.addKeyValue(Buffer.buffer(p)))
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[String]("client-key-path").map { path =>
           pemKeyCertOptions.addKeyPath(path)
-          netopt.setKeyCertOptions(pemKeyCertOptions)
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[String]("client-key").map { path =>
           pemKeyCertOptions.addKeyValue(Buffer.buffer(path))
-          netopt.setKeyCertOptions(pemKeyCertOptions)
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
-
-        // Trust all
         ssl.betterGetOptional[Boolean]("trust-all").map { v =>
-          netopt.setTrustAll(v)
+          pgopt.setTrustAll(v)
         }
-
-        // Enable SSL
-        netopt.setSsl(true)
-        netopt
+        pgopt
       }
-
-    (pgOpts, netOpts)
   }
 
   private lazy val poolOptions = new PoolOptions()
@@ -243,13 +223,7 @@ class ReactivePgDataStores(
   private lazy val schema         = configuration.getOptionalWithFileSupport[String]("app.pg.schema").getOrElse("otoroshi")
   private lazy val table          = configuration.getOptionalWithFileSupport[String]("app.pg.table").getOrElse("entities")
   private lazy val schemaDotTable = s"$schema.$table"
-  private lazy val client         = PgBuilder
-    .pool()
-    .`with`(poolOptions)
-    .`with`(netClientOptions)
-    .connectingTo(connectOptions)
-    .using(vertx)
-    .build()
+  private lazy val client         = PgPool.pool(connectOptions, poolOptions)
 
   lazy val redis = new ReactivePgRedis(
     client,
@@ -276,39 +250,39 @@ class ReactivePgDataStores(
         _ <- client.query(s"CREATE SCHEMA IF NOT EXISTS $schema;").executeAsync()
         _ <- if (testMode) redis.asInstanceOf[ReactivePgRedis].drop().map(_ => ()) else FastFuture.successful(())
         _ <- client
-               .query(s"""
-           |create table if not exists $schemaDotTable (
-           |  key text not null,
-           |  type text not null,
-           |  ttl_starting_at TIMESTAMPTZ default NOW(),
-           |  ttl interval default '1000 years'::interval,
-           |  counter bigint default 0,
-           |  value text default '',
-           |  lvalue jsonb default '[]'::jsonb,
-           |  svalue jsonb default '{}'::jsonb,
-           |  mvalue jsonb default '{}'::jsonb,
-           |  kind text default '',
-           |  jvalue jsonb default '{}'::jsonb,
-           |  PRIMARY KEY (key)
-           |);
-           |""".stripMargin)
-               .executeAsync()
+          .query(s"""
+                    |create table if not exists $schemaDotTable (
+                    |  key text not null,
+                    |  type text not null,
+                    |  ttl_starting_at TIMESTAMPTZ default NOW(),
+                    |  ttl interval default '1000 years'::interval,
+                    |  counter bigint default 0,
+                    |  value text default '',
+                    |  lvalue jsonb default '[]'::jsonb,
+                    |  svalue jsonb default '{}'::jsonb,
+                    |  mvalue jsonb default '{}'::jsonb,
+                    |  kind text default '',
+                    |  jvalue jsonb default '{}'::jsonb,
+                    |  PRIMARY KEY (key)
+                    |);
+                    |""".stripMargin)
+          .executeAsync()
         _ <- client
-               .withConnection(c =>
-                 c.preparedQuery(s"""
-           |create index concurrently if not exists otoroshi_kind_idx on $schemaDotTable using btree (kind);
-           |""".stripMargin)
-                   .execute()
-               )
-               .scala
+          .withConnection(c =>
+            c.preparedQuery(s"""
+                               |create index concurrently if not exists otoroshi_kind_idx on $schemaDotTable using btree (kind);
+                               |""".stripMargin)
+              .execute()
+          )
+          .scala
         _ <- client
-               .withConnection(c =>
-                 c.preparedQuery(s"""
-           |create index concurrently if not exists otoroshi_key_idx on $schemaDotTable using btree (key);
-           |""".stripMargin)
-                   .execute()
-               )
-               .scala
+          .withConnection(c =>
+            c.preparedQuery(s"""
+                               |create index concurrently if not exists otoroshi_key_idx on $schemaDotTable using btree (key);
+                               |""".stripMargin)
+              .execute()
+          )
+          .scala
         _ <- if (testMode) redis.flushall() else FastFuture.successful(())
       } yield ()),
       5.minutes
@@ -350,10 +324,10 @@ class ReactivePgDataStores(
   }
 
   override def before(
-      configuration: Configuration,
-      environment: Environment,
-      lifecycle: ApplicationLifecycle
-  ): Future[Unit] = {
+                       configuration: Configuration,
+                       environment: Environment,
+                       lifecycle: ApplicationLifecycle
+                     ): Future[Unit] = {
     logger.info("Now using PostgreSQL (reactive-pg) DataStores")
     runSchemaCreation()
     setupCleanup()
@@ -364,10 +338,10 @@ class ReactivePgDataStores(
   }
 
   override def after(
-      configuration: Configuration,
-      environment: Environment,
-      lifecycle: ApplicationLifecycle
-  ): Future[Unit] = {
+                      configuration: Configuration,
+                      environment: Environment,
+                      lifecycle: ApplicationLifecycle
+                    ): Future[Unit] = {
     _serviceDescriptorDataStore.stopCleanup()
     _certificateDataStore.stopSync()
     Option(cancel.get()).foreach(_.cancel())
@@ -413,7 +387,7 @@ class ReactivePgDataStores(
   private lazy val _webAuthnAdminDataStore                    = new KvWebAuthnAdminDataStore()
   override def webAuthnAdminDataStore: WebAuthnAdminDataStore = _webAuthnAdminDataStore
 
-  private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore
+  private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
 
   private lazy val _tenantDataStore             = new TenantDataStore(redis, env)
@@ -504,25 +478,25 @@ class ReactivePgDataStores(
       .grouped(group)
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-        case keys                 =>
+        case keys                 => {
           Future.sequence(
             keys
               .filterNot { key =>
                 Cluster.filteredKey(key, env)
-              // key == s"${env.storageRoot}:cluster:" ||
-              // key == s"${env.storageRoot}:events:audit" ||
-              // key == s"${env.storageRoot}:events:alerts" ||
-              // key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-              // key.startsWith(s"${env.storageRoot}:admins:") ||
-              // key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-              // // key.startsWith(s"${env.storageRoot}:users:") ||
-              // key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
-              // key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-              // key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-              // key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-              // key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-              // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-              // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+                // key == s"${env.storageRoot}:cluster:" ||
+                // key == s"${env.storageRoot}:events:audit" ||
+                // key == s"${env.storageRoot}:events:alerts" ||
+                // key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                // key.startsWith(s"${env.storageRoot}:admins:") ||
+                // key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                // // key.startsWith(s"${env.storageRoot}:users:") ||
+                // key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
+                // key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                // key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                // key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                // key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
                 for {
@@ -533,6 +507,7 @@ class ReactivePgDataStores(
                 }
               }
           )
+        }
       }
       .map(_.filterNot(_ == JsNull))
       .mapConcat(_.toList)
@@ -551,7 +526,7 @@ class ReactivePgDataStores(
         .grouped(10)
         .mapAsync(1) {
           case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-          case keys                 =>
+          case keys                 => {
             Source(keys.toList)
               .mapAsync(1) { key =>
                 for {
@@ -563,6 +538,7 @@ class ReactivePgDataStores(
               }
               .runWith(Sink.seq)
               .map(_.filterNot(_ == JsNull))
+          }
         }
         .mapConcat(_.toList)
     )
@@ -612,18 +588,18 @@ class ReactivePgDataStores(
 }
 
 class ReactivePgRedis(
-    pool: Pool,
-    system: ActorSystem,
-    env: Env,
-    schemaDotTable: String,
-    _optimized: Boolean,
-    avoidJsonPath: Boolean
-) extends RedisLike
-    with OptimizedRedisLike {
+                       pool: PgPool,
+                       system: ActorSystem,
+                       env: Env,
+                       schemaDotTable: String,
+                       _optimized: Boolean,
+                       avoidJsonPath: Boolean
+                     ) extends RedisLike
+  with OptimizedRedisLike {
 
   import pgimplicits._
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.*
 
   private given ec: ExecutionContextExecutor = system.dispatcher
 
@@ -632,37 +608,35 @@ class ReactivePgRedis(
   private val debugQueries = env.configuration.betterGetOptional[Boolean]("app.pg.logQueries").getOrElse(false)
 
   private def queryRaw[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(
-      f: Seq[Row] => A
+    f: Seq[Row] => A
   ): Future[A] = {
     if (debug || debugQueries) logger.info(s"""query: "$query", params: "${params.mkString(", ")}"""")
     val isRead = query.toLowerCase().trim.startsWith("select")
-    (if (isRead) {
-       pool.withConnection(c => c.preparedQuery(query).execute(io.vertx.sqlclient.Tuple.from(params.toArray))).scala
-     } else {
-       pool.preparedQuery(query).execute(io.vertx.sqlclient.Tuple.from(params.toArray)).scala
-     })
-      .flatMap { _rows =>
-        Try {
-          val rows = _rows.asScala.toSeq
-          f(rows)
-        } match {
-          case Success(value) => FastFuture.successful(value)
-          case Failure(e)     => FastFuture.failed(e)
-        }
+    (isRead match {
+      case true  =>
+        pool.withConnection(c => c.preparedQuery(query).execute(io.vertx.sqlclient.Tuple.from(params.toArray))).scala
+      case false => pool.preparedQuery(query).execute(io.vertx.sqlclient.Tuple.from(params.toArray)).scala
+    }).flatMap { _rows =>
+      Try {
+        val rows = _rows.asScala.toSeq
+        f(rows)
+      } match {
+        case Success(value) => FastFuture.successful(value)
+        case Failure(e)     => FastFuture.failed(e)
       }
-      .andThen { case Failure(e) =>
-        logger.error(s"""Failed to apply query: "$query" with params: "${params.mkString(", ")}"""", e)
-      }
+    }.andThen { case Failure(e) =>
+      logger.error(s"""Failed to apply query: "$query" with params: "${params.mkString(", ")}"""", e)
+    }
   }
 
   private def querySeq[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(
-      f: Row => Option[A]
+    f: Row => Option[A]
   ): Future[Seq[A]] = {
     queryRaw[Seq[A]](query, params, debug)(rows => rows.flatMap(f))
   }
 
   private def queryOne[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(
-      f: Row => Option[A]
+    f: Row => Option[A]
   ): Future[Option[A]] = {
     queryRaw[Option[A]](query, params, debug)(rows => rows.headOption.flatMap(row => f(row)))
   }
@@ -768,8 +742,8 @@ class ReactivePgRedis(
     }
 
   override def serviceDescriptors_findByHost(
-      query: ServiceDescriptorQuery
-  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+                                              query: ServiceDescriptorQuery
+                                            )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.services-find-by-host") {
       val queryRegex = "^" + query.toHost.replace("*", ".*").replace(".", "\\.")
       querySeq(
@@ -782,11 +756,11 @@ class ReactivePgRedis(
     }
 
   override def serviceDescriptors_findByEnv(
-      ev: String
-  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+                                             ev: String
+                                           )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.services-find-by-env") {
       querySeq(
-        s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'env' = '$ev' and (ttl_starting_at + ttl) > NOW();"
+        s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'env' = '${ev}' and (ttl_starting_at + ttl) > NOW();"
       ) { row =>
         row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect { case JsSuccess(service, _) =>
           service
@@ -795,8 +769,8 @@ class ReactivePgRedis(
     }
 
   override def serviceDescriptors_findByGroup(
-      id: String
-  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+                                               id: String
+                                             )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.find-by-group") {
       querySeq(
         s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'groups' ? $$1 and (ttl_starting_at + ttl) > NOW();",
@@ -809,8 +783,8 @@ class ReactivePgRedis(
     }
 
   override def apiKeys_findByService(
-      service: ServiceDescriptor
-  )(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
+                                      service: ServiceDescriptor
+                                    )(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     measure("pg.ops.optm.apikeys-find-by-service") {
 
       var params     = Seq[Any]()
@@ -820,7 +794,7 @@ class ReactivePgRedis(
             params = params ++ ServiceGroupIdentifier(g).str
             s"jvalue -> 'authorizedEntities' ? $$${count + 1}"
           }
-      ).mkString(" or ")
+        ).mkString(" or ")
 
       querySeq(
         s"""select value from $schemaDotTable where kind = 'apikey' and ($predicates) and (ttl_starting_at + ttl) > NOW();""".stripMargin,
@@ -878,11 +852,11 @@ class ReactivePgRedis(
     }
 
   override def set(
-      key: String,
-      value: String,
-      exSeconds: Option[Long],
-      pxMilliseconds: Option[Long]
-  ): Future[Boolean] = {
+                    key: String,
+                    value: String,
+                    exSeconds: Option[Long],
+                    pxMilliseconds: Option[Long]
+                  ): Future[Boolean] = {
     setBS(key, value.byteString, exSeconds, pxMilliseconds)
   }
 
@@ -905,16 +879,16 @@ class ReactivePgRedis(
     measure("pg.ops.incr") {
       queryOne(
         s"""insert into $schemaDotTable (key, type, counter)
-         |values ($$1, 'counter', $$2)
-         |on conflict (key)
-         |do
-         |  update set type = 'counter',
-         |    counter = CASE
-         |     WHEN ($schemaDotTable.ttl_starting_at + $schemaDotTable.ttl > NOW()) THEN $schemaDotTable.counter + $$2
-         |     ELSE $$2
-         |    END
-         |  returning counter
-         |""".stripMargin,
+           |values ($$1, 'counter', $$2)
+           |on conflict (key)
+           |do
+           |  update set type = 'counter',
+           |    counter = CASE
+           |     WHEN ($schemaDotTable.ttl_starting_at + $schemaDotTable.ttl > NOW()) THEN $schemaDotTable.counter + $$2
+           |     ELSE $$2
+           |    END
+           |  returning counter
+           |""".stripMargin,
         Seq(key, increment.asInstanceOf[AnyRef])
       ) { row =>
         row.optLong("counter")
@@ -971,11 +945,11 @@ class ReactivePgRedis(
   }
 
   override def setBS(
-      key: String,
-      value: ByteString,
-      exSeconds: Option[Long],
-      pxMilliseconds: Option[Long]
-  ): Future[Boolean] =
+                      key: String,
+                      value: ByteString,
+                      exSeconds: Option[Long],
+                      pxMilliseconds: Option[Long]
+                    ): Future[Boolean] =
     measure("pg.ops.set") {
       val ttl            = exSeconds
         .map(_ * 1000)
@@ -993,11 +967,11 @@ class ReactivePgRedis(
           val jsonValue = _jsonValue.replace("'", "''")
           queryOne(
             s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value, kind, jvalue)
-             |values ($$1, 'string', $ttl, NOW(), $$2, '$kind', '$jsonValue'::jsonb)
-             |ON CONFLICT (key)
-             |DO
-             |  update set type = 'string', value = $$2$maybeTtlUpdate, kind = $$3, jvalue = $$4::jsonb;
-             |""".stripMargin,
+               |values ($$1, 'string', $ttl, NOW(), $$2, '$kind', '$jsonValue'::jsonb)
+               |ON CONFLICT (key)
+               |DO
+               |  update set type = 'string', value = $$2$maybeTtlUpdate, kind = $$3, jvalue = $$4::jsonb;
+               |""".stripMargin,
             Seq(key, value.utf8String, kind, new JsonObject(jsonValue))
           ) { _ =>
             true.some
@@ -1006,11 +980,11 @@ class ReactivePgRedis(
           val sanitizedValue = value.utf8String.replace("'", "''")
           queryOne(
             s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value)
-             |values ($$1, 'string', $ttl, NOW(), $$2)
-             |ON CONFLICT (key)
-             |DO
-             |  update set type = 'string', value = $$2$maybeTtlUpdate;
-             |""".stripMargin,
+               |values ($$1, 'string', $ttl, NOW(), $$2)
+               |ON CONFLICT (key)
+               |DO
+               |  update set type = 'string', value = $$2${maybeTtlUpdate};
+               |""".stripMargin,
             Seq(key, sanitizedValue)
           ) { _ =>
             true.some
@@ -1038,12 +1012,13 @@ class ReactivePgRedis(
         case (Some(_), Some(_), Some(ttlrow)) if ttlrow.getYears == 1000 =>
           Some(-1L) // here it's default ttl so nothing to do
         case (Some(expirationDate), Some(now), Some(_))
-            if expirationDate.isBefore(now) || expirationDate.isEqual(now) =>
+          if expirationDate.isBefore(now) || expirationDate.isEqual(now) => {
           hardDelete(
             key
           ) // could be risky but the underlying datamodel does not work the same as redis as the data may not be removed for the next call
           Some(-1L)
-        case (Some(expirationDate), Some(now), Some(_))                  =>
+        }
+        case (Some(expirationDate), Some(now), Some(_))                  => {
           val ttl = ChronoUnit.MILLIS.between(now, expirationDate)
           if (ttl > 0) {
             ttl.some
@@ -1053,6 +1028,7 @@ class ReactivePgRedis(
             ) // could be risky but the underlying datamodel does not work the same as redis as the data may not be removed for the next call
             Some(-1L)
           }
+        }
         case _                                                           => Some(-1L)
       }
     }.map(_.filter(_ > -1).getOrElse(-1))
@@ -1089,7 +1065,7 @@ class ReactivePgRedis(
         s"select mvalue from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;",
         Seq(key)
       ) { row =>
-        row.optJsObject("mvalue").map(_.value.view.mapValues(v => v.asString.byteString).toMap)
+        row.optJsObject("mvalue").map(_.value.mapValues(v => v.asString.byteString).toMap)
       }.map(_.getOrElse(Map.empty[String, ByteString]))
     }
 
@@ -1099,11 +1075,11 @@ class ReactivePgRedis(
     measure("pg.ops.hset") {
       queryRaw(
         s"""insert into $schemaDotTable (key, type, mvalue)
-         |values ($$1, 'hash', $$2::jsonb)
-         |on conflict (key)
-         |do
-         |  update set type = 'hash', mvalue = $schemaDotTable.mvalue || $$2::jsonb;
-         |""".stripMargin,
+           |values ($$1, 'hash', $$2::jsonb)
+           |on conflict (key)
+           |do
+           |  update set type = 'hash', mvalue = $schemaDotTable.mvalue || $$2::jsonb;
+           |""".stripMargin,
         Seq(key, Json.obj(key -> value.utf8String).stringify)
       ) { _ =>
         true
@@ -1139,11 +1115,11 @@ class ReactivePgRedis(
       val arr = JsArray(values.map(v => JsString(v.utf8String))).stringify
       queryRaw(
         s"""insert into $schemaDotTable (key, type, lvalue)
-         |values ($$1, 'list', $$2::jsonb)
-         |on conflict (key)
-         |do
-         |  update set type = 'list', lvalue = $schemaDotTable.lvalue || $$2::jsonb;
-         |""".stripMargin,
+           |values ($$1, 'list', $$2::jsonb)
+           |on conflict (key)
+           |do
+           |  update set type = 'list', lvalue = $schemaDotTable.lvalue || $$2::jsonb;
+           |""".stripMargin,
         Seq(key, new JsonArray(arr))
       ) { _ =>
         values.size
@@ -1165,10 +1141,11 @@ class ReactivePgRedis(
           row.optJsArray("slice").map(_.value.map(v => v.asString.byteString).toSeq)
         }.map(_.getOrElse(Seq.empty)).recoverWith {
           case ex: io.vertx.pgclient.PgException
-              if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") =>
+            if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") => {
             getArray(key).map(
               _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)
             ) // awful but not supported in some cases like cockroachdb
+          }
         }
       }
     }
@@ -1180,7 +1157,7 @@ class ReactivePgRedis(
         // awful but not supported in some cases like cockroachdb
         getArray(key).flatMap {
           case None      => FastFuture.successful(false)
-          case Some(arr) =>
+          case Some(arr) => {
             val newArr = JsArray(arr.slice(start.toInt, stop.toInt).map(i => JsString(i.utf8String))).stringify
             queryRaw(
               s"""update $schemaDotTable set type = 'list', lvalue = '$newArr'::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""",
@@ -1188,6 +1165,7 @@ class ReactivePgRedis(
             ) { _ =>
               true
             }
+          }
         }
       } else {
         queryRaw(
@@ -1197,7 +1175,7 @@ class ReactivePgRedis(
           true
         }.recoverWith {
           case ex: io.vertx.pgclient.PgException
-              if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") =>
+            if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") => {
             // awful but not supported in some cases like cockroachdb
             getArray(key).flatMap {
               case None      => FastFuture.successful(false)
@@ -1210,6 +1188,7 @@ class ReactivePgRedis(
                   true
                 }
             }
+          }
         }
       }
     }
@@ -1222,11 +1201,11 @@ class ReactivePgRedis(
       val obj = JsObject(members.map(m => (m.utf8String, JsString("-")))).stringify
       queryRaw(
         s"""insert into $schemaDotTable (key, type, svalue)
-         |values ($$1, 'set', $$2::jsonb)
-         |on conflict (key)
-         |do
-         |  update set type = 'set', svalue = $schemaDotTable.svalue || $$2::jsonb;
-         |""".stripMargin,
+           |values ($$1, 'set', $$2::jsonb)
+           |on conflict (key)
+           |do
+           |  update set type = 'set', svalue = $schemaDotTable.svalue || $$2::jsonb;
+           |""".stripMargin,
         Seq(key, new JsonObject(obj))
       ) { _ =>
         members.size
@@ -1272,9 +1251,9 @@ class ReactivePgRedis(
     measure("pg.ops.scard") {
       queryOne(
         s"""select count(*) from (
-         |	select jsonb_object_keys(svalue) as length from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW()
-         |) A;
-         |""".stripMargin,
+           |	select jsonb_object_keys(svalue) as length from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW()
+           |) A;
+           |""".stripMargin,
         Seq(key)
       ) { row =>
         row.optLong("count")

@@ -84,9 +84,9 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
         transform(jsonBody, config) match {
           case Left(err)   => Results.InternalServerError(err).as("application/json").left
           case Right(body) =>
-            println("body send", body, ctx.otoroshiRequest.headers
+            println(s"body send $body, ${ctx.otoroshiRequest.headers
                   .removeAndPutIgnoreCase("Content-Type" -> "application/json")
-                  .removeAndPutIgnoreCase("Content-Length" -> jsonBody.size.toString))
+                  .removeAndPutIgnoreCase("Content-Length" -> jsonBody.size.toString)}")
             ctx.otoroshiRequest
               .copy(
                 body = Source(body.byteString.grouped(16 * 1024).toList),

@@ -2602,7 +2602,7 @@ class ArrayAppendOperator extends WorkflowOperator {
           case Some(_)                       => JsNull
         }
     }
-    println("array_append", value)
+    println(s"array_append: $value")
     value match {
       case arr @ JsArray(_) if v.isInstanceOf[JsArray] => arr ++ v.asArray
       case arr @ JsArray(_)                            => arr.append(v)

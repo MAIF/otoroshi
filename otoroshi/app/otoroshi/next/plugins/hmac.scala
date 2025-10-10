@@ -89,7 +89,7 @@ class HMACValidator extends NgAccessValidator {
       NgAccess.NgDenied(BadRequest)
   }
 
-  override def access(context: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val HMACValidatorConfig(secret, authorizationHeader) =
       ctx.cachedConfig(internalName)(HMACValidatorConfig.format).getOrElse(HMACValidatorConfig())
 

@@ -18,7 +18,7 @@ import otoroshi.tcp.TcpService
 import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.libs.json._
-import otoroshi.utils.json.JsonImplicits._
+import otoroshi.utils.json.JsonImplicits.given
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 
 import scala.collection.mutable

@@ -1,35 +1,38 @@
 package functional
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.{Host, HttpCookie, RawHeader, `Content-Type`, `Set-Cookie`}
-import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
-import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.{Host, HttpCookie, RawHeader, `Content-Type`, `Set-Cookie`}
+import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.model.{HttpHeader, HttpRequest}
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
 import com.typesafe.config.ConfigFactory
 import functional.Implicits.BetterFuture
 import org.scalatest.BeforeAndAfterAll
-import ch.qos.logback.classic.{Level, Logger => LogbackLogger}
+import ch.qos.logback.classic.{Level, Logger as LogbackLogger}
 import org.joda.time.DateTime
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
 import org.slf4j.LoggerFactory
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.env.Env
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
-import otoroshi.next.plugins.{RejectHeaderOutTooLong, _}
+import otoroshi.next.plugins.{RejectHeaderOutTooLong, *}
 import otoroshi.plugins.hmac.HMACUtils
 import otoroshi.security.IdGenerator
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
+import otoroshi.utils.syntax.implicits.given
 import play.api.http.Status
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.libs.ws.{DefaultWSCookie, WSRequest}
+import play.api.libs.ws.WSBodyWritables.{writeableOf_JsValue, writeableOf_String}
+import play.api.libs.ws.WSBodyReadables.readableAsString
 import play.api.{Configuration, Logger}
 
 import java.util.Base64
@@ -39,13 +42,13 @@ import scala.concurrent.{Future, Promise}
 
 class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
-  implicit lazy val mat = otoroshiComponents.materializer
-  implicit lazy val env = otoroshiComponents.env
+  given mat: Materializer = otoroshiComponents.materializer
+  given env: Env = otoroshiComponents.env
 
   def configurationSpec: Configuration = Configuration.empty
 
   val logger = Logger("otoroshi-tests-plugins")
-  implicit val system  = ActorSystem("otoroshi-test")
+  given system: ActorSystem  = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -688,9 +691,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         id = IdGenerator.uuid
       )
 
-      implicit val system: ActorSystem = ActorSystem("otoroshi-test")
-      implicit val mat: Materializer = Materializer(system)
-      implicit val http: HttpExt = Http()(system)
+      given system: ActorSystem = ActorSystem("otoroshi-test")
+      given mat: Materializer = Materializer(system)
+      given http: HttpExt = Http()
 
       val yesCounter = new AtomicInteger(0)
       val messagesPromise = Promise[Int]()
@@ -732,9 +735,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         id = IdGenerator.uuid
       )
 
-      implicit val system: ActorSystem = ActorSystem("otoroshi-test")
-      implicit val mat: Materializer = Materializer(system)
-      implicit val http: HttpExt = Http()(system)
+      given system: ActorSystem = ActorSystem("otoroshi-test")
+      given mat: Materializer = Materializer(system)
+      given http: HttpExt = Http()
 
       val printSink: Sink[Message, Future[Done]] = Sink.foreach { _ => }
 
@@ -997,7 +1000,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
                   "application/json" -> "custom json response"
                 ),
                 log = false,
-                export = false
+                `export` = false
               ).json.as[JsObject]
             )
           )
@@ -2030,12 +2033,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Read only requests" in {
-       val route = createRequestOtoroshiIORoute(
-         Seq(
+      val route = createRequestOtoroshiIORoute(
+        Seq(
           NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
           NgPluginInstance(NgPluginHelper.pluginId[ReadOnlyCalls])
         )
-       )
+      )
 
       def req() = ws
           .url(s"http://127.0.0.1:$port/api")
@@ -2072,9 +2075,6 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Response body xml-to-json" in {
-      import akka.http.scaladsl.model.{ContentType, MediaTypes, HttpCharsets}
-      import akka.http.scaladsl.model.headers.`Content-Type`
-
       val route = createLocalRoute(
          Seq(
           NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
@@ -2085,7 +2085,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
             ).json.as[JsObject]
           ))
         ),
-        responseHeaders = List(`Content-Type`(ContentType(MediaTypes.`text/xml`, HttpCharsets.`UTF-8`))),
+        responseHeaders = List(RawHeader("Content-Type", "text/xml; charset=UTF-8")),
         stringResult = _ => {
             ByteString("""
             |<?xml version="1.0" encoding="UTF-8" ?>

@@ -2,7 +2,7 @@ package functional
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
-import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage}
 import org.apache.pekko.http.scaladsl.model.AttributeKeys
 import org.apache.pekko.http.scaladsl.util.FastFuture
@@ -19,11 +19,11 @@ import org.slf4j.LoggerFactory
 import otoroshi.api.Otoroshi
 import otoroshi.env.Env
 import otoroshi.loader.modules.OtoroshiComponentsInstances
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.NgRoute
 import play.api.ApplicationLoader.Context
-import play.api.libs.json._
-import play.api.libs.ws._
+import play.api.libs.json.*
+import play.api.libs.ws.*
 import play.api.libs.ws.ahc.{AhcWSClient, AhcWSClientConfig}
 import play.api.{Configuration, Logger}
 import play.core.server.ServerConfig
@@ -32,10 +32,11 @@ import java.net.ServerSocket
 import java.nio.file.Files
 import java.util.Optional
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import scala.concurrent.duration._
-import scala.concurrent._
+import scala.concurrent.duration.*
+import scala.concurrent.*
 import scala.util.{Random, Success, Try}
 import org.slf4j
+import otoroshi.utils.syntax.implicits.BetterJsValue
 
 trait AddConfiguration {
   def getConfiguration(configuration: Configuration): Configuration
@@ -821,8 +822,8 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       )
     )(using materializer)
   }
-  private lazy given scheduler: Scheduler       = actorSystem.scheduler
-  lazy given ec: ExecutionContext               = actorSystem.dispatcher
+  private given scheduler: Scheduler       = actorSystem.scheduler
+  given ec: ExecutionContext               = actorSystem.dispatcher
   private lazy val httpPort: Int = {
     Try {
       val s = new ServerSocket(0)
@@ -842,7 +843,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
 
   def wsClient: WSClient             = wsClientInstance
   def ws: WSClient                   = wsClientInstance
-  lazy given wsImpl: WSClient = wsClientInstance
+  given wsImpl: WSClient = wsClientInstance
   def port: Int                      = httpPort
   def otoroshiComponents: Otoroshi   = otoroshiRef.get()
 
@@ -1580,7 +1581,7 @@ class TargetService(
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
-      case (HttpMethods.GET, p) if host.isEmpty                                       => {
+      case (HttpMethods.GET, p) if host.isEmpty                                       =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1881,7 +1882,7 @@ object TargetService {
       .getOrElse("--")
 
   def json(host: Option[String], path: String, result: HttpRequest => JsValue): TargetService = {
-    apply(host, path, "application/json", r => result(r).stringify)
+    apply(host, "application/json", r => result(r).stringify)
   }
 
   def jsonStreamed(
@@ -1893,7 +1894,6 @@ object TargetService {
     new TargetService(
       freePort,
       host,
-      path,
       "application/json",
       r => {
         val (json, source) = result(r)

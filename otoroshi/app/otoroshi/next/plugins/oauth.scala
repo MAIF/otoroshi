@@ -58,8 +58,8 @@ case class OAuth1CallerConfig(
     algo: Option[String] = None
 ) extends NgPluginConfig {
   override def json: JsValue = OAuth1CallerConfig.format.writes(this)
-  def applyEl(attrs: TypedMap)(implicit env: Env): OAuth1CallerConfig = {
-    OAuth1CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(env).parseJson).get
+  def applyEl(attrs: TypedMap)(using env: Env): OAuth1CallerConfig = {
+    OAuth1CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(using env).parseJson).get
   }
 }
 
@@ -275,8 +275,8 @@ case class OAuth2CallerConfig(
     tlsConfig: MtlsConfig = MtlsConfig()
 ) extends NgPluginConfig {
   override def json: JsValue = OAuth2CallerConfig.format.writes(this)
-  def applyEl(attrs: TypedMap)(implicit env: Env): OAuth2CallerConfig = {
-    OAuth2CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(env).parseJson).get
+  def applyEl(attrs: TypedMap)(using env: Env): OAuth2CallerConfig = {
+    OAuth2CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(using env).parseJson).get
   }
 }
 
