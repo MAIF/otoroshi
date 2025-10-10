@@ -2185,5 +2185,35 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).await()
     }
+
+    "User-Agent details extractor + User-Agent endpoint" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[NgUserAgentExtractor]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[NgUserAgentInfoEndpoint]
+          ),
+        ),
+        id = IdGenerator.uuid)
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/.well-known/otoroshi/plugins/user-agent")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+          "User-Agent" -> "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/119.0"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      Json.parse(resp.body).selectAsString("browser") mustBe "Firefox"
+
+      deleteOtoroshiRoute(route).await()
+    }
   }
 }
