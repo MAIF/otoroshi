@@ -813,7 +813,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
     val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
       compressionEnabled = false,
       idleTimeout = (2 * 60 * 1000).millis,
-      connectionTimeout = (2 * 60 * 1000).millis
+      connectionTimeout = (2 * 60 * 1000).millis,
     )
     AhcWSClient(
       config.copy(
@@ -1453,6 +1453,21 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       .andWait(1000.millis)
   }
 
+  def updateOtoroshiRoute(route: NgRoute, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
+    wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${route.id}")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .put(Json.stringify(route.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
   def deleteOtoroshiRoute(route: NgRoute, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
     wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${route.id}")
@@ -1590,7 +1605,7 @@ class TargetService(
           HttpResponse(
             code,
             headers = headers,
-            entity = entity
+            entity = entity,
           )
         )
       case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get    =>
