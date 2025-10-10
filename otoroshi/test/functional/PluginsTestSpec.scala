@@ -114,7 +114,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       )
 
       val result = createOtoroshiRoute(newRoute)
-        .await()
+        .futureValue
 
       if (result._2 == Status.CREATED) {
         newRoute
@@ -187,7 +187,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       )
 
       val resp = createOtoroshiRoute(newRoute)
-        .await()
+        .futureValue
 
       if (resp._2 == Status.CREATED) {
         newRoute
@@ -197,11 +197,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     def createApiKeys() = {
-      createOtoroshiApiKey(getValidApiKeyForPluginsRoute).await()
+      createOtoroshiApiKey(getValidApiKeyForPluginsRoute).futureValue
     }
 
     def deleteApiKeys() = {
-      deleteOtoroshiApiKey(getValidApiKeyForPluginsRoute).await()
+      deleteOtoroshiApiKey(getValidApiKeyForPluginsRoute).futureValue
     }
 
     def getValidApiKeyForPluginsRoute = {
@@ -261,7 +261,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       resp2.status mustBe 405
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
     // FIX: test not complete
     "Apikeys" in {
@@ -305,7 +305,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       authorizedCall.status mustBe Status.OK
 
       deleteApiKeys()
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Additional headers in" in {
@@ -339,7 +339,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       getInHeader(resp, "foo") mustBe Some("bar")
 
       deleteApiKeys()
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Additional headers out" in {
@@ -373,7 +373,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       getOutHeader(resp, "foo") mustBe Some("bar")
 
       deleteApiKeys()
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Headers validation" in {
@@ -431,7 +431,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       resp3.status mustBe 400
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Missing headers in" in {
@@ -467,7 +467,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       getInHeader(resp, "foo") mustBe Some("foo_value")
       getInHeader(resp, "foo2") mustBe Some("client_value")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Missing headers out" in {
@@ -501,7 +501,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.OK
       getOutHeader(resp, "foo") mustBe Some("foo_value")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Override Host Header" in {
@@ -525,7 +525,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.OK
       getInHeader(resp, "host") mustBe Some("request.otoroshi.io")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Override Location Header: redirect to relative path" in {
@@ -556,7 +556,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.CREATED
       getOutHeader(resp, "Location") mustBe Some("/foo")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Override Location Header: redirect to domain + path" in {
@@ -599,8 +599,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       resp.status mustBe Status.OK
 
-      deleteOtoroshiRoute(route).await()
-      deleteOtoroshiRoute(finalTargetRoute).await()
+      deleteOtoroshiRoute(route).futureValue
+      deleteOtoroshiRoute(finalTargetRoute).futureValue
     }
 
     "Security Txt" in {
@@ -629,7 +629,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         resp.status mustBe Status.OK
         expected.foreach(str => resp.body.contains(str) mustBe true)
 
-        deleteOtoroshiRoute(route).await()
+        deleteOtoroshiRoute(route).futureValue
       }
 
       test(
@@ -716,7 +716,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       val yesMessagesCounter = messagesPromise.future.futureValue(Timeout(Span(1, Minutes)))
       yesMessagesCounter >= 3 mustBe true
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
       system.terminate()
     }
 
@@ -751,7 +751,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       upgradeResponse.futureValue.response.status.intValue() mustBe 500
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
       system.terminate()
     }
 
@@ -786,7 +786,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       getInHeader(resp, "foo") mustBe None
       getInHeader(resp, "foo2") mustBe Some("client_value")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Remove headers out" in {
@@ -823,7 +823,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       getOutHeader(resp, "foo") mustBe None
       getOutHeader(resp, "foo2") mustBe Some("baz")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Build mode" in {
@@ -849,7 +849,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.SERVICE_UNAVAILABLE
       resp.body.contains("Service under construction") mustBe true
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Maintenance mode" in {
@@ -875,7 +875,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.SERVICE_UNAVAILABLE
       resp.body.contains("Service in maintenance mode") mustBe true
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Custom error template" in {
@@ -921,7 +921,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         metadata = Map.empty
       )
 
-      createOtoroshiErrorTemplate(error).await()
+      createOtoroshiErrorTemplate(error).futureValue
 
       {
         val resp = ws
@@ -977,9 +977,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         Json.parse(resp2.body).selectAsString("otoroshi-error") mustEqual "Service in maintenance mode"
       }
 
-      deleteOtoroshiErrorTemplate(error).await()
-      deleteOtoroshiRoute(route).await()
-      deleteOtoroshiRoute(maintenanceRoute).await()
+      deleteOtoroshiErrorTemplate(error).futureValue
+      deleteOtoroshiRoute(route).futureValue
+      deleteOtoroshiRoute(maintenanceRoute).futureValue
     }
 
     "Error response rewrite" in {
@@ -1032,7 +1032,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         resp.body mustEqual "custom json response"
       }
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Reject headers out too long" in {
@@ -1067,7 +1067,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       getOutHeader(resp, "foo") mustBe Some("bar")
       getOutHeader(resp, "baz") mustBe None
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Reject headers in too long" in {
@@ -1101,7 +1101,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       getInHeader(resp, "foo") mustBe Some("bar")
       getInHeader(resp, "baz") mustBe None
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Additional cookies in" in {
@@ -1139,7 +1139,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       cookies.get("cookie") mustBe Some("value")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Additional cookies out" in {
@@ -1172,7 +1172,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.cookies.exists(_.name == "cookie") mustBe true
       resp.cookies.find(_.name == "cookie").map(_.value) mustBe Some("value")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Limit headers in too long" in {
@@ -1216,7 +1216,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       logger.detachAppender(appender)
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Limit headers out too long" in {
@@ -1262,7 +1262,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       logger.detachAppender(appender)
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Basic Auth. caller" in {
@@ -1296,7 +1296,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.OK
       getInHeader(resp, "foo") mustBe Some("Foo Zm9vOmJhcg==")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Force HTTPS traffic" in {
@@ -1326,7 +1326,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.SEE_OTHER
       getOutHeader(resp, "Location") mustBe Some("https://force.oto.tools:8443/api")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Forwarded header" in {
@@ -1355,7 +1355,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       getInHeader(resp, "x-forwarded-port") mustBe Some("443")
       getInHeader(resp, "forwarded").isDefined mustBe true
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Mock responses" in {
@@ -1415,7 +1415,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         Json.parse(resp.body) mustBe Json.obj("message" -> "done")
       }
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Block non HTTPS traffic" in {
@@ -1446,7 +1446,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         clientName = "apikey1",
         authorizedEntities = Seq.empty
       )
-      createOtoroshiApiKey(apikey).await()
+      createOtoroshiApiKey(apikey).futureValue
 
       apikey.enabled mustBe true
 
@@ -1467,8 +1467,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       env.proxyState.apikey(apikey.clientId)
         .map(_.enabled mustBe false)
 
-      deleteOtoroshiApiKey(apikey).await()
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiApiKey(apikey).futureValue
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Consumer endpoint with apikey" in {
@@ -1494,7 +1494,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         metadata = Map("foo" -> "bar"),
         tags = Seq("foo")
       )
-      createOtoroshiApiKey(apikey).await()
+      createOtoroshiApiKey(apikey).futureValue
 
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
@@ -1512,8 +1512,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       Json.parse(resp.body).selectAsString("clientId") mustEqual apikey.clientId
       Json.parse(resp.body).selectAsString("clientName") mustEqual apikey.clientName
 
-      deleteOtoroshiApiKey(apikey).await()
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiApiKey(apikey).futureValue
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Consumer endpoint without apikey" in {
@@ -1539,7 +1539,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.OK
       Json.parse(resp.body).selectAsString("access_type") mustEqual "public"
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Missing cookies in" in {
@@ -1604,7 +1604,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         cookies.get("foo") mustBe Some("bar")
       }
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Missing cookies out" in {
@@ -1680,8 +1680,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         resp.status mustBe Status.OK
         resp.cookies.find(_.name == "foo").get.value mustBe "bar"
 
-        deleteOtoroshiRoute(localRoute).await()
-        deleteOtoroshiRoute(route).await()
+        deleteOtoroshiRoute(localRoute).futureValue
+        deleteOtoroshiRoute(route).futureValue
       }
     }
 
@@ -1725,7 +1725,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp2.status mustBe Status.OK
       Json.parse(resp2.body).selectAsObject("body") mustEqual Json.obj("body_from_client" -> true)
 
-      deleteOtoroshiRoute(localRoute).await()
+      deleteOtoroshiRoute(localRoute).futureValue
     }
 
     "HMAC caller plugin" in {
@@ -1759,7 +1759,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .getEncoder
         .encodeToString(Signatures.hmac(HMACUtils.Algo("HMAC-SHA512"), getInHeader(resp, "date").get, "secret")))
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "HMAC access validator" in {
@@ -1794,7 +1794,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       resp.status mustBe Status.OK
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "HMAC access validator with apikey as secret" in {
@@ -1822,7 +1822,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         clientName = "apikey1",
         authorizedEntities = Seq.empty
       )
-      createOtoroshiApiKey(apikey).await()
+      createOtoroshiApiKey(apikey).futureValue
 
       val base = System.currentTimeMillis().toString
       val signature = Base64.getEncoder.encodeToString(Signatures.hmac(HMACUtils.Algo("HMAC-SHA512"), base, apikey.clientSecret))
@@ -1842,7 +1842,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.OK
 
       deleteOtoroshiApiKey(apikey)
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Static Response" in {
@@ -1877,7 +1877,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       getOutHeader(resp, "baz") mustBe Some("bar")
       Json.parse(resp.body) mustEqual Json.obj("foo" -> "client value")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Http static asset" in {
@@ -1927,8 +1927,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         Json.parse(resp.body).selectAsOptString("path").isDefined mustBe true
       }
 
-      deleteOtoroshiRoute(staticAssetRoute).await()
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(staticAssetRoute).futureValue
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Disable HTTP/1.0" in {
@@ -1989,7 +1989,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         )
 
       resp.contains("HTTP/1.0 503 Service Unavailable") mustBe true
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Query param transformer" in {
@@ -2027,7 +2027,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         "new_query" -> "value"
       )
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Read only requests" in {
@@ -2069,7 +2069,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .futureValue
           .status mustBe Status.METHOD_NOT_ALLOWED
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Response body xml-to-json" in {
@@ -2116,7 +2116,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       Json.parse(resp.body).selectAsObject("book").selectAsOptObject("title").isDefined mustBe true
       Json.parse(resp.body).selectAsObject("book").selectAsString("author") mustBe "Erik T. Ray"
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "User-Agent details extractor" in {
@@ -2141,7 +2141,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.OK
       getInHeader(resp, "user-agent").isDefined mustBe true
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "User-Agent details extractor + User-Agent header" in {
@@ -2176,7 +2176,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       getInHeader(resp, "foo").isDefined mustBe true
       getInHeader(resp, "foo").map(foo => Json.parse(foo).selectAsString("browser") mustBe "Firefox")
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "User-Agent details extractor + User-Agent endpoint" in {
@@ -2206,7 +2206,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       resp.status mustBe Status.OK
       Json.parse(resp.body).selectAsString("browser") mustBe "Firefox"
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Request body xml-to-json" in {
@@ -2241,7 +2241,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       body.selectAsObject("book").selectAsString("cover") mustBe "paperback"
       body.selectAsObject("book").selectAsOptObject("title").isDefined mustBe true
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Jwt signer" in {
@@ -2285,7 +2285,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("iss") mustBe "foo"
 
       deleteOtoroshiVerifier(verifier)
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Jwt signer should not replace the incoming token" in {
@@ -2330,7 +2330,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("iss") mustBe "foo"
 
       deleteOtoroshiVerifier(verifier)
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Jwt verification only (without verifier)" in {
@@ -2359,7 +2359,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         resp.status mustBe Status.BAD_REQUEST
       }
 
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Jwt verification only (without token)" in {
@@ -2399,8 +2399,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       resp.status mustBe Status.BAD_REQUEST
 
-      deleteOtoroshiVerifier(verifier).await()
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiVerifier(verifier).futureValue
+      deleteOtoroshiRoute(route).futureValue
     }
 
     "Jwt verification only with token" in {
@@ -2443,8 +2443,95 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         resp.status mustBe Status.OK
       }
 
-      deleteOtoroshiVerifier(verifier).await()
-      deleteOtoroshiRoute(route).await()
+      deleteOtoroshiVerifier(verifier).futureValue
+      deleteOtoroshiRoute(route).futureValue
+    }
+
+    "Jwt verifiers" in {
+      val verifier = GlobalJwtVerifier(
+        id = "verifier",
+        name = "verifier",
+        desc = "verifier",
+        strict = true,
+        source = InHeader(name = "foo"),
+        algoSettings = HSAlgoSettings(256, "secret"),
+        strategy = PassThrough(
+          verificationSettings = VerificationSettings(Map("iss" -> "foo"))
+        )
+      )
+      
+      val verifier2 = GlobalJwtVerifier(
+        id = "verifier2",
+        name = "verifier2",
+        desc = "verifier2",
+        strict = true,
+        source = InHeader(name = "foo"),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = PassThrough(
+          verificationSettings = VerificationSettings(Map("iss" -> "foo"))
+        )
+      )
+      createOtoroshiVerifier(verifier).futureValue
+      createOtoroshiVerifier(verifier2).futureValue
+
+      val route = createRequestOtoroshiIORoute(
+         Seq(
+          NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
+          NgPluginInstance(NgPluginHelper.pluginId[JwtVerification],
+            config = NgPluginInstanceConfig(
+              NgJwtVerificationConfig(
+                verifiers = Seq(verifier2.id, verifier.id)
+              ).json.as[JsObject]
+            )
+          ))
+      )
+
+      val token256 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmb28iLCJpYXQiOjE3NjAxMDM1MzN9.TAj08m-Ax3dUFrZ2NU3oG3tPdIFOGvJdpO3Yhas63rw"
+      val token512 = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmb28iLCJpYXQiOjE3NjAxMDQ1MDN9.EWLHg8HQimFAhKnaUZ1C_1vYEjSbFuLgErRzHQ2tMTeHFoWwIws52GmhXoCBGx37viQcGqRLRtBv2me8oRd6BA"
+      val wrongSecret = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmb28iLCJpYXQiOjE3NjAxMDM5NDl9.M0Wc2Vt4-W7bSGzsplXQVu4oqWvqzxQbP5PJIyUVWrMQ6ba4KERzI4MzlONZFx7y95Z49_dISF6xQQr9hpdAGw"
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain,
+            "foo" -> token256
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.OK
+      }
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain,
+            "foo" -> token512
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.OK
+      }
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain,
+            "foo" -> wrongSecret
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.BAD_REQUEST
+      }
+
+      deleteOtoroshiVerifier(verifier).futureValue
+      deleteOtoroshiVerifier(verifier2).futureValue
+      deleteOtoroshiRoute(route).futureValue
     }
   }
 }
