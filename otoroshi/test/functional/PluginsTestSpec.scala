@@ -2232,8 +2232,6 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
             |""".stripMargin)
         .futureValue
 
-      println(resp.status)
-      println(resp.body)
       val body = Json.parse(resp.body).selectAsObject("body")
 
       body.selectAsOptObject("book").isDefined mustBe true
@@ -2284,13 +2282,13 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       val tokenBody = getInHeader(resp, "x-jwt-token").get.split("\\.")(1)
       Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("iss") mustBe "foo"
 
-      deleteOtoroshiVerifier(verifier)
+      deleteOtoroshiVerifier(verifier).futureValue
       deleteOtoroshiRoute(route).futureValue
     }
 
     "Jwt signer should not replace the incoming token" in {
       val verifier = GlobalJwtVerifier(
-        id = "verifier",
+        id = IdGenerator.uuid,
         name = "verifier",
         desc = "verifier",
         strict = true,
@@ -2321,15 +2319,17 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> route.frontend.domains.head.domain,
-          "x-jwt-token" -> "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYmYiOjE3NjAwOTkxODIsImp0aSI6IjViNjFjODFhZS04YmEyLTRkYjgtOGI2NC02Y2QxZTZjZDVlYTIiLCJleHAiOjE3NjAwOTkyNDIsImlhdCI6MTc2MDA5OTE4Miwic3ViIjoiYW5vbnltb3VzIiwiYXVkIjoiYmFja2VuZCIsImlzcyI6ImZvbyJ9.MI1-QJ6qlBH0ZrviylYTh1FXOSFhu1Zdeg3B3jMqxvKtgAWB79rmgSBrTb3dK0_sWdPUPKOZTds2K4IuYz54Ug"
+          "x-jwt-token" -> "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmb28iLCJpYXQiOjE3NjAxMDY2OTZ9.bI7ghu2LG9k0s4QXPBlunwFk8TlHeUVyDF6Kv4Xfa8KF-3WXqORlJdW5o8NcY1tcs9UXvUw4TeRrS_QoZhvooQ"
         )
         .get()
         .futureValue
 
+      resp.status mustBe Status.OK
+
       val tokenBody = getInHeader(resp, "x-jwt-token").get.split("\\.")(1)
       Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("iss") mustBe "foo"
 
-      deleteOtoroshiVerifier(verifier)
+      deleteOtoroshiVerifier(verifier).futureValue
       deleteOtoroshiRoute(route).futureValue
     }
 
@@ -2364,7 +2364,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
     "Jwt verification only (without token)" in {
       val verifier = GlobalJwtVerifier(
-        id = "verifier",
+        id = IdGenerator.uuid,
         name = "verifier",
         desc = "verifier",
         strict = true,
@@ -2405,7 +2405,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
     "Jwt verification only with token" in {
       val verifier = GlobalJwtVerifier(
-        id = "verifier",
+        id = IdGenerator.uuid,
         name = "verifier",
         desc = "verifier",
         strict = true,
@@ -2449,7 +2449,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
     "Jwt verifiers" in {
       val verifier = GlobalJwtVerifier(
-        id = "verifier",
+        id = IdGenerator.uuid,
         name = "verifier",
         desc = "verifier",
         strict = true,
@@ -2461,7 +2461,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       )
       
       val verifier2 = GlobalJwtVerifier(
-        id = "verifier2",
+        id = IdGenerator.uuid,
         name = "verifier2",
         desc = "verifier2",
         strict = true,

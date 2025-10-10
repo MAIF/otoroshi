@@ -76,7 +76,6 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
     if (ctx.request.hasBody && ctx.otoroshiRequest.contentType.exists(c => c.contains("text/xml") || c.contains("application/xml"))) {
-      println("HERE")
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val str = bodyRaw.utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
         val xmlBody  = scala.xml.XML.loadString(str)
@@ -84,9 +83,6 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
         transform(jsonBody, config) match {
           case Left(err)   => Results.InternalServerError(err).as("application/json").left
           case Right(body) => {
-            println("body send", body, ctx.otoroshiRequest.headers
-                  .removeAndPutIgnoreCase("Content-Type" -> "application/json")
-                  .removeAndPutIgnoreCase("Content-Length" -> jsonBody.size.toString))
             ctx.otoroshiRequest
               .copy(
                 body = Source(body.byteString.grouped(16 * 1024).toList),
