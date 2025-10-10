@@ -33,6 +33,7 @@ import play.api.libs.ws.{DefaultWSCookie, WSRequest}
 import play.api.{Configuration, Logger}
 
 import java.util.Base64
+import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Future, Promise}
@@ -2243,5 +2244,93 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       deleteOtoroshiRoute(route).await()
     }
 
+    "Jwt signer" in {
+      val verifier = GlobalJwtVerifier(
+        id = "verifier",
+        name = "verifier",
+        desc = "verifier",
+        strict = true,
+        source = InHeader(name = "X-JWT-Token"),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = DefaultToken(
+          strict = true,
+          token = Json.obj("iss" -> "foo")
+        )
+      )
+      createOtoroshiVerifier(verifier).futureValue
+
+      val route = createRequestOtoroshiIORoute(
+         Seq(
+          NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
+          NgPluginInstance(NgPluginHelper.pluginId[JwtSigner],
+            config = NgPluginInstanceConfig(
+              NgJwtSignerConfig(
+                verifier = verifier.id.some,
+                replaceIfPresent = true,
+                failIfPresent = false
+              ).json.as[JsObject]
+            )
+          ))
+      )
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain
+        )
+        .get()
+        .futureValue
+
+      val tokenBody = getInHeader(resp, "x-jwt-token").get.split("\\.")(1)
+      Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("iss") mustBe "foo"
+
+      deleteOtoroshiVerifier(verifier)
+      deleteOtoroshiRoute(route).await()
+    }
+
+    "Jwt signer should not replace the incoming token" in {
+      val verifier = GlobalJwtVerifier(
+        id = "verifier",
+        name = "verifier",
+        desc = "verifier",
+        strict = true,
+        source = InHeader(name = "X-JWT-Token"),
+        algoSettings = HSAlgoSettings(512, "secret"),
+        strategy = DefaultToken(
+          strict = true,
+          token = Json.obj("iss" -> "bar")
+        )
+      )
+      createOtoroshiVerifier(verifier).futureValue
+
+      val route = createRequestOtoroshiIORoute(
+         Seq(
+          NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
+          NgPluginInstance(NgPluginHelper.pluginId[JwtSigner],
+            config = NgPluginInstanceConfig(
+              NgJwtSignerConfig(
+                verifier = verifier.id.some,
+                replaceIfPresent = false,
+                failIfPresent = false
+              ).json.as[JsObject]
+            )
+          ))
+      )
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+          "x-jwt-token" -> "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYmYiOjE3NjAwOTkxODIsImp0aSI6IjViNjFjODFhZS04YmEyLTRkYjgtOGI2NC02Y2QxZTZjZDVlYTIiLCJleHAiOjE3NjAwOTkyNDIsImlhdCI6MTc2MDA5OTE4Miwic3ViIjoiYW5vbnltb3VzIiwiYXVkIjoiYmFja2VuZCIsImlzcyI6ImZvbyJ9.MI1-QJ6qlBH0ZrviylYTh1FXOSFhu1Zdeg3B3jMqxvKtgAWB79rmgSBrTb3dK0_sWdPUPKOZTds2K4IuYz54Ug"
+        )
+        .get()
+        .futureValue
+
+      val tokenBody = getInHeader(resp, "x-jwt-token").get.split("\\.")(1)
+      Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("iss") mustBe "foo"
+
+      deleteOtoroshiVerifier(verifier)
+      deleteOtoroshiRoute(route).await()
+    }
   }
 }
