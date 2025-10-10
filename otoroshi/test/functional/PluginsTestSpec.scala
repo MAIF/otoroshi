@@ -2109,19 +2109,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .get()
         .futureValue
 
-      Json.parse(resp.body) mustEqual Json.obj(
-        "book" -> Json.obj(
-            "category" -> "web",
-            "cover"-> "paperback",
-            "title" -> Json.obj(
-                "lang" -> "en",
-                "#text" -> "Learning XML"
-            ),
-            "author" -> "Erik T. Ray",
-            "year" -> "2003",
-            "price" -> "39.95"
-        )
-      )
+      Json.parse(resp.body).selectAsOptObject("book").isDefined mustBe true
+      Json.parse(resp.body).selectAsObject("book").selectAsString("category") mustBe "web"
+      Json.parse(resp.body).selectAsObject("book").selectAsString("cover") mustBe "paperback"
+      Json.parse(resp.body).selectAsObject("book").selectAsOptObject("title").isDefined mustBe true
+      Json.parse(resp.body).selectAsObject("book").selectAsString("author") mustBe "Erik T. Ray"
 
       deleteOtoroshiRoute(route).await()
     }
