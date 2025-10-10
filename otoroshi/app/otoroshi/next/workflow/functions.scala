@@ -754,8 +754,7 @@ class HelloFunction extends WorkflowFunction {
   )
   override def call(args: JsObject)(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val name    = args.select("name").asOptString.getOrElse("Stranger")
-    val message = s"Hello $name !"
-    println(message)
+    val message = s"Hello ${name} !"
     message.json.rightf
   }
 }
