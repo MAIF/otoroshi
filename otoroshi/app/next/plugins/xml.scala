@@ -75,13 +75,18 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
-    if (ctx.request.hasBody && ctx.otoroshiRequest.contentType.exists(_.contains("text/xml"))) {
+    if (ctx.request.hasBody && ctx.otoroshiRequest.contentType.exists(c => c.contains("text/xml") || c.contains("application/xml"))) {
+      println("HERE")
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val xmlBody  = scala.xml.XML.loadString(bodyRaw.utf8String)
+        val str = bodyRaw.utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
+        val xmlBody  = scala.xml.XML.loadString(str)
         val jsonBody = otoroshi.utils.xml.Xml.toJson(xmlBody).stringify
         transform(jsonBody, config) match {
           case Left(err)   => Results.InternalServerError(err).as("application/json").left
           case Right(body) => {
+            println("body send", body, ctx.otoroshiRequest.headers
+                  .removeAndPutIgnoreCase("Content-Type" -> "application/json")
+                  .removeAndPutIgnoreCase("Content-Length" -> jsonBody.size.toString))
             ctx.otoroshiRequest
               .copy(
                 body = Source(body.byteString.grouped(16 * 1024).toList),
@@ -167,7 +172,7 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
-    if (ctx.otoroshiResponse.contentType.exists(_.contains("text/xml"))) {
+    if (ctx.otoroshiResponse.contentType.exists(c => c.contains("text/xml") || c.contains("application/xml"))) {
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val cleanXml = bodyRaw.utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
         val xmlBody = scala.xml.XML.loadString(cleanXml)
