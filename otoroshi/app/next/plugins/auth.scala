@@ -830,7 +830,7 @@ object BasicAuthWithAuthModuleConfig {
         "type"  -> "select",
         "label" -> "Auth. module",
         "props" -> Json.obj(
-          "optionsFrom"        -> "/bo/api/proxy/api/auths",
+          "optionsFrom"        -> "/bo/api/proxy/api/auths?types=basic&types=ldap",
           "optionsTransformer" -> Json.obj(
             "label" -> "name",
             "value" -> "id"
