@@ -58,7 +58,12 @@ class PublicPrivatePaths extends NgAccessValidator {
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Public/Private paths"
-  override def description: Option[String]                 = "This plugin allows or forbid request based on path patterns".some
+  override def description: Option[String] =
+      """This plugin allows or forbid request based on path patterns
+        |
+        | Strict mode = restricted access.
+        | Only an API key is accepted.
+      """.stripMargin.some
   override def defaultConfigObject: Option[NgPluginConfig] = NgPublicPrivatePathsConfig().some
   override def isAccessAsync: Boolean                      = true
 

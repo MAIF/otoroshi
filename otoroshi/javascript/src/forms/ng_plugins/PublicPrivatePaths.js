@@ -14,8 +14,11 @@ export default {
       format: null,
     },
     strict: {
-      label: 'strict',
-      type: 'bool',
+      type: 'box-bool',
+      props: {
+        label: 'strict',
+        description: 'Strict mode = only an API key is accepted.'
+      },
     },
   },
   config_flow: ['private_patterns', 'public_patterns', 'strict'],

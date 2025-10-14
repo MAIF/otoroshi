@@ -2675,5 +2675,80 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).futureValue
     }
+
+    "Public/Private paths" in {
+      val strictRoute = createRequestOtoroshiIORoute(
+         Seq(
+           NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
+           NgPluginInstance(NgPluginHelper.pluginId[ApikeyCalls],
+             config = NgPluginInstanceConfig(
+               NgApikeyCallsConfig(
+                  mandatory = false
+               ).json.as[JsObject]
+             )),
+           NgPluginInstance(NgPluginHelper.pluginId[PublicPrivatePaths],
+             config = NgPluginInstanceConfig(
+                NgPublicPrivatePathsConfig(
+                  strict = true,
+                  publicPatterns = Seq("/public/*."),
+                  privatePatterns = Seq("/private")
+                ).json.as[JsObject]
+             )
+            )
+         ),
+        id = IdGenerator.uuid)
+
+      val nonStrictRoute = createRequestOtoroshiIORoute(
+         Seq(
+           NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
+           NgPluginInstance(NgPluginHelper.pluginId[ApikeyCalls],
+             config = NgPluginInstanceConfig(
+               NgApikeyCallsConfig(
+                  mandatory = false
+               ).json.as[JsObject]
+             )),
+           NgPluginInstance(NgPluginHelper.pluginId[PublicPrivatePaths],
+             config = NgPluginInstanceConfig(
+                NgPublicPrivatePathsConfig(
+                  strict = true,
+                  publicPatterns = Seq("/public/*."),
+                  privatePatterns = Seq("/private")
+                ).json.as[JsObject]
+             )
+            )
+         ),
+         id = IdGenerator.uuid)
+
+      val apikey = ApiKey(
+        clientId = "apikey-test",
+        clientSecret = "1234",
+        clientName = "apikey-test",
+        authorizedEntities = Seq(RouteIdentifier(strictRoute.id), RouteIdentifier(nonStrictRoute.id))
+      )
+
+      createOtoroshiApiKey(apikey).futureValue
+
+      def call(route: NgRoute, path: String, addApikey: Boolean = false) = ws
+          .url(s"http://127.0.0.1:$port/$path")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain,
+            "Otoroshi-Client-Id" -> getValidApiKeyForPluginsRoute.clientId,
+            "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute.clientSecret
+          )
+          .get()
+          .futureValue
+
+      call(nonStrictRoute, "/public").status mustBe Status.OK
+      call(nonStrictRoute, "/public/foo").status mustBe Status.OK
+      call(nonStrictRoute, "/private").status mustBe Status.UNAUTHORIZED
+      call(nonStrictRoute, "/private", addApikey = true).status mustBe Status.OK
+
+      call(strictRoute, "/private", addApikey = true).status mustBe Status.OK
+      call(strictRoute, "/private").status mustBe Status.UNAUTHORIZED
+
+      deleteOtoroshiApiKey(apikey).futureValue
+      deleteOtoroshiRoute(strictRoute).futureValue
+      deleteOtoroshiRoute(nonStrictRoute).futureValue
+    }
   }
 }
