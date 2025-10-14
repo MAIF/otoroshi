@@ -2627,5 +2627,53 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       deleteOtoroshiVerifier(verifier).futureValue
       deleteOtoroshiRoute(route).futureValue
     }
+
+    "Otoroshi Health endpoint" in {
+      val route = createRequestOtoroshiIORoute(
+         Seq(
+           NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
+           NgPluginInstance(NgPluginHelper.pluginId[OtoroshiHealthEndpoint],
+             include = Seq("/health")
+            )
+         ))
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.OK
+        Json.parse(resp.body).selectAsString("method") mustEqual "GET"
+      }
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/health")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain
+          )
+          .get()
+          .futureValue
+
+        resp.status mustBe Status.OK
+        Json.parse(resp.body).selectAsString("otoroshi") mustEqual "healthy"
+        Json.parse(resp.body).selectAsString("datastore") mustEqual "healthy"
+
+        val keys = Json.parse(resp.body).as[JsObject].keys
+
+        keys.contains("proxy")
+        keys.contains("storage")
+        keys.contains("eventstore")
+        keys.contains("certificates")
+        keys.contains("scripts")
+        keys.contains("cluster")
+      }
+
+      deleteOtoroshiRoute(route).futureValue
+    }
   }
 }
