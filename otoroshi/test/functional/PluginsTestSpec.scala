@@ -2533,5 +2533,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       deleteOtoroshiVerifier(verifier2).futureValue
       deleteOtoroshiRoute(route).futureValue
     }
+
+    ""
   }
 }
