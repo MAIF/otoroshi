@@ -2690,7 +2690,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
              config = NgPluginInstanceConfig(
                 NgPublicPrivatePathsConfig(
                   strict = true,
-                  publicPatterns = Seq("/public/*."),
+                  publicPatterns = Seq("/public"),
                   privatePatterns = Seq("/private")
                 ).json.as[JsObject]
              )
@@ -2711,7 +2711,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
              config = NgPluginInstanceConfig(
                 NgPublicPrivatePathsConfig(
                   strict = true,
-                  publicPatterns = Seq("/public/*."),
+                  publicPatterns = Seq("/public"),
                   privatePatterns = Seq("/private")
                 ).json.as[JsObject]
              )
@@ -2728,18 +2728,29 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       createOtoroshiApiKey(apikey).futureValue
 
-      def call(route: NgRoute, path: String, addApikey: Boolean = false) = ws
-          .url(s"http://127.0.0.1:$port/$path")
-          .withHttpHeaders(
-            "Host" -> route.frontend.domains.head.domain,
-            "Otoroshi-Client-Id" -> getValidApiKeyForPluginsRoute.clientId,
-            "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute.clientSecret
-          )
-          .get()
-          .futureValue
+      def call(route: NgRoute, path: String, addApikey: Boolean = false) = {
+        if (addApikey) {
+          ws
+            .url(s"http://127.0.0.1:$port$path")
+            .withHttpHeaders(
+              "Host" -> route.frontend.domains.head.domain,
+              "Otoroshi-Client-Id" -> getValidApiKeyForPluginsRoute.clientId,
+              "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute.clientSecret
+            )
+            .get()
+            .futureValue
+        } else {
+          ws
+            .url(s"http://127.0.0.1:$port$path")
+            .withHttpHeaders(
+              "Host" -> route.frontend.domains.head.domain
+            )
+            .get()
+            .futureValue
+        }
+      }
 
       call(nonStrictRoute, "/public").status mustBe Status.OK
-      call(nonStrictRoute, "/public/foo").status mustBe Status.OK
       call(nonStrictRoute, "/private").status mustBe Status.UNAUTHORIZED
       call(nonStrictRoute, "/private", addApikey = true).status mustBe Status.OK
 

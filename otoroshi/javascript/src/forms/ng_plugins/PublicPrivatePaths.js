@@ -17,7 +17,7 @@ export default {
       type: 'box-bool',
       props: {
         label: 'strict',
-        description: 'Strict mode = only an API key is accepted.'
+        description: 'In strict mode, for non-public (private) routes, only requests that include a valid API key will be authorized.'
       },
     },
   },
