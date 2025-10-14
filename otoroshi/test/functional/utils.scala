@@ -21,6 +21,7 @@ import org.scalatest.{MustMatchers, OptionValues, TestSuite, WordSpec}
 import org.scalatestplus.play.components.{OneServerPerSuiteWithComponents, OneServerPerTestWithComponents}
 import org.slf4j.LoggerFactory
 import otoroshi.api.Otoroshi
+import otoroshi.auth.AuthModuleConfig
 import otoroshi.models.DataExporterConfig
 import otoroshi.loader.modules.OtoroshiComponentsInstances
 import otoroshi.next.models.NgRoute
@@ -1349,6 +1350,24 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .andWait(2000.millis)
   }
 
+  def createAuthModule(
+      auth: AuthModuleConfig,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/auths")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(auth.asJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(2000.millis)
+  }
+
   def createOtoroshiApiKey(
       apiKey: ApiKey,
       customPort: Option[Int] = None,
@@ -1391,6 +1410,24 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       ws: WSClient = wsClient
   ): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/verifiers/${verifier.id}")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def deleteAuthModule(
+      auth: AuthModuleConfig,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/auths/${auth.id}")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
