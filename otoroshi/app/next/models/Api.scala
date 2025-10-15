@@ -964,7 +964,7 @@ case class Api(
               .mkString(", ") + " - " + apiRoute.frontend.domains.map(_.path).mkString(", "),
             description = description,
             tags = tags,
-            metadata = metadata ++ Map("Api-Ref" -> id),
+            metadata = metadata ++ Map("Otoroshi-Api-Ref" -> id),
             enabled = apiRoute.enabled,
             capture = capture,
             debugFlow = debugFlow,
