@@ -1001,7 +1001,7 @@ class WebsocketEngine(
                 Left(NgWebsocketError(500.some, "internal_server_error".some, wrapper.plugin.rejectStrategy(ctx).some))
               )
             case Success(Left(error))                             => {
-              //println("DENIED", wrapper.plugin.rejectStrategy(ctx), wrapper.plugin.name, error.statusCode, error.reason)
+//              println("DENIED", wrapper.plugin.rejectStrategy(ctx), wrapper.plugin.name, error.statusCode, error.reason)
               wrapper.plugin.rejectStrategy(ctx) match {
                 case RejectStrategy.Close =>
                   closeConnection(NgWebsocketResponse(NgAccess.NgAllowed, error.statusCode, error.reason))

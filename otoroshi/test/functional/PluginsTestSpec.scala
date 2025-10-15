@@ -1,9 +1,9 @@
 package functional
 
-import akka.Done
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.{Host, HttpCookie, RawHeader, `Content-Type`, `Set-Cookie`}
-import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
+import akka.http.scaladsl.model.ws.{BinaryMessage, Message, PeerClosedConnectionException, TextMessage, WebSocketRequest}
 import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
@@ -38,7 +38,8 @@ import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{Await, Future, Promise}
+import scala.util.{Failure, Success}
 
 class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
@@ -135,9 +136,14 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
                           frontendPath: String = "/api",
                           jsonAPI: Boolean = true,
                           responseContentType: String = "application/json",
-                          stringResult: HttpRequest => String = _ => ""
+                          stringResult: HttpRequest => String = _ => "",
+                          target: Option[NgTarget] = None
                         ) = {
-      val target = (if (jsonAPI) TargetService
+
+      var _target: Option[TargetService] = None
+
+      if (target.isEmpty)
+        _target = (if (jsonAPI) TargetService
         .jsonFull(
           Some(domain),
           frontendPath,
@@ -149,7 +155,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           contentType = responseContentType,
           r => (responseStatus, stringResult(r), responseHeaders)
         ))
-        .await()
+          .await()
+          .some
 
       val newRoute = NgRoute(
         location = EntityLocation.default,
@@ -171,12 +178,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         ),
         backend = NgBackend(
           targets = Seq(
-            NgTarget(
+            target.getOrElse(NgTarget(
               hostname = "127.0.0.1",
-              port = target.port,
+              port = _target.get.port,
               id = "local.target",
               tls = https
-            )
+            ))
           ),
           root = "/",
           rewrite = false,
@@ -3337,6 +3344,140 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       token.selectAsObject("user").selectAsString("email") mustBe "user@oto.tools"
 
       deleteAuthModule(authenticationModule).futureValue
+      deleteOtoroshiRoute(route).futureValue
+    }
+
+    "Websocket json format validator (drop)" in {
+      implicit val http: HttpExt = Http()(system)
+
+      val backend = new WebsocketBackend().await()
+
+      val route = createLocalRoute(
+        frontendPath = "/",
+        plugins = Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[WebsocketJsonFormatValidator],
+            config = NgPluginInstanceConfig(
+              WebsocketJsonFormatValidatorConfig(
+                schema = Json.obj("type" -> "object", "required" -> Json.arr("name")).stringify.some,
+                specification = "https://json-schema.org/draft/2020-12/schema",
+                rejectStrategy = RejectStrategy.Drop
+              ).json.as[JsObject]
+            )
+          )
+        ),
+        target = NgTarget(
+          hostname = "127.0.0.1",
+          port = backend.backendPort,
+          id = "local.target",
+          tls = false
+        ).some
+      )
+
+      val messagesPromise = Promise[Int]()
+      val counter = new AtomicInteger(0)
+
+      val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
+        counter.incrementAndGet()
+        if(counter.get == 2)
+          messagesPromise.trySuccess(counter.get)
+        else if(counter.get > 2)
+          messagesPromise.tryFailure(new RuntimeException("Failure, but lost track of exception :-("))
+      }
+
+      val messages = List(
+        TextMessage(Json.obj("name" -> "bar").stringify),
+        TextMessage(Json.obj("name" -> "bar").stringify),
+        TextMessage(Json.obj("foo" -> "bar").stringify),
+        TextMessage("foo"),
+        TextMessage("bar"),
+        TextMessage(Json.obj("foo" -> "bar").stringify),
+      )
+
+      val clientSource: Source[TextMessage, NotUsed] = Source(messages)
+        .throttle(1, 300.millis)
+
+      val (_, _) = http.singleWebSocketRequest(
+        WebSocketRequest(s"ws://127.0.0.1:$port/")
+          .copy(extraHeaders = List(Host(route.frontend.domains.head.domainLowerCase))),
+        Flow
+          .fromSinkAndSourceMat(printSink, clientSource)(Keep.both)
+          .alsoTo(Sink.onComplete { _ => })
+      )
+
+      val yesMessagesCounter = messagesPromise.future.futureValue(Timeout(Span(1, Minutes)))
+      yesMessagesCounter mustBe 2
+
+      backend.await()
+      system.terminate().await()
+      http.shutdownAllConnectionPools().await()
+      deleteOtoroshiRoute(route).futureValue
+    }
+
+    "Websocket json format validator (close connection)" in {
+      implicit val http: HttpExt = Http()(system)
+
+      val backend = new WebsocketBackend().await()
+
+      val route = createLocalRoute(
+        frontendPath = "/",
+        plugins = Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[WebsocketJsonFormatValidator],
+            config = NgPluginInstanceConfig(
+              WebsocketJsonFormatValidatorConfig(
+                schema = Json.obj("type" -> "object", "required" -> Json.arr("name")).stringify.some,
+                specification = "https://json-schema.org/draft/2020-12/schema",
+                rejectStrategy = RejectStrategy.Close
+              ).json.as[JsObject]
+            )
+          )
+        ),
+        target = NgTarget(
+          hostname = "127.0.0.1",
+          port = backend.backendPort,
+          id = "local.target",
+          tls = false
+        ).some
+      )
+
+      val counter = new AtomicInteger(0)
+
+      val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
+        counter.incrementAndGet()
+      }
+
+      val messages = List(
+        TextMessage(Json.obj("name" -> "bar").stringify),
+        TextMessage(Json.obj("name" -> "bar").stringify),
+        TextMessage(Json.obj("foo" -> "bar").stringify),
+        TextMessage(Json.obj("name" -> "bar").stringify)
+      )
+
+      val clientSource: Source[TextMessage, NotUsed] = Source(messages)
+        .throttle(1, 300.millis)
+
+      val (_, closed: (Future[Done], NotUsed)) = http.singleWebSocketRequest(
+        WebSocketRequest(s"ws://127.0.0.1:$port/")
+          .copy(extraHeaders = List(Host(route.frontend.domains.head.domainLowerCase))),
+        Flow
+          .fromSinkAndSourceMat(printSink, clientSource)(Keep.both)
+          .alsoTo(Sink.onComplete { _ => })
+      )
+
+      val ex = closed._1.failed.futureValue
+      ex mustBe a[PeerClosedConnectionException]
+      ex.getMessage must include ("failed to validate message")
+
+      backend.await()
+      system.terminate().await()
+      http.shutdownAllConnectionPools().await()
       deleteOtoroshiRoute(route).futureValue
     }
   }
