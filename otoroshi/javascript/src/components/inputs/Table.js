@@ -1203,13 +1203,13 @@ class TableComponent extends Component {
                   type="button"
                   className="btn btn-danger"
                   title="Delete current item"
-                  disabled
                 >
                   <i className="fas fa-trash" /> Delete
                 </button>
               )}
               {this.props.displayTrash && !this.props.displayTrash(this.state.currentItem) && (
                 <button
+                  disabled
                   type="button"
                   className="btn btn-danger"
                   title="Delete current item"
