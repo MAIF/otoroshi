@@ -3132,5 +3132,39 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       deleteOtoroshiRoute(secondRoute).futureValue
       deleteOtoroshiRoute(route).futureValue
     }
+
+    "Defer Responses" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[NgDeferPlugin],
+            config = NgPluginInstanceConfig(
+              NgDeferPluginConfig(
+                duration = 2.seconds
+              ).json.as[JsObject]
+            )
+          )
+        ),
+        id = IdGenerator.uuid
+      )
+
+      val lastStart = System.currentTimeMillis()
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+      System.currentTimeMillis() - lastStart > 1000 mustBe true
+
+      deleteOtoroshiRoute(route).futureValue
+    }
   }
 }
