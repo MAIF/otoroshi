@@ -3166,5 +3166,178 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).futureValue
     }
+
+    "Otoroshi info. token" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OtoroshiInfos],
+            config = NgPluginInstanceConfig(
+              NgOtoroshiInfoConfig.apply(
+                secComVersion = SecComInfoTokenVersionLatest,
+                secComTtl = 30.seconds,
+                headerName = Some("foo"),
+                addFields = None,
+                projection = Json.obj(),
+                algo = HSAlgoSettings(512, "secret", base64 = false)
+              ).json.as[JsObject]
+            )
+          )
+        ),
+        id = IdGenerator.uuid
+      )
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+
+      val tokenBody = getInHeader(resp, "foo").get.split("\\.")(1)
+      Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("iss") mustBe "Otoroshi"
+      Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("access_type") mustBe "public"
+
+      deleteOtoroshiRoute(route).futureValue
+    }
+
+    "Otoroshi info. token with apikeys" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[ApikeyCalls]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OtoroshiInfos],
+            config = NgPluginInstanceConfig(
+              NgOtoroshiInfoConfig.apply(
+                secComVersion = SecComInfoTokenVersionLatest,
+                secComTtl = 30.seconds,
+                headerName = Some("foo"),
+                addFields = None,
+                projection = Json.obj(),
+                algo = HSAlgoSettings(512, "secret", base64 = false)
+              ).json.as[JsObject]
+            )
+          )
+        ),
+        id = IdGenerator.uuid
+      )
+
+      val apikey = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
+        clientName = "apikey1",
+        authorizedEntities = Seq(RouteIdentifier(route.id))
+      )
+      createOtoroshiApiKey(apikey).futureValue
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+          "Otoroshi-Client-Id" -> apikey.clientId,
+          "Otoroshi-Client-Secret" -> apikey.clientSecret
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+
+      val tokenBody = getInHeader(resp, "foo").get.split("\\.")(1)
+      val token = Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject]
+      token.selectAsString("iss") mustBe "Otoroshi"
+      token.selectAsString("access_type") mustBe "apikey"
+      token.selectAsObject("apikey").selectAsString("clientId") mustBe apikey.clientId
+
+      deleteOtoroshiApiKey(apikey).futureValue
+      deleteOtoroshiRoute(route).futureValue
+    }
+
+    "Otoroshi info. token with user" in {
+      val authenticationModule = BasicAuthModuleConfig(
+        id = IdGenerator.namedId("auth_mod", env),
+        name = "New auth. module",
+        desc = "New auth. module",
+        tags = Seq.empty,
+        metadata = Map.empty,
+        sessionCookieValues = SessionCookieValues(),
+        clientSideSessionEnabled = true,
+        users = Seq(BasicAuthUser(
+          name = "Stefanie Koss",
+          password = "$2a$10$RtYWagxgvorxpxNIYTi4Be2tU.n8294eHpwle1ad0Tmh7.NiVXOEq",
+          email = "user@oto.tools",
+          tags = Seq.empty,
+          rights = UserRights(
+            Seq(
+              UserRight(
+                TenantAccess("*"),
+                Seq(TeamAccess("*"))
+              )
+            )
+          ),
+          adminEntityValidators = Map()
+        ))
+      )
+
+      createAuthModule(authenticationModule).futureValue
+
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[BasicAuthWithAuthModule],
+            config = NgPluginInstanceConfig(
+              BasicAuthWithAuthModuleConfig(ref = authenticationModule.id).json.as[JsObject]
+            )
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OtoroshiInfos],
+            config = NgPluginInstanceConfig(
+              NgOtoroshiInfoConfig.apply(
+                secComVersion = SecComInfoTokenVersionLatest,
+                secComTtl = 30.seconds,
+                headerName = Some("foo"),
+                addFields = None,
+                projection = Json.obj(),
+                algo = HSAlgoSettings(512, "secret", base64 = false)
+              ).json.as[JsObject]
+            )
+          )
+        ),
+        id = IdGenerator.uuid
+      )
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+          "Authorization" -> "Basic dXNlckBvdG8udG9vbHM6cGFzc3dvcmQ="
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe Status.OK
+
+      val tokenBody = getInHeader(resp, "foo").get.split("\\.")(1)
+      val token = Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject]
+      token.selectAsString("iss") mustBe "Otoroshi"
+      token.selectAsString("access_type") mustBe "user"
+      token.selectAsObject("user").selectAsString("email") mustBe "user@oto.tools"
+
+      deleteAuthModule(authenticationModule).futureValue
+      deleteOtoroshiRoute(route).futureValue
+    }
   }
 }
