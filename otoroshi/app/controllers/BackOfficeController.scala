@@ -1774,20 +1774,24 @@ class BackOfficeController(
         rservices          <- env.proxyState.allServices().vfuture
         rroutes            <- env.proxyState.allRoutes().vfuture
         rrouteCompositions <- env.proxyState.allNgServices().vfuture
+        rapis              <- env.proxyState.allApis().vfuture
       } yield {
         val groups            = rgroups
           .filter(ctx.canUserRead)
-          .map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
+          .map(g => Json.obj("label" -> s"Group - ${g.name}", "value" -> s"group_${g.id}", "kind" -> "group"))
         val services          = rservices
           .filter(ctx.canUserRead)
-          .map(g => Json.obj("label" -> g.name, "value" -> s"service_${g.id}", "kind" -> "service"))
+          .map(g => Json.obj("label" -> s"Service - ${g.name}", "value" -> s"service_${g.id}", "kind" -> "service"))
         val routes            = rroutes
           .filter(ctx.canUserRead)
-          .map(g => Json.obj("label" -> g.name, "value" -> s"route_${g.id}", "kind" -> "route"))
+          .map(g => Json.obj("label" -> s"Route - ${g.name}", "value" -> s"route_${g.id}", "kind" -> "route"))
+        val apis            = rapis
+          .filter(ctx.canUserRead)
+          .map(g => Json.obj("label" -> s"Api - ${g.name}", "value" -> s"api_${g.id}", "kind" -> "api"))
         val routeCompositions = rrouteCompositions
           .filter(ctx.canUserRead)
-          .map(g => Json.obj("label" -> g.name, "value" -> s"route-composition_${g.id}", "kind" -> "route-composition"))
-        Ok(JsArray(groups ++ services ++ routes ++ routeCompositions))
+          .map(g => Json.obj("label" -> s"Route composition - ${g.name}", "value" -> s"route-composition_${g.id}", "kind" -> "route-composition"))
+        Ok(JsArray(groups ++ services ++ routes ++ apis ++ routeCompositions))
       }
     }
 

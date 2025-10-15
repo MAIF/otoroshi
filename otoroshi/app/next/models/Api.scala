@@ -960,16 +960,16 @@ case class Api(
           NgRoute(
             location = location,
             id = apiRoute.id,
-            name = apiRoute.name + " - " + apiRoute.frontend.methods
+            name = apiRoute.name.getOrElse("route") + " - " + apiRoute.frontend.methods
               .mkString(", ") + " - " + apiRoute.frontend.domains.map(_.path).mkString(", "),
             description = description,
             tags = tags,
-            metadata = metadata,
+            metadata = metadata ++ Map("Api-Ref" -> id),
             enabled = apiRoute.enabled,
             capture = capture,
             debugFlow = debugFlow,
             exportReporting = exportReporting,
-            groups = Seq.empty,
+            groups = Seq(id),
             frontend = apiRoute.frontend,
             backend = backend,
             backendRef = None,
