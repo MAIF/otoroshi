@@ -80,7 +80,8 @@ class EchoBackend extends NgBackendCall {
       "cookies"  -> cookies
     )
     if (ctx.request.hasBody) {
-      ctx.request.body.limit(config.limit).runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
+      val limited = ctx.request.body.limitWeighted(config.limit)(_.size)
+      limited.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val body: JsValue = ctx.request.typedContentType match {
           case Some(ctype) if ctype.mediaType == MediaTypes.`application/x-www-form-urlencoded` =>
             bodyRaw.utf8String.json
@@ -97,6 +98,19 @@ class EchoBackend extends NgBackendCall {
           None
         ).right
       }
+        .recover {
+          case _: akka.stream.StreamLimitReachedException =>
+            BackendCallResponse(
+              NgPluginHttpResponse.fromResult(
+                Results.Status(413)(Json.obj(
+                  "error" -> "request_body_too_large",
+                  "message" -> s"Request body exceeds maximum allowed size of ${config.limit} bytes",
+                  "limit" -> config.limit
+                ))
+              ),
+              None
+            ).right
+        }
     } else {
       BackendCallResponse(
         NgPluginHttpResponse.fromResult(Results.Ok(payload ++ Json.obj("body" -> JsNull))),
@@ -131,7 +145,8 @@ class RequestBodyEchoBackend extends NgBackendCall {
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(EchoBackendConfig.format).getOrElse(EchoBackendConfig.default)
     if (ctx.request.hasBody) {
-      ctx.request.body.limit(config.limit).runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
+      val limited = ctx.request.body.limitWeighted(config.limit)(_.size)
+      limited.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val ctype = ctx.request.contentType.getOrElse("application/octet-stream")
         BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(bodyRaw).as(ctype)), None).right
       }
