@@ -2960,5 +2960,51 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).futureValue
     }
+
+    "Request body Echo" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[RequestBodyEchoBackend],
+            config = NgPluginInstanceConfig(
+              EchoBackendConfig(
+                limit = 12
+              ).json.as[JsObject]
+            )
+          )
+        )
+      )
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> PLUGINS_HOST,
+          )
+          .post(Json.obj("f" -> "b"))
+          .futureValue
+
+        resp.status mustBe Status.OK
+        Json.parse(resp.body).selectAsString("f") mustEqual "b"
+      }
+
+      {
+        val resp = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> PLUGINS_HOST,
+          )
+          .post(Json.obj("foo" -> "bar"))
+          .futureValue
+
+        resp.status mustBe Status.REQUEST_ENTITY_TOO_LARGE
+      }
+
+
+      deleteOtoroshiRoute(route).futureValue
+    }
   }
 }

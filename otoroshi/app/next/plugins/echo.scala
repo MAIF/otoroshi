@@ -150,6 +150,19 @@ class RequestBodyEchoBackend extends NgBackendCall {
         val ctype = ctx.request.contentType.getOrElse("application/octet-stream")
         BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(bodyRaw).as(ctype)), None).right
       }
+        .recover {
+          case _: akka.stream.StreamLimitReachedException =>
+            BackendCallResponse(
+              NgPluginHttpResponse.fromResult(
+                Results.Status(413)(Json.obj(
+                  "error" -> "request_body_too_large",
+                  "message" -> s"Request body exceeds maximum allowed size of ${config.limit} bytes",
+                  "limit" -> config.limit
+                ))
+              ),
+              None
+            ).right
+        }
     } else {
       BackendCallResponse(NgPluginHttpResponse.fromResult(Results.NoContent), None).rightf
     }
