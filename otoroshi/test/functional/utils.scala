@@ -1860,6 +1860,43 @@ class WebsocketServer(counter: AtomicInteger) {
   }
 }
 
+class WebsocketBackend(root: String = "",
+                           callback: String => Message = text => TextMessage(s"Echo: $text"),
+                           streamCallback: Source[String, _] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))) {
+  import akka.http.scaladsl.server.Directives.{handleWebSocketMessages, path, get, complete}
+
+  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  implicit val mat: Materializer = Materializer(system)
+  val http = Http()
+
+  val websocketFlow: Flow[Message, Message, Any] = Flow[Message].map {
+    case TextMessage.Strict(text) => callback(text)
+    case TextMessage.Streamed(textStream) => streamCallback(textStream)
+    case _ => TextMessage("Unsupported message type")
+  }
+
+  val websocketRoute = path(root) {
+      get {
+        handleWebSocketMessages(websocketFlow)
+      }
+    }
+
+  val backendPort = TargetService.freePort
+
+  val bound = http.newServerAt("0.0.0.0", backendPort).bind(websocketRoute)
+
+  def await(): WebsocketBackend = {
+    Await.result(bound, 60.seconds)
+    this
+  }
+
+  def stop(): Unit = {
+    Await.result(bound, 60.seconds).unbind()
+    Await.result(http.shutdownAllConnectionPools(), 60.seconds)
+    Await.result(system.terminate(), 60.seconds)
+  }
+}
+
 object TargetService {
 
   import Implicits._
