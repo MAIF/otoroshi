@@ -149,12 +149,13 @@ export class Form extends Component {
           return <Separator title={name.replace('-- ', '')} />;
         }
       }
-      if (!this.props.schema[name]) {
-        console.log('unable to find "', name, '" in', this.props.schema);
+      const finalSchema = isFunction(this.props.schema) ? this.props.schema(this.props, this.state) : this.props.schema;
+      if (!finalSchema[name]) {
+        console.log('unable to find "', name, '" in', finalSchema);
         return null;
       }
-      const { display, type, disabled, props = {} } = this.props.schema[name];
-      // console.log('generate', name, 'of type', type, 'from', this.props.schema);
+      const { display, type, disabled, props = {} } = finalSchema[name];
+      // console.log('generate', name, 'of type', type, 'from', finalSchema);
       let component = null;
       if (display) {
         if (!display(this.theValue())) {

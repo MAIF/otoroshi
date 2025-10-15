@@ -41,24 +41,26 @@ export class TenantsPage extends Component {
 
   formFlow = ['id', 'name', 'description', 'tags', 'metadata'];
 
-  formSchema = {
-    id: { type: 'string', props: { label: 'Id', placeholder: '---' } },
-    name: {
-      type: 'string',
-      props: { label: 'Name', placeholder: 'Nice organization' },
-    },
-    description: {
-      type: 'string',
-      props: { label: 'Description', placeholder: 'A nice organization to do whatever you want' },
-    },
-    metadata: {
-      type: 'object',
-      props: { label: 'Metadata' },
-    },
-    tags: {
-      type: 'array',
-      props: { label: 'Tags' },
-    },
+  formSchema = (fprops) => {
+    return {
+      id: { type: 'string', props: { label: 'Id', placeholder: '---', disabled: fprops.update } },
+      name: {
+        type: 'string',
+          props: { label: 'Name', placeholder: 'Nice organization' },
+      },
+      description: {
+        type: 'string',
+          props: { label: 'Description', placeholder: 'A nice organization to do whatever you want' },
+      },
+      metadata: {
+        type: 'object',
+          props: { label: 'Metadata' },
+      },
+      tags: {
+        type: 'array',
+          props: { label: 'Tags' },
+      },
+    }
   };
 
   render() {

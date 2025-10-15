@@ -1104,6 +1104,8 @@ class TableComponent extends Component {
                 />
               ) : (
                 <Form
+                  create={this.state.showAddForm}
+                  update={this.state.showEditForm}
                   onStateChange={this.props.onStateChange}
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
@@ -1116,7 +1118,7 @@ class TableComponent extends Component {
               <>
                 <div className="displayGroupBtn float-end">
                   <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
-                    <i className="fas fa-arrow-left" /> Back to {this.props.itemName}s List
+                    <i className="fas fa-arrow-left" /> Back to {this.props.itemName}s
                   </button>
                   {this.props.stayAfterSave && (
                     <button
@@ -1185,6 +1187,8 @@ class TableComponent extends Component {
                 />
               ) : (
                 <Form
+                  create={this.state.showAddForm}
+                  update={this.state.showEditForm}
                   onStateChange={this.props.onStateChange}
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
@@ -1248,7 +1252,7 @@ class TableComponent extends Component {
               )}
               {!this.props.newForm && (
                 <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
-                  <i className="fas fa-arrow-left" /> Back to {this.props.itemName}s list
+                  <i className="fas fa-arrow-left" /> Back to {this.props.itemName}s
                 </button>
               )}
               {this.props.stayAfterSave && !this.props.newForm && (
