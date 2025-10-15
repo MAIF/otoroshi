@@ -3101,6 +3101,14 @@ function Informations(props) {
       type: 'array',
       label: 'Tags',
     },
+    groups: {
+      type: 'array-select',
+      label: 'Groups',
+      props: {
+        optionsFrom: '/bo/api/proxy/api/groups',
+        optionsTransformer: (arr) => arr.map((item) => ({ value: item.id, label: item.name })),
+      },
+    },
     capture: {
       type: 'bool',
       label: 'Capture route traffic',
@@ -3165,6 +3173,7 @@ function Informations(props) {
       name: 'Misc.',
       collapsed: false,
       fields: [
+        'groups',
         'tags',
         'metadata',
         {

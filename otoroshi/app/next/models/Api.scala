@@ -845,6 +845,7 @@ case class Api(
     debugFlow: Boolean,
     capture: Boolean,
     exportReporting: Boolean,
+    groups: Seq[String],
     state: ApiState,
     enabled: Boolean = true,
     blueprint: ApiBlueprint,
@@ -969,7 +970,7 @@ case class Api(
             capture = capture,
             debugFlow = debugFlow,
             exportReporting = exportReporting,
-            groups = Seq(id),
+            groups = Seq("virtual_group_for_" + id) ++ groups,
             frontend = apiRoute.frontend,
             backend = backend,
             backendRef = None,
@@ -1080,6 +1081,7 @@ object Api {
         state = ApiStaging,
         backends = Seq(backend),
         flows = Seq(ApiFlows.empty(env)),
+        groups = Seq.empty,
         consumers = Seq(
           ApiConsumer(
             id = "keyless",
@@ -1232,6 +1234,7 @@ object Api {
       "debug_flow"       -> o.debugFlow,
       "capture"          -> o.capture,
       "export_reporting" -> o.exportReporting,
+      "groups"           -> o.groups,
       "state"            -> o.state.name,
       "enabled"          -> o.enabled,
       "blueprint"        -> o.blueprint.name,
@@ -1258,6 +1261,7 @@ object Api {
         debugFlow = (json \ "debug_flow").asOpt[Boolean].getOrElse(false),
         capture = (json \ "capture").asOpt[Boolean].getOrElse(false),
         exportReporting = (json \ "export_reporting").asOpt[Boolean].getOrElse(false),
+        groups = (json \ "groups").asOpt[Seq[String]].getOrElse(Seq.empty),
         state = (json \ "state").asOptString
           .map {
             case "staging"    => ApiStaging
@@ -1334,6 +1338,7 @@ trait ApiDataStore extends BasicStore[Api] {
       debugFlow = false,
       capture = false,
       exportReporting = false,
+      groups = Seq.empty,
       state = ApiStaging,
       blueprint = ApiBlueprint.REST,
       routes = Seq.empty,
