@@ -279,7 +279,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
             }
           case Some(service) => {
             val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
-            service.metadata.get("Api-Ref") match {
+            service.metadata.get("Otoroshi-Api-Ref") match {
               case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef) => apiKey.some
               case _ => {
                 val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
