@@ -248,11 +248,11 @@ case class ApiDocumentationSidebar(raw: JsArray) {
 }
 
 case class ApiDocumentationResource(raw: JsObject) {
-  lazy val path: String = raw.select("path").asString
+  lazy val path: Option[String] = raw.select("path").asOptString
   lazy val title: Option[String] = raw.select("title").asOptString
   lazy val contentType: String = raw.select("content_type").asOpt[String].getOrElse("text/markdown")
   lazy val url: Option[String] = raw.select("url").asOpt[String]
-  lazy val include_sidebar: Boolean = raw.select("include_sidebar").asOpt[Boolean].getOrElse(false)
+  lazy val include_sidebar: Boolean = raw.select("include_sidebar").asOpt[Boolean].getOrElse(true)
   lazy val text_content: Option[String] = raw.select("text_content").asOpt[String]
   lazy val json_content: Option[JsValue] = raw.select("json_content").asOpt[JsValue].filterNot(_ == JsNull)
   lazy val base64_content: Option[ByteString] = raw.select("base64_content").asOpt[String].map(_.byteString.decodeBase64)
@@ -343,7 +343,7 @@ object ApiDocumentation {
         specification = ApiDocumentationResource(Json.obj(
           "path" -> "/openapi.json",
           "content_type" -> "application/json",
-          "url" -> "https://rickandmorty.zuplo.io"
+          "url" -> "https://rickandmorty.zuplo.io/openapi.json"
         )),
         home = ApiDocumentationResource(Json.obj(
           "path" -> "/home",
@@ -358,20 +358,30 @@ object ApiDocumentation {
           )),
           ApiDocumentationResource(Json.obj(
             "path" -> "/documentation/more-information",
-            "content_type" -> "text/html",
-            "text_content" -> "<div class=\"container-xxl\"><h1>More information !</h1></div>"
+            "content_type" -> "text/markdown",
+            "text_content" -> "# More information\n\n- Lorem ipsum\n- Lorem ipsum\n\n"
           ))
         ),
-        logos = Seq.empty,
+        logos = Seq(ApiDocumentationResource(Json.obj(
+          "url" -> "https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png",
+          "style" -> "width: 27px; height: 27px;"
+        ))),
         metadata = Map.empty,
         sidebar = ApiDocumentationSidebar(Json.arr(
           Json.obj(
             "label" -> "Getting started",
             "link" -> "/documentation/getting-started",
+            "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
           ),
           Json.obj(
             "label" -> "More information",
             "link" -> "/documentation/more-information",
+            "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
+          ),
+          Json.obj(
+            "label" -> "API Reference",
+            "link" -> "/api-ref",
+            "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
           )
         )).some
       )
