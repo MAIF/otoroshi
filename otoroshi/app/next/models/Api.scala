@@ -15,14 +15,7 @@ import otoroshi.next.plugins._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.UrlSanitizer.sanitize
-import otoroshi.utils.syntax.implicits.{
-  BetterJsLookupResult,
-  BetterJsReadable,
-  BetterJsValue,
-  BetterJsValueReader,
-  BetterMapOfStringAndB,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.libs.json._
 
@@ -233,6 +226,39 @@ object ApiSpecification       {
   }
 }
 
+sealed trait ApiDocumentationSidebarItem
+case class ApiDocumentationSidebarCategory(raw: JsObject) extends ApiDocumentationSidebarItem {
+  lazy val icon: Option[ApiDocumentationResource] = raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
+  lazy val label: String = raw.select("label").asOptString.getOrElse("No label")
+  lazy val links: Seq[ApiDocumentationSidebarLink] = raw.select("links").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationSidebarLink(o))
+}
+case class ApiDocumentationSidebarLink(raw: JsObject) extends ApiDocumentationSidebarItem {
+  lazy val icon: Option[ApiDocumentationResource] = raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
+  lazy val label: String = raw.select("label").asOptString.getOrElse("No label")
+  lazy val link: String = raw.select("link").asOptString.getOrElse("#")
+}
+
+case class ApiDocumentationSidebar(raw: JsArray) {
+  lazy val items: Seq[ApiDocumentationSidebarItem] = raw.value.map { v =>
+    v.select("kind").asOptString.getOrElse("link") match {
+      case "category" => ApiDocumentationSidebarCategory(v.asObject)
+      case _ => ApiDocumentationSidebarLink(v.asObject)
+    }
+  }
+}
+
+case class ApiDocumentationResource(raw: JsObject) {
+  lazy val path: String = raw.select("path").asString
+  lazy val title: Option[String] = raw.select("title").asOptString
+  lazy val contentType: String = raw.select("content_type").asOpt[String].getOrElse("text/markdown")
+  lazy val url: Option[String] = raw.select("url").asOpt[String]
+  lazy val include_sidebar: Boolean = raw.select("include_sidebar").asOpt[Boolean].getOrElse(false)
+  lazy val text_content: Option[String] = raw.select("text_content").asOpt[String]
+  lazy val json_content: Option[JsValue] = raw.select("json_content").asOpt[JsValue].filterNot(_ == JsNull)
+  lazy val base64_content: Option[ByteString] = raw.select("base64_content").asOpt[String].map(_.byteString.decodeBase64)
+}
+
+/*
 trait ApiPage {
   def path: String
   def name: String
@@ -281,31 +307,73 @@ object ApiPage {
     }
   }
 }
+*/
 
 case class ApiDocumentation(
-    specification: ApiSpecification,
-    home: ApiPage,
-    pages: Seq[ApiPage],
+    enabled: Boolean,
+    specification: ApiDocumentationResource,
+    home: ApiDocumentationResource,
+    resources: Seq[ApiDocumentationResource],
     metadata: Map[String, String],
-    logos: Seq[ByteString]
+    logos: Seq[ApiDocumentationResource],
+    sidebar: Option[ApiDocumentationSidebar],
 )
 
 object ApiDocumentation {
   val _fmt: Format[ApiDocumentation] = new Format[ApiDocumentation] {
-
     override def reads(json: JsValue): JsResult[ApiDocumentation] = Try {
+      // ApiDocumentation(
+      //   enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
+      //   specification = ApiDocumentationResource(json.select("specification").asObject),
+      //   home = ApiDocumentationResource(json.select("home").asObject),
+      //   resources = (json \ "resources")
+      //     .asOpt[Seq[JsObject]]
+      //     .map(_.map(v => ApiDocumentationResource(v)))
+      //     .getOrElse(Seq.empty),
+      //   metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+      //   logos = (json \ "logos")
+      //     .asOpt[Seq[JsObject]]
+      //     .map(_.map(o => ApiDocumentationResource(o)))
+      //     .getOrElse(Seq.empty),
+      //   sidebar = json.select("sidebar").asOpt[JsArray].map(o => ApiDocumentationSidebar(o)),
+      // )
+      // TODO: remove that
       ApiDocumentation(
-        specification = json.select("specification").as(ApiSpecification._fmt),
-        home = json.select("home").as(ApiPage._fmt),
-        pages = (json \ "pages")
-          .asOpt[Seq[JsValue]]
-          .map(_.flatMap(v => ApiPage._fmt.reads(v).asOpt))
-          .getOrElse(Seq.empty),
-        metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        logos = (json \ "logos")
-          .asOpt[Seq[String]]
-          .map(seq => seq.map(ByteString.apply))
-          .getOrElse(Seq.empty)
+        enabled = true,
+        specification = ApiDocumentationResource(Json.obj(
+          "path" -> "/openapi.json",
+          "content_type" -> "application/json",
+          "url" -> "https://rickandmorty.zuplo.io"
+        )),
+        home = ApiDocumentationResource(Json.obj(
+          "path" -> "/home",
+          "content_type" -> "text/html",
+          "text_content" -> "<div class=\"container-xxl\"><h1>Home !</h1></div>"
+        )),
+        resources = Seq(
+          ApiDocumentationResource(Json.obj(
+            "path" -> "/documentation/getting-started",
+            "content_type" -> "text/html",
+            "text_content" -> "<div class=\"container-xxl\"><h1>Getting started !</h1></div>"
+          )),
+          ApiDocumentationResource(Json.obj(
+            "path" -> "/documentation/more-information",
+            "content_type" -> "text/html",
+            "text_content" -> "<div class=\"container-xxl\"><h1>More information !</h1></div>"
+          ))
+        ),
+        logos = Seq.empty,
+        metadata = Map.empty,
+        sidebar = ApiDocumentationSidebar(Json.arr(
+          Json.obj(
+            "label" -> "Getting started",
+            "link" -> "/documentation/getting-started",
+          ),
+          Json.obj(
+            "label" -> "More information",
+            "link" -> "/documentation/more-information",
+          )
+        )).some
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -313,11 +381,13 @@ object ApiDocumentation {
     }
 
     override def writes(o: ApiDocumentation): JsValue = Json.obj(
-      "specification" -> ApiSpecification._fmt.writes(o.specification),
-      "home"          -> ApiPage._fmt.writes(o.home),
-      "pages"         -> o.pages.map(ApiPage._fmt.writes),
+      "enabled"       -> o.enabled,
+      "specification" -> o.specification.raw,
+      "home"          -> o.home.raw,
+      "resources"     -> JsArray(o.resources.map(_.raw)),
       "metadata"      -> o.metadata,
-      "logos"         -> o.logos
+      "logos"         -> JsArray(o.logos.map(_.raw)),
+      "sidebar"       -> o.sidebar.map(_.raw).getOrElse(JsNull).asValue,
     )
   }
 }
