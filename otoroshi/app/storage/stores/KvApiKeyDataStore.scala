@@ -132,24 +132,33 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
     val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
+
+    val throttlingKeyName = throttlingKey(apiKey.clientId)
+    val dailyKeyName      = dailyQuotaKey(apiKey.clientId)
+    val monthlyKeyName    = monthlyQuotaKey(apiKey.clientId)
+
     env.clusterAgent.incrementApi(apiKey.clientId, increment)
+
     for {
       _ <- redisCli.incrby(totalCallsKey(apiKey.clientId), increment)
 
-      secTtl   <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
-                    redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
-                  }
-      secCalls <- redisCli.incrby(throttlingKey(apiKey.clientId), increment)
+      // --- Throttling window ---
+      secCalls <- redisCli.incrby(throttlingKeyName, increment)
+      _ <- if (secCalls == increment) {
+        redisCli.expire(throttlingKeyName, env.throttlingWindow)
+      } else Future.successful(())
 
-      dailyTtl   <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
-                      redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
-                    }
-      dailyCalls <- redisCli.incrby(dailyQuotaKey(apiKey.clientId), increment)
+      // --- Daily quota ---
+      dailyCalls <- redisCli.incrby(dailyKeyName, increment)
+      _ <- if (dailyCalls == increment) {
+        redisCli.expire(dailyKeyName, (toDayEnd / 1000).toInt)
+      } else Future.successful(())
 
-      monthlyTtl   <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
-                        redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
-                      }
-      monthlyCalls <- redisCli.incrby(monthlyQuotaKey(apiKey.clientId), increment)
+      // --- Monthly quota ---
+      monthlyCalls <- redisCli.incrby(monthlyKeyName, increment)
+      _ <- if (monthlyCalls == increment) {
+        redisCli.expire(monthlyKeyName, (toMonthEnd / 1000).toInt)
+      } else Future.successful(())
     } yield {
       RemainingQuotas(
         authorizedCallsPerWindow = apiKey.throttlingQuota,

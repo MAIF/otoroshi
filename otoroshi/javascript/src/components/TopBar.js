@@ -1128,7 +1128,7 @@ export class TopBar extends Component {
         ? e.target.className?.indexOf('ace_text-input') === -1
         : true;
       if (
-        e.keyCode === 191 &&
+        e.key === '/' &&
         e.target.tagName?.toLowerCase() !== 'input' &&
         hasClassNameAndNotAceInput
       ) {
