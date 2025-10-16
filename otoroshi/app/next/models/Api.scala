@@ -359,7 +359,7 @@ object ApiDocumentation {
           ApiDocumentationResource(Json.obj(
             "path" -> "/documentation/more-information",
             "content_type" -> "text/markdown",
-            "text_content" -> "# More information\n\n- Lorem ipsum\n- Lorem ipsum\n\n"
+            "text_content" -> "# More information\n\n- Lorem ipsum\n- Lorem ipsum\n\n```json\n{\"foo\":\"bar\"}\n```\n\n"
           ))
         ),
         logos = Seq(ApiDocumentationResource(Json.obj(
