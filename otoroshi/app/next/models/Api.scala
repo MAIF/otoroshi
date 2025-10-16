@@ -238,8 +238,11 @@ case class ApiDocumentationSidebarLink(raw: JsObject) extends ApiDocumentationSi
   lazy val link: String = raw.select("link").asOptString.getOrElse("#")
 }
 
-case class ApiDocumentationSidebar(raw: JsArray) {
-  lazy val items: Seq[ApiDocumentationSidebarItem] = raw.value.map { v =>
+case class ApiDocumentationSidebar(raw: JsObject) {
+  lazy val label: String = raw.select("label").asString
+  lazy val icon: Option[ApiDocumentationResource] = raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
+  lazy val path: Option[String] = raw.select("path").asOptString
+  lazy val items: Seq[ApiDocumentationSidebarItem] = raw.select("items").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { v =>
     v.select("kind").asOptString.getOrElse("link") match {
       case "category" => ApiDocumentationSidebarCategory(v.asObject)
       case _ => ApiDocumentationSidebarLink(v.asObject)
@@ -252,10 +255,11 @@ case class ApiDocumentationResource(raw: JsObject) {
   lazy val title: Option[String] = raw.select("title").asOptString
   lazy val contentType: String = raw.select("content_type").asOpt[String].getOrElse("text/markdown")
   lazy val url: Option[String] = raw.select("url").asOpt[String]
-  lazy val include_sidebar: Boolean = raw.select("include_sidebar").asOpt[Boolean].getOrElse(true)
   lazy val text_content: Option[String] = raw.select("text_content").asOpt[String]
   lazy val json_content: Option[JsValue] = raw.select("json_content").asOpt[JsValue].filterNot(_ == JsNull)
   lazy val base64_content: Option[ByteString] = raw.select("base64_content").asOpt[String].map(_.byteString.decodeBase64)
+  lazy val site_page: Boolean = raw.select("site_page").asOpt[Boolean].getOrElse(false)
+  lazy val transform: Option[String] = raw.select("transform").asOpt[String]
 }
 
 /*
@@ -309,14 +313,32 @@ object ApiPage {
 }
 */
 
+case class ApiDocumentationSearch(raw: JsObject) {
+  lazy val enabled: Boolean = raw.select("enabled").asOpt[Boolean].getOrElse(true)
+}
+
+object ApiDocumentationSearch {
+  val default = ApiDocumentationSearch(Json.obj("enabled" -> true))
+}
+
+case class ApiDocumentationRedirection(raw: JsObject) {
+  lazy val from: String = raw.select("from").as[String]
+  lazy val to: String = raw.select("to").as[String]
+}
+
 case class ApiDocumentation(
-    enabled: Boolean,
-    specification: ApiDocumentationResource,
+    enabled: Boolean = true,
     home: ApiDocumentationResource,
-    resources: Seq[ApiDocumentationResource],
-    metadata: Map[String, String],
-    logos: Seq[ApiDocumentationResource],
-    sidebar: Option[ApiDocumentationSidebar],
+    logo: ApiDocumentationResource,
+    references: Seq[ApiDocumentationResource] = Seq.empty,
+    resources: Seq[ApiDocumentationResource] = Seq.empty,
+    navigation: Seq[ApiDocumentationSidebar] = Seq.empty,
+    redirections: Seq[ApiDocumentationRedirection] = Seq.empty,
+    footer: Option[ApiDocumentationResource] = None,
+    search: ApiDocumentationSearch = ApiDocumentationSearch.default,
+    banner: Option[ApiDocumentationResource] = None,
+    metadata: Map[String, String] = Map.empty,
+    tags: Seq[String] = Seq.empty,
 )
 
 object ApiDocumentation {
@@ -339,51 +361,92 @@ object ApiDocumentation {
       // )
       // TODO: remove that
       ApiDocumentation(
-        enabled = true,
-        specification = ApiDocumentationResource(Json.obj(
+        references = Seq(ApiDocumentationResource(Json.obj(
           "path" -> "/openapi.json",
           "content_type" -> "application/json",
           "url" -> "https://rickandmorty.zuplo.io/openapi.json"
-        )),
+        ))),
+        redirections = Seq(
+          ApiDocumentationRedirection(Json.obj("from" -> "/", "to" -> "/documentation"))
+        ),
         home = ApiDocumentationResource(Json.obj(
           "path" -> "/home",
           "content_type" -> "text/html",
+          "site_page" -> true,
           "text_content" -> "<div class=\"container-xxl\"><h1>Home !</h1></div>"
         )),
         resources = Seq(
           ApiDocumentationResource(Json.obj(
             "path" -> "/documentation/getting-started",
             "content_type" -> "text/html",
+            "site_page" -> true,
             "text_content" -> "<div class=\"container-xxl\"><h1>Getting started !</h1></div>"
           )),
           ApiDocumentationResource(Json.obj(
             "path" -> "/documentation/more-information",
             "content_type" -> "text/markdown",
+            "site_page" -> true,
+            "transform" -> "markdown",
             "text_content" -> "# More information\n\n- Lorem ipsum\n- Lorem ipsum\n\n```json\n{\"foo\":\"bar\"}\n```\n\n"
+          )),
+          ApiDocumentationResource(Json.obj(
+            "path" -> "/important/getting-started",
+            "content_type" -> "text/html",
+            "site_page" -> true,
+            "text_content" -> "<div class=\"container-xxl\"><h1>Getting started !</h1></div>"
+          )),
+          ApiDocumentationResource(Json.obj(
+            "path" -> "/important/more-information",
+            "content_type" -> "text/markdown",
+            "site_page" -> true,
+            "transform" -> "markdown",
+            "url" -> "https://github.com/MAIF/otoroshi/raw/refs/heads/master/manual/src/main/paradox/about.md"
           ))
         ),
-        logos = Seq(ApiDocumentationResource(Json.obj(
+        logo = ApiDocumentationResource(Json.obj(
           "url" -> "https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png",
-          "style" -> "width: 27px; height: 27px;"
-        ))),
-        metadata = Map.empty,
-        sidebar = ApiDocumentationSidebar(Json.arr(
-          Json.obj(
-            "label" -> "Getting started",
-            "link" -> "/documentation/getting-started",
-            "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
-          ),
-          Json.obj(
-            "label" -> "More information",
-            "link" -> "/documentation/more-information",
-            "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
-          ),
-          Json.obj(
-            "label" -> "API Reference",
-            "link" -> "/api-ref",
-            "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
-          )
-        )).some
+        )),
+        navigation = Seq(
+          ApiDocumentationSidebar(Json.obj(
+            "label" -> "Documentation",
+            "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2"),
+            "path" -> "/documentation",
+            "items" -> Json.arr(
+              Json.obj(
+                "label" -> "Getting started",
+                "link" -> "/documentation/getting-started",
+                "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
+              ),
+              Json.obj(
+                "label" -> "More information",
+                "link" -> "/documentation/more-information",
+                "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
+              ),
+              Json.obj(
+                "label" -> "API Reference",
+                "link" -> "/api-ref",
+                "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
+              )
+            )
+          )),
+          ApiDocumentationSidebar(Json.obj(
+            "label" -> "Other important stuff",
+            "icon" -> Json.obj("text_content" -> "bi bi-exclamation-diamond me-2"),
+            "path" -> "/important",
+            "items" -> Json.arr(
+              Json.obj(
+                "label" -> "Getting started",
+                "link" -> "/important/getting-started",
+                "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
+              ),
+              Json.obj(
+                "label" -> "More information",
+                "link" -> "/important/more-information",
+                "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
+              )
+            )
+          )),
+        )
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -392,12 +455,17 @@ object ApiDocumentation {
 
     override def writes(o: ApiDocumentation): JsValue = Json.obj(
       "enabled"       -> o.enabled,
-      "specification" -> o.specification.raw,
       "home"          -> o.home.raw,
+      "logo"          -> o.logo.raw,
+      "references"    -> JsArray(o.references.map(_.raw)),
       "resources"     -> JsArray(o.resources.map(_.raw)),
+      "navigation"    -> JsArray(o.navigation.map(_.raw)),
+      "redirections"  -> JsArray(o.redirections.map(_.raw)),
+      "footer"        -> o.footer.map(_.raw).getOrElse(JsNull).asValue,
+      "search"        -> o.search.raw,
+      "banner"        -> o.banner.map(_.raw).getOrElse(JsNull).asValue,
       "metadata"      -> o.metadata,
-      "logos"         -> JsArray(o.logos.map(_.raw)),
-      "sidebar"       -> o.sidebar.map(_.raw).getOrElse(JsNull).asValue,
+      "tags"          -> o.tags,
     )
   }
 }
