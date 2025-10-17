@@ -327,11 +327,18 @@ case class ApiDocumentationRedirection(raw: JsObject) {
   lazy val to: String = raw.select("to").as[String]
 }
 
+case class ApiDocumentationSpecRef(raw: JsObject) {
+  lazy val title: String = raw.select("title").asString
+  lazy val description: Option[String] = raw.select("description").asOptString
+  lazy val link: String = raw.select("link").asString
+  lazy val icon: Option[ApiDocumentationResource] = raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
+}
+
 case class ApiDocumentation(
     enabled: Boolean = true,
     home: ApiDocumentationResource,
     logo: ApiDocumentationResource,
-    references: Seq[ApiDocumentationResource] = Seq.empty,
+    references: Seq[ApiDocumentationSpecRef] = Seq.empty,
     resources: Seq[ApiDocumentationResource] = Seq.empty,
     navigation: Seq[ApiDocumentationSidebar] = Seq.empty,
     redirections: Seq[ApiDocumentationRedirection] = Seq.empty,
@@ -345,47 +352,65 @@ case class ApiDocumentation(
 object ApiDocumentation {
   val _fmt: Format[ApiDocumentation] = new Format[ApiDocumentation] {
     override def reads(json: JsValue): JsResult[ApiDocumentation] = Try {
-      // ApiDocumentation(
-      //   enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
-      //   specification = ApiDocumentationResource(json.select("specification").asObject),
-      //   home = ApiDocumentationResource(json.select("home").asObject),
-      //   resources = (json \ "resources")
-      //     .asOpt[Seq[JsObject]]
-      //     .map(_.map(v => ApiDocumentationResource(v)))
-      //     .getOrElse(Seq.empty),
-      //   metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-      //   logos = (json \ "logos")
-      //     .asOpt[Seq[JsObject]]
-      //     .map(_.map(o => ApiDocumentationResource(o)))
-      //     .getOrElse(Seq.empty),
-      //   sidebar = json.select("sidebar").asOpt[JsArray].map(o => ApiDocumentationSidebar(o)),
-      // )
+      ApiDocumentation(
+        enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
+        metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        home = ApiDocumentationResource(json.select("home").asOpt[JsObject].getOrElse(Json.obj())),
+        logo = ApiDocumentationResource(json.select("logo").asOpt[JsObject].getOrElse(Json.obj())),
+        references = json.select("references").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationSpecRef(o)),
+        resources = json.select("resources").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationResource(o)),
+        navigation = json.select("navigation").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationSidebar(o)),
+        redirections = json.select("redirections").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationRedirection(o)),
+        footer = json.select("footer").asOpt[JsObject].map(o => ApiDocumentationResource(o)),
+        search = json.select("search").asOpt[JsObject].map(o => ApiDocumentationSearch(o)).getOrElse(ApiDocumentationSearch.default),
+        banner = json.select("banner").asOpt[JsObject].map(o => ApiDocumentationResource(o)),
+      )
       // TODO: remove that
       ApiDocumentation(
         references = Seq(
-          ApiDocumentationResource(Json.obj(
+          ApiDocumentationSpecRef(Json.obj(
             "title" -> "Rick & Morty API",
-            "path" -> "/openapi-rm.json",
-            "content_type" -> "application/json",
-            "url" -> "https://rickandmorty.zuplo.io/openapi.json"
+            "link" -> "/openapi-rm.json",
+            "icon" -> Json.obj("text_content" -> "bi bi-rocket")
           )),
-          ApiDocumentationResource(Json.obj(
+          ApiDocumentationSpecRef(Json.obj(
             "title" -> "Otoroshi API",
-            "path" -> "/openapi-oto.json",
-            "content_type" -> "application/json",
-            "url" -> "https://maif.github.io/otoroshi/manual/code/openapi.json"
-          ))
+            "link" -> "/openapi-oto.json",
+          )),
         ),
         redirections = Seq(
-          ApiDocumentationRedirection(Json.obj("from" -> "/", "to" -> "/documentation"))
+          ApiDocumentationRedirection(Json.obj("from" -> "/foo", "to" -> "/documentation"))
         ),
         home = ApiDocumentationResource(Json.obj(
           "path" -> "/home",
           "content_type" -> "text/html",
           "site_page" -> true,
-          "text_content" -> "<div class=\"container-xxl\"><h1>Home !</h1></div>"
+          "text_content" ->
+            """<div class="container-xxl" style="margin-top: 30px;">
+              |  <h1>Home of this awesome API!</h1>
+              |  <p>
+              |    Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
+              |  </p>
+              |  <p>
+              |    Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
+              |  </p>
+              |  <a href="/foo">Go to doc !</a>
+              |</div>""".stripMargin
         )),
         resources = Seq(
+          ApiDocumentationResource(Json.obj(
+            "title" -> "Rick & Morty API oas",
+            "path" -> "/openapi-rm.json",
+            "content_type" -> "application/json",
+            "url" -> "https://rickandmorty.zuplo.io/openapi.json"
+          )),
+          ApiDocumentationResource(Json.obj(
+            "title" -> "Otoroshi API oas",
+            "path" -> "/openapi-oto.json",
+            "content_type" -> "application/json",
+            "url" -> "https://maif.github.io/otoroshi/manual/code/openapi.json"
+          )),
           ApiDocumentationResource(Json.obj(
             "path" -> "/documentation/getting-started",
             "content_type" -> "text/html",
@@ -423,19 +448,31 @@ object ApiDocumentation {
             "path" -> "/documentation",
             "items" -> Json.arr(
               Json.obj(
-                "label" -> "Getting started",
-                "link" -> "/documentation/getting-started",
-                "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
+                "label" -> "Information",
+                "kind" -> "category",
+                "links" -> Json.arr(
+                  Json.obj(
+                    "label" -> "Getting started",
+                    "link" -> "/documentation/getting-started",
+                    "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
+                  ),
+                  Json.obj(
+                    "label" -> "More information",
+                    "link" -> "/documentation/more-information",
+                    "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
+                  )
+                )
               ),
               Json.obj(
-                "label" -> "More information",
-                "link" -> "/documentation/more-information",
-                "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
-              ),
-              Json.obj(
-                "label" -> "API Reference",
-                "link" -> "/api-references",
-                "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
+                "label" -> "API",
+                "kind" -> "category",
+                "links" -> Json.arr(
+                  Json.obj(
+                    "label" -> "API Reference",
+                    "link" -> "/api-references",
+                    "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
+                  )
+                )
               )
             )
           )),
