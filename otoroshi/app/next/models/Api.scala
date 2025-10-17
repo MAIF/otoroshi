@@ -241,7 +241,7 @@ case class ApiDocumentationSidebarLink(raw: JsObject) extends ApiDocumentationSi
 case class ApiDocumentationSidebar(raw: JsObject) {
   lazy val label: String = raw.select("label").asString
   lazy val icon: Option[ApiDocumentationResource] = raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
-  lazy val path: Option[String] = raw.select("path").asOptString
+  lazy val path: Seq[String] = raw.select("path").asOpt[Seq[String]].orElse(raw.select("path").asOptString.map(s => Seq(s))).getOrElse(Seq.empty)
   lazy val items: Seq[ApiDocumentationSidebarItem] = raw.select("items").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { v =>
     v.select("kind").asOptString.getOrElse("link") match {
       case "category" => ApiDocumentationSidebarCategory(v.asObject)
@@ -251,8 +251,9 @@ case class ApiDocumentationSidebar(raw: JsObject) {
 }
 
 case class ApiDocumentationResource(raw: JsObject) {
-  lazy val path: Option[String] = raw.select("path").asOptString
+  lazy val path: Seq[String] = raw.select("path").asOpt[Seq[String]].orElse(raw.select("path").asOptString.map(s => Seq(s))).getOrElse(Seq.empty)
   lazy val title: Option[String] = raw.select("title").asOptString
+  lazy val description: Option[String] = raw.select("description").asOptString
   lazy val contentType: String = raw.select("content_type").asOpt[String].getOrElse("text/markdown")
   lazy val url: Option[String] = raw.select("url").asOpt[String]
   lazy val text_content: Option[String] = raw.select("text_content").asOpt[String]
@@ -361,11 +362,20 @@ object ApiDocumentation {
       // )
       // TODO: remove that
       ApiDocumentation(
-        references = Seq(ApiDocumentationResource(Json.obj(
-          "path" -> "/openapi.json",
-          "content_type" -> "application/json",
-          "url" -> "https://rickandmorty.zuplo.io/openapi.json"
-        ))),
+        references = Seq(
+          ApiDocumentationResource(Json.obj(
+            "title" -> "Rick & Morty API",
+            "path" -> "/openapi-rm.json",
+            "content_type" -> "application/json",
+            "url" -> "https://rickandmorty.zuplo.io/openapi.json"
+          )),
+          ApiDocumentationResource(Json.obj(
+            "title" -> "Otoroshi API",
+            "path" -> "/openapi-oto.json",
+            "content_type" -> "application/json",
+            "url" -> "https://maif.github.io/otoroshi/manual/code/openapi.json"
+          ))
+        ),
         redirections = Seq(
           ApiDocumentationRedirection(Json.obj("from" -> "/", "to" -> "/documentation"))
         ),
@@ -424,7 +434,7 @@ object ApiDocumentation {
               ),
               Json.obj(
                 "label" -> "API Reference",
-                "link" -> "/api-ref",
+                "link" -> "/api-references",
                 "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
               )
             )
