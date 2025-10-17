@@ -334,6 +334,17 @@ case class ApiDocumentationSpecRef(raw: JsObject) {
   lazy val icon: Option[ApiDocumentationResource] = raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
 }
 
+case class ApiDocumentationPlan(raw: JsObject) {
+  lazy val id: String = raw.select("id").asString
+  lazy val name: String = raw.select("name").asString
+  lazy val description: String = raw.select("description").asOptString.getOrElse("No description")
+  lazy val throttlingQuota: Long = raw.select("throttling_quota").asOptLong.getOrElse(1000L)
+  lazy val dailyQuota: Long = raw.select("daily_quota").asOptLong.getOrElse(10000L)
+  lazy val monthlyQuota: Long = raw.select("monthly_quota").asOptLong.getOrElse(100000L)
+  lazy val tags: Seq[String] = raw.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val metadata: Map[String, String] = raw.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+}
+
 case class ApiDocumentation(
     enabled: Boolean = true,
     home: ApiDocumentationResource,
@@ -345,6 +356,7 @@ case class ApiDocumentation(
     footer: Option[ApiDocumentationResource] = None,
     search: ApiDocumentationSearch = ApiDocumentationSearch.default,
     banner: Option[ApiDocumentationResource] = None,
+    plans: Seq[ApiDocumentationPlan] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     tags: Seq[String] = Seq.empty,
 )
@@ -362,6 +374,7 @@ object ApiDocumentation {
         resources = json.select("resources").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationResource(o)),
         navigation = json.select("navigation").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationSidebar(o)),
         redirections = json.select("redirections").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationRedirection(o)),
+        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationPlan(o)),
         footer = json.select("footer").asOpt[JsObject].map(o => ApiDocumentationResource(o)),
         search = json.select("search").asOpt[JsObject].map(o => ApiDocumentationSearch(o)).getOrElse(ApiDocumentationSearch.default),
         banner = json.select("banner").asOpt[JsObject].map(o => ApiDocumentationResource(o)),
@@ -398,6 +411,18 @@ object ApiDocumentation {
               |  <a href="/foo">Go to doc !</a>
               |</div>""".stripMargin
         )),
+        plans = Seq(ApiDocumentationPlan(Json.obj(
+          "id" -> "dev",
+          "name" -> "Dev",
+          "description" -> "An apikey to try the API on prototypes",
+          "throttling_quota" -> 100,
+          "daily_quota" -> 1000,
+          "monthly_quota" -> 1000,
+          "tags" -> Json.arr(),
+          "metadata" -> Json.obj(
+            "env" -> "dev"
+          ),
+        ))),
         resources = Seq(
           ApiDocumentationResource(Json.obj(
             "title" -> "Rick & Morty API oas",
@@ -508,6 +533,7 @@ object ApiDocumentation {
       "resources"     -> JsArray(o.resources.map(_.raw)),
       "navigation"    -> JsArray(o.navigation.map(_.raw)),
       "redirections"  -> JsArray(o.redirections.map(_.raw)),
+      "plans"         -> JsArray(o.plans.map(_.raw)),
       "footer"        -> o.footer.map(_.raw).getOrElse(JsNull).asValue,
       "search"        -> o.search.raw,
       "banner"        -> o.banner.map(_.raw).getOrElse(JsNull).asValue,
