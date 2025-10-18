@@ -1,7 +1,6 @@
 package next.models
 
 import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import next.models.ApiConsumerKind.Keyless
 import org.joda.time.DateTime
@@ -9,9 +8,9 @@ import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, EntityLocationSupport, RoundRobin, ServiceDescriptor}
 import otoroshi.next.models._
-import otoroshi.next.plugins.api.NgPluginHelper.pluginId
-import otoroshi.next.plugins.api.{NgPlugin, NgPluginConfig, NgPluginHelper}
 import otoroshi.next.plugins._
+import otoroshi.next.plugins.api.NgPluginHelper.pluginId
+import otoroshi.next.plugins.api.{NgPlugin, NgPluginConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.UrlSanitizer.sanitize
@@ -19,6 +18,8 @@ import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.libs.json._
 
+import java.net.URI
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
@@ -255,64 +256,28 @@ case class ApiDocumentationResource(raw: JsObject) {
   lazy val title: Option[String] = raw.select("title").asOptString
   lazy val description: Option[String] = raw.select("description").asOptString
   lazy val contentType: String = raw.select("content_type").asOpt[String].getOrElse("text/markdown")
-  lazy val url: Option[String] = raw.select("url").asOpt[String]
   lazy val text_content: Option[String] = raw.select("text_content").asOpt[String]
+  lazy val css_icon_class: Option[String] = raw.select("css_icon_class").asOpt[String]
   lazy val json_content: Option[JsValue] = raw.select("json_content").asOpt[JsValue].filterNot(_ == JsNull)
   lazy val base64_content: Option[ByteString] = raw.select("base64_content").asOpt[String].map(_.byteString.decodeBase64)
   lazy val site_page: Boolean = raw.select("site_page").asOpt[Boolean].getOrElse(false)
   lazy val transform: Option[String] = raw.select("transform").asOpt[String]
-}
-
-/*
-trait ApiPage {
-  def path: String
-  def name: String
-}
-
-object ApiPage {
-  case class ApiPageDir(path: String, name: String, leafs: Seq[ApiPage])  extends ApiPage
-  case class ApiPageLeaf(path: String, name: String, content: ByteString) extends ApiPage
-
-  val _fmt: Format[ApiPage] = new Format[ApiPage] {
-    override def reads(json: JsValue): JsResult[ApiPage] = Try {
-      val path = json.select("path").asString
-
-      json.select("name").asString match {
-        case name if name == "ApiPageDir" =>
-          ApiPageDir(
-            path,
-            name,
-            leafs = (json \ "leafs")
-              .asOpt[Seq[JsValue]]
-              .map(_.flatMap(v => ApiPage._fmt.reads(v).asOpt))
-              .getOrElse(Seq.empty)
-          )
-        case _                            => ApiPageLeaf(path, "ApiPageLeaf", content = ByteString(json.select("content").asString))
+  lazy val url: Option[String] = raw.select("url").asOpt[String]
+  lazy val httpHeaders: Map[String, String] = raw.select("http_headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+  lazy val httpTimeout: FiniteDuration = raw.select("http_timeout").asOpt[Long].getOrElse(30000L).millis
+  lazy val httpFollowRedirects: Boolean = raw.select("http_follow_redirects").asOpt[Boolean].getOrElse(true)
+  def resolveUrl(doc: ApiDocumentation): Option[String] = {
+    url match {
+      case Some(url) if url.startsWith(".") && doc.source.isDefined => {
+        val uri = new URI(doc.source.get.url.get + "/" + url)
+        val norm = uri.normalize()
+        norm.toString.some
       }
-    } match {
-      case Failure(ex)    => JsError(ex.getMessage)
-      case Success(value) => JsSuccess(value)
-    }
-
-    override def writes(o: ApiPage): JsValue = {
-      o match {
-        case ApiPageDir(path, name, leafs)    =>
-          Json.obj(
-            "name"  -> name,
-            "path"  -> path,
-            "leafs" -> leafs.map(ApiPage._fmt.writes)
-          )
-        case ApiPageLeaf(path, name, content) =>
-          Json.obj(
-            "name"    -> name,
-            "path"    -> path,
-            "content" -> content
-          )
-      }
+      case Some(url) => Some(url)
+      case None => None
     }
   }
 }
-*/
 
 case class ApiDocumentationSearch(raw: JsObject) {
   lazy val enabled: Boolean = raw.select("enabled").asOpt[Boolean].getOrElse(true)
@@ -327,7 +292,7 @@ case class ApiDocumentationRedirection(raw: JsObject) {
   lazy val to: String = raw.select("to").as[String]
 }
 
-case class ApiDocumentationSpecRef(raw: JsObject) {
+case class ApiDocumentationResourceRef(raw: JsObject) {
   lazy val title: String = raw.select("title").asString
   lazy val description: Option[String] = raw.select("description").asOptString
   lazy val link: String = raw.select("link").asString
@@ -345,11 +310,48 @@ case class ApiDocumentationPlan(raw: JsObject) {
   lazy val metadata: Map[String, String] = raw.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
 }
 
+case class ApiDocumentationSource(raw: JsObject) {
+  lazy val url: Option[String] = raw.select("url").asOpt[String]
+  lazy val httpHeaders: Map[String, String] = raw.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+  lazy val httpTimeout: FiniteDuration = raw.select("timeout").asOpt[Long].getOrElse(30000L).millis
+  lazy val httpFollowRedirects: Boolean = raw.select("follow_redirects").asOpt[Boolean].getOrElse(true)
+  def resolve(doc: ApiDocumentation)(implicit env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
+    url match {
+      case None => None.vfuture
+      case Some(url) => {
+        env.Ws.url(url)
+          .withFollowRedirects(httpFollowRedirects)
+          .withHttpHeaders(httpHeaders.toSeq: _*)
+          .withRequestTimeout(httpTimeout)
+          .get() map { resp =>
+          if (resp.status == 200) {
+            ApiDocumentation._fmt.reads(resp.json).asOpt.map { remoteDoc =>
+              remoteDoc.copy(
+                source = doc.source,
+                references = remoteDoc.references ++ doc.references,
+                resources = remoteDoc.resources ++ doc.resources,
+                navigation = remoteDoc.navigation ++ doc.navigation,
+                redirections = remoteDoc.redirections ++ doc.redirections,
+                footer = remoteDoc.footer.orElse(doc.footer),
+                banner = remoteDoc.banner.orElse(doc.banner),
+                plans = remoteDoc.plans ++ doc.plans,
+              )
+            }
+          } else {
+            None
+          }
+        }
+      }
+    }
+  }
+}
+
 case class ApiDocumentation(
     enabled: Boolean = true,
-    home: ApiDocumentationResource,
-    logo: ApiDocumentationResource,
-    references: Seq[ApiDocumentationSpecRef] = Seq.empty,
+    source: Option[ApiDocumentationSource] = None,
+    home: ApiDocumentationResource = ApiDocumentationResource(Json.obj()),
+    logo: ApiDocumentationResource = ApiDocumentationResource(Json.obj()),
+    references: Seq[ApiDocumentationResourceRef] = Seq.empty,
     resources: Seq[ApiDocumentationResource] = Seq.empty,
     navigation: Seq[ApiDocumentationSidebar] = Seq.empty,
     redirections: Seq[ApiDocumentationRedirection] = Seq.empty,
@@ -359,7 +361,9 @@ case class ApiDocumentation(
     plans: Seq[ApiDocumentationPlan] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     tags: Seq[String] = Seq.empty,
-)
+) {
+  def json: JsValue = ApiDocumentation._fmt.writes(this)
+}
 
 object ApiDocumentation {
   val _fmt: Format[ApiDocumentation] = new Format[ApiDocumentation] {
@@ -368,9 +372,10 @@ object ApiDocumentation {
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        source = json.select("source").asOpt[JsObject].map(o => ApiDocumentationSource(o)),
         home = ApiDocumentationResource(json.select("home").asOpt[JsObject].getOrElse(Json.obj())),
         logo = ApiDocumentationResource(json.select("logo").asOpt[JsObject].getOrElse(Json.obj())),
-        references = json.select("references").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationSpecRef(o)),
+        references = json.select("references").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationResourceRef(o)),
         resources = json.select("resources").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationResource(o)),
         navigation = json.select("navigation").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationSidebar(o)),
         redirections = json.select("redirections").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationRedirection(o)),
@@ -379,147 +384,6 @@ object ApiDocumentation {
         search = json.select("search").asOpt[JsObject].map(o => ApiDocumentationSearch(o)).getOrElse(ApiDocumentationSearch.default),
         banner = json.select("banner").asOpt[JsObject].map(o => ApiDocumentationResource(o)),
       )
-      // TODO: remove that
-      ApiDocumentation(
-        references = Seq(
-          ApiDocumentationSpecRef(Json.obj(
-            "title" -> "Rick & Morty API",
-            "link" -> "/openapi-rm.json",
-            "icon" -> Json.obj("text_content" -> "bi bi-rocket")
-          )),
-          ApiDocumentationSpecRef(Json.obj(
-            "title" -> "Otoroshi API",
-            "link" -> "/openapi-oto.json",
-          )),
-        ),
-        redirections = Seq(
-          ApiDocumentationRedirection(Json.obj("from" -> "/foo", "to" -> "/documentation"))
-        ),
-        home = ApiDocumentationResource(Json.obj(
-          "path" -> "/home",
-          "content_type" -> "text/html",
-          "site_page" -> true,
-          "text_content" ->
-            """<div class="container-xxl" style="margin-top: 30px;">
-              |  <h1>Home of this awesome API!</h1>
-              |  <p>
-              |    Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
-              |  </p>
-              |  <p>
-              |    Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
-              |  </p>
-              |  <a href="/foo">Go to doc !</a>
-              |</div>""".stripMargin
-        )),
-        plans = Seq(ApiDocumentationPlan(Json.obj(
-          "id" -> "dev",
-          "name" -> "Dev",
-          "description" -> "An apikey to try the API on prototypes",
-          "throttling_quota" -> 100,
-          "daily_quota" -> 1000,
-          "monthly_quota" -> 1000,
-          "tags" -> Json.arr(),
-          "metadata" -> Json.obj(
-            "env" -> "dev"
-          ),
-        ))),
-        resources = Seq(
-          ApiDocumentationResource(Json.obj(
-            "title" -> "Rick & Morty API oas",
-            "path" -> "/openapi-rm.json",
-            "content_type" -> "application/json",
-            "url" -> "https://rickandmorty.zuplo.io/openapi.json"
-          )),
-          ApiDocumentationResource(Json.obj(
-            "title" -> "Otoroshi API oas",
-            "path" -> "/openapi-oto.json",
-            "content_type" -> "application/json",
-            "url" -> "https://maif.github.io/otoroshi/manual/code/openapi.json"
-          )),
-          ApiDocumentationResource(Json.obj(
-            "path" -> "/documentation/getting-started",
-            "content_type" -> "text/html",
-            "site_page" -> true,
-            "text_content" -> "<div class=\"container-xxl\"><h1>Getting started !</h1></div>"
-          )),
-          ApiDocumentationResource(Json.obj(
-            "path" -> "/documentation/more-information",
-            "content_type" -> "text/markdown",
-            "site_page" -> true,
-            "transform" -> "markdown",
-            "text_content" -> "# More information\n\n- Lorem ipsum\n- Lorem ipsum\n\n```json\n{\"foo\":\"bar\"}\n```\n\n"
-          )),
-          ApiDocumentationResource(Json.obj(
-            "path" -> "/important/getting-started",
-            "content_type" -> "text/html",
-            "site_page" -> true,
-            "text_content" -> "<div class=\"container-xxl\"><h1>Getting started !</h1></div>"
-          )),
-          ApiDocumentationResource(Json.obj(
-            "path" -> "/important/more-information",
-            "content_type" -> "text/markdown",
-            "site_page" -> true,
-            "transform" -> "markdown",
-            "url" -> "https://github.com/MAIF/otoroshi/raw/refs/heads/master/manual/src/main/paradox/about.md"
-          ))
-        ),
-        logo = ApiDocumentationResource(Json.obj(
-          "url" -> "https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png",
-        )),
-        navigation = Seq(
-          ApiDocumentationSidebar(Json.obj(
-            "label" -> "Documentation",
-            "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2"),
-            "path" -> "/documentation",
-            "items" -> Json.arr(
-              Json.obj(
-                "label" -> "Information",
-                "kind" -> "category",
-                "links" -> Json.arr(
-                  Json.obj(
-                    "label" -> "Getting started",
-                    "link" -> "/documentation/getting-started",
-                    "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
-                  ),
-                  Json.obj(
-                    "label" -> "More information",
-                    "link" -> "/documentation/more-information",
-                    "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
-                  )
-                )
-              ),
-              Json.obj(
-                "label" -> "API",
-                "kind" -> "category",
-                "links" -> Json.arr(
-                  Json.obj(
-                    "label" -> "API Reference",
-                    "link" -> "/api-references",
-                    "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
-                  )
-                )
-              )
-            )
-          )),
-          ApiDocumentationSidebar(Json.obj(
-            "label" -> "Other important stuff",
-            "icon" -> Json.obj("text_content" -> "bi bi-exclamation-diamond me-2"),
-            "path" -> "/important",
-            "items" -> Json.arr(
-              Json.obj(
-                "label" -> "Getting started",
-                "link" -> "/important/getting-started",
-                "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
-              ),
-              Json.obj(
-                "label" -> "More information",
-                "link" -> "/important/more-information",
-                "icon" -> Json.obj("text_content" -> "bi bi-journal-text me-2")
-              )
-            )
-          )),
-        )
-      )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
@@ -527,6 +391,7 @@ object ApiDocumentation {
 
     override def writes(o: ApiDocumentation): JsValue = Json.obj(
       "enabled"       -> o.enabled,
+      "source"        -> o.source.map(_.raw).getOrElse(JsNull).asValue,
       "home"          -> o.home.raw,
       "logo"          -> o.logo.raw,
       "references"    -> JsArray(o.references.map(_.raw)),
@@ -1091,6 +956,13 @@ case class Api(
   override def theTags: Seq[String] = tags
 
   override def theMetadata: Map[String, String] = metadata
+
+  def resolveDocumentation()(implicit env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
+    documentation.flatMap(_.source) match {
+      case None => documentation.vfuture
+      case Some(source) => source.resolve(documentation.get)
+    }
+  }
 
   def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
     implicit val ec = env.otoroshiExecutionContext
