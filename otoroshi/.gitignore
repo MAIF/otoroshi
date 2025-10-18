@@ -30,5 +30,6 @@ companion.txt
 /service.json
 /zips
 outsideplugins.scala
+outsidedev
 playwright-report
 /workflow_test.json
