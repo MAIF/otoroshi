@@ -262,6 +262,7 @@ case class ApiDocumentationResource(raw: JsObject) {
   lazy val base64_content: Option[ByteString] = raw.select("base64_content").asOpt[String].map(_.byteString.decodeBase64)
   lazy val site_page: Boolean = raw.select("site_page").asOpt[Boolean].getOrElse(false)
   lazy val transform: Option[String] = raw.select("transform").asOpt[String]
+  lazy val transform_wrapper: Option[String] = raw.select("transform_wrapper").asOpt[String]
   lazy val url: Option[String] = raw.select("url").asOpt[String]
   lazy val httpHeaders: Map[String, String] = raw.select("http_headers").asOpt[Map[String, String]].getOrElse(Map.empty)
   lazy val httpTimeout: FiniteDuration = raw.select("http_timeout").asOpt[Long].getOrElse(30000L).millis
