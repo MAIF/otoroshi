@@ -145,7 +145,7 @@ object KafkaSettings {
       .create(_env.analyticsActorSystem, new ByteArrayDeserializer(), new StringDeserializer())
 
     var settings = config.securityProtocol match {
-      case "SSL" | "SASL_SSL" =>
+      case "SSL" | "SASL_SSL" if !config.mtlsConfig.mtls =>
         val ks = config.keystore.get
         val ts = config.truststore.get
         val kp = config.keyPass.get
@@ -160,7 +160,20 @@ object KafkaSettings {
           .applyOnIf(!config.hostValidation)(
             _.withProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "")
           )
-      case _                  =>
+      case "SSL" | "SASL_SSL"                            => {
+        // AWAIT: valid
+        Await.result(waitForFirstSetup(_env), 5.seconds) // wait until certs fully populated at least once
+        val (jks1, jks2, password) = config.mtlsConfig.toJKS(_env)
+        entity
+          .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
+          .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required") // TODO - test it
+          .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, "")
+          .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, jks1.getAbsolutePath)
+          .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, password)
+          .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, jks2.getAbsolutePath)
+          .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, password)
+      }
+      case _                                             =>
         entity
           .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, config.securityProtocol)
           .withProperty(SaslConfigs.SASL_MECHANISM, mechanism)
@@ -179,21 +192,6 @@ object KafkaSettings {
           s"""${getSaslJaasClass(mechanism)} required username="$username" password="$password";"""
         )
     }
-
-    if (config.mtlsConfig.mtls) {
-      // AWAIT: valid
-      Await.result(waitForFirstSetup(_env), 5.seconds) // wait until certs fully populated at least once
-      val (jks1, jks2, password) = config.mtlsConfig.toJKS(_env)
-      settings = settings
-        .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
-        .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required") // TODO - test it
-        .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, "")
-        .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, jks1.getAbsolutePath)
-        .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, password)
-        .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, jks2.getAbsolutePath)
-        .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, password)
-    }
-
     settings.properties
   }
 
