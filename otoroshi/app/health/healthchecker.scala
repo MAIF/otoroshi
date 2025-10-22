@@ -2,6 +2,7 @@ package otoroshi.health
 
 import java.util.concurrent.TimeUnit
 import akka.actor.{Actor, Props}
+import akka.http.scaladsl.model.ContentType
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
@@ -9,7 +10,7 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events.HealthCheckEvent
 import otoroshi.gateway.Retry
-import otoroshi.models.{SecComVersion, ServiceDescriptor, Target}
+import otoroshi.models.{HealthCheck, SecComVersion, ServiceDescriptor, Target}
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
@@ -22,6 +23,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.{Failure, Success}
 import scala.concurrent.duration._
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.ws.WSResponse
 
 case class StartHealthCheck()
 case class ReStartHealthCheck()
@@ -32,6 +34,19 @@ object HealthCheck {
   import otoroshi.utils.http.Implicits._
 
   val badHealth = new UnboundedTrieMap[String, Unit]()
+
+  def contextCheckHealth(resp: WSResponse, healthCheck: HealthCheck): Option[String] = {
+    val content = resp.body
+    val healthyMatched = healthCheck.healthyRegexChecks.exists { regex =>
+      content.matches(regex)
+    }
+    val unhealthyMatched = healthCheck.unhealthyRegexChecks.exists { regex =>
+      content.matches(regex)
+    }
+    if (unhealthyMatched) Some("RED")
+    else if (healthyMatched) Some("GREEN")
+    else Some("RED")
+  }
 
   def checkTarget(desc: ServiceDescriptor, target: Target, logger: Logger)(implicit
       env: Env,
@@ -85,6 +100,7 @@ object HealthCheck {
         .get()
         .andThen {
           case Success(res)   => {
+            println(res.body.parseJson.prettify)
             val checkDone = if (desc.healthCheck.logicCheck) {
               res.header(env.Headers.OtoroshiHealthCheckLogicTestResult).exists(_.toLong == value.toLong + 42L)
             } else {
@@ -94,22 +110,32 @@ object HealthCheck {
             val useDefaultConfiguration =
               desc.healthCheck.healthyStatuses.isEmpty && desc.healthCheck.unhealthyStatuses.isEmpty
 
+            val needToCheckContent = (desc.healthCheck.healthyRegexChecks.nonEmpty || desc.healthCheck.unhealthyRegexChecks.nonEmpty) && ContentType.parse(res.contentType).map(_.mediaType.isText).getOrElse(false)
+
             val rawHealth = (res.status, checkDone) match {
               case (a, true) if a > 199 && a < 500  => Some("GREEN")
               case (a, false) if a > 199 && a < 500 => Some("YELLOW")
               case _                                => Some("RED")
             }
 
-            val health = if (useDefaultConfiguration) {
-              rawHealth
+            val health: Option[String] = if (useDefaultConfiguration) {
+              rawHealth match {
+                case Some("RED") => rawHealth
+                case _ if needToCheckContent => contextCheckHealth(res, desc.healthCheck)
+                case _ => rawHealth
+              }
             } else {
               if (desc.healthCheck.unhealthyStatuses.contains(res.status)) {
                 Some("RED")
               } else if (desc.healthCheck.healthyStatuses.contains(res.status)) {
-                if (checkDone) {
-                  Some("GREEN")
+                if (needToCheckContent) {
+                  contextCheckHealth(res, desc.healthCheck)
                 } else {
-                  Some("YELLOW")
+                  if (checkDone) {
+                    Some("GREEN")
+                  } else {
+                    Some("YELLOW")
+                  }
                 }
               } else { // if not contains in both list, just resolve with error
                 Some("RED")

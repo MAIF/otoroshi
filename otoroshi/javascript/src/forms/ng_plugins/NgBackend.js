@@ -270,9 +270,9 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
           },
         },
         url: {
-          label: 'URL',
+          label: 'URL Path',
           type: 'string',
-          help: "The URL to check. Should return an HTTP 200 response. You can also respond with an 'Opun-Health-Check-Logic-Test-Result' header set to the value of the 'Opun-Health-Check-Logic-Test' request header + 42. to make the healthcheck complete.",
+          help: "The URL Path to check. Should return an HTTP 200 response. You can also respond with an 'Otoroshi-Health-Check-Logic-Test-Result' header set to the value of the 'Otoroshi-Health-Check-Logic-Test-Test' request header + 42. to make the healthcheck complete.",
         },
         timeout: {
           type: 'number',
@@ -288,6 +288,20 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
           array: true,
           label: 'Unhealthy statuses',
         },
+        healthyRegexChecks: {
+          type: 'string',
+          array: true,
+          label: 'Healthy regex checks',
+          suffix: 'regex',
+          placeholder: 'regex',
+        },
+        unhealthyRegexChecks: {
+          type: 'string',
+          array: true,
+          label: 'Unhealthy regex checks',
+          suffix: 'regex',
+          placeholder: 'regex',
+        },
       },
       flow: [
         'description',
@@ -298,6 +312,8 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
         'timeout',
         'healthyStatuses',
         'unhealthyStatuses',
+        'healthyRegexChecks',
+        'unhealthyRegexChecks',
       ],
     },
     targets: {

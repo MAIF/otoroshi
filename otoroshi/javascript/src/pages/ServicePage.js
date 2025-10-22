@@ -3321,7 +3321,7 @@ export class ServicePage extends Component {
             <TextInput
               label="HealthCheck url"
               value={this.state.service.healthCheck.url}
-              help="The URL to check. Should return an HTTP 200 response. You can also respond with an 'Opun-Health-Check-Logic-Test-Result' header set to the value of the 'Opun-Health-Check-Logic-Test' request header + 42. to make the healthcheck complete."
+              help="The URL to check. Should return an HTTP 200 response. You can also respond with an 'Otoroshi-Health-Check-Logic-Test-Result' header set to the value of the 'Otoroshi-Health-Check-Logic-Test' request header + 42. to make the healthcheck complete."
               onChange={(v) => this.changeTheValue('healthCheck.url', v)}
             />
           </Collapse>
