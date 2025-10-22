@@ -257,6 +257,7 @@ export function RoutesTable(props) {
   const fetchItems = (paginationState) =>
     nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findAllWithPagination({
       ...paginationState,
+      sorted: [{ id: "name", desc: true }],
       fields: [
         'backend.targets',
         'enabled',
