@@ -271,7 +271,6 @@ export function RoutesTable(props) {
     }
     return nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findAllWithPagination({
       ...paginationState,
-      sorted: [{ id: "name", desc: true }],
       fields: [
         'backend.targets',
         'enabled',
@@ -392,7 +391,7 @@ export function RoutesTable(props) {
             setFields(newFields);
           }}
           deleteItem={(item) => deleteItem(item)}
-          defaultSort="metadata.updated_at"
+          defaultSort="name"
           defaultSortDesc="true"
           fetchItems={fetchItems}
           fetchTemplate={fetchTemplate}

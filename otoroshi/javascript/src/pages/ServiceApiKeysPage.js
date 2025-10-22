@@ -947,7 +947,6 @@ export class ServiceApiKeysPage extends Component {
   fetchAllApiKeys = (paginationState) => {
     return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).findAllWithPagination({
       ...paginationState,
-      sorted: [{ id: "clientName", desc: true }],
     });
   };
 
@@ -1014,6 +1013,8 @@ export class ServiceApiKeysPage extends Component {
             authorizedEntities: this.state.service.groups.map((g) => 'group_' + g),
           })}
           itemName="ApiKey"
+          defaultSort="clientName"
+          defaultSortDesc="true"
           formSchema={ApiKeysConstants.formSchema(this)}
           formFlow={ApiKeysConstants.formFlow}
           columns={ApiKeysConstants.columns(this)}
@@ -1127,7 +1128,6 @@ export class ApiKeysPage extends Component {
   fetchAllApiKeys = (paginationState) => {
     return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).findAllWithPagination({
       ...paginationState,
-      sorted: [{ id: "clientName", desc: true }],
       fields: [
         ...Object.keys(this.state.fields).map((field) =>
           this.state.fields[field] ? field : undefined
@@ -1212,6 +1212,8 @@ export class ApiKeysPage extends Component {
           parentProps={this.props}
           selfUrl={`apikeys`}
           defaultTitle="All apikeys"
+          defaultSort="clientName"
+          defaultSortDesc="true"
           defaultValue={() =>
             nextClient
               .forEntityNext(nextClient.ENTITIES.APIKEYS)
