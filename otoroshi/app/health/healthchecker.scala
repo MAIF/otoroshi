@@ -116,7 +116,6 @@ object HealthCheck {
         .get()
         .andThen {
           case Success(res)   => {
-            println(res.body.parseJson.prettify)
             val checkDone = if (desc.healthCheck.logicCheck) {
               res.header(env.Headers.OtoroshiHealthCheckLogicTestResult).exists(_.toLong == value.toLong + 42L)
             } else {
