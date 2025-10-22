@@ -27,6 +27,7 @@ export function RoutesTable(props) {
   const params = useParams();
   const history = useHistory();
 
+  const [groups, setGroups] = useState([]);
   const [queryFilters, setQueryFilters] = useState(undefined);
 
   const [loading, setLoading] = useState(true);
@@ -164,7 +165,7 @@ export function RoutesTable(props) {
   const groupsColumn = {
     title: 'Groups',
     filterId: 'groups',
-    content: (item) => (Array.isArray(item.groups) ? item.groups : []).join(','),
+    content: (item) => (Array.isArray(item.groups) ? item.groups : []).map(group_id => groups.find(g => g.id === group_id)?.name || group_id).join(','),
   };
 
   const pluginsColumn = {
@@ -252,8 +253,23 @@ export function RoutesTable(props) {
     }
   };
 
-  const fetchItems = (paginationState) =>
-    nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findAllWithPagination({
+  const fetchItems = (paginationState) => {
+    if (paginationState.filtered && paginationState.filtered.length > 0) {
+      paginationState.filtered = paginationState.filtered.map(filter => {
+        if (filter.id === "groups") {
+          const value = filter.value;
+          const fgroup = groups.find(g => g.name.toLowerCase().indexOf(value.toLowerCase()) > -1);
+          if (fgroup) {
+            return { id: 'groups', value: fgroup.id };
+          } else {
+            return filter;
+          }
+        } else {
+          return filter;
+        }
+      })
+    }
+    return nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findAllWithPagination({
       ...paginationState,
       sorted: [{ id: "name", desc: true }],
       fields: [
@@ -266,6 +282,7 @@ export function RoutesTable(props) {
         ...Object.keys(fields).map((field) => (fields[field] ? field : undefined)),
       ].filter((c) => c),
     });
+  }
 
   const fetchTemplate = () => nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).template();
 
@@ -283,6 +300,7 @@ export function RoutesTable(props) {
   useEffect(() => {
     loadSearchParamsFromQuery();
     loadFields();
+    loadGroups();
   }, []);
 
   const loadSearchParamsFromQuery = () => {
@@ -309,6 +327,12 @@ export function RoutesTable(props) {
       setLoading(false);
     }
   };
+
+  const loadGroups = () => {
+    nextClient.forEntityNext(nextClient.ENTITIES.GROUPS).findAll().then((groups) => {
+      setGroups(groups);
+    })
+  }
 
   const saveFields = (fields) => {
     try {
