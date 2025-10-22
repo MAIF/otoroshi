@@ -76,16 +76,20 @@ object HealthCheck {
         .withHttpHeaders(
           env.Headers.OtoroshiState                -> state,
           env.Headers.OtoroshiClaim                -> claim,
-          env.Headers.OtoroshiHealthCheckLogicTest -> value
-        )
+        ).applyOnIf(desc.healthCheck.logicCheck) { builder =>
+          builder.addHttpHeaders(env.Headers.OtoroshiHealthCheckLogicTest -> value)
+        }
         .withMaybeProxyServer(
           desc.clientConfig.proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
         )
         .get()
         .andThen {
           case Success(res)   => {
-            val checkDone =
+            val checkDone = if (desc.healthCheck.logicCheck) {
               res.header(env.Headers.OtoroshiHealthCheckLogicTestResult).exists(_.toLong == value.toLong + 42L)
+            } else {
+              true
+            }
 
             val useDefaultConfiguration =
               desc.healthCheck.healthyStatuses.isEmpty && desc.healthCheck.unhealthyStatuses.isEmpty

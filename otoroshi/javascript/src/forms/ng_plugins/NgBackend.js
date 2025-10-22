@@ -261,6 +261,14 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
               'If enabled, Otoroshi will block requests when the healthcheck status is considered unhealthy (red)',
           },
         },
+        logicCheck: {
+          label: 'Logic check',
+          type: 'box-bool',
+          props: {
+            description:
+              'If enabled, Otoroshi will check if the response contains a header with the logic check value + 42 to consider health GREEN.',
+          },
+        },
         url: {
           label: 'URL',
           type: 'string',
