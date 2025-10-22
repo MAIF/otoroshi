@@ -99,12 +99,12 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
         case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
         case Some(desc)                            => {
           val oldGroup   = (body \ "authorizedGroup").asOpt[String].map(g => "group_" + g).toSeq
-          val entities   = (Seq("service_" + routeId) ++ oldGroup).distinct
+          val entities   = (Seq("route_" + routeId) ++ oldGroup).distinct
           val apiKeyJson = ((body \ "authorizedEntities").asOpt[Seq[String]] match {
-            case None                                              => body ++ Json.obj("authorizedEntities" -> Json.arr("service_" + routeId))
-            case Some(sid) if !sid.contains(s"service_${routeId}") =>
+            case None                                              => body ++ Json.obj("authorizedEntities" -> Json.arr("route_" + routeId))
+            case Some(sid) if !sid.contains(s"route_${routeId}") =>
               body ++ Json.obj("authorizedEntities" -> (entities ++ sid).distinct)
-            case Some(sid) if sid.contains(s"service_${routeId}")  => body
+            case Some(sid) if sid.contains(s"route_${routeId}")  => body
             case Some(_)                                           => body
           }) - "authorizedGroup"
           ApiKey.fromJsonSafe(apiKeyJson) match {
