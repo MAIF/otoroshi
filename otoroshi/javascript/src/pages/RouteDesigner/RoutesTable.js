@@ -150,7 +150,6 @@ export function RoutesTable(props) {
     title: 'Tags',
     content: (item) => (item.tags || []).join(','),
     notSortable: true,
-    notFilterable: true,
   };
 
   const metadataColumn = {
