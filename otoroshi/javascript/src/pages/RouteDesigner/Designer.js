@@ -2000,9 +2000,10 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
                   ''
                 );
                 const mtls =
+                  target.tls &&
                   target.tls_config &&
                   target.tls_config.enabled &&
-                  [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
+                  [...(target.tls_config.certs || [])]
                     .length > 0 ? (
                     <span
                       className="badge bg-warning text-dark"
