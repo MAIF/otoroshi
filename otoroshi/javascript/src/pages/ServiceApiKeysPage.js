@@ -699,8 +699,8 @@ const ApiKeysConstants = {
       props: {
         label: 'Throttling quota',
         placeholder: 'Authorized calls per window',
-        suffix: 'calls per sec.',
-        help: 'The authorized number of calls per window',
+        suffix: 'calls per window',
+        help: 'The authorized number of calls per window. See the `otoroshi.throttlingWindow` config. or `OTOROSHI_THROTTLING_WINDOW` environment variable.',
       },
     },
     dailyQuota: {
