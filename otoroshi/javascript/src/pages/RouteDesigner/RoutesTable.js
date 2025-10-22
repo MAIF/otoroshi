@@ -258,9 +258,9 @@ export function RoutesTable(props) {
       paginationState.filtered = paginationState.filtered.map(filter => {
         if (filter.id === "groups") {
           const value = filter.value;
-          const fgroup = groups.find(g => g.name.toLowerCase().indexOf(value.toLowerCase()) > -1);
-          if (fgroup) {
-            return { id: 'groups', value: fgroup.id };
+          const fgroup = groups.filter(g => g.name.toLowerCase().indexOf(value.toLowerCase()) > -1);
+          if (fgroup && fgroup.length > 0) {
+            return { id: 'groups', value: fgroup.map(g => g.id).join('|') };
           } else {
             return filter;
           }
