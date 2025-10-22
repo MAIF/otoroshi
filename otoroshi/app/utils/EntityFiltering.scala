@@ -190,19 +190,23 @@ object EntityFiltering {
 
                 if (isANumber) {
                   sortedArray
-                    .sortBy(r => {
-                      JsonOperationsHelper.getValueAtPath(sort._1, r)._2 match {
+                    .sortWith { (a, b) =>
+                      val field1 = JsonOperationsHelper.getValueAtPath(sort._1, a)._2 match {
                         case JsNumber(value) => value.toInt
                         case value           => value.asOpt[Int].getOrElse(0)
                       }
-                    })(
-                      Ordering[Int].reverse
-                    )
+                      val field2 = JsonOperationsHelper.getValueAtPath(sort._1, b)._2 match {
+                        case JsNumber(value) => value.toInt
+                        case value           => value.asOpt[Int].getOrElse(0)
+                      }
+                      field1.compareTo(field2) > 0
+                    }
                 } else {
-                  sortedArray
-                    .sortBy(r => String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1, r)._2))(
-                      Ordering[String].reverse
-                    )
+                  sortedArray.sortWith { (a, b) =>
+                    val field1 = JsonOperationsHelper.getValueAtPath(sort._1, a)._2.asOptString.getOrElse("--")
+                    val field2 = JsonOperationsHelper.getValueAtPath(sort._1, b)._2.asOptString.getOrElse("--")
+                    field1.compareToIgnoreCase(field2) > 0
+                  }
                 }
               }
 

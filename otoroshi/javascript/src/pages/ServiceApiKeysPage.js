@@ -944,10 +944,11 @@ export class ServiceApiKeysPage extends Component {
     });
   }
 
-  fetchAllApiKeys = () => {
-    return BackOfficeServices.fetchApiKeysForPage(
-      this.props.params.serviceId || this.props.params.routeId
-    );
+  fetchAllApiKeys = (paginationState) => {
+    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).findAllWithPagination({
+      ...paginationState,
+      sorted: [{ id: "clientName", desc: true }],
+    });
   };
 
   createItem = (ak) => {
@@ -1126,6 +1127,7 @@ export class ApiKeysPage extends Component {
   fetchAllApiKeys = (paginationState) => {
     return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).findAllWithPagination({
       ...paginationState,
+      sorted: [{ id: "clientName", desc: true }],
       fields: [
         ...Object.keys(this.state.fields).map((field) =>
           this.state.fields[field] ? field : undefined
