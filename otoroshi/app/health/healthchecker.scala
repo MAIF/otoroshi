@@ -1,38 +1,34 @@
 package otoroshi.health
 
-import java.util.concurrent.TimeUnit
 import akka.actor.{Actor, Props}
-import akka.http.scaladsl.model.ContentType
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.HealthCheckEvent
 import otoroshi.gateway.Retry
 import otoroshi.models.{HealthCheck, SecComVersion, ServiceDescriptor, Target}
-import org.joda.time.DateTime
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
-import play.api.Logger
+import otoroshi.script._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.util.{Failure, Success}
-import scala.concurrent.duration._
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.Json
+import play.api.Logger
 import play.api.libs.ws.WSResponse
 
+import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 case class StartHealthCheck()
 case class ReStartHealthCheck()
 case class CheckFirstService(startedAt: DateTime, services: Seq[ServiceDescriptor])
 
-object HealthCheck {
+object HealthCheckLogic {
 
   import otoroshi.utils.http.Implicits._
 
@@ -181,7 +177,7 @@ object HealthCheck {
                 Some(env.healtCheckTTL)
               )
             } else {
-              HealthCheck.badHealth.remove(target.asCleanTarget)
+              HealthCheckLogic.badHealth.remove(target.asCleanTarget)
               if (!env.healtCheckTTLOnly) {
                 env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:targets:bad-health:${target.asCleanTarget}"))
               }
@@ -209,7 +205,7 @@ object HealthCheck {
             )
             hce.toAnalytics()
             hce.pushToRedis()
-            HealthCheck.badHealth.put(target.asCleanTarget, ())
+            HealthCheckLogic.badHealth.put(target.asCleanTarget, ())
             env.datastores.rawDataStore.set(
               s"${env.storageRoot}:targets:bad-health:${target.asCleanTarget}",
               ByteString(DateTime.now().toString()),
@@ -244,7 +240,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
       case false => FastFuture.successful(())
       case true  => {
         Source(desc.targets.toList)
-          .mapAsync(1)(target => HealthCheck.checkTarget(desc, target, logger))
+          .mapAsync(1)(target => HealthCheckLogic.checkTarget(desc, target, logger))
           .toMat(Sink.ignore)(Keep.right)
           .run()
           .map(_ => ())
@@ -325,9 +321,13 @@ class HealthCheckJob extends Job {
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
     JobInstantiation.OneInstancePerOtoroshiCluster
 
-  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = {
+    env.configuration.getOptional[Long]("otoroshi.healthcheck.job.initial-delay").getOrElse(10000L).milliseconds.some
+  }
 
-  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = {
+    env.configuration.getOptional[Long]("otoroshi.healthcheck.job.interval").getOrElse(60000L).milliseconds.some
+  }
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
@@ -347,7 +347,7 @@ class HealthCheckJob extends Job {
     Source(targets)
       .mapAsync(parallelChecks) { case (target, service) =>
         logger.debug(s"checking health of ${service.name} - ${target.asTargetStr}")
-        HealthCheck.checkTarget(service, target, logger)
+        HealthCheckLogic.checkTarget(service, target, logger)
       }
       .runWith(Sink.ignore)
       .map(_ => ())
@@ -381,10 +381,10 @@ class HealthCheckLocalCacheJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.rawDataStore.keys(s"${env.storageRoot}:targets:bad-health:*").map { keys =>
-      HealthCheck.badHealth.clear()
+      HealthCheckLogic.badHealth.clear()
       keys.foreach { key =>
         val target = key.replace(s"${env.storageRoot}:targets:bad-health:", "")
-        HealthCheck.badHealth.put(target, ())
+        HealthCheckLogic.badHealth.put(target, ())
       }
     }
   }
