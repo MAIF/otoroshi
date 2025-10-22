@@ -160,7 +160,6 @@ export function RoutesTable(props) {
         .map(([key, value]) => `${key}:${value}`)
         .join(' - '),
     notSortable: true,
-    notFilterable: true,
   };
 
   const groupsColumn = {
