@@ -253,8 +253,23 @@ export function RoutesTable(props) {
     }
   };
 
-  const fetchItems = (paginationState) =>
-    nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findAllWithPagination({
+  const fetchItems = (paginationState) => {
+    if (paginationState.filtered && paginationState.filtered.length > 0) {
+      paginationState.filtered = paginationState.filtered.map(filter => {
+        if (filter.id === "groups") {
+          const value = filter.value;
+          const fgroup = groups.find(g => g.name.toLowerCase().indexOf(value.toLowerCase()) > -1);
+          if (fgroup) {
+            return { id: 'groups', value: fgroup.id };
+          } else {
+            return filter;
+          }
+        } else {
+          return filter;
+        }
+      })
+    }
+    return nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findAllWithPagination({
       ...paginationState,
       sorted: [{ id: "name", desc: true }],
       fields: [
@@ -267,6 +282,7 @@ export function RoutesTable(props) {
         ...Object.keys(fields).map((field) => (fields[field] ? field : undefined)),
       ].filter((c) => c),
     });
+  }
 
   const fetchTemplate = () => nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).template();
 
