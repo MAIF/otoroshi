@@ -255,9 +255,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
+          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${
             rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
+          }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${
             rawValue.clientSecret
           }' http://xxxxxx --include`}
         />
