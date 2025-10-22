@@ -1219,7 +1219,7 @@ class TableComponent extends Component {
                 </button>
               )}
               {this.props.export && (
-                <>
+                <div className="btn-group">
                   <button
                     onClick={this.exportJson}
                     type="button"
@@ -1238,7 +1238,7 @@ class TableComponent extends Component {
                     <i className="fas fa-file-export me-2" />
                     Export YAML
                   </button>
-                </>
+                </div>
               )}
               {!this.props.displayTrash && !this.props.newForm && (
                 <button
