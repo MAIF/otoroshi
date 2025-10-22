@@ -1416,6 +1416,7 @@ const possibleExporterConfigFormValues = {
       'saslConfig.username',
       'saslConfig.password',
       'saslConfig.mechanism',
+      'saslConfig.jaasConfig',
       'mtlsConfig.mtls',
       'keyPass',
       'keystore',
@@ -1425,6 +1426,7 @@ const possibleExporterConfigFormValues = {
       'mtlsConfig.certs',
       'mtlsConfig.trustedCerts',
       'hostValidation',
+      'properties',
     ],
     schema: {
       servers: {
@@ -1462,6 +1464,14 @@ const possibleExporterConfigFormValues = {
           label: 'Kafka truststore path',
           placeholder: '/home/bas/client.truststore.jks',
           help: 'The truststore path on the server if you use a keystore/truststore to connect to Kafka cluster',
+        },
+      },
+      'saslConfig.jaasConfig': {
+        type: 'string',
+        display: (v) => tryOrTrue(() => v.securityProtocol.includes('SASL')),
+        props: {
+          label: 'SASL JAAS Config',
+          help: 'The JAAS config. property',
         },
       },
       'saslConfig.username': {
@@ -1562,6 +1572,13 @@ const possibleExporterConfigFormValues = {
           label: 'Kafka topic',
           placeholder: 'otoroshi-alerts',
           help: 'The topic on which Otoroshi alerts will be sent',
+        },
+      },
+      properties: {
+        type: 'object',
+        props: {
+          label: 'Properties',
+          help: 'Additional properties for the Kafka client',
         },
       },
     },
