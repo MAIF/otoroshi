@@ -27,6 +27,7 @@ export function RoutesTable(props) {
   const params = useParams();
   const history = useHistory();
 
+  const [groups, setGroups] = useState([]);
   const [queryFilters, setQueryFilters] = useState(undefined);
 
   const [loading, setLoading] = useState(true);
@@ -164,7 +165,7 @@ export function RoutesTable(props) {
   const groupsColumn = {
     title: 'Groups',
     filterId: 'groups',
-    content: (item) => (Array.isArray(item.groups) ? item.groups : []).join(','),
+    content: (item) => (Array.isArray(item.groups) ? item.groups : []).map(group_id => groups.find(g => g.id === group_id)?.name || group_id).join(','),
   };
 
   const pluginsColumn = {
@@ -283,6 +284,7 @@ export function RoutesTable(props) {
   useEffect(() => {
     loadSearchParamsFromQuery();
     loadFields();
+    loadGroups();
   }, []);
 
   const loadSearchParamsFromQuery = () => {
@@ -309,6 +311,12 @@ export function RoutesTable(props) {
       setLoading(false);
     }
   };
+
+  const loadGroups = () => {
+    nextClient.forEntityNext(nextClient.ENTITIES.GROUPS).findAll().then((groups) => {
+      setGroups(groups);
+    })
+  }
 
   const saveFields = (fields) => {
     try {
