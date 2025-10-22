@@ -23,7 +23,10 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.{Failure, Success}
 import scala.concurrent.duration._
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
+
+import java.util.regex.Pattern
 
 case class StartHealthCheck()
 case class ReStartHealthCheck()
@@ -37,15 +40,28 @@ object HealthCheck {
 
   def contextCheckHealth(resp: WSResponse, healthCheck: HealthCheck): Option[String] = {
     val content = resp.body
-    val healthyMatched = healthCheck.healthyRegexChecks.exists { regex =>
-      content.matches(regex)
+    val healthyMatched = if (healthCheck.healthyRegexChecks.isEmpty) true else healthCheck.healthyRegexChecks.exists { regex =>
+      Pattern.compile(regex).matcher(content).find()
     }
-    val unhealthyMatched = healthCheck.unhealthyRegexChecks.exists { regex =>
-      content.matches(regex)
+    val unhealthyMatched = if (healthCheck.unhealthyRegexChecks.isEmpty) false else healthCheck.unhealthyRegexChecks.exists { regex =>
+      Pattern.compile(regex).matcher(content).find()
     }
     if (unhealthyMatched) Some("RED")
     else if (healthyMatched) Some("GREEN")
     else Some("RED")
+  }
+
+  def isTextualContentType(contentType: String): Boolean = {
+    if (contentType == null || contentType.trim.isEmpty) return false
+    val ct = contentType.toLowerCase.trim
+    ct.startsWith("text/") ||
+      ct.contains("json") ||
+      ct.contains("xml") ||
+      ct.contains("yaml") ||
+      ct.contains("csv") ||
+      ct.contains("html") ||
+      ct.contains("javascript") ||
+      ct.contains("x-www-form-urlencoded")
   }
 
   def checkTarget(desc: ServiceDescriptor, target: Target, logger: Logger)(implicit
@@ -110,7 +126,9 @@ object HealthCheck {
             val useDefaultConfiguration =
               desc.healthCheck.healthyStatuses.isEmpty && desc.healthCheck.unhealthyStatuses.isEmpty
 
-            val needToCheckContent = (desc.healthCheck.healthyRegexChecks.nonEmpty || desc.healthCheck.unhealthyRegexChecks.nonEmpty) && ContentType.parse(res.contentType).map(_.mediaType.isText).getOrElse(false)
+            val hasRegexChecks = (desc.healthCheck.healthyRegexChecks.nonEmpty || desc.healthCheck.unhealthyRegexChecks.nonEmpty)
+            val isTextResult = isTextualContentType(res.contentType)
+            val needToCheckContent = hasRegexChecks && isTextResult
 
             val rawHealth = (res.status, checkDone) match {
               case (a, true) if a > 199 && a < 500  => Some("GREEN")
