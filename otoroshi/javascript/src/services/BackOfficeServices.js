@@ -2182,6 +2182,7 @@ export const nextClient = {
     APIKEYS: 'apikeys',
     DRAFTS: 'drafts',
     APIS: 'apis',
+    GROUPS: 'service-groups',
     API_CONSUMER_SUBSCRIPTIONS: 'apiconsumersubscriptions',
   },
   find: (entity) => fetchWrapper(`/${entity}`),
