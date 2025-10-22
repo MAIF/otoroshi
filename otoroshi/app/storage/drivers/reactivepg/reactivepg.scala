@@ -220,6 +220,8 @@ class ReactivePgDataStores(
   private lazy val poolOptions = new PoolOptions()
     .setMaxSize(configuration.getOptionalWithFileSupport[Int]("app.pg.poolSize").getOrElse(100))
 
+  private lazy val ttlJobInitialDelay = configuration.getOptionalWithFileSupport[Long]("app.pg.ttl-cleanup-job.initial-delay").getOrElse(2000L).milliseconds
+  private lazy val ttlJobInterval     = configuration.getOptionalWithFileSupport[Long]("app.pg.ttl-cleanup-job.interval").getOrElse(5000L).milliseconds
   private lazy val testMode       = configuration.getOptionalWithFileSupport[Boolean]("app.pg.testMode").getOrElse(false)
   private lazy val schema         = configuration.getOptionalWithFileSupport[String]("app.pg.schema").getOrElse("otoroshi")
   private lazy val table          = configuration.getOptionalWithFileSupport[String]("app.pg.table").getOrElse("entities")
@@ -292,7 +294,7 @@ class ReactivePgDataStores(
 
   def setupCleanup(): Unit = {
     implicit val ec = reactivePgActorSystem.dispatcher
-    cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(10.seconds, 30.seconds)(SchedulerHelper.runnable {
+    cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(ttlJobInitialDelay, ttlJobInterval)(SchedulerHelper.runnable {
       try {
         client
           .query(s"DELETE FROM $schemaDotTable WHERE (ttl_starting_at + ttl) < NOW();")
