@@ -1219,7 +1219,7 @@ class TableComponent extends Component {
                 </button>
               )}
               {this.props.export && (
-                <div className="btn-group"> 
+                <div className="btn-group">
                   <button
                     onClick={this.exportJson}
                     type="button"
