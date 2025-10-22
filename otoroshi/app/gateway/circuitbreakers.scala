@@ -11,7 +11,7 @@ import akka.pattern.{CircuitBreaker => AkkaCircuitBreaker}
 import akka.stream.scaladsl.Flow
 import otoroshi.env.Env
 import otoroshi.events._
-import otoroshi.health.HealthCheck
+import otoroshi.health.HealthCheckLogic
 import otoroshi.models.{ApiKey, ClientConfig, GlobalConfig, LoadBalancing, ServiceDescriptor, Target}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
@@ -188,7 +188,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   ): Option[(Target, AkkaCircuitBreaker)] = {
     val raw_healthy_targets = _targets
       .filter(_.predicate.matches(reqId, requestHeader, attrs))
-      .filterNot(t => HealthCheck.badHealth.contains(t.asCleanTarget)) // health check can disable targets
+      .filterNot(t => HealthCheckLogic.badHealth.contains(t.asCleanTarget)) // health check can disable targets
       .filterNot(t => breakers.get(t.host).exists(_.cb.isOpen))
       .flatMap(t => Seq.fill(t.weight)(t))
     // val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
