@@ -293,6 +293,7 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
         'description',
         'enabled',
         'blockOnRed',
+        'logicCheck',
         'url',
         'timeout',
         'healthyStatuses',
