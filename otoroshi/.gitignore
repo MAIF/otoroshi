@@ -33,3 +33,4 @@ outsideplugins.scala
 outsidedev
 playwright-report
 /workflow_test.json
+*.env
