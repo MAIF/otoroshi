@@ -243,9 +243,16 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
                 val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
                 groups.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
             }
-          case Some(service) =>
-            val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
-            identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey).vfuture
+          case Some(service) => {
+            val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
+            service.metadata.get("Otoroshi-Api-Ref") match {
+              case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef) => apiKey.some.vfuture
+              case _ => {
+                val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
+                identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey).vfuture
+              }
+            }
+          }
         }
       case _                                                                                                => FastFuture.successful(None)
     }
@@ -265,9 +272,16 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
                 val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
                 groups.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
             }
-          case Some(service) =>
-            val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
-            identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
+          case Some(service) => {
+            val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
+            service.metadata.get("Otoroshi-Api-Ref") match {
+              case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef) => apiKey.some
+              case _ => {
+                val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
+                identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
+              }
+            }
+          }
         }
       case _                                                                                                => None
     }

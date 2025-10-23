@@ -1255,7 +1255,8 @@ class Env(
     localHost = s"127.0.0.1:$port",
     forceHttps = false,
     additionalHeaders = Map(
-      "Host" -> backOfficeDescriptorHostHeader
+      "Host" -> backOfficeDescriptorHostHeader,
+      "X-Forwarded-For" -> backOfficeDescriptorHostHeader,
     ),
     publicPatterns = Seq("/health", "/metrics"),
     removeHeadersIn = Seq.empty,

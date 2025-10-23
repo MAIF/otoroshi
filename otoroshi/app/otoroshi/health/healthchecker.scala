@@ -9,29 +9,54 @@ import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events.HealthCheckEvent
 import otoroshi.gateway.Retry
-import otoroshi.models.{SecComVersion, ServiceDescriptor, Target}
-import org.joda.time.DateTime
+import otoroshi.models.{HealthCheck, SecComVersion, ServiceDescriptor, Target}
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
-import play.api.Logger
+import otoroshi.script._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.cache.types.UnboundedTrieMap
+import otoroshi.utils.syntax.implicits._
+import play.api.Logger
+import play.api.libs.ws.WSResponse
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.{Failure, Success}
-import scala.concurrent.duration._
-import otoroshi.utils.syntax.implicits._
 
 case class StartHealthCheck()
 case class ReStartHealthCheck()
 case class CheckFirstService(startedAt: DateTime, services: Seq[ServiceDescriptor])
 
-object HealthCheck {
+object HealthCheckLogic {
 
   import otoroshi.utils.http.Implicits._
 
   val badHealth = new UnboundedTrieMap[String, Unit]()
+
+  def contextCheckHealth(resp: WSResponse, healthCheck: HealthCheck): Option[String] = {
+    val content = resp.body
+    val healthyMatched = if (healthCheck.healthyRegexChecks.isEmpty) true else healthCheck.healthyRegexChecks.exists { regex =>
+      Pattern.compile(regex).matcher(content).find()
+    }
+    val unhealthyMatched = if (healthCheck.unhealthyRegexChecks.isEmpty) false else healthCheck.unhealthyRegexChecks.exists { regex =>
+      Pattern.compile(regex).matcher(content).find()
+    }
+    if (unhealthyMatched) Some("RED")
+    else if (healthyMatched) Some("GREEN")
+    else Some("RED")
+  }
+
+  def isTextualContentType(contentType: String): Boolean = {
+    if (contentType == null || contentType.trim.isEmpty) return false
+    val ct = contentType.toLowerCase.trim
+    ct.startsWith("text/") ||
+      ct.contains("json") ||
+      ct.contains("xml") ||
+      ct.contains("yaml") ||
+      ct.contains("csv") ||
+      ct.contains("html") ||
+      ct.contains("javascript") ||
+      ct.contains("x-www-form-urlencoded")
+  }
 
   def checkTarget(desc: ServiceDescriptor, target: Target, logger: Logger)(using
       env: Env,
@@ -76,19 +101,27 @@ object HealthCheck {
         .withHttpHeaders(
           env.Headers.OtoroshiState                -> state,
           env.Headers.OtoroshiClaim                -> claim,
-          env.Headers.OtoroshiHealthCheckLogicTest -> value
-        )
+        ).applyOnIf(desc.healthCheck.logicCheck) { builder =>
+          builder.addHttpHeaders(env.Headers.OtoroshiHealthCheckLogicTest -> value)
+        }
         .withMaybeProxyServer(
           desc.clientConfig.proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
         )
         .get()
         .andThen {
           case Success(res)   =>
-            val checkDone =
+            val checkDone = if (desc.healthCheck.logicCheck) {
               res.header(env.Headers.OtoroshiHealthCheckLogicTestResult).exists(_.toLong == value.toLong + 42L)
+            } else {
+              true
+            }
 
             val useDefaultConfiguration =
               desc.healthCheck.healthyStatuses.isEmpty && desc.healthCheck.unhealthyStatuses.isEmpty
+
+            val hasRegexChecks = (desc.healthCheck.healthyRegexChecks.nonEmpty || desc.healthCheck.unhealthyRegexChecks.nonEmpty)
+            val isTextResult = isTextualContentType(res.contentType)
+            val needToCheckContent = hasRegexChecks && isTextResult
 
             val rawHealth = (res.status, checkDone) match {
               case (a, true) if a > 199 && a < 500  => Some("GREEN")
@@ -96,16 +129,24 @@ object HealthCheck {
               case _                                => Some("RED")
             }
 
-            val health = if (useDefaultConfiguration) {
-              rawHealth
+            val health: Option[String] = if (useDefaultConfiguration) {
+              rawHealth match {
+                case Some("RED") => rawHealth
+                case _ if needToCheckContent => contextCheckHealth(res, desc.healthCheck)
+                case _ => rawHealth
+              }
             } else {
               if (desc.healthCheck.unhealthyStatuses.contains(res.status)) {
                 Some("RED")
               } else if (desc.healthCheck.healthyStatuses.contains(res.status)) {
-                if (checkDone) {
-                  Some("GREEN")
+                if (needToCheckContent) {
+                  contextCheckHealth(res, desc.healthCheck)
                 } else {
-                  Some("YELLOW")
+                  if (checkDone) {
+                    Some("GREEN")
+                  } else {
+                    Some("YELLOW")
+                  }
                 }
               } else { // if not contains in both list, just resolve with error
                 Some("RED")
@@ -134,7 +175,7 @@ object HealthCheck {
                 Some(env.healtCheckTTL)
               )
             } else {
-              HealthCheck.badHealth.remove(target.asCleanTarget)
+              HealthCheckLogic.badHealth.remove(target.asCleanTarget)
               if (!env.healtCheckTTLOnly) {
                 env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:targets:bad-health:${target.asCleanTarget}"))
               }
@@ -161,7 +202,7 @@ object HealthCheck {
             )
             hce.toAnalytics()
             hce.pushToRedis()
-            HealthCheck.badHealth.put(target.asCleanTarget, ())
+            HealthCheckLogic.badHealth.put(target.asCleanTarget, ())
             env.datastores.rawDataStore.set(
               s"${env.storageRoot}:targets:bad-health:${target.asCleanTarget}",
               ByteString(DateTime.now().toString()),
@@ -195,7 +236,7 @@ class HealthCheckerActor()(using env: Env) extends Actor {
       case false => FastFuture.successful(())
       case true  =>
         Source(desc.targets.toList)
-          .mapAsync(1)(target => HealthCheck.checkTarget(desc, target, logger))
+          .mapAsync(1)(target => HealthCheckLogic.checkTarget(desc, target, logger))
           .toMat(Sink.ignore)(Keep.right)
           .run()
           .map(_ => ())
@@ -268,9 +309,13 @@ class HealthCheckJob extends Job {
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
     JobInstantiation.OneInstancePerOtoroshiCluster
 
-  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = {
+    env.configuration.getOptional[Long]("otoroshi.healthcheck.job.initial-delay").getOrElse(10000L).milliseconds.some
+  }
 
-  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = {
+    env.configuration.getOptional[Long]("otoroshi.healthcheck.job.interval").getOrElse(60000L).milliseconds.some
+  }
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
@@ -290,7 +335,7 @@ class HealthCheckJob extends Job {
     Source(targets)
       .mapAsync(parallelChecks) { case (target, service) =>
         logger.debug(s"checking health of ${service.name} - ${target.asTargetStr}")
-        HealthCheck.checkTarget(service, target, logger)
+        HealthCheckLogic.checkTarget(service, target, logger)
       }
       .runWith(Sink.ignore)
       .map(_ => ())
@@ -324,10 +369,10 @@ class HealthCheckLocalCacheJob extends Job {
 
   override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.rawDataStore.keys(s"${env.storageRoot}:targets:bad-health:*").map { keys =>
-      HealthCheck.badHealth.clear()
+      HealthCheckLogic.badHealth.clear()
       keys.foreach { key =>
         val target = key.replace(s"${env.storageRoot}:targets:bad-health:", "")
-        HealthCheck.badHealth.put(target, ())
+        HealthCheckLogic.badHealth.put(target, ())
       }
     }
   }

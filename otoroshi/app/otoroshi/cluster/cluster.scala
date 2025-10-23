@@ -1132,7 +1132,7 @@ object ClusterAgent {
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
 
-  private def clusterGetApikey(env: Env, id: String)(using
+  def clusterGetApikey(env: Env, id: String)(using
       executionContext: ExecutionContext,
       mat: Materializer
   ): Future[Option[JsValue]] = {
@@ -1147,6 +1147,29 @@ object ClusterAgent {
       .withRequestTimeout(Duration(cfg.worker.timeout, TimeUnit.MILLISECONDS))
       .withMaybeProxyServer(cfg.proxy)
       .get()
+      .map {
+        case r if r.status == 200 => r.json.some
+        case r                    =>
+          r.ignore()
+          None
+      }
+  }
+
+  def clusterDeleteApikey(env: Env, id: String)(using
+                                             executionContext: ExecutionContext,
+                                             mat: Materializer
+  ): Future[Option[JsValue]] = {
+    val cfg         = env.clusterConfig
+    val otoroshiUrl = cfg.leader.urls.head
+    env.MtlsWs
+      .url(otoroshiUrl + s"/api/apikeys/$id", cfg.mtlsConfig)
+      .withHttpHeaders(
+        "Host" -> cfg.leader.host
+      )
+      .withAuth(cfg.leader.clientId, cfg.leader.clientSecret, WSAuthScheme.BASIC)
+      .withRequestTimeout(Duration(cfg.worker.timeout, TimeUnit.MILLISECONDS))
+      .withMaybeProxyServer(cfg.proxy)
+      .delete()
       .map {
         case r if r.status == 200 => r.json.some
         case r                    =>

@@ -255,9 +255,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
+          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${
             rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
+          }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${
             rawValue.clientSecret
           }' http://xxxxxx --include`}
         />
@@ -699,8 +699,8 @@ const ApiKeysConstants = {
       props: {
         label: 'Throttling quota',
         placeholder: 'Authorized calls per window',
-        suffix: 'calls per sec.',
-        help: 'The authorized number of calls per window',
+        suffix: 'calls per window',
+        help: 'The authorized number of calls per window. See the `otoroshi.throttlingWindow` config. or `OTOROSHI_THROTTLING_WINDOW` environment variable.',
       },
     },
     dailyQuota: {
@@ -944,10 +944,10 @@ export class ServiceApiKeysPage extends Component {
     });
   }
 
-  fetchAllApiKeys = () => {
-    return BackOfficeServices.fetchApiKeysForPage(
-      this.props.params.serviceId || this.props.params.routeId
-    );
+  fetchAllApiKeys = (paginationState) => {
+    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).findAllWithPagination({
+      ...paginationState,
+    });
   };
 
   createItem = (ak) => {
@@ -998,7 +998,10 @@ export class ServiceApiKeysPage extends Component {
               .then((apk) => ({
                 ...apk,
                 clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-                authorizedEntities: (this.state.service.groups || []).map((g) => 'group_' + g),
+                authorizedEntities: [
+                  //...(this.state.service.groups || []).map((g) => 'group_' + g), // Here we authorize the group by default, can be dangerous
+                  `route_${this.props.params.routeId}` // just authorize the route
+                ]
               }))
           }
           _defaultValue={() => ({
@@ -1013,6 +1016,8 @@ export class ServiceApiKeysPage extends Component {
             authorizedEntities: this.state.service.groups.map((g) => 'group_' + g),
           })}
           itemName="ApiKey"
+          defaultSort="clientName"
+          defaultSortDesc="true"
           formSchema={ApiKeysConstants.formSchema(this)}
           formFlow={ApiKeysConstants.formFlow}
           columns={ApiKeysConstants.columns(this)}
@@ -1210,6 +1215,8 @@ export class ApiKeysPage extends Component {
           parentProps={this.props}
           selfUrl={`apikeys`}
           defaultTitle="All apikeys"
+          defaultSort="clientName"
+          defaultSortDesc="true"
           defaultValue={() =>
             nextClient
               .forEntityNext(nextClient.ENTITIES.APIKEYS)

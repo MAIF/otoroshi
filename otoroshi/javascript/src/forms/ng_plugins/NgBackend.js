@@ -261,10 +261,18 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
               'If enabled, Otoroshi will block requests when the healthcheck status is considered unhealthy (red)',
           },
         },
+        logicCheck: {
+          label: 'Logic check',
+          type: 'box-bool',
+          props: {
+            description:
+              'If enabled, Otoroshi will check if the response contains a header with the logic check value + 42 to consider health GREEN.',
+          },
+        },
         url: {
-          label: 'URL',
+          label: 'URL Path',
           type: 'string',
-          help: "The URL to check. Should return an HTTP 200 response. You can also respond with an 'Opun-Health-Check-Logic-Test-Result' header set to the value of the 'Opun-Health-Check-Logic-Test' request header + 42. to make the healthcheck complete.",
+          help: "The URL Path to check. Should return an HTTP 200 response. You can also respond with an 'Otoroshi-Health-Check-Logic-Test-Result' header set to the value of the 'Otoroshi-Health-Check-Logic-Test-Test' request header + 42. to make the healthcheck complete.",
         },
         timeout: {
           type: 'number',
@@ -280,15 +288,32 @@ appending 42 in the response header defined by \`otoroshi.headers.healthcheck.te
           array: true,
           label: 'Unhealthy statuses',
         },
+        healthyRegexChecks: {
+          type: 'string',
+          array: true,
+          label: 'Healthy regex checks',
+          suffix: 'regex',
+          placeholder: 'regex',
+        },
+        unhealthyRegexChecks: {
+          type: 'string',
+          array: true,
+          label: 'Unhealthy regex checks',
+          suffix: 'regex',
+          placeholder: 'regex',
+        },
       },
       flow: [
         'description',
         'enabled',
         'blockOnRed',
+        'logicCheck',
         'url',
         'timeout',
         'healthyStatuses',
         'unhealthyStatuses',
+        'healthyRegexChecks',
+        'unhealthyRegexChecks',
       ],
     },
     targets: {

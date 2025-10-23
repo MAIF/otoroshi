@@ -465,7 +465,6 @@ object ElasticTemplates                 {
       )
     )
     .prettify
-    .debugPrintln
 }
 
 object ElasticWritesAnalytics {
@@ -2032,8 +2031,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                              .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> "day") }
                              .applyOnIf(version.aboveOrEqualsEight) { obj =>
                                obj ++ Json.obj("calendar_interval" -> "day")
-                             }
-                             .debugPrintln,
+                             },
                            "aggs"           -> Json.obj(
                              "status" -> Json.obj(
                                "terms" -> Json.obj(

@@ -809,7 +809,10 @@ case class HealthCheck(
     timeout: Int = 5000,
     healthyStatuses: Seq[Int] = Seq.empty,
     unhealthyStatuses: Seq[Int] = Seq.empty,
-    blockOnRed: Boolean = false
+    blockOnRed: Boolean = false,
+    logicCheck: Boolean = true,
+    healthyRegexChecks: Seq[String] = Seq.empty,
+    unhealthyRegexChecks: Seq[String] = Seq.empty,
 ) {
   def toJson: JsObject = Json.obj(
     "enabled"           -> enabled,
@@ -817,7 +820,10 @@ case class HealthCheck(
     "timeout"           -> timeout,
     "healthyStatuses"   -> healthyStatuses,
     "unhealthyStatuses" -> unhealthyStatuses,
-    "blockOnRed"        -> blockOnRed
+    "blockOnRed"        -> blockOnRed,
+    "logicCheck"        -> logicCheck,
+    "healthyRegexChecks" -> healthyRegexChecks,
+    "unhealthyRegexChecks" -> unhealthyRegexChecks,
   )
 }
 
@@ -830,7 +836,10 @@ object HealthCheck {
         timeout = json.select("timeout").asOpt[Int].getOrElse(5000),
         healthyStatuses = json.select("healthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty),
         unhealthyStatuses = json.select("unhealthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty),
-        blockOnRed = json.select("blockOnRed").asOpt[Boolean].getOrElse(false)
+        blockOnRed = json.select("blockOnRed").asOpt[Boolean].getOrElse(false),
+        logicCheck = json.select("logicCheck").asOpt[Boolean].getOrElse(true),
+        healthyRegexChecks = json.select("healthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty),
+        unhealthyRegexChecks = json.select("unhealthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty),
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)

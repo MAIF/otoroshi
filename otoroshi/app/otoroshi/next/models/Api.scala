@@ -9,23 +9,18 @@ import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, EntityLocationSupport, RoundRobin, ServiceDescriptor}
 import otoroshi.next.models._
-import otoroshi.next.plugins.api.NgPluginHelper.pluginId
-import otoroshi.next.plugins.api.{NgPlugin, NgPluginConfig, NgPluginHelper}
 import otoroshi.next.plugins._
+import otoroshi.next.plugins.api.NgPluginHelper.pluginId
+import otoroshi.next.plugins.api.{NgPlugin, NgPluginConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.UrlSanitizer.sanitize
-import otoroshi.utils.syntax.implicits.{
-  BetterJsLookupResult,
-  BetterJsReadable,
-  BetterJsValue,
-  BetterJsValueReader,
-  BetterMapOfStringAndB,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.libs.json._
 
+import java.net.URI
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
@@ -233,79 +228,163 @@ object ApiSpecification       {
   }
 }
 
-trait ApiPage {
-  def path: String
-  def name: String
+sealed trait ApiDocumentationSidebarItem
+case class ApiDocumentationSidebarCategory(raw: JsObject) extends ApiDocumentationSidebarItem {
+  lazy val icon: Option[ApiDocumentationResource] = raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
+  lazy val label: String = raw.select("label").asOptString.getOrElse("No label")
+  lazy val links: Seq[ApiDocumentationSidebarLink] = raw.select("links").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationSidebarLink(o))
+}
+case class ApiDocumentationSidebarLink(raw: JsObject) extends ApiDocumentationSidebarItem {
+  lazy val icon: Option[ApiDocumentationResource] = raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
+  lazy val label: String = raw.select("label").asOptString.getOrElse("No label")
+  lazy val link: String = raw.select("link").asOptString.getOrElse("#")
 }
 
-object ApiPage {
-  case class ApiPageDir(path: String, name: String, leafs: Seq[ApiPage])  extends ApiPage
-  case class ApiPageLeaf(path: String, name: String, content: ByteString) extends ApiPage
-
-  val _fmt: Format[ApiPage] = new Format[ApiPage] {
-    override def reads(json: JsValue): JsResult[ApiPage] = Try {
-      val path = json.select("path").asString
-
-      json.select("name").asString match {
-        case name if name == "ApiPageDir" =>
-          ApiPageDir(
-            path,
-            name,
-            leafs = (json \ "leafs")
-              .asOpt[Seq[JsValue]]
-              .map(_.flatMap(v => ApiPage._fmt.reads(v).asOpt))
-              .getOrElse(Seq.empty)
-          )
-        case _                            => ApiPageLeaf(path, "ApiPageLeaf", content = ByteString(json.select("content").asString))
-      }
-    } match {
-      case Failure(ex)    => JsError(ex.getMessage)
-      case Success(value) => JsSuccess(value)
+case class ApiDocumentationSidebar(raw: JsObject) {
+  lazy val label: String = raw.select("label").asString
+  lazy val icon: Option[ApiDocumentationResource] = raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
+  lazy val path: Seq[String] = raw.select("path").asOpt[Seq[String]].orElse(raw.select("path").asOptString.map(s => Seq(s))).getOrElse(Seq.empty)
+  lazy val items: Seq[ApiDocumentationSidebarItem] = raw.select("items").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { v =>
+    v.select("kind").asOptString.getOrElse("link") match {
+      case "category" => ApiDocumentationSidebarCategory(v.asObject)
+      case _ => ApiDocumentationSidebarLink(v.asObject)
     }
+  }
+}
 
-    override def writes(o: ApiPage): JsValue = {
-      o match {
-        case ApiPageDir(path, name, leafs)    =>
-          Json.obj(
-            "name"  -> name,
-            "path"  -> path,
-            "leafs" -> leafs.map(ApiPage._fmt.writes)
-          )
-        case ApiPageLeaf(path, name, content) =>
-          Json.obj(
-            "name"    -> name,
-            "path"    -> path,
-            "content" -> content
-          )
+case class ApiDocumentationResource(raw: JsObject) {
+  lazy val path: Seq[String] = raw.select("path").asOpt[Seq[String]].orElse(raw.select("path").asOptString.map(s => Seq(s))).getOrElse(Seq.empty)
+  lazy val title: Option[String] = raw.select("title").asOptString
+  lazy val description: Option[String] = raw.select("description").asOptString
+  lazy val contentType: String = raw.select("content_type").asOpt[String].getOrElse("text/markdown")
+  lazy val text_content: Option[String] = raw.select("text_content").asOpt[String]
+  lazy val css_icon_class: Option[String] = raw.select("css_icon_class").asOpt[String]
+  lazy val json_content: Option[JsValue] = raw.select("json_content").asOpt[JsValue].filterNot(_ == JsNull)
+  lazy val base64_content: Option[ByteString] = raw.select("base64_content").asOpt[String].map(_.byteString.decodeBase64)
+  lazy val site_page: Boolean = raw.select("site_page").asOpt[Boolean].getOrElse(false)
+  lazy val transform: Option[String] = raw.select("transform").asOpt[String]
+  lazy val transform_wrapper: Option[String] = raw.select("transform_wrapper").asOpt[String]
+  lazy val url: Option[String] = raw.select("url").asOpt[String]
+  lazy val httpHeaders: Map[String, String] = raw.select("http_headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+  lazy val httpTimeout: FiniteDuration = raw.select("http_timeout").asOpt[Long].getOrElse(30000L).millis
+  lazy val httpFollowRedirects: Boolean = raw.select("http_follow_redirects").asOpt[Boolean].getOrElse(true)
+  def resolveUrl(doc: ApiDocumentation): Option[String] = {
+    url match {
+      case Some(url) if url.startsWith(".") && doc.source.isDefined => {
+        val uri = new URI(doc.source.get.url.get + "/" + url)
+        val norm = uri.normalize()
+        norm.toString.some
+      }
+      case Some(url) => Some(url)
+      case None => None
+    }
+  }
+}
+
+case class ApiDocumentationSearch(raw: JsObject) {
+  lazy val enabled: Boolean = raw.select("enabled").asOpt[Boolean].getOrElse(true)
+}
+
+object ApiDocumentationSearch {
+  val default = ApiDocumentationSearch(Json.obj("enabled" -> true))
+}
+
+case class ApiDocumentationRedirection(raw: JsObject) {
+  lazy val from: String = raw.select("from").as[String]
+  lazy val to: String = raw.select("to").as[String]
+}
+
+case class ApiDocumentationResourceRef(raw: JsObject) {
+  lazy val title: String = raw.select("title").asString
+  lazy val description: Option[String] = raw.select("description").asOptString
+  lazy val link: String = raw.select("link").asString
+  lazy val icon: Option[ApiDocumentationResource] = raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
+}
+
+case class ApiDocumentationPlan(raw: JsObject) {
+  lazy val id: String = raw.select("id").asString
+  lazy val name: String = raw.select("name").asString
+  lazy val description: String = raw.select("description").asOptString.getOrElse("No description")
+  lazy val throttlingQuota: Long = raw.select("throttling_quota").asOptLong.getOrElse(1000L)
+  lazy val dailyQuota: Long = raw.select("daily_quota").asOptLong.getOrElse(10000L)
+  lazy val monthlyQuota: Long = raw.select("monthly_quota").asOptLong.getOrElse(100000L)
+  lazy val tags: Seq[String] = raw.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val metadata: Map[String, String] = raw.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+}
+
+case class ApiDocumentationSource(raw: JsObject) {
+  lazy val url: Option[String] = raw.select("url").asOpt[String]
+  lazy val httpHeaders: Map[String, String] = raw.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+  lazy val httpTimeout: FiniteDuration = raw.select("timeout").asOpt[Long].getOrElse(30000L).millis
+  lazy val httpFollowRedirects: Boolean = raw.select("follow_redirects").asOpt[Boolean].getOrElse(true)
+  def resolve(doc: ApiDocumentation)(implicit env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
+    url match {
+      case None => None.vfuture
+      case Some(url) => {
+        env.Ws.url(url)
+          .withFollowRedirects(httpFollowRedirects)
+          .withHttpHeaders(httpHeaders.toSeq: _*)
+          .withRequestTimeout(httpTimeout)
+          .get() map { resp =>
+          if (resp.status == 200) {
+            ApiDocumentation._fmt.reads(resp.json).asOpt.map { remoteDoc =>
+              remoteDoc.copy(
+                source = doc.source,
+                references = remoteDoc.references ++ doc.references,
+                resources = remoteDoc.resources ++ doc.resources,
+                navigation = remoteDoc.navigation ++ doc.navigation,
+                redirections = remoteDoc.redirections ++ doc.redirections,
+                footer = remoteDoc.footer.orElse(doc.footer),
+                banner = remoteDoc.banner.orElse(doc.banner),
+                plans = remoteDoc.plans ++ doc.plans,
+              )
+            }
+          } else {
+            None
+          }
+        }
       }
     }
   }
 }
 
 case class ApiDocumentation(
-    specification: ApiSpecification,
-    home: ApiPage,
-    pages: Seq[ApiPage],
-    metadata: Map[String, String],
-    logos: Seq[ByteString]
-)
+    enabled: Boolean = true,
+    source: Option[ApiDocumentationSource] = None,
+    home: ApiDocumentationResource = ApiDocumentationResource(Json.obj()),
+    logo: ApiDocumentationResource = ApiDocumentationResource(Json.obj()),
+    references: Seq[ApiDocumentationResourceRef] = Seq.empty,
+    resources: Seq[ApiDocumentationResource] = Seq.empty,
+    navigation: Seq[ApiDocumentationSidebar] = Seq.empty,
+    redirections: Seq[ApiDocumentationRedirection] = Seq.empty,
+    footer: Option[ApiDocumentationResource] = None,
+    search: ApiDocumentationSearch = ApiDocumentationSearch.default,
+    banner: Option[ApiDocumentationResource] = None,
+    plans: Seq[ApiDocumentationPlan] = Seq.empty,
+    metadata: Map[String, String] = Map.empty,
+    tags: Seq[String] = Seq.empty,
+) {
+  def json: JsValue = ApiDocumentation._fmt.writes(this)
+}
 
 object ApiDocumentation {
   val _fmt: Format[ApiDocumentation] = new Format[ApiDocumentation] {
-
     override def reads(json: JsValue): JsResult[ApiDocumentation] = Try {
       ApiDocumentation(
-        specification = json.select("specification").as(using ApiSpecification._fmt),
-        home = json.select("home").as(using ApiPage._fmt),
-        pages = (json \ "pages")
-          .asOpt[Seq[JsValue]]
-          .map(_.flatMap(v => ApiPage._fmt.reads(v).asOpt))
-          .getOrElse(Seq.empty),
-        metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        logos = (json \ "logos")
-          .asOpt[Seq[String]]
-          .map(seq => seq.map(ByteString.apply))
-          .getOrElse(Seq.empty)
+        enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
+        metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        source = json.select("source").asOpt[JsObject].map(o => ApiDocumentationSource(o)),
+        home = ApiDocumentationResource(json.select("home").asOpt[JsObject].getOrElse(Json.obj())),
+        logo = ApiDocumentationResource(json.select("logo").asOpt[JsObject].getOrElse(Json.obj())),
+        references = json.select("references").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationResourceRef(o)),
+        resources = json.select("resources").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationResource(o)),
+        navigation = json.select("navigation").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationSidebar(o)),
+        redirections = json.select("redirections").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationRedirection(o)),
+        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationPlan(o)),
+        footer = json.select("footer").asOpt[JsObject].map(o => ApiDocumentationResource(o)),
+        search = json.select("search").asOpt[JsObject].map(o => ApiDocumentationSearch(o)).getOrElse(ApiDocumentationSearch.default),
+        banner = json.select("banner").asOpt[JsObject].map(o => ApiDocumentationResource(o)),
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -313,11 +392,20 @@ object ApiDocumentation {
     }
 
     override def writes(o: ApiDocumentation): JsValue = Json.obj(
-      "specification" -> ApiSpecification._fmt.writes(o.specification),
-      "home"          -> ApiPage._fmt.writes(o.home),
-      "pages"         -> o.pages.map(ApiPage._fmt.writes),
+      "enabled"       -> o.enabled,
+      "source"        -> o.source.map(_.raw).getOrElse(JsNull).asValue,
+      "home"          -> o.home.raw,
+      "logo"          -> o.logo.raw,
+      "references"    -> JsArray(o.references.map(_.raw)),
+      "resources"     -> JsArray(o.resources.map(_.raw)),
+      "navigation"    -> JsArray(o.navigation.map(_.raw)),
+      "redirections"  -> JsArray(o.redirections.map(_.raw)),
+      "plans"         -> JsArray(o.plans.map(_.raw)),
+      "footer"        -> o.footer.map(_.raw).getOrElse(JsNull).asValue,
+      "search"        -> o.search.raw,
+      "banner"        -> o.banner.map(_.raw).getOrElse(JsNull).asValue,
       "metadata"      -> o.metadata,
-      "logos"         -> o.logos
+      "tags"          -> o.tags,
     )
   }
 }
@@ -845,6 +933,7 @@ case class Api(
     debugFlow: Boolean,
     capture: Boolean,
     exportReporting: Boolean,
+    groups: Seq[String],
     state: ApiState,
     enabled: Boolean = true,
     blueprint: ApiBlueprint,
@@ -869,6 +958,13 @@ case class Api(
   override def theTags: Seq[String] = tags
 
   override def theMetadata: Map[String, String] = metadata
+
+  def resolveDocumentation()(implicit env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
+    documentation.flatMap(_.source) match {
+      case None => documentation.vfuture
+      case Some(source) => source.resolve(documentation.get)
+    }
+  }
 
   def toRoutes(using env: Env): Future[Seq[NgRoute]] = {
     given ec: ExecutionContext = env.otoroshiExecutionContext
@@ -960,16 +1056,16 @@ case class Api(
           NgRoute(
             location = location,
             id = apiRoute.id,
-            name = s"${apiRoute.name} - ${apiRoute.frontend.methods
-              .mkString(", ")} - ${apiRoute.frontend.domains.map(_.path).mkString(", ")}",
+            name = apiRoute.name.getOrElse("route") + " - " + apiRoute.frontend.methods
+              .mkString(", ") + " - " + apiRoute.frontend.domains.map(_.path).mkString(", "),
             description = description,
             tags = tags,
-            metadata = metadata,
+            metadata = metadata ++ Map("Otoroshi-Api-Ref" -> id),
             enabled = apiRoute.enabled,
             capture = capture,
             debugFlow = debugFlow,
             exportReporting = exportReporting,
-            groups = Seq.empty,
+            groups = Seq("virtual_group_for_" + id) ++ groups,
             frontend = apiRoute.frontend,
             backend = backend,
             backendRef = None,
@@ -1079,7 +1175,8 @@ object Api {
         blueprint = ApiBlueprint.REST,
         state = ApiStaging,
         backends = Seq(backend),
-        flows = Seq(ApiFlows.empty(using env)),
+        flows = Seq(ApiFlows.empty(env)),
+        groups = Seq.empty,
         consumers = Seq(
           ApiConsumer(
             id = "keyless",
@@ -1232,6 +1329,7 @@ object Api {
       "debug_flow"       -> o.debugFlow,
       "capture"          -> o.capture,
       "export_reporting" -> o.exportReporting,
+      "groups"           -> o.groups,
       "state"            -> o.state.name,
       "enabled"          -> o.enabled,
       "blueprint"        -> o.blueprint.name,
@@ -1258,6 +1356,7 @@ object Api {
         debugFlow = (json \ "debug_flow").asOpt[Boolean].getOrElse(false),
         capture = (json \ "capture").asOpt[Boolean].getOrElse(false),
         exportReporting = (json \ "export_reporting").asOpt[Boolean].getOrElse(false),
+        groups = (json \ "groups").asOpt[Seq[String]].getOrElse(Seq.empty),
         state = (json \ "state").asOptString
           .map {
             case "staging"    => ApiStaging
@@ -1334,6 +1433,7 @@ trait ApiDataStore extends BasicStore[Api] {
       debugFlow = false,
       capture = false,
       exportReporting = false,
+      groups = Seq.empty,
       state = ApiStaging,
       blueprint = ApiBlueprint.REST,
       routes = Seq.empty,

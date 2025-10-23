@@ -41,35 +41,37 @@ export class TeamsPage extends Component {
 
   formFlow = ['id', 'tenant', 'name', 'description', 'tags', 'metadata'];
 
-  formSchema = {
-    id: { type: 'string', props: { label: 'Id', placeholder: '---' } },
-    name: {
-      type: 'string',
-      props: { label: 'Name', placeholder: 'Nice team' },
-    },
-    description: {
-      type: 'string',
-      props: { label: 'Description', placeholder: 'A nice team to do whatever you want' },
-    },
-    tenant: {
-      type: 'select',
-      props: {
-        label: 'Organization',
-        valuesFrom: '/bo/api/proxy/api/tenants',
-        transformer: (a) => ({
-          value: a.id,
-          label: a.name + ' - ' + a.description,
-        }),
+  formSchema = (fprops) => {
+    return {
+      id: { type: 'string', props: { label: 'Id', placeholder: '---', disabled: fprops.update } },
+      name: {
+        type: 'string',
+          props: { label: 'Name', placeholder: 'Nice team' },
       },
-    },
-    metadata: {
-      type: 'object',
-      props: { label: 'Metadata' },
-    },
-    tags: {
-      type: 'array',
-      props: { label: 'Tags' },
-    },
+      description: {
+        type: 'string',
+          props: { label: 'Description', placeholder: 'A nice team to do whatever you want' },
+      },
+      tenant: {
+        type: 'select',
+          props: {
+          label: 'Organization',
+            valuesFrom: '/bo/api/proxy/api/tenants',
+            transformer: (a) => ({
+            value: a.id,
+            label: a.name + ' - ' + a.description,
+          }),
+        },
+      },
+      metadata: {
+        type: 'object',
+          props: { label: 'Metadata' },
+      },
+      tags: {
+        type: 'array',
+          props: { label: 'Tags' },
+      },
+    }
   };
 
   render() {

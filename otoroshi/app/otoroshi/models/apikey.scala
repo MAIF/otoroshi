@@ -146,6 +146,7 @@ object EntityIdentifier       {
       case Some("service")           => ServiceDescriptorIdentifier(id).some
       case Some("route-composition") => RouteCompositionIdentifier(id).some
       case Some("route")             => RouteIdentifier(id).some
+      case Some("api")               => ApiIdentifier(id).some
       case _                         => ServiceGroupIdentifier(id).some // should be None but could be useful for backward compatibility
     }
   }
@@ -155,7 +156,8 @@ object EntityIdentifier       {
       case id if id.startsWith("service_")           => Some(ServiceDescriptorIdentifier(id.replaceFirst("service_", "")))
       case id if id.startsWith("route-composition_") =>
         Some(RouteCompositionIdentifier(id.replaceFirst("route-composition_", "")))
-      case id if id.startsWith("route")              => Some(RouteIdentifier(id.replaceFirst("route_", "")))
+      case id if id.startsWith("route_")             => Some(RouteIdentifier(id.replaceFirst("route_", "")))
+      case id if id.startsWith("api_")               => Some(ApiIdentifier(id.replaceFirst("api_", "")))
       case id                                        => Some(ServiceGroupIdentifier(id)) // should be None but could be useful for backward compatibility
     }
   }
@@ -166,18 +168,31 @@ sealed trait EntityIdentifier {
   def str: String         = s"${prefix}_$id"
   def json: JsValue       = JsString(str)
   def modernJson: JsValue = Json.obj("kind" -> prefix, "id" -> id)
+  def isService: Boolean = false
+  def isApi: Boolean = false
+  def isGroup: Boolean = false
+  def isRoute: Boolean = false
+  def isRouteComposition: Boolean = false
 }
 case class ServiceGroupIdentifier(id: String) extends EntityIdentifier {
   def prefix: String = "group"
+  override def isGroup: Boolean = true
 }
 case class ServiceDescriptorIdentifier(id: String) extends EntityIdentifier {
   def prefix: String = "service"
+  override def isService: Boolean = true
 }
 case class RouteIdentifier(id: String) extends EntityIdentifier {
   def prefix: String = "route"
+  override def isRoute: Boolean = true
+}
+case class ApiIdentifier(id: String) extends EntityIdentifier {
+  def prefix: String = "api"
+  override def isApi: Boolean = true
 }
 case class RouteCompositionIdentifier(id: String) extends EntityIdentifier {
   def prefix: String = "route-composition"
+  override def isRouteComposition: Boolean = true
 }
 
 case class ApiKey(
@@ -216,21 +231,25 @@ case class ApiKey(
   def isInactive(): Boolean                                              = !isActive()
   def isValid(value: String): Boolean                                    =
     enabled && ((value == clientSecret) || (rotation.enabled && rotation.nextSecret.contains(value)))
-  def isInvalid(value: String): Boolean                                  = !isValid(value)
-  def authorizedOn(identifier: EntityIdentifier): Boolean                = authorizedEntities.contains(identifier)
-  def authorizedOnService(id: String): Boolean                           = authorizedEntities.contains(ServiceDescriptorIdentifier(id))
-  def authorizedOnGroup(id: String): Boolean                             = authorizedEntities.contains(ServiceGroupIdentifier(id))
-  def authorizedOnRoute(id: String): Boolean                             = authorizedEntities.contains(RouteIdentifier(id))
-  def authorizedOnRouteComposition(id: String): Boolean                  = authorizedEntities.contains(RouteCompositionIdentifier(id))
+  def isInvalid(value: String): Boolean                   = !isValid(value)
+  def authorizedOn(identifier: EntityIdentifier): Boolean = authorizedEntities.contains(identifier)
+  def authorizedOnService(id: String): Boolean            = authorizedEntities.contains(ServiceDescriptorIdentifier(id))
+  def authorizedOnGroup(id: String): Boolean              = authorizedEntities.contains(ServiceGroupIdentifier(id))
+  def authorizedOnRoute(id: String): Boolean              = authorizedEntities.contains(RouteIdentifier(id))
+  def authorizedOnApi(id: String): Boolean                = authorizedEntities.contains(ApiIdentifier(id))
+  def authorizedOnRouteComposition(id: String): Boolean   = authorizedEntities.contains(RouteCompositionIdentifier(id))
   def authorizedOnOneGroupFrom(ids: Seq[String]): Boolean = {
     val identifiers = ids.map(ServiceGroupIdentifier.apply)
     authorizedEntities.exists(e => identifiers.contains(e))
   }
   def authorizedOnServiceOrGroups(service: String, groups: Seq[String]): Boolean = {
-    authorizedOnService(service) || authorizedOnRoute(service) || authorizedOnRouteComposition(service) || {
-      val identifiers = groups.map(ServiceGroupIdentifier.apply)
-      authorizedEntities.exists(e => identifiers.contains(e))
-    }
+    authorizedOnService(service) ||
+      authorizedOnRoute(service) ||
+      authorizedOnApi(service) ||
+      authorizedOnRouteComposition(service) || {
+        val identifiers = groups.map(ServiceGroupIdentifier.apply)
+        authorizedEntities.exists(e => identifiers.contains(e))
+      }
   }
   // def services(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
   //   FastFuture

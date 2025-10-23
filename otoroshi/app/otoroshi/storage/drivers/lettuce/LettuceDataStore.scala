@@ -107,7 +107,7 @@ class LettuceDataStores(
     def standardConnection() = {
       val client = RedisClient.create(resources, nodesRaw.head)
       clientRef.set(client)
-      new LettuceRedisStandaloneAndSentinels(redisActorSystem, client)
+      new LettuceRedisStandaloneAndSentinels(redisActorSystem, client, env)
     }
 
     redisConnection match {
@@ -121,15 +121,17 @@ class LettuceDataStores(
         connection.setReadFrom(readFrom)
         clientRef.set(redisClient)
         connectionRef.set(connection)
-        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
-      case "master-replicas"                =>
+        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient, env)
+      
+      case "master-replicas"                => 
         val redisClient = RedisClient.create(resources)
         val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
         connection.setReadFrom(readFrom)
         clientRef.set(redisClient)
         connectionRef.set(connection)
-        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
-      case "cluster"                        =>
+        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient, env)
+      
+      case "cluster"                        => 
         // docker run -p '7000-7050:7000-7050' -e "IP=0.0.0.0" grokzen/redis-cluster:latest
         // -Dapp.redis.lettuce.connection=cluster -Dapp.redis.lettuce.uris.0=redis://localhost:7000/0 -Dapp.redis.lettuce.uris.1=redis://localhost:7001/0 -Dapp.redis.lettuce.uris.2=redis://localhost:7002/0
         val redisClient = RedisClusterClient.create(resources, nodes)

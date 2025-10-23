@@ -14,8 +14,11 @@ export default {
       format: null,
     },
     strict: {
-      label: 'strict',
-      type: 'bool',
+      type: 'box-bool',
+      props: {
+        label: 'strict',
+        description: 'In strict mode, for non-public (private) routes, only requests that include a valid API key will be authorized.'
+      },
     },
   },
   config_flow: ['private_patterns', 'public_patterns', 'strict'],

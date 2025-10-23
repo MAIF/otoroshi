@@ -1104,6 +1104,8 @@ class TableComponent extends Component {
                 />
               ) : (
                 <Form
+                  create={this.state.showAddForm}
+                  update={this.state.showEditForm}
                   onStateChange={this.props.onStateChange}
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
@@ -1116,7 +1118,7 @@ class TableComponent extends Component {
               <>
                 <div className="displayGroupBtn float-end">
                   <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
-                    Cancel
+                    <i className="fas fa-arrow-left" /> Back to {this.props.itemName}s
                   </button>
                   {this.props.stayAfterSave && (
                     <button
@@ -1124,12 +1126,14 @@ class TableComponent extends Component {
                       className="btn btn-success"
                       onClick={this.createItemAndStay}
                     >
-                      Create and stay on this {this.props.itemName}
+                      <i className="fas fa-plus-circle" /> Create {this.props.itemName}
                     </button>
                   )}
-                  <button type="button" className="btn btn-success" onClick={this.createItem}>
-                    Create {this.props.itemName}
-                  </button>
+                  {!this.props.stayAfterSave && (
+                    <button type="button" className="btn btn-success" onClick={this.createItem}>
+                      <i className="fas fa-plus-circle" /> Create {this.props.itemName}
+                    </button>
+                  )}
                 </div>
               </>
             )}
@@ -1183,6 +1187,8 @@ class TableComponent extends Component {
                 />
               ) : (
                 <Form
+                  create={this.state.showAddForm}
+                  update={this.state.showEditForm}
                   onStateChange={this.props.onStateChange}
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
@@ -1197,13 +1203,13 @@ class TableComponent extends Component {
                   type="button"
                   className="btn btn-danger"
                   title="Delete current item"
-                  disabled
                 >
                   <i className="fas fa-trash" /> Delete
                 </button>
               )}
               {this.props.displayTrash && !this.props.displayTrash(this.state.currentItem) && (
                 <button
+                  disabled
                   type="button"
                   className="btn btn-danger"
                   title="Delete current item"
@@ -1213,7 +1219,7 @@ class TableComponent extends Component {
                 </button>
               )}
               {this.props.export && (
-                <>
+                <div className="btn-group">
                   <button
                     onClick={this.exportJson}
                     type="button"
@@ -1232,7 +1238,7 @@ class TableComponent extends Component {
                     <i className="fas fa-file-export me-2" />
                     Export YAML
                   </button>
-                </>
+                </div>
               )}
               {!this.props.displayTrash && !this.props.newForm && (
                 <button
@@ -1246,17 +1252,17 @@ class TableComponent extends Component {
               )}
               {!this.props.newForm && (
                 <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
-                  <i className="fas fa-times" /> Cancel
+                  <i className="fas fa-arrow-left" /> Back to {this.props.itemName}s
                 </button>
               )}
               {this.props.stayAfterSave && !this.props.newForm && (
                 <button type="button" className="btn btn-success" onClick={this.updateItemAndStay}>
-                  Update and stay on this {this.props.itemName}
+                  <i className="fas fa-edit" /> Update {this.props.itemName}
                 </button>
               )}
-              {!this.props.newForm && (
+              {!this.props.stayAfterSave && !this.props.newForm && (
                 <button type="button" className="btn btn-success" onClick={this.updateItem}>
-                  Update {this.props.itemName}
+                  <i className="fas fa-edit" /> Update {this.props.itemName}
                 </button>
               )}
 
