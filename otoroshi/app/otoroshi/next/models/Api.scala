@@ -323,7 +323,7 @@ case class ApiDocumentationSource(raw: JsObject) {
       case Some(url) => {
         env.Ws.url(url)
           .withFollowRedirects(httpFollowRedirects)
-          .withHttpHeaders(httpHeaders.toSeq: _*)
+          .withHttpHeaders(httpHeaders.toSeq*)
           .withRequestTimeout(httpTimeout)
           .get() map { resp =>
           if (resp.status == 200) {
@@ -1175,7 +1175,7 @@ object Api {
         blueprint = ApiBlueprint.REST,
         state = ApiStaging,
         backends = Seq(backend),
-        flows = Seq(ApiFlows.empty(env)),
+        flows = Seq(ApiFlows.empty),
         groups = Seq.empty,
         consumers = Seq(
           ApiConsumer(

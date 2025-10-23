@@ -1,25 +1,27 @@
 package otoroshi.health
 
-import java.util.concurrent.TimeUnit
 import org.apache.pekko.actor.{Actor, Props}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.util.ByteString
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.HealthCheckEvent
 import otoroshi.gateway.Retry
 import otoroshi.models.{HealthCheck, SecComVersion, ServiceDescriptor, Target}
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.ws.WSResponse
 
+import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
+import scala.concurrent.duration.{Duration, DurationLong, FiniteDuration, given}
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.{Failure, Success}
 
 case class StartHealthCheck()
@@ -28,7 +30,7 @@ case class CheckFirstService(startedAt: DateTime, services: Seq[ServiceDescripto
 
 object HealthCheckLogic {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   val badHealth = new UnboundedTrieMap[String, Unit]()
 

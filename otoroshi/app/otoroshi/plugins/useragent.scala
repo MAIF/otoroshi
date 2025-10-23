@@ -67,7 +67,7 @@ object UserAgentHelper {
               cache.put(ua, details)
           }
           cache.getIfPresent(ua).flatten
-        }(ec)
+        }
         case _                                      => None .future
       }
     }
@@ -116,11 +116,11 @@ class UserAgentExtractor extends PreRouting {
       case None     => funit
       case Some(ua) =>
         UserAgentHelper.userAgentDetails(ua).map {
-          case None       => funit
+          case None       => funit: Unit
           case Some(info) =>
             if (log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
             ctx.attrs.putIfAbsent(Keys.UserAgentInfoKey -> info)
-            funit
+            funit: Unit
         }
     }
   }

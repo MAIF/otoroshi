@@ -26,7 +26,7 @@ case class NgSecurityTxtConfig(
 ) extends NgPluginConfig {
   override def json: JsValue = Json
     .obj(
-      "contact"       -> JsArray(contact.map(JsString)),
+      "contact"       -> JsArray(contact.map(JsString.apply)),
       "auto_expires"  -> autoExpires,
       "expires_years" -> expiresYears
     )
