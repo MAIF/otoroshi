@@ -517,7 +517,7 @@ class ApikeyServiceApiSpec(name: String, configurationSpec: => Configuration)
   override def singleEntity(): ApiKey                         =
     env.datastores.apiKeyDataStore
       .initiateNewApiKey("admin-api-group", env)
-      .copy(authorizedEntities = Seq(ServiceDescriptorIdentifier("admin-api-service")))
+      .applyOn(a => a.copy(authorizedEntities = a.authorizedEntities ++ Seq(RouteIdentifier("admin-api-service"))))
   override def entityName: String                             = "ApiKey"
   override def route(): String                                = "/api/routes/admin-api-service/apikeys"
   override def readEntityFromJson(json: JsValue): ApiKey      = ApiKey._fmt.reads(json).get
