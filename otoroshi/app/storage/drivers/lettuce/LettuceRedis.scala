@@ -2,7 +2,6 @@ package otoroshi.storage.drivers.lettuce
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-
 import akka.actor.ActorSystem
 import akka.util.ByteString
 import otoroshi.env.Env
@@ -11,6 +10,7 @@ import io.lettuce.core.codec.RedisCodec
 import io.lettuce.core.{RedisClient, SetArgs}
 import play.api.Logger
 import otoroshi.storage._
+import otoroshi.utils.syntax.implicits.{BetterString, BetterSyntax}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -33,7 +33,7 @@ trait LettuceRedis extends RedisLike {
   def info(): Future[String]
 }
 
-class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: RedisClient) extends LettuceRedis {
+class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: RedisClient, env: Env) extends LettuceRedis {
 
   import actorSystem.dispatcher
 
@@ -43,6 +43,10 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
   lazy val redis = client.connect(new ByteStringRedisCodec()).async()
 
   lazy val logger = Logger("otoroshi-lettuce-redis")
+
+  lazy val avoidCommandFailures = env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.avoid-command-failures").getOrElse(false)
+  lazy val shimListCommands = env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.shim-list-commands").getOrElse(false)
+  lazy val shimSetCommands = env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.shim-set-commands").getOrElse(false)
 
   def typ(key: String): Future[String] = redis.`type`(key).toScala
 
@@ -113,24 +117,61 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] =
     redis.hset(key, field, value).toScala.map(_.booleanValue())
 
-  override def llen(key: String): Future[Long] = redis.llen(key).toScala.map(_.longValue())
+  override def llen(key: String): Future[Long] = if (shimListCommands) {
+    hgetall(key).map(_.size.toLong)
+  } else {
+    redis.llen(key).toScala.map(_.longValue()).applyOnIf(avoidCommandFailures)(_.recover {
+      case _ => 0L
+    })
+  }
 
-  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply): _*)
+  override def lpush(key: String, values: String*): Future[Long] =
+    lpushBS(key, values.map(ByteString.apply): _*).applyOnIf(avoidCommandFailures)(_.recover {
+      case _ => 0L
+    })
 
   override def lpushLong(key: String, values: Long*): Future[Long] =
-    lpushBS(key, values.map(v => ByteString(v.toString)): _*)
+    lpushBS(key, values.map(v => ByteString(v.toString)): _*).applyOnIf(avoidCommandFailures)(_.recover {
+      case _ => 0L
+    })
 
-  override def lpushBS(key: String, values: ByteString*): Future[Long] =
-    redis.lpush(key, values: _*).toScala.map(_.longValue())
+  override def lpushBS(key: String, values: ByteString*): Future[Long] = if (shimListCommands) {
+    hgetall(key).flatMap { h =>
+      val currentIdx = h.size
+      Future.sequence(values.zipWithIndex.map {
+        case (value, idx) =>
+          hsetBS(key, (currentIdx + idx).toString, value)
+      }).map(_.size.toLong)
+    }
+  } else {
+    redis.lpush(key, values: _*).toScala.map(_.longValue()).applyOnIf(avoidCommandFailures)(_.recover {
+      case _ => 0L
+    })
+  }
 
-  override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] =
-    redis.lrange(key, start, stop).toScala.map(_.asScala.toSeq)
+  override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = if (shimListCommands) {
+    hgetall(key).map { h =>
+      (start to stop).flatMap { idxLong =>
+        val k = idxLong.toString
+        h.get(k)
+      }
+    }
+  } else {
+    redis.lrange(key, start, stop).toScala.map(_.asScala.toSeq).applyOnIf(avoidCommandFailures)(_.recover {
+      case _ => Seq.empty
+    })
+  }
 
-  override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] =
+  override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = if (shimListCommands) {
+    hdel(key, (start to stop).map(_.toString): _*).map(_ > 0)
+  } else {
     redis.ltrim(key, start, stop).toScala.map {
       case "OK" => true
       case _    => false
-    }
+    }.applyOnIf(avoidCommandFailures)(_.recover {
+      case _ => false
+    })
+  }
 
   override def pttl(key: String): Future[Long] = redis.pttl(key).toScala.map(_.longValue())
 
@@ -144,22 +185,53 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
 
   override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
 
-  override def saddBS(key: String, members: ByteString*): Future[Long] =
-    redis.sadd(key, members: _*).toScala.map(_.longValue())
+  override def saddBS(key: String, members: ByteString*): Future[Long] = if (shimSetCommands) {
+    Future.sequence(members.map { member =>
+      hsetBS(key, member.encodeBase64.utf8String, member)
+    }).map(_.size.toLong)
+  } else {
+    redis.sadd(key, members: _*).toScala.map(_.longValue()).applyOnIf(avoidCommandFailures)(_.recover {
+      case _ => 0L
+    })
+  }
 
   override def sismember(key: String, member: String): Future[Boolean] = sismemberBS(key, ByteString(member))
 
-  override def sismemberBS(key: String, member: ByteString): Future[Boolean] =
-    redis.sismember(key, member).toScala.map(_.booleanValue())
+  override def sismemberBS(key: String, member: ByteString): Future[Boolean] = if (shimSetCommands) {
+    hgetall(key).map { h =>
+      h.contains(member.encodeBase64.utf8String)
+    }
+  } else {
+    redis.sismember(key, member).toScala.map(_.booleanValue()).applyOnIf(avoidCommandFailures)(_.recover {
+      case _ => false
+    })
+  }
 
-  override def smembers(key: String): Future[Seq[ByteString]] = redis.smembers(key).toScala.map(_.asScala.toSeq)
+  override def smembers(key: String): Future[Seq[ByteString]] = if (shimSetCommands) {
+    hgetall(key).map(_.keySet.map(_.byteString.decodeBase64).toSeq)
+  } else {
+    redis.smembers(key).toScala.map(_.asScala.toSeq).applyOnIf(avoidCommandFailures)(_.recover {
+      case _ => Seq.empty[ByteString]
+    })
+  }
 
   override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
 
-  override def sremBS(key: String, members: ByteString*): Future[Long] =
-    redis.srem(key, members: _*).toScala.map(_.longValue())
+  override def sremBS(key: String, members: ByteString*): Future[Long] = if (shimSetCommands) {
+    hdel(key, members.map(_.encodeBase64.utf8String): _*)
+  } else {
+    redis.srem(key, members: _*).toScala.map(_.longValue()).applyOnIf(avoidCommandFailures)(_.recover {
+      case _ => 0L
+    })
+  }
 
-  override def scard(key: String): Future[Long] = redis.scard(key).toScala.map(_.longValue())
+  override def scard(key: String): Future[Long] = if (shimSetCommands) {
+    hgetall(key).map(_.size.toLong)
+  } else {
+    redis.scard(key).toScala.map(_.longValue()).applyOnIf(avoidCommandFailures)(_.recover {
+      case _ => 0L
+    })
+  }
 
   override def rawGet(key: String): Future[Option[Any]] = redis.get(key).toScala.map(Option.apply)
 

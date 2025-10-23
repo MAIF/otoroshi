@@ -106,7 +106,7 @@ class LettuceDataStores(
     def standardConnection() = {
       val client = RedisClient.create(resources, nodesRaw.head)
       clientRef.set(client)
-      new LettuceRedisStandaloneAndSentinels(redisActorSystem, client)
+      new LettuceRedisStandaloneAndSentinels(redisActorSystem, client, env)
     }
 
     redisConnection match {
@@ -120,7 +120,7 @@ class LettuceDataStores(
         connection.setReadFrom(readFrom)
         clientRef.set(redisClient)
         connectionRef.set(connection)
-        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
+        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient, env)
       }
       case "master-replicas"                => {
         val redisClient = RedisClient.create(resources)
@@ -128,7 +128,7 @@ class LettuceDataStores(
         connection.setReadFrom(readFrom)
         clientRef.set(redisClient)
         connectionRef.set(connection)
-        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
+        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient, env)
       }
       case "cluster"                        => {
         // docker run -p '7000-7050:7000-7050' -e "IP=0.0.0.0" grokzen/redis-cluster:latest
