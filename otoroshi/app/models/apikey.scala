@@ -10,21 +10,13 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.{
-  Alerts,
-  ApiKeyQuotasAlmostExceededAlert,
-  ApiKeyQuotasAlmostExceededReason,
-  ApiKeyQuotasExceededAlert,
-  ApiKeyQuotasExceededReason,
-  ApiKeySecretHasRotated,
-  ApiKeySecretWillRotate,
-  RevokedApiKeyUsageAlert
-}
+import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.NgAccess
+import otoroshi.next.proxy.{LocalTokensBucketStrategy, ThrottlingStrategy, ThrottlingStrategyConfig}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, Unauthorized}
@@ -33,13 +25,7 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{
-  BetterDecodedJWT,
-  BetterJsLookupResult,
-  BetterJsReadable,
-  BetterJsValue,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
@@ -209,6 +195,7 @@ case class ApiKey(
     throttlingQuota: Long = RemainingQuotas.MaxValue,
     dailyQuota: Long = RemainingQuotas.MaxValue,
     monthlyQuota: Long = RemainingQuotas.MaxValue,
+    throttlingStrategy: Option[ThrottlingStrategyConfig] = None,
     constrainedServicesOnly: Boolean = false,
     restrictions: Restrictions = Restrictions(),
     validUntil: Option[DateTime] = None,
@@ -444,6 +431,7 @@ object ApiKey {
         "throttlingQuota"         -> apk.throttlingQuota,
         "dailyQuota"              -> apk.dailyQuota,
         "monthlyQuota"            -> apk.monthlyQuota,
+        "throttlingStrategy"      -> apk.throttlingStrategy.map(strat => ThrottlingStrategyConfig.format.writes(strat)),
         "constrainedServicesOnly" -> apk.constrainedServicesOnly,
         "restrictions"            -> apk.restrictions.json,
         "rotation"                -> apk.rotation.json,
@@ -505,6 +493,7 @@ object ApiKey {
             throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
             dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
             monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+            throttlingStrategy = (json \ "throttlingStrategy").asOpt(ThrottlingStrategyConfig.format),
             constrainedServicesOnly = (json \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
             restrictions = Restrictions.format
               .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
@@ -610,6 +599,8 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   def addFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def clearFastLookupByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def clearFastLookupByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+
+  def processTokenBatchRequest(bucketKey: String, apiKey: ApiKey): Future[Long]
 
   // def willBeRotatedAt(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Option[(DateTime, Long)]] = {
   //   if (apiKey.rotation.enabled) {
@@ -2384,11 +2375,11 @@ object ApiKeyHelper {
               .map(v => Left(v))
           }
           case Right(apikey)                                                        => {
-            val allowed = env.proxyState.rateLimiter.consume(apikey.clientId)
+            val allowed = env.proxyState.rateLimiter.consume(apikey.clientId, apikey.throttlingStrategy)
 
             val promise = if (!allowed)
-              env.proxyState.rateLimiter.checkEmptyBucket(apikey.clientId, apikey.throttlingQuota)
-                .map(_ => env.proxyState.rateLimiter.consume(apikey.clientId))
+              env.proxyState.rateLimiter.askForRefill(apikey.clientId)
+                .map(_ => env.proxyState.rateLimiter.consume(apikey.clientId, apikey.throttlingStrategy))
             else
               FastFuture.successful(allowed)
 

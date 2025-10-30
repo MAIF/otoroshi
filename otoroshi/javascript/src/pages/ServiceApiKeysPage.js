@@ -12,6 +12,8 @@ import { firstLetterUppercase, unsecuredCopyToClipboard } from '../util';
 import { DraftEditorContainer } from '../components/Drafts/DraftEditor';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
+import { Row } from '../components/Row';
+import { NgForm } from '../components/nginputs';
 
 const FIELDS_SELECTOR = 'otoroshi-fields-selector';
 
@@ -56,9 +58,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-          this.props.rawValue.clientId +
-          '/bearer?newSecret=' +
-          this.props.rawValue.clientSecret,
+        this.props.rawValue.clientId +
+        '/bearer?newSecret=' +
+        this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -255,11 +257,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${
-            rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${
-            rawValue.clientSecret
-          }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${rawValue.clientId
+            }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${rawValue.clientSecret
+            }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -694,6 +694,75 @@ const ApiKeysConstants = {
         help: 'The tags assigned to this apikey',
       },
     },
+    throttlingStrategy: {
+      type: props => {
+        return <Row title="Throttling Strategy">
+          <NgForm
+            value={props.value}
+            schema={{
+              type: {
+                type: 'select',
+                props: {
+                  label: 'Strategy',
+                  ngOptions: {
+                    spread: true,
+                  },
+                  options: [
+                    { value: 'local-tokens-bucket', label: 'Local Tokens Bucket' },
+                    { value: 'local-fixed-window', label: 'Local Fixed Window' }
+                  ]
+                }
+              }
+            }}
+            onChange={props.onChange}
+          />
+          {props.value.type === 'local-tokens-bucket' && <div className='mt-3'>
+            <NgForm
+              value={props.value.config}
+              schema={{
+                capacity: {
+                  type: 'number',
+                },
+                refillRequestIntervalMs: {
+                  type: 'number'
+                },
+                refillRequestedTokens: {
+                  type: 'number'
+                }
+              }}
+              onChange={config => props.onChange({ ...props.value, config })}
+            />
+          </div>}
+          {props.value.type === 'local-fixed-window' && <div className='mt-3'>
+            <NgForm
+              value={props.value.config}
+              schema={{
+                capacity: {
+                  type: 'number',
+                }
+              }}
+              onChange={config => props.onChange({ ...props.value, config })}
+            />
+          </div>}
+        </Row>
+      }
+    },
+    // type: 'form',
+    // label: 'Throttling Strategy',
+    // collapsable: true,
+    // collapsed: true,
+    // schema: {
+    //   type: {
+    //     type: 'select',
+    //     props: {
+    //       label: 'Strategy',
+    //       options: [
+    //         { value: 'local-tokens-bucket', label: 'Tokens Bucket' }
+    //       ]
+    //     }
+    //   }
+    // },
+    // flow: ['type']
     throttlingQuota: {
       type: 'number',
       props: {
@@ -837,9 +906,8 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${
-                that.state.service ? that.state.service.id : '-'
-              }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
+                }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -882,6 +950,7 @@ const ApiKeysConstants = {
     'basicAuth',
     'curlCommandWithBasicAuth',
     '>>>Quotas',
+    'throttlingStrategy',
     'throttlingQuota',
     'dailyQuota',
     'monthlyQuota',
@@ -926,8 +995,8 @@ export class ServiceApiKeysPage extends Component {
     const fu = this.onRoutes
       ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
       : nextClient
-          .forEntityNext(nextClient.ENTITIES.SERVICES)
-          .findById(this.props.params.serviceId);
+        .forEntityNext(nextClient.ENTITIES.SERVICES)
+        .findById(this.props.params.serviceId);
     fu.then((service) => {
       this.onRoutes
         ? this.props.setTitle(this.props.title || `Routes Apikeys`)
@@ -987,7 +1056,7 @@ export class ServiceApiKeysPage extends Component {
           selfUrl={
             this.onRoutes
               ? // ? `services/${this.props.params.routeId}/apikeys`
-                `routes/${this.props.params.routeId}/apikeys`
+              `routes/${this.props.params.routeId}/apikeys`
               : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
           }
           defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
