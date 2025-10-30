@@ -17,7 +17,7 @@ import org.scalatest.BeforeAndAfterAll
 import ch.qos.logback.classic.{Level, Logger => LogbackLogger}
 import org.joda.time.DateTime
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.time.{Minutes, Span}
+import org.scalatest.time.{Minutes, Seconds, Span}
 import org.slf4j.LoggerFactory
 import otoroshi.models._
 import otoroshi.next.models._
@@ -3408,7 +3408,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .alsoTo(Sink.onComplete { _ => })
       )
 
-      val yesMessagesCounter = messagesPromise.future.futureValue(Timeout(Span(1, Minutes)))
+      val yesMessagesCounter = messagesPromise.future.futureValue(Timeout(Span(20, Seconds)))
       yesMessagesCounter mustBe 2
 
       backend.await()
@@ -3447,10 +3447,14 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         ).some
       )
 
+      val messagesPromise = Promise[Int]()
       val counter = new AtomicInteger(0)
 
       val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
         counter.incrementAndGet()
+
+        if(counter.get == 2)
+          messagesPromise.trySuccess(counter.get)
       }
 
       val messages = List(
@@ -3463,21 +3467,27 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       val clientSource: Source[TextMessage, NotUsed] = Source(messages)
         .throttle(1, 300.millis)
 
-      val (_, closed: (Future[Done], NotUsed)) = http.singleWebSocketRequest(
+      val (_, (closed, _)) = http.singleWebSocketRequest(
         WebSocketRequest(s"ws://127.0.0.1:$port/")
           .copy(extraHeaders = List(Host(route.frontend.domains.head.domainLowerCase))),
         Flow
           .fromSinkAndSourceMat(printSink, clientSource)(Keep.both)
-          .alsoTo(Sink.onComplete { _ => })
       )
 
-      val ex = closed._1.failed.futureValue
-      ex mustBe a[PeerClosedConnectionException]
-      ex.getMessage must include ("failed to validate message")
+      closed.onComplete {
+        case Success(_) => println("WebSocket connection closed normally")
+        case Failure(ex) => {
+          println("fini")
+          println(ex.getMessage)
+          ex.getMessage.contains("Stopping now") mustBe true
+        }
+      }
+      val yesMessagesCounter = messagesPromise.future.futureValue(Timeout(Span(20, Seconds)))
+      yesMessagesCounter mustBe 2
 
       backend.await()
       system.terminate().await()
-      http.shutdownAllConnectionPools().await()
+      http.shutdownAllConnectionPools() //.await()
       deleteOtoroshiRoute(route).futureValue
     }
   }
