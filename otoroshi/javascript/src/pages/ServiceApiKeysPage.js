@@ -709,7 +709,8 @@ const ApiKeysConstants = {
                   },
                   options: [
                     { value: 'local-tokens-bucket', label: 'Local Tokens Bucket' },
-                    { value: 'local-fixed-window', label: 'Local Fixed Window' }
+                    { value: 'local-fixed-window', label: 'Local Fixed Window' },
+                    { value: 'local-sliding-window', label: 'Local Sliding Window' }
                   ]
                 }
               }
@@ -734,6 +735,17 @@ const ApiKeysConstants = {
             />
           </div>}
           {props.value.type === 'local-fixed-window' && <div className='mt-3'>
+            <NgForm
+              value={props.value.config}
+              schema={{
+                capacity: {
+                  type: 'number',
+                }
+              }}
+              onChange={config => props.onChange({ ...props.value, config })}
+            />
+          </div>}
+          {props.value.type === 'local-sliding-window' && <div className='mt-3'>
             <NgForm
               value={props.value.config}
               schema={{

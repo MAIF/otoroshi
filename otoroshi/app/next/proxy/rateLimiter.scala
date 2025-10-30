@@ -64,6 +64,14 @@ object ThrottlingStrategyConfig {
           refillRequestIntervalMs = config.selectAsLong("refillRequestIntervalMs"),
           refillRequestedTokens = config.selectAsLong("refillRequestedTokens")
         )
+        case "local-fixed-window" => LocalFixedWindowConfig(
+          bucketKey = config.selectAsOptString("bucketKey").getOrElse(""),
+          capacity = config.selectAsLong("capacity"),
+        )
+        case "local-sliding-window" => LocalSlidingWindowConfig(
+          bucketKey = config.selectAsOptString("bucketKey").getOrElse(""),
+          capacity = config.selectAsLong("capacity"),
+        )
         case _ => ???
       }
 
@@ -91,6 +99,10 @@ object ThrottlingStrategy {
         refillRequestedTokens = conf.selectAsLong("refillRequestedTokens")
       ))
       case "local-fixed-window" => LocalFixedWindowStrategy(LocalFixedWindowConfig(
+        bucketKey = conf.selectAsOptString("bucketKey").getOrElse(""),
+        capacity = conf.selectAsLong("capacity")
+      ))
+      case "local-sliding-window" => LocalSlidingWindowStrategy(LocalSlidingWindowConfig(
         bucketKey = conf.selectAsOptString("bucketKey").getOrElse(""),
         capacity = conf.selectAsLong("capacity")
       ))
@@ -135,6 +147,7 @@ case class LocalFixedWindowStrategy(config: LocalFixedWindowConfig)(implicit env
   override def askForRefill(): Future[Unit] = FastFuture.successful(())
 
   override def consume(): Boolean = {
+    println("consume local fixed window")
     val now: Long = DateTime.now().getMillis
     val currentWindow = now / windowMs * windowMs
 
@@ -219,6 +232,73 @@ case class LocalTokensBucketStrategy(config: LocalTokensBucketStrategyConfig)(im
   }
 }
 
+
+case class LocalSlidingWindowStrategy(config: LocalSlidingWindowConfig)(implicit env: Env)
+  extends ThrottlingStrategy {
+  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+
+  private val windowSeconds: Int = env.throttlingWindow
+
+  private val secondCounters = Array.fill(windowSeconds)(new AtomicLong(0L))
+  private val lastSecond = new AtomicLong(currentSecond())
+
+  private def currentSecond(): Long = DateTime.now().getMillis / 1000L
+
+  private def resetExpiredSeconds(now: Long): Unit = {
+    val last = lastSecond.get()
+    val secondsElapsed = now - last
+
+    if (secondsElapsed > 0 && secondsElapsed < windowSeconds) {
+      for (i <- 1L to secondsElapsed) {
+        val secondToReset = (last + i) % windowSeconds
+        secondCounters(secondToReset.toInt).set(0L)
+      }
+      lastSecond.set(now)
+    } else if (secondsElapsed >= windowSeconds) {
+      secondCounters.foreach(_.set(0L))
+      lastSecond.set(now)
+    }
+  }
+
+  override def askForRefill(): Future[Unit] = FastFuture.successful(())
+
+  override def consume(): Boolean = {
+    println("consume local sliding window with shared chunks")
+    val now: Long = currentSecond()
+    val currentIndex = (now % windowSeconds).toInt
+
+    resetExpiredSeconds(now)
+
+    println(secondCounters.mkString("Array(", ", ", ")"))
+
+    val totalCount = secondCounters.map(_.get()).sum
+    val allowed = totalCount + 1 <= config.capacity
+
+    if (allowed) {
+      secondCounters(currentIndex).incrementAndGet()
+    } else {
+      println(
+        s"[${config.bucketKey}] too many requests: ${totalCount + 1} > ${config.capacity} (second: $now)"
+      )
+    }
+
+    allowed
+  }
+}
+
+case class LocalSlidingWindowConfig(
+  bucketKey: String,
+  capacity: Long
+) extends ThrottlingStrategyConfig {
+
+  override def `type`: String = "local-sliding-window"
+
+  override def json: JsObject = Json.obj(
+    "bucketKey" -> bucketKey,
+    "capacity" -> capacity
+  )
+}
+
 case class GlobalTokenBucketStrategy() {
 
 }
@@ -284,6 +364,7 @@ class RateLimiter(env: Env) {
 
   def consume(bucketKey: String, throttlingStrategy: Option[ThrottlingStrategyConfig]): Boolean = {
     // TODO - apply possible changes on throttling strategy
+    println("consume for ", bucketKey, throttlingStrategy)
     buckets.get(bucketKey) match {
       case Some(strategy) => strategy.consume()
       case None =>
