@@ -1,18 +1,22 @@
 package otoroshi.next.proxy
 
+import akka.actor.Cancellable
 import akka.http.scaladsl.util.FastFuture
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script.{Job, JobId}
+import otoroshi.utils
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValueReader, BetterSyntax}
 import play.api.Logger
 import play.api.libs.json._
 
-import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import scala.annotation.tailrec
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.DurationLong
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 case class LocalBucket(key: String = "", var tokens: Double = 0, var lastRefill: Long)
@@ -72,6 +76,12 @@ object ThrottlingStrategyConfig {
           bucketKey = config.selectAsOptString("bucketKey").getOrElse(""),
           capacity = config.selectAsLong("capacity"),
         )
+        case "local-leaky-bucket" => LocalLeakyBucketConfig(
+          bucketKey = config.selectAsOptString("bucketKey").getOrElse(""),
+          capacity = config.selectAsLong("capacity"),
+          leakRate = config.selectAsLong("leakRate"),
+          queueTimeout = config.selectAsLong("queueTimeout"),
+        )
         case _ => ???
       }
 
@@ -83,7 +93,7 @@ object ThrottlingStrategyConfig {
 }
 
 trait ThrottlingStrategy {
-  def consume(): Boolean
+  def consume(): Future[Boolean]
   def askForRefill(): Future[Unit] = FastFuture.successful(())
   def config: ThrottlingStrategyConfig
 }
@@ -105,6 +115,12 @@ object ThrottlingStrategy {
       case "local-sliding-window" => LocalSlidingWindowStrategy(LocalSlidingWindowConfig(
         bucketKey = conf.selectAsOptString("bucketKey").getOrElse(""),
         capacity = conf.selectAsLong("capacity")
+      ))
+      case "local-leaky-bucket" => LocalLeakyBucketStrategy(LocalLeakyBucketConfig(
+        bucketKey = conf.selectAsOptString("bucketKey").getOrElse(""),
+        capacity = conf.selectAsLong("capacity"),
+        leakRate = conf.selectAsLong("leakRate"),
+        queueTimeout = conf.selectAsLong("queueTimeout"),
       ))
     }
   }
@@ -146,7 +162,7 @@ case class LocalFixedWindowStrategy(config: LocalFixedWindowConfig)(implicit env
 
   override def askForRefill(): Future[Unit] = FastFuture.successful(())
 
-  override def consume(): Boolean = {
+  override def consume(): Future[Boolean] = {
     println("consume local fixed window")
     val now: Long = DateTime.now().getMillis
     val currentWindow = now / windowMs * windowMs
@@ -167,7 +183,7 @@ case class LocalFixedWindowStrategy(config: LocalFixedWindowConfig)(implicit env
       )
     }
 
-    allowed
+    allowed.future
   }
 }
 
@@ -218,16 +234,16 @@ case class LocalTokensBucketStrategy(config: LocalTokensBucketStrategyConfig)(im
     FastFuture.successful(())
   }
 
-  override def consume(): Boolean = {
+  override def consume(): Future[Boolean] = {
     val currentTokens = memoryBucket.get()
     if (currentTokens >= 1.0) {
       val newTokens = memoryBucket.updateAndGet(v => Math.max(0.0, v - 1.0))
       println(
         s"remaining memory tokens : $newTokens and in global bucket : ${bucketRef.get().tokens}"
       )
-      true
+      true.future
     } else {
-      false
+      false.future
     }
   }
 }
@@ -262,7 +278,7 @@ case class LocalSlidingWindowStrategy(config: LocalSlidingWindowConfig)(implicit
 
   override def askForRefill(): Future[Unit] = FastFuture.successful(())
 
-  override def consume(): Boolean = {
+  override def consume(): Future[Boolean] = {
     println("consume local sliding window with shared chunks")
     val now: Long = currentSecond()
     val currentIndex = (now % windowSeconds).toInt
@@ -280,7 +296,7 @@ case class LocalSlidingWindowStrategy(config: LocalSlidingWindowConfig)(implicit
       )
     }
 
-    allowed
+    allowed.future
   }
 }
 
@@ -297,12 +313,86 @@ case class LocalSlidingWindowConfig(
   )
 }
 
-case class GlobalTokenBucketStrategy() {
+case class LocalLeakyBucketStrategy(config: LocalLeakyBucketConfig)(implicit env: Env)
+    extends ThrottlingStrategy {
 
+  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+
+  private val queue = new ConcurrentLinkedQueue[Promise[Boolean]]()
+  private val queueSize = new AtomicLong(0L)
+
+  private val lastLeakTime = new AtomicLong(System.currentTimeMillis())
+  private val isLeaking = new AtomicBoolean(false)
+  private val scheduledTask = new AtomicReference[Cancellable](null)
+
+  private val leakRateMs: Long = 1000L / config.leakRate
+
+  def consume(): Future[Boolean] = {
+    val promise = Promise[Boolean]()
+    queue.add(promise)
+    queueSize.incrementAndGet()
+    startLeaking()
+    promise.future
+  }
+
+  private def startLeaking(): Unit = {
+    if (isLeaking.compareAndSet(false, true)) {
+      val task = env.otoroshiScheduler.scheduleAtFixedRate(0.millis, leakRateMs.millis) {
+        utils.SchedulerHelper.runnable({
+          val stillLeaking = leak()
+          if (!stillLeaking) stopLeaking()
+        })
+      }
+      scheduledTask.set(task)
+    }
+  }
+
+  private def stopLeaking(): Unit = {
+    Option(scheduledTask.getAndSet(null)).foreach(_.cancel())
+    isLeaking.set(false)
+  }
+
+  private def leak(): Boolean = {
+    val now = System.currentTimeMillis()
+    val previous = lastLeakTime.get()
+    val elapsed = now - previous
+
+    val tokensToLeak = (elapsed / leakRateMs).toInt
+
+    if (tokensToLeak > 0) {
+      val newLastLeakTime = previous + tokensToLeak * leakRateMs
+      lastLeakTime.set(newLastLeakTime)
+
+      var leaked = 0
+      while (leaked < tokensToLeak && !queue.isEmpty) {
+        val promise = queue.poll()
+        if (promise != null) {
+          queueSize.decrementAndGet()
+          promise.success(true)
+          leaked += 1
+        }
+      }
+    }
+
+    queueSize.get() > 0
+  }
 }
 
-case class GlobalFixedWindow() {
+case class LocalLeakyBucketConfig(
+  bucketKey: String,
+  capacity: Long,
+  leakRate: Long,
+  queueTimeout: Long = 30000
+) extends ThrottlingStrategyConfig {
 
+  override def `type`: String = "local-leaky-bucket"
+
+  override def json: JsObject = Json.obj(
+    "bucketKey" -> bucketKey,
+    "capacity" -> capacity,
+    "leakRate" -> leakRate,
+    "queueTimeout" -> queueTimeout
+  )
 }
 
 class RateLimiter(env: Env) {
@@ -317,7 +407,7 @@ class RateLimiter(env: Env) {
     }
   }
 
-  def consume(bucketKey: String, throttlingStrategy: Option[ThrottlingStrategyConfig]): Boolean = {
+  def consume(bucketKey: String, throttlingStrategy: Option[ThrottlingStrategyConfig]): Future[Boolean] = {
     // TODO - apply possible changes on throttling strategy
     println("consume for ", bucketKey, throttlingStrategy)
     buckets.get(bucketKey) match {
@@ -327,7 +417,7 @@ class RateLimiter(env: Env) {
           case Some(throttling) =>
             buckets.put(bucketKey, ThrottlingStrategy.apply(throttling)(env))
             consume(bucketKey, throttlingStrategy = throttlingStrategy)
-          case None => false
+          case None => false.future
         }
     }
   }

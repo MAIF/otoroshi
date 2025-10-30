@@ -2373,38 +2373,39 @@ object ApiKeyHelper {
               .map(v => Left(v))
           }
           case Right(apikey)                                                        => {
-            val allowed = env.proxyState.rateLimiter.consume(apikey.clientId, apikey.throttlingStrategy)
+            env.proxyState.rateLimiter.consume(apikey.clientId, apikey.throttlingStrategy)
+              .flatMap(allowed => {
+                val promise = if (!allowed)
+                  env.proxyState.rateLimiter.askForRefill(apikey.clientId)
+                    .flatMap(_ => env.proxyState.rateLimiter.consume(apikey.clientId, apikey.throttlingStrategy))
+                else
+                  FastFuture.successful(allowed)
 
-            val promise = if (!allowed)
-              env.proxyState.rateLimiter.askForRefill(apikey.clientId)
-                .map(_ => env.proxyState.rateLimiter.consume(apikey.clientId, apikey.throttlingStrategy))
-            else
-              FastFuture.successful(allowed)
-
-//            apikey.updateQuotas().flatMap { remainingQuotas =>
-            promise.flatMap(allowed => {
-              if (!allowed) {
-                tooMuchRequests(apikey, RemainingQuotas()) // TODO
-              } else {
-                apikey.withinQuotasAndRotationQuotas(true).flatMap {
-                  case (true, rotationInfos, quotas) =>
-                    rotationInfos.foreach { i =>
-                      attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+    //            apikey.updateQuotas().flatMap { remainingQuotas =>
+                promise.flatMap(allowed => {
+                  if (!allowed) {
+                    tooMuchRequests(apikey, RemainingQuotas()) // TODO
+                  } else {
+                    apikey.withinQuotasAndRotationQuotas(true).flatMap {
+                      case (true, rotationInfos, quotas) =>
+                        rotationInfos.foreach { i =>
+                          attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                        }
+                        attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                        sendQuotasAlmostExceededError(apikey, quotas)
+      //                  if (incrementQuotas) {
+      //                    apikey.updateQuotas().map { remainingQuotas =>
+      //                      attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> remainingQuotas)
+                            apikey.rightf
+      //                    }
+      //                  } else {
+      //                    apikey.rightf
+      //                  }
+                      case (false, _, quotas) => tooMuchRequests(apikey, quotas)
                     }
-                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
-                    sendQuotasAlmostExceededError(apikey, quotas)
-  //                  if (incrementQuotas) {
-  //                    apikey.updateQuotas().map { remainingQuotas =>
-  //                      attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> remainingQuotas)
-                        apikey.rightf
-  //                    }
-  //                  } else {
-  //                    apikey.rightf
-  //                  }
-                  case (false, _, quotas) => tooMuchRequests(apikey, quotas)
-                }
-              }
-            })
+                  }
+                })
+              })
 //            }
           }
         }
