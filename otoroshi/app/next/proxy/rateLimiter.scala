@@ -269,8 +269,6 @@ case class LocalSlidingWindowStrategy(config: LocalSlidingWindowConfig)(implicit
 
     resetExpiredSeconds(now)
 
-    println(secondCounters.mkString("Array(", ", ", ")"))
-
     val totalCount = secondCounters.map(_.get()).sum
     val allowed = totalCount + 1 <= config.capacity
 
@@ -308,52 +306,9 @@ case class GlobalFixedWindow() {
 }
 
 class RateLimiter(env: Env) {
-
-  implicit val ec = env.otoroshiExecutionContext
+  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
   val buckets = new UnboundedTrieMap[String, ThrottlingStrategy]()
-
-//  val leaderRetryIntervalMS: Long = 50
-//  var lastLeaderRequestTime = DateTime.now().getMillis
-
-  def now() = DateTime.now().getMillis
-
-//  def checkEmptyBucket(bucketKey: String, apiKey: ApiKey): Future[Long] = {
-//    if (now() - lastLeaderRequestTime >= leaderRetryIntervalMS) {
-//      if (env.clusterConfig.mode == ClusterMode.Worker) {
-//        //        sendTokenBatchRequest(bucketKey, apiKey)
-//        FastFuture.successful(0)
-//      } else {
-//        env.datastores
-//          .apiKeyDataStore
-//          .processTokenBatchRequest(bucketKey = bucketKey, apiKey = apiKey)
-//          .map(tokens => {
-//            createLocalBucket(bucketKey, tokens)
-//            tokens
-//          })
-//      }
-//    } else {
-//      FastFuture.successful(0)
-//    }
-//  }
-//
-//  private def createLocalBucket(bucketKey: String, tokens: Long) = {
-//    val time = now()
-//    val localBucket = LocalBucket(bucketKey, time, tokens = tokens)
-//    buckets.put(bucketKey, localBucket)
-//    lastLeaderRequestTime = time
-//  }
-
-//  def sendTokenBatchRequest(bucketKey: String, tokens: Long): Future[Long] = {
-//    println("Calling the Rate Limit Service")
-//
-//    val time = now()
-//    val localBucket = LocalBucket(bucketKey, time, tokens = tokens - 1)
-//    buckets.put(bucketKey, localBucket)
-//    lastLeaderRequestTime = time
-//
-//    FastFuture.successful(0)
-//  }
 
   def askForRefill(bucketKey: String): Future[Unit] = {
     buckets.get(bucketKey) match {

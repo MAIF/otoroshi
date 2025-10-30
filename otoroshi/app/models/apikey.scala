@@ -600,8 +600,6 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   def clearFastLookupByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def clearFastLookupByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
 
-  def processTokenBatchRequest(bucketKey: String, apiKey: ApiKey): Future[Long]
-
   // def willBeRotatedAt(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Option[(DateTime, Long)]] = {
   //   if (apiKey.rotation.enabled) {
   //     val key = s"${env.storageRoot}:apikeys-rotation:${apiKey.clientId}"

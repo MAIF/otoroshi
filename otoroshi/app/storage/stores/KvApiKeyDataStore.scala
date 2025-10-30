@@ -5,14 +5,13 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime
-import otoroshi.next.proxy.TokensSnapshot
 import play.api.Logger
-import play.api.libs.json.{Format, JsError, JsObject, JsResult, JsSuccess, JsValue, Json}
+import play.api.libs.json.Format
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.Success
 
 class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore with RedisLikeStore[ApiKey] {
 
@@ -33,8 +32,6 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
   def monthlyQuotaKey(name: String): String = s"${_env.storageRoot}:apikey:quotas:monthly:$name"
 
   def throttlingKey(name: String): String = s"${_env.storageRoot}:apikey:quotas:second:$name"
-
-  def getBucketKey(name: String) = s"${_env.storageRoot}:apikey:bucket:$name"
 
   override def clearFastLookupByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = {
     redisCli.del(s"${env.storageRoot}:apikey:byservice:$serviceId")
@@ -78,82 +75,23 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     } yield r
   }
 
-  override def processTokenBatchRequest(bucketKey: String, apiKey: ApiKey): Future[Long] = {
-    implicit val ec = _env.otoroshiExecutionContext
-
-    val bucketId = getBucketKey(bucketKey)
-
-    val tokensRequested = 50
-
-    println("request token")
-
-    redisCli.get(bucketId)
-      .fast
-      .map(_.map(value => TokensSnapshot._fmt.reads(value.utf8String.parseJson)))
-      .flatMap {
-        case None =>
-          println("Unkwown client")
-          TokensSnapshot(
-            tokens = apiKey.throttlingQuota,
-            lastRefill = DateTime.now().getMillis / 1000 // in seconds
-          ).future
-        case Some(value) => value match {
-          case JsSuccess(bucketData, _) => {
-            val timeElapsed = DateTime.now().getMillis / 1000 - bucketData.lastRefill
-            val refillRate = apiKey.throttlingQuota.toDouble / _env.throttlingWindow.toDouble
-            val tokensToAdd = timeElapsed * refillRate
-
-            TokensSnapshot(
-              tokens = Math.min(apiKey.throttlingQuota, bucketData.tokens + tokensToAdd),
-              lastRefill = DateTime.now().getMillis / 1000
-            ).future
-          }
-          case JsError(errors) =>
-            logger.error("unable to update the throttling quota - parsing failed")
-            TokensSnapshot(tokens = 0, lastRefill = DateTime.now().getMillis / 1000).future
-        }
-      }(_env.otoroshiExecutionContext)
-      .flatMap(newBucketData => {
-        val availableTokens = Math.min(tokensRequested, newBucketData.tokens)
-        println("available tokens", availableTokens)
-        if (availableTokens >= 1) {
-          val updatedBucket = newBucketData.copy(tokens = newBucketData.tokens - availableTokens)
-
-          // setEx(key, ttl, value)
-          redisCli
-            .set(bucketId, updatedBucket.asJson().stringify, 180.toLong.some)
-
-          println(s"Mise à jour du bucket $bucketId j'autorise", availableTokens.toInt)
-          println(" ")
-          Future.successful(availableTokens.toInt)
-        } else {
-          println("NO MORE TOKEN")
-          println(" ")
-          Future.successful(0)
-        }
-      })
-  }
-
   override def remainingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] =
     for {
-//      throttlingCallsPerWindow <- redisCli.get(throttlingKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
-      throttlingBucket         <- redisCli.get(s"${throttlingKey(apiKey.clientId)}_token_bucket").fast.map(_.map(value => TokensSnapshot._fmt.reads(value.utf8String.parseJson)).flatMap(_.asOpt))
+      throttlingCallsPerWindow <-
+        redisCli.get(throttlingKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
       dailyCalls               <- redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
       monthlyCalls             <- redisCli.get(monthlyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
-    } yield {
-//      println("LECTURE Remaining Quotas", throttlingBucket)
-      RemainingQuotas(
-        authorizedCallsPerWindow = apiKey.throttlingQuota,
-        throttlingCallsPerWindow = throttlingBucket.map(bucket => (apiKey.throttlingQuota - bucket.tokens).toLong).getOrElse(0), // TODO
-        remainingCallsPerWindow = throttlingBucket.map(_.tokens.toLong).getOrElse(0),
-        authorizedCallsPerDay = apiKey.dailyQuota,
-        currentCallsPerDay = dailyCalls,
-        remainingCallsPerDay = Math.max(0, apiKey.dailyQuota - dailyCalls),
-        authorizedCallsPerMonth = apiKey.monthlyQuota,
-        currentCallsPerMonth = monthlyCalls,
-        remainingCallsPerMonth = Math.max(0, apiKey.monthlyQuota - monthlyCalls)
-      )
-    }
+    } yield RemainingQuotas(
+      authorizedCallsPerWindow = apiKey.throttlingQuota,
+      throttlingCallsPerWindow = throttlingCallsPerWindow,
+      remainingCallsPerWindow = Math.max(0, apiKey.throttlingQuota - throttlingCallsPerWindow),
+      authorizedCallsPerDay = apiKey.dailyQuota,
+      currentCallsPerDay = dailyCalls,
+      remainingCallsPerDay = Math.max(0, apiKey.dailyQuota - dailyCalls),
+      authorizedCallsPerMonth = apiKey.monthlyQuota,
+      currentCallsPerMonth = monthlyCalls,
+      remainingCallsPerMonth = Math.max(0, apiKey.monthlyQuota - monthlyCalls)
+    )
 
   override def resetQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] = {
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
@@ -190,126 +128,41 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       ec: ExecutionContext,
       env: Env
   ): Future[RemainingQuotas] = {
-//    val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
-//    val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
-//    val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
-//    val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
+    val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
+    val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
+    val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+    val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
+    env.clusterAgent.incrementApi(apiKey.clientId, increment)
+    for {
+      _ <- redisCli.incrby(totalCallsKey(apiKey.clientId), increment)
 
-    val throttlingKeyName = s"${throttlingKey(apiKey.clientId)}_token_bucket"
-//    val dailyKeyName      = dailyQuotaKey(apiKey.clientId)
-//    val monthlyKeyName    = monthlyQuotaKey(apiKey.clientId)
+      secTtl   <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
+                    redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
+                  }
+      secCalls <- redisCli.incrby(throttlingKey(apiKey.clientId), increment)
 
-    redisCli.get(throttlingKeyName)
-        .fast
-        .map(_.map(value => TokensSnapshot._fmt.reads(value.utf8String.parseJson)))
-        .flatMap {
-          case None =>
-              println("Unkwown client")
-              TokensSnapshot(
-                tokens = apiKey.throttlingQuota,
-                lastRefill = DateTime.now().getMillis / 1000 // in seconds
-              ).future
-          case Some(value) => value match {
-            case JsSuccess(bucketData, _) => {
-              val timeElapsed = DateTime.now().getMillis / 1000 - bucketData.lastRefill
-              val refillRate = apiKey.throttlingQuota.toDouble / env.throttlingWindow.toDouble
-              val tokensToAdd = timeElapsed * refillRate
+      dailyTtl   <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
+                      redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
+                    }
+      dailyCalls <- redisCli.incrby(dailyQuotaKey(apiKey.clientId), increment)
 
-              println("LAST BUCKET REFILL", bucketData.lastRefill)
-              println("Seconds elapsed", timeElapsed)
-              println("New token to add", tokensToAdd)
-
-              TokensSnapshot(
-                tokens = Math.min(apiKey.throttlingQuota, bucketData.tokens + tokensToAdd),
-                lastRefill = DateTime.now().getMillis / 1000
-              ).future
-            }
-            case JsError(errors) =>
-              logger.error("unable to update the throttling quota - parsing failed")
-              TokensSnapshot(tokens = 0, lastRefill = DateTime.now().getMillis / 1000).future
-          }
-        }
-        .flatMap(newBucketData => {
-          if (newBucketData.tokens >= 1.0) {
-            val updatedBucket = newBucketData.copy(tokens = newBucketData.tokens - 1)
-
-            // setEx(key, ttl, value)
-            println("Mise à jour du quota", updatedBucket)
-            println(" ")
-            redisCli
-              .set(throttlingKeyName, updatedBucket.asJson().stringify, 180.toLong.some)
-              .map(done => {
-                RemainingQuotas(
-                  authorizedCallsPerWindow = apiKey.throttlingQuota,
-                  throttlingCallsPerWindow = (apiKey.throttlingQuota - updatedBucket.tokens).toLong,
-                  remainingCallsPerWindow = updatedBucket.tokens.toLong,
-                  authorizedCallsPerDay = apiKey.dailyQuota, // TODO
-                  currentCallsPerDay = 0, // TODO
-                  remainingCallsPerDay = apiKey.dailyQuota, // TODO
-                  authorizedCallsPerMonth = apiKey.monthlyQuota, // TODO
-                  currentCallsPerMonth = 0, // TODO
-                  remainingCallsPerMonth = apiKey.monthlyQuota, // TODO
-                  allowed = true
-                )
-              })
-          } else {
-            println("NO MORE TOKEN")
-            println(" ")
-            RemainingQuotas(
-              authorizedCallsPerWindow = apiKey.throttlingQuota,
-              throttlingCallsPerWindow = newBucketData.tokens.toLong,
-              remainingCallsPerWindow = 0,
-              authorizedCallsPerDay = apiKey.dailyQuota, // TODO
-              currentCallsPerDay = 0, // TODO
-              remainingCallsPerDay = apiKey.dailyQuota, // TODO
-              authorizedCallsPerMonth = apiKey.monthlyQuota, // TODO
-              currentCallsPerMonth = 0, // TODO
-              remainingCallsPerMonth = apiKey.monthlyQuota, // TODO
-              allowed = false
-            ).future
-          }
-        })
-
-
-
-
-
-
-    //    env.clusterAgent.incrementApi(apiKey.clientId, increment)
-//
-//    for {
-//      _ <- redisCli.incrby(totalCallsKey(apiKey.clientId), increment)
-//
-//      // --- Throttling window ---
-//      secCalls <- redisCli.incrby(throttlingKeyName, increment)
-//      _ <- if (secCalls == increment) {
-//        redisCli.expire(throttlingKeyName, env.throttlingWindow)
-//      } else Future.successful(())
-//
-//      // --- Daily quota ---
-//      dailyCalls <- redisCli.incrby(dailyKeyName, increment)
-//      _ <- if (dailyCalls == increment) {
-//        redisCli.expire(dailyKeyName, (toDayEnd / 1000).toInt)
-//      } else Future.successful(())
-//
-//      // --- Monthly quota ---
-//      monthlyCalls <- redisCli.incrby(monthlyKeyName, increment)
-//      _ <- if (monthlyCalls == increment) {
-//        redisCli.expire(monthlyKeyName, (toMonthEnd / 1000).toInt)
-//      } else Future.successful(())
-//    } yield {
-//      RemainingQuotas(
-//        authorizedCallsPerWindow = apiKey.throttlingQuota,
-//        throttlingCallsPerWindow = secCalls,
-//        remainingCallsPerWindow = (apiKey.throttlingQuota - secCalls).toInt,
-//        authorizedCallsPerDay = apiKey.dailyQuota,
-//        currentCallsPerDay = dailyCalls,
-//        remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
-//        authorizedCallsPerMonth = apiKey.monthlyQuota,
-//        currentCallsPerMonth = monthlyCalls,
-//        remainingCallsPerMonth = apiKey.monthlyQuota - monthlyCalls
-//      )
-//    }
+      monthlyTtl   <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
+                        redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
+                      }
+      monthlyCalls <- redisCli.incrby(monthlyQuotaKey(apiKey.clientId), increment)
+    } yield {
+      RemainingQuotas(
+        authorizedCallsPerWindow = apiKey.throttlingQuota,
+        throttlingCallsPerWindow = secCalls,
+        remainingCallsPerWindow = (apiKey.throttlingQuota - secCalls).toInt,
+        authorizedCallsPerDay = apiKey.dailyQuota,
+        currentCallsPerDay = dailyCalls,
+        remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
+        authorizedCallsPerMonth = apiKey.monthlyQuota,
+        currentCallsPerMonth = monthlyCalls,
+        remainingCallsPerMonth = apiKey.monthlyQuota - monthlyCalls
+      )
+    }
   }
 
   override def withingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
