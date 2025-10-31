@@ -6,6 +6,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.7.0] - 2025-10-31
+
+
+https://github.com/MAIF/otoroshi/milestone/123?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.6.3...v17.7.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.7.0
+
+
+### Added 
+
+- In the route table, add column filter for the tags (#2257 fixed by [sebprunierserli](https://github.com/sebprunierserli))
+- In the route table, sort rows by name by default (#2258 fixed by [sebprunierserli](https://github.com/sebprunierserli))
+- JDK25 support for docker images (#2270 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add missing error template in the search bar (#2272 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Add health check strategy based on regex (#2277 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support APIs in apikeys authorize section (#2281 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- APIs can have groups (#2284 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make PG cleanup job interval customizable (#2285 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- When creating an apikey from a route, add route in the authorized entities and not group (#2290 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make metadata searchable in the route page (#2293 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Display group names in the route table (#2295 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Allow server side filtering with multiple values for a field in generic admin apis (#2297 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make Healthcheck job interval customizable (#2299 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Enhance kafka config. (#2300 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- emulate some datastore commands when the underlying datastore only support a limited command set (#2301 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Remove double save buttons on a lot of entity screens (#2279 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Fix mTLS label on the home of route designer (#2286 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Change throttling suffix "calls per sec" to "calls per window" (#2287 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Group exprot button in the Table component (#2298 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- Bad enum value for PostgreSQL SSL_MODE (#2275 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make id readonly when editing teams and organizations (#2278 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Otoroshi API behind an NGINX ingress controller can cause infinite proxy loop (#2282 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Apikey delete button always disabled (#2283 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- SSL Kafka data exporter doesn't work using Otoroshi certificates (#2288 fixed by )       
+      
+
+### Contributors
+
+* @sebprunierserli
+* @mathieuancelin
+* @Zwiterrion
+* @ptitFicus
+
 ## [17.6.3] - 2025-10-06
 
 
