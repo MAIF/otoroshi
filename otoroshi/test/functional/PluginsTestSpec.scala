@@ -35,6 +35,7 @@ import play.api.{Configuration, Logger}
 import java.util.Base64
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
+import otoroshi.utils.JsonPathValidator
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -726,7 +727,6 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       yesMessagesCounter >= 3 mustBe true
 
       deleteOtoroshiRoute(route).futureValue
-      system.terminate()
     }
 
     "Yes Websocket plugin: reject connection with fail=yes query parameter" in {
@@ -761,7 +761,6 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       upgradeResponse.futureValue.response.status.intValue() mustBe 500
 
       deleteOtoroshiRoute(route).futureValue
-      system.terminate()
     }
 
     "Remove headers in" in {
@@ -3412,8 +3411,6 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       yesMessagesCounter mustBe 2
 
       backend.await()
-      system.terminate().await()
-      http.shutdownAllConnectionPools().await()
       deleteOtoroshiRoute(route).futureValue
     }
 
@@ -3486,8 +3483,73 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       yesMessagesCounter mustBe 2
 
       backend.await()
-      system.terminate().await()
-      http.shutdownAllConnectionPools() //.await()
+      deleteOtoroshiRoute(route).futureValue
+    }
+
+    "Websocket content validator" in {
+      implicit val http: HttpExt = Http()(system)
+
+      val backend = new WebsocketBackend().await()
+
+      val route = createLocalRoute(
+        frontendPath = "/",
+        plugins = Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[WebsocketContentValidatorIn],
+            config = NgPluginInstanceConfig(
+              FrameFormatValidatorConfig(
+               validator = Some(JsonPathValidator("$.message", JsString("foo"), None)),
+               rejectStrategy = RejectStrategy.Drop
+              ).json.as[JsObject]
+            )
+          )
+        ),
+        target = NgTarget(
+          hostname = "127.0.0.1",
+          port = backend.backendPort,
+          id = "local.target",
+          tls = false
+        ).some
+      )
+
+      val messagesPromise = Promise[Int]()
+      val counter = new AtomicInteger(0)
+
+      val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
+        counter.incrementAndGet()
+        if(counter.get == 2)
+          messagesPromise.trySuccess(counter.get)
+        else if(counter.get > 2)
+          messagesPromise.tryFailure(new RuntimeException("Failure, but lost track of exception :-("))
+      }
+
+      val messages = List(
+        TextMessage("name"),
+        TextMessage("name"),
+        TextMessage("foo"),
+        TextMessage("foo"),
+        TextMessage("nothing"),
+      )
+
+      val clientSource: Source[TextMessage, NotUsed] = Source(messages)
+        .throttle(1, 300.millis)
+
+      val (_, _) = http.singleWebSocketRequest(
+        WebSocketRequest(s"ws://127.0.0.1:$port/")
+          .copy(extraHeaders = List(Host(route.frontend.domains.head.domainLowerCase))),
+        Flow
+          .fromSinkAndSourceMat(printSink, clientSource)(Keep.both)
+          .watchTermination()(Keep.both)
+      )
+
+      val yesMessagesCounter = messagesPromise.future.futureValue(Timeout(Span(20, Seconds)))
+      yesMessagesCounter mustBe 2
+
+      backend.await()
+      http.shutdownAllConnectionPools()
       deleteOtoroshiRoute(route).futureValue
     }
   }
