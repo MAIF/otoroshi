@@ -3832,5 +3832,21 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       http.shutdownAllConnectionPools()
       deleteOtoroshiRoute(route).futureValue
     }
+
+    "S3Backend" in {
+      import com.dimafeng.testcontainers.GenericContainer
+      import org.testcontainers.containers.wait.strategy.Wait
+
+      val s3Container = GenericContainer("scireum/s3-ninja:8.5.0",
+        exposedPorts = Seq(9000, 8000),
+        waitStrategy = Wait.forHttp("/")
+      )
+      s3Container.start()
+
+
+
+
+      s3Container.stop()
+    }
   }
 }

@@ -338,7 +338,8 @@ case class S3Configuration(
     chunkSize: Int = 1024 * 1024 * 8,
     v4auth: Boolean = true,
     writeEvery: FiniteDuration,
-    acl: CannedAcl
+    acl: CannedAcl,
+    pathStyleAccess: Boolean = false
 ) extends NgPluginConfig {
   def json: JsValue = Json.obj(
     "bucket"     -> bucket,
@@ -350,7 +351,8 @@ case class S3Configuration(
     "chunkSize"  -> chunkSize,
     "v4auth"     -> v4auth,
     "writeEvery" -> writeEvery.toMillis,
-    "acl"        -> acl.value
+    "acl"        -> acl.value,
+    "pathStyleAccess" -> pathStyleAccess
   )
 }
 
@@ -392,7 +394,8 @@ object S3Configuration {
             case "PublicReadWrite"        => CannedAcl.PublicReadWrite
             case _                        => CannedAcl.Private
           }
-          .getOrElse(CannedAcl.Private)
+          .getOrElse(CannedAcl.Private),
+        pathStyleAccess = json.selectAsOptBoolean("pathStyleAccess").getOrElse(false)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

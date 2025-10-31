@@ -1,3 +1,5 @@
+import React from 'react'
+
 export default {
   id: 'cp:otoroshi.next.plugins.S3Backend',
   config_schema: {
@@ -37,6 +39,19 @@ export default {
       label: 'key',
       type: 'string',
     },
+    pathStyleAccess: {
+      label: 'Path Style Access',
+      type: 'box-bool',
+      props: {
+        description: <div>
+          <div>Virtual-hosted-style</div>
+          <pre>https://my-bucket.s3.amazonaws.com/photos/cat.jpg</pre>
+
+          <div>Path-style</div>
+          <pre>https://s3.amazonaws.com/my-bucket/photos/cat.jpg</pre>
+        </div>
+      }
+    }
   },
   config_flow: [
     'region',
@@ -48,5 +63,6 @@ export default {
     'bucket',
     'chunkSize',
     'writeEvery',
+    'pathStyleAccess'
   ],
 };

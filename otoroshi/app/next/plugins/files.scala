@@ -1,6 +1,7 @@
 package otoroshi.next.plugins
 
 import akka.http.scaladsl.model.headers.`Last-Modified`
+import akka.stream.alpakka.s3.AccessStyle.{PathAccessStyle, VirtualHostAccessStyle}
 import akka.stream.alpakka.s3.scaladsl.S3
 import akka.stream.{Attributes, Materializer}
 import akka.stream.alpakka.s3.{ApiVersion, MemoryBufferType, ObjectMetadata, S3Attributes, S3Settings}
@@ -171,8 +172,10 @@ class S3Backend extends NgBackendCall {
       s3RegionProvider = new AwsRegionProvider {
         override def getRegion: Region = Region.of(conf.region)
       },
-      listBucketApiVersion = ApiVersion.ListBucketVersion2
-    ).withEndpointUrl(conf.endpoint)
+      listBucketApiVersion = ApiVersion.ListBucketVersion2,
+    )
+      .withEndpointUrl(conf.endpoint)
+      .withAccessStyle(if(conf.pathStyleAccess) PathAccessStyle else VirtualHostAccessStyle)
     S3Attributes.settings(settings)
   }
 
@@ -217,6 +220,7 @@ class S3Backend extends NgBackendCall {
       mat: Materializer
   ): Future[String] = {
     val keyWithIndex = s"$key/index.html"
+
     fileExists(key, config).flatMap {
       case true  => key.vfuture
       case false => keyWithIndex.vfuture
@@ -253,6 +257,7 @@ class S3Backend extends NgBackendCall {
       val askedFilePath = ctx.request.path.replace("//", "")
       val key           = s"${config.key}${askedFilePath}"
       val cacheKey      = s"${ctx.route.id}-${key}"
+
       normalizeKey(key, config).map(_.replace("//", "/")).flatMap { filePath =>
         fileCache.getIfPresent(cacheKey) match {
           case Some((om, content)) =>

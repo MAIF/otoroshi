@@ -226,7 +226,8 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
-  )
+  ),
+  "com.dimafeng"                    %% "testcontainers-scala-scalatest"             % "0.43.6" % Test
   // https://github.com/mvel/mvel
   // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
 )
@@ -249,6 +250,7 @@ PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 
 Test / parallelExecution := false
 IntegrationTest / testForkedParallel := false
+IntegrationTest / fork := true
 
 usePgpKeyHex("4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))
