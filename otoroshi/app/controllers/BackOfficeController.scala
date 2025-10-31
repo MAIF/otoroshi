@@ -1785,12 +1785,18 @@ class BackOfficeController(
         val routes            = rroutes
           .filter(ctx.canUserRead)
           .map(g => Json.obj("label" -> s"Route - ${g.name}", "value" -> s"route_${g.id}", "kind" -> "route"))
-        val apis            = rapis
+        val apis              = rapis
           .filter(ctx.canUserRead)
           .map(g => Json.obj("label" -> s"Api - ${g.name}", "value" -> s"api_${g.id}", "kind" -> "api"))
         val routeCompositions = rrouteCompositions
           .filter(ctx.canUserRead)
-          .map(g => Json.obj("label" -> s"Route composition - ${g.name}", "value" -> s"route-composition_${g.id}", "kind" -> "route-composition"))
+          .map(g =>
+            Json.obj(
+              "label" -> s"Route composition - ${g.name}",
+              "value" -> s"route-composition_${g.id}",
+              "kind"  -> "route-composition"
+            )
+          )
         Ok(JsArray(groups ++ services ++ routes ++ apis ++ routeCompositions))
       }
     }

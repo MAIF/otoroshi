@@ -46,18 +46,18 @@ export class TeamsPage extends Component {
       id: { type: 'string', props: { label: 'Id', placeholder: '---', disabled: fprops.update } },
       name: {
         type: 'string',
-          props: { label: 'Name', placeholder: 'Nice team' },
+        props: { label: 'Name', placeholder: 'Nice team' },
       },
       description: {
         type: 'string',
-          props: { label: 'Description', placeholder: 'A nice team to do whatever you want' },
+        props: { label: 'Description', placeholder: 'A nice team to do whatever you want' },
       },
       tenant: {
         type: 'select',
-          props: {
+        props: {
           label: 'Organization',
-            valuesFrom: '/bo/api/proxy/api/tenants',
-            transformer: (a) => ({
+          valuesFrom: '/bo/api/proxy/api/tenants',
+          transformer: (a) => ({
             value: a.id,
             label: a.name + ' - ' + a.description,
           }),
@@ -65,13 +65,13 @@ export class TeamsPage extends Component {
       },
       metadata: {
         type: 'object',
-          props: { label: 'Metadata' },
+        props: { label: 'Metadata' },
       },
       tags: {
         type: 'array',
-          props: { label: 'Tags' },
+        props: { label: 'Tags' },
       },
-    }
+    };
   };
 
   render() {

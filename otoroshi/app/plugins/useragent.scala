@@ -25,16 +25,16 @@ object UserAgentHelper {
 
   private val logger = Logger("otoroshi-plugins-user-agent-helper")
 
-  private val ec                       = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
-  private val parserFuture             = new AtomicReference[Future[UserAgentParser]]()
+  private val ec           = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
+  private val parserFuture = new AtomicReference[Future[UserAgentParser]]()
 
-  private val cache                    = Caches.expireAfterWrite[String, Option[JsObject]](10.minutes, 999)
+  private val cache = Caches.expireAfterWrite[String, Option[JsObject]](10.minutes, 999)
 
   private def ensureInitialized(): Future[UserAgentParser] = {
     Option(parserFuture.get()) match {
       case Some(future) => future
-      case None =>
-        val start = System.currentTimeMillis()
+      case None         =>
+        val start  = System.currentTimeMillis()
         val future = Future {
           logger.info("Initializing User-Agent parser ...")
           val parser = new UserAgentService().loadParser()
@@ -56,20 +56,20 @@ object UserAgentHelper {
   def userAgentDetails(ua: String)(implicit env: Env): Future[Option[JsObject]] = {
     env.metrics.withTimer("otoroshi.plugins.useragent.details") {
       cache.getIfPresent(ua) match {
-        case details @ Some(_)                      => details.flatten.future
-        case None =>
+        case details @ Some(_) => details.flatten.future
+        case None              =>
           ensureInitialized().map { parser =>
-          Try(parser.parse(ua)) match {
-            case Failure(e)            => cache.put(ua, None)
-            case Success(capabilities) =>
-              val details = Some(JsObject(capabilities.getValues.asScala.map { case (field, value) =>
-                (field.name().toLowerCase(), JsString(value))
-              }.toMap))
-              cache.put(ua, details)
-          }
-          cache.getIfPresent(ua).flatten
-        }(ec)
-        case _                                      => None .future
+            Try(parser.parse(ua)) match {
+              case Failure(e)            => cache.put(ua, None)
+              case Success(capabilities) =>
+                val details = Some(JsObject(capabilities.getValues.asScala.map { case (field, value) =>
+                  (field.name().toLowerCase(), JsString(value))
+                }.toMap))
+                cache.put(ua, details)
+            }
+            cache.getIfPresent(ua).flatten
+          }(ec)
+        case _                 => None.future
       }
     }
   }

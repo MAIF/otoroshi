@@ -388,36 +388,45 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
         </div>
         <div className="mt-3">
           {resources.map((resource, idx) => {
-            return <div className="d-flex-between endpoint me-2 py-2 px-3" key={resource.name} style={{ flex: 1 }}>
-              <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
-              {!endpoints.find((e) => e.model === resource.name) &&
-                !resources.find((e) => e.schema?.find((f) => f.field_type === 'Model' && f.value === resource.name)) &&
-                <span
-                  style={{ color: 'var(--color-red)' }}
-                  {...createTooltip('Model not used')}
-                >
-                  <i className="fas fa-exclamation-triangle" />
-                </span>}
-              <div>
-                <button
-                  className="btn btn-sm btn-success me-2"
-                  onClick={() => {
-                    showResourceForm(idx, true);
-                  }}
-                >
-                  <i className="fas fa-pencil-alt" />
-                </button>
-                <button
-                  className="btn btn-sm btn-quiet"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeResource(idx);
-                  }}
-                >
-                  <i className="fas fa-trash" />
-                </button>
+            return (
+              <div
+                className="d-flex-between endpoint me-2 py-2 px-3"
+                key={resource.name}
+                style={{ flex: 1 }}
+              >
+                <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
+                {!endpoints.find((e) => e.model === resource.name) &&
+                  !resources.find((e) =>
+                    e.schema?.find((f) => f.field_type === 'Model' && f.value === resource.name)
+                  ) && (
+                    <span
+                      style={{ color: 'var(--color-red)' }}
+                      {...createTooltip('Model not used')}
+                    >
+                      <i className="fas fa-exclamation-triangle" />
+                    </span>
+                  )}
+                <div>
+                  <button
+                    className="btn btn-sm btn-success me-2"
+                    onClick={() => {
+                      showResourceForm(idx, true);
+                    }}
+                  >
+                    <i className="fas fa-pencil-alt" />
+                  </button>
+                  <button
+                    className="btn btn-sm btn-quiet"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeResource(idx);
+                    }}
+                  >
+                    <i className="fas fa-trash" />
+                  </button>
+                </div>
               </div>
-            </div>
+            );
           })}
         </div>
         {resources.length === 0 && <span>No entities available</span>}
@@ -426,7 +435,13 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
   );
 }
 
-function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, openResource, actions }) {
+function CharlatanEndpointsList({
+  showEndpointForm,
+  endpoints,
+  removeEndpoint,
+  openResource,
+  actions,
+}) {
   return (
     <>
       <div className="d-flex">
@@ -465,13 +480,14 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
             </span>
             <span className="me-auto">MODEL</span>
           </div>
-          <div className='text-end' style={{ minWidth: '60px' }}>Actions</div>
+          <div className="text-end" style={{ minWidth: '60px' }}>
+            Actions
+          </div>
         </div>
         {endpoints
           .sort((a, b) => a.path.localeCompare(b.path))
           .map((endpoint, idx) => {
-
-            const hasModel = endpoint.model && endpoint.use_generation
+            const hasModel = endpoint.model && endpoint.use_generation;
 
             return (
               <div
@@ -677,18 +693,18 @@ export default class MocksDesigner extends React.Component {
                 : this.getState().resources,
               endpoints: Number.isFinite(idx)
                 ? this.getState()[elementName].map((r, i) => {
-                  if (i === idx) return newEndpoint;
-                  return r;
-                })
+                    if (i === idx) return newEndpoint;
+                    return r;
+                  })
                 : [...this.getState()[elementName], newEndpoint, ...additionalEndpoints],
             });
           } else {
             this.setAndSave({
               resources: Number.isFinite(idx)
                 ? this.getState().resources.map((r, i) => {
-                  if (i === idx) return value;
-                  return r;
-                })
+                    if (i === idx) return value;
+                    return r;
+                  })
                 : [...this.getState().resources, value],
             });
           }
@@ -781,7 +797,7 @@ export default class MocksDesigner extends React.Component {
 
     if (!route) return null;
 
-    console.log(resources, endpoints)
+    console.log(resources, endpoints);
 
     return (
       <div
@@ -790,7 +806,7 @@ export default class MocksDesigner extends React.Component {
           overflowX: 'hidden',
         }}
       >
-        <div style={{ maxWidth: 820, minWidth: 640 }} className='mx-auto'>
+        <div style={{ maxWidth: 820, minWidth: 640 }} className="mx-auto">
           <Header
             hide={hide}
             setDesigner={(value) => this.setState({ onDesigner: value })}
@@ -810,13 +826,15 @@ export default class MocksDesigner extends React.Component {
                       true
                     )
                   }
-                  actions={resources.length > 0 ? (
-                    <CharlatanActions
-                      endpoints={endpoints}
-                      generateData={this.generateData}
-                      resetData={this.resetData}
-                    />
-                  ) : null}
+                  actions={
+                    resources.length > 0 ? (
+                      <CharlatanActions
+                        endpoints={endpoints}
+                        generateData={this.generateData}
+                        resetData={this.resetData}
+                      />
+                    ) : null
+                  }
                 />
                 <CharlatanResourcesList
                   showResourceForm={this.showResourceForm}
@@ -892,7 +910,7 @@ function OpenAPIResponse({ body, status, description, model, resource_list }) {
             <p>{resource_list ? `List of ${model || 'Model'}` : model || 'Model'}</p>
           </div>
           <Suspense fallback={<div>Loading ....</div>}>
-            <CodeInput value={body} onChange={() => { }} mode="json" editorOnly={true} />
+            <CodeInput value={body} onChange={() => {}} mode="json" editorOnly={true} />
           </Suspense>
         </div>
       </div>
@@ -1329,23 +1347,25 @@ class NewEndpoint extends React.Component {
 }
 
 function Header({ hide, onDesigner, setDesigner }) {
-  return <div className="d-flex-between mb-5">
-    <h3>Responses</h3>
+  return (
+    <div className="d-flex-between mb-5">
+      <h3>Responses</h3>
 
-    <PillButton
-      rightEnabled={onDesigner}
-      onChange={setDesigner}
-      leftText="Design"
-      rightText="Content"
-    />
+      <PillButton
+        rightEnabled={onDesigner}
+        onChange={setDesigner}
+        leftText="Design"
+        rightText="Content"
+      />
 
-    <button
-      className="btn btn-quiet btn-sm"
-      type="button"
-      style={{ minWidth: '36px' }}
-      onClick={hide}
-    >
-      <i className="fas fa-times" />
-    </button>
-  </div>
+      <button
+        className="btn btn-quiet btn-sm"
+        type="button"
+        style={{ minWidth: '36px' }}
+        onClick={hide}
+      >
+        <i className="fas fa-times" />
+      </button>
+    </div>
+  );
 }

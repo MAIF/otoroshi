@@ -35,13 +35,19 @@ object HealthCheckLogic {
   val badHealth = new UnboundedTrieMap[String, Unit]()
 
   def contextCheckHealth(resp: WSResponse, healthCheck: HealthCheck): Option[String] = {
-    val content = resp.body
-    val healthyMatched = if (healthCheck.healthyRegexChecks.isEmpty) true else healthCheck.healthyRegexChecks.exists { regex =>
-      Pattern.compile(regex).matcher(content).find()
-    }
-    val unhealthyMatched = if (healthCheck.unhealthyRegexChecks.isEmpty) false else healthCheck.unhealthyRegexChecks.exists { regex =>
-      Pattern.compile(regex).matcher(content).find()
-    }
+    val content          = resp.body
+    val healthyMatched   =
+      if (healthCheck.healthyRegexChecks.isEmpty) true
+      else
+        healthCheck.healthyRegexChecks.exists { regex =>
+          Pattern.compile(regex).matcher(content).find()
+        }
+    val unhealthyMatched =
+      if (healthCheck.unhealthyRegexChecks.isEmpty) false
+      else
+        healthCheck.unhealthyRegexChecks.exists { regex =>
+          Pattern.compile(regex).matcher(content).find()
+        }
     if (unhealthyMatched) Some("RED")
     else if (healthyMatched) Some("GREEN")
     else Some("RED")
@@ -51,13 +57,13 @@ object HealthCheckLogic {
     if (contentType == null || contentType.trim.isEmpty) return false
     val ct = contentType.toLowerCase.trim
     ct.startsWith("text/") ||
-      ct.contains("json") ||
-      ct.contains("xml") ||
-      ct.contains("yaml") ||
-      ct.contains("csv") ||
-      ct.contains("html") ||
-      ct.contains("javascript") ||
-      ct.contains("x-www-form-urlencoded")
+    ct.contains("json") ||
+    ct.contains("xml") ||
+    ct.contains("yaml") ||
+    ct.contains("csv") ||
+    ct.contains("html") ||
+    ct.contains("javascript") ||
+    ct.contains("x-www-form-urlencoded")
   }
 
   def checkTarget(desc: ServiceDescriptor, target: Target, logger: Logger)(implicit
@@ -101,9 +107,10 @@ object HealthCheckLogic {
         .url(url, target.mtlsConfig)
         .withRequestTimeout(Duration(desc.healthCheck.timeout, TimeUnit.MILLISECONDS))
         .withHttpHeaders(
-          env.Headers.OtoroshiState                -> state,
-          env.Headers.OtoroshiClaim                -> claim,
-        ).applyOnIf(desc.healthCheck.logicCheck) { builder =>
+          env.Headers.OtoroshiState -> state,
+          env.Headers.OtoroshiClaim -> claim
+        )
+        .applyOnIf(desc.healthCheck.logicCheck) { builder =>
           builder.addHttpHeaders(env.Headers.OtoroshiHealthCheckLogicTest -> value)
         }
         .withMaybeProxyServer(
@@ -121,8 +128,9 @@ object HealthCheckLogic {
             val useDefaultConfiguration =
               desc.healthCheck.healthyStatuses.isEmpty && desc.healthCheck.unhealthyStatuses.isEmpty
 
-            val hasRegexChecks = (desc.healthCheck.healthyRegexChecks.nonEmpty || desc.healthCheck.unhealthyRegexChecks.nonEmpty)
-            val isTextResult = isTextualContentType(res.contentType)
+            val hasRegexChecks     =
+              desc.healthCheck.healthyRegexChecks.nonEmpty || desc.healthCheck.unhealthyRegexChecks.nonEmpty
+            val isTextResult       = isTextualContentType(res.contentType)
             val needToCheckContent = hasRegexChecks && isTextResult
 
             val rawHealth = (res.status, checkDone) match {
@@ -133,9 +141,9 @@ object HealthCheckLogic {
 
             val health: Option[String] = if (useDefaultConfiguration) {
               rawHealth match {
-                case Some("RED") => rawHealth
+                case Some("RED")             => rawHealth
                 case _ if needToCheckContent => contextCheckHealth(res, desc.healthCheck)
-                case _ => rawHealth
+                case _                       => rawHealth
               }
             } else {
               if (desc.healthCheck.unhealthyStatuses.contains(res.status)) {

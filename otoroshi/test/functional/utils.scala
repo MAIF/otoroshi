@@ -813,7 +813,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
     val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
       compressionEnabled = false,
       idleTimeout = (2 * 60 * 1000).millis,
-      connectionTimeout = (2 * 60 * 1000).millis,
+      connectionTimeout = (2 * 60 * 1000).millis
     )
     AhcWSClient(
       config.copy(
@@ -1645,7 +1645,7 @@ class TargetService(
           HttpResponse(
             code,
             headers = headers,
-            entity = entity,
+            entity = entity
           )
         )
       }
@@ -1860,26 +1860,28 @@ class WebsocketServer(counter: AtomicInteger) {
   }
 }
 
-class WebsocketBackend(root: String = "",
-                           callback: String => Message = text => TextMessage(s"Echo: $text"),
-                           streamCallback: Source[String, _] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))) {
-  import akka.http.scaladsl.server.Directives.{handleWebSocketMessages, path, get, complete}
+class WebsocketBackend(
+    root: String = "",
+    callback: String => Message = text => TextMessage(s"Echo: $text"),
+    streamCallback: Source[String, _] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))
+) {
+  import akka.http.scaladsl.server.Directives.{complete, get, handleWebSocketMessages, path}
 
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
-  implicit val mat: Materializer = Materializer(system)
-  val http = Http()
+  implicit val mat: Materializer   = Materializer(system)
+  val http                         = Http()
 
   val websocketFlow: Flow[Message, Message, Any] = Flow[Message].map {
-    case TextMessage.Strict(text) => callback(text)
+    case TextMessage.Strict(text)         => callback(text)
     case TextMessage.Streamed(textStream) => streamCallback(textStream)
-    case _ => TextMessage("Unsupported message type")
+    case _                                => TextMessage("Unsupported message type")
   }
 
   val websocketRoute = path(root) {
-      get {
-        handleWebSocketMessages(websocketFlow)
-      }
+    get {
+      handleWebSocketMessages(websocketFlow)
     }
+  }
 
   val backendPort = TargetService.freePort
 

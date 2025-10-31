@@ -75,9 +75,12 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
-    if (ctx.request.hasBody && ctx.otoroshiRequest.contentType.exists(c => c.contains("text/xml") || c.contains("application/xml"))) {
+    if (
+      ctx.request.hasBody && ctx.otoroshiRequest.contentType
+        .exists(c => c.contains("text/xml") || c.contains("application/xml"))
+    ) {
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val str = bodyRaw.utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
+        val str      = bodyRaw.utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
         val xmlBody  = scala.xml.XML.loadString(str)
         val jsonBody = otoroshi.utils.xml.Xml.toJson(xmlBody).stringify
         transform(jsonBody, config) match {
@@ -171,7 +174,7 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
     if (ctx.otoroshiResponse.contentType.exists(c => c.contains("text/xml") || c.contains("application/xml"))) {
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val cleanXml = bodyRaw.utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
-        val xmlBody = scala.xml.XML.loadString(cleanXml)
+        val xmlBody  = scala.xml.XML.loadString(cleanXml)
         val jsonBody = otoroshi.utils.xml.Xml.toJson(xmlBody).stringify
         transform(jsonBody, config) match {
           case Left(err)   => Results.InternalServerError(err).as("application/json").left

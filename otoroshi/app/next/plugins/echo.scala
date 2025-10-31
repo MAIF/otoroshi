@@ -81,35 +81,38 @@ class EchoBackend extends NgBackendCall {
     )
     if (ctx.request.hasBody) {
       val limited = ctx.request.body.limitWeighted(config.limit)(_.size)
-      limited.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val body: JsValue = ctx.request.typedContentType match {
-          case Some(ctype) if ctype.mediaType == MediaTypes.`application/x-www-form-urlencoded` =>
-            bodyRaw.utf8String.json
-          case Some(ctype) if ctype.mediaType == MediaTypes.`application/json`                  =>
-            Try(Json.parse(bodyRaw.utf8String)) match {
-              case Success(value) => value
-              case Failure(_)     => JsString(bodyRaw.utf8String)
-            }
-          case Some(ctype) if ctype.mediaType.isText                                            => JsString(bodyRaw.utf8String)
-          case _                                                                                => JsString(bodyRaw.encodeBase64.utf8String)
+      limited
+        .runFold(ByteString.empty)(_ ++ _)
+        .map { bodyRaw =>
+          val body: JsValue = ctx.request.typedContentType match {
+            case Some(ctype) if ctype.mediaType == MediaTypes.`application/x-www-form-urlencoded` =>
+              bodyRaw.utf8String.json
+            case Some(ctype) if ctype.mediaType == MediaTypes.`application/json`                  =>
+              Try(Json.parse(bodyRaw.utf8String)) match {
+                case Success(value) => value
+                case Failure(_)     => JsString(bodyRaw.utf8String)
+              }
+            case Some(ctype) if ctype.mediaType.isText                                            => JsString(bodyRaw.utf8String)
+            case _                                                                                => JsString(bodyRaw.encodeBase64.utf8String)
+          }
+          BackendCallResponse(
+            NgPluginHttpResponse.fromResult(Results.Ok(payload ++ Json.obj("body" -> body))),
+            None
+          ).right
         }
-        BackendCallResponse(
-          NgPluginHttpResponse.fromResult(Results.Ok(payload ++ Json.obj("body" -> body))),
-          None
-        ).right
-      }
-        .recover {
-          case _: akka.stream.StreamLimitReachedException =>
-            BackendCallResponse(
-              NgPluginHttpResponse.fromResult(
-                Results.Status(413)(Json.obj(
-                  "error" -> "request_body_too_large",
+        .recover { case _: akka.stream.StreamLimitReachedException =>
+          BackendCallResponse(
+            NgPluginHttpResponse.fromResult(
+              Results.Status(413)(
+                Json.obj(
+                  "error"   -> "request_body_too_large",
                   "message" -> s"Request body exceeds maximum allowed size of ${config.limit} bytes",
-                  "limit" -> config.limit
-                ))
-              ),
-              None
-            ).right
+                  "limit"   -> config.limit
+                )
+              )
+            ),
+            None
+          ).right
         }
     } else {
       BackendCallResponse(
@@ -146,22 +149,25 @@ class RequestBodyEchoBackend extends NgBackendCall {
     val config = ctx.cachedConfig(internalName)(EchoBackendConfig.format).getOrElse(EchoBackendConfig.default)
     if (ctx.request.hasBody) {
       val limited = ctx.request.body.limitWeighted(config.limit)(_.size)
-      limited.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val ctype = ctx.request.contentType.getOrElse("application/octet-stream")
-        BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(bodyRaw).as(ctype)), None).right
-      }
-        .recover {
-          case _: akka.stream.StreamLimitReachedException =>
-            BackendCallResponse(
-              NgPluginHttpResponse.fromResult(
-                Results.Status(413)(Json.obj(
-                  "error" -> "request_body_too_large",
+      limited
+        .runFold(ByteString.empty)(_ ++ _)
+        .map { bodyRaw =>
+          val ctype = ctx.request.contentType.getOrElse("application/octet-stream")
+          BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(bodyRaw).as(ctype)), None).right
+        }
+        .recover { case _: akka.stream.StreamLimitReachedException =>
+          BackendCallResponse(
+            NgPluginHttpResponse.fromResult(
+              Results.Status(413)(
+                Json.obj(
+                  "error"   -> "request_body_too_large",
                   "message" -> s"Request body exceeds maximum allowed size of ${config.limit} bytes",
-                  "limit" -> config.limit
-                ))
-              ),
-              None
-            ).right
+                  "limit"   -> config.limit
+                )
+              )
+            ),
+            None
+          ).right
         }
     } else {
       BackendCallResponse(NgPluginHttpResponse.fromResult(Results.NoContent), None).rightf

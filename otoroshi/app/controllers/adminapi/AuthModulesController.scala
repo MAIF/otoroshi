@@ -68,9 +68,8 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[AuthModuleConfig]]] = {
     env.datastores.authConfigsDataStore.findAll().map { seq =>
-
       val entities: Seq[AuthModuleConfig] = req.queryString.get("types") match {
-        case None => seq
+        case None        => seq
         case Some(types) => seq.filter(auth => types.contains(auth.`type`))
       }
 

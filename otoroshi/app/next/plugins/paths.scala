@@ -58,8 +58,8 @@ class PublicPrivatePaths extends NgAccessValidator {
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Public/Private paths"
-  override def description: Option[String] =
-      """This plugin allows or forbid request based on path patterns
+  override def description: Option[String]                 =
+    """This plugin allows or forbid request based on path patterns
         |
         | Strict mode = restricted access.
         | Only an API key is accepted.
@@ -72,7 +72,7 @@ class PublicPrivatePaths extends NgAccessValidator {
     val NgPublicPrivatePathsConfig(strict, publicPatterns, privatePatterns) =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgPublicPrivatePathsConfig())
 
-    val isPublic                                                            =
+    val isPublic =
       !privatePatterns.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(p =>
         otoroshi.utils.RegexPool.regex(p).matches(uri)
       )

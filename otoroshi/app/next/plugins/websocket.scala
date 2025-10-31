@@ -303,8 +303,8 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
 
         Try {
           schema.validate(data, InputFormat.JSON).isEmpty
-        } recover {
-          case _ => false
+        } recover { case _ =>
+          false
         } get
       })
       .flatMap {

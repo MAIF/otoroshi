@@ -215,7 +215,7 @@ trait AnalyticEvent extends OtoroshiEvent {
 
     for {
       originDetails <- fOrigin
-      ua <- uaDetails
+      ua            <- uaDetails
     } yield {
       jsonObject ++ Json.obj(
         "user-agent-details" -> ua,

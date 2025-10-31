@@ -149,7 +149,9 @@ export class Form extends Component {
           return <Separator title={name.replace('-- ', '')} />;
         }
       }
-      const finalSchema = isFunction(this.props.schema) ? this.props.schema(this.props, this.state) : this.props.schema;
+      const finalSchema = isFunction(this.props.schema)
+        ? this.props.schema(this.props, this.state)
+        : this.props.schema;
       if (!finalSchema[name]) {
         console.log('unable to find "', name, '" in', finalSchema);
         return null;

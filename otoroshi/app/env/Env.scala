@@ -1249,8 +1249,8 @@ class Env(
     localHost = s"127.0.0.1:$port",
     forceHttps = false,
     additionalHeaders = Map(
-      "Host" -> backOfficeDescriptorHostHeader,
-      "X-Forwarded-For" -> backOfficeDescriptorHostHeader,
+      "Host"            -> backOfficeDescriptorHostHeader,
+      "X-Forwarded-For" -> backOfficeDescriptorHostHeader
     ),
     publicPatterns = Seq("/health", "/metrics"),
     allowHttp10 = true,

@@ -1199,11 +1199,7 @@ class TableComponent extends Component {
             <hr />
             <div className="displayGroupBtn float-end">
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  title="Delete current item"
-                >
+                <button type="button" className="btn btn-danger" title="Delete current item">
                   <i className="fas fa-trash" /> Delete
                 </button>
               )}

@@ -1159,8 +1159,8 @@ object ClusterAgent {
   }
 
   def clusterDeleteApikey(env: Env, id: String)(implicit
-                                             executionContext: ExecutionContext,
-                                             mat: Materializer
+      executionContext: ExecutionContext,
+      mat: Materializer
   ): Future[Option[JsValue]] = {
     val cfg         = env.clusterConfig
     val otoroshiUrl = cfg.leader.urls.head

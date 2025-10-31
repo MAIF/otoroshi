@@ -40,23 +40,28 @@ case class KafkaConfig(
     mtlsConfig: MtlsConfig = MtlsConfig(),
     securityProtocol: String = SecurityProtocol.PLAINTEXT.name,
     saslConfig: Option[SaslConfig] = None,
-    properties: Option[Map[String, String]] = None,
+    properties: Option[Map[String, String]] = None
 ) extends Exporter {
   def json: JsValue   = KafkaConfig.format.writes(this)
   def toJson: JsValue = KafkaConfig.format.writes(this)
 }
 
-case class SaslConfig(username: String, password: String, mechanism: String = "PLAIN", jaasConfig: Option[String] = None)
+case class SaslConfig(
+    username: String,
+    password: String,
+    mechanism: String = "PLAIN",
+    jaasConfig: Option[String] = None
+)
 
 object SaslConfig {
   implicit val format = new Format[SaslConfig] { // Json.format[KafkaConfig]
 
     override def writes(o: SaslConfig): JsValue =
       Json.obj(
-        "username"  -> o.username,
-        "password"  -> o.password,
-        "mechanism" -> o.mechanism,
-        "jaasConfig" -> o.jaasConfig,
+        "username"   -> o.username,
+        "password"   -> o.password,
+        "mechanism"  -> o.mechanism,
+        "jaasConfig" -> o.jaasConfig
       )
 
     override def reads(json: JsValue): JsResult[SaslConfig] =
@@ -65,8 +70,8 @@ object SaslConfig {
           username = (json \ "username").asOpt[String].getOrElse("foo"),
           password = (json \ "password").asOpt[String].getOrElse("bar"),
           mechanism = (json \ "mechanism").asOpt[String].getOrElse("PLAIN"),
-          jaasConfig = (json \ "jaasConfig").asOpt[String],
-      )
+          jaasConfig = (json \ "jaasConfig").asOpt[String]
+        )
       } match {
         case Failure(e)  => JsError(e.getMessage)
         case Success(kc) => JsSuccess(kc)
@@ -90,7 +95,7 @@ object KafkaConfig {
         "mtlsConfig"       -> o.mtlsConfig.json,
         "securityProtocol" -> o.securityProtocol,
         "saslConfig"       -> o.saslConfig.map(SaslConfig.format.writes),
-        "properties" -> o.properties,
+        "properties"       -> o.properties
       )
 
     override def reads(json: JsValue): JsResult[KafkaConfig] =
@@ -106,7 +111,7 @@ object KafkaConfig {
           mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
           securityProtocol = (json \ "securityProtocol").asOpt[String].getOrElse(SecurityProtocol.PLAINTEXT.name),
           saslConfig = (json \ "saslConfig").asOpt[JsValue].flatMap(c => SaslConfig.format.reads(c).asOpt),
-          properties = (json \ "properties").asOpt[Map[String, String]],
+          properties = (json \ "properties").asOpt[Map[String, String]]
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -142,16 +147,17 @@ object KafkaSettings {
   }
 
   def kafkaSettings(_env: otoroshi.env.Env, config: KafkaConfig): Map[String, String] = {
-    val username  = config.saslConfig.map(_.username).getOrElse("foo")
-    val password  = config.saslConfig.map(_.password).getOrElse("bar")
-    val mechanism = config.saslConfig.map(_.mechanism).getOrElse("PLAIN")
+    val username   = config.saslConfig.map(_.username).getOrElse("foo")
+    val password   = config.saslConfig.map(_.password).getOrElse("bar")
+    val mechanism  = config.saslConfig.map(_.mechanism).getOrElse("PLAIN")
     val jaasConfig = config.saslConfig.flatMap(_.jaasConfig)
 
     val entity = ConsumerSettings
       .create(_env.analyticsActorSystem, new ByteArrayDeserializer(), new StringDeserializer())
 
     var settings = config.securityProtocol match {
-      case "SSL" | "SASL_SSL" if !config.mtlsConfig.mtls && config.keystore.isDefined && config.truststore.isDefined && config.keyPass.isDefined =>
+      case "SSL" | "SASL_SSL"
+          if !config.mtlsConfig.mtls && config.keystore.isDefined && config.truststore.isDefined && config.keyPass.isDefined =>
         val ks = config.keystore.get
         val ts = config.truststore.get
         val kp = config.keyPass.get
@@ -166,13 +172,17 @@ object KafkaSettings {
           .applyOnIf(!config.hostValidation)(
             _.withProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "")
           )
-      case "SSL" | "SASL_SSL" if config.mtlsConfig.mtls && (config.mtlsConfig.certs.nonEmpty || config.mtlsConfig.trustedCerts.nonEmpty)  => {
+      case "SSL" | "SASL_SSL"
+          if config.mtlsConfig.mtls && (config.mtlsConfig.certs.nonEmpty || config.mtlsConfig.trustedCerts.nonEmpty) => {
         // AWAIT: valid
         Await.result(waitForFirstSetup(_env), 5.seconds) // wait until certs fully populated at least once
         val (jks1, jks2, password) = config.mtlsConfig.toJKS(_env)
         entity
           .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, config.securityProtocol)
-          .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, if (config.mtlsConfig.certs.nonEmpty) "required" else "none") // TODO - test it
+          .withProperty(
+            BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG,
+            if (config.mtlsConfig.certs.nonEmpty) "required" else "none"
+          ) // TODO - test it
           .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, "")
           .applyOnIf(config.mtlsConfig.certs.nonEmpty) { p =>
             p.withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, jks1.getAbsolutePath)
@@ -183,7 +193,7 @@ object KafkaSettings {
               .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, password)
           }
       }
-      case _                                             =>
+      case _ =>
         entity
           .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, config.securityProtocol)
           .withProperty(SaslConfigs.SASL_MECHANISM, mechanism)
@@ -198,13 +208,15 @@ object KafkaSettings {
         .withProperty(SaslConfigs.SASL_MECHANISM, mechanism)
         .withProperty(
           SaslConfigs.SASL_JAAS_CONFIG,
-          jaasConfig.getOrElse(s"""${getSaslJaasClass(mechanism)} required username="$username" password="$password";""")
+          jaasConfig.getOrElse(
+            s"""${getSaslJaasClass(mechanism)} required username="$username" password="$password";"""
+          )
         )
     }
 
     settings
-      .applyOnWithOpt(config.properties) {
-        case (ent, properties) => properties.foldLeft(ent) { case (acc, (key, value)) => acc.withProperty(key, value) }
+      .applyOnWithOpt(config.properties) { case (ent, properties) =>
+        properties.foldLeft(ent) { case (acc, (key, value)) => acc.withProperty(key, value) }
       }
       .properties
   }
