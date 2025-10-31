@@ -520,7 +520,7 @@ This plugin can be used to call api that are authenticated using basic auth.
 ```json
 {
   "username" : null,
-  "passaword" : null,
+  "password" : null,
   "headerName" : "Authorization",
   "headerValueFormat" : "Basic %s"
 }
@@ -1510,7 +1510,8 @@ This plugin can be used to check if a HMAC signature is present and valid in Aut
 
 ```json
 {
-  "secret" : null
+  "secret" : null,
+  "authorizationHeader" : null
 }
 ```
 
@@ -4787,6 +4788,9 @@ This plugin replaces compromised cdn.polyfill.io script tags in html resource wi
 
 This plugin allows or forbid request based on path patterns
 
+ Strict mode = restricted access.
+ Only an API key is accepted.
+
 
 
 ### Default configuration
@@ -5898,8 +5902,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-10-06T13:50:36.338Z",
-  "stop" : "2025-10-07T13:50:36.359Z",
+  "start" : "2025-10-31T11:54:20.053Z",
+  "stop" : "2025-11-01T11:54:20.074Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
