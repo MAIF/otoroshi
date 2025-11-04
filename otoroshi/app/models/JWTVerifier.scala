@@ -19,6 +19,7 @@ import otoroshi.ssl.{DynamicSSLEngineProvider, PemUtils}
 import otoroshi.storage.BasicStore
 import otoroshi.utils
 import otoroshi.utils.cache.Caches
+import otoroshi.utils.http.Implicits.logger
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{RegexPool, TypedMap}
@@ -528,17 +529,27 @@ case class JWKSAlgoSettings(
               val obj  = Json.parse(resp.body).as[JsObject]
               (obj \ "keys").asOpt[JsArray] match {
                 case Some(values) => {
-                  val keys = values.value.map { k =>
+                  val keys = values.value.flatMap { k =>
                     val jwk = JWK.parse(Json.stringify(k))
-                    (jwk.getKeyID, jwk)
+                    Seq(
+                      (s"${jwk.getAlgorithm.getName}${jwk.getKeyID}", jwk),
+                      (jwk.getKeyID, jwk)
+                    )
                   }.toMap
+                  //println(s"keys: ${keys.mkString(",")}")
                   JWKSAlgoSettings.cache.put(url, (stop, keys, false))
-                  keys.get(kid) match {
-                    case Some(jwk) => algoFromJwk(alg, jwk)
-                    case None      => None
+                  keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
+                    case Some(jwk) =>
+                      logger.info(s"jwks call - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}")
+                      algoFromJwk(alg, jwk)
+                    case None      =>
+                      logger.error(s"jwks call - requested: ${kid}/${alg} - not found")
+                      None
                   }
                 }
-                case None         => None
+                case None         =>
+                  logger.error(s"fetchJWKS - requested: ${kid}/${alg} - response is not a JWKS response, unabled to get keys: ${resp.body}")
+                  None
               }
             }
           }
@@ -563,22 +574,32 @@ case class JWKSAlgoSettings(
       case InputMode(alg, Some(kid)) => {
         JWKSAlgoSettings.cache.getIfPresent(url) match {
           case Some((stop, keys, false)) if stop > System.currentTimeMillis()  => {
-            keys.get(kid) match {
-              case Some(jwk) => FastFuture.successful(algoFromJwk(alg, jwk))
-              case None      => FastFuture.successful(None)
+            keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
+              case Some(jwk) =>
+                logger.info(s"jwks cache 1 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}")
+                FastFuture.successful(algoFromJwk(alg, jwk))
+              case None      =>
+                logger.error(s"jwks cache 1 - requested: ${kid}/${alg} - not found")
+                FastFuture.successful(None)
             }
           }
           case Some((stop, keys, false)) if stop <= System.currentTimeMillis() => fetchJWKS(alg, kid, stop, keys)
           case Some((_, keys, true))                                           => {
-            keys.get(kid) match {
-              case Some(jwk) => FastFuture.successful(algoFromJwk(alg, jwk))
-              case None      => FastFuture.successful(None)
+            keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
+              case Some(jwk) =>
+                logger.info(s"jwks cache 2 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}")
+                FastFuture.successful(algoFromJwk(alg, jwk))
+              case None      =>
+                logger.error(s"jwks cache 2 - requested: ${kid}/${alg} - not found")
+                FastFuture.successful(None)
             }
           }
           case None                                                            => fetchJWKS(alg, kid, System.currentTimeMillis() + ttl.toMillis, Map.empty)
         }
       }
-      case _                         => FastFuture.successful(None)
+      case _                         =>
+        logger.error(s"jwks asAlgorithmF - not an input mode: ${mode}")
+        FastFuture.successful(None)
     }
   }
 
