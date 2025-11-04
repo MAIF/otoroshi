@@ -1835,7 +1835,7 @@ object ApiKeyHelper {
               location = Some(
                 ApikeyLocation(
                   ApikeyLocationKind.Header,
-                  "Authorization" // TODO: do it better ;)
+                  constraints.otoBearerAuth.headerName.getOrElse("Authorization")
                 )
               ),
               otoBearer = Some(bearer)
