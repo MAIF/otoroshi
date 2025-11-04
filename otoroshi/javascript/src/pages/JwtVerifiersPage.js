@@ -97,12 +97,13 @@ export class JwtVerifiersPage extends Component {
           defaultTitle="Global Jwt Verifiers"
           itemName="Jwt verifier"
           kubernetesKind="security.otoroshi.io/JwtVerifier"
-          export={false}
+          export={true}
           displayTrash={false}
-          newForm={true}
+          newForm={false}
           showActions={true}
-          hideAllActions={true}
+          hideAllActions={false}
           showLink={false}
+          stayAfterSave={true}
           rowNavigation={true}
           firstSort={0}
           columns={this.columns}
@@ -125,7 +126,7 @@ export class JwtVerifiersPage extends Component {
             global: true,
             showHeader: window.location.href.includes('edit'),
           }}
-          injectBottomBar={({ closeEditForm, state, setState, buttons }) => {
+          _injectBottomBar={({ closeEditForm, state, setState, buttons }) => {
             return (
               <div className="d-flex align-items-center justify-content-end">
                 <Button type="danger" className="btn-sm me-1" onClick={closeEditForm}>
@@ -141,7 +142,7 @@ export class JwtVerifiersPage extends Component {
               </div>
             );
           }}
-          injectTopBar={() => (
+          _injectTopBar={() => (
             <Button
               type="primary"
               onClick={() => {

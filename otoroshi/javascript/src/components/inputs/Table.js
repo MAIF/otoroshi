@@ -1258,7 +1258,7 @@ class TableComponent extends Component {
               )}
               {!this.props.stayAfterSave && !this.props.newForm && (
                 <button type="button" className="btn btn-success" onClick={this.updateItem}>
-                  <i className="fas fa-edit" /> Update {this.props.itemName}
+                  <i className="fas fa-edit" /> Update {this.props.itemName} 2
                 </button>
               )}
 
