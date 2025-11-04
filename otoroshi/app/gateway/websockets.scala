@@ -259,6 +259,8 @@ class WebSocketHandler()(implicit env: Env) {
                 uri = req.relativeUri
               ),
               backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
+              requestStreamingDuration = -1L,
+              responseStreamingDuration = -1L,
               duration = duration,
               overhead = overhead,
               cbDuration = cbDuration,

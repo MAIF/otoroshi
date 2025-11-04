@@ -227,6 +227,8 @@ class ForwardTrafficHandler extends RequestHandler {
               from = request.theIpAddress,
               env = env.env,
               backendDuration = calldur,
+              requestStreamingDuration = -1L,
+              responseStreamingDuration = -1L,
               duration = duration,
               overhead = overhead,
               cbDuration = 0,

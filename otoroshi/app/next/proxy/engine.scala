@@ -28,7 +28,7 @@ import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{RegexPool, TypedMap, UrlSanitizer}
-import play.api.{mvc, Logger}
+import play.api.{Logger, mvc}
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
@@ -39,7 +39,7 @@ import play.api.mvc._
 import play.api.mvc.request.RequestAttrKey
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
@@ -3161,7 +3161,15 @@ class ProxyEngine() extends RequestHandler {
         .withMaybeProxyServer(
           route.backend.client.proxy.orElse(globalConfig.proxies.services)
         )
+      val requestStreamStart = System.currentTimeMillis()
       val theBody                                        = request.body
+        .applyOn { source =>
+          source.alsoTo(Sink.onComplete {
+            case _ =>
+              val requestStreamDuration = System.currentTimeMillis() - requestStreamStart
+              attrs.put(otoroshi.plugins.Keys.RequestStreamDurationKey -> requestStreamDuration)
+          })
+        }
         .applyOnIf(env.dynamicBodySizeCompute && contentLengthIn.isEmpty) { body =>
           body.map { chunk =>
             counterIn.addAndGet(chunk.size)
@@ -3795,6 +3803,8 @@ class ProxyEngine() extends RequestHandler {
           uri = rawRequest.relativeUri
         ),
         backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
+        requestStreamingDuration = -1L,
+        responseStreamingDuration = -1L,
         duration = duration,
         overhead = overhead,
         cbDuration = cbDuration,
@@ -3873,11 +3883,14 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, Done] = {
+    val start = System.currentTimeMillis()
     attrs
       .get(otoroshi.plugins.Keys.ResponseEndPromiseKey)
       .foreach(_.future.andThen { case _ =>
+        val responseStreamingDuration      = System.currentTimeMillis() - start
         val actualDuration: Long           = report.getDurationNow()
         val overhead: Long                 = report.getOverheadNow()
+        val requestStreamingDuration: Long = attrs.get(otoroshi.plugins.Keys.RequestStreamDurationKey).getOrElse(-1L)
         val upstreamLatency: Long          = report.getStep("call-backend").map(_.duration).getOrElse(-1L)
         val apiKey                         = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
         val paUsr                          = attrs.get(otoroshi.plugins.Keys.UserKey)
@@ -3940,6 +3953,12 @@ class ProxyEngine() extends RequestHandler {
           fromTo = s"$fromLbl###${route.name}"
         )
         val cbDuration                     = System.currentTimeMillis() - sb.cbStart
+        // println(s"event duration: ${duration}")
+        // println("---------------")
+        // println("overhead: " + overhead)
+        // println("backend duration: " + attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L))
+        // println(s"response streaming in duration: ${requestStreamingDuration}")
+        // println(s"response streaming out duration: ${responseStreamingDuration}")
         val evt                            = GatewayEvent(
           `@id` = env.snowflakeGenerator.nextIdStr(),
           reqId = snowflake,
@@ -3958,6 +3977,8 @@ class ProxyEngine() extends RequestHandler {
             uri = rawRequest.relativeUri
           ),
           backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
+          requestStreamingDuration = requestStreamingDuration,
+          responseStreamingDuration = responseStreamingDuration,
           duration = duration,
           overhead = overhead,
           cbDuration = cbDuration,

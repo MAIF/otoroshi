@@ -12,6 +12,7 @@ import play.api.mvc.RequestHeader
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.Promise
+import scala.concurrent.duration.FiniteDuration
 
 case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[_ <: A], f: JsValue => _ <: A)
 
@@ -30,6 +31,8 @@ object Keys {
   val ExtraAnalyticsDataKey    = TypedKey[JsObject]("otoroshi.plugins.ExtraAnalyticsData")
 
   val CaptureRequestBodyKey         = TypedKey[ByteString]("otoroshi.core.CaptureRequestBody")
+  val RequestStreamDurationKey      = TypedKey[Long]("otoroshi.core.RequestStreamDuration")
+  val ResponseStreamDurationKey     = TypedKey[Long]("otoroshi.core.ResponseStreamDuration")
   val RequestTimestampKey           = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")
   val RequestKey                    = TypedKey[RequestHeader]("otoroshi.core.Request")
   val RequestStartKey               = TypedKey[Long]("otoroshi.core.RequestStart")

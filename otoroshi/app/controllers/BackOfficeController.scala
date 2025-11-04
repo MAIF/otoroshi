@@ -2208,6 +2208,8 @@ class BackOfficeController(
           uri = rawRequest.relativeUri
         ),
         backendDuration = 20L,
+        requestStreamingDuration = 10L,
+        responseStreamingDuration = 20L,
         duration = 30L,
         overhead = 10L,
         cbDuration = 0L,
