@@ -324,7 +324,9 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
       viz = None,
       geolocationInfo = None,
       userAgentInfo = None,
-      extraAnalyticsData = None
+      extraAnalyticsData = None,
+      requestStreamingDuration = -1L,
+      responseStreamingDuration = -1L,
     )
   }
 
