@@ -337,6 +337,7 @@ class InMemoryDataStores(
       case str: String                                                     => ("string", JsString(str))
       case str: ByteString                                                 => ("string", JsString(str.utf8String))
       case lng: Long                                                       => ("string", JsString(lng.toString))
+      case lng: java.util.concurrent.atomic.AtomicLong                     => ("string", JsString(lng.get().toString))
       case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] =>
         ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
       case map: TrieMap[String, ByteString]                                =>
