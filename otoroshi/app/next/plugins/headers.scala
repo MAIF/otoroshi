@@ -10,6 +10,7 @@ import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, RemainingQuotas}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api._
+import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -211,7 +212,42 @@ class HeadersValidation extends NgAccessValidator {
     }
     if (
       validationHeaders.forall { case (key, value) =>
-        headers.get(key).contains(value)
+        //headers.get(key).contains(value)
+        headers.get(key).exists { v =>
+          val expected = value
+          val expectedTrimmed = expected.trim
+          if (expectedTrimmed.startsWith("Regex(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(6).init
+            RegexPool.regex(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("Wildcard(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(9).init
+            RegexPool.apply(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("RegexNot(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(9).init
+            !RegexPool.regex(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("WildcardNot(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(12).init
+            !RegexPool.apply(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("Contains(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(9).init
+            v.contains(contained)
+          } else if (expectedTrimmed.startsWith("ContainsNot(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(12).init
+            !v.contains(contained)
+          } else if (expectedTrimmed.startsWith("Not(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(4).init
+            v != contained
+          } else if (expectedTrimmed.startsWith("ContainedIn(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(12).init
+            contained.split(",").map(_.trim()).contains(v)
+          } else if (expectedTrimmed.startsWith("NotContainedIn(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(15).init
+            val values    = contained.split(",").map(_.trim())
+            !values.contains(v)
+          } else {
+            v == expected
+          }
+        }
       }
     ) {
       NgAccess.NgAllowed.vfuture
