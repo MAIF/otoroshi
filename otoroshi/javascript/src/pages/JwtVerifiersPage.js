@@ -43,7 +43,7 @@ export class JwtVerifiersPage extends Component {
 
       return (
         <PageTitle title={title} {...this.props}>
-          {isEditPage && (
+          {/*isEditPage && (
             <Dropdown>
               <YAMLExportButton value={verifier} entityKind="security.otoroshi.io/JwtVerifier" />
               <JsonExportButton value={verifier} entityKind="security.otoroshi.io/JwtVerifier" />
@@ -65,7 +65,7 @@ export class JwtVerifiersPage extends Component {
               />
             </Dropdown>
           )}
-          {SaveButton}
+          {SaveButton*/}
         </PageTitle>
       );
     });
