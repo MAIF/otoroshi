@@ -2349,6 +2349,7 @@ object ApiKeyHelper {
       case None              =>
         error(Results.BadRequest, "no apikey", "errors.no.api.key", "no apikey detected in the http request".some)
       case Some(apikeyTuple) =>
+        attrs.putIfAbsent(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey -> apikeyTuple)
         validateApikeyTuple(req, apikeyTuple, constraints, service, attrs) match {
           case Left((None, additionalMessage))                                      =>
             error(Results.BadRequest, "invalid apikey", "errors.invalid.api.key", additionalMessage)
