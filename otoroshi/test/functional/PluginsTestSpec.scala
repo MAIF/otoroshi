@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.headers.{Host, HttpCookie, RawHeader, `Content-T
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, PeerClosedConnectionException, TextMessage, WebSocketRequest}
 import akka.http.scaladsl.model.{ContentTypes, HttpHeader, HttpRequest}
 import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.Materializer
+import akka.stream.{Attributes, Materializer}
 import akka.stream.alpakka.s3.AccessStyle.{PathAccessStyle, VirtualHostAccessStyle}
 import akka.stream.alpakka.s3.{ApiVersion, MemoryBufferType, S3Attributes, S3Headers, S3Settings}
 import akka.stream.alpakka.s3.headers.CannedAcl
@@ -3864,40 +3864,42 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           NgPluginInstance(
             plugin = NgPluginHelper.pluginId[S3Backend],
             config = NgPluginInstanceConfig(
-              S3BackendConfig(
-                S3Configuration(
-                  bucket = "foobar2",
-                  endpoint = s"http://$s3Host:$s3Port",
-                  access =  "admin",
-                  secret = "secret123",
-                  key = "",
-                  region = "eu-west-1",
-                  writeEvery = 60000.seconds,
-                  acl = CannedAcl.Private
-                ))
-                .json
-                .as[JsObject]
-            )
+              S3Configuration(
+                bucket = "foobar2",
+                endpoint = s"http://$s3Host:$s3Port",
+                access =  "admin",
+                secret = "secret123",
+                key = "",
+                region = "eu-west-1",
+                writeEvery = 60000.seconds,
+                acl = CannedAcl.Private,
+                pathStyleAccess = true
+              )
+              .json
+              .as[JsObject]
           )
-        ),
-        id = IdGenerator.uuid
+        )),
+        id = IdGenerator.uuid,
+        domain = "s3backend.oto.tools"
       )
 
       def s3Client = {
-        val awsCredentials = StaticCredentialsProvider.create(
-          AwsBasicCredentials.create("admin", "secret123")
-        )
-        val settings       = S3Settings(
+        S3Attributes.settings(S3Settings(
           bufferType = MemoryBufferType,
-          credentialsProvider = awsCredentials,
+          credentialsProvider = StaticCredentialsProvider.create(
+            AwsBasicCredentials.create("admin", "secret123")
+          ),
           s3RegionProvider = new AwsRegionProvider {
             override def getRegion: Region = Region.US_EAST_1
           },
           listBucketApiVersion = ApiVersion.ListBucketVersion2,
         )
           .withEndpointUrl(s"http://$s3Host:$s3Port")
-        S3Attributes.settings(settings)
+          .withAccessStyle(PathAccessStyle)
+        )
       }
+
+      implicit val attrs: Attributes = s3Client
 
       val htmlContent =
         """<!DOCTYPE html>
@@ -3906,16 +3908,19 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           |  <body><h1>Hello from MinIO!</h1></body>
           |</html>""".stripMargin
 
-      S3.makeBucket("foobar2").futureValue
+      S3
+        .makeBucket("foobar2", S3Headers.empty)
+        .futureValue
       S3.putObject("foobar2", "index.html",  Source.single(ByteString(htmlContent)),
         htmlContent.length,
         contentType = ContentTypes.`text/html(UTF-8)`,
         S3Headers.empty)
+        .withAttributes(s3Client)
         .runWith(Sink.headOption)
         .futureValue
 
       val resp2 = ws
-        .url(s"http://127.0.0.1:$port/api/index.html")
+        .url(s"http://127.0.0.1:$port/index.html")
         .withHttpHeaders(
           "Host"         -> route.frontend.domains.head.domain,
         )
