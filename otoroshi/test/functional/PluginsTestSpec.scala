@@ -37,6 +37,7 @@ import play.api.{Configuration, Logger}
 
 import java.util.Base64
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import org.jsoup.Jsoup
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.JsonPathValidator
@@ -44,7 +45,9 @@ import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCrede
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
+import java.net.InetAddress
 import java.nio.file.{Files, Path}
+import java.util
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, Future, Promise}
@@ -86,7 +89,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     def createRequestOtoroshiIORoute(
         plugins: Seq[NgPluginInstance] = Seq.empty,
         domain: String = "plugins.oto.tools",
-        id: String = PLUGINS_ROUTE_ID
+        id: String = PLUGINS_ROUTE_ID,
+        hostname: String = "request.otoroshi.io",
+        root: String = "/"
     ) = {
       val newRoute = NgRoute(
         location = EntityLocation.default,
@@ -109,13 +114,13 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         backend = NgBackend(
           targets = Seq(
             NgTarget(
-              hostname = "request.otoroshi.io",
+              hostname = hostname,
               port = 443,
               id = "request.otoroshi.io.target",
               tls = true
             )
           ),
-          root = "/",
+          root,
           rewrite = false,
           loadBalancing = RoundRobin,
           client = NgClientConfig.default
@@ -3978,6 +3983,75 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .sorted(java.util.Comparator.reverseOrder())
         .forEach(Files.delete)
 
+      deleteOtoroshiRoute(route).futureValue
+    }
+
+    "Context Validator" in {
+      val route = createRequestOtoroshiIORoute(
+         Seq(
+            NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[OverrideHost]
+            ),
+           NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[ApikeyCalls],
+              config = NgPluginInstanceConfig(
+                NgApikeyCallsConfig().json.as[JsObject]
+              )
+            ),
+            NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[ContextValidation],
+              config = NgPluginInstanceConfig(
+                ContextValidationConfig(
+                  validators = Seq(
+                    JsonPathValidator("$.apikey.metadata.foo", JsString("Contains(bar)")),
+                    JsonPathValidator("$.request.headers.foo", JsString("Contains(bar)"))
+                  )
+                )
+                .json
+                .as[JsObject]
+            )
+          )),
+        id = IdGenerator.uuid
+      )
+
+      val apikey = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
+        clientName = "apikey1",
+        authorizedEntities = Seq.empty,
+        metadata = Map("foo" -> "bar")
+      )
+      createOtoroshiApiKey(apikey).futureValue
+
+      apikey.enabled mustBe true
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+          "Otoroshi-Client-Id"     -> apikey.clientId,
+          "Otoroshi-Client-Secret" -> apikey.clientSecret,
+          "foo" -> "bar"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 200
+
+      val resp2 = ws
+        .url(s"http://127.0.0.1:$port")
+        .withHttpHeaders(
+          "Host" -> route.frontend.domains.head.domain,
+          "Otoroshi-Client-Id"     -> apikey.clientId,
+          "Otoroshi-Client-Secret" -> apikey.clientSecret,
+        )
+        .get()
+        .futureValue
+
+      resp2.status mustBe 403
+
+
+      deleteOtoroshiApiKey(apikey).futureValue
       deleteOtoroshiRoute(route).futureValue
     }
   }
