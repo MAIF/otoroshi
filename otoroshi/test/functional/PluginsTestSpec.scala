@@ -2,17 +2,14 @@ package functional
 
 import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.{`Content-Type`, `Set-Cookie`, Host, HttpCookie, RawHeader}
-import akka.http.scaladsl.model.ws.{
-  BinaryMessage,
-  Message,
-  PeerClosedConnectionException,
-  TextMessage,
-  WebSocketRequest
-}
-import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
+import akka.http.scaladsl.model.headers.{Host, HttpCookie, RawHeader, `Content-Type`, `Set-Cookie`}
+import akka.http.scaladsl.model.ws.{BinaryMessage, Message, PeerClosedConnectionException, TextMessage, WebSocketRequest}
+import akka.http.scaladsl.model.{ContentTypes, HttpHeader, HttpRequest}
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
+import akka.stream.alpakka.s3.AccessStyle.{PathAccessStyle, VirtualHostAccessStyle}
+import akka.stream.alpakka.s3.{ApiVersion, MemoryBufferType, S3Attributes, S3Headers, S3Settings}
+import akka.stream.alpakka.s3.headers.CannedAcl
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.ByteString
 import ch.qos.logback.classic.spi.ILoggingEvent
@@ -35,13 +32,17 @@ import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
-import play.api.libs.ws.{DefaultWSCookie, WSRequest}
+import play.api.libs.ws.{DefaultWSCookie, WSAuthScheme, WSRequest}
 import play.api.{Configuration, Logger}
 
 import java.util.Base64
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
+import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.JsonPathValidator
+import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -3836,16 +3837,95 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "S3Backend" in {
       import com.dimafeng.testcontainers.GenericContainer
       import org.testcontainers.containers.wait.strategy.Wait
+      import akka.stream.alpakka.s3.scaladsl.S3
 
-      val s3Container = GenericContainer("scireum/s3-ninja:8.5.0",
-        exposedPorts = Seq(9000, 8000),
-        waitStrategy = Wait.forHttp("/")
+      val s3Container = GenericContainer(
+        dockerImage = "quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z",
+        exposedPorts = Seq(9000, 9001),
+        env = Map(
+          "MINIO_ROOT_USER" -> "admin",
+          "MINIO_ROOT_PASSWORD" -> "secret123"
+        ),
+        command = Seq("server", "/data", "--console-address", ":9001"),
+        waitStrategy = Wait.forHttp("/minio/health/ready").forPort(9000).forStatusCode(200)
       )
       s3Container.start()
 
+      val s3Host = s3Container.host
+      val s3Port = s3Container.mappedPort(9000)
 
+      println(s"S3 endpoint: http://$s3Host:$s3Port")
 
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[S3Backend],
+            config = NgPluginInstanceConfig(
+              S3BackendConfig(
+                S3Configuration(
+                  bucket = "foobar2",
+                  endpoint = s"http://$s3Host:$s3Port",
+                  access =  "admin",
+                  secret = "secret123",
+                  key = "",
+                  region = "eu-west-1",
+                  writeEvery = 60000.seconds,
+                  acl = CannedAcl.Private
+                ))
+                .json
+                .as[JsObject]
+            )
+          )
+        ),
+        id = IdGenerator.uuid
+      )
 
+      def s3Client = {
+        val awsCredentials = StaticCredentialsProvider.create(
+          AwsBasicCredentials.create("admin", "secret123")
+        )
+        val settings       = S3Settings(
+          bufferType = MemoryBufferType,
+          credentialsProvider = awsCredentials,
+          s3RegionProvider = new AwsRegionProvider {
+            override def getRegion: Region = Region.US_EAST_1
+          },
+          listBucketApiVersion = ApiVersion.ListBucketVersion2,
+        )
+          .withEndpointUrl(s"http://$s3Host:$s3Port")
+        S3Attributes.settings(settings)
+      }
+
+      val htmlContent =
+        """<!DOCTYPE html>
+          |<html>
+          |  <head><title>My MinIO Page</title></head>
+          |  <body><h1>Hello from MinIO!</h1></body>
+          |</html>""".stripMargin
+
+      S3.makeBucket("foobar2").futureValue
+      S3.putObject("foobar2", "index.html",  Source.single(ByteString(htmlContent)),
+        htmlContent.length,
+        contentType = ContentTypes.`text/html(UTF-8)`,
+        S3Headers.empty)
+        .runWith(Sink.headOption)
+        .futureValue
+
+      val resp2 = ws
+        .url(s"http://127.0.0.1:$port/api/index.html")
+        .withHttpHeaders(
+          "Host"         -> route.frontend.domains.head.domain,
+        )
+        .get()
+        .futureValue
+
+      resp2.status mustBe 200
+      resp2.body contains "Hello from MinIO" mustBe true
+
+      deleteOtoroshiRoute(route).futureValue
       s3Container.stop()
     }
   }

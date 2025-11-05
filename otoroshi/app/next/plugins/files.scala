@@ -255,7 +255,11 @@ class S3Backend extends NgBackendCall {
     if (ctx.request.method == "GET") {
       val config        = ctx.cachedConfig(internalName)(S3Configuration.format).getOrElse(S3Configuration.default)
       val askedFilePath = ctx.request.path.replace("//", "")
-      val key           = s"${config.key}${askedFilePath}"
+      val key = if (config.key.isEmpty && askedFilePath.startsWith("/")) {
+        askedFilePath.replaceFirst("/", "")
+      } else {
+        s"${config.key}${askedFilePath}"
+      }
       val cacheKey      = s"${ctx.route.id}-${key}"
 
       normalizeKey(key, config).map(_.replace("//", "/")).flatMap { filePath =>
