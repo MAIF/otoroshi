@@ -115,6 +115,7 @@ class StaticBackend extends NgBackendCall {
       val config        = ctx.cachedConfig(internalName)(StaticBackendConfig.format).getOrElse(StaticBackendConfig("/tmp"))
       val askedFilePath = ctx.request.path.replace("//", "")
       val filePath      = fileUtils.normalize(askedFilePath, config.rootPath)
+
       fileCache.getIfPresent(filePath) match {
         case Some((contentType, content)) =>
           inMemoryBodyResponse(200, Map("Content-Type" -> contentType), content).vfuture

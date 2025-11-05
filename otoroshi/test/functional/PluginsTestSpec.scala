@@ -44,6 +44,7 @@ import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCrede
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
+import java.nio.file.{Files, Path}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, Future, Promise}
@@ -3932,6 +3933,52 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).futureValue
       s3Container.stop()
+    }
+
+    "Static backend" in {
+      val tempRoot: Path = Files.createTempDirectory("testRoot")
+
+      val file = tempRoot.resolve("index.html")
+      Files.write(file, "<div>Hello from file system</div>".getBytes())
+
+      Files.exists(file) mustBe true
+      Files.exists(tempRoot) mustBe true
+
+      new String(Files.readAllBytes(file)).contains("Hello from file system") mustBe true
+
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[StaticBackend],
+            config = NgPluginInstanceConfig(
+              StaticBackendConfig(tempRoot.toAbsolutePath.toString)
+              .json
+              .as[JsObject]
+          )
+        )),
+        id = IdGenerator.uuid,
+        domain = "s3backend.oto.tools"
+      )
+
+      val resp2 = ws
+        .url(s"http://127.0.0.1:$port/index.html")
+        .withHttpHeaders(
+          "Host"         -> route.frontend.domains.head.domain,
+        )
+        .get()
+        .futureValue
+
+      resp2.status mustBe 200
+      resp2.body contains "Hello from file system" mustBe true
+
+      Files.walk(tempRoot)
+        .sorted(java.util.Comparator.reverseOrder())
+        .forEach(Files.delete)
+
+      deleteOtoroshiRoute(route).futureValue
     }
   }
 }
