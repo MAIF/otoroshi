@@ -186,6 +186,19 @@ class HeadersValidation extends NgAccessValidator {
   override def core: Boolean                               = true
   override def name: String                                = "Headers validation"
   override def description: Option[String]                 = "This plugin validates the values of incoming request headers".some
+
+  override def documentation: Option[String] = Some(
+    s"""You can use otoroshi expression languages in headers values. You can also use the following validation expressions:
+       |
+       |- Regex(foo[1-9]+bar)
+       |- Wildcard(foo*bar)
+       |- WildcardNot(foo*bar)
+       |- Contains(foo)
+       |- ContainsNot(foo)
+       |- Not(foo)
+       |- ContainedIn(a, b, c)
+       |- NotContainedIn(a, b, c)
+       |""".stripMargin)
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
   override def isAccessAsync: Boolean                      = true
 
