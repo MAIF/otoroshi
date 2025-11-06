@@ -137,6 +137,97 @@ function responseToObject(response) {
   }
 }
 
+class OIDCConfigModal extends Component {
+
+  state = {
+    url: '',
+    trust_all: false,
+    loose: false,
+    trusted_certs: [],
+    client_certs: [],
+  }
+
+  render() {
+    return (
+      <>
+        <div className="modal-body">
+          <Form
+            value={this.state}
+            onChange={(doc) => this.setState({ ...doc })}
+            flow={['url', 'trust_all', 'loose', 'trusted_certs', 'client_certs']}
+            schema={{
+              url: {
+                type: 'string',
+                props: {
+                  label: 'OIDC config. URL'
+                }
+              },
+              trust_all: {
+                type: 'bool',
+                props: {
+                  label: 'TLS trust all'
+                }
+              },
+              loose: {
+                type: 'bool',
+                props: {
+                  label: 'TLS loose'
+                }
+              },
+              client_certs: {
+                type: 'array',
+                props: {
+                  label: 'Client certificates',
+                  placeholder: 'Choose a client certificate',
+                  valuesFrom: '/bo/api/proxy/api/certificates',
+                  transformer: (a) => ({
+                    value: a.id,
+                    label: (
+                      <span>
+                        <span className="badge bg-success" style={{ minWidth: 63 }}>
+                          {a.certType}
+                        </span>{' '}
+                        {a.name} - {a.description}
+                      </span>
+                    ),
+                  }),
+                },
+              },
+              trusted_certs: {
+                type: 'array',
+                props: {
+                  label: 'Trusted certificates',
+                  placeholder: 'Choose a trusted certificate',
+                  valuesFrom: '/bo/api/proxy/api/certificates',
+                  transformer: (a) => ({
+                    value: a.id,
+                    label: (
+                      <span>
+                        <span className="badge bg-success" style={{ minWidth: 63 }}>
+                          {a.certType}
+                        </span>{' '}
+                        {a.name} - {a.description}
+                      </span>
+                    ),
+                  }),
+                },
+              }
+            }}
+          />
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn-success" onClick={e => this.props.ok(this.state)}>
+            Fetch
+          </button>
+        </div>
+      </>
+    );
+  }
+}
+
 export class Oauth2ModuleConfig extends Component {
   state = {
     error: null,
@@ -204,8 +295,16 @@ export class Oauth2ModuleConfig extends Component {
   };
 
   fetchConfig = () => {
-    window.newPrompt('URL of the OIDC config').then((url) => {
-      if (url) {
+    // ici !!!!!
+
+    window.popup('URL of the OIDC config', (ok, cancel) => (
+      <OIDCConfigModal
+        ok={ok}
+        cancel={cancel}
+      />
+    ), { additionalClass: 'modal-xl' }).then((resp) => {
+      if (resp) {
+        console.log(resp)
         return fetch(`/bo/api/oidc/_fetchConfig`, {
           method: 'POST',
           credentials: 'include',
@@ -214,20 +313,45 @@ export class Oauth2ModuleConfig extends Component {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            url,
             id: this.props.value.id,
             name: this.props.value.name,
             desc: this.props.value.desc,
             clientId: this.props.value.clientId,
             clientSecret: this.props.value.clientSecret,
+            ...resp
           }),
         })
-          .then((r) => r.json())
-          .then((config) => {
-            this.props.onChange(config);
-          });
+        .then((r) => r.json())
+        .then((config) => {
+          this.props.onChange(config);
+        });
       }
     });
+
+    // window.newPrompt('URL of the OIDC config').then((url) => {
+    //   if (url) {
+    //     return fetch(`/bo/api/oidc/_fetchConfig`, {
+    //       method: 'POST',
+    //       credentials: 'include',
+    //       headers: {
+    //         Accept: 'application/json',
+    //         'Content-Type': 'application/json',
+    //       },
+    //       body: JSON.stringify({
+    //         url,
+    //         id: this.props.value.id,
+    //         name: this.props.value.name,
+    //         desc: this.props.value.desc,
+    //         clientId: this.props.value.clientId,
+    //         clientSecret: this.props.value.clientSecret,
+    //       }),
+    //     })
+    //       .then((r) => r.json())
+    //       .then((config) => {
+    //         this.props.onChange(config);
+    //       });
+    //   }
+    // });
   };
 
   fetchKeycloakConfig = () => {
@@ -1919,7 +2043,7 @@ export class AuthModuleConfig extends Component {
     //   return <h3>Unknown config type ...</h3>;
     // }
 
-    console.log(this.props.value);
+    // console.log(this.props.value);
 
     return (
       <div>
