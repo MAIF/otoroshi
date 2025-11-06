@@ -111,6 +111,23 @@ All verifiers has the following properties:
 
 No specific values needed. This kind of verifier needs only the two fields `Verify token fields` and `Verify token array value`.
 
+in the `Verify token fields` and `Verify token array value` fields you can use the Otoroshi @ref:[expression language](../topics/expression-language.md)
+
+in the `Verify token fields` you can use the following validation expressions as values
+
+- `Regex(foo[1-9]+bar)`
+- `Wildcard(foo*bar)`
+- `WildcardNot(foo*bar)`
+- `Contains(foo)`
+- `ContainsNot(foo)`
+- `Not(foo)`
+- `ContainedIn(a, b, c)`
+- `NotContainedIn(a, b, c)`
+- `ContainsOneOf(a, b)`
+- `ContainsNotOneOf(a, b)`
+- `ContainsAll(a, b)`
+- `ContainsNotAll(a, b)`
+
 #### Verify and re-sign JWT token
 
 When `Verify and re-sign JWT token` is chosen, the `Re-sign settings` appear. All fields of `Re-sign settings` are the same of the `Token validation` section. The only difference is that the values are used to sign the new token and not to validate the token.
