@@ -227,7 +227,8 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
   ),
-  "com.dimafeng"                    %% "testcontainers-scala-scalatest"             % "0.43.6" % Test
+  "com.dimafeng"                    %% "testcontainers-scala-scalatest"             % "0.43.6" % Test,
+  "com.microsoft.playwright"        % "playwright"                                  % "1.47.0" % Test
   // https://github.com/mvel/mvel
   // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
 )
