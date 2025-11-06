@@ -248,7 +248,7 @@ object BandwidthThrottlingConfig {
     "throttling_quota",
     "group_expr",
     "fail",
-    ""
+    "kind"
   )
   val configSchema = Some(
     Json.obj(
@@ -274,15 +274,16 @@ object BandwidthThrottlingConfig {
         "type"    -> "select",
         "label"   -> "Type",
         "props"   -> Json.obj(
+          "label" -> "Type",
           "ngOptions" -> Json.obj(
             "spread" -> true
+          ),
+          "options" -> Json.arr(
+            Json.obj("value" -> "per_request", "label" -> "Per Request"),
+            Json.obj("value" -> "per_node", "label"    -> "Per Node"),
+            Json.obj("value" -> "per_cluster", "label" -> "Per cluster")
           )
         ),
-        "options" -> Json.arr(
-          Json.obj("value" -> "per_request", "label" -> "Per Request"),
-          Json.obj("value" -> "per_node", "label"    -> "Per Node"),
-          Json.obj("value" -> "per_cluster", "label" -> "Per cluster")
-        )
       )
     )
   )
