@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.6.0-dev",
+    "version" : "17.8.0-dev",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:34401",
+    "url" : "http://otoroshi-api.oto.tools:38095",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -21190,6 +21190,16 @@
         "title" : "Region match",
         "required" : [ "region" ]
       },
+      "apidocumentationplan" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation plan",
+        "required" : [ "raw" ]
+      },
       "samlsignature" : {
         "type" : "object",
         "properties" : {
@@ -21202,6 +21212,53 @@
         },
         "title" : "S a m l signature",
         "required" : [ "algorithm", "canocalizationMethod" ]
+      },
+      "trynode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Try node",
+        "required" : [ "json" ]
+      },
+      "apiconsumer" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "autoValidation" : {
+            "type" : "boolean"
+          },
+          "consumerKind" : {
+            "$ref" : "#/components/schemas/apiconsumerkind"
+          },
+          "settings" : {
+            "$ref" : "#/components/schemas/apiconsumersettings"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/apiconsumerstatus"
+          },
+          "subscriptions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apiconsumersubscriptionref"
+            }
+          }
+        },
+        "title" : "Api consumer",
+        "required" : [ "id", "name", "autoValidation", "consumerKind", "settings", "status", "subscriptions" ]
       },
       "teamaccess" : {
         "type" : "object",
@@ -21245,6 +21302,16 @@
         },
         "title" : "Ng custom timeouts",
         "required" : [ "path", "connectionTimeout", "idleTimeout", "callAndStreamTimeout", "callTimeout", "globalTimeout" ]
+      },
+      "apidocumentationsidebar" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation sidebar",
+        "required" : [ "raw" ]
       },
       "backpressurengoverflowstrategy" : {
         "type" : "object",
@@ -21379,6 +21446,11 @@
         "title" : "Cors settings",
         "required" : [ "enabled", "allowOrigin", "exposeHeaders", "allowHeaders", "allowMethods", "excludedPatterns", "allowCredentials" ]
       },
+      "grpc" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "G r p c"
+      },
       "proxies" : {
         "type" : "object",
         "properties" : {
@@ -21426,6 +21498,11 @@
           }
         },
         "title" : "Sec com headers"
+      },
+      "staging" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Staging"
       },
       "random" : {
         "type" : "object",
@@ -21521,6 +21598,29 @@
       "BulkPatchBody" : {
         "type" : "object",
         "description" : "BulkPatchBody object"
+      },
+      "apiblueprint" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/graphql"
+        }, {
+          "$ref" : "#/components/schemas/http"
+        }, {
+          "$ref" : "#/components/schemas/rest"
+        }, {
+          "$ref" : "#/components/schemas/websocket"
+        }, {
+          "$ref" : "#/components/schemas/grpc"
+        } ]
+      },
+      "apidocumentationsource" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation source",
+        "required" : [ "raw" ]
       },
       "seccomversionv1" : {
         "type" : "object",
@@ -22082,6 +22182,16 @@
         "title" : "Exporter ref",
         "required" : [ "ref", "config" ]
       },
+      "apidocumentationresourceref" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation resource ref",
+        "required" : [ "raw" ]
+      },
       "userright" : {
         "type" : "object",
         "properties" : {
@@ -22165,6 +22275,31 @@
         },
         "title" : "Weighted best response time",
         "required" : [ "ratio" ]
+      },
+      "apiflows" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "consumers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "plugins" : {
+            "$ref" : "#/components/schemas/ngplugins"
+          }
+        },
+        "title" : "Api flows",
+        "required" : [ "id", "name", "consumers", "plugins" ]
       },
       "apis.otoroshi.io.ApiConsumerSubscription" : {
         "type" : "object",
@@ -22310,6 +22445,16 @@
         },
         "title" : "Ng route composition",
         "required" : [ "location", "id", "name", "description", "tags", "metadata", "enabled", "debugFlow", "capture", "exportReporting", "groups", "routes", "client", "plugins" ]
+      },
+      "apidocumentationredirection" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation redirection",
+        "required" : [ "raw" ]
       },
       "oauth1providerget" : {
         "type" : "object",
@@ -22840,6 +22985,11 @@
         "title" : "Ng backend",
         "required" : [ "targets", "root", "rewrite", "loadBalancing", "client" ]
       },
+      "closed" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Closed"
+      },
       "wasmauthmoduleconfig" : {
         "type" : "object",
         "properties" : {
@@ -23268,10 +23418,29 @@
           },
           "saslConfig" : {
             "$ref" : "#/components/schemas/saslconfig"
+          },
+          "properties" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
           }
         },
         "title" : "Kafka config",
         "required" : [ "servers", "sendEvents", "hostValidation", "topic", "mtlsConfig", "securityProtocol" ]
+      },
+      "endnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "End node",
+        "required" : [ "json" ]
       },
       "ngclientconfig" : {
         "type" : "object",
@@ -23321,6 +23490,11 @@
         },
         "title" : "Ng client config",
         "required" : [ "retries", "maxErrors", "retryInitialDelay", "backoffFactor", "connectionTimeout", "idleTimeout", "callAndStreamTimeout", "callTimeout", "globalTimeout", "sampleInterval", "customTimeouts", "cacheConnectionSettings" ]
+      },
+      "rest" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "R e s t"
       },
       "ngcacheconnectionsettings" : {
         "type" : "object",
@@ -23403,6 +23577,11 @@
         "title" : "Simple otoroshi admin",
         "required" : [ "username", "password", "label", "createdAt", "typ", "tags", "metadata", "rights", "location", "adminEntityValidators" ]
       },
+      "published" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Published"
+      },
       "otoroshiadmintype" : {
         "anyOf" : [ {
           "$ref" : "#/components/schemas/otoroshiadmintypesimpleadmin"
@@ -23414,6 +23593,16 @@
         "type" : "object",
         "properties" : { },
         "title" : "Sec com info token version latest"
+      },
+      "whilenode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "While node",
+        "required" : [ "json" ]
       },
       "customtimeouts" : {
         "type" : "object",
@@ -23467,6 +23656,19 @@
         "type" : "object",
         "properties" : { },
         "title" : "Apikey"
+      },
+      "apiconsumersettings" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/apikey"
+        }, {
+          "$ref" : "#/components/schemas/jwt"
+        }, {
+          "$ref" : "#/components/schemas/keyless"
+        }, {
+          "$ref" : "#/components/schemas/mtls"
+        }, {
+          "$ref" : "#/components/schemas/oauth2"
+        } ]
       },
       "proxy.otoroshi.io.Route" : {
         "type" : "object",
@@ -23830,6 +24032,11 @@
         "title" : "Bad responses fault config",
         "required" : [ "ratio", "responses" ]
       },
+      "websocket" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Websocket"
+      },
       "samlcredentials" : {
         "type" : "object",
         "properties" : {
@@ -23874,6 +24081,17 @@
         },
         "title" : "Remote user validator settings",
         "required" : [ "url", "headers", "timeout", "tlsSettings" ]
+      },
+      "apiidentifier" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api identifier",
+        "required" : [ "id" ]
       },
       "autonomous" : {
         "type" : "object",
@@ -24159,6 +24377,11 @@
         "properties" : { },
         "title" : "Best response time"
       },
+      "deprecated" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Deprecated"
+      },
       "restrictions" : {
         "type" : "object",
         "properties" : {
@@ -24215,6 +24438,52 @@
         }, {
           "$ref" : "#/components/schemas/sendgridsettings"
         } ]
+      },
+      "apitesting" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "headerKey" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "headerValue" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api testing",
+        "required" : [ "enabled", "headerKey", "headerValue" ]
+      },
+      "ngclientcredentialtokenendpointconfig" : {
+        "type" : "object",
+        "properties" : {
+          "expiration" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "defaultKeyPair" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "allowedApikeys" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "allowedGroups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Ng client credential token endpoint config",
+        "required" : [ "expiration", "defaultKeyPair", "allowedApikeys", "allowedGroups" ]
       },
       "dataexporterconfigtypecustommetrics" : {
         "type" : "object",
@@ -24432,6 +24701,17 @@
         "title" : "R s a k p algo settings",
         "required" : [ "size", "certId" ]
       },
+      "apiconsumerstatus" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/closed"
+        }, {
+          "$ref" : "#/components/schemas/deprecated"
+        }, {
+          "$ref" : "#/components/schemas/published"
+        }, {
+          "$ref" : "#/components/schemas/staging"
+        } ]
+      },
       "ngminimalroute" : {
         "type" : "object",
         "properties" : {
@@ -24506,6 +24786,24 @@
         "title" : "Index settings interval week",
         "required" : [ "name" ]
       },
+      "apibackendclient" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "client" : {
+            "$ref" : "#/components/schemas/ngclientconfig"
+          }
+        },
+        "title" : "Api backend client",
+        "required" : [ "id", "name", "client" ]
+      },
       "timeunit" : {
         "type" : "object",
         "properties" : { },
@@ -24535,7 +24833,119 @@
       },
       "apis.otoroshi.io.Api" : {
         "type" : "object",
-        "description" : "A resource of kind Api"
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "version" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "versions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "debugFlow" : {
+            "type" : "boolean"
+          },
+          "capture" : {
+            "type" : "boolean"
+          },
+          "exportReporting" : {
+            "type" : "boolean"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "state" : {
+            "$ref" : "#/components/schemas/apistate"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "blueprint" : {
+            "$ref" : "#/components/schemas/apiblueprint"
+          },
+          "routes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apiroute"
+            }
+          },
+          "backends" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apibackend"
+            }
+          },
+          "flows" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apiflows"
+            }
+          },
+          "clients" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apibackendclient"
+            }
+          },
+          "documentation" : {
+            "$ref" : "#/components/schemas/apidocumentation"
+          },
+          "consumers" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apiconsumer"
+            }
+          },
+          "deployments" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apideployment"
+            }
+          },
+          "testing" : {
+            "$ref" : "#/components/schemas/apitesting"
+          }
+        },
+        "title" : "Api",
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "version", "versions", "debugFlow", "capture", "exportReporting", "groups", "state", "enabled", "blueprint", "routes", "backends", "flows", "clients", "consumers", "deployments", "testing" ]
       },
       "httpprotocol" : {
         "type" : "object",
@@ -24547,6 +24957,35 @@
         },
         "title" : "Http protocol",
         "required" : [ "value" ]
+      },
+      "apiroute" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "frontend" : {
+            "$ref" : "#/components/schemas/ngfrontend"
+          },
+          "flowRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "backend" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api route",
+        "required" : [ "id", "enabled", "frontend", "flowRef", "backend" ]
       },
       "foo.extensions.otoroshi.io.Foo" : {
         "type" : "object",
@@ -24704,6 +25143,16 @@
           "$ref" : "#/components/schemas/dataexporterconfigtypeworkflow"
         } ]
       },
+      "breakpointnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Break point node",
+        "required" : [ "json" ]
+      },
       "otoroshiadmintypewebauthnadmin" : {
         "type" : "object",
         "properties" : { },
@@ -24813,6 +25262,16 @@
         }, {
           "$ref" : "#/components/schemas/workflowcallsettings"
         } ]
+      },
+      "jumpnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Jump node",
+        "required" : [ "json" ]
       },
       "security.otoroshi.io.AuthModule" : {
         "anyOf" : [ {
@@ -24941,6 +25400,80 @@
         },
         "title" : "Sign",
         "required" : [ "verificationSettings", "algoSettings" ]
+      },
+      "apidocumentation" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "source" : {
+            "$ref" : "#/components/schemas/apidocumentationsource"
+          },
+          "home" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "logo" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "references" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationresourceref"
+            }
+          },
+          "resources" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationresource"
+            }
+          },
+          "navigation" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationsidebar"
+            }
+          },
+          "redirections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationredirection"
+            }
+          },
+          "footer" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "search" : {
+            "$ref" : "#/components/schemas/apidocumentationsearch"
+          },
+          "banner" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "plans" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationplan"
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Api documentation",
+        "required" : [ "enabled", "home", "logo", "references", "resources", "navigation", "redirections", "search", "plans", "metadata", "tags" ]
       },
       "pausenode" : {
         "type" : "object",
@@ -25167,6 +25700,36 @@
         },
         "title" : "Http listener",
         "required" : [ "location", "id", "name", "description", "tags", "config", "metadata" ]
+      },
+      "apideployment" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "apiRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "owner" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "apiDefinition" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "version" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api deployment",
+        "required" : [ "id", "apiRef", "owner", "at", "apiDefinition", "version" ]
       },
       "maxmindgeolocationsettings" : {
         "type" : "object",
@@ -25808,6 +26371,17 @@
         "title" : "Sni settings",
         "required" : [ "enabled", "forwardIfNoMatch", "forwardsTo" ]
       },
+      "apistate" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/apideprecated"
+        }, {
+          "$ref" : "#/components/schemas/apipublished"
+        }, {
+          "$ref" : "#/components/schemas/apiremoved"
+        }, {
+          "$ref" : "#/components/schemas/apistaging"
+        } ]
+      },
       "seccominfotokenversionlegacy" : {
         "type" : "object",
         "properties" : { },
@@ -25899,6 +26473,11 @@
         "title" : "Default token",
         "required" : [ "strict", "token", "verificationSettings" ]
       },
+      "apideprecated" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api deprecated"
+      },
       "keytype" : {
         "type" : "object",
         "properties" : {
@@ -25954,6 +26533,17 @@
         },
         "title" : "Team",
         "required" : [ "id", "tenant", "name", "description", "tags", "metadata" ]
+      },
+      "apiconsumersubscriptionref" : {
+        "type" : "object",
+        "properties" : {
+          "ref" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api consumer subscription ref",
+        "required" : [ "ref" ]
       },
       "pkceconfig" : {
         "type" : "object",
@@ -26082,10 +26672,49 @@
           },
           "orphans" : {
             "$ref" : "#/components/schemas/orphans"
+          },
+          "notes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/note"
+            }
           }
         },
         "title" : "Workflow",
-        "required" : [ "location", "id", "name", "description", "tags", "metadata", "config", "job", "functions", "testPayload", "orphans" ]
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "config", "job", "functions", "testPayload", "orphans", "notes" ]
+      },
+      "note" : {
+        "type" : "object",
+        "properties" : {
+          "content" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "color" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "titleColor" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "position" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "measured" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "kind" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Note",
+        "required" : [ "content", "color", "titleColor", "position", "measured", "id", "kind" ]
       },
       "ngtarget" : {
         "type" : "object",
@@ -26892,6 +27521,16 @@
         "properties" : { },
         "title" : "Js true"
       },
+      "apidocumentationsearch" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation search",
+        "required" : [ "raw" ]
+      },
       "routeidentifier" : {
         "type" : "object",
         "properties" : {
@@ -27031,6 +27670,16 @@
         },
         "title" : "Error template",
         "required" : [ "location", "serviceId", "name", "description", "metadata", "tags", "template40x", "template50x", "templateBuild", "templateMaintenance", "genericTemplates", "messages" ]
+      },
+      "apidocumentationresource" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation resource",
+        "required" : [ "raw" ]
       },
       "indexsettingsintervalyear" : {
         "type" : "object",
@@ -27417,7 +28066,13 @@
         "anyOf" : [ {
           "$ref" : "#/components/schemas/assignnode"
         }, {
+          "$ref" : "#/components/schemas/asyncnode"
+        }, {
+          "$ref" : "#/components/schemas/breakpointnode"
+        }, {
           "$ref" : "#/components/schemas/callnode"
+        }, {
+          "$ref" : "#/components/schemas/endnode"
         }, {
           "$ref" : "#/components/schemas/errornode"
         }, {
@@ -27429,6 +28084,8 @@
         }, {
           "$ref" : "#/components/schemas/ifthenelsenode"
         }, {
+          "$ref" : "#/components/schemas/jumpnode"
+        }, {
           "$ref" : "#/components/schemas/mapnode"
         }, {
           "$ref" : "#/components/schemas/noopnode"
@@ -27439,9 +28096,13 @@
         }, {
           "$ref" : "#/components/schemas/switchnode"
         }, {
+          "$ref" : "#/components/schemas/trynode"
+        }, {
           "$ref" : "#/components/schemas/valuenode"
         }, {
           "$ref" : "#/components/schemas/waitnode"
+        }, {
+          "$ref" : "#/components/schemas/whilenode"
         }, {
           "$ref" : "#/components/schemas/workflownode"
         } ]
@@ -27571,6 +28232,11 @@
         "properties" : { },
         "title" : "Name i d format kerberos"
       },
+      "apiremoved" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api removed"
+      },
       "servicedescriptoridentifier" : {
         "type" : "object",
         "properties" : {
@@ -27602,19 +28268,8 @@
       },
       "localtime" : {
         "type" : "object",
-        "properties" : {
-          "x$1" : {
-            "type" : "number"
-          },
-          "x$2" : {
-            "type" : "number"
-          },
-          "x$3" : {
-            "type" : "number"
-          }
-        },
-        "title" : "Local time",
-        "required" : [ "x$1", "x$2", "x$3" ]
+        "properties" : { },
+        "title" : "Local time"
       },
       "mappingsettings" : {
         "type" : "object",
@@ -27641,6 +28296,11 @@
         },
         "title" : "Mapping settings",
         "required" : [ "map", "values", "remove" ]
+      },
+      "apipublished" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api published"
       },
       "samlcanocalizationmethodexclusivewithcomments" : {
         "type" : "object",
@@ -28240,6 +28900,11 @@
         "properties" : { },
         "title" : "Data exporter config type custom"
       },
+      "http" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Http"
+      },
       "defaulttemplates" : {
         "type" : "object",
         "properties" : {
@@ -28343,6 +29008,16 @@
         "properties" : { },
         "title" : "Scheduled once"
       },
+      "asyncnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Async node",
+        "required" : [ "json" ]
+      },
       "transform" : {
         "type" : "object",
         "properties" : {
@@ -28383,10 +29058,30 @@
             "items" : {
               "type" : "number"
             }
+          },
+          "blockOnRed" : {
+            "type" : "boolean"
+          },
+          "logicCheck" : {
+            "type" : "boolean"
+          },
+          "healthyRegexChecks" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "unhealthyRegexChecks" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
           }
         },
         "title" : "Health check",
-        "required" : [ "enabled", "url", "timeout", "healthyStatuses", "unhealthyStatuses" ]
+        "required" : [ "enabled", "url", "timeout", "healthyStatuses", "unhealthyStatuses", "blockOnRed", "logicCheck", "healthyRegexChecks", "unhealthyRegexChecks" ]
       },
       "globaljwtverifier" : {
         "type" : "object",
@@ -28465,6 +29160,28 @@
         },
         "title" : "Web authn details",
         "required" : [ "handle", "credentials" ]
+      },
+      "apibackend" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "backend" : {
+            "$ref" : "#/components/schemas/ngbackend"
+          },
+          "client" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api backend",
+        "required" : [ "id", "name", "backend", "client" ]
       },
       "geopositionradius" : {
         "type" : "object",
@@ -28575,6 +29292,10 @@
             "minLength" : 1
           },
           "mechanism" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "jaasConfig" : {
             "type" : "string",
             "minLength" : 1
           }
@@ -28931,6 +29652,48 @@
         "title" : "Chaos config",
         "required" : [ "enabled" ]
       },
+      "nghasclientcertmatchingvalidatorconfig" : {
+        "type" : "object",
+        "properties" : {
+          "serialNumbers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "subjectDNs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "issuerDNs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "regexSubjectDNs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "regexIssuerDNs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Ng has client cert matching validator config",
+        "required" : [ "serialNumbers", "subjectDNs", "issuerDNs", "regexSubjectDNs", "regexIssuerDNs" ]
+      },
       "GlobalConfigImportBody" : {
         "type" : "object",
         "description" : ""
@@ -28990,6 +29753,20 @@
         "properties" : { },
         "title" : "Client auth none"
       },
+      "ngjwtverificationonlyconfig" : {
+        "type" : "object",
+        "properties" : {
+          "verifier" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "failIfAbsent" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "Ng jwt verification only config",
+        "required" : [ "failIfAbsent" ]
+      },
       "proxy.otoroshi.io.Backend" : {
         "type" : "object",
         "properties" : {
@@ -29041,6 +29818,11 @@
         },
         "title" : "Js string",
         "required" : [ "value" ]
+      },
+      "apistaging" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api staging"
       },
       "httplistenerconfig" : {
         "type" : "object",
@@ -29129,6 +29911,8 @@
       },
       "entityidentifier" : {
         "anyOf" : [ {
+          "$ref" : "#/components/schemas/apiidentifier"
+        }, {
           "$ref" : "#/components/schemas/routecompositionidentifier"
         }, {
           "$ref" : "#/components/schemas/routeidentifier"
@@ -29165,6 +29949,11 @@
         },
         "title" : "Switch node",
         "required" : [ "json" ]
+      },
+      "graphql" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Graph q l"
       },
       "preroutingref" : {
         "type" : "object",

@@ -1550,6 +1550,20 @@ This plugin validates the values of incoming request headers
 
 
 
+### Documentation
+
+You can use otoroshi expression languages in headers values. You can also use the following validation expressions:
+
+- Regex(foo[1-9]+bar)
+- Wildcard(foo*bar)
+- WildcardNot(foo*bar)
+- Contains(foo)
+- ContainsNot(foo)
+- Not(foo)
+- ContainedIn(a, b, c)
+- NotContainedIn(a, b, c)
+
+
 
 
 @@@
@@ -5019,6 +5033,39 @@ Remember to properly escape backslashes in JSON.
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexRequestHeadersRewriter }
+
+## Regex request headers rewriter
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RegexRequestHeadersRewriter`
+
+### Description
+
+Rewrites the HTTP request headers using a set of regex rules
+
+
+
+### Default configuration
+
+```json
+{
+  "rules" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexResponseBodyRewriter }
 
 ## Regex response body rewriter
@@ -5086,6 +5133,39 @@ Rewrites the HTTP response body using a set of regex rules, with optional auto-p
 ```
 
 Note: replacement supports backrefs $1, $2, ...
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexResponseHeadersRewriter }
+
+## Regex response headers rewriter
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RegexResponseHeadersRewriter`
+
+### Description
+
+Rewrites the HTTP response headers using a set of regex rules
+
+
+
+### Default configuration
+
+```json
+{
+  "rules" : [ ]
+}
+```
+
 
 
 
@@ -5572,7 +5652,8 @@ This plugin is able to S3 bucket with file content
   "chunkSize" : 8388608,
   "v4auth" : true,
   "writeEvery" : 60000,
-  "acl" : "private"
+  "acl" : "private",
+  "pathStyleAccess" : false
 }
 ```
 
@@ -5902,8 +5983,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-10-31T11:54:20.053Z",
-  "stop" : "2025-11-01T11:54:20.074Z",
+  "start" : "2025-11-06T11:40:38.406Z",
+  "stop" : "2025-11-07T11:40:38.426Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"

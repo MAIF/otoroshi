@@ -574,7 +574,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;username&quot; : null,
-  &quot;passaword&quot; : null,
+  &quot;password&quot; : null,
   &quot;headerName&quot; : &quot;Authorization&quot;,
   &quot;headerValueFormat&quot; : &quot;Basic %s&quot;
 }
@@ -1061,7 +1061,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin can be used to check if a HMAC signature is present and valid in Authorization header.</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;secret&quot; : null
+  &quot;secret&quot; : null,
+  &quot;authorizationHeader&quot; : null
 }
 </code></pre></div><div id="otoroshi.next.plugins.HeadersValidation" class="ng-plugin plugin-hidden pl">
 <h2><a href="#headers-validation" name="headers-validation" class="anchor"><span class="anchor-link"></span></a>Headers validation</h2>
@@ -1077,7 +1078,19 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-json">{
   &quot;headers&quot; : { }
 }
-</code></pre></div><div id="otoroshi.next.plugins.Http3Switch" class="ng-plugin plugin-hidden pl">
+</code></pre>
+<h3><a href="#documentation" name="documentation" class="anchor"><span class="anchor-link"></span></a>Documentation</h3>
+<p>You can use otoroshi expression languages in headers values. You can also use the following validation expressions:</p>
+<ul>
+  <li>Regex(foo[1-9]+bar)</li>
+  <li>Wildcard(foo*bar)</li>
+  <li>WildcardNot(foo*bar)</li>
+  <li>Contains(foo)</li>
+  <li>ContainsNot(foo)</li>
+  <li>Not(foo)</li>
+  <li>ContainedIn(a, b, c)</li>
+  <li>NotContainedIn(a, b, c)</li>
+</ul></div><div id="otoroshi.next.plugins.Http3Switch" class="ng-plugin plugin-hidden pl">
 <h2><a href="#http3-traffic-switch" name="http3-traffic-switch" class="anchor"><span class="anchor-link"></span></a>Http3 traffic switch</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -2205,10 +2218,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.NgSecurityTxt</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin exposes a special route <code>/.well-known/security.txt</code> as proposed at <a href="https://securitytxt.org/">https://securitytxt.org/</a></p>
+<p>This plugin exposes a special route <code>/.well-known/security.txt</code> as defined in RFC 9116 (<a href="https://www.rfc-editor.org/rfc/rfc9116.html">https://www.rfc-editor.org/rfc/rfc9116.html</a>)</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;contact&quot; : &quot;contact@foo.bar&quot;
+  &quot;contact&quot; : [ &quot;contact@foo.bar&quot; ],
+  &quot;auto_expires&quot; : false,
+  &quot;expires_years&quot; : 1
 }
 </code></pre></div><div id="otoroshi.next.plugins.NgServiceQuotas" class="ng-plugin plugin-hidden pl">
 <h2><a href="#public-quotas" name="public-quotas" class="anchor"><span class="anchor-link"></span></a>Public quotas</h2>
@@ -2621,6 +2636,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p><code>cp:otoroshi.next.plugins.PublicPrivatePaths</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
 <p>This plugin allows or forbid request based on path patterns</p>
+<p>Strict mode = restricted access.  Only an API key is accepted.</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;strict&quot; : false,
@@ -2714,7 +2730,21 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>{  &ldquo;plugin&rdquo;: &ldquo;cp:otoroshi.next.plugins.RegexResponseBodyRewriter&rdquo;,  &ldquo;enabled&rdquo;: true,  &ldquo;config&rdquo;: {  &ldquo;content_types&rdquo;: [&ldquo;text/html&rdquo;],  &ldquo;rules&rdquo;: [  { &ldquo;pattern&rdquo;: &ldquo;(?i)https?://example.com&rdquo;, &ldquo;replacement&rdquo;: &ldquo;<a href="https://public.example.com">https://public.example.com</a>&rdquo; }  ],  &ldquo;max_body_size&rdquo;: 1048576  } }</p>
 <p>2) Rewrite paths while keeping captured groups</p>
 <p>{  &ldquo;plugin&rdquo;: &ldquo;cp:otoroshi.next.plugins.RegexResponseBodyRewriter&rdquo;,  &ldquo;enabled&rdquo;: true,  &ldquo;config&rdquo;: {  &ldquo;content_types&rdquo;: [&ldquo;text/html&rdquo;, &ldquo;text/plain&rdquo;],  &ldquo;rules&rdquo;: [  { &ldquo;pattern&rdquo;: &ldquo;href=([&quot;&rsquo;])/v1/(.+?)\1&rdquo;, &ldquo;replacement&rdquo;: &ldquo;href=$1/v2/$2$1&rdquo;, &ldquo;flags&rdquo;: &ldquo;i&rdquo; }  ]  } }</p>
-<p>Note: replacement supports backrefs $1, $2, &hellip; Remember to properly escape backslashes in JSON.</p></div><div id="otoroshi.next.plugins.RegexResponseBodyRewriter" class="ng-plugin plugin-hidden pl">
+<p>Note: replacement supports backrefs $1, $2, &hellip; Remember to properly escape backslashes in JSON.</p></div><div id="otoroshi.next.plugins.RegexRequestHeadersRewriter" class="ng-plugin plugin-hidden pl">
+<h2><a href="#regex-request-headers-rewriter" name="regex-request-headers-rewriter" class="anchor"><span class="anchor-link"></span></a>Regex request headers rewriter</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.RegexRequestHeadersRewriter</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Rewrites the HTTP request headers using a set of regex rules</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;rules&quot; : [ ]
+}
+</code></pre></div><div id="otoroshi.next.plugins.RegexResponseBodyRewriter" class="ng-plugin plugin-hidden pl">
 <h2><a href="#regex-response-body-rewriter" name="regex-response-body-rewriter" class="anchor"><span class="anchor-link"></span></a>Regex response body rewriter</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -2760,7 +2790,21 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   }
 }
 </code></pre>
-<p>Note: replacement supports backrefs $1, $2, &hellip;</p></div><div id="otoroshi.next.plugins.RejectHeaderInTooLong" class="ng-plugin plugin-hidden pl">
+<p>Note: replacement supports backrefs $1, $2, &hellip;</p></div><div id="otoroshi.next.plugins.RegexResponseHeadersRewriter" class="ng-plugin plugin-hidden pl">
+<h2><a href="#regex-response-headers-rewriter" name="regex-response-headers-rewriter" class="anchor"><span class="anchor-link"></span></a>Regex response headers rewriter</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.RegexResponseHeadersRewriter</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Rewrites the HTTP response headers using a set of regex rules</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;rules&quot; : [ ]
+}
+</code></pre></div><div id="otoroshi.next.plugins.RejectHeaderInTooLong" class="ng-plugin plugin-hidden pl">
 <h2><a href="#reject-headers-in-too-long" name="reject-headers-in-too-long" class="anchor"><span class="anchor-link"></span></a>Reject headers in too long</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -2982,7 +3026,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;chunkSize&quot; : 8388608,
   &quot;v4auth&quot; : true,
   &quot;writeEvery&quot; : 60000,
-  &quot;acl&quot; : &quot;private&quot;
+  &quot;acl&quot; : &quot;private&quot;,
+  &quot;pathStyleAccess&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.SOAPAction" class="ng-plugin plugin-hidden pl">
 <h2><a href="#soap-action" name="soap-action" class="anchor"><span class="anchor-link"></span></a>SOAP action</h2>
@@ -3128,8 +3173,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin can split a portion of the traffic to canary backends between two dates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;start&quot; : &quot;2025-09-29T12:42:06.339Z&quot;,
-  &quot;stop&quot; : &quot;2025-09-30T12:42:06.360Z&quot;,
+  &quot;start&quot; : &quot;2025-11-06T11:40:38.406Z&quot;,
+  &quot;stop&quot; : &quot;2025-11-07T11:40:38.426Z&quot;,
   &quot;increment_percent&quot; : 1,
   &quot;targets&quot; : [ ],
   &quot;root&quot; : &quot;/&quot;
@@ -4147,7 +4192,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#read-only-requests" class="header">Read only requests</a></li>
     <li><a href="../plugins/built-in-plugins.html#redirection" class="header">Redirection</a></li>
     <li><a href="../plugins/built-in-plugins.html#regex-request-body-rewriter" class="header">Regex request body rewriter</a></li>
+    <li><a href="../plugins/built-in-plugins.html#regex-request-headers-rewriter" class="header">Regex request headers rewriter</a></li>
     <li><a href="../plugins/built-in-plugins.html#regex-response-body-rewriter" class="header">Regex response body rewriter</a></li>
+    <li><a href="../plugins/built-in-plugins.html#regex-response-headers-rewriter" class="header">Regex response headers rewriter</a></li>
     <li><a href="../plugins/built-in-plugins.html#reject-headers-in-too-long" class="header">Reject headers in too long</a></li>
     <li><a href="../plugins/built-in-plugins.html#reject-headers-out-too-long" class="header">Reject headers out too long</a></li>
     <li><a href="../plugins/built-in-plugins.html#remove-cookies-in" class="header">Remove cookies in</a></li>
