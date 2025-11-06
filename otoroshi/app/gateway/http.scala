@@ -322,6 +322,7 @@ class HttpHandler()(implicit env: Env) {
               backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
               requestStreamingDuration = -1L,
               responseStreamingDuration = -1L,
+              backendResponseStreamingDuration = -1L,
               duration = duration,
               overhead = overhead,
               cbDuration = cbDuration,

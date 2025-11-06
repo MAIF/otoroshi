@@ -32,7 +32,7 @@ object Keys {
 
   val CaptureRequestBodyKey         = TypedKey[ByteString]("otoroshi.core.CaptureRequestBody")
   val RequestStreamDurationKey      = TypedKey[Long]("otoroshi.core.RequestStreamDuration")
-  val ResponseStreamDurationKey     = TypedKey[Long]("otoroshi.core.ResponseStreamDuration")
+  val BackendsResponseStreamDurationKey = TypedKey[Long]("otoroshi.core.BackendResponseStreamDuration")
   val RequestTimestampKey           = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")
   val RequestKey                    = TypedKey[RequestHeader]("otoroshi.core.Request")
   val RequestStartKey               = TypedKey[Long]("otoroshi.core.RequestStart")

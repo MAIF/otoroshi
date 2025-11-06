@@ -327,6 +327,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
       extraAnalyticsData = None,
       requestStreamingDuration = -1L,
       responseStreamingDuration = -1L,
+      backendResponseStreamingDuration = -1L,
     )
   }
 

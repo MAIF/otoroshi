@@ -2222,6 +2222,7 @@ class BackOfficeController(
         backendDuration = 20L,
         requestStreamingDuration = 10L,
         responseStreamingDuration = 20L,
+        backendResponseStreamingDuration = 20L,
         duration = 30L,
         overhead = 10L,
         cbDuration = 0L,

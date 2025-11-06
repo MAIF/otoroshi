@@ -3207,6 +3207,10 @@ class ProxyEngine() extends RequestHandler {
         .stream()
         .map { response =>
           attrs.put(otoroshi.plugins.Keys.BackendDurationKey -> (System.currentTimeMillis() - start))
+          val fbodyStart = System.currentTimeMillis()
+          val fbody = response.bodyAsSource.alsoTo(Sink.onComplete {
+            case _ => attrs.put(otoroshi.plugins.Keys.BackendsResponseStreamDurationKey -> (System.currentTimeMillis() - fbodyStart))
+          })
           val idOpt              = rawRequest.attrs.get(otoroshi.netty.NettyRequestKeys.TrailerHeadersIdKey)
           val hasTrailerHeaders  =
             rawRequest.headers.get("te").contains("trailers") || response.headers.containsIgnoreCase("trailer")
@@ -3234,7 +3238,7 @@ class ProxyEngine() extends RequestHandler {
                 }
               },
               cookies = response.safeCookies(env),
-              body = response.bodyAsSource
+              body = fbody
             ),
             response.some
           )
@@ -3805,6 +3809,7 @@ class ProxyEngine() extends RequestHandler {
         backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
         requestStreamingDuration = -1L,
         responseStreamingDuration = -1L,
+        backendResponseStreamingDuration = -1L,
         duration = duration,
         overhead = overhead,
         cbDuration = cbDuration,
@@ -3891,6 +3896,7 @@ class ProxyEngine() extends RequestHandler {
         val actualDuration: Long           = report.getDurationNow()
         val overhead: Long                 = report.getOverheadNow()
         val requestStreamingDuration: Long = attrs.get(otoroshi.plugins.Keys.RequestStreamDurationKey).getOrElse(-1L)
+        val backendResponseStreamingDuration: Long = attrs.get(otoroshi.plugins.Keys.BackendsResponseStreamDurationKey).getOrElse(-1L)
         val upstreamLatency: Long          = report.getStep("call-backend").map(_.duration).getOrElse(-1L)
         val apiKey                         = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
         val paUsr                          = attrs.get(otoroshi.plugins.Keys.UserKey)
@@ -3979,6 +3985,7 @@ class ProxyEngine() extends RequestHandler {
           backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
           requestStreamingDuration = requestStreamingDuration,
           responseStreamingDuration = responseStreamingDuration,
+          backendResponseStreamingDuration = backendResponseStreamingDuration,
           duration = duration,
           overhead = overhead,
           cbDuration = cbDuration,

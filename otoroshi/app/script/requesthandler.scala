@@ -229,6 +229,7 @@ class ForwardTrafficHandler extends RequestHandler {
               backendDuration = calldur,
               requestStreamingDuration = -1L,
               responseStreamingDuration = -1L,
+              backendResponseStreamingDuration = -1L,
               duration = duration,
               overhead = overhead,
               cbDuration = 0,
