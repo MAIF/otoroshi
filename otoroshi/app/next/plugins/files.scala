@@ -173,10 +173,10 @@ class S3Backend extends NgBackendCall {
       s3RegionProvider = new AwsRegionProvider {
         override def getRegion: Region = Region.of(conf.region)
       },
-      listBucketApiVersion = ApiVersion.ListBucketVersion2,
+      listBucketApiVersion = ApiVersion.ListBucketVersion2
     )
       .withEndpointUrl(conf.endpoint)
-      .withAccessStyle(if(conf.pathStyleAccess) PathAccessStyle else VirtualHostAccessStyle)
+      .withAccessStyle(if (conf.pathStyleAccess) PathAccessStyle else VirtualHostAccessStyle)
     S3Attributes.settings(settings)
   }
 
@@ -256,7 +256,7 @@ class S3Backend extends NgBackendCall {
     if (ctx.request.method == "GET") {
       val config        = ctx.cachedConfig(internalName)(S3Configuration.format).getOrElse(S3Configuration.default)
       val askedFilePath = ctx.request.path.replace("//", "")
-      val key = if (config.key.isEmpty && askedFilePath.startsWith("/")) {
+      val key           = if (config.key.isEmpty && askedFilePath.startsWith("/")) {
         askedFilePath.replaceFirst("/", "")
       } else {
         s"${config.key}${askedFilePath}"

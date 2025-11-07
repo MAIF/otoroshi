@@ -456,13 +456,12 @@ class RegexRequestBodyRewriter extends NgRequestTransformer {
   }
 }
 
-
 case class RegexHeaderReplacementRule(
-                                 name: String,
-                                 pattern: String,
-                                 replacement: String,
-                                 flags: Option[String] = None
-                               )                           {
+    name: String,
+    pattern: String,
+    replacement: String,
+    flags: Option[String] = None
+)                                 {
   def json: JsValue = RegexHeaderReplacementRule.format.writes(this)
 }
 object RegexHeaderReplacementRule {
@@ -480,7 +479,7 @@ object RegexHeaderReplacementRule {
     }
 
     override def writes(o: RegexHeaderReplacementRule): JsValue = Json.obj(
-      "name"     -> o.name,
+      "name"        -> o.name,
       "pattern"     -> o.pattern,
       "replacement" -> o.replacement,
       "flags"       -> o.flags
@@ -489,7 +488,7 @@ object RegexHeaderReplacementRule {
 }
 
 case class RegexHeadersRewriterConfig(
-  rules: Seq[RegexHeaderReplacementRule] = Seq.empty,
+    rules: Seq[RegexHeaderReplacementRule] = Seq.empty
 ) extends NgPluginConfig {
   def json: JsValue = RegexHeadersRewriterConfig.format.writes(this)
 }
@@ -500,13 +499,13 @@ object RegexHeadersRewriterConfig {
 
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "rules"            -> Json.obj(
+      "rules" -> Json.obj(
         "type"   -> "array",
         "label"  -> "Regex rules",
         "array"  -> true,
         "format" -> "form",
         "schema" -> Json.obj(
-          "name" -> Json.obj("type" -> "string", "label" -> "Header name"),
+          "name"        -> Json.obj("type" -> "string", "label" -> "Header name"),
           "pattern"     -> Json
             .obj("type" -> "string", "label" -> "Pattern", "placeholder" -> "href=([\\\"'])/v1/(.+?)\\1"),
           "replacement" -> Json.obj("type" -> "string", "label" -> "Replacement", "placeholder" -> "href=$1/v2/$2$1"),
@@ -531,7 +530,7 @@ object RegexHeadersRewriterConfig {
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: RegexHeadersRewriterConfig): JsValue             = Json.obj(
-      "rules"            -> JsArray(o.rules.map(_.json))
+      "rules" -> JsArray(o.rules.map(_.json))
     )
   }
 }
@@ -567,13 +566,17 @@ class RegexRequestHeadersRewriter extends NgRequestTransformer {
     bits
   }
 
-  private def applyRegexReplacementRules(originalHeaders: Map[String, String], rules: Seq[RegexHeaderReplacementRule], attrs: TypedMap)(implicit env: Env): Map[String, String] = {
+  private def applyRegexReplacementRules(
+      originalHeaders: Map[String, String],
+      rules: Seq[RegexHeaderReplacementRule],
+      attrs: TypedMap
+  )(implicit env: Env): Map[String, String] = {
     var headers = Map.empty[String, String] ++ originalHeaders
     rules.foreach { _rule =>
       val rule = RegexHeaderReplacementRule.format.reads(_rule.json.stringify.evaluateEl(attrs).parseJson).get
       headers.getIgnoreCase(rule.name).foreach { headerValue =>
-        val p: Pattern = Pattern.compile(rule.pattern, flagsBits(rule.flags))
-        val m: Matcher = p.matcher(headerValue)
+        val p: Pattern     = Pattern.compile(rule.pattern, flagsBits(rule.flags))
+        val m: Matcher     = p.matcher(headerValue)
         val newHeaderValue = m.replaceAll(rule.replacement)
         headers += (rule.name -> newHeaderValue)
       }
@@ -582,18 +585,19 @@ class RegexRequestHeadersRewriter extends NgRequestTransformer {
   }
 
   override def transformRequest(
-   ctx: NgTransformerRequestContext
- )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    val conf = ctx
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    val conf       = ctx
       .cachedConfig(internalName)(RegexHeadersRewriterConfig.format)
       .getOrElse(RegexHeadersRewriterConfig())
     val newHeaders = applyRegexReplacementRules(ctx.otoroshiRequest.headers, conf.rules, ctx.attrs)
-    ctx.otoroshiRequest.copy(
-      headers = newHeaders,
-    ).rightf
+    ctx.otoroshiRequest
+      .copy(
+        headers = newHeaders
+      )
+      .rightf
   }
 }
-
 
 class RegexResponseHeadersRewriter extends NgRequestTransformer {
 
@@ -626,13 +630,17 @@ class RegexResponseHeadersRewriter extends NgRequestTransformer {
     bits
   }
 
-  private def applyRegexReplacementRules(originalHeaders: Map[String, String], rules: Seq[RegexHeaderReplacementRule], attrs: TypedMap)(implicit env: Env): Map[String, String] = {
+  private def applyRegexReplacementRules(
+      originalHeaders: Map[String, String],
+      rules: Seq[RegexHeaderReplacementRule],
+      attrs: TypedMap
+  )(implicit env: Env): Map[String, String] = {
     var headers = Map.empty[String, String] ++ originalHeaders
     rules.foreach { _rule =>
       val rule = RegexHeaderReplacementRule.format.reads(_rule.json.stringify.evaluateEl(attrs).parseJson).get
       headers.getIgnoreCase(rule.name).foreach { headerValue =>
-        val p: Pattern = Pattern.compile(rule.pattern, flagsBits(rule.flags))
-        val m: Matcher = p.matcher(headerValue)
+        val p: Pattern     = Pattern.compile(rule.pattern, flagsBits(rule.flags))
+        val m: Matcher     = p.matcher(headerValue)
         val newHeaderValue = m.replaceAll(rule.replacement)
         headers += (rule.name -> newHeaderValue)
       }
@@ -640,13 +648,17 @@ class RegexResponseHeadersRewriter extends NgRequestTransformer {
     headers
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
-    val conf = ctx
+  override def transformResponse(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+    val conf       = ctx
       .cachedConfig(internalName)(RegexHeadersRewriterConfig.format)
       .getOrElse(RegexHeadersRewriterConfig())
     val newHeaders = applyRegexReplacementRules(ctx.otoroshiResponse.headers, conf.rules, ctx.attrs)
-    ctx.otoroshiResponse.copy(
-      headers = newHeaders,
-    ).rightf
+    ctx.otoroshiResponse
+      .copy(
+        headers = newHeaders
+      )
+      .rightf
   }
 }
