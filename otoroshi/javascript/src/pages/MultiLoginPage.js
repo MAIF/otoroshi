@@ -26,21 +26,9 @@ function Provider({ name, link, type }) {
           justifyContent: 'flex-start',
           alignItems: 'center',
           color: '#fff',
-          textTransform: 'uppercase',
           borderRadius: 4,
         }}
       >
-        {/* <div style={{
-        minWidth: 46,
-        minHeight: 46,
-        background: '#fff',
-        color: '#000',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        {name.substring(0, 1)}
-      </div> */}
         <p
           style={{
             margin: 0,
@@ -51,7 +39,7 @@ function Provider({ name, link, type }) {
             // fontSize: '.85rem'
           }}
         >
-          CONTINUE WITH
+          Continue with
         </p>
         <p
           className="m-0"
@@ -69,13 +57,14 @@ function Provider({ name, link, type }) {
 export class MultiLoginPage extends Component {
   getLink = (id) => {
     if (this.props.redirect.length <= 0) {
-      return `/privateapps/generic/login?ref=${id}&route=${this.props.route}`;
+      return `/privateapps/generic/login?ref=${id}&route=${this.props.route}&hash=${this.props.hash}`;
     } else {
-      return `/privateapps/generic/login?ref=${id}&redirect=${this.props.redirect}&route=${this.props.route}`;
+      return `/privateapps/generic/login?ref=${id}&redirect=${btoa(this.props.redirect)}&route=${this.props.route}&hash=${this.props.hash}`;
     }
   };
 
   render() {
+    console.log(JSON.stringify(this.props, null, 4))
     const auths = JSON.parse(this.props.auths);
 
     const { types, ...authenticationModules } = auths;

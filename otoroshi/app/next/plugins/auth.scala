@@ -242,15 +242,20 @@ class MultiAuthModule extends NgAccessValidator {
   }
 
   private def redirectToAuthModule(ctx: NgAccessContext, useEmailPrompt: Boolean)(implicit env: Env) = {
-    val redirect = ctx.request
-      .getQueryString("redirect")
-      .getOrElse(s"${ctx.request.theProtocol}://${ctx.request.theHost}${ctx.request.relativeUri}")
+    val req             = ctx.request
+    val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+    val redirect        =
+              if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect)
+      else baseRedirect
+    val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
+    val descriptorId    = ctx.route.legacy.id
+    val hash            = env.sign(s"route=${descriptorId}&redirect=${encodedRedirect}")
 
     if (useEmailPrompt) {
       NgAccess
         .NgDenied(
           Results.Redirect(
-            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/simple-login?route=${ctx.route.id}&redirect=${redirect}"
+            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/simple-login?route=${ctx.route.id}&redirect=${encodedRedirect}&hash=${hash}"
           )
         )
         .vfuture
@@ -258,7 +263,7 @@ class MultiAuthModule extends NgAccessValidator {
       NgAccess
         .NgDenied(
           Results.Redirect(
-            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/choose-provider?route=${ctx.route.id}&redirect=${redirect}"
+            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/choose-provider?route=${ctx.route.id}&redirect=${encodedRedirect}&hash=${hash}"
           )
         )
         .vfuture

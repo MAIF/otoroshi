@@ -1,4 +1,4 @@
-@(_env: otoroshi.env.Env, redirect: Option[String], route: String)
+@(_env: otoroshi.env.Env, redirect: Option[String], route: String, hash: Option[String])
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,6 +22,7 @@
         <script>
                 Otoroshi.simpleLogin({
                     redirect: '@redirect',
+                    hash: '@hash',
                     route: '@route',
                     otoroshiLogo: '@(_env.otoroshiLogo)'
                 }, document.getElementById("app"));
