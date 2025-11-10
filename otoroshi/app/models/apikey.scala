@@ -2093,7 +2093,6 @@ object ApiKeyHelper {
     attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyKey) match {
       case Some(either) => either
       case None         => {
-        println("there")
         env.datastores.apiKeyDataStore.findAuthorizeKeyForFromCache(apikeyTuple.clientId, service) match {
           case None         => (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
           case Some(apikey) =>
