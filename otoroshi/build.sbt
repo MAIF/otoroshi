@@ -121,7 +121,7 @@ libraryDependencies ++= Seq(
   },
   "org.shredzone.acme4j"             % "acme4j-client"                             % acme4jVersion excludeAll (excludeSlf4jAndJackson: _*),
   "io.lettuce"                       % "lettuce-core"                              % "6.2.2.RELEASE" excludeAll (excludesJackson: _*),
-  "io.vertx"                         % "vertx-pg-client"                           % "4.3.4",
+  "io.vertx"                         % "vertx-pg-client"                           % "4.5.22",
   "com.ongres.scram"                 % "common"                                    % "2.1",
   "com.ongres.scram"                 % "client"                                    % "2.1",
   "com.jayway.jsonpath"              % "json-path"                                 % "2.7.0",
