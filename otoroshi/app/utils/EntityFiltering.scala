@@ -37,7 +37,7 @@ object EntityFiltering {
           val items: Seq[JsValue] = arr.value.filter { elem =>
             filters.forall {
               case (key, value) if key.startsWith("$") && key.contains(".") => {
-                elem.atPath(key).as[JsValue] match {
+                elem.atPath(key).asOpt[JsValue].getOrElse(JsNull) match {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
@@ -54,7 +54,7 @@ object EntityFiltering {
                 }
               }
               case (key, value) if key.contains(".")                        => {
-                elem.at(key).as[JsValue] match {
+                elem.at(key).asOpt[JsValue].getOrElse(JsNull) match {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
@@ -70,7 +70,7 @@ object EntityFiltering {
                 }
               }
               case (key, value) if key.contains("/")                        => {
-                elem.atPointer(key).as[JsValue] match {
+                elem.atPointer(key).asOpt[JsValue].getOrElse(JsNull) match {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
@@ -86,7 +86,7 @@ object EntityFiltering {
                 }
               }
               case (key, value)                                             => {
-                (elem \ key).as[JsValue] match {
+                (elem \ key).asOpt[JsValue].getOrElse(JsNull) match {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
