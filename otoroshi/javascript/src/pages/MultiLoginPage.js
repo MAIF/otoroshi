@@ -64,7 +64,6 @@ export class MultiLoginPage extends Component {
   };
 
   render() {
-    console.log(JSON.stringify(this.props, null, 4))
     const auths = JSON.parse(this.props.auths);
 
     const { types, ...authenticationModules } = auths;
