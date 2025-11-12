@@ -386,7 +386,7 @@ class SecurityHeadersPlugin extends NgRequestTransformer {
   override def multiInstance: Boolean = true
   override def core: Boolean                  = true
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def steps: Seq[NgStep]             = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]             = Seq(NgStep.TransformResponse)
   override def transformsError: Boolean = false
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false
