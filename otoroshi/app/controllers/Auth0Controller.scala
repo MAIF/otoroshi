@@ -101,7 +101,10 @@ class AuthController(
     }
   }
 
-  def withMultiAuthConfig(route: NgRoute, req: RequestHeader, refFromRelayState: Option[String] = None)(
+  def withMultiAuthConfig(route: NgRoute,
+                          req: RequestHeader,
+                          refFromRelayState: Option[String] = None,
+                          refFromState: Option[String] = None)(
       f: AuthModuleConfig => Future[Result]
   ): Future[Result] = {
     lazy val error = Errors.craftResponseResult(
@@ -117,45 +120,40 @@ class AuthController(
     route.plugins.getPluginByClass[MultiAuthModule] match {
       case None             => error
       case Some(authPlugin) => {
-        (req.getQueryString("ref"), refFromRelayState) match {
-          case (Some(ref), _) =>
-            env.proxyState.authModuleAsync(ref).flatMap {
-              case None       => error
-              case Some(auth) => f(auth)
-            }
-          case (_, Some(ref)) =>
-            env.proxyState.authModuleAsync(ref).flatMap {
-              case None       => error
-              case Some(auth) => f(auth)
-            }
-          case (_, _)         =>
-            req.getQueryString("email") match {
-              case None        => error
-              case Some(email) =>
-                NgMultiAuthModuleConfig.format.reads(authPlugin.config.raw) match {
-                  case JsSuccess(config, _) =>
-                    config.usersGroups.value
-                      .find(p =>
-                        p._2
-                          .asOpt[Seq[String]]
-                          .getOrElse(Seq.empty)
-                          .exists(em => RegexPool.theRegex(em).map(e => e.matches(email)).getOrElse(email == em))
-                      ) match {
-                      case Some(auth) =>
-                        env.proxyState.authModuleAsync(auth._1).flatMap {
-                          case None       => error
-                          case Some(auth) => f(auth)
-                        }
-                      case None       =>
-                        logger.error(s"Email does not match any groups")
-                        error
-                    }
-                  case JsError(_)           =>
-                    logger.error(s"Failed to read auth module configuration")
-                    error
-                }
-            }
-        }
+        req.getQueryString("ref") orElse refFromRelayState orElse refFromState match {
+            case Some(ref) =>
+              env.proxyState.authModuleAsync(ref).flatMap {
+                case None       => error
+                case Some(auth) => f(auth)
+              }
+            case None =>
+              req.getQueryString("email") match {
+                case None        => error
+                case Some(email) =>
+                  NgMultiAuthModuleConfig.format.reads(authPlugin.config.raw) match {
+                    case JsSuccess(config, _) =>
+                      config.usersGroups.value
+                        .find(p =>
+                          p._2
+                            .asOpt[Seq[String]]
+                            .getOrElse(Seq.empty)
+                            .exists(em => RegexPool.theRegex(em).map(e => e.matches(email)).getOrElse(email == em))
+                        ) match {
+                        case Some(auth) =>
+                          env.proxyState.authModuleAsync(auth._1).flatMap {
+                            case None       => error
+                            case Some(auth) => f(auth)
+                          }
+                        case None       =>
+                          logger.error(s"Email does not match any groups")
+                          error
+                      }
+                    case JsError(_)           =>
+                      logger.error(s"Failed to read auth module configuration")
+                      error
+                  }
+              }
+          }
       }
     }
   }
@@ -334,7 +332,8 @@ class AuthController(
                 req
                   .getQueryString("redirect")
                   .filter(redirect =>
-                    req.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}"))
+                    req.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")) ||
+                    req.getQueryString("hash").contains(env.sign(s"route=${descriptor.id}&redirect=${redirect}"))
                   )
                   .map(redirectBase64Encoded =>
                     new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
@@ -725,7 +724,7 @@ class AuthController(
         case None       =>
       }
 
-      def processService(serviceId: String) = {
+      def processService(serviceId: String, refFromState: Option[String] = None) = {
         if (logger.isDebugEnabled) logger.debug(s"redirect to service descriptor : $serviceId")
         env.datastores.serviceDescriptorDataStore.findOrRouteById(serviceId).flatMap {
           case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
@@ -786,7 +785,7 @@ class AuthController(
         }
       }
 
-      def processRoute(routeId: String) = {
+      def processRoute(routeId: String, refFromState: Option[String] = None) = {
         if (logger.isDebugEnabled) logger.debug(s"redirect to route : $routeId")
 
         env.proxyState.route(routeId).vfuture.flatMap {
@@ -845,7 +844,7 @@ class AuthController(
             }
           }
           case Some(route) if route.plugins.hasPlugin[MultiAuthModule] && route.id != env.backOfficeDescriptor.id => {
-            withMultiAuthConfig(route, ctx.request, refFromRelayState) { _auth =>
+            withMultiAuthConfig(route, ctx.request, refFromRelayState, refFromState) { _auth =>
               verifyHash(route.id, _auth, ctx.request) {
                 case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
                   val authModule = auth.authModule(ctx.globalConfig).asInstanceOf[BasicAuthModule]
@@ -923,11 +922,12 @@ class AuthController(
         case (_, Some(state))                 =>
           if (logger.isDebugEnabled) logger.debug(s"Received state : $state")
           val unsignedState = decryptState(ctx.request.requestHeader)
+          val refFromState = unsignedState.selectAsOptString("ref")
           (unsignedState \ "descriptor").asOpt[String] match {
             case Some(route) if isRoute    =>
-              processRoute(route).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
+              processRoute(route, refFromState).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
             case Some(service) if !isRoute =>
-              processService(service).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
+              processService(service, refFromState).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
             case _                         =>
               NotFound(otoroshi.views.html.oto.error(s"${if (isRoute) "Route" else "service"} not found", env)).vfuture
           }

@@ -239,9 +239,10 @@ class MultiAuthModule extends NgAccessValidator {
   private def getHashAndRedirectURI(ctx: NgAccessContext)(implicit env: Env) = {
     val req             = ctx.request
     val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
-    val redirect        =
+    val redirect        = {
       if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect)
       else baseRedirect
+    }
     val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
     val descriptorId    = ctx.route.legacy.id
     val hash            = env.sign(s"route=${descriptorId}&redirect=${encodedRedirect}")

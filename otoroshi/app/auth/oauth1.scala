@@ -347,7 +347,8 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
             val redirect    = request
               .getQueryString("redirect")
               .filter(redirect =>
-                request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}"))
+                request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")) ||
+                request.getQueryString("hash").contains(env.sign(s"route=${descriptor.id}&redirect=${redirect}"))
               )
               .map(redirectBase64Encoded =>
                 new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)

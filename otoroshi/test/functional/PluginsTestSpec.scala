@@ -4606,9 +4606,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         "clientId": "otoroshi",
         "name": "otoroshi",
         "description": "otoroshi",
-        "rootUrl": "http://mauth.oto.tools:${port}",
+        "rootUrl": "http://plugins.oto.tools:${port}",
         "adminUrl": "",
-        "baseUrl": "http://mauth.oto.tools:$port",
+        "baseUrl": "http://plugins.oto.tools:$port",
         "surrogateAuthRequired": false,
         "enabled": true,
         "alwaysDisplayInConsole": true,
@@ -4618,7 +4618,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           "http://privateapps.oto.tools:$port/privateapps/generic/callback*"
         ],
         "webOrigins": [
-          "http://mauth.oto.tools:$port",
+          "http://plugins.oto.tools:$port",
           "http://privateapp.oto.toos:$port"
         ],
         "notBefore": 0,
@@ -4729,6 +4729,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           "firstName" -> "Test",
           "lastName" -> "User",
           "enabled" -> true,
+          "emailVerified" -> true,
           "credentials" -> Json.arr(
             Json.obj(
               "type" -> "password",
@@ -4771,7 +4772,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         logoutUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/logout",
         callbackUrl = s"http://privateapps.oto.tools:${port}/privateapps/generic/callback",
         scope = "openid roles phone web-origins profile email acr microprofile-jwt offline_access address",
-        clientSideSessionEnabled = false,
+        clientSideSessionEnabled = true,
+        noWildcardRedirectURI = true,
         userValidators = Seq.empty,
         remoteValidators = Seq.empty,
         tags = Seq.empty,
@@ -4805,7 +4807,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
             "grant_type" -> Seq("password"),
             "client_id" -> Seq("otoroshi"),
             "client_secret" -> Seq("DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr"),
-            "username" -> Seq("testuser"),
+            "username" -> Seq("test@example.com"),
             "password" -> Seq("testpassword")
           )
         )
@@ -4816,12 +4818,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       accessToken.isEmpty mustBe false
 
       val playwright = Playwright.create()
-      val browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false))
+      val browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
       val context = browser.newContext()
-      // context.tracing().start(new Tracing.StartOptions().setScreenshots(true).setSnapshots(true).setSources(true))
       val page = context.newPage()
 
-      println(s"CALLING: http://${route.frontend.domains.head.domain}:$port")
       page.navigate(s"http://${route.frontend.domains.head.domain}:$port")
 
       page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Continue with keycloak")).click()
@@ -4851,8 +4851,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .futureValue
 
       callWithUser.status mustBe 200
-      Json.parse(callWithUser.body).selectAsString("email") mustBe "user@oto.tools"
-      Json.parse(callWithUser.body).selectAsString("name") mustBe "foo"
+      Json.parse(callWithUser.body).selectAsString("email") mustBe "test@example.com"
+      Json.parse(callWithUser.body).selectAsString("name") mustBe "Test User"
 
       val callWithoutCookies = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
         .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
