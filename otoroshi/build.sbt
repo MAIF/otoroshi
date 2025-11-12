@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "17.8.0-dev"
+version := "17.9.0-dev"
 scalaVersion := scalaLangVersion
 
 inThisBuild(
@@ -86,7 +86,7 @@ lazy val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
 libraryDependencies ++= Seq(
   ws,
   filters,
-  "com.softwaremill.macwire"        %% "macros"                                    % "2.5.8" % "provided",
+  "com.softwaremill.macwire"        %% "macros"                                    % "2.5.8"  % "provided",
   "com.typesafe.play"               %% "play-json"                                 % playJsonVersion,
   "com.typesafe.play"               %% "play-json-joda"                            % playJsonVersion,
   "com.github.etaty"                %% "rediscala"                                 % "1.9.0",
@@ -121,7 +121,7 @@ libraryDependencies ++= Seq(
   },
   "org.shredzone.acme4j"             % "acme4j-client"                             % acme4jVersion excludeAll (excludeSlf4jAndJackson: _*),
   "io.lettuce"                       % "lettuce-core"                              % "6.2.2.RELEASE" excludeAll (excludesJackson: _*),
-  "io.vertx"                         % "vertx-pg-client"                           % "4.3.4",
+  "io.vertx"                         % "vertx-pg-client"                           % "4.5.22",
   "com.ongres.scram"                 % "common"                                    % "2.1",
   "com.ongres.scram"                 % "client"                                    % "2.1",
   "com.jayway.jsonpath"              % "json-path"                                 % "2.7.0",
@@ -180,6 +180,7 @@ libraryDependencies ++= Seq(
   "io.azam.ulidj"                    % "ulidj"                                     % "1.0.4",
   "fr.maif"                         %% "wasm4s"                                    % "4.1.2" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                      % "1.16.0",
+  "com.google.auth"                  % "google-auth-library-oauth2-http"           % "1.40.0",
   // included in libs as jitpack is not stable at all
   // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
   //   ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
@@ -213,7 +214,7 @@ libraryDependencies ++= Seq(
   "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.62.Final" classifier "linux-x86_64" classifier "osx-x86_64",
   "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.28.Final",
   // tests
-  "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test,
+  "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0"  % Test,
   "com.networknt"                    % "json-schema-validator"                     % "1.3.0" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
@@ -227,8 +228,8 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
   ),
-  "com.dimafeng"                    %% "testcontainers-scala-scalatest"             % "0.43.6" % Test,
-  "com.microsoft.playwright"        % "playwright"                                  % "1.47.0" % Test
+  "com.dimafeng"                    %% "testcontainers-scala-scalatest"            % "0.43.6" % Test,
+  "com.microsoft.playwright"         % "playwright"                                % "1.47.0" % Test
   // https://github.com/mvel/mvel
   // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
 )

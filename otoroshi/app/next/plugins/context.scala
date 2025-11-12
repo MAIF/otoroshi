@@ -2,7 +2,15 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
+import otoroshi.next.plugins.api.{
+  NgAccess,
+  NgAccessContext,
+  NgAccessValidator,
+  NgPluginCategory,
+  NgPluginConfig,
+  NgPluginVisibility,
+  NgStep
+}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils.{JsonPathValidator, RegexPool}
 import otoroshi.utils.syntax.implicits._
@@ -171,7 +179,7 @@ class ContextValidation extends NgAccessValidator {
     val json           = ctx.json.asObject ++ Json.obj(
       "route" -> ctx.route.json,
       "token" -> token,
-      "req" -> JsonHelpers.requestToJson(ctx.request, ctx.attrs)
+      "req"   -> JsonHelpers.requestToJson(ctx.request, ctx.attrs)
     )
     // java.nio.file.Files.writeString(new java.io.File("./ctx.json").toPath, json.prettify.debugPrintln)
     config.validators

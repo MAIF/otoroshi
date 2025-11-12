@@ -541,7 +541,9 @@ case class JWKSAlgoSettings(
                   JWKSAlgoSettings.cache.put(url, (stop, keys, false))
                   keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
                     case Some(jwk) =>
-                      logger.info(s"jwks call - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}")
+                      logger.info(
+                        s"jwks call - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}"
+                      )
                       algoFromJwk(alg, jwk)
                     case None      =>
                       logger.error(s"jwks call - requested: ${kid}/${alg} - not found")
@@ -549,7 +551,9 @@ case class JWKSAlgoSettings(
                   }
                 }
                 case None         =>
-                  logger.error(s"fetchJWKS - requested: ${kid}/${alg} - response is not a JWKS response, unabled to get keys: ${resp.body}")
+                  logger.error(
+                    s"fetchJWKS - requested: ${kid}/${alg} - response is not a JWKS response, unabled to get keys: ${resp.body}"
+                  )
                   None
               }
             }
@@ -577,7 +581,9 @@ case class JWKSAlgoSettings(
           case Some((stop, keys, false)) if stop > System.currentTimeMillis()  => {
             keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
               case Some(jwk) =>
-                logger.info(s"jwks cache 1 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}")
+                logger.info(
+                  s"jwks cache 1 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}"
+                )
                 FastFuture.successful(algoFromJwk(alg, jwk))
               case None      =>
                 logger.error(s"jwks cache 1 - requested: ${kid}/${alg} - not found")
@@ -588,7 +594,9 @@ case class JWKSAlgoSettings(
           case Some((_, keys, true))                                           => {
             keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
               case Some(jwk) =>
-                logger.info(s"jwks cache 2 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}")
+                logger.info(
+                  s"jwks cache 2 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}"
+                )
                 FastFuture.successful(algoFromJwk(alg, jwk))
               case None      =>
                 logger.error(s"jwks cache 2 - requested: ${kid}/${alg} - not found")
@@ -879,107 +887,159 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
         .require(algorithm)
         .acceptLeeway(10)
     ) {
-      case (a, b) if b._1 == RegisteredClaims.AUDIENCE => a.withAudience(b._2)
-      case (a, b) if b._1 == RegisteredClaims.ISSUER   => a.withIssuer(b._2)
-      case (a, b) if b._1 == RegisteredClaims.JWT_ID   => a.withJWTId(b._2)
-      case (a, b) if b._1 == RegisteredClaims.SUBJECT  => a.withSubject(b._2)
-      case (a, b) if b._2.startsWith("Regex(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        Try(claim.asString()).toOption.filterNot(_ == null) match {
-          case None => false
-          case Some(str) => {
-            val regex = b._2.substring(6).init
-            RegexPool.regex(regex).matches(str)
+      case (a, b) if b._1 == RegisteredClaims.AUDIENCE                          => a.withAudience(b._2)
+      case (a, b) if b._1 == RegisteredClaims.ISSUER                            => a.withIssuer(b._2)
+      case (a, b) if b._1 == RegisteredClaims.JWT_ID                            => a.withJWTId(b._2)
+      case (a, b) if b._1 == RegisteredClaims.SUBJECT                           => a.withSubject(b._2)
+      case (a, b) if b._2.startsWith("Regex(") && b._2.endsWith(")")            =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            Try(claim.asString()).toOption.filterNot(_ == null) match {
+              case None      => false
+              case Some(str) => {
+                val regex = b._2.substring(6).init
+                RegexPool.regex(regex).matches(str)
+              }
+            }
           }
-        }
-      })
-      case (a, b) if b._2.startsWith("Wildcard(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        Try(claim.asString()).toOption.filterNot(_ == null) match {
-          case None => false
-          case Some(v) => {
-            val regex = b._2.substring(9).init
-            RegexPool.apply(regex).matches(v)
+        )
+      case (a, b) if b._2.startsWith("Wildcard(") && b._2.endsWith(")")         =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            Try(claim.asString()).toOption.filterNot(_ == null) match {
+              case None    => false
+              case Some(v) => {
+                val regex = b._2.substring(9).init
+                RegexPool.apply(regex).matches(v)
+              }
+            }
           }
-        }
-      })
-      case (a, b) if b._2.startsWith("RegexNot(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        Try(claim.asString()).toOption.filterNot(_ == null) match {
-          case None => false
-          case Some(v) => {
-            val regex = b._2.substring(9).init
-            !RegexPool.regex(regex).matches(v)
+        )
+      case (a, b) if b._2.startsWith("RegexNot(") && b._2.endsWith(")")         =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            Try(claim.asString()).toOption.filterNot(_ == null) match {
+              case None    => false
+              case Some(v) => {
+                val regex = b._2.substring(9).init
+                !RegexPool.regex(regex).matches(v)
+              }
+            }
           }
-        }
-      })
-      case (a, b) if b._2.startsWith("WildcardNot(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        Try(claim.asString()).toOption.filterNot(_ == null) match {
-          case None => false
-          case Some(v) => {
-            val regex = b._2.substring(12).init
-            !RegexPool.apply(regex).matches(v)
+        )
+      case (a, b) if b._2.startsWith("WildcardNot(") && b._2.endsWith(")")      =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            Try(claim.asString()).toOption.filterNot(_ == null) match {
+              case None    => false
+              case Some(v) => {
+                val regex = b._2.substring(12).init
+                !RegexPool.apply(regex).matches(v)
+              }
+            }
           }
-        }
-      })
-      case (a, b) if b._2.startsWith("Contains(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        val contained = b._2.substring(9).init
-        claim.toString.contains(contained)
-      })
-      case (a, b) if b._2.startsWith("ContainsNot(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        val contained = b._2.substring(9).init
-        !claim.toString.contains(contained)
-      })
-      case (a, b) if b._2.startsWith("ContainsOneOf(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        val contained = b._2.substring(14).init
-        val values = contained.split(",").map(_.trim())
-        val str = claim.toString
-        values.exists(v => str.contains(v))
-      })
-      case (a, b) if b._2.startsWith("ContainsNotOneOf(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        val contained = b._2.substring(17).init
-        val values    = contained.split(",").map(_.trim())
-        val str = claim.toString
-        !values.exists(v => str.contains(v))
-      })
-      case (a, b) if b._2.startsWith("ContainsAll(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        val contained = b._2.substring(12).init
-        val values = contained.split(",").map(_.trim())
-        val str = claim.toString
-        values.forall(v => str.contains(v))
-      })
-      case (a, b) if b._2.startsWith("ContainsNotAll(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        val contained = b._2.substring(15).init
-        val values    = contained.split(",").map(_.trim())
-        val str = claim.toString
-        !values.forall(v => str.contains(v))
-      })
-      case (a, b) if b._2.startsWith("Not(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        Try(claim.asString()).toOption.filterNot(_ == null) match {
-          case None => false
-          case Some(v) => {
-            val contained = b._2.substring(4).init
-            v != contained
+        )
+      case (a, b) if b._2.startsWith("Contains(") && b._2.endsWith(")")         =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            val contained = b._2.substring(9).init
+            claim.toString.contains(contained)
           }
-        }
-      })
-      case (a, b) if b._2.startsWith("NotContainedIn(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        Try(claim.asString()).toOption.filterNot(_ == null) match {
-          case None => false
-          case Some(v) => {
+        )
+      case (a, b) if b._2.startsWith("ContainsNot(") && b._2.endsWith(")")      =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            val contained = b._2.substring(9).init
+            !claim.toString.contains(contained)
+          }
+        )
+      case (a, b) if b._2.startsWith("ContainsOneOf(") && b._2.endsWith(")")    =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            val contained = b._2.substring(14).init
+            val values    = contained.split(",").map(_.trim())
+            val str       = claim.toString
+            values.exists(v => str.contains(v))
+          }
+        )
+      case (a, b) if b._2.startsWith("ContainsNotOneOf(") && b._2.endsWith(")") =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            val contained = b._2.substring(17).init
+            val values    = contained.split(",").map(_.trim())
+            val str       = claim.toString
+            !values.exists(v => str.contains(v))
+          }
+        )
+      case (a, b) if b._2.startsWith("ContainsAll(") && b._2.endsWith(")")      =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            val contained = b._2.substring(12).init
+            val values    = contained.split(",").map(_.trim())
+            val str       = claim.toString
+            values.forall(v => str.contains(v))
+          }
+        )
+      case (a, b) if b._2.startsWith("ContainsNotAll(") && b._2.endsWith(")")   =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
             val contained = b._2.substring(15).init
             val values    = contained.split(",").map(_.trim())
-            !values.contains(v)
+            val str       = claim.toString
+            !values.forall(v => str.contains(v))
           }
-        }
-      })
-      case (a, b) if b._2.startsWith("ContainedIn(") && b._2.endsWith(")")=> a.withClaim(b._1, (claim: Claim, token: DecodedJWT) => {
-        Try(claim.asString()).toOption.filterNot(_ == null) match {
-          case None => false
-          case Some(v) => {
-            val contained = b._2.substring(12).init
-            contained.split(",").map(_.trim()).contains(v)
+        )
+      case (a, b) if b._2.startsWith("Not(") && b._2.endsWith(")")              =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            Try(claim.asString()).toOption.filterNot(_ == null) match {
+              case None    => false
+              case Some(v) => {
+                val contained = b._2.substring(4).init
+                v != contained
+              }
+            }
           }
-        }
-      })
-      case (a, b)                                      => a.withClaim(b._1, b._2)
+        )
+      case (a, b) if b._2.startsWith("NotContainedIn(") && b._2.endsWith(")")   =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            Try(claim.asString()).toOption.filterNot(_ == null) match {
+              case None    => false
+              case Some(v) => {
+                val contained = b._2.substring(15).init
+                val values    = contained.split(",").map(_.trim())
+                !values.contains(v)
+              }
+            }
+          }
+        )
+      case (a, b) if b._2.startsWith("ContainedIn(") && b._2.endsWith(")")      =>
+        a.withClaim(
+          b._1,
+          (claim: Claim, token: DecodedJWT) => {
+            Try(claim.asString()).toOption.filterNot(_ == null) match {
+              case None    => false
+              case Some(v) => {
+                val contained = b._2.substring(12).init
+                contained.split(",").map(_.trim()).contains(v)
+              }
+            }
+          }
+        )
+      case (a, b)                                                               => a.withClaim(b._1, b._2)
     }
     arrayFields.foldLeft(verification)((a, b) => {
       if (b._2.contains(",")) {

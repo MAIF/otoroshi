@@ -342,16 +342,16 @@ case class S3Configuration(
     pathStyleAccess: Boolean = false
 ) extends NgPluginConfig {
   def json: JsValue = Json.obj(
-    "bucket"     -> bucket,
-    "endpoint"   -> endpoint,
-    "region"     -> region,
-    "access"     -> access,
-    "secret"     -> secret,
-    "key"        -> key,
-    "chunkSize"  -> chunkSize,
-    "v4auth"     -> v4auth,
-    "writeEvery" -> writeEvery.toMillis,
-    "acl"        -> acl.value,
+    "bucket"          -> bucket,
+    "endpoint"        -> endpoint,
+    "region"          -> region,
+    "access"          -> access,
+    "secret"          -> secret,
+    "key"             -> key,
+    "chunkSize"       -> chunkSize,
+    "v4auth"          -> v4auth,
+    "writeEvery"      -> writeEvery.toMillis,
+    "acl"             -> acl.value,
     "pathStyleAccess" -> pathStyleAccess
   )
 }

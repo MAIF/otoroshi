@@ -2104,8 +2104,8 @@ object ApiKeyHelper {
                   apikey.some,
                   s"apikey ${apikeyTuple.clientId}' disabled or secret/next.secret does not match".some
                 ).left
-              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if apikey.checkBearer(otoBearer)  => apikey.right
-              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) =>
+              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if apikey.checkBearer(otoBearer) && apikey.enabled => apikey.right
+              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) || !apikey.enabled =>
                 (apikey.some, s"apikey ${apikeyTuple.clientId}' bearer/next.bearer does not match".some).left
               case ApikeyTuple(_, None, Some(jwt), _, _)                                         => {
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")

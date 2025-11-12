@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.8.0] - 2025-11-07
+
+
+https://github.com/MAIF/otoroshi/milestone/127?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.7.0...v17.8.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.8.0
+
+
+### Added 
+
+- Headers validation plugin can use validation expressions (#2304 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support validation expressions in JWT Verifiers (#2305 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- New plugin to rewrite plugin request headers using regex (#2307 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- New plugin to rewrite plugin response headers using regex (#2308 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add informations about streaming durations in GatewayEvents (#2309 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OIDC config. fetch from UI now supports mTLS (#2312 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Make JWT UI like the other UIs (#2310 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- JWKS fetch need to select key by id AND alg (#2302 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Wipe apikey from request doesn't work anymore (#2303 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- When using apikey bearer with custom header name, request is not wiped (#2306 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- File storage is missing some counter values (#2311 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- bandwith plugins kind renderer missing (#2313 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [17.7.0] - 2025-10-31
 
 

@@ -974,16 +974,16 @@ class BackOfficeController(
       import otoroshi.utils.http.Implicits._
 
       import scala.concurrent.duration._
-      val id                  = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
-      val name                = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
-      val desc                = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
-      val clientId            = (ctx.request.body \ "clientId").asOpt[String].getOrElse("client")
-      val clientSecret        = (ctx.request.body \ "clientSecret").asOpt[String].getOrElse("secret")
+      val id           = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
+      val name         = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
+      val desc         = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
+      val clientId     = (ctx.request.body \ "clientId").asOpt[String].getOrElse("client")
+      val clientSecret = (ctx.request.body \ "clientSecret").asOpt[String].getOrElse("secret")
 
-      val trust_all = ctx.request.body.select("trust_all").asOptBoolean.getOrElse(false)
-      val loose = ctx.request.body.select("loose").asOptBoolean.getOrElse(false)
+      val trust_all     = ctx.request.body.select("trust_all").asOptBoolean.getOrElse(false)
+      val loose         = ctx.request.body.select("loose").asOptBoolean.getOrElse(false)
       val trusted_certs = ctx.request.body.select("trusted_certs").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val client_certs = ctx.request.body.select("client_certs").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val client_certs  = ctx.request.body.select("client_certs").asOpt[Seq[String]].getOrElse(Seq.empty)
 
       val sessionCookieValues =
         (ctx.request.body \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
@@ -1012,7 +1012,7 @@ class BackOfficeController(
             trustedCerts = trusted_certs,
             mtls = (client_certs.nonEmpty || trusted_certs.nonEmpty || loose || trust_all),
             loose = loose,
-            trustAll = trust_all,
+            trustAll = trust_all
           )
           env.MtlsWs
             .url(url, tlsConfig)

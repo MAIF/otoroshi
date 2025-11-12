@@ -138,14 +138,13 @@ function responseToObject(response) {
 }
 
 class OIDCConfigModal extends Component {
-
   state = {
     url: '',
     trust_all: false,
     loose: false,
     trusted_certs: [],
     client_certs: [],
-  }
+  };
 
   render() {
     return (
@@ -159,20 +158,20 @@ class OIDCConfigModal extends Component {
               url: {
                 type: 'string',
                 props: {
-                  label: 'OIDC config. URL'
-                }
+                  label: 'OIDC config. URL',
+                },
               },
               trust_all: {
                 type: 'bool',
                 props: {
-                  label: 'TLS trust all'
-                }
+                  label: 'TLS trust all',
+                },
               },
               loose: {
                 type: 'bool',
                 props: {
-                  label: 'TLS loose'
-                }
+                  label: 'TLS loose',
+                },
               },
               client_certs: {
                 type: 'array',
@@ -211,7 +210,7 @@ class OIDCConfigModal extends Component {
                     ),
                   }),
                 },
-              }
+              },
             }}
           />
         </div>
@@ -219,7 +218,11 @@ class OIDCConfigModal extends Component {
           <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
             Cancel
           </button>
-          <button type="button" className="btn btn-success" onClick={e => this.props.ok(this.state)}>
+          <button
+            type="button"
+            className="btn btn-success"
+            onClick={(e) => this.props.ok(this.state)}
+          >
             Fetch
           </button>
         </div>
@@ -297,36 +300,37 @@ export class Oauth2ModuleConfig extends Component {
   fetchConfig = () => {
     // ici !!!!!
 
-    window.popup('URL of the OIDC config', (ok, cancel) => (
-      <OIDCConfigModal
-        ok={ok}
-        cancel={cancel}
-      />
-    ), { additionalClass: 'modal-xl' }).then((resp) => {
-      if (resp) {
-        console.log(resp)
-        return fetch(`/bo/api/oidc/_fetchConfig`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: this.props.value.id,
-            name: this.props.value.name,
-            desc: this.props.value.desc,
-            clientId: this.props.value.clientId,
-            clientSecret: this.props.value.clientSecret,
-            ...resp
-          }),
-        })
-        .then((r) => r.json())
-        .then((config) => {
-          this.props.onChange(config);
-        });
-      }
-    });
+    window
+      .popup(
+        'URL of the OIDC config',
+        (ok, cancel) => <OIDCConfigModal ok={ok} cancel={cancel} />,
+        { additionalClass: 'modal-xl' }
+      )
+      .then((resp) => {
+        if (resp) {
+          console.log(resp);
+          return fetch(`/bo/api/oidc/_fetchConfig`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              id: this.props.value.id,
+              name: this.props.value.name,
+              desc: this.props.value.desc,
+              clientId: this.props.value.clientId,
+              clientSecret: this.props.value.clientSecret,
+              ...resp,
+            }),
+          })
+            .then((r) => r.json())
+            .then((config) => {
+              this.props.onChange(config);
+            });
+        }
+      });
 
     // window.newPrompt('URL of the OIDC config').then((url) => {
     //   if (url) {

@@ -182,12 +182,12 @@ class HeadersValidation extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = true
-  override def name: String                                = "Headers validation"
-  override def description: Option[String]                 = "This plugin validates the values of incoming request headers".some
+  override def multiInstance: Boolean      = true
+  override def core: Boolean               = true
+  override def name: String                = "Headers validation"
+  override def description: Option[String] = "This plugin validates the values of incoming request headers".some
 
-  override def documentation: Option[String] = Some(
+  override def documentation: Option[String]               = Some(
     s"""You can use otoroshi expression languages in headers values. You can also use the following validation expressions:
        |
        |- Regex(foo[1-9]+bar)
@@ -198,7 +198,8 @@ class HeadersValidation extends NgAccessValidator {
        |- Not(foo)
        |- ContainedIn(a, b, c)
        |- NotContainedIn(a, b, c)
-       |""".stripMargin)
+       |""".stripMargin
+  )
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
   override def isAccessAsync: Boolean                      = true
 
@@ -227,7 +228,7 @@ class HeadersValidation extends NgAccessValidator {
       validationHeaders.forall { case (key, value) =>
         //headers.get(key).contains(value)
         headers.get(key).exists { v =>
-          val expected = value
+          val expected        = value
           val expectedTrimmed = expected.trim
           if (expectedTrimmed.startsWith("Regex(") && expectedTrimmed.endsWith(")")) {
             val regex = expected.substring(6).init

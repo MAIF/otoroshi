@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.8.0-dev",
+    "version" : "17.9.0-dev",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:38095",
+    "url" : "http://otoroshi-api.oto.tools:38561",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -28145,10 +28145,13 @@
           },
           "acl" : {
             "$ref" : "#/components/schemas/cannedacl"
+          },
+          "pathStyleAccess" : {
+            "type" : "boolean"
           }
         },
         "title" : "S3 configuration",
-        "required" : [ "bucket", "endpoint", "region", "access", "secret", "key", "chunkSize", "v4auth", "writeEvery", "acl" ]
+        "required" : [ "bucket", "endpoint", "region", "access", "secret", "key", "chunkSize", "v4auth", "writeEvery", "acl", "pathStyleAccess" ]
       },
       "allservicespergroup" : {
         "type" : "object",
@@ -28268,8 +28271,19 @@
       },
       "localtime" : {
         "type" : "object",
-        "properties" : { },
-        "title" : "Local time"
+        "properties" : {
+          "x$1" : {
+            "type" : "number"
+          },
+          "x$2" : {
+            "type" : "number"
+          },
+          "x$3" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Local time",
+        "required" : [ "x$1", "x$2", "x$3" ]
       },
       "mappingsettings" : {
         "type" : "object",
