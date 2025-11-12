@@ -179,15 +179,10 @@ class MultiAuthModule extends NgAccessValidator {
   private val configReads: Reads[NgMultiAuthModuleConfig] = NgMultiAuthModuleConfig.format
 
   override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
-
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
-
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-
   override def multiInstance: Boolean = true
-
   override def core: Boolean = true
-
   override def name: String = "Multi Authentication"
 
   override def description: Option[String] =
@@ -241,21 +236,27 @@ class MultiAuthModule extends NgAccessValidator {
     }
   }
 
-  private def redirectToAuthModule(ctx: NgAccessContext, useEmailPrompt: Boolean)(implicit env: Env) = {
+  private def getHashAndRedirectURI(ctx: NgAccessContext)(implicit env: Env) = {
     val req             = ctx.request
     val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
     val redirect        =
-              if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect)
+      if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect)
       else baseRedirect
     val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
     val descriptorId    = ctx.route.legacy.id
     val hash            = env.sign(s"route=${descriptorId}&redirect=${encodedRedirect}")
 
+    (hash, encodedRedirect)
+  }
+
+  private def redirectToAuthModule(ctx: NgAccessContext, useEmailPrompt: Boolean)(implicit env: Env) = {
+    val (hash, encodedRedirect) = getHashAndRedirectURI(ctx)
+
     if (useEmailPrompt) {
       NgAccess
         .NgDenied(
           Results.Redirect(
-            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/simple-login?route=${ctx.route.id}&redirect=${encodedRedirect}&hash=${hash}"
+            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/simple-login?route=${ctx.route.id}&redirect=$encodedRedirect&hash=$hash"
           )
         )
         .vfuture
@@ -263,7 +264,7 @@ class MultiAuthModule extends NgAccessValidator {
       NgAccess
         .NgDenied(
           Results.Redirect(
-            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/choose-provider?route=${ctx.route.id}&redirect=${encodedRedirect}&hash=${hash}"
+            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/choose-provider?route=${ctx.route.id}&redirect=$encodedRedirect&hash=$hash"
           )
         )
         .vfuture
@@ -294,18 +295,11 @@ class MultiAuthModule extends NgAccessValidator {
             ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> paUsr)
             NgAccess.NgAllowed.vfuture
           case None        => {
-            val req             = ctx.request
-            val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
-            val redirect        =
-              if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect)
-              else baseRedirect
-            val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
-            val descriptorId    = ctx.route.legacy.id
-            val hash            = env.sign(s"desc=${descriptorId}&redirect=${encodedRedirect}")
+            val (hash, encodedRedirect) = getHashAndRedirectURI(ctx)
             val redirectTo      =
               env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                 .confidentialAppLoginPage()
-                .url + s"?desc=${descriptorId}&redirect=${encodedRedirect}&hash=${hash}"
+                .url + s"?route=${ctx.route.id}&redirect=$encodedRedirect&hash=$hash&ref=${authModuleId}"
             if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
             NgAccess
               .NgDenied(

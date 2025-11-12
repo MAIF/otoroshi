@@ -18,6 +18,7 @@ import com.typesafe.config.ConfigFactory
 import functional.Implicits.BetterFuture
 import org.scalatest.BeforeAndAfterAll
 import ch.qos.logback.classic.{Level, Logger => LogbackLogger}
+import com.dimafeng.testcontainers.GenericContainer
 import com.gargoylesoftware.htmlunit.DownloadedContent.InMemory
 import com.microsoft.playwright.options.AriaRole
 import org.joda.time.DateTime
@@ -40,7 +41,8 @@ import play.api.{Configuration, Logger}
 import java.util.Base64
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.jsoup.Jsoup
-import otoroshi.auth.{BasicAuthModule, BasicAuthModuleConfig, BasicAuthUser, RemoteUserValidatorSettings, SessionCookieValues}
+import org.testcontainers.containers.wait.strategy.Wait
+import otoroshi.auth.{BasicAuthModule, BasicAuthModuleConfig, BasicAuthUser, GenericOauth2ModuleConfig, RemoteUserValidatorSettings, SessionCookieValues}
 import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.JsonPathValidator
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
@@ -4441,6 +4443,439 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       deleteOtoroshiApiKey(apikey).futureValue
       deleteAuthModule(moduleConfiguration).futureValue
       deleteOtoroshiRoute(route).futureValue
+    }
+
+    "Multi Authentication - one module" in {
+      import com.microsoft.playwright._
+
+      val moduleConfiguration = BasicAuthModuleConfig(
+        id = "BasicAuthModuleConfig",
+        name = "BasicAuthModuleConfig",
+        desc = "BasicAuthModuleConfig",
+        users = Seq(
+          BasicAuthUser(
+            name = "foo",
+            password = "$2a$10$RtYWagxgvorxpxNIYTi4Be2tU.n8294eHpwle1ad0Tmh7.NiVXOEq",
+            email = "user@oto.tools",
+            tags = Seq.empty,
+            rights = UserRights(rights = Seq
+            (UserRight(
+              tenant = TenantAccess("*", canRead = true, canWrite = true),
+              teams = Seq(TeamAccess("*", canRead = true, canWrite = true))))),
+            adminEntityValidators = Map.empty
+          )
+        ),
+        clientSideSessionEnabled = false,
+        userValidators = Seq.empty,
+        remoteValidators = Seq.empty,
+        tags = Seq.empty,
+        metadata = Map.empty,
+        sessionCookieValues = SessionCookieValues(httpOnly = true, secure = false),
+        location = otoroshi.models.EntityLocation(),
+        allowedUsers = Seq.empty,
+        deniedUsers = Seq.empty
+      )
+      createAuthModule(moduleConfiguration).futureValue
+
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[MultiAuthModule],
+            config = NgPluginInstanceConfig(
+              NgMultiAuthModuleConfig(modules = Seq(moduleConfiguration.id))
+                .json
+                .as[JsObject]
+            )
+          )
+        ),
+        id = IdGenerator.uuid
+      )
+
+      val playwright = Playwright.create()
+      val browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
+      val context = browser.newContext()
+      val page = context.newPage()
+
+      page.navigate(s"http://${route.frontend.domains.head.domain}:$port")
+
+      page.locator("input[name='username']").click()
+      page.locator("input[name='username']").fill("user@oto.tools")
+      page.locator("input[name='password']").click()
+      page.locator("input[name='password']").fill("password")
+      page.fill("input[name='password']", "password")
+      page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Login")).nth(0).click()
+
+      page.content().contains("GET") mustBe true
+
+      val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+        DefaultWSCookie(
+          name = c.name,
+          value = c.value,
+          domain = Option(c.domain),
+          path = Option(c.path).getOrElse("/").some,
+          secure = c.secure,
+          httpOnly = c.httpOnly
+        )
+      }
+
+      val callWithUser = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+        .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
+        .withCookies(wsCookies:_*)
+        .get()
+        .futureValue
+
+      callWithUser.status mustBe 200
+      Json.parse(callWithUser.body).selectAsString("email") mustBe "user@oto.tools"
+      Json.parse(callWithUser.body).selectAsString("name") mustBe "foo"
+
+      val callWithoutCookies = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+        .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
+        .withFollowRedirects(false)
+        .get()
+        .futureValue
+
+      callWithoutCookies.status mustBe 401
+
+      val callWithoutCookies2 = ws.url(s"http://127.0.0.1:$port")
+        .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
+        .withFollowRedirects(false)
+        .get()
+        .futureValue
+
+      callWithoutCookies2.status mustBe 303
+
+      browser.close()
+      playwright.close()
+
+      deleteAuthModule(moduleConfiguration).futureValue
+      deleteOtoroshiRoute(route).futureValue
+    }
+
+    "Multi Authentication - multi modules" in {
+      import com.microsoft.playwright._
+
+      val basicModuleConfiguration = BasicAuthModuleConfig(
+        id = "inmemory",
+        name = "inmemory",
+        desc = "inmemory",
+        users = Seq(
+          BasicAuthUser(
+            name = "foo",
+            password = "$2a$10$RtYWagxgvorxpxNIYTi4Be2tU.n8294eHpwle1ad0Tmh7.NiVXOEq",
+            email = "user@oto.tools",
+            tags = Seq.empty,
+            rights = UserRights(rights = Seq
+            (UserRight(
+              tenant = TenantAccess("*", canRead = true, canWrite = true),
+              teams = Seq(TeamAccess("*", canRead = true, canWrite = true))))),
+            adminEntityValidators = Map.empty
+          )
+        ),
+        clientSideSessionEnabled = false,
+        userValidators = Seq.empty,
+        remoteValidators = Seq.empty,
+        tags = Seq.empty,
+        metadata = Map.empty,
+        sessionCookieValues = SessionCookieValues(httpOnly = true, secure = false),
+        location = otoroshi.models.EntityLocation(),
+        allowedUsers = Seq.empty,
+        deniedUsers = Seq.empty
+      )
+      createAuthModule(basicModuleConfiguration).futureValue
+
+      val keycloakContainer = GenericContainer(
+        dockerImage = "quay.io/keycloak/keycloak:26.4",
+        exposedPorts = Seq(8080),
+        env = Map(
+          "KEYCLOAK_ADMIN" -> "admin",
+          "KEYCLOAK_ADMIN_PASSWORD" -> "admin"
+        ),
+        command = Seq("start-dev"),
+        waitStrategy = Wait.forHttp("/realms/master")
+          .forPort(8080)
+          .forStatusCode(200)
+          .withStartupTimeout(java.time.Duration.ofMinutes(2))
+      )
+      keycloakContainer.start()
+
+      def getKeycloakUrl: String = s"http://${keycloakContainer.host}:${keycloakContainer.mappedPort(8080)}"
+
+      def configureKeycloak(): Future[Unit] = {
+        val clientConfig = s"""{
+        "clientId": "otoroshi",
+        "name": "otoroshi",
+        "description": "otoroshi",
+        "rootUrl": "http://mauth.oto.tools:${port}",
+        "adminUrl": "",
+        "baseUrl": "http://mauth.oto.tools:$port",
+        "surrogateAuthRequired": false,
+        "enabled": true,
+        "alwaysDisplayInConsole": true,
+        "clientAuthenticatorType": "client-secret",
+        "secret": "DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr",
+        "redirectUris": [
+          "http://privateapps.oto.tools:$port/privateapps/generic/callback*"
+        ],
+        "webOrigins": [
+          "http://mauth.oto.tools:$port",
+          "http://privateapp.oto.toos:$port"
+        ],
+        "notBefore": 0,
+        "bearerOnly": false,
+        "consentRequired": false,
+        "standardFlowEnabled": true,
+        "implicitFlowEnabled": false,
+        "directAccessGrantsEnabled": true,
+        "serviceAccountsEnabled": true,
+        "authorizationServicesEnabled": true,
+        "publicClient": false,
+        "frontchannelLogout": true,
+        "protocol": "openid-connect",
+        "attributes": {
+          "oidc.ciba.grant.enabled": "false",
+          "backchannel.logout.session.required": "true",
+          "login_theme": "keycloak",
+          "post.logout.redirect.uris": "http://privateapps.oto.tools:$port/privateapps/generic/logout",
+          "oauth2.device.authorization.grant.enabled": "false",
+          "display.on.consent.screen": "false",
+          "use.jwks.url": "false",
+          "backchannel.logout.revoke.offline.tokens": "false"
+        },
+        "fullScopeAllowed": true,
+        "protocolMappers": [
+          {
+            "name": "Client IP Address",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usersessionmodel-note-mapper",
+            "consentRequired": false,
+            "config": {
+              "user.session.note": "clientAddress",
+              "id.token.claim": "true",
+              "access.token.claim": "true",
+              "claim.name": "clientAddress",
+              "jsonType.label": "String"
+            }
+          },
+          {
+            "name": "Client ID",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usersessionmodel-note-mapper",
+            "consentRequired": false,
+            "config": {
+              "user.session.note": "client_id",
+              "id.token.claim": "true",
+              "access.token.claim": "true",
+              "claim.name": "client_id",
+              "jsonType.label": "String"
+            }
+          },
+          {
+            "name": "Client Host",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usersessionmodel-note-mapper",
+            "consentRequired": false,
+            "config": {
+              "user.session.note": "clientHost",
+              "id.token.claim": "true",
+              "access.token.claim": "true",
+              "claim.name": "clientHost",
+              "jsonType.label": "String"
+            }
+          }
+        ],
+        "defaultClientScopes": [
+          "web-origins",
+          "acr",
+          "roles",
+          "profile",
+          "email"
+        ],
+        "optionalClientScopes": [
+          "address",
+          "phone",
+          "offline_access",
+          "microprofile-jwt"
+        ]
+      }"""
+
+        val tokenResponse = env.Ws.url(
+          s"$getKeycloakUrl/realms/master/protocol/openid-connect/token"
+        ).post(Map(
+            "grant_type" -> "password",
+            "client_id" -> "admin-cli",
+            "username" -> "admin",
+            "password" -> "admin"
+        ))
+          .futureValue
+
+        val adminToken = Json.parse(tokenResponse.body).selectAsString("access_token")
+
+        val createClientResponse = env.Ws
+          .url(s"$getKeycloakUrl/admin/realms/master/clients")
+          .withHttpHeaders(
+            "Authorization" -> s"Bearer $adminToken",
+            "Content-Type" -> "application/json"
+          )
+          .post(clientConfig)
+          .futureValue
+
+        println("✓ Client 'otoroshi' created successfully")
+
+        // Create a test user
+        val userConfig = Json.obj(
+          "username" -> "testuser",
+          "email" -> "test@example.com",
+          "firstName" -> "Test",
+          "lastName" -> "User",
+          "enabled" -> true,
+          "credentials" -> Json.arr(
+            Json.obj(
+              "type" -> "password",
+              "value" -> "testpassword",
+              "temporary" -> false
+            )
+          )
+        )
+
+        val createUserResponse = env.Ws
+          .url(s"$getKeycloakUrl/admin/realms/master/users")
+          .withHttpHeaders(
+            "Authorization" -> s"Bearer $adminToken",
+            "Content-Type" -> "application/json"
+          )
+          .post(userConfig)
+          .futureValue
+
+        println("✓ Test user created: testuser / testpassword")
+
+        Future.successful(())
+      }
+
+      configureKeycloak().futureValue
+
+      val keycloakHost = keycloakContainer.host
+      val keycloakPort = keycloakContainer.mappedPort(8080)
+
+      val oauth2Configuration = GenericOauth2ModuleConfig(
+        id = "keycloak",
+        name = "Keycloak",
+        desc = "Keycloak",
+        clientId = "otoroshi",
+        clientSecret = "DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr",
+        tokenUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/token",
+        authorizeUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/auth",
+        userInfoUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/userinfo",
+        introspectionUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/token/introspect",
+        loginUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/auth",
+        logoutUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/logout",
+        callbackUrl = s"http://privateapps.oto.tools:${port}/privateapps/generic/callback",
+        scope = "openid roles phone web-origins profile email acr microprofile-jwt offline_access address",
+        clientSideSessionEnabled = false,
+        userValidators = Seq.empty,
+        remoteValidators = Seq.empty,
+        tags = Seq.empty,
+        metadata = Map.empty,
+        sessionCookieValues = SessionCookieValues(httpOnly = true, secure = false),
+        location = otoroshi.models.EntityLocation(),
+        allowedUsers = Seq.empty,
+        deniedUsers = Seq.empty
+      )
+      createAuthModule(oauth2Configuration).futureValue
+
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[MultiAuthModule],
+            config = NgPluginInstanceConfig(
+              NgMultiAuthModuleConfig(modules = Seq(basicModuleConfiguration.id, oauth2Configuration.id))
+                .json
+                .as[JsObject]
+            )
+          )
+        ),
+        id = IdGenerator.uuid
+      )
+
+      val response = env.Ws
+        .url(s"$getKeycloakUrl/realms/master/protocol/openid-connect/token")
+        .post(
+          Map(
+            "grant_type" -> Seq("password"),
+            "client_id" -> Seq("otoroshi"),
+            "client_secret" -> Seq("DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr"),
+            "username" -> Seq("testuser"),
+            "password" -> Seq("testpassword")
+          )
+        )
+        .futureValue
+
+      response.status mustBe 200
+      val accessToken = Json.parse(response.body).selectAsString("access_token")
+      accessToken.isEmpty mustBe false
+
+      val playwright = Playwright.create()
+      val browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false))
+      val context = browser.newContext()
+      // context.tracing().start(new Tracing.StartOptions().setScreenshots(true).setSnapshots(true).setSources(true))
+      val page = context.newPage()
+
+      println(s"CALLING: http://${route.frontend.domains.head.domain}:$port")
+      page.navigate(s"http://${route.frontend.domains.head.domain}:$port")
+
+      page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Continue with keycloak")).click()
+      page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Username or email")).click()
+      page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Username or email")).fill("testuser")
+      page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Username or email")).press("Tab")
+      page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Password")).fill("testpassword")
+      page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Sign In")).click()
+
+      page.content().contains("GET") mustBe true
+
+      val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+        DefaultWSCookie(
+          name = c.name,
+          value = c.value,
+          domain = Option(c.domain),
+          path = Option(c.path).getOrElse("/").some,
+          secure = c.secure,
+          httpOnly = c.httpOnly
+        )
+      }
+
+      val callWithUser = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+        .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
+        .withCookies(wsCookies:_*)
+        .get()
+        .futureValue
+
+      callWithUser.status mustBe 200
+      Json.parse(callWithUser.body).selectAsString("email") mustBe "user@oto.tools"
+      Json.parse(callWithUser.body).selectAsString("name") mustBe "foo"
+
+      val callWithoutCookies = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+        .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
+        .withFollowRedirects(false)
+        .get()
+        .futureValue
+
+      callWithoutCookies.status mustBe 401
+
+      val callWithoutCookies2 = ws.url(s"http://127.0.0.1:$port")
+        .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
+        .withFollowRedirects(false)
+        .get()
+        .futureValue
+
+      callWithoutCookies2.status mustBe 303
+
+      browser.close()
+      playwright.close()
+
+      deleteAuthModule(basicModuleConfiguration).futureValue
+      deleteOtoroshiRoute(route).futureValue
+      keycloakContainer.stop()
     }
   }
 }

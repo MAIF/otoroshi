@@ -321,7 +321,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         encryptState(
           Json.obj(
             "descriptor" -> descriptor.id,
-            "hash"       -> hash
+            "hash"       -> hash,
+            "ref"        -> authConfig.id // TODO - send ref and read it in callback
           )
         )
       else ""
