@@ -7,9 +7,9 @@ export class SimpleLoginPage extends Component {
 
   getLink = (email) => {
     if (this.props.redirect.length <= 0) {
-      return `/privateapps/generic/login?route=${this.props.route}&email=${email}`;
+      return `/privateapps/generic/login?route=${this.props.route}&email=${email}&hash=${this.props.hash}`;
     } else {
-      return `/privateapps/generic/login?redirect=${this.props.redirect}&route=${this.props.route}&email=${email}`;
+      return `/privateapps/generic/login?redirect=${btoa(this.props.redirect)}&route=${this.props.route}&email=${email}&hash=${this.props.hash}`;
     }
   };
 
