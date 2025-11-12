@@ -167,8 +167,10 @@ object NgMultiAuthModuleConfig {
     }
 
     override def writes(o: NgMultiAuthModuleConfig): JsValue = Json.obj(
-      "pass_with_apikey" -> o.passWithApikey,
-      "auth_modules"     -> o.modules
+      "pass_with_apikey"  -> o.passWithApikey,
+      "auth_modules"      -> o.modules,
+      "use_email_prompt"  -> o.useEmailPrompt,
+      "users_groups"      -> o.usersGroups,
     )
   }
 }
