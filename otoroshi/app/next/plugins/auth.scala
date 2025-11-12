@@ -713,6 +713,14 @@ class SimpleBasicAuth extends NgAccessValidator {
   override def configFlow: Seq[String]        = SimpleBasicAuthConfig.configFlow
   override def configSchema: Option[JsObject] = SimpleBasicAuthConfig.configSchema
 
+  private def safeCheckPassword(password: String, hashed: String): Boolean = {
+  try {
+    BCrypt.checkpw(password, hashed)
+  } catch {
+    case _: IllegalArgumentException => false
+  }
+}
+
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config                = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads).getOrElse(SimpleBasicAuthConfig())
     val globalUsers           = env.datastores.globalConfigDataStore
@@ -733,9 +741,9 @@ class SimpleBasicAuth extends NgAccessValidator {
       val username = parts.head
       val password = parts.tail.mkString(":")
       (config.users ++ globalUsers).get(username) match {
-        case Some(pwd) if password == pwd               => NgAccess.NgAllowed.vfuture
-        case Some(pwd) if BCrypt.checkpw(password, pwd) => NgAccess.NgAllowed.vfuture
-        case _                                          => {
+        case Some(pwd) if password == pwd                   => NgAccess.NgAllowed.vfuture
+        case Some(pwd) if safeCheckPassword(password, pwd)  => NgAccess.NgAllowed.vfuture
+        case _                                              => {
           NgAccess
             .NgDenied(
               Results

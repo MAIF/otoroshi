@@ -41,7 +41,7 @@ import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, Bett
 import play.api.http.Status
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
-import play.api.libs.ws.{DefaultWSCookie, WSRequest}
+import play.api.libs.ws.{DefaultWSCookie, WSAuthScheme, WSRequest}
 import play.api.{Configuration, Logger}
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
@@ -6258,6 +6258,49 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(route).futureValue
       keycloakContainer.stop()
+    }
+
+    "Basic Auth" in {
+      def createRoute() = {
+        createRequestOtoroshiIORoute(
+          Seq(
+            NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
+            NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[SimpleBasicAuth],
+              config = NgPluginInstanceConfig(
+                SimpleBasicAuthConfig(
+                 users = Map("foo"-> "bar")
+                )
+                  .json
+                  .as[JsObject]
+              )
+            )
+          ),
+          id = IdGenerator.uuid
+        )
+      }
+
+      def verify(route: NgRoute): Unit = {
+        val resp = ws.url(s"http://127.0.0.1:$port")
+          .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
+          .get()
+          .futureValue
+
+        resp.status mustBe 401
+
+        val callWithUser = ws.url(s"http://127.0.0.1:$port")
+          .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
+          .withAuth("foo", "bar", WSAuthScheme.BASIC)
+          .get()
+          .futureValue
+
+        callWithUser.status mustBe 200
+      }
+
+      val route = createRoute()
+      verify(route)
+
+      deleteOtoroshiRoute(route).futureValue
     }
   }
 }
