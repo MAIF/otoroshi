@@ -3,6 +3,7 @@ package otoroshi.next.plugins
 import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
+import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
@@ -137,5 +138,192 @@ class NgSecurityTxt extends NgRequestTransformer {
       }
       case (_, _)                               => Right(ctx.otoroshiRequest).future
     }
+  }
+}
+
+sealed trait FrameOptions {
+  def json: JsValue
+}
+object FrameOptions {
+  case object DENY extends FrameOptions { def json: JsValue = JsString("DENY") }
+  case object SAMEORIGIN extends FrameOptions { def json: JsValue = JsString("SAMEORIGIN") }
+  case object DISABLED extends FrameOptions { def json: JsValue = JsString("DISABLED") }
+  def fromString(s: String): FrameOptions = s.toUpperCase match {
+    case "DENY" => DENY
+    case "SAMEORIGIN" => SAMEORIGIN
+    case _ => DISABLED
+  }
+}
+
+sealed trait XssProtection{
+  def json: JsValue
+}
+object XssProtection {
+  case object OFF extends XssProtection { def json: JsValue = JsString("OFF")}
+  case object ON extends XssProtection { def json: JsValue = JsString("ON")}
+  case object BLOCK extends XssProtection { def json: JsValue = JsString("BLOCK")}
+  case object DISABLED extends XssProtection { def json: JsValue = JsString("DISABLED")}
+  def fromString(s: String): XssProtection = s.toUpperCase match {
+    case "OFF" => OFF
+    case "ON" => ON
+    case "BLOCK" => BLOCK
+    case _ => DISABLED
+  }
+}
+
+sealed trait CspMode {
+  def json: JsValue
+}
+object CspMode {
+  case object ENABLED extends CspMode { def json: JsValue = JsString("ENABLED")}
+  case object REPORT_ONLY extends CspMode { def json: JsValue = JsString("REPORT_ONLY")}
+  case object DISABLED extends CspMode { def json: JsValue = JsString("DISABLED")}
+  def fromString(s: String): CspMode = s.toUpperCase match {
+    case "ENABLED" => ENABLED
+    case "REPORT_ONLY" => REPORT_ONLY
+    case _ => DISABLED
+  }
+}
+
+
+final case class HstsConf(
+  enabled: Boolean,
+  includeSubdomains: Boolean,
+  maxAge: Long,
+  preload: Boolean,
+  onHttp: Boolean
+) {
+  def json: JsValue = HstsConf.format.writes(this)
+}
+
+object HstsConf {
+  val format = new Format[HstsConf] {
+    override def reads(json: JsValue): JsResult[HstsConf] = {
+      for {
+        enabled <- (json \ "enabled").validate[Boolean]
+        includeSubdomains <- (json \ "include_subdomains").validate[Boolean]
+        maxAge <- (json \ "max_age").validate[Long]
+        preload <- (json \ "preload").validate[Boolean]
+        onHttp <- (json \ "on_http").validate[Boolean]
+      } yield HstsConf(enabled, includeSubdomains, maxAge, preload, onHttp)
+    }
+    
+    override def writes(o: HstsConf): JsValue = Json.obj(
+      "enabled" -> o.enabled,
+      "include_subdomains" -> o.includeSubdomains,
+      "max_age" -> o.maxAge,
+      "preload" -> o.preload,
+      "on_http" -> o.onHttp
+    )
+  }
+}
+
+
+final case class CspConf(mode: CspMode, csp: String) {
+  def json: JsValue = CspConf.format.writes(this)
+}
+
+object CspConf {
+  val format = new Format[CspConf] {
+    override def reads(json: JsValue): JsResult[CspConf] = Try {
+      CspConf(
+        CspMode.fromString((json \ "mode").as[String]),
+        (json \ "csp").as[String]
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    
+    override def writes(o: CspConf): JsValue = Json.obj(
+      "mode" -> o.mode.json,
+      "csp" -> o.csp
+    )
+  }
+}
+
+object SecurityHeadersPluginConfig {
+  val default = SecurityHeadersPluginConfig(
+    FrameOptions.DISABLED,
+    XssProtection.DISABLED,
+    false,
+    HstsConf(false, false, 31536000L, false, false),
+    CspConf(CspMode.DISABLED, "")
+  )
+  val format = new Format[SecurityHeadersPluginConfig] {
+
+    override def reads(json: JsValue): JsResult[SecurityHeadersPluginConfig] = Try {
+      SecurityHeadersPluginConfig(
+        frameOptions = FrameOptions.fromString((json \ "frame_options").as[String]),
+        xssProtection = XssProtection.fromString((json \ "xss_protection").as[String]),
+        contentTypeOptions = (json \ "content_type_options").as[Boolean],
+        hsts = json.select("hsts").asOpt[JsObject].flatMap(o => HstsConf.format.reads(o).asOpt).getOrElse(SecurityHeadersPluginConfig.default.hsts),
+        csp = json.select("csp").asOpt[JsObject].flatMap(o => CspConf.format.reads(o).asOpt).getOrElse(SecurityHeadersPluginConfig.default.csp),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+
+    override def writes(o: SecurityHeadersPluginConfig): JsValue = Json.obj(
+      "frame_options" -> o.frameOptions.json,
+      "xss_protection" -> o.xssProtection.json,
+      "content_type_options" -> o.contentTypeOptions,
+    )
+  }
+}
+
+case class SecurityHeadersPluginConfig(
+  frameOptions: FrameOptions,
+  xssProtection: XssProtection,
+  contentTypeOptions: Boolean,
+  hsts: HstsConf,
+  csp: CspConf
+) extends NgPluginConfig {
+  def json: JsValue = SecurityHeadersPluginConfig.format.writes(this)
+}
+
+class SecurityHeadersPlugin extends NgRequestTransformer {
+  override def name: String = "Security Headers"
+  override def description: Option[String] = Some("Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options)")
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security)
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(SecurityHeadersPluginConfig.default)
+  override def multiInstance: Boolean = true
+  override def core: Boolean                  = true
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def steps: Seq[NgStep]             = Seq(NgStep.TransformRequest)
+  override def transformsError: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def noJsForm: Boolean = true
+
+  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+    val conf  = ctx.cachedConfig(internalName)(SecurityHeadersPluginConfig.format).getOrElse(SecurityHeadersPluginConfig.default)
+    val initial = ctx.otoroshiResponse.headers
+    val withXfo = conf.frameOptions match {
+      case FrameOptions.DENY => initial + ("X-Frame-Options" -> "DENY")
+      case FrameOptions.SAMEORIGIN => initial + ("X-Frame-Options" -> "SAMEORIGIN")
+      case FrameOptions.DISABLED => initial - "X-Frame-Options"
+    }
+    val withXss = conf.xssProtection match {
+      case XssProtection.OFF => withXfo + ("X-XSS-Protection" -> "0")
+      case XssProtection.ON => withXfo + ("X-XSS-Protection" -> "1")
+      case XssProtection.BLOCK => withXfo + ("X-XSS-Protection" -> "1; mode=block")
+      case XssProtection.DISABLED => withXfo - "X-XSS-Protection"
+    }
+    val withNosniff = if (conf.contentTypeOptions) withXss + ("X-Content-Type-Options" -> "nosniff") else withXss - "X-Content-Type-Options"
+    val isHttps = ctx.request.theSecured
+    val withHsts = if (conf.hsts.enabled && (isHttps || conf.hsts.onHttp)) {
+      val base = s"max-age=${conf.hsts.maxAge}"
+      val sub = if (conf.hsts.includeSubdomains) "; includeSubDomains" else ""
+      val preload= if (conf.hsts.preload) "; preload" else ""
+      withNosniff + ("Strict-Transport-Security" -> (base + sub + preload))
+    } else withNosniff - "Strict-Transport-Security"
+    val finalHeaders = conf.csp.mode match {
+      case CspMode.DISABLED => withHsts - "Content-Security-Policy" - "Content-Security-Policy-Report-Only"
+      case CspMode.ENABLED => withHsts + ("Content-Security-Policy" -> conf.csp.csp.trim)
+      case CspMode.REPORT_ONLY => withHsts + ("Content-Security-Policy-Report-Only" -> conf.csp.csp.trim)
+    }
+    ctx.otoroshiResponse.copy(headers = finalHeaders).rightf
   }
 }
