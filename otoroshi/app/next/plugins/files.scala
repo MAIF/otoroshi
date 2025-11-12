@@ -220,11 +220,14 @@ class S3Backend extends NgBackendCall {
       ec: ExecutionContext,
       mat: Materializer
   ): Future[String] = {
-    val keyWithIndex = s"$key/index.html"
-
-    fileExists(key, config).flatMap {
-      case true  => key.vfuture
-      case false => keyWithIndex.vfuture
+    if (key.endsWith("/")) {
+      val keyWithIndex = s"$key/index.html"
+      fileExists(key, config).flatMap {
+        case false  => key.vfuture
+        case true => keyWithIndex.vfuture
+      }
+    } else {
+      key.vfuture
     }
   }
 
