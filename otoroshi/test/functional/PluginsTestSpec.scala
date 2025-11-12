@@ -5947,6 +5947,209 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         println("✓ Client 'otoroshi' created successfully")
       }
 
+      def configureKeycloak(keycloakUrl: String): Future[Unit] = {
+        val adminToken = getAdminToken(keycloakUrl)
+        val clientConfig = getClientConfig()
+        createKeycloakClient(keycloakUrl, adminToken, clientConfig)
+        Future.successful(())
+      }
+
+      def createRoute(keycloakPort: Int) = {
+        createRequestOtoroshiIORoute(
+          Seq(
+            NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
+            NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[OAuth2Caller],
+              config = NgPluginInstanceConfig(
+                OAuth2CallerConfig(
+                  kind        = OAuth2Kind.ClientCredentials,
+                  url         = s"http://localhost:$keycloakPort/realms/master/protocol/openid-connect/token",
+                  method      = "POST",
+                  headerName  = "Authorization",
+                  headerValueFormat   = "Bearer %s",
+                  jsonPayload         = false,
+                  clientId            = "otoroshi",
+                  clientSecret        = "DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr",
+                  scope               = Some("openid profile email"),
+                  audience            = None,
+                  user                = None,
+                  password            = None,
+                  cacheTokenSeconds   = (10L * 60L).seconds,
+                  tlsConfig           = MtlsConfig()
+                )
+                  .json
+                  .as[JsObject]
+              )
+            )
+          ),
+          id = IdGenerator.uuid
+        )
+      }
+
+      def verify(route: NgRoute): Unit = {
+        val resp = ws.url(s"http://127.0.0.1:$port")
+          .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
+          .get()
+          .futureValue
+
+        resp.status mustBe 200
+        resp.body.contains("GET") mustBe true
+      }
+
+      val keycloakContainer = startKeycloakContainer()
+      val keycloakUrl = getKeycloakUrl(keycloakContainer)
+      configureKeycloak(keycloakUrl).futureValue
+
+      val route = createRoute(keycloakContainer.mappedPort(8080))
+      verify(route)
+
+      deleteOtoroshiRoute(route).futureValue
+      keycloakContainer.stop()
+    }
+
+    "OAuth2 caller - password flow" in {
+      def startKeycloakContainer(): GenericContainer = {
+        val keycloakContainer = GenericContainer(
+          dockerImage = "quay.io/keycloak/keycloak:26.4",
+          exposedPorts = Seq(8080),
+          env = Map(
+            "KEYCLOAK_ADMIN" -> "admin",
+            "KEYCLOAK_ADMIN_PASSWORD" -> "admin"
+          ),
+          command = Seq("start-dev"),
+          waitStrategy = Wait.forHttp("/realms/master")
+            .forPort(8080)
+            .forStatusCode(200)
+            .withStartupTimeout(java.time.Duration.ofMinutes(2))
+        )
+        keycloakContainer.start()
+        keycloakContainer
+      }
+
+      def getKeycloakUrl(container: GenericContainer): String =
+        s"http://${container.host}:${container.mappedPort(8080)}"
+
+      def getClientConfig(): String = s"""{
+        "clientId": "otoroshi",
+        "name": "otoroshi",
+        "description": "otoroshi",
+        "rootUrl": "http://plugins.oto.tools:${port}",
+        "adminUrl": "",
+        "baseUrl": "http://plugins.oto.tools:$port",
+        "surrogateAuthRequired": false,
+        "enabled": true,
+        "alwaysDisplayInConsole": true,
+        "clientAuthenticatorType": "client-secret",
+        "secret": "DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr",
+        "redirectUris": [
+          "http://privateapps.oto.tools:$port/privateapps/generic/callback*"
+        ],
+        "webOrigins": [
+          "http://plugins.oto.tools:$port",
+          "http://privateapp.oto.toos:$port"
+        ],
+        "notBefore": 0,
+        "bearerOnly": false,
+        "consentRequired": false,
+        "standardFlowEnabled": true,
+        "implicitFlowEnabled": false,
+        "directAccessGrantsEnabled": true,
+        "serviceAccountsEnabled": true,
+        "authorizationServicesEnabled": true,
+        "publicClient": false,
+        "frontchannelLogout": true,
+        "protocol": "openid-connect",
+        "attributes": {
+          "oidc.ciba.grant.enabled": "false",
+          "backchannel.logout.session.required": "true",
+          "login_theme": "keycloak",
+          "post.logout.redirect.uris": "http://privateapps.oto.tools:$port/privateapps/generic/logout",
+          "oauth2.device.authorization.grant.enabled": "false",
+          "display.on.consent.screen": "false",
+          "use.jwks.url": "false",
+          "backchannel.logout.revoke.offline.tokens": "false"
+        },
+        "fullScopeAllowed": true,
+        "protocolMappers": [
+          {
+            "name": "Client IP Address",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usersessionmodel-note-mapper",
+            "consentRequired": false,
+            "config": {
+              "user.session.note": "clientAddress",
+              "id.token.claim": "true",
+              "access.token.claim": "true",
+              "claim.name": "clientAddress",
+              "jsonType.label": "String"
+            }
+          },
+          {
+            "name": "Client ID",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usersessionmodel-note-mapper",
+            "consentRequired": false,
+            "config": {
+              "user.session.note": "client_id",
+              "id.token.claim": "true",
+              "access.token.claim": "true",
+              "claim.name": "client_id",
+              "jsonType.label": "String"
+            }
+          },
+          {
+            "name": "Client Host",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usersessionmodel-note-mapper",
+            "consentRequired": false,
+            "config": {
+              "user.session.note": "clientHost",
+              "id.token.claim": "true",
+              "access.token.claim": "true",
+              "claim.name": "clientHost",
+              "jsonType.label": "String"
+            }
+          }
+        ],
+        "defaultClientScopes": [
+          "web-origins",
+          "acr",
+          "roles",
+          "profile",
+          "email"
+        ],
+        "optionalClientScopes": [
+          "address",
+          "phone",
+          "offline_access",
+          "microprofile-jwt"
+        ]
+      }"""
+
+      def getAdminToken(keycloakUrl: String): String = {
+        val tokenResponse = env.Ws.url(
+          s"$keycloakUrl/realms/master/protocol/openid-connect/token"
+        ).post(Map(
+            "grant_type" -> "password",
+            "client_id" -> "admin-cli",
+            "username" -> "admin",
+            "password" -> "admin"
+        )).futureValue
+        Json.parse(tokenResponse.body).selectAsString("access_token")
+      }
+
+      def createKeycloakClient(keycloakUrl: String, adminToken: String, clientConfig: String): Unit = {
+        val createClientResponse = env.Ws
+          .url(s"$keycloakUrl/admin/realms/master/clients")
+          .withHttpHeaders(
+            "Authorization" -> s"Bearer $adminToken",
+            "Content-Type" -> "application/json"
+          )
+          .post(clientConfig)
+          .futureValue
+        println("✓ Client 'otoroshi' created successfully")
+      }
+
       def createKeycloakUser(keycloakUrl: String, adminToken: String): Unit = {
         val userConfig = Json.obj(
           "username" -> "testuser",
@@ -5991,7 +6194,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
               plugin = NgPluginHelper.pluginId[OAuth2Caller],
               config = NgPluginInstanceConfig(
                 OAuth2CallerConfig(
-                  kind        = OAuth2Kind.ClientCredentials,
+                  kind        = OAuth2Kind.Password,
                   url         = s"http://localhost:$keycloakPort/realms/master/protocol/openid-connect/token",
                   method      = "POST",
                   headerName  = "Authorization",
@@ -6001,8 +6204,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
                   clientSecret        = "DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr",
                   scope               = Some("openid profile email"),
                   audience            = None,
-                  user                = None,
-                  password            = None,
+                  user                = "test@example.com".some,
+                  password            = "testpassword".some,
                   cacheTokenSeconds   = (10L * 60L).seconds,
                   tlsConfig           = MtlsConfig()
                 )
