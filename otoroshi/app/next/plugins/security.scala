@@ -8,8 +8,8 @@ import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
-import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{ZoneId, ZonedDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util._
 
@@ -198,14 +198,17 @@ final case class HstsConf(
 
 object HstsConf {
   val format = new Format[HstsConf] {
-    override def reads(json: JsValue): JsResult[HstsConf] = {
-      for {
-        enabled <- (json \ "enabled").validate[Boolean]
-        includeSubdomains <- (json \ "include_subdomains").validate[Boolean]
-        maxAge <- (json \ "max_age").validate[Long]
-        preload <- (json \ "preload").validate[Boolean]
-        onHttp <- (json \ "on_http").validate[Boolean]
-      } yield HstsConf(enabled, includeSubdomains, maxAge, preload, onHttp)
+    override def reads(json: JsValue): JsResult[HstsConf] = Try {
+      HstsConf(
+        enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+        includeSubdomains = (json \ "include_subdomains").asOpt[Boolean].getOrElse(false),
+        maxAge = (json \ "max_age").asOpt[Long].getOrElse(3600L),
+        preload = (json \ "preload").asOpt[Boolean].getOrElse(false),
+        onHttp = (json \ "on_http").asOpt[Boolean].getOrElse(false),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
     }
     
     override def writes(o: HstsConf): JsValue = Json.obj(
@@ -243,6 +246,97 @@ object CspConf {
 }
 
 object SecurityHeadersPluginConfig {
+  val configFlow: Seq[String] = Seq(
+    "frame_options",
+    "xss_protection",
+    "content_type_options",
+    "hsts",
+    "csp",
+  )
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "frame_options" -> Json.obj(
+        "type"  -> "select",
+        "label" -> s"X-Frame-Options",
+        "props" -> Json.obj(
+          "options" -> Json.arr(
+            Json.obj("label" -> "DENY", "value" -> "DENY"),
+            Json.obj("label" -> "SAMEORIGIN", "value"   -> "SAMEORIGIN"),
+            Json.obj("label" -> "DISABLED", "value"   -> "DISABLED"),
+          )
+        )
+      ),
+      "xss_protection" -> Json.obj(
+        "type"  -> "select",
+        "label" -> s"X-XSS-Protection",
+        "props" -> Json.obj(
+          "options" -> Json.arr(
+            Json.obj("label" -> "OFF", "value" -> "OFF"),
+            Json.obj("label" -> "ON", "value"   -> "ON"),
+            Json.obj("label" -> "BLOCK", "value"   -> "BLOCK"),
+            Json.obj("label" -> "DISABLED", "value"   -> "DISABLED"),
+          )
+        )
+      ),
+      "content_type_options" -> Json.obj(
+        "type" -> "bool",
+        "label" -> s"X-Content-Type-Options",
+      ),
+      "csp" -> Json.obj(
+        "label" -> "Content Security Policy",
+        "type" -> "form",
+        "collapsable" -> true,
+        "collapsed" -> true,
+        "schema" -> Json.obj(
+          "mode" -> Json.obj(
+            "type"  -> "select",
+            "label" -> s"Content-Security-Policy Mode",
+            "props" -> Json.obj(
+              "options" -> Json.arr(
+                Json.obj("label" -> "REPORT_ONLY", "value"   -> "REPORT_ONLY"),
+                Json.obj("label" -> "ENABLED", "value"   -> "ENABLED"),
+                Json.obj("label" -> "DISABLED", "value"   -> "DISABLED"),
+              )
+            )
+          ),
+          "csp" -> Json.obj(
+            "type"  -> "string",
+            "label" -> s"Content-Security-Policy",
+          ),
+        ),
+        "flow" -> Json.arr("mode", "csp"),
+      ),
+      "hsts" -> Json.obj(
+        "label" -> "HTTP Strict Transport Security",
+        "type" -> "form",
+        "collapsable" -> true,
+        "collapsed" -> true,
+        "schema" -> Json.obj(
+          "enabled" -> Json.obj(
+            "type" -> "bool",
+            "label" -> "Enabled",
+          ),
+          "include_subdomains" -> Json.obj(
+            "type" -> "bool",
+            "label" -> "Include Subdomains",
+          ),
+          "max_age" -> Json.obj(
+            "type" -> "number",
+            "label" -> "Max Age",
+          ),
+          "preload" -> Json.obj(
+            "type" -> "bool",
+            "label" -> "Preload",
+          ),
+          "on_http" -> Json.obj(
+            "type" -> "bool",
+            "label" -> "On HTTP",
+          ),
+        ),
+        "flow" -> Json.arr("enabled", "include_subdomains", "max_age", "preload", "on_http"),
+      )
+    )
+  )
   val default = SecurityHeadersPluginConfig(
     FrameOptions.DISABLED,
     XssProtection.DISABLED,
@@ -284,6 +378,7 @@ case class SecurityHeadersPluginConfig(
 }
 
 class SecurityHeadersPlugin extends NgRequestTransformer {
+
   override def name: String = "Security Headers"
   override def description: Option[String] = Some("Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options)")
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security)
@@ -296,6 +391,8 @@ class SecurityHeadersPlugin extends NgRequestTransformer {
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false
   override def noJsForm: Boolean = true
+  override def configFlow: Seq[String] = SecurityHeadersPluginConfig.configFlow
+  override def configSchema: Option[JsObject] = SecurityHeadersPluginConfig.configSchema
 
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val conf  = ctx.cachedConfig(internalName)(SecurityHeadersPluginConfig.format).getOrElse(SecurityHeadersPluginConfig.default)
