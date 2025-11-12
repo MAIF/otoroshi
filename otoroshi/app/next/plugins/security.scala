@@ -338,11 +338,11 @@ object SecurityHeadersPluginConfig {
     )
   )
   val default = SecurityHeadersPluginConfig(
-    FrameOptions.DISABLED,
-    XssProtection.DISABLED,
-    false,
-    HstsConf(false, false, 31536000L, false, false),
-    CspConf(CspMode.DISABLED, "")
+    frameOptions = FrameOptions.DISABLED,
+    xssProtection = XssProtection.DISABLED,
+    contentTypeOptions = false,
+    hsts = HstsConf(false, false, 3600L, false, false),
+    csp = CspConf(CspMode.DISABLED, "")
   )
   val format = new Format[SecurityHeadersPluginConfig] {
 
@@ -363,6 +363,8 @@ object SecurityHeadersPluginConfig {
       "frame_options" -> o.frameOptions.json,
       "xss_protection" -> o.xssProtection.json,
       "content_type_options" -> o.contentTypeOptions,
+      "hsts" -> o.hsts.json,
+      "csp" -> o.csp.json,
     )
   }
 }
@@ -384,12 +386,12 @@ class SecurityHeadersPlugin extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security)
   override def defaultConfigObject: Option[NgPluginConfig] = Some(SecurityHeadersPluginConfig.default)
   override def multiInstance: Boolean = true
-  override def core: Boolean                  = true
+  override def core: Boolean = true
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def steps: Seq[NgStep]             = Seq(NgStep.TransformResponse)
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
   override def transformsError: Boolean = false
-  override def transformsRequest: Boolean = true
-  override def transformsResponse: Boolean = false
+  override def transformsRequest: Boolean = false
+  override def transformsResponse: Boolean = true
   override def noJsForm: Boolean = true
   override def configFlow: Seq[String] = SecurityHeadersPluginConfig.configFlow
   override def configSchema: Option[JsObject] = SecurityHeadersPluginConfig.configSchema

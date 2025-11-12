@@ -19,6 +19,7 @@ import com.dimafeng.testcontainers.GenericContainer
 import com.microsoft.playwright.options.AriaRole
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import org.joda.time.{DateTime, LocalTime}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertLongToGrainOfTime
@@ -28,6 +29,7 @@ import org.testcontainers.containers.wait.strategy.Wait
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, GenericOauth2ModuleConfig, SessionCookieValues}
 import otoroshi.models._
 import otoroshi.next.models._
+import otoroshi.next.plugins.CspMode.ENABLED
 import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
 import otoroshi.next.plugins._
 import otoroshi.plugins.authcallers.OAuth2Kind
@@ -6368,6 +6370,120 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       deleteOtoroshiRoute(basicAuthRoute).futureValue
       deleteOtoroshiRoute(callerRouter).futureValue
+    }
+
+    "Time Restricted Access Plugin" in {
+      val dnow = DateTime.now()
+      val now = LocalTime.now()
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[TimeRestrictedAccessPlugin],
+            config = NgPluginInstanceConfig(
+              TimeRestrictedAccessPluginConfig(
+                rules = Seq(
+                  TimeRestrictedAccessPluginConfigRule(
+                    timeStart = now.plusSeconds(5),
+                    timeEnd = now.plusSeconds(10),
+                    dayStart = dnow.getDayOfWeek,
+                    dayEnd = dnow.getDayOfWeek,
+                  ),
+                  TimeRestrictedAccessPluginConfigRule(
+                    timeStart = now.plusSeconds(15),
+                    timeEnd = now.plusSeconds(20),
+                    dayStart = dnow.getDayOfWeek,
+                    dayEnd = dnow.getDayOfWeek,
+                  )
+                )
+              ).json.as[JsObject]
+            )
+          )
+        )
+      )
+
+      def call(): Int = {
+        ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain,
+          )
+          .get()
+          .futureValue
+          .status
+      }
+
+      call() mustBe 403
+
+      await(6.seconds)
+
+      call() mustBe Status.OK
+
+      await(5.seconds)
+
+      call() mustBe 403
+
+      await(5.seconds)
+
+      call() mustBe Status.OK
+
+      await(5.seconds)
+
+      call() mustBe 403
+
+      deleteOtoroshiRoute(route).futureValue
+    }
+
+    "Security Headers Plugin" in {
+      val route = createRequestOtoroshiIORoute(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[SecurityHeadersPlugin],
+            config = NgPluginInstanceConfig(
+              SecurityHeadersPluginConfig(
+                frameOptions = FrameOptions.SAMEORIGIN,
+                xssProtection = XssProtection.BLOCK,
+                contentTypeOptions = true,
+                hsts = HstsConf(
+                  enabled = true,
+                  includeSubdomains = true,
+                  maxAge = 1000,
+                  preload = true,
+                  onHttp = true,
+                ),
+                csp = CspConf(ENABLED, "default-src none; script-src self; connect-src self; img-src self; style-src self;")
+              ).json.as[JsObject]
+            )
+          )
+        )
+      )
+
+      def call(): Map[String, String] = {
+        ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> route.frontend.domains.head.domain,
+          )
+          .get()
+          .futureValue
+          .headers
+          .mapValues(_.last)
+      }
+
+      val headers = call()
+
+      headers("X-Frame-Options") mustBe "SAMEORIGIN"
+      headers("X-XSS-Protection") mustBe "1; mode=block"
+      headers("X-Content-Type-Options") mustBe "nosniff"
+      headers("Strict-Transport-Security") mustBe "max-age=1000; includeSubDomains; preload"
+      headers("Content-Security-Policy") mustBe "default-src none; script-src self; connect-src self; img-src self; style-src self;"
+
+      deleteOtoroshiRoute(route).futureValue
     }
   }
 }

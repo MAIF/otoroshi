@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, LocalTime}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
@@ -11,11 +11,10 @@ import scala.concurrent._
 import scala.util._
 
 case class TimeRestrictedAccessPluginConfigRule(
-  timeStart: DateTime = new DateTime(0, 0, 0, 8, 0, 0),
-  timeEnd: DateTime = new DateTime(0, 0, 0, 20, 0, 0),
+  timeStart: LocalTime = new LocalTime(8, 0),
+  timeEnd: LocalTime = new LocalTime(20, 0),
   dayStart: Int = 1,
   dayEnd: Int = 5,
-  denyStatus: Option[Int] = Some(403),
 ) {
 
   def json: JsValue = TimeRestrictedAccessPluginConfigRule.format.writes(this)
@@ -26,7 +25,7 @@ case class TimeRestrictedAccessPluginConfigRule(
   }
   
   def timeOk(now: DateTime): Boolean = {
-    val nowTime = new DateTime(0, 0, 0, now.getHourOfDay, now.getMinuteOfHour, now.getSecondOfMinute)
+    val nowTime = now.toLocalTime
     nowTime.isAfter(timeStart) && nowTime.isBefore(timeEnd)
   }
 }
@@ -34,12 +33,11 @@ case class TimeRestrictedAccessPluginConfigRule(
 object TimeRestrictedAccessPluginConfigRule {
   val format = new Format[TimeRestrictedAccessPluginConfigRule] {
     override def reads(json: JsValue): JsResult[TimeRestrictedAccessPluginConfigRule] = Try {
-      val timeStart = (json \ "time_start").asOpt[String].map(s => DateTime.parse(s)).getOrElse(DateTime.now())
-      val timeEnd = (json \ "time_end").asOpt[String].map(s => DateTime.parse(s)).getOrElse(DateTime.now())
+      val timeStart = (json \ "time_start").asOpt[String].map(s => LocalTime.parse(s)).getOrElse(LocalTime.now())
+      val timeEnd = (json \ "time_end").asOpt[String].map(s => LocalTime.parse(s)).getOrElse(LocalTime.now())
       val dayStart = (json \ "day_start").asOpt[Int].getOrElse(1)
       val dayEnd = (json \ "day_end").asOpt[Int].getOrElse(5)
-      val denyStatus = (json \ "deny_status").asOpt[Int]
-      TimeRestrictedAccessPluginConfigRule(timeStart, timeEnd, dayStart, dayEnd, denyStatus)
+      TimeRestrictedAccessPluginConfigRule(timeStart, timeEnd, dayStart, dayEnd)
     } match {
       case Success(rule) => JsSuccess(rule)
       case Failure(e) => JsError(e.getMessage)
@@ -50,7 +48,6 @@ object TimeRestrictedAccessPluginConfigRule {
         "time_end" -> o.timeEnd.toString(),
         "day_start" -> o.dayStart,
         "day_end" -> o.dayEnd,
-        "deny_status" -> o.denyStatus
       )
     }
   }
@@ -93,14 +90,12 @@ object TimeRestrictedAccessPluginConfig {
           "time_end" -> Json.obj("type" -> "string", "format" -> "time", "label" -> "End Time", "placeholder" -> "HH:mm:ss"),
           "day_start" -> Json.obj("type" -> "number", "label" -> "Start Day", "help" -> "1=Monday, 7=Sunday"),
           "day_end" -> Json.obj("type" -> "number", "label" -> "End Day", "help" -> "1=Monday, 7=Sunday"),
-          "deny_status" -> Json.obj("type" -> "number", "label" -> "Deny Status Code"),
         ),
         "flow" -> Json.arr(
           "time_start",
           "time_end",
           "day_start",
           "day_end",
-          "deny_status",
         )
       )
     )
@@ -137,7 +132,7 @@ class TimeRestrictedAccessPlugin extends NgAccessValidator {
         "error_description"  -> "You cannot access this resource right now",
       )
       NgAccess.NgDenied(
-        Results.Status(exists.get.denyStatus.getOrElse(403))(body)
+        Results.Forbidden(body)
       ).vfuture
     }
   }
