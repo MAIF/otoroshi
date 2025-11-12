@@ -400,7 +400,7 @@ class OAuth2Caller extends NgRequestTransformer {
       .flatMap { resp =>
         val respBody = resp.body
         if (resp.status == 200) {
-          if (resp.contentType.toLowerCase().equals("application/x-www-form-urlencoded")) {
+          if (resp.contentType.toLowerCase().startsWith("application/x-www-form-urlencoded")) {
             val body             = resp.body
               .split("&")
               .map { p =>
