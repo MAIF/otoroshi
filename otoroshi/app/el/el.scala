@@ -67,12 +67,12 @@ object GlobalExpressionLanguage {
   }
 
   private def jsValueToString(value: JsValue): String = value match {
-    case JsString(s) => s
-    case JsNumber(s) => s.toString()
-    case JsBoolean(s) => s.toString()
-    case JsNull => "null"
+    case JsString(s)       => s
+    case JsNumber(s)       => s.toString()
+    case JsBoolean(s)      => s.toString()
+    case JsNull            => "null"
     case obj @ JsObject(_) => obj.stringify
-    case arr @ JsArray(_) => arr.stringify
+    case arr @ JsArray(_)  => arr.stringify
   }
 
   def apply(
@@ -93,7 +93,7 @@ object GlobalExpressionLanguage {
         val geolocDetails                          = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
         val matchedRoute                           = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
         val matchedInputJwtToken                   = attrs.get(otoroshi.plugins.Keys.MatchedInputTokenKey)
-        val matchedOutputJwtToken                   = attrs.get(otoroshi.plugins.Keys.MatchedOutputTokenKey)
+        val matchedOutputJwtToken                  = attrs.get(otoroshi.plugins.Keys.MatchedOutputTokenKey)
         lazy val headCert: Option[X509Certificate] = req.flatMap(_.clientCertificateChain).flatMap(_.headOption)
         Try {
           expressionReplacer.replaceOn(value) {
@@ -304,40 +304,40 @@ object GlobalExpressionLanguage {
             case r"req.pathparams.$field@(.*)" if matchedRoute.isDefined                    =>
               matchedRoute.get.pathParams.get(field).getOrElse(s"no-path-param-$field")
 
-            case "apikey.name" if apiKey.isDefined                              => apiKey.get.clientName
-            case "apikey.id" if apiKey.isDefined                                => apiKey.get.clientId
-            case "apikey.clientId" if apiKey.isDefined                          => apiKey.get.clientId
-            case "apikey.json.pretty" if apiKey.isDefined                       => apiKey.get.lightJson.prettify
-            case "apikey.json" if apiKey.isDefined                              => apiKey.get.lightJson.stringify
-            case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined    =>
+            case "apikey.name" if apiKey.isDefined                                  => apiKey.get.clientName
+            case "apikey.id" if apiKey.isDefined                                    => apiKey.get.clientId
+            case "apikey.clientId" if apiKey.isDefined                              => apiKey.get.clientId
+            case "apikey.json.pretty" if apiKey.isDefined                           => apiKey.get.lightJson.prettify
+            case "apikey.json" if apiKey.isDefined                                  => apiKey.get.lightJson.stringify
+            case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined        =>
               apiKey.get.metadata.get(field).getOrElse(dv)
-            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined             =>
+            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined                 =>
               apiKey.get.metadata.get(field).getOrElse(s"no-meta-$field")
-            case r"apikey.tags\['$field@(.*)':'$dv@(.*)'\]" if apiKey.isDefined =>
+            case r"apikey.tags\['$field@(.*)':'$dv@(.*)'\]" if apiKey.isDefined     =>
               Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
-            case r"apikey.tags\['$field@(.*)'\]" if apiKey.isDefined            =>
+            case r"apikey.tags\['$field@(.*)'\]" if apiKey.isDefined                =>
               Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
-            case r"apikey.json.pretty" if apiKey.isDefined                      =>
+            case r"apikey.json.pretty" if apiKey.isDefined                          =>
               apiKey.get.lightJson.prettify
-            case r"apikey.json" if apiKey.isDefined                             =>
+            case r"apikey.json" if apiKey.isDefined                                 =>
               apiKey.get.lightJson.stringify
 
             // for jwt comptab only
-            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"           =>
+            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"               =>
               context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"            =>
+            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"                =>
               context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"         =>
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"             =>
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"         =>
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"             =>
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*)\|token.$field2@(.*):$dv@(.*)"              =>
+            case r"token.$field@(.*)\|token.$field2@(.*):$dv@(.*)"                  =>
               context.get(field).orElse(context.get(field2)).getOrElse(dv)
-            case r"token.$field@(.*)\|token.$field2@(.*)"                       =>
+            case r"token.$field@(.*)\|token.$field2@(.*)"                           =>
               context.get(field).orElse(context.get(field2)).getOrElse(s"no-token-$field-$field2")
-            case r"token.$field@(.*):$dv@(.*)"                                  => context.getOrElse(field, dv)
-            case r"token.$field@(.*)"                                           => context.getOrElse(field, s"no-token-$field")
-            case r"in_jwt.$field@(.*):$dv@(.*)" if matchedInputJwtToken.isDefined => {
+            case r"token.$field@(.*):$dv@(.*)"                                      => context.getOrElse(field, dv)
+            case r"token.$field@(.*)"                                               => context.getOrElse(field, s"no-token-$field")
+            case r"in_jwt.$field@(.*):$dv@(.*)" if matchedInputJwtToken.isDefined   => {
               val json = matchedInputJwtToken.get
               if (field.contains(".")) {
                 json.at(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv)
@@ -345,7 +345,7 @@ object GlobalExpressionLanguage {
                 json.select(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv)
               }
             }
-            case r"in_jwt.$field@(.*)" if matchedInputJwtToken.isDefined => {
+            case r"in_jwt.$field@(.*)" if matchedInputJwtToken.isDefined            => {
               val json = matchedInputJwtToken.get
               if (field.contains(".")) {
                 json.at(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field}")
@@ -361,7 +361,7 @@ object GlobalExpressionLanguage {
                 json.select(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv)
               }
             }
-            case r"out_jwt.$field@(.*)" if matchedOutputJwtToken.isDefined => {
+            case r"out_jwt.$field@(.*)" if matchedOutputJwtToken.isDefined          => {
               val json = matchedOutputJwtToken.get
               if (field.contains(".")) {
                 json.at(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field}")

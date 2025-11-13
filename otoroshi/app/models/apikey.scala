@@ -2097,17 +2097,18 @@ object ApiKeyHelper {
           case None         => (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
           case Some(apikey) =>
             apikeyTuple match {
-              case ApikeyTuple(_, None, None, _, _) if apikey.allowClientIdOnly                  => apikey.right
-              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isValid(secret)            => apikey.right
-              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret)          =>
+              case ApikeyTuple(_, None, None, _, _) if apikey.allowClientIdOnly                                     => apikey.right
+              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isValid(secret)                               => apikey.right
+              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret)                             =>
                 (
                   apikey.some,
                   s"apikey ${apikeyTuple.clientId}' disabled or secret/next.secret does not match".some
                 ).left
-              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if apikey.checkBearer(otoBearer) && apikey.enabled => apikey.right
+              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if apikey.checkBearer(otoBearer) && apikey.enabled   =>
+                apikey.right
               case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) || !apikey.enabled =>
                 (apikey.some, s"apikey ${apikeyTuple.clientId}' bearer/next.bearer does not match".some).left
-              case ApikeyTuple(_, None, Some(jwt), _, _)                                         => {
+              case ApikeyTuple(_, None, Some(jwt), _, _)                                                            => {
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
                 val kid                             = Option(jwt.getKeyId)
                   .orElse(possibleKeyPairId)
@@ -2240,7 +2241,7 @@ object ApiKeyHelper {
                   case None            => (apikey.some, "JWT alg does not match supported ones".some).left
                 }
               }
-              case _                                                                             => (apikey.some, s"unmatched ApikeyTuple(${apikeyTuple.json.stringify})".some).left
+              case _                                                                                                => (apikey.some, s"unmatched ApikeyTuple(${apikeyTuple.json.stringify})".some).left
             }
         }
       }

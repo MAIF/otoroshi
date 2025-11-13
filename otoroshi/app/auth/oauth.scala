@@ -293,7 +293,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   ): Future[Result] = {
     implicit val req = request
 
-    val redirect     = request
+    val redirect = request
       .getQueryString("redirect")
       .filter(redirect =>
         request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")) ||
@@ -408,10 +408,15 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           case url                                                => url
         }
 
-    val state = if (authConfig.noWildcardRedirectURI) encryptState(Json.obj(
-      "hash"       -> hash,
-      "ref"        -> authConfig.id
-    )) else ""
+    val state =
+      if (authConfig.noWildcardRedirectURI)
+        encryptState(
+          Json.obj(
+            "hash" -> hash,
+            "ref"  -> authConfig.id
+          )
+        )
+      else ""
 
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>

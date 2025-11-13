@@ -167,10 +167,10 @@ object NgMultiAuthModuleConfig {
     }
 
     override def writes(o: NgMultiAuthModuleConfig): JsValue = Json.obj(
-      "pass_with_apikey"  -> o.passWithApikey,
-      "auth_modules"      -> o.modules,
-      "use_email_prompt"  -> o.useEmailPrompt,
-      "users_groups"      -> o.usersGroups,
+      "pass_with_apikey" -> o.passWithApikey,
+      "auth_modules"     -> o.modules,
+      "use_email_prompt" -> o.useEmailPrompt,
+      "users_groups"     -> o.usersGroups
     )
   }
 }
@@ -180,12 +180,12 @@ class MultiAuthModule extends NgAccessValidator {
   private val logger                                      = Logger("otoroshi-next-plugins-multi-auth-module")
   private val configReads: Reads[NgMultiAuthModuleConfig] = NgMultiAuthModuleConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def name: String = "Multi Authentication"
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean            = true
+  override def core: Boolean                     = true
+  override def name: String                      = "Multi Authentication"
 
   override def description: Option[String] =
     "This plugin applies an authentication module from a list of selected modules".some
@@ -241,7 +241,7 @@ class MultiAuthModule extends NgAccessValidator {
   private def getHashAndRedirectURI(ctx: NgAccessContext)(implicit env: Env) = {
     val req             = ctx.request
     val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
-    val redirect        = {
+    val redirect = {
       if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect)
       else baseRedirect
     }
@@ -299,7 +299,7 @@ class MultiAuthModule extends NgAccessValidator {
             NgAccess.NgAllowed.vfuture
           case None        => {
             val (hash, encodedRedirect) = getHashAndRedirectURI(ctx)
-            val redirectTo      =
+            val redirectTo              =
               env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                 .confidentialAppLoginPage()
                 .url + s"?route=${ctx.route.id}&redirect=$encodedRedirect&hash=$hash&ref=${authModuleId}"
@@ -714,12 +714,12 @@ class SimpleBasicAuth extends NgAccessValidator {
   override def configSchema: Option[JsObject] = SimpleBasicAuthConfig.configSchema
 
   private def safeCheckPassword(password: String, hashed: String): Boolean = {
-  try {
-    BCrypt.checkpw(password, hashed)
-  } catch {
-    case _: IllegalArgumentException => false
+    try {
+      BCrypt.checkpw(password, hashed)
+    } catch {
+      case _: IllegalArgumentException => false
+    }
   }
-}
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config                = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads).getOrElse(SimpleBasicAuthConfig())
@@ -741,9 +741,9 @@ class SimpleBasicAuth extends NgAccessValidator {
       val username = parts.head
       val password = parts.tail.mkString(":")
       (config.users ++ globalUsers).get(username) match {
-        case Some(pwd) if password == pwd                   => NgAccess.NgAllowed.vfuture
-        case Some(pwd) if safeCheckPassword(password, pwd)  => NgAccess.NgAllowed.vfuture
-        case _                                              => {
+        case Some(pwd) if password == pwd                  => NgAccess.NgAllowed.vfuture
+        case Some(pwd) if safeCheckPassword(password, pwd) => NgAccess.NgAllowed.vfuture
+        case _                                             => {
           NgAccess
             .NgDenied(
               Results

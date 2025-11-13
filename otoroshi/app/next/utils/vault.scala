@@ -432,20 +432,26 @@ class AzureVault(_name: String, configuration: Configuration, _env: Env) extends
 
 class GoogleSecretManagerVault(name: String, configuration: Configuration, _env: Env) extends Vault {
 
-  private val tokenCache = Scaffeine().maximumSize(2).expireAfterWrite(1.hour).build[String, String]()
-  private val logger  = Logger("otoroshi-gcloud-vault")
-  private val baseUrl = configuration
+  private val tokenCache                                = Scaffeine().maximumSize(2).expireAfterWrite(1.hour).build[String, String]()
+  private val logger                                    = Logger("otoroshi-gcloud-vault")
+  private val baseUrl                                   = configuration
     .getOptionalWithFileSupport[String](s"url")
     .getOrElse("https://secretmanager.googleapis.com")
-  private val authMode: String = configuration.getOptionalWithFileSupport[String]("auth_mode").map(_.trim.toLowerCase).getOrElse("auto")
-  private val serviceAccountJsonContent: Option[String] = configuration.getOptionalWithFileSupport[String]("service_account_key_content")
-  private val serviceAccountJsonPath: Option[String] = configuration.getOptionalWithFileSupport[String]("service_account_key_path")
-  private val scopes: Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("service_account_scopes")
-    .orElse(configuration.getOptionalWithFileSupport[String]("service_account_scopes").map(_.split(",").map(_.trim).toSeq))
+  private val authMode: String                          =
+    configuration.getOptionalWithFileSupport[String]("auth_mode").map(_.trim.toLowerCase).getOrElse("auto")
+  private val serviceAccountJsonContent: Option[String] =
+    configuration.getOptionalWithFileSupport[String]("service_account_key_content")
+  private val serviceAccountJsonPath: Option[String]    =
+    configuration.getOptionalWithFileSupport[String]("service_account_key_path")
+  private val scopes: Seq[String]                       = configuration
+    .getOptionalWithFileSupport[Seq[String]]("service_account_scopes")
+    .orElse(
+      configuration.getOptionalWithFileSupport[String]("service_account_scopes").map(_.split(",").map(_.trim).toSeq)
+    )
     .getOrElse(Seq("https://www.googleapis.com/auth/cloud-platform"))
 
   private def dataUrl(path: String, options: Map[String, String]) = {
-    val opts = if (options.isEmpty) "" else  "?" + options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&")
+    val opts = if (options.isEmpty) "" else "?" + options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&")
     s"${baseUrl}/v1${path}:access${opts}"
   }
 
@@ -455,7 +461,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
   ): Future[CachedVaultSecretStatus] = {
     val url = dataUrl(path, options).debugPrintln
     getToken().flatMap {
-      case None => CachedVaultSecretStatus.SecretReadError("access token not found").future
+      case None        => CachedVaultSecretStatus.SecretReadError("access token not found").future
       case Some(token) => {
         env.Ws
           .url(url)
@@ -467,7 +473,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
             if (response.status == 200) {
               response.json.select("payload").select("data").asOpt[String] match {
                 case Some(value) => CachedVaultSecretStatus.SecretReadSuccess(value.fromBase64)
-                case _ => CachedVaultSecretStatus.SecretValueNotFound
+                case _           => CachedVaultSecretStatus.SecretValueNotFound
               }
             } else if (response.status == 401) {
               CachedVaultSecretStatus.SecretReadUnauthorized
@@ -486,53 +492,54 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
 
   private def getToken()(implicit env: Env, ec: ExecutionContext): Future[Option[String]] = {
     tokenCache.getIfPresent("singleton") match {
-      case Some(token) => token.some.vfuture
-      case None if authMode.contains("google") => {
+      case Some(token)                                      => token.some.vfuture
+      case None if authMode.contains("google")              => {
         val adc = GoogleCredentials.getApplicationDefault().applyOnIf(scopes.nonEmpty)(_.createScoped(scopes: _*))
         adc.refreshIfExpired()
         Option(adc.getAccessToken) match {
           case Some(accessToken) => Some(accessToken.getTokenValue).vfuture
-          case None =>
+          case None              =>
             logger.error("no access token found")
             None.vfuture
         }
       }
-      case None if authMode.contains("token") => configuration.getOptionalWithFileSupport[String]("token").vfuture
-      case None if authMode.contains("metadata_server") => tokenFromMetadataServer()
+      case None if authMode.contains("token")               => configuration.getOptionalWithFileSupport[String]("token").vfuture
+      case None if authMode.contains("metadata_server")     => tokenFromMetadataServer()
       case None if authMode.contains("service_account_key") => {
         getServiceAccountJsonContent() match {
           case Some(content) => tokenFromServiceAccountJson(content, scopes)
-          case None =>
+          case None          =>
             logger.error(s"unable to get token from service_account_key")
             None.vfuture
         }
       }
-      case None if authMode.contains("auto") => {
+      case None if authMode.contains("auto")                => {
         getServiceAccountJsonContent() match {
           case Some(content) => tokenFromServiceAccountJson(content, scopes)
-          case None => tokenFromMetadataServer() map {
-            case Some(bearer) => bearer.some
-            case None =>
-              logger.error(s"unable to get token from auto")
-              None
-          }
+          case None          =>
+            tokenFromMetadataServer() map {
+              case Some(bearer) => bearer.some
+              case None         =>
+                logger.error(s"unable to get token from auto")
+                None
+            }
         }
       }
-      case _ => None.vfuture
+      case _                                                => None.vfuture
     }
   }
 
   private def getServiceAccountJsonContent(): Option[String] = {
     serviceAccountJsonPath match {
       case Some(path) => Files.readString(new File(path).toPath).some // content path in config
-      case None => {
+      case None       => {
         serviceAccountJsonContent match {
           case Some(value) => Some(value) // raw content in config
-          case None => {
+          case None        => {
             // GOOGLE_APPLICATION_CREDENTIALS env var
             sys.env.get("GOOGLE_APPLICATION_CREDENTIALS") match {
               case Some(value) if new File(value).exists() => Files.readString(new File(value).toPath).some
-              case None => {
+              case None                                    => {
                 // well known file
                 val wellKnownFile = getWellKnownCredentialsFile()
                 println(wellKnownFile.getAbsolutePath)
@@ -543,7 +550,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
                   val cloudShellPort = sys.env.get("DEVSHELL_CLIENT_PORT").map(_.toInt).getOrElse(0)
                   CloudShellCredentials.refreshAccessToken(cloudShellPort) match {
                     case Success(token) => token.some
-                    case Failure(ex) =>
+                    case Failure(ex)    =>
                       logger.error(s"error while fetching token from cloud shell: ${ex.getMessage}")
                       None
                   }
@@ -557,16 +564,16 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
   }
 
   private def getWellKnownCredentialsFile(): File = {
-    val CLOUDSDK_CONFIG_DIRECTORY = "gcloud"
+    val CLOUDSDK_CONFIG_DIRECTORY   = "gcloud"
     val WELL_KNOWN_CREDENTIALS_FILE = "application_default_credentials.json"
-    val osName = System.getProperty("os.name", "").toLowerCase(Locale.US)
-    val cloudConfigPath: File = sys.env.get("CLOUDSDK_CONFIG") match {
-      case Some(envPath) => new File(envPath)
+    val osName                      = System.getProperty("os.name", "").toLowerCase(Locale.US)
+    val cloudConfigPath: File       = sys.env.get("CLOUDSDK_CONFIG") match {
+      case Some(envPath)                                  => new File(envPath)
       case None if osName.toLowerCase.contains("windows") =>
         val appDataPath = new File(sys.env("APPDATA"))
         new File(appDataPath, CLOUDSDK_CONFIG_DIRECTORY)
-      case None =>
-        val home = System.getProperty("user.home", "")
+      case None                                           =>
+        val home       = System.getProperty("user.home", "")
         val configPath = new File(home, ".config")
         new File(configPath, CLOUDSDK_CONFIG_DIRECTORY)
     }
@@ -574,13 +581,15 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
   }
 
   private def tokenFromMetadataServer()(implicit
-    env: Env,
-    ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[Option[String]] = {
-    val url = configuration.getOptionalWithFileSupport[String](s"metadata_server_url")
+    val url = configuration
+      .getOptionalWithFileSupport[String](s"metadata_server_url")
       .getOrElse("http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token")
     if (logger.isDebugEnabled) logger.debug(s"fetching access token from metadata server at ${url}")
-    _env.Ws.url(url)
+    _env.Ws
+      .url(url)
       .addHttpHeaders("Metadata-Flavor" -> "Google")
       .get()
       .flatMap { resp =>
@@ -590,7 +599,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
             case Some(tok) =>
               tokenCache.put("singleton", tok)
               Future.successful(tok.some)
-            case None =>
+            case None      =>
               logger.error("no access_token in metadata response")
               None.vfuture
           }
@@ -602,48 +611,53 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
   }
 
   private def tokenFromServiceAccountJson(serviceAccountJsonContent: String, scopes: Seq[String])(implicit
-    env: Env,
-    ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[Option[String]] = {
-    val js = Json.parse(serviceAccountJsonContent)
-    val clientEmail = (js \ "client_email").asOpt[String].getOrElse(return Future.failed(new RuntimeException("no client_email in SA json")))
-    val privateKeyPem = (js \ "private_key").asOpt[String].getOrElse(return Future.failed(new RuntimeException("no private_key in SA json")))
-    val now = Instant.now().getEpochSecond
-    val header = Json.obj("alg" -> "RS256", "typ" -> "JWT")
-    val scopeStr = scopes.mkString(" ")
-    val claimSet = Json.obj(
-      "iss" -> clientEmail,
+    val js            = Json.parse(serviceAccountJsonContent)
+    val clientEmail   = (js \ "client_email")
+      .asOpt[String]
+      .getOrElse(return Future.failed(new RuntimeException("no client_email in SA json")))
+    val privateKeyPem = (js \ "private_key")
+      .asOpt[String]
+      .getOrElse(return Future.failed(new RuntimeException("no private_key in SA json")))
+    val now           = Instant.now().getEpochSecond
+    val header        = Json.obj("alg" -> "RS256", "typ" -> "JWT")
+    val scopeStr      = scopes.mkString(" ")
+    val claimSet      = Json.obj(
+      "iss"   -> clientEmail,
       "scope" -> scopeStr,
-      "aud" -> "https://oauth2.googleapis.com/token",
-      "exp" -> (now + 3600),
-      "iat" -> now
+      "aud"   -> "https://oauth2.googleapis.com/token",
+      "exp"   -> (now + 3600),
+      "iat"   -> now
     )
-    val headerB64 = base64UrlEncode(header.toString())
-    val claimB64 = base64UrlEncode(claimSet.toString())
-    val signingInput = s"$headerB64.$claimB64"
-    val pkTry = parsePrivateKeyFromPem(privateKeyPem)
+    val headerB64     = base64UrlEncode(header.toString())
+    val claimB64      = base64UrlEncode(claimSet.toString())
+    val signingInput  = s"$headerB64.$claimB64"
+    val pkTry         = parsePrivateKeyFromPem(privateKeyPem)
     pkTry match {
-      case Failure(ex) => Future.failed(ex)
+      case Failure(ex)         => Future.failed(ex)
       case Success(privateKey) =>
         val sigTry = sign(signingInput.getBytes("UTF-8"), privateKey)
         sigTry match {
-          case Failure(ex) => Future.failed(ex)
+          case Failure(ex)             => Future.failed(ex)
           case Success(signatureBytes) =>
             val signatureB64 = base64UrlEncodeBytes(signatureBytes)
-            val jwt = s"$signingInput.$signatureB64"
-            val tokenUrl = "https://oauth2.googleapis.com/token"
-            val data = Map(
+            val jwt          = s"$signingInput.$signatureB64"
+            val tokenUrl     = "https://oauth2.googleapis.com/token"
+            val data         = Map(
               "grant_type" -> "urn:ietf:params:oauth:grant-type:jwt-bearer",
-              "assertion" -> jwt
+              "assertion"  -> jwt
             )
-            env.Ws.url(tokenUrl)
+            env.Ws
+              .url(tokenUrl)
               .withHttpHeaders("Content-Type" -> "application/x-www-form-urlencoded")
               .post(data)
               .flatMap { resp =>
                 if (resp.status >= 200 && resp.status < 300) {
                   (resp.json \ "access_token").asOpt[String] match {
                     case Some(tok) => tok.some.vfuture
-                    case None =>
+                    case None      =>
                       logger.error(s"no access_token in token response: ${resp.body}")
                       None.vfuture
                   }
@@ -656,7 +670,6 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
     }
   }
 
-
   private def base64UrlEncode(s: String): String = {
     base64UrlEncodeBytes(s.getBytes("UTF-8"))
   }
@@ -667,12 +680,13 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
 
   private def parsePrivateKeyFromPem(pem: String): Try[PrivateKey] = Try {
     // pem looks like "-----BEGIN PRIVATE KEY-----\nMIIEvg... \n-----END PRIVATE KEY-----\n"
-    val cleaned = pem.replaceAll("-----BEGIN (.*)-----", "")
+    val cleaned = pem
+      .replaceAll("-----BEGIN (.*)-----", "")
       .replaceAll("-----END (.*)-----", "")
       .replaceAll("\\s", "")
     val decoded = Base64.getDecoder.decode(cleaned)
     val keySpec = new PKCS8EncodedKeySpec(decoded)
-    val kf = KeyFactory.getInstance("RSA")
+    val kf      = KeyFactory.getInstance("RSA")
     kf.generatePrivate(keySpec)
   }
 
@@ -686,7 +700,8 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
 
 object CloudShellCredentials {
   private val ACCESS_TOKEN_INDEX: Int = 2
-  private val READ_TIMEOUT_MS: Int   = 5000
+  private val READ_TIMEOUT_MS: Int    = 5000
+
   /**
    * The Cloud Shell back authorization channel uses serialized Javascript Protobuffers,
    * preceded by the message length and a new line character. However, the request
@@ -702,11 +717,11 @@ object CloudShellCredentials {
     val socket = new Socket("localhost", authPort)
     socket.setSoTimeout(READ_TIMEOUT_MS)
     try {
-      val os = socket.getOutputStream
+      val os                        = socket.getOutputStream
       os.write(GET_AUTH_TOKEN_REQUEST_BYTES)
-      val input = new BufferedReader(new InputStreamReader(socket.getInputStream, StandardCharsets.UTF_8))
+      val input                     = new BufferedReader(new InputStreamReader(socket.getInputStream, StandardCharsets.UTF_8))
       input.readLine()
-      val content = input.lines.collect(Collectors.joining("\n"))
+      val content                   = input.lines.collect(Collectors.joining("\n"))
       input.close()
       val messageArray: Seq[String] = Json.parse(content).asOpt[Seq[String]].getOrElse(Seq.empty)
       messageArray.apply(ACCESS_TOKEN_INDEX)

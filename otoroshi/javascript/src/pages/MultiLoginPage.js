@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 
 const COLORS = {
-  basic: 'hsl(217, 91%, 60%)',   // vibrant blue — professional, trustworthy
-  saml: 'hsl(0, 79%, 58%)',      // strong red — enterprise / secure
-  oauth1: 'hsl(168, 70%, 44%)',  // teal — techy but calm
-  oauth2: 'hsl(32, 100%, 52%)',  // vivid orange — energetic, modern
-  ldap: 'hsl(142, 71%, 45%)',    // green — stable, reliable
-  custom: 'hsl(47, 100%, 52%)',  // yellow — creative, custom logic
+  basic: 'hsl(217, 91%, 60%)', // vibrant blue — professional, trustworthy
+  saml: 'hsl(0, 79%, 58%)', // strong red — enterprise / secure
+  oauth1: 'hsl(168, 70%, 44%)', // teal — techy but calm
+  oauth2: 'hsl(32, 100%, 52%)', // vivid orange — energetic, modern
+  ldap: 'hsl(142, 71%, 45%)', // green — stable, reliable
+  custom: 'hsl(47, 100%, 52%)', // yellow — creative, custom logic
 };
 
 function adjustHSLColor(hsl, index, total) {
@@ -23,11 +23,7 @@ function Provider({ name, link, type, index = 0, count = 1 }) {
   const bg = adjustHSLColor(baseColor, index, count);
 
   return (
-    <a
-      href={link}
-      className="text-decoration-none"
-      style={{ color: 'inherit' }}
-    >
+    <a href={link} className="text-decoration-none" style={{ color: 'inherit' }}>
       <div
         className="d-flex align-items-center justify-content-start shadow-sm rounded-3 mb-1 px-3 py-2 transition-all"
         style={{
@@ -36,11 +32,11 @@ function Provider({ name, link, type, index = 0, count = 1 }) {
           cursor: 'pointer',
           transition: 'transform 0.15s ease, box-shadow 0.15s ease',
         }}
-        onMouseEnter={e => {
+        onMouseEnter={(e) => {
           e.currentTarget.style.transform = 'scale(1.02)';
           e.currentTarget.style.boxShadow = '0 0.5rem 1rem rgba(0,0,0,0.2)';
         }}
-        onMouseLeave={e => {
+        onMouseLeave={(e) => {
           e.currentTarget.style.transform = 'scale(1)';
           e.currentTarget.style.boxShadow = '0 .125rem .25rem rgba(0,0,0,0.075)';
         }}
@@ -54,9 +50,7 @@ function Provider({ name, link, type, index = 0, count = 1 }) {
   );
 }
 
-
 export class MultiLoginPage extends Component {
-
   getLink = (id) => {
     if (this.props.redirect.length <= 0) {
       return `/privateapps/generic/login?ref=${id}&route=${this.props.route}&hash=${this.props.hash}`;

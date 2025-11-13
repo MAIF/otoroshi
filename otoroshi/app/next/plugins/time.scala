@@ -11,19 +11,19 @@ import scala.concurrent._
 import scala.util._
 
 case class TimeRestrictedAccessPluginConfigRule(
-  timeStart: LocalTime = new LocalTime(8, 0),
-  timeEnd: LocalTime = new LocalTime(20, 0),
-  dayStart: Int = 1,
-  dayEnd: Int = 5,
+    timeStart: LocalTime = new LocalTime(8, 0),
+    timeEnd: LocalTime = new LocalTime(20, 0),
+    dayStart: Int = 1,
+    dayEnd: Int = 5
 ) {
 
   def json: JsValue = TimeRestrictedAccessPluginConfigRule.format.writes(this)
-  
+
   def dayOk(now: DateTime): Boolean = {
     val day = now.getDayOfWeek
     day >= dayStart && day <= dayEnd
   }
-  
+
   def timeOk(now: DateTime): Boolean = {
     val nowTime = now.toLocalTime
     nowTime.isAfter(timeStart) && nowTime.isBefore(timeEnd)
@@ -34,26 +34,27 @@ object TimeRestrictedAccessPluginConfigRule {
   val format = new Format[TimeRestrictedAccessPluginConfigRule] {
     override def reads(json: JsValue): JsResult[TimeRestrictedAccessPluginConfigRule] = Try {
       val timeStart = (json \ "time_start").asOpt[String].map(s => LocalTime.parse(s)).getOrElse(LocalTime.now())
-      val timeEnd = (json \ "time_end").asOpt[String].map(s => LocalTime.parse(s)).getOrElse(LocalTime.now())
-      val dayStart = (json \ "day_start").asOpt[Int].getOrElse(1)
-      val dayEnd = (json \ "day_end").asOpt[Int].getOrElse(5)
+      val timeEnd   = (json \ "time_end").asOpt[String].map(s => LocalTime.parse(s)).getOrElse(LocalTime.now())
+      val dayStart  = (json \ "day_start").asOpt[Int].getOrElse(1)
+      val dayEnd    = (json \ "day_end").asOpt[Int].getOrElse(5)
       TimeRestrictedAccessPluginConfigRule(timeStart, timeEnd, dayStart, dayEnd)
     } match {
       case Success(rule) => JsSuccess(rule)
-      case Failure(e) => JsError(e.getMessage)
+      case Failure(e)    => JsError(e.getMessage)
     }
     override def writes(o: TimeRestrictedAccessPluginConfigRule): JsValue = {
       Json.obj(
         "time_start" -> o.timeStart.toString(),
-        "time_end" -> o.timeEnd.toString(),
-        "day_start" -> o.dayStart,
-        "day_end" -> o.dayEnd,
+        "time_end"   -> o.timeEnd.toString(),
+        "day_start"  -> o.dayStart,
+        "day_end"    -> o.dayEnd
       )
     }
   }
 }
 
-case class TimeRestrictedAccessPluginConfig(rules: Seq[TimeRestrictedAccessPluginConfigRule] = Seq.empty) extends NgPluginConfig {
+case class TimeRestrictedAccessPluginConfig(rules: Seq[TimeRestrictedAccessPluginConfigRule] = Seq.empty)
+    extends NgPluginConfig {
   def json: JsValue = TimeRestrictedAccessPluginConfig.format.writes(this)
 
 }
@@ -62,11 +63,14 @@ object TimeRestrictedAccessPluginConfig {
   val format = new Format[TimeRestrictedAccessPluginConfig]() {
 
     override def reads(json: JsValue): JsResult[TimeRestrictedAccessPluginConfig] = Try {
-      val rules = (json \ "rules").asOpt[Seq[JsObject]].map(_.flatMap(o => TimeRestrictedAccessPluginConfigRule.format.reads(o).asOpt)).getOrElse(Seq.empty)
+      val rules = (json \ "rules")
+        .asOpt[Seq[JsObject]]
+        .map(_.flatMap(o => TimeRestrictedAccessPluginConfigRule.format.reads(o).asOpt))
+        .getOrElse(Seq.empty)
       TimeRestrictedAccessPluginConfig(rules)
     } match {
       case Success(config) => JsSuccess(config)
-      case Failure(e) => JsError(e.getMessage)
+      case Failure(e)      => JsError(e.getMessage)
     }
 
     override def writes(o: TimeRestrictedAccessPluginConfig): JsValue = {
@@ -75,27 +79,29 @@ object TimeRestrictedAccessPluginConfig {
       )
     }
   }
-  val configFlow: Seq[String] = Seq(
-    "rules",
+  val configFlow: Seq[String]        = Seq(
+    "rules"
   )
   val configSchema: Option[JsObject] = Some(
     Json.obj(
       "rules" -> Json.obj(
-        "type" -> "array",
-        "array" -> true,
-        "label" -> s"Rules",
+        "type"   -> "array",
+        "array"  -> true,
+        "label"  -> s"Rules",
         "format" -> "form",
         "schema" -> Json.obj(
-          "time_start" -> Json.obj("type" -> "string", "format" -> "time", "label" -> "Start Time", "placeholder" -> "HH:mm:ss"),
-          "time_end" -> Json.obj("type" -> "string", "format" -> "time", "label" -> "End Time", "placeholder" -> "HH:mm:ss"),
-          "day_start" -> Json.obj("type" -> "number", "label" -> "Start Day", "help" -> "1=Monday, 7=Sunday"),
-          "day_end" -> Json.obj("type" -> "number", "label" -> "End Day", "help" -> "1=Monday, 7=Sunday"),
+          "time_start" -> Json
+            .obj("type" -> "string", "format" -> "time", "label" -> "Start Time", "placeholder" -> "HH:mm:ss"),
+          "time_end"   -> Json
+            .obj("type" -> "string", "format" -> "time", "label" -> "End Time", "placeholder" -> "HH:mm:ss"),
+          "day_start"  -> Json.obj("type" -> "number", "label" -> "Start Day", "help" -> "1=Monday, 7=Sunday"),
+          "day_end"    -> Json.obj("type" -> "number", "label" -> "End Day", "help" -> "1=Monday, 7=Sunday")
         ),
-        "flow" -> Json.arr(
+        "flow"   -> Json.arr(
           "time_start",
           "time_end",
           "day_start",
-          "day_end",
+          "day_end"
         )
       )
     )
@@ -104,23 +110,25 @@ object TimeRestrictedAccessPluginConfig {
 
 class TimeRestrictedAccessPlugin extends NgAccessValidator {
 
-  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
-  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Time Restriction"
   override def description: Option[String]                 = "This plugin restrict when a route is accessible".some
   override def defaultConfigObject: Option[NgPluginConfig] = TimeRestrictedAccessPluginConfig().some
-  override def noJsForm: Boolean = true
-  override def configFlow: Seq[String] = TimeRestrictedAccessPluginConfig.configFlow
-  override def configSchema: Option[JsObject] = TimeRestrictedAccessPluginConfig.configSchema
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = TimeRestrictedAccessPluginConfig.configFlow
+  override def configSchema: Option[JsObject]              = TimeRestrictedAccessPluginConfig.configSchema
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config  = ctx.cachedConfig(internalName)(TimeRestrictedAccessPluginConfig.format).getOrElse(TimeRestrictedAccessPluginConfig())
+    val config = ctx
+      .cachedConfig(internalName)(TimeRestrictedAccessPluginConfig.format)
+      .getOrElse(TimeRestrictedAccessPluginConfig())
     val exists = config.rules.find { rule =>
       val nowUtc = DateTime.now()
-      val dayOk = rule.dayOk(nowUtc)
+      val dayOk  = rule.dayOk(nowUtc)
       val timeOk = rule.timeOk(nowUtc)
       dayOk && timeOk
     }
@@ -128,12 +136,14 @@ class TimeRestrictedAccessPlugin extends NgAccessValidator {
       NgAccess.NgAllowed.vfuture
     } else {
       val body = Json.obj(
-        "error" -> "forbidden",
-        "error_description"  -> "You cannot access this resource right now",
+        "error"             -> "forbidden",
+        "error_description" -> "You cannot access this resource right now"
       )
-      NgAccess.NgDenied(
-        Results.Forbidden(body)
-      ).vfuture
+      NgAccess
+        .NgDenied(
+          Results.Forbidden(body)
+        )
+        .vfuture
     }
   }
 }

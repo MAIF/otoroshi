@@ -223,8 +223,8 @@ class S3Backend extends NgBackendCall {
     if (key.endsWith("/")) {
       val keyWithIndex = s"$key/index.html"
       fileExists(key, config).flatMap {
-        case false  => key.vfuture
-        case true => keyWithIndex.vfuture
+        case false => key.vfuture
+        case true  => keyWithIndex.vfuture
       }
     } else {
       key.vfuture

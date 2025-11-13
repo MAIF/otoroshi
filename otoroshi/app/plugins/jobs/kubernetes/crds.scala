@@ -1828,17 +1828,20 @@ object KubernetesCRDsJob {
                 "userPwd"         -> s"${apikey.clientId}:${apikey.clientSecret}".base64,
                 "basicAuth"       -> s"${apikey.clientId}:${apikey.clientSecret}".base64.base64,
                 "basicAuthHeader" -> ("Basic " + s"${apikey.clientId}:${apikey.clientSecret}".base64).base64,
-                "bearer"          -> apikey.toBearer().base64,
+                "bearer"          -> apikey.toBearer().base64
               ),
               "crd/apikey",
               apikey.clientId
             )
           case Some(secret) =>
-            val kind = secret.theType
+            val kind         = secret.theType
             val clientId     = (secret.raw \ "data" \ "clientId").asOpt[String].map(s => s.fromBase64)
             val clientSecret = (secret.raw \ "data" \ "clientSecret").asOpt[String].map(s => s.fromBase64)
             updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-            if (kind.contains("otoroshi.io/apikey-secret") && (!clientId.contains(apikey.clientId) || !clientSecret.contains(apikey.clientSecret))) {
+            if (
+              kind.contains("otoroshi.io/apikey-secret") && (!clientId.contains(apikey.clientId) || !clientSecret
+                .contains(apikey.clientSecret))
+            ) {
               // println(s"updating $namespace/$name  with ${apikey.clientId} and ${apikey.clientSecret}")
               clientSupport.client.updateSecret(
                 namespace,
@@ -1850,14 +1853,16 @@ object KubernetesCRDsJob {
                   "userPwd"         -> s"${apikey.clientId}:${apikey.clientSecret}".base64,
                   "basicAuth"       -> s"${apikey.clientId}:${apikey.clientSecret}".base64.base64,
                   "basicAuthHeader" -> ("Basic " + s"${apikey.clientId}:${apikey.clientSecret}".base64).base64,
-                  "bearer"          -> apikey.toBearer().base64,
+                  "bearer"          -> apikey.toBearer().base64
                 ),
                 "crd/apikey",
                 apikey.clientId
               )
             } else {
               if (!kind.contains("otoroshi.io/apikey-secret")) {
-                logger.error(s"unable to export apikey ${namespace}/${name} as secret, because secret already exists and is not of type 'otoroshi.io/apikey-secret'")
+                logger.error(
+                  s"unable to export apikey ${namespace}/${name} as secret, because secret already exists and is not of type 'otoroshi.io/apikey-secret'"
+                )
               }
               ().future
             }

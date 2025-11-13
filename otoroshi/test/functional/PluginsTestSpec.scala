@@ -1,7 +1,7 @@
 package functional
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.{Host, HttpCookie, RawHeader, `Set-Cookie`}
+import akka.http.scaladsl.model.headers.{`Set-Cookie`, Host, HttpCookie, RawHeader}
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.http.scaladsl.model.{ContentTypes, HttpHeader, HttpRequest}
 import akka.http.scaladsl.{Http, HttpExt}
@@ -4480,10 +4480,14 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
             password = "$2a$10$RtYWagxgvorxpxNIYTi4Be2tU.n8294eHpwle1ad0Tmh7.NiVXOEq",
             email = "user@oto.tools",
             tags = Seq.empty,
-            rights = UserRights(rights = Seq
-            (UserRight(
-              tenant = TenantAccess("*", canRead = true, canWrite = true),
-              teams = Seq(TeamAccess("*", canRead = true, canWrite = true))))),
+            rights = UserRights(rights =
+              Seq(
+                UserRight(
+                  tenant = TenantAccess("*", canRead = true, canWrite = true),
+                  teams = Seq(TeamAccess("*", canRead = true, canWrite = true))
+                )
+              )
+            ),
             adminEntityValidators = Map.empty
           )
         ),
@@ -4505,8 +4509,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           NgPluginInstance(
             plugin = NgPluginHelper.pluginId[MultiAuthModule],
             config = NgPluginInstanceConfig(
-              NgMultiAuthModuleConfig(modules = Seq(moduleConfiguration.id))
-                .json
+              NgMultiAuthModuleConfig(modules = Seq(moduleConfiguration.id)).json
                 .as[JsObject]
             )
           )
@@ -4515,9 +4518,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       )
 
       val playwright = Playwright.create()
-      val browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
-      val context = browser.newContext()
-      val page = context.newPage()
+      val browser    = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
+      val context    = browser.newContext()
+      val page       = context.newPage()
 
       page.navigate(s"http://${route.frontend.domains.head.domain}:$port")
 
@@ -4541,9 +4544,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         )
       }
 
-      val callWithUser = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+      val callWithUser = ws
+        .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
         .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-        .withCookies(wsCookies:_*)
+        .withCookies(wsCookies: _*)
         .get()
         .futureValue
 
@@ -4551,7 +4555,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       Json.parse(callWithUser.body).selectAsString("email") mustBe "user@oto.tools"
       Json.parse(callWithUser.body).selectAsString("name") mustBe "foo"
 
-      val callWithoutCookies = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+      val callWithoutCookies = ws
+        .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
         .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
         .withFollowRedirects(false)
         .get()
@@ -4559,7 +4564,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       callWithoutCookies.status mustBe 401
 
-      val callWithoutCookies2 = ws.url(s"http://127.0.0.1:$port")
+      val callWithoutCookies2 = ws
+        .url(s"http://127.0.0.1:$port")
         .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
         .withFollowRedirects(false)
         .get()
@@ -4589,10 +4595,14 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
               password = "$2a$10$RtYWagxgvorxpxNIYTi4Be2tU.n8294eHpwle1ad0Tmh7.NiVXOEq",
               email = "user@oto.tools",
               tags = Seq.empty,
-              rights = UserRights(rights = Seq
-              (UserRight(
-                tenant = TenantAccess("*", canRead = true, canWrite = true),
-                teams = Seq(TeamAccess("*", canRead = true, canWrite = true))))),
+              rights = UserRights(rights =
+                Seq(
+                  UserRight(
+                    tenant = TenantAccess("*", canRead = true, canWrite = true),
+                    teams = Seq(TeamAccess("*", canRead = true, canWrite = true))
+                  )
+                )
+              ),
               adminEntityValidators = Map.empty
             )
           ),
@@ -4615,11 +4625,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           dockerImage = "quay.io/keycloak/keycloak:26.4",
           exposedPorts = Seq(8080),
           env = Map(
-            "KEYCLOAK_ADMIN" -> "admin",
+            "KEYCLOAK_ADMIN"          -> "admin",
             "KEYCLOAK_ADMIN_PASSWORD" -> "admin"
           ),
           command = Seq("start-dev"),
-          waitStrategy = Wait.forHttp("/realms/master")
+          waitStrategy = Wait
+            .forHttp("/realms/master")
             .forPort(8080)
             .forStatusCode(200)
             .withStartupTimeout(java.time.Duration.ofMinutes(2))
@@ -4729,14 +4740,19 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }"""
 
       def getAdminToken(keycloakUrl: String): String = {
-        val tokenResponse = env.Ws.url(
-          s"$keycloakUrl/realms/master/protocol/openid-connect/token"
-        ).post(Map(
-            "grant_type" -> "password",
-            "client_id" -> "admin-cli",
-            "username" -> "admin",
-            "password" -> "admin"
-        )).futureValue
+        val tokenResponse = env.Ws
+          .url(
+            s"$keycloakUrl/realms/master/protocol/openid-connect/token"
+          )
+          .post(
+            Map(
+              "grant_type" -> "password",
+              "client_id"  -> "admin-cli",
+              "username"   -> "admin",
+              "password"   -> "admin"
+            )
+          )
+          .futureValue
         Json.parse(tokenResponse.body).selectAsString("access_token")
       }
 
@@ -4745,7 +4761,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/admin/realms/master/clients")
           .withHttpHeaders(
             "Authorization" -> s"Bearer $adminToken",
-            "Content-Type" -> "application/json"
+            "Content-Type"  -> "application/json"
           )
           .post(clientConfig)
           .futureValue
@@ -4754,16 +4770,16 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       def createKeycloakUser(keycloakUrl: String, adminToken: String): Unit = {
         val userConfig = Json.obj(
-          "username" -> "testuser",
-          "email" -> "test@example.com",
-          "firstName" -> "Test",
-          "lastName" -> "User",
-          "enabled" -> true,
+          "username"      -> "testuser",
+          "email"         -> "test@example.com",
+          "firstName"     -> "Test",
+          "lastName"      -> "User",
+          "enabled"       -> true,
           "emailVerified" -> true,
-          "credentials" -> Json.arr(
+          "credentials"   -> Json.arr(
             Json.obj(
-              "type" -> "password",
-              "value" -> "testpassword",
+              "type"      -> "password",
+              "value"     -> "testpassword",
               "temporary" -> false
             )
           )
@@ -4773,7 +4789,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/admin/realms/master/users")
           .withHttpHeaders(
             "Authorization" -> s"Bearer $adminToken",
-            "Content-Type" -> "application/json"
+            "Content-Type"  -> "application/json"
           )
           .post(userConfig)
           .futureValue
@@ -4781,7 +4797,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def configureKeycloak(keycloakUrl: String): Future[Unit] = {
-        val adminToken = getAdminToken(keycloakUrl)
+        val adminToken   = getAdminToken(keycloakUrl)
         val clientConfig = getClientConfig()
         createKeycloakClient(keycloakUrl, adminToken, clientConfig)
         createKeycloakUser(keycloakUrl, adminToken)
@@ -4798,7 +4814,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           tokenUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/token",
           authorizeUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/auth",
           userInfoUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/userinfo",
-          introspectionUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/token/introspect",
+          introspectionUrl =
+            s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/token/introspect",
           loginUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/auth",
           logoutUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/logout",
           callbackUrl = s"http://privateapps.oto.tools:${port}/privateapps/generic/callback",
@@ -4825,8 +4842,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
             NgPluginInstance(
               plugin = NgPluginHelper.pluginId[MultiAuthModule],
               config = NgPluginInstanceConfig(
-                NgMultiAuthModuleConfig(modules = Seq(basicModuleId, oauth2ModuleId))
-                  .json
+                NgMultiAuthModuleConfig(modules = Seq(basicModuleId, oauth2ModuleId)).json
                   .as[JsObject]
               )
             )
@@ -4840,11 +4856,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/realms/master/protocol/openid-connect/token")
           .post(
             Map(
-              "grant_type" -> Seq("password"),
-              "client_id" -> Seq("otoroshi"),
+              "grant_type"    -> Seq("password"),
+              "client_id"     -> Seq("otoroshi"),
               "client_secret" -> Seq("DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr"),
-              "username" -> Seq("test@example.com"),
-              "password" -> Seq("testpassword")
+              "username"      -> Seq("test@example.com"),
+              "password"      -> Seq("testpassword")
             )
           )
           .futureValue
@@ -4856,7 +4872,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       def performKeycloakLogin(browser: Browser, route: NgRoute): BrowserContext = {
         val context = browser.newContext()
-        val page = context.newPage()
+        val page    = context.newPage()
 
         page.navigate(s"http://${route.frontend.domains.head.domain}:$port")
         page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Continue with keycloak")).click()
@@ -4884,9 +4900,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def verifyAuthenticatedAccess(route: NgRoute, cookies: Seq[DefaultWSCookie]): Unit = {
-        val callWithUser = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+        val callWithUser = ws
+          .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-          .withCookies(cookies:_*)
+          .withCookies(cookies: _*)
           .get()
           .futureValue
 
@@ -4896,7 +4913,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def verifyUnauthenticatedAccess(route: NgRoute): Unit = {
-        val callWithoutCookies = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+        val callWithoutCookies = ws
+          .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
           .withFollowRedirects(false)
           .get()
@@ -4904,7 +4922,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
         callWithoutCookies.status mustBe 401
 
-        val callWithoutCookies2 = ws.url(s"http://127.0.0.1:$port")
+        val callWithoutCookies2 = ws
+          .url(s"http://127.0.0.1:$port")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
           .withFollowRedirects(false)
           .get()
@@ -4916,11 +4935,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       val basicModuleConfiguration = createBasicAuthModule()
 
       val keycloakContainer = startKeycloakContainer()
-      val keycloakUrl = getKeycloakUrl(keycloakContainer)
+      val keycloakUrl       = getKeycloakUrl(keycloakContainer)
       configureKeycloak(keycloakUrl).futureValue
 
-      val keycloakHost = keycloakContainer.host
-      val keycloakPort = keycloakContainer.mappedPort(8080)
+      val keycloakHost        = keycloakContainer.host
+      val keycloakPort        = keycloakContainer.mappedPort(8080)
       val oauth2Configuration = createOAuth2Module(keycloakHost, keycloakPort)
 
       val route = createRoute(basicModuleConfiguration.id, oauth2Configuration.id)
@@ -4928,9 +4947,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       verifyKeycloakTokenEndpoint(keycloakUrl)
 
       val playwright = Playwright.create()
-      val browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
-      val context = performKeycloakLogin(browser, route)
-      val wsCookies = extractCookies(context)
+      val browser    = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
+      val context    = performKeycloakLogin(browser, route)
+      val wsCookies  = extractCookies(context)
 
       verifyAuthenticatedAccess(route, wsCookies)
       verifyUnauthenticatedAccess(route)
@@ -4958,10 +4977,14 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
               password = "$2a$10$RtYWagxgvorxpxNIYTi4Be2tU.n8294eHpwle1ad0Tmh7.NiVXOEq",
               email = "user@oto.tools",
               tags = Seq.empty,
-              rights = UserRights(rights = Seq
-              (UserRight(
-                tenant = TenantAccess("*", canRead = true, canWrite = true),
-                teams = Seq(TeamAccess("*", canRead = true, canWrite = true))))),
+              rights = UserRights(rights =
+                Seq(
+                  UserRight(
+                    tenant = TenantAccess("*", canRead = true, canWrite = true),
+                    teams = Seq(TeamAccess("*", canRead = true, canWrite = true))
+                  )
+                )
+              ),
               adminEntityValidators = Map.empty
             )
           ),
@@ -4984,11 +5007,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           dockerImage = "quay.io/keycloak/keycloak:26.4",
           exposedPorts = Seq(8080),
           env = Map(
-            "KEYCLOAK_ADMIN" -> "admin",
+            "KEYCLOAK_ADMIN"          -> "admin",
             "KEYCLOAK_ADMIN_PASSWORD" -> "admin"
           ),
           command = Seq("start-dev"),
-          waitStrategy = Wait.forHttp("/realms/master")
+          waitStrategy = Wait
+            .forHttp("/realms/master")
             .forPort(8080)
             .forStatusCode(200)
             .withStartupTimeout(java.time.Duration.ofMinutes(2))
@@ -5098,14 +5122,19 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }"""
 
       def getAdminToken(keycloakUrl: String): String = {
-        val tokenResponse = env.Ws.url(
-          s"$keycloakUrl/realms/master/protocol/openid-connect/token"
-        ).post(Map(
-            "grant_type" -> "password",
-            "client_id" -> "admin-cli",
-            "username" -> "admin",
-            "password" -> "admin"
-        )).futureValue
+        val tokenResponse = env.Ws
+          .url(
+            s"$keycloakUrl/realms/master/protocol/openid-connect/token"
+          )
+          .post(
+            Map(
+              "grant_type" -> "password",
+              "client_id"  -> "admin-cli",
+              "username"   -> "admin",
+              "password"   -> "admin"
+            )
+          )
+          .futureValue
         Json.parse(tokenResponse.body).selectAsString("access_token")
       }
 
@@ -5114,7 +5143,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/admin/realms/master/clients")
           .withHttpHeaders(
             "Authorization" -> s"Bearer $adminToken",
-            "Content-Type" -> "application/json"
+            "Content-Type"  -> "application/json"
           )
           .post(clientConfig)
           .futureValue
@@ -5123,16 +5152,16 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       def createKeycloakUser(keycloakUrl: String, adminToken: String): Unit = {
         val userConfig = Json.obj(
-          "username" -> "testuser",
-          "email" -> "test@example.com",
-          "firstName" -> "Test",
-          "lastName" -> "User",
-          "enabled" -> true,
+          "username"      -> "testuser",
+          "email"         -> "test@example.com",
+          "firstName"     -> "Test",
+          "lastName"      -> "User",
+          "enabled"       -> true,
           "emailVerified" -> true,
-          "credentials" -> Json.arr(
+          "credentials"   -> Json.arr(
             Json.obj(
-              "type" -> "password",
-              "value" -> "testpassword",
+              "type"      -> "password",
+              "value"     -> "testpassword",
               "temporary" -> false
             )
           )
@@ -5142,7 +5171,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/admin/realms/master/users")
           .withHttpHeaders(
             "Authorization" -> s"Bearer $adminToken",
-            "Content-Type" -> "application/json"
+            "Content-Type"  -> "application/json"
           )
           .post(userConfig)
           .futureValue
@@ -5150,7 +5179,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def configureKeycloak(keycloakUrl: String): Future[Unit] = {
-        val adminToken = getAdminToken(keycloakUrl)
+        val adminToken   = getAdminToken(keycloakUrl)
         val clientConfig = getClientConfig()
         createKeycloakClient(keycloakUrl, adminToken, clientConfig)
         createKeycloakUser(keycloakUrl, adminToken)
@@ -5167,7 +5196,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           tokenUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/token",
           authorizeUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/auth",
           userInfoUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/userinfo",
-          introspectionUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/token/introspect",
+          introspectionUrl =
+            s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/token/introspect",
           loginUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/auth",
           logoutUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/logout",
           callbackUrl = s"http://privateapps.oto.tools:${port}/privateapps/generic/callback",
@@ -5191,25 +5221,31 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         createRequestOtoroshiIORoute(
           Seq(
             NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
-            NgPluginInstance(plugin = NgPluginHelper.pluginId[ApikeyCalls],
-              config = NgPluginInstanceConfig(Json.obj(
-                "mandatory" -> false,
-                "plugin_index" -> Json.obj(
-                  "match_route"        -> 0,
-                  "validate_access"    -> 1,
-                  "transform_request"  -> 1
+            NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[ApikeyCalls],
+              config = NgPluginInstanceConfig(
+                Json.obj(
+                  "mandatory"    -> false,
+                  "plugin_index" -> Json.obj(
+                    "match_route"       -> 0,
+                    "validate_access"   -> 1,
+                    "transform_request" -> 1
+                  )
                 )
-              ))),
+              )
+            ),
             NgPluginInstance(
               plugin = NgPluginHelper.pluginId[MultiAuthModule],
               config = NgPluginInstanceConfig(
-                NgMultiAuthModuleConfig(modules = Seq(basicModuleId, oauth2ModuleId), passWithApikey = true)
-                  .json
-                  .as[JsObject].deepMerge(Json.obj(
-                    "plugin_index" -> Json.obj(
-                     "validate_access"    -> 2
-                   )
-                  ))
+                NgMultiAuthModuleConfig(modules = Seq(basicModuleId, oauth2ModuleId), passWithApikey = true).json
+                  .as[JsObject]
+                  .deepMerge(
+                    Json.obj(
+                      "plugin_index" -> Json.obj(
+                        "validate_access" -> 2
+                      )
+                    )
+                  )
               )
             )
           ),
@@ -5222,11 +5258,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/realms/master/protocol/openid-connect/token")
           .post(
             Map(
-              "grant_type" -> Seq("password"),
-              "client_id" -> Seq("otoroshi"),
+              "grant_type"    -> Seq("password"),
+              "client_id"     -> Seq("otoroshi"),
               "client_secret" -> Seq("DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr"),
-              "username" -> Seq("test@example.com"),
-              "password" -> Seq("testpassword")
+              "username"      -> Seq("test@example.com"),
+              "password"      -> Seq("testpassword")
             )
           )
           .futureValue
@@ -5238,7 +5274,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       def performKeycloakLogin(browser: Browser, route: NgRoute): BrowserContext = {
         val context = browser.newContext()
-        val page = context.newPage()
+        val page    = context.newPage()
 
         page.navigate(s"http://${route.frontend.domains.head.domain}:$port")
         page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Continue with keycloak")).click()
@@ -5266,9 +5302,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def verifyAuthenticatedAccess(route: NgRoute, cookies: Seq[DefaultWSCookie]): Unit = {
-        val callWithUser = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+        val callWithUser = ws
+          .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-          .withCookies(cookies:_*)
+          .withCookies(cookies: _*)
           .get()
           .futureValue
 
@@ -5278,7 +5315,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def verifyUnauthenticatedAccess(route: NgRoute): Unit = {
-        val callWithoutCookies = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+        val callWithoutCookies = ws
+          .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
           .withFollowRedirects(false)
           .get()
@@ -5286,7 +5324,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
         callWithoutCookies.status mustBe 401
 
-        val callWithoutCookies2 = ws.url(s"http://127.0.0.1:$port")
+        val callWithoutCookies2 = ws
+          .url(s"http://127.0.0.1:$port")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
           .withFollowRedirects(false)
           .get()
@@ -5296,7 +5335,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def callWithApikey(route: NgRoute): Unit = {
-          val apikey = ApiKey(
+        val apikey = ApiKey(
           clientId = "apikey-test",
           clientSecret = "1234",
           clientName = "apikey-test",
@@ -5305,9 +5344,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
         createOtoroshiApiKey(apikey).futureValue
 
-        val callWithApikey = ws.url(s"http://127.0.0.1:$port")
+        val callWithApikey = ws
+          .url(s"http://127.0.0.1:$port")
           .withHttpHeaders(
-            "Host" -> route.frontend.domains.head.domain,
+            "Host"                   -> route.frontend.domains.head.domain,
             "Otoroshi-Client-Id"     -> apikey.clientId,
             "Otoroshi-Client-Secret" -> apikey.clientSecret
           )
@@ -5316,7 +5356,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
         callWithApikey.status mustBe 200
 
-        val callWithoutApikey = ws.url(s"http://127.0.0.1:$port")
+        val callWithoutApikey = ws
+          .url(s"http://127.0.0.1:$port")
           .withFollowRedirects(false)
           .withHttpHeaders(
             "Host" -> route.frontend.domains.head.domain
@@ -5330,11 +5371,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       val basicModuleConfiguration = createBasicAuthModule()
 
       val keycloakContainer = startKeycloakContainer()
-      val keycloakUrl = getKeycloakUrl(keycloakContainer)
+      val keycloakUrl       = getKeycloakUrl(keycloakContainer)
       configureKeycloak(keycloakUrl).futureValue
 
-      val keycloakHost = keycloakContainer.host
-      val keycloakPort = keycloakContainer.mappedPort(8080)
+      val keycloakHost        = keycloakContainer.host
+      val keycloakPort        = keycloakContainer.mappedPort(8080)
       val oauth2Configuration = createOAuth2Module(keycloakHost, keycloakPort)
 
       val route = createRoute(basicModuleConfiguration.id, oauth2Configuration.id)
@@ -5342,9 +5383,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       verifyKeycloakTokenEndpoint(keycloakUrl)
 
       val playwright = Playwright.create()
-      val browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
-      val context = performKeycloakLogin(browser, route)
-      val wsCookies = extractCookies(context)
+      val browser    = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
+      val context    = performKeycloakLogin(browser, route)
+      val wsCookies  = extractCookies(context)
 
       verifyAuthenticatedAccess(route, wsCookies)
       verifyUnauthenticatedAccess(route)
@@ -5373,10 +5414,14 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
               password = "$2a$10$RtYWagxgvorxpxNIYTi4Be2tU.n8294eHpwle1ad0Tmh7.NiVXOEq",
               email = "user@oto.tools",
               tags = Seq.empty,
-              rights = UserRights(rights = Seq
-              (UserRight(
-                tenant = TenantAccess("*", canRead = true, canWrite = true),
-                teams = Seq(TeamAccess("*", canRead = true, canWrite = true))))),
+              rights = UserRights(rights =
+                Seq(
+                  UserRight(
+                    tenant = TenantAccess("*", canRead = true, canWrite = true),
+                    teams = Seq(TeamAccess("*", canRead = true, canWrite = true))
+                  )
+                )
+              ),
               adminEntityValidators = Map.empty
             )
           ),
@@ -5399,11 +5444,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           dockerImage = "quay.io/keycloak/keycloak:26.4",
           exposedPorts = Seq(8080),
           env = Map(
-            "KEYCLOAK_ADMIN" -> "admin",
+            "KEYCLOAK_ADMIN"          -> "admin",
             "KEYCLOAK_ADMIN_PASSWORD" -> "admin"
           ),
           command = Seq("start-dev"),
-          waitStrategy = Wait.forHttp("/realms/master")
+          waitStrategy = Wait
+            .forHttp("/realms/master")
             .forPort(8080)
             .forStatusCode(200)
             .withStartupTimeout(java.time.Duration.ofMinutes(2))
@@ -5513,14 +5559,19 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }"""
 
       def getAdminToken(keycloakUrl: String): String = {
-        val tokenResponse = env.Ws.url(
-          s"$keycloakUrl/realms/master/protocol/openid-connect/token"
-        ).post(Map(
-            "grant_type" -> "password",
-            "client_id" -> "admin-cli",
-            "username" -> "admin",
-            "password" -> "admin"
-        )).futureValue
+        val tokenResponse = env.Ws
+          .url(
+            s"$keycloakUrl/realms/master/protocol/openid-connect/token"
+          )
+          .post(
+            Map(
+              "grant_type" -> "password",
+              "client_id"  -> "admin-cli",
+              "username"   -> "admin",
+              "password"   -> "admin"
+            )
+          )
+          .futureValue
         Json.parse(tokenResponse.body).selectAsString("access_token")
       }
 
@@ -5529,7 +5580,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/admin/realms/master/clients")
           .withHttpHeaders(
             "Authorization" -> s"Bearer $adminToken",
-            "Content-Type" -> "application/json"
+            "Content-Type"  -> "application/json"
           )
           .post(clientConfig)
           .futureValue
@@ -5538,16 +5589,16 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       def createKeycloakUser(keycloakUrl: String, adminToken: String): Unit = {
         val userConfig = Json.obj(
-          "username" -> "testuser",
-          "email" -> "test@example.com",
-          "firstName" -> "Test",
-          "lastName" -> "User",
-          "enabled" -> true,
+          "username"      -> "testuser",
+          "email"         -> "test@example.com",
+          "firstName"     -> "Test",
+          "lastName"      -> "User",
+          "enabled"       -> true,
           "emailVerified" -> true,
-          "credentials" -> Json.arr(
+          "credentials"   -> Json.arr(
             Json.obj(
-              "type" -> "password",
-              "value" -> "testpassword",
+              "type"      -> "password",
+              "value"     -> "testpassword",
               "temporary" -> false
             )
           )
@@ -5557,7 +5608,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/admin/realms/master/users")
           .withHttpHeaders(
             "Authorization" -> s"Bearer $adminToken",
-            "Content-Type" -> "application/json"
+            "Content-Type"  -> "application/json"
           )
           .post(userConfig)
           .futureValue
@@ -5565,7 +5616,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def configureKeycloak(keycloakUrl: String): Future[Unit] = {
-        val adminToken = getAdminToken(keycloakUrl)
+        val adminToken   = getAdminToken(keycloakUrl)
         val clientConfig = getClientConfig()
         createKeycloakClient(keycloakUrl, adminToken, clientConfig)
         createKeycloakUser(keycloakUrl, adminToken)
@@ -5582,7 +5633,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           tokenUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/token",
           authorizeUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/auth",
           userInfoUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/userinfo",
-          introspectionUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/token/introspect",
+          introspectionUrl =
+            s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/token/introspect",
           loginUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/auth",
           logoutUrl = s"http://${keycloakHost}:${keycloakPort}/realms/master/protocol/openid-connect/logout",
           callbackUrl = s"http://privateapps.oto.tools:${port}/privateapps/generic/callback",
@@ -5606,15 +5658,19 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         createRequestOtoroshiIORoute(
           Seq(
             NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
-            NgPluginInstance(plugin = NgPluginHelper.pluginId[ApikeyCalls],
-              config = NgPluginInstanceConfig(Json.obj(
-                "mandatory" -> false,
-                "plugin_index" -> Json.obj(
-                  "match_route"        -> 0,
-                  "validate_access"    -> 1,
-                  "transform_request"  -> 1
+            NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[ApikeyCalls],
+              config = NgPluginInstanceConfig(
+                Json.obj(
+                  "mandatory"    -> false,
+                  "plugin_index" -> Json.obj(
+                    "match_route"       -> 0,
+                    "validate_access"   -> 1,
+                    "transform_request" -> 1
+                  )
                 )
-              ))),
+              )
+            ),
             NgPluginInstance(
               plugin = NgPluginHelper.pluginId[MultiAuthModule],
               config = NgPluginInstanceConfig(
@@ -5623,16 +5679,18 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
                   passWithApikey = true,
                   useEmailPrompt = true,
                   usersGroups = Json.obj(
-                    oauth2ModuleId    -> Json.arr("test@example.com"),
-                    basicModuleId     -> Json.arr("Wildcard(*@oto.tools)")
+                    oauth2ModuleId -> Json.arr("test@example.com"),
+                    basicModuleId  -> Json.arr("Wildcard(*@oto.tools)")
                   )
-                )
-                  .json
-                  .as[JsObject].deepMerge(Json.obj(
-                    "plugin_index" -> Json.obj(
-                     "validate_access"    -> 2
-                   )
-                  ))
+                ).json
+                  .as[JsObject]
+                  .deepMerge(
+                    Json.obj(
+                      "plugin_index" -> Json.obj(
+                        "validate_access" -> 2
+                      )
+                    )
+                  )
               )
             )
           ),
@@ -5645,11 +5703,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/realms/master/protocol/openid-connect/token")
           .post(
             Map(
-              "grant_type" -> Seq("password"),
-              "client_id" -> Seq("otoroshi"),
+              "grant_type"    -> Seq("password"),
+              "client_id"     -> Seq("otoroshi"),
               "client_secret" -> Seq("DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr"),
-              "username" -> Seq("test@example.com"),
-              "password" -> Seq("testpassword")
+              "username"      -> Seq("test@example.com"),
+              "password"      -> Seq("testpassword")
             )
           )
           .futureValue
@@ -5661,7 +5719,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       def performInMemoryLogin(browser: Browser, route: NgRoute) = {
         val context = browser.newContext()
-        val page = context.newPage()
+        val page    = context.newPage()
 
         page.navigate(s"http://${route.frontend.domains.head.domain}:$port")
 
@@ -5681,7 +5739,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       def performKeycloakLogin(browser: Browser, route: NgRoute): BrowserContext = {
         val context = browser.newContext()
-        val page = context.newPage()
+        val page    = context.newPage()
 
         page.navigate(s"http://${route.frontend.domains.head.domain}:$port")
 
@@ -5713,9 +5771,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def verifyAuthenticatedAccess(route: NgRoute, cookies: Seq[DefaultWSCookie]): Unit = {
-        val callWithUser = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+        val callWithUser = ws
+          .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-          .withCookies(cookies:_*)
+          .withCookies(cookies: _*)
           .get()
           .futureValue
 
@@ -5725,7 +5784,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def verifyUnauthenticatedAccess(route: NgRoute): Unit = {
-        val callWithoutCookies = ws.url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
+        val callWithoutCookies = ws
+          .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
           .withFollowRedirects(false)
           .get()
@@ -5733,7 +5793,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
         callWithoutCookies.status mustBe 401
 
-        val callWithoutCookies2 = ws.url(s"http://127.0.0.1:$port")
+        val callWithoutCookies2 = ws
+          .url(s"http://127.0.0.1:$port")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
           .withFollowRedirects(false)
           .get()
@@ -5743,7 +5804,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def callWithApikey(route: NgRoute): Unit = {
-          val apikey = ApiKey(
+        val apikey = ApiKey(
           clientId = "apikey-test",
           clientSecret = "1234",
           clientName = "apikey-test",
@@ -5752,9 +5813,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
         createOtoroshiApiKey(apikey).futureValue
 
-        val callWithApikey = ws.url(s"http://127.0.0.1:$port")
+        val callWithApikey = ws
+          .url(s"http://127.0.0.1:$port")
           .withHttpHeaders(
-            "Host" -> route.frontend.domains.head.domain,
+            "Host"                   -> route.frontend.domains.head.domain,
             "Otoroshi-Client-Id"     -> apikey.clientId,
             "Otoroshi-Client-Secret" -> apikey.clientSecret
           )
@@ -5763,7 +5825,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
         callWithApikey.status mustBe 200
 
-        val callWithoutApikey = ws.url(s"http://127.0.0.1:$port")
+        val callWithoutApikey = ws
+          .url(s"http://127.0.0.1:$port")
           .withFollowRedirects(false)
           .withHttpHeaders(
             "Host" -> route.frontend.domains.head.domain
@@ -5777,11 +5840,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       val basicModuleConfiguration = createBasicAuthModule()
 
       val keycloakContainer = startKeycloakContainer()
-      val keycloakUrl = getKeycloakUrl(keycloakContainer)
+      val keycloakUrl       = getKeycloakUrl(keycloakContainer)
       configureKeycloak(keycloakUrl).futureValue
 
-      val keycloakHost = keycloakContainer.host
-      val keycloakPort = keycloakContainer.mappedPort(8080)
+      val keycloakHost        = keycloakContainer.host
+      val keycloakPort        = keycloakContainer.mappedPort(8080)
       val oauth2Configuration = createOAuth2Module(keycloakHost, keycloakPort)
 
       val route = createRoute(basicModuleConfiguration.id, oauth2Configuration.id)
@@ -5789,10 +5852,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       verifyKeycloakTokenEndpoint(keycloakUrl)
 
       val playwright = Playwright.create()
-      val browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
-      val context = performKeycloakLogin(browser, route)
+      val browser    = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
+      val context    = performKeycloakLogin(browser, route)
       performInMemoryLogin(browser, route)
-      val wsCookies = extractCookies(context)
+      val wsCookies  = extractCookies(context)
 
       verifyAuthenticatedAccess(route, wsCookies)
       verifyUnauthenticatedAccess(route)
@@ -5812,11 +5875,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           dockerImage = "quay.io/keycloak/keycloak:26.4",
           exposedPorts = Seq(8080),
           env = Map(
-            "KEYCLOAK_ADMIN" -> "admin",
+            "KEYCLOAK_ADMIN"          -> "admin",
             "KEYCLOAK_ADMIN_PASSWORD" -> "admin"
           ),
           command = Seq("start-dev"),
-          waitStrategy = Wait.forHttp("/realms/master")
+          waitStrategy = Wait
+            .forHttp("/realms/master")
             .forPort(8080)
             .forStatusCode(200)
             .withStartupTimeout(java.time.Duration.ofMinutes(2))
@@ -5926,14 +5990,19 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }"""
 
       def getAdminToken(keycloakUrl: String): String = {
-        val tokenResponse = env.Ws.url(
-          s"$keycloakUrl/realms/master/protocol/openid-connect/token"
-        ).post(Map(
-            "grant_type" -> "password",
-            "client_id" -> "admin-cli",
-            "username" -> "admin",
-            "password" -> "admin"
-        )).futureValue
+        val tokenResponse = env.Ws
+          .url(
+            s"$keycloakUrl/realms/master/protocol/openid-connect/token"
+          )
+          .post(
+            Map(
+              "grant_type" -> "password",
+              "client_id"  -> "admin-cli",
+              "username"   -> "admin",
+              "password"   -> "admin"
+            )
+          )
+          .futureValue
         Json.parse(tokenResponse.body).selectAsString("access_token")
       }
 
@@ -5942,7 +6011,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/admin/realms/master/clients")
           .withHttpHeaders(
             "Authorization" -> s"Bearer $adminToken",
-            "Content-Type" -> "application/json"
+            "Content-Type"  -> "application/json"
           )
           .post(clientConfig)
           .futureValue
@@ -5950,7 +6019,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def configureKeycloak(keycloakUrl: String): Future[Unit] = {
-        val adminToken = getAdminToken(keycloakUrl)
+        val adminToken   = getAdminToken(keycloakUrl)
         val clientConfig = getClientConfig()
         createKeycloakClient(keycloakUrl, adminToken, clientConfig)
         Future.successful(())
@@ -5964,22 +6033,21 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
               plugin = NgPluginHelper.pluginId[OAuth2Caller],
               config = NgPluginInstanceConfig(
                 OAuth2CallerConfig(
-                  kind        = OAuth2Kind.ClientCredentials,
-                  url         = s"http://localhost:$keycloakPort/realms/master/protocol/openid-connect/token",
-                  method      = "POST",
-                  headerName  = "Authorization",
-                  headerValueFormat   = "Bearer %s",
-                  jsonPayload         = false,
-                  clientId            = "otoroshi",
-                  clientSecret        = "DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr",
-                  scope               = Some("openid profile email"),
-                  audience            = None,
-                  user                = None,
-                  password            = None,
-                  cacheTokenSeconds   = (10L * 60L).seconds,
-                  tlsConfig           = MtlsConfig()
-                )
-                  .json
+                  kind = OAuth2Kind.ClientCredentials,
+                  url = s"http://localhost:$keycloakPort/realms/master/protocol/openid-connect/token",
+                  method = "POST",
+                  headerName = "Authorization",
+                  headerValueFormat = "Bearer %s",
+                  jsonPayload = false,
+                  clientId = "otoroshi",
+                  clientSecret = "DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr",
+                  scope = Some("openid profile email"),
+                  audience = None,
+                  user = None,
+                  password = None,
+                  cacheTokenSeconds = (10L * 60L).seconds,
+                  tlsConfig = MtlsConfig()
+                ).json
                   .as[JsObject]
               )
             )
@@ -5989,7 +6057,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def verify(route: NgRoute): Unit = {
-        val resp = ws.url(s"http://127.0.0.1:$port")
+        val resp = ws
+          .url(s"http://127.0.0.1:$port")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
           .get()
           .futureValue
@@ -5999,7 +6068,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       val keycloakContainer = startKeycloakContainer()
-      val keycloakUrl = getKeycloakUrl(keycloakContainer)
+      val keycloakUrl       = getKeycloakUrl(keycloakContainer)
       configureKeycloak(keycloakUrl).futureValue
 
       val route = createRoute(keycloakContainer.mappedPort(8080))
@@ -6015,11 +6084,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           dockerImage = "quay.io/keycloak/keycloak:26.4",
           exposedPorts = Seq(8080),
           env = Map(
-            "KEYCLOAK_ADMIN" -> "admin",
+            "KEYCLOAK_ADMIN"          -> "admin",
             "KEYCLOAK_ADMIN_PASSWORD" -> "admin"
           ),
           command = Seq("start-dev"),
-          waitStrategy = Wait.forHttp("/realms/master")
+          waitStrategy = Wait
+            .forHttp("/realms/master")
             .forPort(8080)
             .forStatusCode(200)
             .withStartupTimeout(java.time.Duration.ofMinutes(2))
@@ -6129,14 +6199,19 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }"""
 
       def getAdminToken(keycloakUrl: String): String = {
-        val tokenResponse = env.Ws.url(
-          s"$keycloakUrl/realms/master/protocol/openid-connect/token"
-        ).post(Map(
-            "grant_type" -> "password",
-            "client_id" -> "admin-cli",
-            "username" -> "admin",
-            "password" -> "admin"
-        )).futureValue
+        val tokenResponse = env.Ws
+          .url(
+            s"$keycloakUrl/realms/master/protocol/openid-connect/token"
+          )
+          .post(
+            Map(
+              "grant_type" -> "password",
+              "client_id"  -> "admin-cli",
+              "username"   -> "admin",
+              "password"   -> "admin"
+            )
+          )
+          .futureValue
         Json.parse(tokenResponse.body).selectAsString("access_token")
       }
 
@@ -6145,7 +6220,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/admin/realms/master/clients")
           .withHttpHeaders(
             "Authorization" -> s"Bearer $adminToken",
-            "Content-Type" -> "application/json"
+            "Content-Type"  -> "application/json"
           )
           .post(clientConfig)
           .futureValue
@@ -6154,16 +6229,16 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
       def createKeycloakUser(keycloakUrl: String, adminToken: String): Unit = {
         val userConfig = Json.obj(
-          "username" -> "testuser",
-          "email" -> "test@example.com",
-          "firstName" -> "Test",
-          "lastName" -> "User",
-          "enabled" -> true,
+          "username"      -> "testuser",
+          "email"         -> "test@example.com",
+          "firstName"     -> "Test",
+          "lastName"      -> "User",
+          "enabled"       -> true,
           "emailVerified" -> true,
-          "credentials" -> Json.arr(
+          "credentials"   -> Json.arr(
             Json.obj(
-              "type" -> "password",
-              "value" -> "testpassword",
+              "type"      -> "password",
+              "value"     -> "testpassword",
               "temporary" -> false
             )
           )
@@ -6173,7 +6248,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/admin/realms/master/users")
           .withHttpHeaders(
             "Authorization" -> s"Bearer $adminToken",
-            "Content-Type" -> "application/json"
+            "Content-Type"  -> "application/json"
           )
           .post(userConfig)
           .futureValue
@@ -6181,7 +6256,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def configureKeycloak(keycloakUrl: String): Future[Unit] = {
-        val adminToken = getAdminToken(keycloakUrl)
+        val adminToken   = getAdminToken(keycloakUrl)
         val clientConfig = getClientConfig()
         createKeycloakClient(keycloakUrl, adminToken, clientConfig)
         createKeycloakUser(keycloakUrl, adminToken)
@@ -6196,22 +6271,21 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
               plugin = NgPluginHelper.pluginId[OAuth2Caller],
               config = NgPluginInstanceConfig(
                 OAuth2CallerConfig(
-                  kind        = OAuth2Kind.Password,
-                  url         = s"http://localhost:$keycloakPort/realms/master/protocol/openid-connect/token",
-                  method      = "POST",
-                  headerName  = "Authorization",
-                  headerValueFormat   = "Bearer %s",
-                  jsonPayload         = false,
-                  clientId            = "otoroshi",
-                  clientSecret        = "DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr",
-                  scope               = Some("openid profile email"),
-                  audience            = None,
-                  user                = "test@example.com".some,
-                  password            = "testpassword".some,
-                  cacheTokenSeconds   = (10L * 60L).seconds,
-                  tlsConfig           = MtlsConfig()
-                )
-                  .json
+                  kind = OAuth2Kind.Password,
+                  url = s"http://localhost:$keycloakPort/realms/master/protocol/openid-connect/token",
+                  method = "POST",
+                  headerName = "Authorization",
+                  headerValueFormat = "Bearer %s",
+                  jsonPayload = false,
+                  clientId = "otoroshi",
+                  clientSecret = "DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr",
+                  scope = Some("openid profile email"),
+                  audience = None,
+                  user = "test@example.com".some,
+                  password = "testpassword".some,
+                  cacheTokenSeconds = (10L * 60L).seconds,
+                  tlsConfig = MtlsConfig()
+                ).json
                   .as[JsObject]
               )
             )
@@ -6225,11 +6299,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
           .url(s"$keycloakUrl/realms/master/protocol/openid-connect/token")
           .post(
             Map(
-              "grant_type" -> Seq("password"),
-              "client_id" -> Seq("otoroshi"),
+              "grant_type"    -> Seq("password"),
+              "client_id"     -> Seq("otoroshi"),
               "client_secret" -> Seq("DF0LZqCtU85vOwH2lfqz6pxRF9hh5ALr"),
-              "username" -> Seq("test@example.com"),
-              "password" -> Seq("testpassword")
+              "username"      -> Seq("test@example.com"),
+              "password"      -> Seq("testpassword")
             )
           )
           .futureValue
@@ -6240,7 +6314,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def verify(route: NgRoute): Unit = {
-        val resp = ws.url(s"http://127.0.0.1:$port")
+        val resp = ws
+          .url(s"http://127.0.0.1:$port")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
           .get()
           .futureValue
@@ -6250,7 +6325,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       val keycloakContainer = startKeycloakContainer()
-      val keycloakUrl = getKeycloakUrl(keycloakContainer)
+      val keycloakUrl       = getKeycloakUrl(keycloakContainer)
       configureKeycloak(keycloakUrl).futureValue
 
       verifyKeycloakTokenEndpoint(keycloakUrl)
@@ -6271,9 +6346,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
               plugin = NgPluginHelper.pluginId[SimpleBasicAuth],
               config = NgPluginInstanceConfig(
                 SimpleBasicAuthConfig(
-                 users = Map("foo"-> "bar")
-                )
-                  .json
+                  users = Map("foo" -> "bar")
+                ).json
                   .as[JsObject]
               )
             )
@@ -6283,14 +6357,16 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def verify(route: NgRoute): Unit = {
-        val resp = ws.url(s"http://127.0.0.1:$port")
+        val resp = ws
+          .url(s"http://127.0.0.1:$port")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
           .get()
           .futureValue
 
         resp.status mustBe 401
 
-        val callWithUser = ws.url(s"http://127.0.0.1:$port")
+        val callWithUser = ws
+          .url(s"http://127.0.0.1:$port")
           .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
           .withAuth("foo", "bar", WSAuthScheme.BASIC)
           .get()
@@ -6314,9 +6390,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
               plugin = NgPluginHelper.pluginId[SimpleBasicAuth],
               config = NgPluginInstanceConfig(
                 SimpleBasicAuthConfig(
-                 users = Map("foo"-> "bar")
-                )
-                  .json
+                  users = Map("foo" -> "bar")
+                ).json
                   .as[JsObject]
               )
             )
@@ -6336,8 +6411,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
                 BasicAuthCallerConfig(
                   username = "foo".some,
                   password = "bar".some
-                )
-                  .json
+                ).json
                   .as[JsObject]
               )
             )
@@ -6348,14 +6422,16 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       def verify(simpleBasicAuthRoute: NgRoute): Unit = {
-        val resp = ws.url(s"http://127.0.0.1:$port")
+        val resp = ws
+          .url(s"http://127.0.0.1:$port")
           .withHttpHeaders("Host" -> simpleBasicAuthRoute.frontend.domains.head.domain)
           .get()
           .futureValue
 
         resp.status mustBe 401
 
-        val callWithUser = ws.url(s"http://127.0.0.1:$port")
+        val callWithUser = ws
+          .url(s"http://127.0.0.1:$port")
           .withHttpHeaders("Host" -> simpleBasicAuthRoute.frontend.domains.head.domain)
           .withAuth("foo", "bar", WSAuthScheme.BASIC)
           .get()
@@ -6365,7 +6441,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       }
 
       val basicAuthRoute = simpleBasicAuthRoute()
-      val callerRouter = basicAuthCallerRoute()
+      val callerRouter   = basicAuthCallerRoute()
       verify(basicAuthRoute)
 
       deleteOtoroshiRoute(basicAuthRoute).futureValue
@@ -6373,8 +6449,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
 
     "Time Restricted Access Plugin" in {
-      val dnow = DateTime.now()
-      val now = LocalTime.now()
+      val dnow  = DateTime.now()
+      val now   = LocalTime.now()
       val route = createRequestOtoroshiIORoute(
         Seq(
           NgPluginInstance(
@@ -6389,13 +6465,13 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
                     timeStart = now.plusSeconds(5),
                     timeEnd = now.plusSeconds(10),
                     dayStart = dnow.getDayOfWeek,
-                    dayEnd = dnow.getDayOfWeek,
+                    dayEnd = dnow.getDayOfWeek
                   ),
                   TimeRestrictedAccessPluginConfigRule(
                     timeStart = now.plusSeconds(15),
                     timeEnd = now.plusSeconds(20),
                     dayStart = dnow.getDayOfWeek,
-                    dayEnd = dnow.getDayOfWeek,
+                    dayEnd = dnow.getDayOfWeek
                   )
                 )
               ).json.as[JsObject]
@@ -6408,7 +6484,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> route.frontend.domains.head.domain,
+            "Host" -> route.frontend.domains.head.domain
           )
           .get()
           .futureValue
@@ -6454,9 +6530,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
                   includeSubdomains = true,
                   maxAge = 1000,
                   preload = true,
-                  onHttp = true,
+                  onHttp = true
                 ),
-                csp = CspConf(ENABLED, "default-src none; script-src self; connect-src self; img-src self; style-src self;")
+                csp =
+                  CspConf(ENABLED, "default-src none; script-src self; connect-src self; img-src self; style-src self;")
               ).json.as[JsObject]
             )
           )
@@ -6467,7 +6544,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> route.frontend.domains.head.domain,
+            "Host" -> route.frontend.domains.head.domain
           )
           .get()
           .futureValue
@@ -6481,7 +6558,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       headers("X-XSS-Protection") mustBe "1; mode=block"
       headers("X-Content-Type-Options") mustBe "nosniff"
       headers("Strict-Transport-Security") mustBe "max-age=1000; includeSubDomains; preload"
-      headers("Content-Security-Policy") mustBe "default-src none; script-src self; connect-src self; img-src self; style-src self;"
+      headers(
+        "Content-Security-Policy"
+      ) mustBe "default-src none; script-src self; connect-src self; img-src self; style-src self;"
 
       deleteOtoroshiRoute(route).futureValue
     }
