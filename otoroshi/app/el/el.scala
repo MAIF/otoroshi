@@ -66,6 +66,15 @@ object GlobalExpressionLanguage {
     )
   }
 
+  private def jsValueToString(value: JsValue): String = value match {
+    case JsString(s) => s
+    case JsNumber(s) => s.toString()
+    case JsBoolean(s) => s.toString()
+    case JsNull => "null"
+    case obj @ JsObject(_) => obj.stringify
+    case arr @ JsArray(_) => arr.stringify
+  }
+
   def apply(
       value: String,
       req: Option[RequestHeader],
@@ -83,6 +92,8 @@ object GlobalExpressionLanguage {
         val userAgentDetails                       = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
         val geolocDetails                          = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
         val matchedRoute                           = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+        val matchedInputJwtToken                   = attrs.get(otoroshi.plugins.Keys.MatchedInputTokenKey)
+        val matchedOutputJwtToken                   = attrs.get(otoroshi.plugins.Keys.MatchedOutputTokenKey)
         lazy val headCert: Option[X509Certificate] = req.flatMap(_.clientCertificateChain).flatMap(_.headOption)
         Try {
           expressionReplacer.replaceOn(value) {
@@ -326,6 +337,38 @@ object GlobalExpressionLanguage {
               context.get(field).orElse(context.get(field2)).getOrElse(s"no-token-$field-$field2")
             case r"token.$field@(.*):$dv@(.*)"                                  => context.getOrElse(field, dv)
             case r"token.$field@(.*)"                                           => context.getOrElse(field, s"no-token-$field")
+            case r"in_jwt.$field@(.*):$dv@(.*)" if matchedInputJwtToken.isDefined => {
+              val json = matchedInputJwtToken.get
+              if (field.contains(".")) {
+                json.at(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv)
+              } else {
+                json.select(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv)
+              }
+            }
+            case r"in_jwt.$field@(.*)" if matchedInputJwtToken.isDefined => {
+              val json = matchedInputJwtToken.get
+              if (field.contains(".")) {
+                json.at(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field}")
+              } else {
+                json.select(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field}")
+              }
+            }
+            case r"out_jwt.$field@(.*):$dv@(.*)" if matchedOutputJwtToken.isDefined => {
+              val json = matchedOutputJwtToken.get
+              if (field.contains(".")) {
+                json.at(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv)
+              } else {
+                json.select(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv)
+              }
+            }
+            case r"out_jwt.$field@(.*)" if matchedOutputJwtToken.isDefined => {
+              val json = matchedOutputJwtToken.get
+              if (field.contains(".")) {
+                json.at(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field}")
+              } else {
+                json.select(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field}")
+              }
+            }
 
             case r"apikeyjwt.$field@(.*)" if field.contains(".")              => {
               attrs
