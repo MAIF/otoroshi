@@ -2394,7 +2394,9 @@ This plugin applies an authentication module from a list of selected modules
 ```json
 {
   "pass_with_apikey" : false,
-  "auth_modules" : [ ]
+  "auth_modules" : [ ],
+  "use_email_prompt" : false,
+  "users_groups" : { }
 }
 ```
 
@@ -5703,6 +5705,52 @@ This plugin is able to call SOAP actions and expose it as a rest endpoint
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SecurityHeadersPlugin }
+
+## Security Headers
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.SecurityHeadersPlugin`
+
+### Description
+
+Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options)
+
+
+
+### Default configuration
+
+```json
+{
+  "frame_options" : "DISABLED",
+  "xss_protection" : "DISABLED",
+  "content_type_options" : false,
+  "hsts" : {
+    "enabled" : false,
+    "include_subdomains" : false,
+    "max_age" : 3600,
+    "preload" : false,
+    "on_http" : false
+  },
+  "csp" : {
+    "mode" : "DISABLED",
+    "csp" : ""
+  }
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SendOtoroshiHeadersBack }
 
 ## Send otoroshi headers back
@@ -5983,11 +6031,44 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-11-10T15:54:45.152Z",
-  "stop" : "2025-11-11T15:54:45.172Z",
+  "start" : "2025-11-13T09:21:27.056Z",
+  "stop" : "2025-11-14T09:21:27.077Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.TimeRestrictedAccessPlugin }
+
+## Time Restriction
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.TimeRestrictedAccessPlugin`
+
+### Description
+
+This plugin restrict when a route is accessible
+
+
+
+### Default configuration
+
+```json
+{
+  "rules" : [ ]
 }
 ```
 
