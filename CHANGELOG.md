@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.8.1] - 2025-11-13
+
+
+https://github.com/MAIF/otoroshi/milestone/128?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.8.0...v17.8.1
+https://github.com/MAIF/otoroshi/releases/tag/v17.8.1
+
+
+### Added 
+
+- Avoid failure when filtering on missing values (#2318 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Http Security headers plugin (#2322 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Time restriction plugin (#2323 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Expression language can be used in JWT claims verification (#2324 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Expose input and output verified/transformed JWT tokens in the expression language (#2325 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- Apikey secret export may fail if secret already exist (#2314 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Google Secret Manager vault (#2315 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- PostgreSQL and JDK 25 (#2316 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- apikey enabled flag check bypass in some cases (#2317 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- S3 backend does not handle index.html automatically (#2319 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Fix Multi authentication plugin (#2321 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @aicfr
+* @Zwiterrion
+
 ## [17.8.0] - 2025-11-07
 
 
