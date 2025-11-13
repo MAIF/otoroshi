@@ -881,8 +881,8 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
       jwt
     })
   }
-  def asVerification(algorithm: Algorithm): Verification = {
-    val verification = fields.foldLeft(
+  def asVerification(algorithm: Algorithm, attrs: TypedMap)(implicit env: Env): Verification = {
+    val verification = fields.mapValues(_.evaluateEl(attrs)).foldLeft(
       JWT
         .require(algorithm)
         .acceptLeeway(10)
@@ -1403,7 +1403,7 @@ sealed trait JwtVerifier extends AsJson {
               )
               .left[JwtInjection]
           case Some(algorithm) => {
-            val verification       = strategy.verificationSettings.asVerification(algorithm)
+            val verification       = strategy.verificationSettings.asVerification(algorithm, attrs)
             val id: String         = this match {
               case v: RefJwtVerifier    => v.ids.mkString("-")
               case v: GlobalJwtVerifier => v.id
@@ -1706,7 +1706,7 @@ sealed trait JwtVerifier extends AsJson {
               )
               .left[A]
           case Some(algorithm) => {
-            val verification       = strategy.verificationSettings.asVerification(algorithm)
+            val verification       = strategy.verificationSettings.asVerification(algorithm, attrs)
             val key                = s"${this.asInstanceOf[GlobalJwtVerifier].id}-${signature}"
             val verificationResult = JwtVerifier.signatureCache.get(key, _ => Try(verification.build().verify(token)))
             verificationResult match {
