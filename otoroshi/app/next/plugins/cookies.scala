@@ -424,7 +424,7 @@ class CookiesValidation extends NgAccessValidator {
       ctx.cachedConfig(internalName)(CookiesValidationConfig.format.reads).getOrElse(CookiesValidationConfig())
     val validationCookies = config.cookies
     val cookies           = ctx.request.cookies.map { cookie =>
-      (cookie.name, cookie.name)
+      (cookie.name, cookie.value)
     }.toMap
     if (
       validationCookies.forall { case (key, value) =>

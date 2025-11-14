@@ -313,5 +313,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Simple Basic Auth" in {
       new SimpleBasicAuthTests(this)
     }
+    "Cookies validation" in {
+      new CookiesValidationTests(this)
+    }
   }
 }
