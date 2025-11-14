@@ -334,5 +334,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikey mandatory metadata" in {
       new ApikeyMandatoryMetadataTests(this)
     }
+    "Robots" in {
+      new RobotsTests(this)
+    }
   }
 }
