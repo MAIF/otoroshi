@@ -4,7 +4,13 @@ import functional.PluginsTestSpec
 import otoroshi.models._
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{JwtVerification, JwtVerificationOnly, NgJwtVerificationConfig, NgJwtVerificationOnlyConfig, OverrideHost}
+import otoroshi.next.plugins.{
+  JwtVerification,
+  JwtVerificationOnly,
+  NgJwtVerificationConfig,
+  NgJwtVerificationOnlyConfig,
+  OverrideHost
+}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status

@@ -10,7 +10,12 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Seconds, Span}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{OverrideHost, RejectStrategy, WebsocketJsonFormatValidator, WebsocketJsonFormatValidatorConfig}
+import otoroshi.next.plugins.{
+  OverrideHost,
+  RejectStrategy,
+  WebsocketJsonFormatValidator,
+  WebsocketJsonFormatValidatorConfig
+}
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.libs.json._
 

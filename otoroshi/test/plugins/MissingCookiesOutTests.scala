@@ -1,6 +1,6 @@
 package plugins
 
-import akka.http.scaladsl.model.headers.{HttpCookie, `Set-Cookie`}
+import akka.http.scaladsl.model.headers.{`Set-Cookie`, HttpCookie}
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper

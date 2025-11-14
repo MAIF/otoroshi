@@ -5,7 +5,15 @@ import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models._
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{AuthModule, JwtVerification, NgAuthModuleConfig, NgJwtUserExtractor, NgJwtUserExtractorConfig, NgJwtVerificationConfig, OverrideHost}
+import otoroshi.next.plugins.{
+  AuthModule,
+  JwtVerification,
+  NgAuthModuleConfig,
+  NgJwtUserExtractor,
+  NgJwtUserExtractorConfig,
+  NgJwtVerificationConfig,
+  OverrideHost
+}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status

@@ -26,7 +26,6 @@ import scala.concurrent.duration.DurationInt
 class S3BackendTests(parent: PluginsTestSpec) {
   import parent._
 
-
   val s3Container = GenericContainer(
     dockerImage = "quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z",
     exposedPorts = Seq(9000, 9001),

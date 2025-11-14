@@ -35,7 +35,7 @@ class HMACAccessValidatorTests(parent: PluginsTestSpec) {
       )
     )
 
-    val base = System.currentTimeMillis().toString
+    val base      = System.currentTimeMillis().toString
     val signature = Base64.getEncoder.encodeToString(Signatures.hmac(HMACUtils.Algo("HMAC-SHA512"), base, "secret"))
 
     val resp = ws
@@ -43,7 +43,7 @@ class HMACAccessValidatorTests(parent: PluginsTestSpec) {
       .withHttpHeaders(
         "Host" -> route.frontend.domains.head.domain,
         "base" -> base,
-        "foo" -> s"""hmac algorithm="HMAC-SHA512", headers="base", signature="$signature""""
+        "foo"  -> s"""hmac algorithm="HMAC-SHA512", headers="base", signature="$signature""""
       )
       .get()
       .futureValue
