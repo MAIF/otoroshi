@@ -21,7 +21,7 @@ import scala.concurrent.{Future, Promise}
 class YesWebsocketPluginTests(parent: PluginsTestSpec) {
   import parent._
 
-  def sendYMessagesPeriodicallyToWebsocketClients = {
+  def sendYMessagesPeriodicallyToWebsocketClients() = {
     val route = createRequestOtoroshiIORoute(
       Seq(
         NgPluginInstance(
@@ -64,7 +64,7 @@ class YesWebsocketPluginTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def rejectConnectionWithFailYesQueryParameter = {
+  def rejectConnectionWithFailYesQueryParameter() = {
     val route = createRequestOtoroshiIORoute(
       Seq(
         NgPluginInstance(
