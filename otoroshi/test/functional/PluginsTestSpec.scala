@@ -331,5 +331,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "User profile endpoint" in {
       new UserProfileEndpointTests(this)
     }
+    "Apikey mandatory metadata" in {
+      new ApikeyMandatoryMetadataTests(this)
+    }
   }
 }
