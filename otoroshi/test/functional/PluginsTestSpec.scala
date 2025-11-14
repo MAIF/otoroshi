@@ -325,5 +325,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "External request validator - reject validator" in {
       new ExternalRequestValidatorTests(this).rejectRequest()
     }
+    "Send otoroshi headers back" in {
+      new SendOtoroshiHeadersBackTests(this)
+    }
   }
 }
