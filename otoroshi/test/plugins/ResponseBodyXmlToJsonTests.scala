@@ -7,10 +7,10 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{JsonTransformConfig, OverrideHost, XmlToJsonResponse}
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.libs.json.{JsObject, Json}
+import akka.http.scaladsl.model.headers.`Content-Type`
+import akka.http.scaladsl.model.{ContentType, HttpCharsets, MediaTypes}
 
 class ResponseBodyXmlToJsonTests(parent: PluginsTestSpec) {
-  import akka.http.scaladsl.model.headers.`Content-Type`
-  import akka.http.scaladsl.model.{ContentType, HttpCharsets, MediaTypes}
   import parent._
 
   val route = createLocalRoute(

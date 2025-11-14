@@ -316,5 +316,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Cookies validation" in {
       new CookiesValidationTests(this)
     }
+    "Image Replacer" in {
+      new ImageReplacerTests(this)
+    }
   }
 }
