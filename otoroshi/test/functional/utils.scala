@@ -24,7 +24,16 @@ import otoroshi.api.Otoroshi
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.models.DataExporterConfig
 import otoroshi.loader.modules.OtoroshiComponentsInstances
-import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPlugins, NgRoute, NgTarget}
+import otoroshi.next.models.{
+  NgBackend,
+  NgClientConfig,
+  NgDomainAndPath,
+  NgFrontend,
+  NgPluginInstance,
+  NgPlugins,
+  NgRoute,
+  NgTarget
+}
 import otoroshi.security.IdGenerator
 import play.api.ApplicationLoader.Context
 import play.api.libs.json._
@@ -1537,17 +1546,17 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .andWait(2000.millis)
   }
 
-  val PLUGINS_ROUTE_ID  = "plugins-route"
-  val PLUGINS_HOST      = "plugins.oto.tools"
-  val LOCAL_HOST        = "local.oto.tools"
+  val PLUGINS_ROUTE_ID = "plugins-route"
+  val PLUGINS_HOST     = "plugins.oto.tools"
+  val LOCAL_HOST       = "local.oto.tools"
 
   def createRequestOtoroshiIORoute(
-                                    plugins: Seq[NgPluginInstance] = Seq.empty,
-                                    domain: String = "plugins.oto.tools",
-                                    id: String = PLUGINS_ROUTE_ID,
-                                    hostname: String = "request.otoroshi.io",
-                                    root: String = "/"
-                                  ) = {
+      plugins: Seq[NgPluginInstance] = Seq.empty,
+      domain: String = "plugins.oto.tools",
+      id: String = PLUGINS_ROUTE_ID,
+      hostname: String = "request.otoroshi.io",
+      root: String = "/"
+  ) = {
     val newRoute = NgRoute(
       location = EntityLocation.default,
       id = id,
@@ -1595,37 +1604,37 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
   }
 
   def createLocalRoute(
-                        plugins: Seq[NgPluginInstance] = Seq.empty,
-                        responseStatus: Int = Status.OK,
-                        result: HttpRequest => JsValue = _ => Json.obj(),
-                        responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
-                        domain: String = "local.oto.tools",
-                        https: Boolean = false,
-                        frontendPath: String = "/api",
-                        jsonAPI: Boolean = true,
-                        responseContentType: String = "application/json",
-                        stringResult: HttpRequest => String = _ => "",
-                        target: Option[NgTarget] = None
-                      ) = {
+      plugins: Seq[NgPluginInstance] = Seq.empty,
+      responseStatus: Int = Status.OK,
+      result: HttpRequest => JsValue = _ => Json.obj(),
+      responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
+      domain: String = "local.oto.tools",
+      https: Boolean = false,
+      frontendPath: String = "/api",
+      jsonAPI: Boolean = true,
+      responseContentType: String = "application/json",
+      stringResult: HttpRequest => String = _ => "",
+      target: Option[NgTarget] = None
+  ) = {
 
     var _target: Option[TargetService] = None
 
     if (target.isEmpty)
       _target = (if (jsonAPI)
-        TargetService
-          .jsonFull(
-            Some(domain),
-            frontendPath,
-            r => (responseStatus, result(r), responseHeaders)
-          )
-      else
-        TargetService
-          .full(
-            Some(domain),
-            frontendPath,
-            contentType = responseContentType,
-            r => (responseStatus, stringResult(r), responseHeaders)
-          ))
+                   TargetService
+                     .jsonFull(
+                       Some(domain),
+                       frontendPath,
+                       r => (responseStatus, result(r), responseHeaders)
+                     )
+                 else
+                   TargetService
+                     .full(
+                       Some(domain),
+                       frontendPath,
+                       contentType = responseContentType,
+                       r => (responseStatus, stringResult(r), responseHeaders)
+                     ))
         .await()
         .some
 
@@ -1791,7 +1800,7 @@ class TargetService(
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
-      case (HttpMethods.GET, p) if host.isEmpty                                       => {
+      case (HttpMethods.GET, p) if host.isEmpty                                         => {
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1806,7 +1815,7 @@ class TargetService(
           )
         )
       }
-      case (HttpMethods.GET, p) /*if TargetService.extractHost(request) == host.get*/ => {
+      case (HttpMethods.GET, p) /*if TargetService.extractHost(request) == host.get*/   => {
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1821,7 +1830,7 @@ class TargetService(
           )
         )
       }
-      case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get    => {
+      case (HttpMethods.POST, p) /*if TargetService.extractHost(request) == host.get */ => {
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1836,7 +1845,7 @@ class TargetService(
           )
         )
       }
-      case (HttpMethods.DELETE, p)                                                    => {
+      case (HttpMethods.DELETE, p)                                                      => {
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1851,7 +1860,7 @@ class TargetService(
           )
         )
       }
-      case (_, p)                                                                     => {
+      case (_, p)                                                                       => {
         FastFuture.successful(HttpResponses.NotFound(p.toString()))
       }
     }

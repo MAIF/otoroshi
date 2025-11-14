@@ -319,5 +319,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Image Replacer" in {
       new ImageReplacerTests(this)
     }
+    "External request validator - pass validator" in {
+      new ExternalRequestValidatorTests(this).valid()
+    }
+    "External request validator - reject validator" in {
+      new ExternalRequestValidatorTests(this).rejectRequest()
+    }
   }
 }
