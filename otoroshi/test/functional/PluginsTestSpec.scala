@@ -328,5 +328,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Send otoroshi headers back" in {
       new SendOtoroshiHeadersBackTests(this)
     }
+    "User profile endpoint" in {
+      new UserProfileEndpointTests(this)
+    }
   }
 }
