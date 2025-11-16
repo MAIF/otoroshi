@@ -116,11 +116,11 @@ class UserAgentExtractor extends PreRouting {
       case None     => funit
       case Some(ua) =>
         UserAgentHelper.userAgentDetails(ua).map {
-          case None       => funit: Unit
+          case None       => ()
           case Some(info) =>
             if (log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
             ctx.attrs.putIfAbsent(Keys.UserAgentInfoKey -> info)
-            funit: Unit
+            ()
         }
     }
   }
