@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.6.3",
+    "version" : "17.8.1",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:36391",
+    "url" : "http://otoroshi-api.oto.tools:45537",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -21182,12 +21182,29 @@
       "otoroshi.models.RefJwtVerifier" : {
         "type" : "object",
         "properties" : {
-          "ids" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "default" : [ ]
+          "region" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Region match",
+        "required" : [ "region" ]
+      },
+      "apidocumentationplan" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation plan",
+        "required" : [ "raw" ]
+      },
+      "samlsignature" : {
+        "type" : "object",
+        "properties" : {
+          "algorithm" : {
+            "$ref" : "#/components/schemas/samlsignaturealgorithm"
           },
           "enabled" : {
             "type" : "boolean",
@@ -21212,6 +21229,43 @@
         },
         "title" : "Try node",
         "required" : [ "json" ]
+      },
+      "apiconsumer" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "autoValidation" : {
+            "type" : "boolean"
+          },
+          "consumerKind" : {
+            "$ref" : "#/components/schemas/apiconsumerkind"
+          },
+          "settings" : {
+            "$ref" : "#/components/schemas/apiconsumersettings"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/apiconsumerstatus"
+          },
+          "subscriptions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apiconsumersubscriptionref"
+            }
+          }
+        },
+        "title" : "Api consumer",
+        "required" : [ "id", "name", "autoValidation", "consumerKind", "settings", "status", "subscriptions" ]
       },
       "teamaccess" : {
         "type" : "object",
@@ -21304,7 +21358,17 @@
         },
         "required" : [ ]
       },
-      "play.api.libs.json.JsNull" : {
+      "apidocumentationsidebar" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation sidebar",
+        "required" : [ "raw" ]
+      },
+      "backpressurengoverflowstrategy" : {
         "type" : "object",
         "properties" : { },
         "required" : [ ]
@@ -21390,6 +21454,11 @@
         },
         "required" : [ "id", "hostname", "port", "tls" ]
       },
+      "grpc" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "G r p c"
+      },
       "proxies" : {
         "type" : "object",
         "properties" : {
@@ -21437,6 +21506,11 @@
           }
         },
         "title" : "Sec com headers"
+      },
+      "staging" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Staging"
       },
       "random" : {
         "type" : "object",
@@ -21533,11 +21607,30 @@
         "type" : "object",
         "description" : "BulkPatchBody object"
       },
-      "PemCsrBody" : {
-        "type" : "string",
-        "description" : "PEM encoded csr"
+      "apiblueprint" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/graphql"
+        }, {
+          "$ref" : "#/components/schemas/http"
+        }, {
+          "$ref" : "#/components/schemas/rest"
+        }, {
+          "$ref" : "#/components/schemas/websocket"
+        }, {
+          "$ref" : "#/components/schemas/grpc"
+        } ]
       },
-      "otoroshi.models.LargeRequestFaultConfig" : {
+      "apidocumentationsource" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation source",
+        "required" : [ "raw" ]
+      },
+      "seccomversionv1" : {
         "type" : "object",
         "properties" : {
           "ratio" : {
@@ -22109,14 +22202,33 @@
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation",
             "default" : "EntityLocation(TenantId(default),List(TeamId(default)))"
           },
-          "adminEntityValidators" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "array",
-              "items" : {
-                "type" : "object",
-                "description" : "Instance of JsonValidator"
-              }
+          "config" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          }
+        },
+        "title" : "Exporter ref",
+        "required" : [ "ref", "config" ]
+      },
+      "apidocumentationresourceref" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation resource ref",
+        "required" : [ "raw" ]
+      },
+      "userright" : {
+        "type" : "object",
+        "properties" : {
+          "tenant" : {
+            "$ref" : "#/components/schemas/tenantaccess"
+          },
+          "teams" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/teamaccess"
             }
           }
         },
@@ -22189,6 +22301,31 @@
         },
         "title" : "Weighted best response time",
         "required" : [ "ratio" ]
+      },
+      "apiflows" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "consumers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "plugins" : {
+            "$ref" : "#/components/schemas/ngplugins"
+          }
+        },
+        "title" : "Api flows",
+        "required" : [ "id", "name", "consumers", "plugins" ]
       },
       "apis.otoroshi.io.ApiConsumerSubscription" : {
         "type" : "object",
@@ -22355,9 +22492,20 @@
         },
         "required" : [ ]
       },
-      "apis.otoroshi.io.ApiConsumerSubscription" : {
-        "$schema" : "http://json-schema.org/draft-07/schema#",
-        "$ref" : "#/components/schemas/next.models.ApiConsumerSubscription"
+      "apidocumentationredirection" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation redirection",
+        "required" : [ "raw" ]
+      },
+      "oauth1providerget" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "O auth1 provider get"
       },
       "globalconfig" : {
         "type" : "object",
@@ -22924,7 +23072,12 @@
         },
         "required" : [ ]
       },
-      "otoroshi.next.models.NgRouteComposition" : {
+      "closed" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Closed"
+      },
+      "wasmauthmoduleconfig" : {
         "type" : "object",
         "properties" : {
           "location" : {
@@ -23260,6 +23413,15 @@
           },
           "saslConfig" : {
             "$ref" : "#/components/schemas/saslconfig"
+          },
+          "properties" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
           }
         },
         "title" : "Kafka config",
@@ -23331,9 +23493,23 @@
             "type" : "boolean",
             "default" : false
           },
-          "u2fLoginOnly" : {
-            "type" : "boolean",
-            "default" : false
+          "cacheConnectionSettings" : {
+            "$ref" : "#/components/schemas/ngcacheconnectionsettings"
+          }
+        },
+        "title" : "Ng client config",
+        "required" : [ "retries", "maxErrors", "retryInitialDelay", "backoffFactor", "connectionTimeout", "idleTimeout", "callAndStreamTimeout", "callTimeout", "globalTimeout", "sampleInterval", "customTimeouts", "cacheConnectionSettings" ]
+      },
+      "rest" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "R e s t"
+      },
+      "ngcacheconnectionsettings" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
           },
           "maintenanceMode" : {
             "type" : "boolean",
@@ -23402,6 +23578,11 @@
         "title" : "Simple otoroshi admin",
         "required" : [ "username", "password", "label", "createdAt", "typ", "tags", "metadata", "rights", "location", "adminEntityValidators" ]
       },
+      "published" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Published"
+      },
       "otoroshiadmintype" : {
         "anyOf" : [ {
           "$ref" : "#/components/schemas/otoroshiadmintypesimpleadmin"
@@ -23438,7 +23619,81 @@
             },
             "default" : [ ]
           },
-          "endlessIpAddresses" : {
+          "idleTimeout" : {
+            "type" : "number"
+          },
+          "callAndStreamTimeout" : {
+            "type" : "number"
+          },
+          "callTimeout" : {
+            "type" : "number"
+          },
+          "globalTimeout" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Custom timeouts",
+        "required" : [ "path", "connectionTimeout", "idleTimeout", "callAndStreamTimeout", "callTimeout", "globalTimeout" ]
+      },
+      "dropbufferngoverflowstrategy" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Drop buffer ng overflow strategy"
+      },
+      "tenantaccess" : {
+        "type" : "object",
+        "properties" : {
+          "value" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "canRead" : {
+            "type" : "boolean"
+          },
+          "canWrite" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "Tenant access",
+        "required" : [ "value", "canRead", "canWrite" ]
+      },
+      "apikey" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Apikey"
+      },
+      "apiconsumersettings" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/apikey"
+        }, {
+          "$ref" : "#/components/schemas/jwt"
+        }, {
+          "$ref" : "#/components/schemas/keyless"
+        }, {
+          "$ref" : "#/components/schemas/mtls"
+        }, {
+          "$ref" : "#/components/schemas/oauth2"
+        } ]
+      },
+      "proxy.otoroshi.io.Route" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -23737,7 +23992,55 @@
               "type" : "string"
             }
           },
-          "stripPath" : {
+          "oneMetaKeyIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "allMetaKeysIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Api key route matcher",
+        "required" : [ "noneTagIn", "oneTagIn", "allTagsIn", "noneMetaIn", "oneMetaIn", "allMetaIn", "noneMetaKeysIn", "oneMetaKeyIn", "allMetaKeysIn" ]
+      },
+      "badresponsesfaultconfig" : {
+        "type" : "object",
+        "properties" : {
+          "ratio" : {
+            "type" : "number"
+          },
+          "responses" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/badresponse"
+            }
+          }
+        },
+        "title" : "Bad responses fault config",
+        "required" : [ "ratio", "responses" ]
+      },
+      "websocket" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Websocket"
+      },
+      "samlcredentials" : {
+        "type" : "object",
+        "properties" : {
+          "signingKey" : {
+            "$ref" : "#/components/schemas/credential"
+          },
+          "encryptionKey" : {
+            "$ref" : "#/components/schemas/credential"
+          },
+          "signedDocuments" : {
             "type" : "boolean"
           },
           "exact" : {
@@ -23787,6 +24090,17 @@
           }
         },
         "required" : [ ]
+      },
+      "apiidentifier" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api identifier",
+        "required" : [ "id" ]
       },
       "autonomous" : {
         "type" : "object",
@@ -23976,6 +24290,16 @@
       },
       "otoroshi.events.StatsdConfig" : {
         "type" : "object",
+        "properties" : { },
+        "title" : "Best response time"
+      },
+      "deprecated" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Deprecated"
+      },
+      "restrictions" : {
+        "type" : "object",
         "properties" : {
           "datadog" : {
             "type" : "boolean"
@@ -24021,6 +24345,52 @@
         }, {
           "$ref" : "#/components/schemas/sendgridsettings"
         } ]
+      },
+      "apitesting" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "headerKey" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "headerValue" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api testing",
+        "required" : [ "enabled", "headerKey", "headerValue" ]
+      },
+      "ngclientcredentialtokenendpointconfig" : {
+        "type" : "object",
+        "properties" : {
+          "expiration" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "defaultKeyPair" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "allowedApikeys" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "allowedGroups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Ng client credential token endpoint config",
+        "required" : [ "expiration", "defaultKeyPair", "allowedApikeys", "allowedGroups" ]
       },
       "dataexporterconfigtypecustommetrics" : {
         "type" : "object",
@@ -24153,7 +24523,18 @@
         },
         "required" : [ "verificationSettings" ]
       },
-      "otoroshi.models.LargeResponseFaultConfig" : {
+      "apiconsumerstatus" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/closed"
+        }, {
+          "$ref" : "#/components/schemas/deprecated"
+        }, {
+          "$ref" : "#/components/schemas/published"
+        }, {
+          "$ref" : "#/components/schemas/staging"
+        } ]
+      },
+      "ngminimalroute" : {
         "type" : "object",
         "properties" : {
           "ratio" : {
@@ -24207,7 +24588,25 @@
         "$schema" : "http://json-schema.org/draft-07/schema#",
         "$ref" : "#/components/schemas/otoroshi.api.TweakedGlobalConfig"
       },
-      "next.models.ApiConsumerSubscription" : {
+      "apibackendclient" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "client" : {
+            "$ref" : "#/components/schemas/ngclientconfig"
+          }
+        },
+        "title" : "Api backend client",
+        "required" : [ "id", "name", "client" ]
+      },
+      "timeunit" : {
         "type" : "object",
         "properties" : { },
         "title" : "Time unit"
@@ -24236,9 +24635,161 @@
       },
       "apis.otoroshi.io.Api" : {
         "type" : "object",
-        "description" : "A resource of kind Api"
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "version" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "versions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "debugFlow" : {
+            "type" : "boolean"
+          },
+          "capture" : {
+            "type" : "boolean"
+          },
+          "exportReporting" : {
+            "type" : "boolean"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "state" : {
+            "$ref" : "#/components/schemas/apistate"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "blueprint" : {
+            "$ref" : "#/components/schemas/apiblueprint"
+          },
+          "routes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apiroute"
+            }
+          },
+          "backends" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apibackend"
+            }
+          },
+          "flows" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apiflows"
+            }
+          },
+          "clients" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apibackendclient"
+            }
+          },
+          "documentation" : {
+            "$ref" : "#/components/schemas/apidocumentation"
+          },
+          "consumers" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apiconsumer"
+            }
+          },
+          "deployments" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apideployment"
+            }
+          },
+          "testing" : {
+            "$ref" : "#/components/schemas/apitesting"
+          }
+        },
+        "title" : "Api",
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "version", "versions", "debugFlow", "capture", "exportReporting", "groups", "state", "enabled", "blueprint", "routes", "backends", "flows", "clients", "consumers", "deployments", "testing" ]
       },
       "httpprotocol" : {
+        "type" : "object",
+        "properties" : {
+          "value" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Http protocol",
+        "required" : [ "value" ]
+      },
+      "apiroute" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "frontend" : {
+            "$ref" : "#/components/schemas/ngfrontend"
+          },
+          "flowRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "backend" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api route",
+        "required" : [ "id", "enabled", "frontend", "flowRef", "backend" ]
+      },
+      "foo.extensions.otoroshi.io.Foo" : {
         "type" : "object",
         "properties" : {
           "location" : {
@@ -24590,6 +25141,80 @@
         "title" : "Sign",
         "required" : [ "verificationSettings", "algoSettings" ]
       },
+      "apidocumentation" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "source" : {
+            "$ref" : "#/components/schemas/apidocumentationsource"
+          },
+          "home" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "logo" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "references" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationresourceref"
+            }
+          },
+          "resources" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationresource"
+            }
+          },
+          "navigation" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationsidebar"
+            }
+          },
+          "redirections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationredirection"
+            }
+          },
+          "footer" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "search" : {
+            "$ref" : "#/components/schemas/apidocumentationsearch"
+          },
+          "banner" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "plans" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationplan"
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Api documentation",
+        "required" : [ "enabled", "home", "logo", "references", "resources", "navigation", "redirections", "search", "plans", "metadata", "tags" ]
+      },
       "pausenode" : {
         "type" : "object",
         "properties" : {
@@ -24726,6 +25351,36 @@
           }
         },
         "required" : [ ]
+      },
+      "apideployment" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "apiRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "owner" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "apiDefinition" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "version" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api deployment",
+        "required" : [ "id", "apiRef", "owner", "at", "apiDefinition", "version" ]
       },
       "maxmindgeolocationsettings" : {
         "type" : "object",
@@ -25121,7 +25776,18 @@
         },
         "required" : [ "rawValue" ]
       },
-      "PatchDocument" : {
+      "apistate" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/apideprecated"
+        }, {
+          "$ref" : "#/components/schemas/apipublished"
+        }, {
+          "$ref" : "#/components/schemas/apiremoved"
+        }, {
+          "$ref" : "#/components/schemas/apistaging"
+        } ]
+      },
+      "seccominfotokenversionlegacy" : {
         "type" : "object",
         "description" : "A JSONPatch document as defined by RFC 6902",
         "required" : [ "op", "path" ],
@@ -25170,7 +25836,12 @@
         },
         "required" : [ "rawValue" ]
       },
-      "next.models.ApiSpecification.AsyncApiSpecification" : {
+      "apideprecated" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api deprecated"
+      },
+      "keytype" : {
         "type" : "object",
         "properties" : {
           "content" : {
@@ -25238,7 +25909,18 @@
         },
         "required" : [ ]
       },
-      "otoroshi.models.BadResponse" : {
+      "apiconsumersubscriptionref" : {
+        "type" : "object",
+        "properties" : {
+          "ref" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api consumer subscription ref",
+        "required" : [ "ref" ]
+      },
+      "pkceconfig" : {
         "type" : "object",
         "properties" : {
           "status" : {
@@ -26046,7 +26728,17 @@
         "type" : "object",
         "description" : "an empty body. Useful for RPC like endpoints"
       },
-      "otoroshi.models.TlsWasmoSettings" : {
+      "apidocumentationsearch" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation search",
+        "required" : [ "raw" ]
+      },
+      "routeidentifier" : {
         "type" : "object",
         "properties" : {
           "settings" : {
@@ -26172,7 +26864,17 @@
         },
         "required" : [ "location", "serviceId", "name", "description", "metadata", "tags", "template40x", "template50x", "templateBuild", "templateMaintenance", "genericTemplates" ]
       },
-      "BulkResponseBody" : {
+      "apidocumentationresource" : {
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api documentation resource",
+        "required" : [ "raw" ]
+      },
+      "indexsettingsintervalyear" : {
         "type" : "object",
         "description" : "BulkResponseBody object"
       },
@@ -26542,11 +27244,48 @@
       "s3configuration" : {
         "type" : "object",
         "properties" : {
-          "value" : {
-            "type" : "string"
+          "bucket" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "endpoint" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "region" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "access" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "secret" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "key" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "chunkSize" : {
+            "type" : "number"
+          },
+          "v4auth" : {
+            "type" : "boolean"
+          },
+          "writeEvery" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "acl" : {
+            "$ref" : "#/components/schemas/cannedacl"
+          },
+          "pathStyleAccess" : {
+            "type" : "boolean"
           }
         },
-        "required" : [ "value" ]
+        "title" : "S3 configuration",
+        "required" : [ "bucket", "endpoint", "region", "access", "secret", "key", "chunkSize", "v4auth", "writeEvery", "acl", "pathStyleAccess" ]
       },
       "allservicespergroup" : {
         "type" : "object",
@@ -26641,6 +27380,11 @@
         "properties" : { },
         "title" : "Name i d format kerberos"
       },
+      "apiremoved" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api removed"
+      },
       "servicedescriptoridentifier" : {
         "type" : "object",
         "properties" : {
@@ -26716,6 +27460,11 @@
         },
         "title" : "Mapping settings",
         "required" : [ "map", "values", "remove" ]
+      },
+      "apipublished" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api published"
       },
       "samlcanocalizationmethodexclusivewithcomments" : {
         "type" : "object",
@@ -27430,6 +28179,11 @@
         "properties" : { },
         "title" : "Data exporter config type custom"
       },
+      "http" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Http"
+      },
       "defaulttemplates" : {
         "type" : "object",
         "properties" : {
@@ -27586,10 +28340,27 @@
           },
           "blockOnRed" : {
             "type" : "boolean"
+          },
+          "logicCheck" : {
+            "type" : "boolean"
+          },
+          "healthyRegexChecks" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "unhealthyRegexChecks" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
           }
         },
         "title" : "Health check",
-        "required" : [ "enabled", "url", "timeout", "healthyStatuses", "unhealthyStatuses", "blockOnRed" ]
+        "required" : [ "enabled", "url", "timeout", "healthyStatuses", "unhealthyStatuses", "blockOnRed", "logicCheck", "healthyRegexChecks", "unhealthyRegexChecks" ]
       },
       "otoroshi.models.ServiceDescriptor" : {
         "type" : "object",
@@ -27636,13 +28407,45 @@
             "type" : "string",
             "default" : "/"
           },
-          "matchingRoot" : {
-            "anyOf" : [ {
-              "type" : "string"
-            }, {
-              "type" : "null"
-            } ],
-            "default" : null
+          "credentials" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "$ref" : "#/components/schemas/jsvalue"
+              }
+            }
+          }
+        },
+        "title" : "Web authn details",
+        "required" : [ "handle", "credentials" ]
+      },
+      "apibackend" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "backend" : {
+            "$ref" : "#/components/schemas/ngbackend"
+          },
+          "client" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api backend",
+        "required" : [ "id", "name", "backend", "client" ]
+      },
+      "geopositionradius" : {
+        "type" : "object",
+        "properties" : {
+          "latitude" : {
+            "type" : "number"
           },
           "stripPath" : {
             "type" : "boolean",
@@ -27718,6 +28521,10 @@
             "minLength" : 1
           },
           "mechanism" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "jaasConfig" : {
             "type" : "string",
             "minLength" : 1
           }
@@ -28419,12 +29226,51 @@
         },
         "required" : [ "id", "name", "description", "chain", "privateKey", "revoked" ]
       },
-      "akka.util.ByteString" : {
-        "type" : "array",
-        "items" : {
-          "type" : "object",
-          "description" : "Instance of Any"
-        }
+      "nghasclientcertmatchingvalidatorconfig" : {
+        "type" : "object",
+        "properties" : {
+          "serialNumbers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "subjectDNs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "issuerDNs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "regexSubjectDNs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "regexIssuerDNs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Ng has client cert matching validator config",
+        "required" : [ "serialNumbers", "subjectDNs", "issuerDNs", "regexSubjectDNs", "regexIssuerDNs" ]
+      },
+      "GlobalConfigImportBody" : {
+        "type" : "object",
+        "description" : ""
       },
       "otoroshi.greenscore.RuleStateRecord" : {
         "type" : "object",
@@ -28515,31 +29361,21 @@
         "type" : "object",
         "description" : ""
       },
-      "otoroshi.models.JwtVerifier" : {
-        "oneOf" : [ {
-          "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier",
-          "title" : "GlobalJwtVerifier"
-        }, {
-          "$ref" : "#/components/schemas/otoroshi.models.LocalJwtVerifier",
-          "title" : "LocalJwtVerifier"
-        }, {
-          "$ref" : "#/components/schemas/otoroshi.models.RefJwtVerifier",
-          "title" : "RefJwtVerifier"
-        } ]
+      "ngjwtverificationonlyconfig" : {
+        "type" : "object",
+        "properties" : {
+          "verifier" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "failIfAbsent" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "Ng jwt verification only config",
+        "required" : [ "failIfAbsent" ]
       },
-      "otoroshi.models.JwtTokenLocation" : {
-        "oneOf" : [ {
-          "$ref" : "#/components/schemas/otoroshi.models.InCookie",
-          "title" : "InCookie"
-        }, {
-          "$ref" : "#/components/schemas/otoroshi.models.InHeader",
-          "title" : "InHeader"
-        }, {
-          "$ref" : "#/components/schemas/otoroshi.models.InQueryParam",
-          "title" : "InQueryParam"
-        } ]
-      },
-      "otoroshi.models.LatencyInjectionFaultConfig" : {
+      "proxy.otoroshi.io.Backend" : {
         "type" : "object",
         "properties" : {
           "ratio" : {
@@ -28577,7 +29413,12 @@
         },
         "required" : [ ]
       },
-      "otoroshi.script.PreRoutingRef" : {
+      "apistaging" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api staging"
+      },
+      "httplistenerconfig" : {
         "type" : "object",
         "properties" : {
           "enabled" : {
@@ -28825,6 +29666,8 @@
       },
       "entityidentifier" : {
         "anyOf" : [ {
+          "$ref" : "#/components/schemas/apiidentifier"
+        }, {
           "$ref" : "#/components/schemas/routecompositionidentifier"
         }, {
           "$ref" : "#/components/schemas/routeidentifier"
@@ -28861,6 +29704,11 @@
         },
         "title" : "Switch node",
         "required" : [ "json" ]
+      },
+      "graphql" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Graph q l"
       },
       "preroutingref" : {
         "type" : "object",

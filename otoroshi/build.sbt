@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype.*
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "17.7.0-dev"
+version := "17.9.0-dev"
 scalaVersion := scalaLangVersion
 
 ThisBuild / evictionErrorLevel := Level.Warn
@@ -283,6 +283,7 @@ PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 
 Test / parallelExecution := false
 IntegrationTest / testForkedParallel := false
+IntegrationTest / fork := true
 
 usePgpKeyHex("4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))

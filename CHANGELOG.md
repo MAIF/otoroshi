@@ -6,6 +6,122 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.8.1] - 2025-11-13
+
+
+https://github.com/MAIF/otoroshi/milestone/128?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.8.0...v17.8.1
+https://github.com/MAIF/otoroshi/releases/tag/v17.8.1
+
+
+### Added 
+
+- Avoid failure when filtering on missing values (#2318 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Http Security headers plugin (#2322 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Time restriction plugin (#2323 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Expression language can be used in JWT claims verification (#2324 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Expose input and output verified/transformed JWT tokens in the expression language (#2325 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- Apikey secret export may fail if secret already exist (#2314 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Google Secret Manager vault (#2315 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- PostgreSQL and JDK 25 (#2316 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- apikey enabled flag check bypass in some cases (#2317 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- S3 backend does not handle index.html automatically (#2319 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Fix Multi authentication plugin (#2321 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @aicfr
+* @Zwiterrion
+
+## [17.8.0] - 2025-11-07
+
+
+https://github.com/MAIF/otoroshi/milestone/127?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.7.0...v17.8.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.8.0
+
+
+### Added 
+
+- Headers validation plugin can use validation expressions (#2304 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support validation expressions in JWT Verifiers (#2305 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- New plugin to rewrite plugin request headers using regex (#2307 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- New plugin to rewrite plugin response headers using regex (#2308 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add informations about streaming durations in GatewayEvents (#2309 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OIDC config. fetch from UI now supports mTLS (#2312 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Make JWT UI like the other UIs (#2310 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- JWKS fetch need to select key by id AND alg (#2302 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Wipe apikey from request doesn't work anymore (#2303 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- When using apikey bearer with custom header name, request is not wiped (#2306 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- File storage is missing some counter values (#2311 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- bandwith plugins kind renderer missing (#2313 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
+## [17.7.0] - 2025-10-31
+
+
+https://github.com/MAIF/otoroshi/milestone/123?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.6.3...v17.7.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.7.0
+
+
+### Added 
+
+- In the route table, add column filter for the tags (#2257 fixed by [sebprunierserli](https://github.com/sebprunierserli))
+- In the route table, sort rows by name by default (#2258 fixed by [sebprunierserli](https://github.com/sebprunierserli))
+- JDK25 support for docker images (#2270 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add missing error template in the search bar (#2272 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Add health check strategy based on regex (#2277 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support APIs in apikeys authorize section (#2281 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- APIs can have groups (#2284 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make PG cleanup job interval customizable (#2285 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- When creating an apikey from a route, add route in the authorized entities and not group (#2290 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make metadata searchable in the route page (#2293 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Display group names in the route table (#2295 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Allow server side filtering with multiple values for a field in generic admin apis (#2297 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make Healthcheck job interval customizable (#2299 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Enhance kafka config. (#2300 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- emulate some datastore commands when the underlying datastore only support a limited command set (#2301 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Remove double save buttons on a lot of entity screens (#2279 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Fix mTLS label on the home of route designer (#2286 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Change throttling suffix "calls per sec" to "calls per window" (#2287 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Group exprot button in the Table component (#2298 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- Bad enum value for PostgreSQL SSL_MODE (#2275 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make id readonly when editing teams and organizations (#2278 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Otoroshi API behind an NGINX ingress controller can cause infinite proxy loop (#2282 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Apikey delete button always disabled (#2283 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- SSL Kafka data exporter doesn't work using Otoroshi certificates (#2288 fixed by )       
+      
+
+### Contributors
+
+* @sebprunierserli
+* @mathieuancelin
+* @Zwiterrion
+* @ptitFicus
+
 ## [17.6.3] - 2025-10-06
 
 

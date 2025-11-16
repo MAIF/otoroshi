@@ -1255,8 +1255,8 @@ class Env(
     localHost = s"127.0.0.1:$port",
     forceHttps = false,
     additionalHeaders = Map(
-      "Host" -> backOfficeDescriptorHostHeader,
-      "X-Forwarded-For" -> backOfficeDescriptorHostHeader,
+      "Host"            -> backOfficeDescriptorHostHeader,
+      "X-Forwarded-For" -> backOfficeDescriptorHostHeader
     ),
     publicPatterns = Seq("/health", "/metrics"),
     removeHeadersIn = Seq.empty,
@@ -1274,7 +1274,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "17.7.0-dev"
+  lazy val otoroshiVersion    = "17.9.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 

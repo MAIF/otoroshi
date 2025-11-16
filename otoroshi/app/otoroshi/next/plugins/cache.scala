@@ -125,7 +125,7 @@ class NgHttpClientCache extends NgRequestTransformer {
             "Cache-Control" -> s"max-age=${config.maxAgeSeconds}",
             "Date"          -> date,
             "Expires"       -> expires,
-            "ETag"          -> Codecs.sha1(s"$date -> ${ctx.request.domain}${ctx.request.uri}"),
+            "ETag"          -> Codecs.sha1(s"${ctx.request.domain}${ctx.request.uri}"),
             "Last-Modified" -> date,
             "Vary"          -> "Accept-Encoding"
           )

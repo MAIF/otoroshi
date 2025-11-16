@@ -10,6 +10,7 @@ import otoroshi.gateway.Errors
 import otoroshi.models.RemainingQuotas
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api._
+import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -179,10 +180,24 @@ class HeadersValidation extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = true
-  override def name: String                                = "Headers validation"
-  override def description: Option[String]                 = "This plugin validates the values of incoming request headers".some
+  override def multiInstance: Boolean      = true
+  override def core: Boolean               = true
+  override def name: String                = "Headers validation"
+  override def description: Option[String] = "This plugin validates the values of incoming request headers".some
+
+  override def documentation: Option[String]               = Some(
+    s"""You can use otoroshi expression languages in headers values. You can also use the following validation expressions:
+       |
+       |- Regex(foo[1-9]+bar)
+       |- Wildcard(foo*bar)
+       |- WildcardNot(foo*bar)
+       |- Contains(foo)
+       |- ContainsNot(foo)
+       |- Not(foo)
+       |- ContainedIn(a, b, c)
+       |- NotContainedIn(a, b, c)
+       |""".stripMargin
+  )
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
   override def isAccessAsync: Boolean                      = true
 
@@ -209,7 +224,42 @@ class HeadersValidation extends NgAccessValidator {
     }
     if (
       validationHeaders.forall { case (key, value) =>
-        headers.get(key).contains(value)
+        //headers.get(key).contains(value)
+        headers.get(key).exists { v =>
+          val expected        = value
+          val expectedTrimmed = expected.trim
+          if (expectedTrimmed.startsWith("Regex(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(6).init
+            RegexPool.regex(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("Wildcard(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(9).init
+            RegexPool.apply(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("RegexNot(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(9).init
+            !RegexPool.regex(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("WildcardNot(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(12).init
+            !RegexPool.apply(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("Contains(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(9).init
+            v.contains(contained)
+          } else if (expectedTrimmed.startsWith("ContainsNot(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(12).init
+            !v.contains(contained)
+          } else if (expectedTrimmed.startsWith("Not(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(4).init
+            v != contained
+          } else if (expectedTrimmed.startsWith("ContainedIn(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(12).init
+            contained.split(",").map(_.trim()).contains(v)
+          } else if (expectedTrimmed.startsWith("NotContainedIn(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(15).init
+            val values    = contained.split(",").map(_.trim())
+            !values.contains(v)
+          } else {
+            v == expected
+          }
+        }
       }
     ) {
       NgAccess.NgAllowed.vfuture

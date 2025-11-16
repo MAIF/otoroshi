@@ -219,13 +219,15 @@ class ReactivePgDataStores(
   private lazy val poolOptions = new PoolOptions()
     .setMaxSize(configuration.getOptionalWithFileSupport[Int]("app.pg.poolSize").getOrElse(100))
 
-  private lazy val ttlJobInitialDelay = configuration.getOptionalWithFileSupport[Long]("app.pg.ttl-cleanup-job.initial-delay").getOrElse(2000L).milliseconds
-  private lazy val ttlJobInterval     = configuration.getOptionalWithFileSupport[Long]("app.pg.ttl-cleanup-job.interval").getOrElse(5000L).milliseconds
-  private lazy val testMode       = configuration.getOptionalWithFileSupport[Boolean]("app.pg.testMode").getOrElse(false)
-  private lazy val schema         = configuration.getOptionalWithFileSupport[String]("app.pg.schema").getOrElse("otoroshi")
-  private lazy val table          = configuration.getOptionalWithFileSupport[String]("app.pg.table").getOrElse("entities")
-  private lazy val schemaDotTable = s"$schema.$table"
-  private lazy val client         = PgPool.pool(connectOptions, poolOptions)
+  private lazy val ttlJobInitialDelay =
+    configuration.getOptionalWithFileSupport[Long]("app.pg.ttl-cleanup-job.initial-delay").getOrElse(2000L).milliseconds
+  private lazy val ttlJobInterval     =
+    configuration.getOptionalWithFileSupport[Long]("app.pg.ttl-cleanup-job.interval").getOrElse(5000L).milliseconds
+  private lazy val testMode           = configuration.getOptionalWithFileSupport[Boolean]("app.pg.testMode").getOrElse(false)
+  private lazy val schema             = configuration.getOptionalWithFileSupport[String]("app.pg.schema").getOrElse("otoroshi")
+  private lazy val table              = configuration.getOptionalWithFileSupport[String]("app.pg.table").getOrElse("entities")
+  private lazy val schemaDotTable     = s"$schema.$table"
+  private lazy val client             = PgPool.pool(connectOptions, poolOptions)
 
   lazy val redis = new ReactivePgRedis(
     client,
@@ -293,18 +295,20 @@ class ReactivePgDataStores(
 
   def setupCleanup(): Unit = {
     given ec: ExecutionContextExecutor = reactivePgActorSystem.dispatcher
-    cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(ttlJobInitialDelay, ttlJobInterval)(SchedulerHelper.runnable {
-      try {
-        client
-          .query(s"DELETE FROM $schemaDotTable WHERE (ttl_starting_at + ttl) < NOW();")
-          .executeAsync()
-          .recover { case e: Throwable =>
-            logger.error("cache scheduler exec error", e)
-          }
-      } catch {
-        case e: Throwable => logger.error("cache scheduler error", e)
-      }
-    }))
+    cancel.set(
+      reactivePgActorSystem.scheduler.scheduleAtFixedRate(ttlJobInitialDelay, ttlJobInterval)(SchedulerHelper.runnable {
+        try {
+          client
+            .query(s"DELETE FROM $schemaDotTable WHERE (ttl_starting_at + ttl) < NOW();")
+            .executeAsync()
+            .recover { case e: Throwable =>
+              logger.error("cache scheduler exec error", e)
+            }
+        } catch {
+          case e: Throwable => logger.error("cache scheduler error", e)
+        }
+      })
+    )
   }
 
   def mockService(): Unit = {

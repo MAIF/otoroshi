@@ -46,21 +46,21 @@ export class TenantsPage extends Component {
       id: { type: 'string', props: { label: 'Id', placeholder: '---', disabled: fprops.update } },
       name: {
         type: 'string',
-          props: { label: 'Name', placeholder: 'Nice organization' },
+        props: { label: 'Name', placeholder: 'Nice organization' },
       },
       description: {
         type: 'string',
-          props: { label: 'Description', placeholder: 'A nice organization to do whatever you want' },
+        props: { label: 'Description', placeholder: 'A nice organization to do whatever you want' },
       },
       metadata: {
         type: 'object',
-          props: { label: 'Metadata' },
+        props: { label: 'Metadata' },
       },
       tags: {
         type: 'array',
-          props: { label: 'Tags' },
+        props: { label: 'Tags' },
       },
-    }
+    };
   };
 
   render() {

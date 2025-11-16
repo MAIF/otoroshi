@@ -296,14 +296,16 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   ): Future[Result] = {
     given req: RequestHeader = request
 
-    val redirect     = request
+    val redirect = request
       .getQueryString("redirect")
       .filter(redirect =>
-        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=$redirect"))
+        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")) ||
+        request.getQueryString("hash").contains(env.sign(s"route=${descriptor.id}&redirect=${redirect}"))
       )
       .map(redirectBase64Encoded =>
         new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
       )
+
     val clientId     = authConfig.clientId
     val responseType = "code"
     val scope        = authConfig.scope // "openid profile email name"
@@ -324,7 +326,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         encryptState(
           Json.obj(
             "descriptor" -> descriptor.id,
-            "hash"       -> hash
+            "hash"       -> hash,
+            "ref"        -> authConfig.id
           )
         )
       else ""
@@ -408,7 +411,15 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           case url                                                => url
         }
 
-    val state = if (authConfig.noWildcardRedirectURI) encryptState(Json.obj("hash" -> hash)) else ""
+    val state =
+      if (authConfig.noWildcardRedirectURI)
+        encryptState(
+          Json.obj(
+            "hash" -> hash,
+            "ref"  -> authConfig.id
+          )
+        )
+      else ""
 
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>

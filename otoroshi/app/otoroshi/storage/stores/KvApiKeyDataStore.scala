@@ -247,7 +247,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
             val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
             service.metadata.get("Otoroshi-Api-Ref") match {
               case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef) => apiKey.some.vfuture
-              case _ => {
+              case _                                                        => {
                 val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
                 identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey).vfuture
               }
@@ -276,7 +276,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
             val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
             service.metadata.get("Otoroshi-Api-Ref") match {
               case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef) => apiKey.some
-              case _ => {
+              case _                                                        => {
                 val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
                 identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
               }

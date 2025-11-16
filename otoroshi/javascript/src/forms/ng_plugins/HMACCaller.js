@@ -17,7 +17,7 @@ export default {
     authorizationHeader: {
       type: 'string',
       label: 'Header used to send HMAC signature',
-      placeholder: 'Authorization, Proxy-Authorization, ...'
+      placeholder: 'Authorization, Proxy-Authorization, ...',
     },
   },
   config_flow: ['secret', 'algo', 'authorizationHeader'],

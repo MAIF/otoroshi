@@ -162,7 +162,7 @@ export class JwtVerifier extends Component {
 
     return (
       <div>
-        {this.props.showHeader && (
+        {false && this.props.showHeader && (
           <Header
             isConfigView={isConfigView}
             onChange={(isConfigView) => this.setState({ isConfigView })}

@@ -284,7 +284,11 @@ otoroshi {
     name_of_the_vault {
       type = "gcloud"
       url = "https://secretmanager.googleapis.com"
-      apikey = "secret"
+      auth_mode = "auto" # can be token, metadata_server, service_account_key, auto, google. Auto mode will try ADC then service_account_key then metadata server
+      service_account_key_content = "{ ... }" # content of the service account key if auth_mode = auto or auth_mode = service_account_key
+      service_account_key_path = "/path/to/sa.json" # path of the service account key file if auth_mode = auto or auth_mode = service_account_key
+      service_account_scopes = ["scope1", "scope2"] # scopes applied to the credentials
+      metadata_server_url = "https://...." # metadata server url if auth_mode = metadata_server
     }
   }
 }

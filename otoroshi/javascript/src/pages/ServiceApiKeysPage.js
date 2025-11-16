@@ -1000,8 +1000,8 @@ export class ServiceApiKeysPage extends Component {
                 clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
                 authorizedEntities: [
                   //...(this.state.service.groups || []).map((g) => 'group_' + g), // Here we authorize the group by default, can be dangerous
-                  `route_${this.props.params.routeId}` // just authorize the route
-                ]
+                  `route_${this.props.params.routeId}`, // just authorize the route
+                ],
               }))
           }
           _defaultValue={() => ({

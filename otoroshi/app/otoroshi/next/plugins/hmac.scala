@@ -15,7 +15,8 @@ import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class HMACValidatorConfig(secret: Option[String] = None, authorizationHeader: Option[String] = None) extends NgPluginConfig {
+case class HMACValidatorConfig(secret: Option[String] = None, authorizationHeader: Option[String] = None)
+    extends NgPluginConfig {
   def json: JsValue = HMACValidatorConfig.format.writes(this)
 }
 
@@ -32,7 +33,7 @@ object HMACValidatorConfig {
     }
     override def writes(o: HMACValidatorConfig): JsValue             =
       Json.obj(
-        "secret" -> o.secret,
+        "secret"              -> o.secret,
         "authorizationHeader" -> o.authorizationHeader
       )
   }
@@ -105,16 +106,17 @@ class HMACValidator extends NgAccessValidator {
           authorizationHeader match {
             case Some(authorization) if ctx.request.headers.get(authorization).isDefined =>
               checkHMACSignature(ctx.request.headers.get(authorization).get, ctx, secret)
-            case None => (ctx.request.headers.get("Authorization"), ctx.request.headers.get("Proxy-Authorization")) match {
-              case (Some(authorization), None) => checkHMACSignature(authorization, ctx, secret)
-              case (None, Some(authorization)) => checkHMACSignature(authorization, ctx, secret)
-              case (_, _)                      =>
-                if (logger.isDebugEnabled) logger.debug("Missing authorization header")
-                NgAccess.NgDenied(BadRequest)
-            }
+            case None                                                                    =>
+              (ctx.request.headers.get("Authorization"), ctx.request.headers.get("Proxy-Authorization")) match {
+                case (Some(authorization), None) => checkHMACSignature(authorization, ctx, secret)
+                case (None, Some(authorization)) => checkHMACSignature(authorization, ctx, secret)
+                case (_, _)                      =>
+                  if (logger.isDebugEnabled) logger.debug("Missing authorization header")
+                  NgAccess.NgDenied(BadRequest)
+              }
           }
-        } recover {
-          case _ => NgAccess.NgDenied(BadRequest)
+        } recover { case _ =>
+          NgAccess.NgDenied(BadRequest)
         } get
     }).vfuture
   }

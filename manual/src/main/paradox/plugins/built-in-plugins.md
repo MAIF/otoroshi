@@ -520,7 +520,7 @@ This plugin can be used to call api that are authenticated using basic auth.
 ```json
 {
   "username" : null,
-  "passaword" : null,
+  "password" : null,
   "headerName" : "Authorization",
   "headerValueFormat" : "Basic %s"
 }
@@ -1510,7 +1510,8 @@ This plugin can be used to check if a HMAC signature is present and valid in Aut
 
 ```json
 {
-  "secret" : null
+  "secret" : null,
+  "authorizationHeader" : null
 }
 ```
 
@@ -1547,6 +1548,20 @@ This plugin validates the values of incoming request headers
 }
 ```
 
+
+
+### Documentation
+
+You can use otoroshi expression languages in headers values. You can also use the following validation expressions:
+
+- Regex(foo[1-9]+bar)
+- Wildcard(foo*bar)
+- WildcardNot(foo*bar)
+- Contains(foo)
+- ContainsNot(foo)
+- Not(foo)
+- ContainedIn(a, b, c)
+- NotContainedIn(a, b, c)
 
 
 
@@ -2379,7 +2394,9 @@ This plugin applies an authentication module from a list of selected modules
 ```json
 {
   "pass_with_apikey" : false,
-  "auth_modules" : [ ]
+  "auth_modules" : [ ],
+  "use_email_prompt" : false,
+  "users_groups" : { }
 }
 ```
 
@@ -4787,6 +4804,9 @@ This plugin replaces compromised cdn.polyfill.io script tags in html resource wi
 
 This plugin allows or forbid request based on path patterns
 
+ Strict mode = restricted access.
+ Only an API key is accepted.
+
 
 
 ### Default configuration
@@ -5015,6 +5035,39 @@ Remember to properly escape backslashes in JSON.
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexRequestHeadersRewriter }
+
+## Regex request headers rewriter
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RegexRequestHeadersRewriter`
+
+### Description
+
+Rewrites the HTTP request headers using a set of regex rules
+
+
+
+### Default configuration
+
+```json
+{
+  "rules" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexResponseBodyRewriter }
 
 ## Regex response body rewriter
@@ -5082,6 +5135,39 @@ Rewrites the HTTP response body using a set of regex rules, with optional auto-p
 ```
 
 Note: replacement supports backrefs $1, $2, ...
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexResponseHeadersRewriter }
+
+## Regex response headers rewriter
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RegexResponseHeadersRewriter`
+
+### Description
+
+Rewrites the HTTP response headers using a set of regex rules
+
+
+
+### Default configuration
+
+```json
+{
+  "rules" : [ ]
+}
+```
+
 
 
 
@@ -5568,7 +5654,8 @@ This plugin is able to S3 bucket with file content
   "chunkSize" : 8388608,
   "v4auth" : true,
   "writeEvery" : 60000,
-  "acl" : "private"
+  "acl" : "private",
+  "pathStyleAccess" : false
 }
 ```
 
@@ -5608,6 +5695,52 @@ This plugin is able to call SOAP actions and expose it as a rest endpoint
   "charset" : null,
   "jq_request_filter" : null,
   "jq_response_filter" : null
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SecurityHeadersPlugin }
+
+## Security Headers
+
+### Defined on steps
+
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.SecurityHeadersPlugin`
+
+### Description
+
+Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options)
+
+
+
+### Default configuration
+
+```json
+{
+  "frame_options" : "DISABLED",
+  "xss_protection" : "DISABLED",
+  "content_type_options" : false,
+  "hsts" : {
+    "enabled" : false,
+    "include_subdomains" : false,
+    "max_age" : 3600,
+    "preload" : false,
+    "on_http" : false
+  },
+  "csp" : {
+    "mode" : "DISABLED",
+    "csp" : ""
+  }
 }
 ```
 
@@ -5898,11 +6031,44 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-10-06T13:50:36.338Z",
-  "stop" : "2025-10-07T13:50:36.359Z",
+  "start" : "2025-11-13T09:21:27.056Z",
+  "stop" : "2025-11-14T09:21:27.077Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.TimeRestrictedAccessPlugin }
+
+## Time Restriction
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.TimeRestrictedAccessPlugin`
+
+### Description
+
+This plugin restrict when a route is accessible
+
+
+
+### Default configuration
+
+```json
+{
+  "rules" : [ ]
 }
 ```
 

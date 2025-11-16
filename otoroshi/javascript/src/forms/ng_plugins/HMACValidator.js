@@ -9,7 +9,7 @@ export default {
       type: 'string',
       label: 'Header used to send HMAC signature',
       placeholder: 'Authorization, Proxy-Authorization or custom header',
-    }
+    },
   },
   config_flow: ['secret', 'authorizationHeader'],
 };

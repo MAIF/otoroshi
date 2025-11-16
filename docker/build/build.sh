@@ -129,7 +129,7 @@ case "${1}" in
     ;;
   build-dev)
     OTO_VERSION="dev"
-    JDK_VERSION="22"
+    JDK_VERSION="25"
     copy_build
     docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" -t "maif/otoroshi:dev"  .
     cleanup

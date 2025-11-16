@@ -304,7 +304,7 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
 
         Try {
           schema.validate(data, InputFormat.JSON).isEmpty
-        } recover { case _: Throwable =>
+        } recover { case _ =>
           false
         } get
       })

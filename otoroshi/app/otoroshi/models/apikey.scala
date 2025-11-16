@@ -165,33 +165,33 @@ object EntityIdentifier       {
 sealed trait EntityIdentifier {
   def prefix: String
   def id: String
-  def str: String         = s"${prefix}_$id"
-  def json: JsValue       = JsString(str)
-  def modernJson: JsValue = Json.obj("kind" -> prefix, "id" -> id)
-  def isService: Boolean = false
-  def isApi: Boolean = false
-  def isGroup: Boolean = false
-  def isRoute: Boolean = false
+  def str: String                 = s"${prefix}_${id}"
+  def json: JsValue               = JsString(str)
+  def modernJson: JsValue         = Json.obj("kind" -> prefix, "id" -> id)
+  def isService: Boolean          = false
+  def isApi: Boolean              = false
+  def isGroup: Boolean            = false
+  def isRoute: Boolean            = false
   def isRouteComposition: Boolean = false
 }
 case class ServiceGroupIdentifier(id: String) extends EntityIdentifier {
-  def prefix: String = "group"
+  def prefix: String            = "group"
   override def isGroup: Boolean = true
 }
 case class ServiceDescriptorIdentifier(id: String) extends EntityIdentifier {
-  def prefix: String = "service"
+  def prefix: String              = "service"
   override def isService: Boolean = true
 }
 case class RouteIdentifier(id: String) extends EntityIdentifier {
-  def prefix: String = "route"
+  def prefix: String            = "route"
   override def isRoute: Boolean = true
 }
 case class ApiIdentifier(id: String) extends EntityIdentifier {
-  def prefix: String = "api"
+  def prefix: String          = "api"
   override def isApi: Boolean = true
 }
 case class RouteCompositionIdentifier(id: String) extends EntityIdentifier {
-  def prefix: String = "route-composition"
+  def prefix: String                       = "route-composition"
   override def isRouteComposition: Boolean = true
 }
 
@@ -244,12 +244,12 @@ case class ApiKey(
   }
   def authorizedOnServiceOrGroups(service: String, groups: Seq[String]): Boolean = {
     authorizedOnService(service) ||
-      authorizedOnRoute(service) ||
-      authorizedOnApi(service) ||
-      authorizedOnRouteComposition(service) || {
-        val identifiers = groups.map(ServiceGroupIdentifier.apply)
-        authorizedEntities.exists(e => identifiers.contains(e))
-      }
+    authorizedOnRoute(service) ||
+    authorizedOnApi(service) ||
+    authorizedOnRouteComposition(service) || {
+      val identifiers = groups.map(ServiceGroupIdentifier.apply)
+      authorizedEntities.exists(e => identifiers.contains(e))
+    }
   }
   // def services(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
   //   FastFuture
@@ -1816,7 +1816,7 @@ object ApiKeyHelper {
               location = Some(
                 ApikeyLocation(
                   ApikeyLocationKind.Header,
-                  "Authorization" // TODO: do it better ;)
+                  constraints.otoBearerAuth.headerName.getOrElse("Authorization")
                 )
               ),
               otoBearer = Some(bearer)
@@ -2077,15 +2077,16 @@ object ApiKeyHelper {
           case None         => (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
           case Some(apikey) =>
             apikeyTuple match {
-              case ApikeyTuple(_, None, None, _, _) if apikey.allowClientIdOnly                  => apikey.right
-              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isValid(secret)            => apikey.right
-              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret)          =>
+              case ApikeyTuple(_, None, None, _, _) if apikey.allowClientIdOnly                                     => apikey.right
+              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isValid(secret)                               => apikey.right
+              case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret)                             =>
                 (
                   apikey.some,
                   s"apikey ${apikeyTuple.clientId}' disabled or secret/next.secret does not match".some
                 ).left
-              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if apikey.checkBearer(otoBearer)  => apikey.right
-              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) =>
+              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if apikey.checkBearer(otoBearer) && apikey.enabled   =>
+                apikey.right
+              case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) || !apikey.enabled =>
                 (apikey.some, s"apikey ${apikeyTuple.clientId}' bearer/next.bearer does not match".some).left
               case ApikeyTuple(_, None, Some(jwt), _, _)                                         =>
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
@@ -2325,6 +2326,7 @@ object ApiKeyHelper {
       case None              =>
         error(Results.BadRequest, "no apikey", "errors.no.api.key", "no apikey detected in the http request".some)
       case Some(apikeyTuple) =>
+        attrs.putIfAbsent(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey -> apikeyTuple)
         validateApikeyTuple(req, apikeyTuple, constraints, service, attrs) match {
           case Left((None, additionalMessage))                                      =>
             error(Results.BadRequest, "invalid apikey", "errors.invalid.api.key", additionalMessage)

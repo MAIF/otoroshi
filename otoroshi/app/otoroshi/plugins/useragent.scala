@@ -32,8 +32,8 @@ object UserAgentHelper {
   private def ensureInitialized(): Future[UserAgentParser] = {
     Option(parserFuture.get()) match {
       case Some(future) => future
-      case None =>
-        val start = System.currentTimeMillis()
+      case None         =>
+        val start  = System.currentTimeMillis()
         val future = Future {
           logger.info("Initializing User-Agent parser ...")
           val parser = new UserAgentService().loadParser()
@@ -55,8 +55,8 @@ object UserAgentHelper {
   def userAgentDetails(ua: String)(using env: Env): Future[Option[JsObject]] = {
     env.metrics.withTimer("otoroshi.plugins.useragent.details") {
       cache.getIfPresent(ua) match {
-        case details @ Some(_)                      => details.flatten.future
-        case None =>
+        case details @ Some(_) => details.flatten.future
+        case None              =>
           ensureInitialized().map { parser =>
           Try(parser.parse(ua)) match {
             case Failure(e)            => cache.put(ua, None)

@@ -20,8 +20,17 @@ import otoroshi.api.Otoroshi
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.models.DataExporterConfig
 import otoroshi.loader.modules.OtoroshiComponentsInstances
-import otoroshi.models.*
-import otoroshi.next.models.NgRoute
+import otoroshi.next.models.{
+  NgBackend,
+  NgClientConfig,
+  NgDomainAndPath,
+  NgFrontend,
+  NgPluginInstance,
+  NgPlugins,
+  NgRoute,
+  NgTarget
+}
+import otoroshi.security.IdGenerator
 import play.api.ApplicationLoader.Context
 import play.api.libs.json.*
 import play.api.libs.ws.*
@@ -36,8 +45,9 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.concurrent.duration.*
 import scala.concurrent.*
 import scala.util.{Random, Success, Try}
-import org.slf4j
 import otoroshi.utils.syntax.implicits.BetterJsValue
+import org.slf4j
+import play.api.http.Status
 
 trait AddConfiguration {
   def getConfiguration(configuration: Configuration): Configuration
@@ -815,7 +825,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
     val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
       compressionEnabled = false,
       idleTimeout = (2 * 60 * 1000).millis,
-      connectionTimeout = (2 * 60 * 1000).millis,
+      connectionTimeout = (2 * 60 * 1000).millis
     )
     AhcWSClient(
       config.copy(
@@ -1534,6 +1544,176 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       }
       .andWait(2000.millis)
   }
+
+  val PLUGINS_ROUTE_ID = "plugins-route"
+  val PLUGINS_HOST     = "plugins.oto.tools"
+  val LOCAL_HOST       = "local.oto.tools"
+
+  def createRequestOtoroshiIORoute(
+      plugins: Seq[NgPluginInstance] = Seq.empty,
+      domain: String = "plugins.oto.tools",
+      id: String = PLUGINS_ROUTE_ID,
+      hostname: String = "request.otoroshi.io",
+      root: String = "/"
+  ) = {
+    val newRoute = NgRoute(
+      location = EntityLocation.default,
+      id = id,
+      name = "plugins-route",
+      description = "plugins-route",
+      enabled = true,
+      debugFlow = false,
+      capture = false,
+      exportReporting = false,
+      frontend = NgFrontend(
+        domains = Seq(NgDomainAndPath(domain)),
+        headers = Map(),
+        cookies = Map(),
+        query = Map(),
+        methods = Seq(),
+        stripPath = true,
+        exact = false
+      ),
+      backend = NgBackend(
+        targets = Seq(
+          NgTarget(
+            hostname = hostname,
+            port = 443,
+            id = "request.otoroshi.io.target",
+            tls = true
+          )
+        ),
+        root,
+        rewrite = false,
+        loadBalancing = RoundRobin,
+        client = NgClientConfig.default
+      ),
+      plugins = NgPlugins(plugins),
+      tags = Seq.empty,
+      metadata = Map.empty
+    )
+
+    val result = createOtoroshiRoute(newRoute).futureValue
+
+    if (result._2 == Status.CREATED) {
+      newRoute
+    } else {
+      throw new RuntimeException("failed to create a new route")
+    }
+  }
+
+  def createLocalRoute(
+      plugins: Seq[NgPluginInstance] = Seq.empty,
+      responseStatus: Int = Status.OK,
+      result: HttpRequest => JsValue = _ => Json.obj(),
+      responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
+      domain: String = "local.oto.tools",
+      https: Boolean = false,
+      frontendPath: String = "/api",
+      jsonAPI: Boolean = true,
+      responseContentType: String = "application/json",
+      stringResult: HttpRequest => String = _ => "",
+      target: Option[NgTarget] = None
+  ) = {
+
+    var _target: Option[TargetService] = None
+
+    if (target.isEmpty)
+      _target = (if (jsonAPI)
+                   TargetService
+                     .jsonFull(
+                       Some(domain),
+                       frontendPath,
+                       r => (responseStatus, result(r), responseHeaders)
+                     )
+                 else
+                   TargetService
+                     .full(
+                       Some(domain),
+                       frontendPath,
+                       contentType = responseContentType,
+                       r => (responseStatus, stringResult(r), responseHeaders)
+                     ))
+        .await()
+        .some
+
+    val newRoute = NgRoute(
+      location = EntityLocation.default,
+      id = s"route_${IdGenerator.uuid}",
+      name = "local-route",
+      description = "local-route",
+      enabled = true,
+      debugFlow = false,
+      capture = false,
+      exportReporting = false,
+      frontend = NgFrontend(
+        domains = Seq(NgDomainAndPath(domain)),
+        headers = Map(),
+        cookies = Map(),
+        query = Map(),
+        methods = Seq(),
+        stripPath = true,
+        exact = false
+      ),
+      backend = NgBackend(
+        targets = Seq(
+          target.getOrElse(
+            NgTarget(
+              hostname = "127.0.0.1",
+              port = _target.get.port,
+              id = "local.target",
+              tls = https
+            )
+          )
+        ),
+        root = "/",
+        rewrite = false,
+        loadBalancing = RoundRobin,
+        client = NgClientConfig.default
+      ),
+      plugins = NgPlugins(plugins),
+      tags = Seq.empty,
+      metadata = Map.empty
+    )
+
+    val resp = createOtoroshiRoute(newRoute).futureValue
+
+    if (resp._2 == Status.CREATED) {
+      newRoute
+    } else {
+      throw new RuntimeException("failed to create a new local route")
+    }
+  }
+
+  def createPluginsRouteApiKeys() = {
+    createOtoroshiApiKey(getValidApiKeyForPluginsRoute).futureValue
+  }
+
+  def deletePluginsRouteApiKeys() = {
+    deleteOtoroshiApiKey(getValidApiKeyForPluginsRoute).futureValue
+  }
+
+  def getValidApiKeyForPluginsRoute = {
+    ApiKey(
+      clientId = "apikey-test",
+      clientSecret = "1234",
+      clientName = "apikey-test",
+      authorizedEntities = Seq(RouteIdentifier(PLUGINS_ROUTE_ID))
+    )
+  }
+
+  def getOutHeader(resp: WSRequest#Self#Response, headerName: String) = {
+    resp.headers.find { case (k, _) => k.equalsIgnoreCase(headerName) }.map(_._2).flatMap(_.headOption)
+  }
+
+  def getInHeader(resp: WSRequest#Self#Response, headerName: String) = {
+    val headers = Json
+      .parse(resp.body)
+      .as[JsValue]
+      .select("headers")
+      .as[Map[String, String]]
+    headers.get(headerName)
+  }
 }
 
 object Implicits {
@@ -1643,7 +1823,7 @@ class TargetService(
           HttpResponse(
             code,
             headers = headers,
-            entity = entity,
+            entity = entity
           )
         )
       case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get    =>
@@ -1841,6 +2021,45 @@ class WebsocketServer(counter: AtomicInteger) {
   val bound: Future[Http.ServerBinding] = Http().newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): WebsocketServer = {
+    Await.result(bound, 60.seconds)
+    this
+  }
+
+  def stop(): Unit = {
+    Await.result(bound, 60.seconds).unbind()
+    Await.result(http.shutdownAllConnectionPools(), 60.seconds)
+    Await.result(system.terminate(), 60.seconds)
+  }
+}
+
+class WebsocketBackend(
+    root: String = "",
+    callback: String => Message = text => TextMessage(s"Echo: $text"),
+    streamCallback: Source[String, _] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))
+) {
+  import akka.http.scaladsl.server.Directives.{complete, get, handleWebSocketMessages, path}
+
+  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  implicit val mat: Materializer   = Materializer(system)
+  val http                         = Http()
+
+  val websocketFlow: Flow[Message, Message, Any] = Flow[Message].map {
+    case TextMessage.Strict(text)         => callback(text)
+    case TextMessage.Streamed(textStream) => streamCallback(textStream)
+    case _                                => TextMessage("Unsupported message type")
+  }
+
+  val websocketRoute = path(root) {
+    get {
+      handleWebSocketMessages(websocketFlow)
+    }
+  }
+
+  val backendPort = TargetService.freePort
+
+  val bound = http.newServerAt("0.0.0.0", backendPort).bind(websocketRoute)
+
+  def await(): WebsocketBackend = {
     Await.result(bound, 60.seconds)
     this
   }

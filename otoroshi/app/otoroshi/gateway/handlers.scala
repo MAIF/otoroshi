@@ -244,6 +244,16 @@ object GatewayRequestHandler {
       maybeRoute = Some(route)
     )
 
+    lazy val missingCookie = Errors.craftResponseResult(
+      s"No authentication cookies found",
+      Unauthorized,
+      req,
+      None,
+      Some("errors.invalid.session"),
+      attrs = attrs,
+      maybeRoute = Some(route)
+    )
+
     route.legacy.authConfigRef match {
       case None      =>
         route.plugins
@@ -252,7 +262,7 @@ object GatewayRequestHandler {
             NgMultiAuthModuleConfig.format.reads(multiAuth.config.raw) match {
               case JsSuccess(config, _) =>
                 req.cookies.filter(cookie => cookie.name.startsWith("oto-papps")) match {
-                  case Nil                         => missingAuthRefError
+                  case Nil                         => missingCookie
                   case cookies if cookies.nonEmpty =>
                     config.modules
                       .flatMap(module => env.proxyState.authModule(module))
@@ -260,7 +270,7 @@ object GatewayRequestHandler {
                         cookies.exists(cookie => cookie.name == s"oto-papps-${module.routeCookieSuffix(route)}")
                       ) match {
                       case Some(authModuleConfig) => f(authModuleConfig)
-                      case None                   => missingAuthRefError
+                      case None                   => missingCookie
                     }
                 }
               case JsError(_)           => missingAuthRefError

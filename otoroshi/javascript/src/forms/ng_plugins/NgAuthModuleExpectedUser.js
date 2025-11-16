@@ -13,7 +13,7 @@ export default {
           label: 'name',
           value: 'id',
         },
-      }
+      },
     },
   },
   config_flow: ['only_from'],

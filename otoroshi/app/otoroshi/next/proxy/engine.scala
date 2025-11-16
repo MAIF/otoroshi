@@ -40,8 +40,8 @@ import play.api.mvc.*
 import play.api.mvc.request.RequestAttrKey
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.duration.{DurationInt, DurationLong}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 case class ProxyEngineConfig(
@@ -3147,7 +3147,14 @@ class ProxyEngine() extends RequestHandler {
         .withMaybeProxyServer(
           route.backend.client.proxy.orElse(globalConfig.proxies.services)
         )
+      val requestStreamStart                             = System.currentTimeMillis()
       val theBody                                        = request.body
+        .applyOn { source =>
+          source.alsoTo(Sink.onComplete { case _ =>
+            val requestStreamDuration = System.currentTimeMillis() - requestStreamStart
+            attrs.put(otoroshi.plugins.Keys.RequestStreamDurationKey -> requestStreamDuration)
+          })
+        }
         .applyOnIf(env.dynamicBodySizeCompute && contentLengthIn.isEmpty) { (body: Source[ByteString, ?]) =>
           body.map { chunk =>
             counterIn.addAndGet(chunk.size)
@@ -3185,6 +3192,12 @@ class ProxyEngine() extends RequestHandler {
         .stream()
         .map { response =>
           attrs.put(otoroshi.plugins.Keys.BackendDurationKey -> (System.currentTimeMillis() - start))
+          val fbodyStart         = System.currentTimeMillis()
+          val fbody              = response.bodyAsSource.alsoTo(Sink.onComplete { case _ =>
+            attrs.put(
+              otoroshi.plugins.Keys.BackendsResponseStreamDurationKey -> (System.currentTimeMillis() - fbodyStart)
+            )
+          })
           val idOpt              = rawRequest.attrs.get(otoroshi.netty.NettyRequestKeys.TrailerHeadersIdKey)
           val hasTrailerHeaders  =
             rawRequest.headers.get("te").contains("trailers") || response.headers.containsIgnoreCase("trailer")
@@ -3212,7 +3225,7 @@ class ProxyEngine() extends RequestHandler {
                 }
               },
               cookies = response.safeCookies(env),
-              body = response.bodyAsSource
+              body = fbody
             ),
             response.some
           )
@@ -3764,6 +3777,9 @@ class ProxyEngine() extends RequestHandler {
           uri = rawRequest.relativeUri
         ),
         backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
+        requestStreamingDuration = -1L,
+        responseStreamingDuration = -1L,
+        backendResponseStreamingDuration = -1L,
         duration = duration,
         overhead = overhead,
         cbDuration = cbDuration,
@@ -3842,27 +3858,32 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, Done] = {
+    val start = System.currentTimeMillis()
     attrs
       .get(otoroshi.plugins.Keys.ResponseEndPromiseKey)
       .foreach(_.future.andThen { case _ =>
-        val actualDuration: Long           = report.getDurationNow()
-        val overhead: Long                 = report.getOverheadNow()
-        val upstreamLatency: Long          = report.getStep("call-backend").map(_.duration).getOrElse(-1L)
-        val apiKey                         = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
-        val paUsr                          = attrs.get(otoroshi.plugins.Keys.UserKey)
-        val callDate                       = attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get
-        val counterIn                      = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
-        val counterOut                     = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
-        val fromOtoroshi                   = rawRequest.headers
+        val responseStreamingDuration              = System.currentTimeMillis() - start
+        val actualDuration: Long                   = report.getDurationNow()
+        val overhead: Long                         = report.getOverheadNow()
+        val requestStreamingDuration: Long         = attrs.get(otoroshi.plugins.Keys.RequestStreamDurationKey).getOrElse(-1L)
+        val backendResponseStreamingDuration: Long =
+          attrs.get(otoroshi.plugins.Keys.BackendsResponseStreamDurationKey).getOrElse(-1L)
+        val upstreamLatency: Long                  = report.getStep("call-backend").map(_.duration).getOrElse(-1L)
+        val apiKey                                 = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+        val paUsr                                  = attrs.get(otoroshi.plugins.Keys.UserKey)
+        val callDate                               = attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get
+        val counterIn                              = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
+        val counterOut                             = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
+        val fromOtoroshi                           = rawRequest.headers
           .get(env.Headers.OtoroshiRequestId)
           .orElse(rawRequest.headers.get(env.Headers.OtoroshiGatewayParentRequest))
-        val noContentLengthHeader: Boolean =
+        val noContentLengthHeader: Boolean         =
           rawResponse.contentLength.isEmpty
-        val hasChunkedHeader: Boolean      = rawResponse
+        val hasChunkedHeader: Boolean              = rawResponse
           .header("Transfer-Encoding")
           .exists(h => h.toLowerCase().contains("chunked"))
-        val isContentLengthZero: Boolean   = rawResponse.header("Content-Length").contains("0")
-        val isChunked: Boolean             = rawResponse.isChunked() match {
+        val isContentLengthZero: Boolean           = rawResponse.header("Content-Length").contains("0")
+        val isChunked: Boolean                     = rawResponse.isChunked() match {
           case _ if isContentLengthZero                                                              => false
           case Some(chunked)                                                                         => chunked
           case None if !env.emptyContentLengthIsChunked                                              =>
@@ -3895,11 +3916,11 @@ class ProxyEngine() extends RequestHandler {
             BestResponseTime.incrementAverage(route.cacheableId, backend.toTarget, duration)
           case _                           =>
         }
-        val fromLbl                        =
+        val fromLbl                                =
           rawRequest.headers
             .get(env.Headers.OtoroshiVizFromLabel)
             .getOrElse("internet")
-        val viz: OtoroshiViz               = OtoroshiViz(
+        val viz: OtoroshiViz                       = OtoroshiViz(
           to = route.id,
           toLbl = route.name,
           from = rawRequest.headers
@@ -3908,8 +3929,14 @@ class ProxyEngine() extends RequestHandler {
           fromLbl = fromLbl,
           fromTo = s"$fromLbl###${route.name}"
         )
-        val cbDuration                     = System.currentTimeMillis() - sb.cbStart
-        val evt                            = GatewayEvent(
+        val cbDuration                             = System.currentTimeMillis() - sb.cbStart
+        // println(s"event duration: ${duration}")
+        // println("---------------")
+        // println("overhead: " + overhead)
+        // println("backend duration: " + attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L))
+        // println(s"response streaming in duration: ${requestStreamingDuration}")
+        // println(s"response streaming out duration: ${responseStreamingDuration}")
+        val evt                                    = GatewayEvent(
           `@id` = env.snowflakeGenerator.nextIdStr(),
           reqId = snowflake,
           parentReqId = fromOtoroshi,
@@ -3927,6 +3954,9 @@ class ProxyEngine() extends RequestHandler {
             uri = rawRequest.relativeUri
           ),
           backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
+          requestStreamingDuration = requestStreamingDuration,
+          responseStreamingDuration = responseStreamingDuration,
+          backendResponseStreamingDuration = backendResponseStreamingDuration,
           duration = duration,
           overhead = overhead,
           cbDuration = cbDuration,

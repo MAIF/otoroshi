@@ -121,6 +121,7 @@ class StaticBackend extends NgBackendCall {
       val config        = ctx.cachedConfig(internalName)(StaticBackendConfig.format).getOrElse(StaticBackendConfig("/tmp"))
       val askedFilePath = ctx.request.path.replace("//", "")
       val filePath      = fileUtils.normalize(askedFilePath, config.rootPath)
+
       fileCache.getIfPresent(filePath) match {
         case Some((contentType, content)) =>
           inMemoryBodyResponse(200, Map("Content-Type" -> contentType), content).vfuture
@@ -178,7 +179,9 @@ class S3Backend extends NgBackendCall {
         override def getRegion: Region = Region.of(conf.region)
       },
       listBucketApiVersion = ApiVersion.ListBucketVersion2
-    ).withEndpointUrl(conf.endpoint)
+    )
+      .withEndpointUrl(conf.endpoint)
+      .withAccessStyle(if (conf.pathStyleAccess) PathAccessStyle else VirtualHostAccessStyle)
     S3Attributes.settings(settings)
   }
 
@@ -221,10 +224,14 @@ class S3Backend extends NgBackendCall {
       ec: ExecutionContext,
       mat: Materializer
   ): Future[String] = {
-    val keyWithIndex = s"$key/index.html"
-    fileExists(key, config).flatMap {
-      case true  => key.vfuture
-      case false => keyWithIndex.vfuture
+    if (key.endsWith("/")) {
+      val keyWithIndex = s"$key/index.html"
+      fileExists(key, config).flatMap {
+        case false => key.vfuture
+        case true  => keyWithIndex.vfuture
+      }
+    } else {
+      key.vfuture
     }
   }
 
@@ -256,8 +263,13 @@ class S3Backend extends NgBackendCall {
     if (ctx.request.method == "GET") {
       val config        = ctx.cachedConfig(internalName)(S3Configuration.format).getOrElse(S3Configuration.default)
       val askedFilePath = ctx.request.path.replace("//", "")
-      val key           = s"${config.key}$askedFilePath"
-      val cacheKey      = s"${ctx.route.id}-$key"
+      val key           = if (config.key.isEmpty && askedFilePath.startsWith("/")) {
+        askedFilePath.replaceFirst("/", "")
+      } else {
+        s"${config.key}${askedFilePath}"
+      }
+      val cacheKey      = s"${ctx.route.id}-${key}"
+
       normalizeKey(key, config).map(_.replace("//", "/")).flatMap { filePath =>
         fileCache.getIfPresent(cacheKey) match {
           case Some((om, content)) =>

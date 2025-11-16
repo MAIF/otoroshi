@@ -38,7 +38,7 @@ object EntityFiltering {
           val items: Seq[JsValue] = arr.value.toSeq.filter { elem =>
             filters.forall {
               case (key, value) if key.startsWith("$") && key.contains(".") =>
-                elem.atPath(key).as[JsValue] match {
+                elem.atPath(key).asOpt[JsValue].getOrElse(JsNull) match {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
@@ -54,7 +54,7 @@ object EntityFiltering {
                   case _               => false
                 }
               case (key, value) if key.contains(".")                        =>
-                elem.at(key).as[JsValue] match {
+                elem.at(key).asOpt[JsValue].getOrElse(JsNull) match {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
@@ -69,7 +69,7 @@ object EntityFiltering {
                   case _               => false
                 }
               case (key, value) if key.contains("/")                        =>
-                elem.atPointer(key).as[JsValue] match {
+                elem.atPointer(key).asOpt[JsValue].getOrElse(JsNull) match {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
@@ -84,7 +84,7 @@ object EntityFiltering {
                   case _               => false
                 }
               case (key, value)                                             =>
-                (elem \ key).as[JsValue] match {
+                (elem \ key).asOpt[JsValue].getOrElse(JsNull) match {
                   case JsString(v)     => v == value
                   case JsBoolean(v)    => v == value.toBoolean
                   case JsNumber(v)     => v.toDouble == value.toDouble
@@ -108,13 +108,15 @@ object EntityFiltering {
         val filteredItems = if (filtered.nonEmpty) {
           val items: Seq[JsValue] = reducedItems.filter { elem =>
             filtered.forall { case (key, maybeValues) =>
-              val searched_values: Seq[String] = if (maybeValues.contains("|")) maybeValues.split("\\|").toSeq else Seq(maybeValues)
+              val searched_values: Seq[String] =
+                if (maybeValues.contains("|")) maybeValues.split("\\|").toSeq else Seq(maybeValues)
               JsonOperationsHelper.getValueAtPath(key.toLowerCase(), elem)._2.asOpt[JsValue] match {
                 case Some(v) =>
                   v match {
                     case JsString(v)              => searched_values.exists(value => v.toLowerCase().indexOf(value) != -1)
                     case JsBoolean(v)             => searched_values.exists(value => v == value.toBoolean)
-                    case JsNumber(v)              => searched_values.exists(value => v.toDouble == value.replaceAll("[^0-9]", "").toDouble)
+                    case JsNumber(v)              =>
+                      searched_values.exists(value => v.toDouble == value.replaceAll("[^0-9]", "").toDouble)
                     case JsArray(values)          =>
                       values.exists {
                         case JsString(v)     => searched_values.exists(value => v.contains(value))
@@ -129,13 +131,15 @@ object EntityFiltering {
                           v match {
                             case JsString(v)     => searched_values.exists(value => v.toLowerCase().indexOf(value) != -1)
                             case JsBoolean(v)    => searched_values.exists(value => v == value.toBoolean)
-                            case JsNumber(v)     => searched_values.exists(value => v.toDouble == value.replaceAll("[^0-9]", "").toDouble)
+                            case JsNumber(v)     =>
+                              searched_values.exists(value => v.toDouble == value.replaceAll("[^0-9]", "").toDouble)
                             case JsArray(values) =>
                               values.exists {
                                 case JsString(v)     => searched_values.exists(value => v.contains(value))
                                 case JsBoolean(v)    => searched_values.exists(value => v == value.toBoolean)
                                 case JsNumber(v)     => searched_values.exists(value => v.toDouble == value.toDouble)
-                                case JsArray(values) => searched_values.exists(value => values.contains(JsString(value)))
+                                case JsArray(values) =>
+                                  searched_values.exists(value => values.contains(JsString(value)))
                                 case _               => false
                               }
                             case _               => false

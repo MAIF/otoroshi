@@ -350,14 +350,55 @@ class HttpHandler()(using env: Env) {
                 metadata = k.metadata
               )
             )
-            .orElse(
-              paUsr.map(k =>
-                Identity(
-                  identityType = "PRIVATEAPP",
-                  identity = k.email,
-                  label = k.name,
-                  tags = k.tags,
-                  metadata = k.metadata
+            val evt              = GatewayEvent(
+              `@id` = env.snowflakeGenerator.nextIdStr(),
+              reqId = snowflake,
+              parentReqId = fromOtoroshi,
+              `@timestamp` = DateTime.now(),
+              `@calledAt` = callDate,
+              protocol = req.version,
+              to = Location(
+                scheme = req.theProtocol,
+                host = req.theHost,
+                uri = req.relativeUri
+              ),
+              target = Location(
+                scheme = scheme,
+                host = host,
+                uri = req.relativeUri
+              ),
+              backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
+              requestStreamingDuration = -1L,
+              responseStreamingDuration = -1L,
+              backendResponseStreamingDuration = -1L,
+              duration = duration,
+              overhead = overhead,
+              cbDuration = cbDuration,
+              overheadWoCb = Math.abs(overhead - cbDuration),
+              callAttempts = callAttempts,
+              url = url,
+              method = req.method,
+              from = req.theIpAddress,
+              env = descriptor.env,
+              data = DataInOut(
+                dataIn = counterIn.get(),
+                dataOut = counterOut.get()
+              ),
+              status = resp.status,
+              headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
+              headersOut = resp.headersOut,
+              otoroshiHeadersIn = resp.otoroshiHeadersIn,
+              otoroshiHeadersOut = resp.otoroshiHeadersOut,
+              extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
+              identity = apiKey
+                .map(k =>
+                  Identity(
+                    identityType = "APIKEY",
+                    identity = k.clientId,
+                    label = k.clientName,
+                    tags = k.tags,
+                    metadata = k.metadata
+                  )
                 )
               )
             ),

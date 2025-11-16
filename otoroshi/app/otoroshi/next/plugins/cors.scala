@@ -102,6 +102,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
     val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
 
     if (req.method == "OPTIONS" && req.headers.get("Access-Control-Request-Method").isDefined) {
+      println("preflight request")
       // handle cors preflight request
       if (cors.legacy.shouldNotPass(req)) {
         Errors
