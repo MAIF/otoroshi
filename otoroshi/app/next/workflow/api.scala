@@ -575,6 +575,7 @@ object WorkflowOperator {
     case JsArray(arr)                                                                     => JsArray(arr.map(v => processOperators(v, wfr, env)))
     case JsObject(map)                                                                    => JsObject(map.mapValues(v => processOperators(v, wfr, env)))
     case JsString("${now}")                                                               => System.currentTimeMillis().json
+    case JsString("${rand}")                                                              => JsNumber(Math.random())
     case JsString("${workflow_id}")                                                       => wfr.workflow_ref.json
     case JsString("${session_id}")                                                        => wfr.id.json
     case JsString("${memory}")                                                            => wfr.memory.json
@@ -597,7 +598,7 @@ object WorkflowOperator {
         case Some(value) => value
       }
     }
-    case JsString(str) if str.startsWith("${") && str.endsWith("}") && str.contains(".")  => {
+    case JsString(str) if str.startsWith("${") && str.endsWith("}") && str.contains(".")  =>
       val parts = str.substring(2).init.split("\\.")
       val name  = parts.head
       val path  = parts.tail.mkString(".")
@@ -605,7 +606,6 @@ object WorkflowOperator {
         case None        => JsNull
         case Some(value) => value.at(path).asOpt[JsValue].getOrElse(JsNull)
       }
-    }
     case JsString(str) if str.contains("${now_str}")                                      => JsString(str.replace("${now_str}", DateTime.now().toString))
     case JsString(str) if str.contains("${now}")                                          => JsString(str.replace("${now}", System.currentTimeMillis().toString))
     case JsString(str) if str.contains("${workflow_id}")                                  => JsString(str.replace("${workflow_id}", wfr.workflow_ref))

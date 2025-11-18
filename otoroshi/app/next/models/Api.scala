@@ -1023,7 +1023,9 @@ case class Api(
             draftApis.map(api => api.routes.map(route => routeToNgRoute(route, api.some))).getOrElse(Seq.empty)
 
           Future
-            .sequence(routes.map(route => routeToNgRoute(route, this.some)) ++ draftRoutes)
+            .sequence(routes
+              .filter(_ => state == ApiPublished || state == ApiDeprecated)
+              .map(route => routeToNgRoute(route, this.some)) ++ draftRoutes)
             .map(routes => {
               routes
                 .collect { case Some(value) =>

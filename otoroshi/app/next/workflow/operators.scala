@@ -71,6 +71,7 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$str_replace", new StringReplaceOperator())
     WorkflowOperator.registerOperator("$str_replace_all", new StringReplaceAllOperator())
     WorkflowOperator.registerOperator("$jq", new JqOperator())
+    WorkflowOperator.registerOperator("$round", new Round())
   }
 }
 
@@ -660,6 +661,39 @@ class ArrayHeadOperator extends WorkflowOperator {
     }
   }
 }
+
+class Round extends WorkflowOperator {
+  override def documentationName: String                  = "$round"
+  override def documentationDisplayName: String           = "Round"
+  override def documentationIcon: String                  = "fas fa-code"
+  override def documentationDescription: String           = "This operator rounds a value to the nearest integer"
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "value"  -> Json.obj(
+        "type"  -> "json",
+        "props" -> Json.obj(
+          "description" -> "A value to round"
+        ),
+        "label" -> "Value"
+      )
+    )
+  )
+  override def documentationInputSchema: Option[JsObject] = None
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$round" -> Json.obj(
+        "value"  -> 0.5
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("value").asOpt[JsNumber] match {
+      case Some(value) => JsNumber(Math.floor(value.value.toDouble))
+      case v => JsNumber(0)
+    }
+  }
+}
+
 
 class JqOperator extends WorkflowOperator {
 
@@ -1308,7 +1342,8 @@ class MultiplyOperator extends WorkflowOperator {
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("values").asOpt[Seq[JsNumber]] match {
-      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a * b.value))
+      case Some(numbers) if numbers.length == 1 => numbers.head
+      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(1))((a, b) => a * b.value))
       case _             => 0.json
     }
   }
@@ -2270,7 +2305,11 @@ class MemRefOperator extends WorkflowOperator {
       case n if wfr.memory.contains(n) => {
         wfr.memory.get(n) match {
           case None                          => JsNull
-          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isEmpty   =>
+            opts.select("path").asOpt[JsNumber] match {
+              case Some(index) => value(index.value.toInt)
+              case None => value
+            }
           case Some(value) if path.isDefined => value.at(path.get).asValue
         }
       }
