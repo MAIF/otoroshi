@@ -613,56 +613,29 @@ object WorkflowOperator {
     case JsString(str) if str.contains("${resume_token}")                                 =>
       JsString(str.replace("${resume_token}", PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env)))
     case JsString(str) if str.contains("${") && str.contains("}")                         => {
-      val res = pattern.replaceAllIn(
-        str,
-        m => {
-          val key = m.group(1)
-          if (key.contains("||")) {
-            key.split("\\|\\|").toStream.map { expr =>
-              val parts = if (expr.contains(".")) expr.split("\\.").toSeq else Seq(expr)
-              val name  = parts.head
-              val path  = if (parts.size > 1) Some(parts.tail.mkString(".")) else None
-              (wfr.memory.get(name), path)
-            }.collectFirst {
-              case (Some(v), None) => v
-              case (Some(v), Some(path)) => v.at(path).asOpt[JsValue].getOrElse(JsNull)
-            }.getOrElse(JsNull) match {
-              case JsNull       => "null"
-              case JsNumber(n)  => n.toString
-              case JsBoolean(n) => n.toString
-              case JsString(n)  => n
-              case j            => j.stringify
-            }
-          } else if (key.contains(".")) {
-            val parts = key.split("\\.")
+      val res = pattern.replaceAllIn(str, m => {
+        val expr = m.group(1).trim
+        val value = expr.split("\\|\\|").toStream.map(_.trim).collectFirst {
+          case part if part.nonEmpty =>
+            val parts = part.split("\\.").toSeq
             val name  = parts.head
-            val path  = parts.tail.mkString(".")
-            wfr.memory
-              .get(name)
-              .map(obj =>
-                obj.at(path).asOpt[JsValue].getOrElse(JsNull) match {
-                  case JsNull       => "null"
-                  case JsNumber(n)  => n.toString
-                  case JsBoolean(n) => n.toString
-                  case JsString(n)  => n
-                  case j            => j.stringify
-                }
-              )
-              .getOrElse("--")
-          } else {
-            wfr.memory
-              .get(key)
-              .map {
-                case JsNull       => "null"
-                case JsNumber(n)  => n.toString
-                case JsBoolean(n) => n.toString
-                case JsString(n)  => n
-                case j            => j.stringify
+            val path  = if (parts.size > 1) Some(parts.tail.mkString(".")) else None
+            wfr.memory.get(name).map { v =>
+              path match {
+                case Some(p) => v.at(p).asOpt[JsValue].getOrElse(JsNull)
+                case None    => v
               }
-              .getOrElse("--")
-          }
+            }.getOrElse(JsNull)
+        }.getOrElse(JsNull)
+
+        value match {
+          case JsNull       => "null"
+          case JsNumber(n)  => n.toString
+          case JsBoolean(b) => b.toString
+          case JsString(s)  => s
+          case j            => j.stringify
         }
-      )
+      })
       res.json
     }
     case _                                                                                => value
