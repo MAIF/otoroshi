@@ -59,6 +59,7 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$subtract", new SubtractOperator())
     WorkflowOperator.registerOperator("$multiply", new MultiplyOperator())
     WorkflowOperator.registerOperator("$divide", new DivideOperator())
+    WorkflowOperator.registerOperator("$remainder", new RemainderOperator())
     WorkflowOperator.registerOperator("$incr", new IncrementOperator())
     WorkflowOperator.registerOperator("$decr", new DecrementOperator())
     WorkflowOperator.registerOperator("$str_upper_case", new UppercaseOperator())
@@ -1310,6 +1311,49 @@ class MultiplyOperator extends WorkflowOperator {
       case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a * b.value))
       case _             => 0.json
     }
+  }
+}
+
+class RemainderOperator extends WorkflowOperator {
+  override def documentationName: String                  = "%remainder"
+  override def documentationDisplayName: String           = "Remainder"
+  override def documentationIcon: String                  = "fas fa-percent"
+  override def documentationDescription: String           = "This operator perform Euclidian division"
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "values" -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Values",
+        "props" -> Json.obj(
+          "description" -> "The list of numbers to divide"
+        )
+      )
+    )
+  )
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("value", "by"),
+      "properties" -> Json.obj(
+        "value" -> Json.obj("type" -> "number", "description" -> "The number to divide"),
+        "by" -> Json.obj("type" -> "number", "description" -> "The numbe to divide by")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$divide" -> Json.obj(
+        "value" -> 10,
+        "by" -> 2
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val result: Option[JsNumber] = for {
+      value <- opts.select("value").asOpt[JsNumber]
+      by <- opts.select("by").asOpt[JsNumber]
+    } yield JsNumber(value.value % by.value)
+    result.getOrElse(0.json)
   }
 }
 

@@ -120,8 +120,17 @@ class CustomMetrics extends Component {
                   optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
                     props?.rootValue?.eventType || 'GatewayEvent'
                   }`}
-                  optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
-                  onChange={props.onChange}
+                  optionsTransformer={(arr) => {
+                    return arr.map((item) => {
+                      if (item.label) {
+                        return item;
+                      }
+                      return {value: item, label: item}
+                    })
+                  }}
+                  onChange={v => {
+                    props.onChange(v.value)
+                  }}
                 />
               </LabelAndInput>
             );
