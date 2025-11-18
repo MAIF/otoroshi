@@ -579,6 +579,17 @@ object WorkflowOperator {
     case JsString("${session_id}")                                                        => wfr.id.json
     case JsString("${memory}")                                                            => wfr.memory.json
     case JsString("${resume_token}")                                                      => PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env).json
+    case JsString(str) if str.startsWith("${") && str.endsWith("}") && str.contains("||") => {
+      str.substring(2).init.split("\\|\\|").toStream.map { expr =>
+        val parts = if (expr.contains(".")) expr.split("\\.").toSeq else Seq(expr)
+        val name  = parts.head
+        val path  = if (parts.size > 1) Some(parts.tail.mkString(".")) else None
+        (wfr.memory.get(name), path)
+      }.collectFirst {
+        case (Some(v), None) => v
+        case (Some(v), Some(path)) => v.at(path).asOpt[JsValue].getOrElse(JsNull)
+      }.getOrElse(JsNull)
+    }
     case JsString(str) if str.startsWith("${") && str.endsWith("}") && !str.contains(".") => {
       val name = str.substring(2).init
       wfr.memory.get(name) match {
@@ -606,7 +617,23 @@ object WorkflowOperator {
         str,
         m => {
           val key = m.group(1)
-          if (key.contains(".")) {
+          if (key.contains("||")) {
+            key.split("\\|\\|").toStream.map { expr =>
+              val parts = if (expr.contains(".")) expr.split("\\.").toSeq else Seq(expr)
+              val name  = parts.head
+              val path  = if (parts.size > 1) Some(parts.tail.mkString(".")) else None
+              (wfr.memory.get(name), path)
+            }.collectFirst {
+              case (Some(v), None) => v
+              case (Some(v), Some(path)) => v.at(path).asOpt[JsValue].getOrElse(JsNull)
+            }.getOrElse(JsNull) match {
+              case JsNull       => "null"
+              case JsNumber(n)  => n.toString
+              case JsBoolean(n) => n.toString
+              case JsString(n)  => n
+              case j            => j.stringify
+            }
+          } else if (key.contains(".")) {
             val parts = key.split("\\.")
             val name  = parts.head
             val path  = parts.tail.mkString(".")
