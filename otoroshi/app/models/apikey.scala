@@ -263,17 +263,19 @@ case class ApiKey(
   //     .map(_.flatten)
   // }
 
-  def updateQuotas()(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]    =
+  def updateQuotas()(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]                    =
     env.datastores.apiKeyDataStore.updateQuotas(this)
-  def remainingQuotas()(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] =
+  def updateQuotasAndCheck()(implicit ec: ExecutionContext, env: Env): Future[(RemainingQuotas, Boolean)] =
+    env.datastores.apiKeyDataStore.updateQuotasAndCheck(this)
+  def remainingQuotas()(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]                 =
     env.datastores.apiKeyDataStore.remainingQuotas(this)
-  def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]   =
+  def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                   =
     env.datastores.apiKeyDataStore.withinThrottlingQuota(this)
-  def withinDailyQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]        =
+  def withinDailyQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                        =
     env.datastores.apiKeyDataStore.withinDailyQuota(this)
-  def withinMonthlyQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]      =
+  def withinMonthlyQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                      =
     env.datastores.apiKeyDataStore.withinMonthlyQuota(this)
-  def withinQuotas()(implicit ec: ExecutionContext, env: Env): Future[Boolean]            =
+  def withinQuotas()(implicit ec: ExecutionContext, env: Env): Future[Boolean]                            =
     env.datastores.apiKeyDataStore.withingQuotas(this)
   def withinQuotasAndRotation()(implicit
       ec: ExecutionContext,
@@ -298,8 +300,8 @@ case class ApiKey(
       (within, rotation, quotas)
     }
   }
-  def metadataJson: JsValue                                                               = JsObject(metadata.mapValues(JsString.apply))
-  def lightJson: JsObject                                                                 =
+  def metadataJson: JsValue                                                                               = JsObject(metadata.mapValues(JsString.apply))
+  def lightJson: JsObject                                                                                 =
     Json.obj(
       "clientId"   -> clientId,
       "clientName" -> clientName,
@@ -583,6 +585,10 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       ec: ExecutionContext,
       env: Env
   ): Future[RemainingQuotas]
+  def updateQuotasAndCheck(apiKey: ApiKey, increment: Long = 1L)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[(RemainingQuotas, Boolean)]
   def withingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def withinThrottlingQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def withinDailyQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
@@ -2372,31 +2378,79 @@ object ApiKeyHelper {
               .map(v => Left(v))
           }
           case Right(apikey)                                                        => {
-            apikey.withinQuotasAndRotationQuotas().flatMap {
-              case (true, rotationInfos, quotas) =>
-                rotationInfos.foreach { i =>
-                  attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
-                }
-                attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
-                sendQuotasAlmostExceededError(apikey, quotas)
-                if (incrementQuotas) {
-                  apikey.updateQuotas().map { remainingQuotas =>
-                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> remainingQuotas)
-                    apikey.right
-                  }
-                } else {
-                  apikey.rightf
-                }
-              case (false, _, quotas)            =>
-                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apikey)
-                sendQuotasExceededError(apikey, quotas)
-                error(
-                  Results.TooManyRequests,
-                  "You performed too much requests",
-                  "errors.too.much.requests",
-                  s"apikey '${apikey.clientId}' quotas exceeded".some
-                )
+            env.datastores.apiKeyDataStore.keyRotation(apikey).map { rotationInfos =>
+              rotationInfos.foreach { i =>
+                attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+              }
             }
+            if (incrementQuotas) {
+              apikey.updateQuotasAndCheck().flatMap {
+                case (quotas, true) =>
+                  // Within quota - check rotation
+                  attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                  sendQuotasAlmostExceededError(apikey, quotas)
+                  apikey.rightf
+
+                case (quotas, false) =>
+                  // Quota exceeded - reject with 429
+                  attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey           -> apikey)
+                  attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                  sendQuotasExceededError(apikey, quotas)
+                  error(
+                    Results.TooManyRequests,
+                    "You performed too much requests",
+                    "errors.too.much.requests",
+                    s"apikey '${apikey.clientId}' quotas exceeded".some
+                  )
+              }
+            } else {
+              env.datastores.apiKeyDataStore
+                .remainingQuotas(apikey)
+                .flatMap { quotas =>
+                  val within = quotas.remainingCallsPerWindow > 0 &&
+                    (quotas.currentCallsPerDay < apikey.dailyQuota) &&
+                    (quotas.currentCallsPerMonth < apikey.monthlyQuota)
+
+                  if (within) {
+                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                    apikey.rightf
+                  } else {
+                    attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey           -> apikey)
+                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                    error(
+                      Results.TooManyRequests,
+                      "You performed too much requests",
+                      "errors.too.much.requests",
+                      s"apikey '${apikey.clientId}' quotas exceeded".some
+                    )
+                  }
+                }
+            }
+//            apikey.withinQuotasAndRotationQuotas().flatMap {
+//              case (true, rotationInfos, quotas) =>
+//                rotationInfos.foreach { i =>
+//                  attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+//                }
+//                attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+//                sendQuotasAlmostExceededError(apikey, quotas)
+//                if (incrementQuotas) {
+//                  apikey.updateQuotas().map { remainingQuotas =>
+//                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> remainingQuotas)
+//                    apikey.right
+//                  }
+//                } else {
+//                  apikey.rightf
+//                }
+//              case (false, _, quotas)            =>
+//                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apikey)
+//                sendQuotasExceededError(apikey, quotas)
+//                error(
+//                  Results.TooManyRequests,
+//                  "You performed too much requests",
+//                  "errors.too.much.requests",
+//                  s"apikey '${apikey.clientId}' quotas exceeded".some
+//                )
+//            }
           }
         }
     }
