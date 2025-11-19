@@ -492,7 +492,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
     tokenCache.getIfPresent("singleton") match {
       case Some(token)                                      => token.some.vfuture
       case None if authMode.contains("google")              => {
-        val adc = GoogleCredentials.getApplicationDefault().applyOnIf(scopes.nonEmpty)(_.createScoped(scopes: _*))
+        val adc = GoogleCredentials.getApplicationDefault().applyOnIf(scopes.nonEmpty)(_.createScoped(scopes*))
         adc.refreshIfExpired()
         Option(adc.getAccessToken) match {
           case Some(accessToken) => Some(accessToken.getTokenValue).vfuture

@@ -3148,9 +3148,9 @@ class ProxyEngine() extends RequestHandler {
           route.backend.client.proxy.orElse(globalConfig.proxies.services)
         )
       val requestStreamStart                             = System.currentTimeMillis()
-      val theBody                                        = request.body
-        .applyOn { source =>
-          source.alsoTo(Sink.onComplete { case _ =>
+      val theBody = request.body
+        .applyOn { (source: Source[ByteString, ?]) =>
+          source.alsoTo(Sink.onComplete { _ =>
             val requestStreamDuration = System.currentTimeMillis() - requestStreamStart
             attrs.put(otoroshi.plugins.Keys.RequestStreamDurationKey -> requestStreamDuration)
           })

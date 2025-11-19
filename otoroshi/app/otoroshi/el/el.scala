@@ -340,7 +340,7 @@ object GlobalExpressionLanguage {
               context.get(field.s).orElse(context.get(field2.s)).getOrElse(s"no-token-$field-$field2")
             case r"token.$field(.*):$dv(.*)"                                  => context.getOrElse(field.s, dv.s)
             case r"token.$field(.*)"                                          => context.getOrElse(field.s, s"no-token-$field")
-            case r"in_jwt.$field@(.*):$dv@(.*)" if matchedInputJwtToken.isDefined   =>
+            case r"in_jwt.$field(.*):$dv(.*)" if matchedInputJwtToken.isDefined   =>
               val json = matchedInputJwtToken.get
               if (field.s.contains(".")) {
                 json.at(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv.s)
@@ -348,25 +348,25 @@ object GlobalExpressionLanguage {
                 json.select(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv.s)
               }
             
-            case r"in_jwt.$field@(.*)" if matchedInputJwtToken.isDefined            =>
+            case r"in_jwt.$field(.*)" if matchedInputJwtToken.isDefined            =>
               val json = matchedInputJwtToken.get
-              if (field.contains(".")) {
+              if (field.s.contains(".")) {
                 json.at(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field.s}")
               } else {
                 json.select(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field.s}")
               }
         
-            case r"out_jwt.$field@(.*):$dv@(.*)" if matchedOutputJwtToken.isDefined =>
+            case r"out_jwt.$field(.*):$dv(.*)" if matchedOutputJwtToken.isDefined =>
               val json = matchedOutputJwtToken.get
-              if (field.contains(".")) {
+              if (field.s.contains(".")) {
                 json.at(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv.s)
               } else {
                 json.select(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv.s)
               }
             
-            case r"out_jwt.$field@(.*)" if matchedOutputJwtToken.isDefined          =>
+            case r"out_jwt.$field(.*)" if matchedOutputJwtToken.isDefined          =>
               val json = matchedOutputJwtToken.get
-              if (field.contains(".")) {
+              if (field.s.contains(".")) {
                 json.at(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field.s}")
               } else {
                 json.select(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field.s}")

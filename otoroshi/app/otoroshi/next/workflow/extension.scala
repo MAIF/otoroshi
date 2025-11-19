@@ -155,8 +155,8 @@ object Workflow {
           .getOrElse(WorkflowJobConfig.default),
         functions = (json \ "functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
         testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo")),
-        orphans = (json \ "orphans").asOpt[Orphans](Orphans.format).getOrElse(Orphans()),
-        notes = (json \ "notes").asOpt(using Reads.seq(Note.format)).getOrElse(Seq.empty)
+        orphans = (json \ "orphans").asOpt[Orphans](using Orphans.format).getOrElse(Orphans()),
+        notes = (json \ "notes").asOpt(using Reads.seq(using Note.format)).getOrElse(Seq.empty)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

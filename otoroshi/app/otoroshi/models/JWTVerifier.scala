@@ -482,9 +482,9 @@ case class JWKSAlgoSettings(
   def isAsync: Boolean = {
     JWKSAlgoSettings.cache.getIfPresent(url) match {
       case Some((stop, keys, false)) if stop > System.currentTimeMillis() => false
-      case Some((stop, keys, false))                                      => true
-      case Some((_, keys, true))                                          => false
-      case None                                                           => true
+      case Some((stop, keys, false)) => true
+      case Some((_, keys, true)) => false
+      case None => true
     }
   }
 
@@ -496,19 +496,19 @@ case class JWKSAlgoSettings(
           case "RS384" => Some(Algorithm.RSA384(rsaKey.toRSAPublicKey, null))
           case "RS512" => Some(Algorithm.RSA512(rsaKey.toRSAPublicKey, null))
         }
-      case ecKey: ECKey   =>
+      case ecKey: ECKey =>
         alg match {
           case "ES256" => Some(Algorithm.ECDSA256(ecKey.toECPublicKey, null))
           case "ES384" => Some(Algorithm.ECDSA384(ecKey.toECPublicKey, null))
           case "ES512" => Some(Algorithm.ECDSA512(ecKey.toECPublicKey, null))
         }
-      case _              => None
+      case _ => None
     }
   }
 
   def fetchJWKS(alg: String, kid: String, oldStop: Long, oldKeys: Map[String, com.nimbusds.jose.jwk.JWK])(using
-      ec: ExecutionContext,
-      env: Env
+                                                                                                          ec: ExecutionContext,
+                                                                                                          env: Env
   ): Future[Option[Algorithm]] = {
     import otoroshi.utils.http.Implicits._
     given s: Scheduler = env.otoroshiScheduler
@@ -519,7 +519,7 @@ case class JWKSAlgoSettings(
         env.MtlsWs
           .url(url, tlsConfig)
           .withRequestTimeout(timeout)
-          .withHttpHeaders(headers.toSeq*)
+          .withHttpHeaders(headers.toSeq *)
           .withMaybeProxyServer(
             proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.jwk))
           )
@@ -531,10 +531,10 @@ case class JWKSAlgoSettings(
               None
             } else {
               val stop = System.currentTimeMillis() + ttl.toMillis
-              val obj  = Json.parse(resp.body).as[JsObject]
+              val obj = Json.parse(resp.body).as[JsObject]
               (obj \ "keys").asOpt[JsArray] match {
                 case Some(values) =>
-                  val keys = values.value.map { k =>
+                  val keys = values.value.flatMap { k =>
                     val jwk = JWK.parse(Json.stringify(k))
                     Seq(
                       (s"${jwk.getAlgorithm.getName}${jwk.getKeyID}", jwk),
@@ -549,24 +549,24 @@ case class JWKSAlgoSettings(
                         s"jwks call - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}"
                       )
                       algoFromJwk(alg, jwk)
-                    case None      =>
+                    case None =>
                       logger.error(s"jwks call - requested: ${kid}/${alg} - not found")
                       None
                   }
-                }
-                case None         =>
+                case None =>
                   logger.error(
                     s"fetchJWKS - requested: ${kid}/${alg} - response is not a JWKS response, unabled to get keys: ${resp.body}"
                   )
                   None
+
               }
             }
           }
-      }
-      .recover { case e =>
-        JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, false))
-        logger.error(s"Error while reading JWKS $url", e)
-        None
+          .recover { case e =>
+            JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, false))
+            logger.error(s"Error while reading JWKS $url", e)
+            None
+          }
       }
   }
 
@@ -595,7 +595,7 @@ case class JWKSAlgoSettings(
             }
           }
           case Some((stop, keys, false)) if stop <= System.currentTimeMillis() => fetchJWKS(alg, kid, stop, keys)
-          case Some((_, keys, true))                                           => {
+          case Some((_, keys, true))                                           =>
             keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
               case Some(jwk) =>
                 logger.info(
@@ -608,10 +608,10 @@ case class JWKSAlgoSettings(
             }
           case None                                                           => fetchJWKS(alg, kid, System.currentTimeMillis() + ttl.toMillis, Map.empty)
         }
-      }
       case _                         =>
         logger.error(s"jwks asAlgorithmF - not an input mode: ${mode}")
         FastFuture.successful(None)
+        
     }
   }
 

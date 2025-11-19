@@ -6,20 +6,22 @@ import com.nimbusds.jose.crypto.{RSADecrypter, RSAEncrypter}
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.{EncryptionMethod, JOSEException, JWEAlgorithm, JWEHeader, JWEObject}
 import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
-import java.util.{Base64 => JavaBase64}
+
+import java.util.Base64 as JavaBase64
 import org.joda.time.DateTime
 import otoroshi.el.JwtExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.plugins.Keys.JwtInjectionKey
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterString, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
-import play.api.libs.ws.WSBodyWritables._
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.mvc.{Result, Results}
+import otoroshi.utils.syntax.implicits.*
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets

@@ -5,22 +5,22 @@ import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction, PrivateAppsActionContext}
-import otoroshi.auth._
+import otoroshi.auth.*
 import otoroshi.next.plugins.AuthModule
-import otoroshi.auth.implicits._
+import otoroshi.auth.implicits.*
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.gateway.Errors
-import otoroshi.models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.models.{BackOfficeUser, CorsSettings, GlobalConfig, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.models.{NgPluginInstance, NgRoute}
 import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -30,7 +30,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 object AuthController {
@@ -319,7 +319,6 @@ class AuthController(
           }
         }
       }
-    }
 
   private def authCallback(
       auth: AuthModuleConfig,
@@ -372,11 +371,11 @@ class AuthController(
                             descriptor,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }
-                  case redirectTo                  => {
+                  case redirectTo                  =>
                     val encodedRedirectTo =
                       Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
                     val url               =
@@ -422,7 +421,7 @@ class AuthController(
                             descriptor,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }
@@ -487,7 +486,7 @@ class AuthController(
                             legacy,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }
@@ -538,7 +537,7 @@ class AuthController(
                             legacy,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }

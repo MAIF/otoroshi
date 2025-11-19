@@ -713,7 +713,7 @@ class SimpleBasicAuth extends NgAccessValidator {
   }
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config                = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads).getOrElse(SimpleBasicAuthConfig())
+    val config                = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format).getOrElse(SimpleBasicAuthConfig())
     val globalUsers           = env.datastores.globalConfigDataStore
       .latest()
       .plugins

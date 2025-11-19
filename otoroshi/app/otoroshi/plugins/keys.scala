@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
 
-case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[_ <: A], f: JsValue => _ <: A)
+case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[? <: A], f: JsValue => ? <: A)
 
 object Keys {
   val BackendDurationKey: TypedKey[Long]                  = TypedKey[Long]("otoroshi.core.BackendDuration")
