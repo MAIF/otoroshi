@@ -364,5 +364,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Generic allowed list" in {
       new GenericAllowedListTests(this)
     }
+    "Generic block list" in {
+      new GenericBlockListTests(this)
+    }
   }
 }
