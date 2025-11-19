@@ -5,9 +5,10 @@ import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, ReadOnlyCalls}
 import play.api.http.Status
+import play.api.libs.ws.DefaultBodyWritables.given
 
 class ReadOnlyRequestsTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

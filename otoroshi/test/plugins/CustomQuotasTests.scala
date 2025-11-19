@@ -9,7 +9,7 @@ import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class CustomQuotasTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   def global() = {
     val route = createRequestOtoroshiIORoute(

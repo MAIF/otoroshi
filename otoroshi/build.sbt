@@ -173,7 +173,7 @@ libraryDependencies ++= Seq(
     "io.github.rediscala"             %% "rediscala"                                 % "1.17.0",
     ("com.github.gphat"               %% "censorinus"                                % "2.1.16").cross(CrossVersion.for3Use2_13),
     "org.apache.pekko"                %% "pekko-connectors-kafka"                    % pekkoConnectorsVersion,
-    "org.apache.pekko"                %% "pekko-connectors-s3"                       % pekkoConnectorsVersion,
+    "org.apache.pekko"                %% "pekko-connectors-s3"                       % pekkoHttpVersion,
     "org.apache.pekko"                %% "pekko-actor"                               % pekkoVersion,
     "org.apache.pekko"                %% "pekko-stream"                              % pekkoVersion,
     "org.apache.pekko"                %% "pekko-slf4j"                               % pekkoVersion,
@@ -276,7 +276,9 @@ libraryDependencies ++= Seq(
     "org.scalatestplus.play"          %% "scalatestplus-play"                        % "7.0.2" % Test,
     "com.networknt"                    % "json-schema-validator"                     % "1.5.8" excludeAll (excludeSlf4jAndJackson *),
     "jakarta.jms"                      % "jakarta.jms-api"                           % "3.1.0",
-    "org.apache.activemq"              % "artemis-jakarta-client"                    % "2.42.0" excludeAll (excludeSlf4jAndJackson *)
+    "org.apache.activemq"              % "artemis-jakarta-client"                    % "2.42.0" excludeAll (excludeSlf4jAndJackson *),
+  "com.dimafeng"                    %% "testcontainers-scala-scalatest"            % "0.43.6" % Test,
+  "com.microsoft.playwright"         % "playwright"                                % "1.47.0" % Test
 )
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")

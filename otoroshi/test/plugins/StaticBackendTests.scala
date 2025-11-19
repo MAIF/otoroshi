@@ -11,7 +11,7 @@ import java.nio.file.{Files, Path}
 
 class StaticBackendTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val tempRoot: Path = Files.createTempDirectory("testRoot")
 
@@ -48,8 +48,8 @@ class StaticBackendTests(parent: PluginsTestSpec) {
     .get()
     .futureValue
 
-  resp2.status mustBe 200
-  resp2.body contains "Hello from file system" mustBe true
+  resp2.status.mustBe(200)
+  resp2.body.contains("Hello from file system").mustBe(true)
 
   Files
     .walk(tempRoot)

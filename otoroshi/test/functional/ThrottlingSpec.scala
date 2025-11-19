@@ -1,21 +1,18 @@
 package functional
 
-package functional
-
-import akka.Done
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.{`Set-Cookie`, Host, HttpCookie, RawHeader}
-import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
-import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.{Materializer, ThrottleMode}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.{`Set-Cookie`, Host, HttpCookie, RawHeader}
+import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.model.{HttpHeader, HttpRequest}
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.{Materializer, ThrottleMode}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.classic.{Level, Logger => LogbackLogger}
 import ch.qos.logback.core.AppenderBase
 import com.typesafe.config.ConfigFactory
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
@@ -42,12 +39,12 @@ import scala.util.{Failure, Success}
 
 class ThrottlingTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
-  implicit lazy val mat = otoroshiComponents.materializer
-  implicit lazy val env = otoroshiComponents.env
-
   def configurationSpec: Configuration = Configuration.empty
 
-  implicit val system = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-test")
+  given mat: Materializer   = Materializer(system)
+  given http: HttpExt       = Http()
+  given env: otoroshi.env.Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(

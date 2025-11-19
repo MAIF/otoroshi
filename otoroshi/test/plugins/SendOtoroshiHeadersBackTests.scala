@@ -1,22 +1,24 @@
 package plugins
 
 import functional.PluginsTestSpec
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.Materializer
 import otoroshi.models.{ApiKey, ApiKeyRotation, RouteIdentifier}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  AdditionalCookieIn,
-  AdditionalCookieInConfig,
-  ApikeyCalls,
-  OverrideHost,
-  SendOtoroshiHeadersBack
-}
+import otoroshi.next.plugins.{AdditionalCookieIn, AdditionalCookieInConfig, ApikeyCalls, OverrideHost, SendOtoroshiHeadersBack}
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
+
+  given system: ActorSystem = ActorSystem("otoroshi-test")
+  given mat: Materializer   = Materializer(system)
+  given http: HttpExt       = Http()
+  given env: otoroshi.env.Env = otoroshiComponents.env
 
   val route = createRequestOtoroshiIORoute(
     Seq(

@@ -9,7 +9,7 @@ import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class SecurityTxtTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   def test(config: NgSecurityTxtConfig, expected: Seq[String]) = {
     val route = createRequestOtoroshiIORoute(

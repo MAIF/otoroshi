@@ -16,7 +16,7 @@ import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 
 class CookiesValidationTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(
@@ -47,7 +47,7 @@ class CookiesValidationTests(parent: PluginsTestSpec) {
           domain = route.frontend.domains.head.domain.some,
           httpOnly = true
         )
-      ): _*
+      )*
     )
     .get()
     .futureValue

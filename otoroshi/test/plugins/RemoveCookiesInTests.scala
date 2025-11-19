@@ -10,7 +10,7 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.DefaultWSCookie
 
 class RemoveCookiesInTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(
@@ -37,7 +37,7 @@ class RemoveCookiesInTests(parent: PluginsTestSpec) {
           value = "bar",
           domain = route.frontend.domains.head.domain.some
         )
-      ): _*
+      )*
     )
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain

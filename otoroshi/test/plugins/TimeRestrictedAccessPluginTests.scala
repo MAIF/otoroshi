@@ -16,7 +16,7 @@ import play.api.libs.json._
 import scala.concurrent.duration.DurationInt
 
 class TimeRestrictedAccessPluginTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val dnow  = DateTime.now()
   val now   = LocalTime.now()

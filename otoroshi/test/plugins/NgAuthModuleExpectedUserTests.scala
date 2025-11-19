@@ -13,11 +13,11 @@ import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters.ListHasAsScala
 
 class NgAuthModuleExpectedUserTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val moduleConfiguration = BasicAuthModuleConfig(
     id = "BasicAuthModuleConfig",

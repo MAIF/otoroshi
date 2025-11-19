@@ -6,9 +6,10 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{AllowHttpMethods, NgAllowedMethodsConfig, OverrideHost}
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.WSBodyWritables.given
 
 class AllowHTTPMethodsTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(
@@ -42,7 +43,7 @@ class AllowHTTPMethodsTests(parent: PluginsTestSpec) {
     .post(Json.obj())
     .futureValue
 
-  resp2.status mustBe 405
+  resp2.status.mustBe(405)
 
   deleteOtoroshiRoute(route).futureValue
 }

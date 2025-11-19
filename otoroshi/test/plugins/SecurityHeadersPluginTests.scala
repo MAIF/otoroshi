@@ -8,7 +8,7 @@ import otoroshi.next.plugins._
 import play.api.libs.json._
 
 class SecurityHeadersPluginTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(
@@ -45,7 +45,9 @@ class SecurityHeadersPluginTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
       .headers
+      .view
       .mapValues(_.last)
+      .toMap
   }
 
   val headers = call()

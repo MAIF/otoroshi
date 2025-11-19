@@ -11,7 +11,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSAuthScheme
 
 class BasicAuthCallerTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   def checkProcess() = {
     def simpleBasicAuthRoute(): NgRoute = {

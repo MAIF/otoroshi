@@ -7,7 +7,7 @@ import otoroshi.next.plugins.{BuildMode, OverrideHost}
 import play.api.http.Status
 
 class BuildModeTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

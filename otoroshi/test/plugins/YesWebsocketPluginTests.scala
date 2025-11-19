@@ -1,12 +1,12 @@
 package plugins
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.Host
-import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.Host
+import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
 import functional.PluginsTestSpec
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{Future, Promise}
 
 class YesWebsocketPluginTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   def sendYMessagesPeriodicallyToWebsocketClients() = {
     val route = createRequestOtoroshiIORoute(
@@ -36,7 +36,7 @@ class YesWebsocketPluginTests(parent: PluginsTestSpec) {
 
     implicit val system: ActorSystem = ActorSystem("otoroshi-test")
     implicit val mat: Materializer   = Materializer(system)
-    implicit val http: HttpExt       = Http()(system)
+    implicit val http: HttpExt       = Http()
 
     val yesCounter      = new AtomicInteger(0)
     val messagesPromise = Promise[Int]()
@@ -77,9 +77,9 @@ class YesWebsocketPluginTests(parent: PluginsTestSpec) {
       id = IdGenerator.uuid
     )
 
-    implicit val system: ActorSystem = ActorSystem("otoroshi-test")
-    implicit val mat: Materializer   = Materializer(system)
-    implicit val http: HttpExt       = Http()(system)
+    given system: ActorSystem = ActorSystem("otoroshi-test")
+    given mat: Materializer   = Materializer(system)
+    given http: HttpExt       = Http()
 
     val printSink: Sink[Message, Future[Done]] = Sink.foreach { _ => }
 

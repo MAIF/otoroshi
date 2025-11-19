@@ -13,14 +13,15 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.libs.json._
-import play.api.libs.ws.DefaultWSCookie
+import play.api.libs.ws.{DefaultWSCookie, WSBodyWritables}
+import WSBodyWritables.given
 
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters.ListHasAsScala
 
 class MultiAuthenticationTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   def emailFlow() = {
     def createBasicAuthModule(): BasicAuthModuleConfig = {
@@ -390,11 +391,11 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
       }.toSeq
     }
 
-    def verifyAuthenticatedAccess(route: NgRoute, cookies: Seq[DefaultWSCookie]): Unit = {
+    def verifyAuthenticatedAccess(route: NgRoute, cookies: scala.collection.immutable.Seq[DefaultWSCookie]): Unit = {
       val callWithUser = ws
         .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
         .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-        .withCookies(cookies: _*)
+        .withCookies(cookies*)
         .get()
         .futureValue
 
@@ -825,11 +826,11 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
       }.toSeq
     }
 
-    def verifyAuthenticatedAccess(route: NgRoute, cookies: Seq[DefaultWSCookie]): Unit = {
+    def verifyAuthenticatedAccess(route: NgRoute, cookies: scala.collection.immutable.Seq[DefaultWSCookie]): Unit = {
       val callWithUser = ws
         .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
         .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-        .withCookies(cookies: _*)
+        .withCookies(cookies*)
         .get()
         .futureValue
 
@@ -1243,7 +1244,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
       val callWithUser = ws
         .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
         .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-        .withCookies(cookies: _*)
+        .withCookies(cookies*)
         .get()
         .futureValue
 
@@ -1366,7 +1367,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
 
     page.content().contains("GET") mustBe true
 
-    val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+    val wsCookies: scala.collection.immutable.Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
       DefaultWSCookie(
         name = c.name,
         value = c.value,
@@ -1375,12 +1376,12 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
         secure = c.secure,
         httpOnly = c.httpOnly
       )
-    }
+    }.toSeq
 
     val callWithUser = ws
       .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-      .withCookies(wsCookies: _*)
+      .withCookies(wsCookies*)
       .get()
       .futureValue
 

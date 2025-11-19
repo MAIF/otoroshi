@@ -10,7 +10,7 @@ import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 
 class MissingCookiesInTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

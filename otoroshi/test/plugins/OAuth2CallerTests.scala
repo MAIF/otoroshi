@@ -2,6 +2,9 @@ package plugins
 
 import com.dimafeng.testcontainers.GenericContainer
 import functional.PluginsTestSpec
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.Materializer
 import org.testcontainers.containers.wait.strategy.Wait
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -11,12 +14,15 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.WSBodyWritables.given
 
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationLong
 
 class OAuth2CallerTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
+  
+  given env: otoroshi.env.Env = otoroshiComponents.env
 
   def startKeycloakContainer(): GenericContainer = {
     val keycloakContainer = GenericContainer(

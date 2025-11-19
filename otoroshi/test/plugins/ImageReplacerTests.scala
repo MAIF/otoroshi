@@ -1,7 +1,7 @@
 package plugins
 
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.util.ByteString
 import functional.PluginsTestSpec
 import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -9,7 +9,7 @@ import otoroshi.next.plugins.{ImageReplacer, OverrideHost}
 import play.api.http.Status
 
 class ImageReplacerTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createLocalRoute(
     Seq(

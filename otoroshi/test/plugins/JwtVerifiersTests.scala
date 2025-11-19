@@ -17,7 +17,7 @@ import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class JwtVerifiersTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val verifier = GlobalJwtVerifier(
     id = IdGenerator.uuid,

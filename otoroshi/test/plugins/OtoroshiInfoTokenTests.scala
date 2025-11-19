@@ -1,7 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import java.util.Base64
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models._
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
@@ -15,7 +15,7 @@ import play.api.libs.json._
 import scala.concurrent.duration.DurationInt
 
 class OtoroshiInfoTokenTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   def withUser() = {
     val authenticationModule = BasicAuthModuleConfig(
@@ -90,7 +90,7 @@ class OtoroshiInfoTokenTests(parent: PluginsTestSpec) {
     resp.status mustBe Status.OK
 
     val tokenBody = getInHeader(resp, "foo").get.split("\\.")(1)
-    val token     = Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject]
+    val token     = Json.parse(Base64.getUrlDecoder.decode(tokenBody)).as[JsObject]
     token.selectAsString("iss") mustBe "Otoroshi"
     token.selectAsString("access_type") mustBe "user"
     token.selectAsObject("user").selectAsString("email") mustBe "user@oto.tools"
@@ -136,8 +136,8 @@ class OtoroshiInfoTokenTests(parent: PluginsTestSpec) {
     resp.status mustBe Status.OK
 
     val tokenBody = getInHeader(resp, "foo").get.split("\\.")(1)
-    Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("iss") mustBe "Otoroshi"
-    Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("access_type") mustBe "public"
+    Json.parse(Base64.getUrlDecoder.decode(tokenBody)).as[JsObject].selectAsString("iss") mustBe "Otoroshi"
+    Json.parse(Base64.getUrlDecoder.decode(tokenBody)).as[JsObject].selectAsString("access_type") mustBe "public"
 
     deleteOtoroshiRoute(route).futureValue
   }
@@ -192,7 +192,7 @@ class OtoroshiInfoTokenTests(parent: PluginsTestSpec) {
     resp.status mustBe Status.OK
 
     val tokenBody = getInHeader(resp, "foo").get.split("\\.")(1)
-    val token     = Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject]
+    val token     = Json.parse(Base64.getUrlDecoder.decode(tokenBody)).as[JsObject]
     token.selectAsString("iss") mustBe "Otoroshi"
     token.selectAsString("access_type") mustBe "apikey"
     token.selectAsObject("apikey").selectAsString("clientId") mustBe apikey.clientId

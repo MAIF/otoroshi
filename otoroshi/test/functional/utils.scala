@@ -18,18 +18,10 @@ import org.scalatest.matchers.must.Matchers
 import org.slf4j.LoggerFactory
 import otoroshi.api.Otoroshi
 import otoroshi.auth.AuthModuleConfig
-import otoroshi.models.DataExporterConfig
+import otoroshi.models.*
+import otoroshi.env.Env
 import otoroshi.loader.modules.OtoroshiComponentsInstances
-import otoroshi.next.models.{
-  NgBackend,
-  NgClientConfig,
-  NgDomainAndPath,
-  NgFrontend,
-  NgPluginInstance,
-  NgPlugins,
-  NgRoute,
-  NgTarget
-}
+import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPlugins, NgRoute, NgTarget}
 import otoroshi.security.IdGenerator
 import play.api.ApplicationLoader.Context
 import play.api.libs.json.*
@@ -45,7 +37,7 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.concurrent.duration.*
 import scala.concurrent.*
 import scala.util.{Random, Success, Try}
-import otoroshi.utils.syntax.implicits.BetterJsValue
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import org.slf4j
 import play.api.http.Status
 
@@ -561,8 +553,8 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
   def getTestConfiguration(configuration: Configuration): Configuration
 
   private lazy val logger                              = Logger("otoroshi-spec")
-  private lazy given actorSystem: ActorSystem   = ActorSystem(s"test-actor-system")
-  private lazy given materializer: Materializer = Materializer(actorSystem)
+  private given actorSystem: ActorSystem   = ActorSystem(s"test-actor-system")
+  private given materializer: Materializer = Materializer(actorSystem)
   private lazy val wsClientInstance: WSClient = {
     val parser: WSConfigParser         = new WSConfigParser(
       Configuration(
@@ -2035,13 +2027,13 @@ class WebsocketServer(counter: AtomicInteger) {
 class WebsocketBackend(
     root: String = "",
     callback: String => Message = text => TextMessage(s"Echo: $text"),
-    streamCallback: Source[String, _] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))
+    streamCallback: Source[String, ?] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))
 ) {
-  import akka.http.scaladsl.server.Directives.{complete, get, handleWebSocketMessages, path}
+  import org.apache.pekko.http.scaladsl.server.Directives.{complete, get, handleWebSocketMessages, path}
 
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit val mat: Materializer   = Materializer(system)
-  val http                         = Http()
+  val http: HttpExt = Http()
 
   val websocketFlow: Flow[Message, Message, Any] = Flow[Message].map {
     case TextMessage.Strict(text)         => callback(text)

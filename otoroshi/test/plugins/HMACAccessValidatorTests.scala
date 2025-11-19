@@ -15,7 +15,7 @@ import play.api.libs.json._
 import java.util.Base64
 
 class HMACAccessValidatorTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   def default() = {
     val route = createRequestOtoroshiIORoute(

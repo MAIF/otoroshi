@@ -7,9 +7,10 @@ import otoroshi.next.plugins.{EchoBackendConfig, OverrideHost, RequestBodyEchoBa
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.WSBodyWritables.given
 
 class RequestBodyEchoTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(
@@ -36,8 +37,8 @@ class RequestBodyEchoTests(parent: PluginsTestSpec) {
       .post(Json.obj("f" -> "b"))
       .futureValue
 
-    resp.status mustBe Status.OK
-    Json.parse(resp.body).selectAsString("f") mustEqual "b"
+    resp.status.mustBe(Status.OK)
+    Json.parse(resp.body).selectAsString("f").mustEqual("b")
   }
 
   {
@@ -49,7 +50,7 @@ class RequestBodyEchoTests(parent: PluginsTestSpec) {
       .post(Json.obj("foo" -> "bar"))
       .futureValue
 
-    resp.status mustBe Status.REQUEST_ENTITY_TOO_LARGE
+    resp.status.mustBe(Status.REQUEST_ENTITY_TOO_LARGE)
   }
 
   deleteOtoroshiRoute(route).futureValue

@@ -9,7 +9,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class UserAgentDetailsExtractorUserAgentHeaderTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

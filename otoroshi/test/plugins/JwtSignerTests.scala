@@ -1,7 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import java.util.Base64
 import otoroshi.models.{DefaultToken, GlobalJwtVerifier, HSAlgoSettings, InHeader}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -12,7 +12,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class JwtSignerTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   def default() = {
     val verifier = GlobalJwtVerifier(
@@ -54,7 +54,7 @@ class JwtSignerTests(parent: PluginsTestSpec) {
       .futureValue
 
     val tokenBody = getInHeader(resp, "x-jwt-token").get.split("\\.")(1)
-    Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("iss") mustBe "foo"
+    Json.parse(Base64.getUrlDecoder.decode(tokenBody)).as[JsObject].selectAsString("iss") mustBe "foo"
 
     deleteOtoroshiVerifier(verifier).futureValue
     deleteOtoroshiRoute(route).futureValue
@@ -103,7 +103,7 @@ class JwtSignerTests(parent: PluginsTestSpec) {
     resp.status mustBe Status.OK
 
     val tokenBody = getInHeader(resp, "x-jwt-token").get.split("\\.")(1)
-    Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("iss") mustBe "foo"
+    Json.parse(Base64.getUrlDecoder.decode(tokenBody)).as[JsObject].selectAsString("iss") mustBe "foo"
 
     deleteOtoroshiVerifier(verifier).futureValue
     deleteOtoroshiRoute(route).futureValue

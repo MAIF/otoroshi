@@ -1,15 +1,15 @@
 //package otoroshi.api.schema <- should actually be in this package
 package functional
 
-import org.json4s._
-import org.json4s.jackson.JsonMethods._
+import org.json4s.*
+import org.json4s.jackson.JsonMethods.*
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import otoroshi.api.schema._
+import otoroshi.api.schema.*
 
-import java.time._
+import java.time.*
 import java.util.UUID
-import scala.reflect.runtime.universe._
+import scala.reflect.runtime.universe.*
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -110,8 +110,7 @@ object TypeAliases {
     type ListAlias = List[Int]
 }
 
-import functional.TypeAliases._
-case class ModelWithAliases(name: StringAlias, numbers: ListAlias)
+case class ModelWithAliases(name: TypeAliases.StringAlias, numbers: TypeAliases.ListAlias)
 
 class ProductionSchemaGeneratorSpec extends AnyFlatSpec with Matchers {
 

@@ -13,11 +13,11 @@ import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 import com.microsoft.playwright._
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters.ListHasAsScala
 
 class AuthenticationTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   def passWithApikey() = {
     val moduleConfiguration = BasicAuthModuleConfig(
@@ -112,12 +112,12 @@ class AuthenticationTests(parent: PluginsTestSpec) {
         secure = c.secure,
         httpOnly = c.httpOnly
       )
-    }
+    }.toSeq
 
     val callWithUser = ws
       .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-      .withCookies(wsCookies: _*)
+      .withCookies(wsCookies*)
       .get()
       .futureValue
 
@@ -238,12 +238,12 @@ class AuthenticationTests(parent: PluginsTestSpec) {
         secure = c.secure,
         httpOnly = c.httpOnly
       )
-    }
+    }.toSeq
 
     val callWithUser = ws
       .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-      .withCookies(wsCookies: _*)
+      .withCookies(wsCookies*)
       .get()
       .futureValue
 

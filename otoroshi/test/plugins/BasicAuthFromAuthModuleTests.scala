@@ -11,7 +11,7 @@ import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class BasicAuthFromAuthModuleTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val authenticationModule = BasicAuthModuleConfig(
     id = IdGenerator.namedId("auth_mod", env),

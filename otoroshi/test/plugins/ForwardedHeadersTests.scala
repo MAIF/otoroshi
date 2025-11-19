@@ -7,7 +7,7 @@ import otoroshi.next.plugins.{BuildMode, ForwardedHeader, OverrideHost}
 import play.api.http.Status
 
 class ForwardedHeadersTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

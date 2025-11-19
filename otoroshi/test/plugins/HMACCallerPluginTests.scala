@@ -13,7 +13,7 @@ import play.api.libs.json._
 import java.util.Base64
 
 class HMACCallerPluginTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

@@ -1,11 +1,13 @@
 package plugins
 
-import akka.http.scaladsl.model.headers.Host
-import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.{Done, NotUsed}
+import org.apache.pekko.http.scaladsl.model.headers.Host
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.{Done, NotUsed}
 import functional.{PluginsTestSpec, WebsocketBackend}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Seconds, Span}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
@@ -19,9 +21,11 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
 class WebsocketJQTransformerTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
-  implicit val http: HttpExt = Http()(system)
+  given system: ActorSystem = ActorSystem("otoroshi-test")
+  given mat: Materializer = Materializer(system)
+  given http: HttpExt = Http()
 
   val backend = new WebsocketBackend(
     callback = text => TextMessage(Json.obj("message" -> text).stringify)

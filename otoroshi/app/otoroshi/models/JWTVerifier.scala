@@ -886,6 +886,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
   }
   def asVerification(algorithm: Algorithm, attrs: TypedMap)(implicit env: Env): Verification = {
     val verification = fields
+      .view
       .mapValues(_.evaluateEl(attrs))
       .foldLeft(
         JWT

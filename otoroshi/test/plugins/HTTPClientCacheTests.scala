@@ -9,7 +9,7 @@ import play.api.libs.json._
 
 class HTTPClientCacheTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   def matchesWildcardMimeType() = {
     val route = createRequestOtoroshiIORoute(
@@ -115,7 +115,7 @@ class HTTPClientCacheTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def addCacheHeadersWhenMethodStatusAndContentTypeMatch() {
+  def addCacheHeadersWhenMethodStatusAndContentTypeMatch() = {
     val route = createRequestOtoroshiIORoute(
       Seq(
         NgPluginInstance(

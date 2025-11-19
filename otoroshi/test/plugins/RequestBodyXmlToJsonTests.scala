@@ -6,10 +6,11 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, XmlToJsonRequest}
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.libs.json.Json
+import play.api.libs.ws.DefaultBodyWritables.given
 
 class RequestBodyXmlToJsonTests(parent: PluginsTestSpec) {
-  import parent._
-
+  import parent.{given, *}
+  
   val route = createRequestOtoroshiIORoute(
     Seq(
       NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),

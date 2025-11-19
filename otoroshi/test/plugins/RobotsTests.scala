@@ -8,10 +8,11 @@ import otoroshi.next.plugins._
 import otoroshi.security.IdGenerator
 import play.api.http.Status
 import play.api.libs.json.JsObject
+import play.api.libs.ws.DefaultBodyReadables.readableAsString
 
 class RobotsTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

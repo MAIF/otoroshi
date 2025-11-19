@@ -11,7 +11,7 @@ import play.api.libs.json._
 import scala.concurrent.duration.DurationInt
 
 class DeferResponsesTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

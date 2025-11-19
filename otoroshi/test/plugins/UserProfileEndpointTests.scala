@@ -13,11 +13,11 @@ import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters.ListHasAsScala
 
 class UserProfileEndpointTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val moduleConfiguration = BasicAuthModuleConfig(
     id = "BasicAuthModuleConfig",
@@ -81,7 +81,7 @@ class UserProfileEndpointTests(parent: PluginsTestSpec) {
   page.fill("input[name='password']", "password")
   page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Login")).nth(0).click()
 
-  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+  val wsCookies: scala.collection.immutable.Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
     DefaultWSCookie(
       name = c.name,
       value = c.value,
@@ -90,19 +90,19 @@ class UserProfileEndpointTests(parent: PluginsTestSpec) {
       secure = c.secure,
       httpOnly = c.httpOnly
     )
-  }
+  }.toSeq
 
   val callWithUser = ws
     .url(s"http://127.0.0.1:$port/")
     .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-    .withCookies(wsCookies: _*)
+    .withCookies(wsCookies*)
     .get()
     .futureValue
 
   println(callWithUser.body)
 
-  callWithUser.status mustBe 200
-  Json.parse(callWithUser.body).selectAsString("email").contains("user@oto.tools") mustBe true
+  callWithUser.status.mustBe(200)
+  Json.parse(callWithUser.body).selectAsString("email").contains("user@oto.tools").mustBe(true)
 
   browser.close()
   playwright.close()

@@ -13,6 +13,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.libs.ws.WSAuthScheme

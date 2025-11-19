@@ -6,9 +6,10 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgErrorRewriter, NgErrorRewriterConfig, OverrideHost, ResponseStatusRange}
 import play.api.http.Status
 import play.api.libs.json.JsObject
+import play.api.libs.ws.DefaultBodyReadables.readableAsString
 
 class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(
@@ -25,7 +26,7 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
               "application/json" -> "custom json response"
             ),
             log = false,
-            export = false
+            `export` = false
           ).json.as[JsObject]
         )
       )
@@ -42,7 +43,7 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    resp.body mustEqual "custom response"
+    resp.body.mustEqual("custom response")
   }
 
   {
@@ -56,7 +57,7 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    resp.body mustEqual "custom json response"
+    resp.body.mustEqual("custom json response")
   }
 
   deleteOtoroshiRoute(route).futureValue

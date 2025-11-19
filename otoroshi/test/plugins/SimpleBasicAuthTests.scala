@@ -11,7 +11,7 @@ import play.api.libs.ws.WSAuthScheme
 
 class SimpleBasicAuthTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   def simpleBasicAuthRoute(): NgRoute = {
     createRequestOtoroshiIORoute(

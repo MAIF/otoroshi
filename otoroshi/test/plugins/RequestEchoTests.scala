@@ -6,9 +6,10 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{EchoBackend, EchoBackendConfig, OverrideHost}
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.WSBodyWritables.given
 
 class RequestEchoTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(
@@ -35,7 +36,7 @@ class RequestEchoTests(parent: PluginsTestSpec) {
       .post(Json.obj("f" -> "b"))
       .futureValue
 
-    resp.status mustBe Status.OK
+    resp.status.mustBe(Status.OK)
   }
 
   {
@@ -47,7 +48,7 @@ class RequestEchoTests(parent: PluginsTestSpec) {
       .post(Json.obj("foo" -> "bar"))
       .futureValue
 
-    resp.status mustBe Status.REQUEST_ENTITY_TOO_LARGE
+    resp.status.mustBe(Status.REQUEST_ENTITY_TOO_LARGE)
   }
 
   deleteOtoroshiRoute(route).futureValue

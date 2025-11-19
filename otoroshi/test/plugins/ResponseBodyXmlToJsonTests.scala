@@ -1,17 +1,17 @@
 package plugins
 
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.util.ByteString
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{JsonTransformConfig, OverrideHost, XmlToJsonResponse}
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.libs.json.{JsObject, Json}
-import akka.http.scaladsl.model.headers.`Content-Type`
-import akka.http.scaladsl.model.{ContentType, HttpCharsets, MediaTypes}
+
 
 class ResponseBodyXmlToJsonTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createLocalRoute(
     Seq(
@@ -23,7 +23,7 @@ class ResponseBodyXmlToJsonTests(parent: PluginsTestSpec) {
         )
       )
     ),
-    responseHeaders = List(`Content-Type`(ContentType(MediaTypes.`text/xml`, HttpCharsets.`UTF-8`))),
+    responseHeaders = List(RawHeader("Content-Type", "text/xml; charset=UTF-8")),
     stringResult = _ => {
       ByteString(
         """
