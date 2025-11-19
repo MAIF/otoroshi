@@ -358,5 +358,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "User extraction from auth. module" in {
       new NgAuthModuleUserExtractorTests(this)
     }
+    "Expected consumer" in {
+      new NgExpectedConsumerTests(this)
+    }
   }
 }
