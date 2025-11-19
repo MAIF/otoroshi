@@ -343,5 +343,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "IP block list" in {
       new IpAddressBlockListTests(this)
     }
+    "IP Allowed list" in {
+      new IpAddressAllowedListTests(this)
+    }
   }
 }
