@@ -366,5 +366,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Robots" in {
       new RobotsTests(this)
     }
+    "User logged in expected" in {
+      new NgAuthModuleExpectedUserTests(this)
+    }
   }
 }

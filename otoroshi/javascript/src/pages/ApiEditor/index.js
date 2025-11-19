@@ -276,7 +276,7 @@ function Subscriptions(props) {
       children: <VersionBadge />,
     });
 
-    // return () => props.setTitle(undefined);
+    return () => props.setTitle(undefined);
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS);
@@ -1172,7 +1172,7 @@ function NewConsumer(props) {
     return updateItem({
       ...item,
       consumers: [...item.consumers, consumer],
-    }).then(() => historyPush(history, location, `/apis/${params.apiId}`));
+    }).then(() => historyPush(history, location, `/apis/${params.apiId}/consumers`));
   };
 
   if (!item) return <SimpleLoader />;
@@ -1306,7 +1306,7 @@ function Routes(props) {
       children: <VersionBadge />,
     });
 
-    // return () => props.setTitle(undefined);
+    return () => props.setTitle(undefined);
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.APIS);
@@ -1875,7 +1875,7 @@ function EditHttpClientSettings(props) {
 
   return (
     <>
-      <PageTitle title="Update Backend" {...props} style={{ paddingBottom: 0 }}>
+      <PageTitle title="Update Http Client settings" {...props} style={{ paddingBottom: 0 }}>
         <FeedbackButton
           type="success"
           className="ms-2 mb-1 d-flex align-items-center"
@@ -1971,7 +1971,7 @@ function Testing(props) {
   useEffect(() => {
     props.setTitle('Testing mode');
 
-    // return () => props.setTitle(undefined);
+    return () => props.setTitle(undefined);
   }, []);
 
   if (!item) return <SimpleLoader />;
@@ -2103,7 +2103,7 @@ function Deployments(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-    // return () => props.setTitle(undefined);
+    return () => props.setTitle(undefined);
   }, []);
 
   if (!item) return <SimpleLoader />;
@@ -2217,14 +2217,14 @@ function EditFlow(props) {
           consumers: item.consumers.reduce(
             (acc, item) => ({
               ...acc,
-              [item.id]: currentFlow.consumers.includes(item.id),
+              [item.id]: currentFlow.consumers?.includes(item.id),
             }),
             {}
           ),
         });
       }
     }
-    // return () => props.setTitle(undefined);
+    return () => props.setTitle(undefined);
   }, [item]);
 
   const updateFlow = () => {
@@ -2318,7 +2318,7 @@ function NewFlow(props) {
       children: <VersionBadge />,
     });
 
-    // return () => props.setTitle(undefined);
+    return () => props.setTitle(undefined);
   }, []);
 
   const [flow, setFlow] = useState({
@@ -2373,68 +2373,6 @@ function NewFlow(props) {
   );
 }
 
-function OpenAPILoader(props) {
-  const history = useHistory();
-  const location = useLocation();
-
-  const schema = {
-    openapi: {
-      type: 'string',
-      label: 'Openapi URL',
-    },
-    domain: {
-      type: 'string',
-      label: 'Exposed domain',
-    },
-    serverURL: {
-      type: 'string',
-      label: 'Server URL',
-    },
-    root: {
-      type: 'string',
-      label: 'The root URL of the target service',
-    },
-    action: {
-      renderer: () => (
-        <Row title="Server URL" className="col-sm-10 d-flex align-items-center">
-          <Button
-            type="primaryColor"
-            className="btn-sm"
-            text="Read file"
-            onClick={() => {
-              fetchWrapperNext(
-                `/${nextClient.ENTITIES.APIS}/_openapi`,
-                'POST',
-                props.value,
-                'apis.otoroshi.io'
-              ).then((api) => {
-                props.setValue({
-                  ...props.value,
-                  serverURL:
-                    api.backends?.length > 0 && api.backends[0].backend.targets.length > 0
-                      ? api.backends[0].backend.targets[0].hostname
-                      : '',
-                  root:
-                    api.backends?.length > 0 && api.backends[0].root ? api.backends[0].root : '',
-                  api,
-                });
-              });
-            }}
-          />
-        </Row>
-      ),
-    },
-  };
-
-  let flow = ['openapi', 'domain', 'action'];
-
-  if (props.value.serverURL) {
-    flow = ['openapi', 'domain', 'serverURL', 'root'];
-  }
-
-  return <NgForm value={props.value} flow={flow} onChange={props.setValue} schema={schema} />;
-}
-
 function NewAPI(props) {
   const history = useHistory();
   const location = useLocation();
@@ -2446,7 +2384,7 @@ function NewAPI(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-    // return () => props.setTitle(undefined);
+    return () => props.setTitle(undefined);
   }, []);
 
   const [value, setValue] = useState();
@@ -2494,7 +2432,51 @@ function NewAPI(props) {
       props: { label: 'Description' },
     },
     openapi: {
-      renderer: (_) => <OpenAPILoader value={value} setValue={setValue} />,
+      type: 'string',
+      label: 'Openapi URL',
+    },
+    domain: {
+      type: 'string',
+      label: 'Exposed domain',
+    },
+    serverURL: {
+      type: 'string',
+      label: 'Hostname',
+    },
+    root: {
+      type: 'string',
+      label: 'The root URL of the target service',
+    },
+    action: {
+      renderer: () => {
+        return <Row title=" " className="col-sm-10 d-flex align-items-center">
+          <Button
+            type="primaryColor"
+            className="btn-sm"
+            text="Read information from OpenAPI URL"
+            onClick={() => {
+              fetchWrapperNext(
+                `/${nextClient.ENTITIES.APIS}/_openapi`,
+                'POST',
+                value,
+                'apis.otoroshi.io'
+              ).then((api) => {
+                const hasBackends = api.backends?.length > 0
+                const firstBackend = hasBackends ? api.backends[0] : undefined
+
+                console.log(hasBackends, firstBackend)
+                setValue({
+                  ...value,
+                  serverURL: hasBackends && firstBackend.backend.targets.length > 0
+                    ? firstBackend.backend.targets[0].hostname : '',
+                  root: hasBackends && firstBackend.root ? firstBackend.root : '',
+                  api,
+                });
+              });
+            }}
+          />
+        </Row>
+      },
     },
     picker: {
       renderer: (_) => {
@@ -2568,21 +2550,21 @@ function NewAPI(props) {
     step === 0
       ? ['picker']
       : [
-          'location',
-          choice === 'openapi'
-            ? {
-                type: 'group',
-                name: 'OpenAPI',
-                collapsable: false,
-                fields: ['openapi'],
-              }
-            : {
-                type: 'group',
-                name: 'Informations',
-                collapsable: false,
-                fields: ['id', 'name', 'description'],
-              },
-        ];
+        'location',
+        choice === 'openapi'
+          ? {
+            type: 'group',
+            name: 'OpenAPI',
+            collapsable: false,
+            fields: ['openapi', 'domain', 'action', 'serverURL', 'root']
+          }
+          : {
+            type: 'group',
+            name: 'Informations',
+            collapsable: false,
+            fields: ['id', 'name', 'description'],
+          },
+      ];
 
   const createApi = () => {
     if (choice === 'fromScratch') {
@@ -2644,7 +2626,7 @@ function Apis(props) {
         </div>
       ),
     });
-    // return () => props.setTitle(undefined);
+    return () => props.setTitle(undefined);
   }, []);
 
   const columns = [
@@ -2859,7 +2841,7 @@ function Flows(props) {
       children: <VersionBadge />,
     });
 
-    // return () => props.setTitle(undefined);
+    return () => props.setTitle(undefined);
   }, []);
 
   const fetchItems = (_) => Promise.resolve(item.flows);
@@ -3101,14 +3083,6 @@ function Informations(props) {
       type: 'array',
       label: 'Tags',
     },
-    groups: {
-      type: 'array-select',
-      label: 'Groups',
-      props: {
-        optionsFrom: '/bo/api/proxy/api/groups',
-        optionsTransformer: (arr) => arr.map((item) => ({ value: item.id, label: item.name })),
-      },
-    },
     capture: {
       type: 'bool',
       label: 'Capture route traffic',
@@ -3173,7 +3147,6 @@ function Informations(props) {
       name: 'Misc.',
       collapsed: false,
       fields: [
-        'groups',
         'tags',
         'metadata',
         {
@@ -3203,7 +3176,7 @@ function Informations(props) {
         children: <VersionBadge />,
       });
 
-      // return () => props.setTitle(undefined);
+      return () => props.setTitle(undefined);
     }
   }, [item]);
 
@@ -3688,14 +3661,14 @@ function RouteItem({ item, api, ports }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}
+        >
+          {m}
+        </span>
+      ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');
@@ -4199,13 +4172,13 @@ function ObjectiveCard({ title, description, icon, to, onClick }) {
       <div className="objective-card-icon">{icon}</div>
       <div className="objective-card-body">
         <p>{title}</p>
-        <div
+        <p
           onClick={() => {
             onClick ? onClick() : historyPush(history, location, to);
           }}
         >
           {description}
-        </div>
+        </p>
       </div>
     </div>
   );

@@ -59,6 +59,7 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$subtract", new SubtractOperator())
     WorkflowOperator.registerOperator("$multiply", new MultiplyOperator())
     WorkflowOperator.registerOperator("$divide", new DivideOperator())
+    WorkflowOperator.registerOperator("$remainder", new RemainderOperator())
     WorkflowOperator.registerOperator("$incr", new IncrementOperator())
     WorkflowOperator.registerOperator("$decr", new DecrementOperator())
     WorkflowOperator.registerOperator("$str_upper_case", new UppercaseOperator())
@@ -70,6 +71,7 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$str_replace", new StringReplaceOperator())
     WorkflowOperator.registerOperator("$str_replace_all", new StringReplaceAllOperator())
     WorkflowOperator.registerOperator("$jq", new JqOperator())
+    WorkflowOperator.registerOperator("$round", new Round())
   }
 }
 
@@ -659,6 +661,39 @@ class ArrayHeadOperator extends WorkflowOperator {
     }
   }
 }
+
+class Round extends WorkflowOperator {
+  override def documentationName: String                  = "$round"
+  override def documentationDisplayName: String           = "Round"
+  override def documentationIcon: String                  = "fas fa-code"
+  override def documentationDescription: String           = "This operator rounds a value to the nearest integer"
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "value"  -> Json.obj(
+        "type"  -> "json",
+        "props" -> Json.obj(
+          "description" -> "A value to round"
+        ),
+        "label" -> "Value"
+      )
+    )
+  )
+  override def documentationInputSchema: Option[JsObject] = None
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$round" -> Json.obj(
+        "value"  -> 0.5
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("value").asOpt[JsNumber] match {
+      case Some(value) => JsNumber(Math.floor(value.value.toDouble))
+      case v => JsNumber(0)
+    }
+  }
+}
+
 
 class JqOperator extends WorkflowOperator {
 
@@ -1307,9 +1342,53 @@ class MultiplyOperator extends WorkflowOperator {
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("values").asOpt[Seq[JsNumber]] match {
-      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a * b.value))
+      case Some(numbers) if numbers.length == 1 => numbers.head
+      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(1))((a, b) => a * b.value))
       case _             => 0.json
     }
+  }
+}
+
+class RemainderOperator extends WorkflowOperator {
+  override def documentationName: String                  = "%remainder"
+  override def documentationDisplayName: String           = "Remainder"
+  override def documentationIcon: String                  = "fas fa-percent"
+  override def documentationDescription: String           = "This operator perform Euclidian division"
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "values" -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Values",
+        "props" -> Json.obj(
+          "description" -> "The list of numbers to divide"
+        )
+      )
+    )
+  )
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("value", "by"),
+      "properties" -> Json.obj(
+        "value" -> Json.obj("type" -> "number", "description" -> "The number to divide"),
+        "by" -> Json.obj("type" -> "number", "description" -> "The numbe to divide by")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$divide" -> Json.obj(
+        "value" -> 10,
+        "by" -> 2
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val result: Option[JsNumber] = for {
+      value <- opts.select("value").asOpt[JsNumber]
+      by <- opts.select("by").asOpt[JsNumber]
+    } yield JsNumber(value.value % by.value)
+    result.getOrElse(0.json)
   }
 }
 
@@ -2226,7 +2305,11 @@ class MemRefOperator extends WorkflowOperator {
       case n if wfr.memory.contains(n) => {
         wfr.memory.get(n) match {
           case None                          => JsNull
-          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isEmpty   =>
+            opts.select("path").asOpt[JsNumber] match {
+              case Some(index) => value(index.value.toInt)
+              case None => value
+            }
           case Some(value) if path.isDefined => value.at(path.get).asValue
           case Some(_)                       => JsNull
         }
