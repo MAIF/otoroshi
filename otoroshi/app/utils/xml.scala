@@ -108,14 +108,30 @@ object Xml {
         xml.Null
       else {
         val lastAttribute =
-          new UnprefixedAttribute(attrs.last._1.replaceAll("@", ""), attrs.last._2.toString(), xml.Null)
+          new UnprefixedAttribute(
+            attrs.last._1.replaceAll("@", ""),
+            extractAttributeValue(attrs.last._2),
+            xml.Null
+          )
         attrs
           .slice(0, attrs.length - 1)
           .reverse
           .foldLeft(lastAttribute) { case (attr, attribute) =>
-            new UnprefixedAttribute(attribute._1.replaceAll("@", ""), attribute._2.toString(), attr)
+            new UnprefixedAttribute(
+              attribute._1.replaceAll("@", ""),
+              extractAttributeValue(attribute._2),
+              attr
+            )
           }
       }
+    }
+
+    def extractAttributeValue(jsValue: JsValue): String = jsValue match {
+      case JsString(s)  => s
+      case JsNumber(n)  => n.toString()
+      case JsBoolean(b) => b.toString
+      case JsNull       => "null"
+      case _            => jsValue.toString()
     }
 
     def nestedToXml(name: String, json: JsValue): NodeSeq = json match {

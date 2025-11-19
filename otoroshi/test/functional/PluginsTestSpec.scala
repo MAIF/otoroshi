@@ -346,5 +346,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "IP Allowed list" in {
       new IpAddressAllowedListTests(this)
     }
+    "Request body json-to-xml" in {
+      new RequestBodyJsonToXMLTests(this)
+    }
   }
 }
