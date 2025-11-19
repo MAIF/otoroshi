@@ -369,5 +369,32 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "User logged in expected" in {
       new NgAuthModuleExpectedUserTests(this)
     }
+    "IP block list" in {
+      new IpAddressBlockListTests(this)
+    }
+    "IP Allowed list" in {
+      new IpAddressAllowedListTests(this)
+    }
+    "Request body json-to-xml" in {
+      new RequestBodyJsonToXMLTests(this)
+    }
+    "Response body json-to-xml" in {
+      new ResponseBodyJsonToXMLTests(this)
+    }
+    "Apikey mandatory tags" in {
+      new ApikeyMandatoryTagsTests(this)
+    }
+    "User extraction from auth. module" in {
+      new NgAuthModuleUserExtractorTests(this)
+    }
+    "Expected consumer" in {
+      new NgExpectedConsumerTests(this)
+    }
+    "Generic allowed list" in {
+      new GenericAllowedListTests(this)
+    }
+    "Generic block list" in {
+      new GenericBlockListTests(this)
+    }
   }
 }
