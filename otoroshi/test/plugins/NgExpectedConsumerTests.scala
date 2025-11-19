@@ -58,10 +58,10 @@ class NgExpectedConsumerTests(parent: PluginsTestSpec) {
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[ApikeyCalls],
+        include = Seq("/restricted"),
         config = NgPluginInstanceConfig(
           Json.obj(
             "mandatory"    -> false,
-            "include"      -> "/restricted",
             "plugin_index" -> Json.obj(
               "match_route"       -> 0,
               "validate_access"   -> 1,
@@ -72,12 +72,12 @@ class NgExpectedConsumerTests(parent: PluginsTestSpec) {
       ),
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[AuthModule],
+        include = Seq("/restricted"),
         config = NgPluginInstanceConfig(
           NgAuthModuleConfig(module = moduleConfiguration.id.some, passWithApikey = true).json
             .as[JsObject]
             .deepMerge(
               Json.obj(
-                "include"      -> "/restricted",
                 "plugin_index" -> Json.obj(
                   "validate_access" -> 2
                 )

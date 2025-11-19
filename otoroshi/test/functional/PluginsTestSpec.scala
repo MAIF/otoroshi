@@ -361,5 +361,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Expected consumer" in {
       new NgExpectedConsumerTests(this)
     }
+    "Generic allowed list" in {
+      new GenericAllowedListTests(this)
+    }
   }
 }
