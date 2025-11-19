@@ -349,5 +349,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Request body json-to-xml" in {
       new RequestBodyJsonToXMLTests(this)
     }
+    "Response body json-to-xml" in {
+      new ResponseBodyJsonToXMLTests(this)
+    }
   }
 }
