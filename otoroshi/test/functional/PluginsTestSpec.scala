@@ -352,5 +352,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Response body json-to-xml" in {
       new ResponseBodyJsonToXMLTests(this)
     }
+    "Apikey mandatory tags" in {
+      new ApikeyMandatoryTagsTests(this)
+    }
   }
 }
