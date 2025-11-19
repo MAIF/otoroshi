@@ -13,12 +13,11 @@ import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
-
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters.given
 
 class NgExpectedConsumerTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val moduleConfiguration = BasicAuthModuleConfig(
     id = "BasicAuthModuleConfig",
@@ -115,12 +114,12 @@ class NgExpectedConsumerTests(parent: PluginsTestSpec) {
       secure = c.secure,
       httpOnly = c.httpOnly
     )
-  }
+  }.toSeq
 
   val callWithUser = ws
     .url(s"http://127.0.0.1:$port/restricted")
     .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-    .withCookies(wsCookies: _*)
+    .withCookies(wsCookies*)
     .get()
     .futureValue
 

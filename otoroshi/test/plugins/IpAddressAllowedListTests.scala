@@ -9,7 +9,7 @@ import play.api.libs.json._
 
 class IpAddressAllowedListTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

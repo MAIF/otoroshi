@@ -15,7 +15,7 @@ import play.api.http.Status
 import play.api.libs.json._
 
 class IpAddressBlockListTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

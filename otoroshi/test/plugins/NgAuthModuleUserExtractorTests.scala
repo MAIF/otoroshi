@@ -3,7 +3,7 @@ package plugins
 import com.microsoft.playwright._
 import com.microsoft.playwright.options.AriaRole
 import functional.PluginsTestSpec
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import java.util.Base64
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models._
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
@@ -15,11 +15,11 @@ import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 
 import scala.concurrent.duration.DurationInt
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters.given
 
 class NgAuthModuleUserExtractorTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val moduleConfiguration = BasicAuthModuleConfig(
     id = "BasicAuthModuleConfig",
@@ -122,18 +122,18 @@ class NgAuthModuleUserExtractorTests(parent: PluginsTestSpec) {
       secure = c.secure,
       httpOnly = c.httpOnly
     )
-  }
+  }.toSeq
 
   val callWithUser = ws
     .url(s"http://127.0.0.1:$port/")
     .withHttpHeaders("Host" -> routeToCheck.frontend.domains.head.domain)
-    .withCookies(wsCookies: _*)
+    .withCookies(wsCookies*)
     .get()
     .futureValue
 
   callWithUser.status mustBe 200
   val tokenBody = getInHeader(callWithUser, "foo").get.split("\\.")(1)
-  Json.parse(ApacheBase64.decodeBase64(tokenBody)).as[JsObject].selectAsString("access_type") mustBe "user"
+  Json.parse(Base64.getUrlDecoder.decode(tokenBody)).as[JsObject].selectAsString("access_type").mustBe("user")
 
   val callWithoutCookies = ws
     .url(s"http://127.0.0.1:$port/")
@@ -143,7 +143,7 @@ class NgAuthModuleUserExtractorTests(parent: PluginsTestSpec) {
 
   callWithoutCookies.status mustBe 200
   val public = getInHeader(callWithoutCookies, "foo").get.split("\\.")(1)
-  Json.parse(ApacheBase64.decodeBase64(public)).as[JsObject].selectAsString("access_type") mustBe "public"
+  Json.parse(Base64.getUrlDecoder.decode(public)).as[JsObject].selectAsString("access_type").mustBe("public")
 
   browser.close()
   playwright.close()
