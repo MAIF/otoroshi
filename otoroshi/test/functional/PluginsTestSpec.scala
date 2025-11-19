@@ -355,5 +355,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikey mandatory tags" in {
       new ApikeyMandatoryTagsTests(this)
     }
+    "User extraction from auth. module" in {
+      new NgAuthModuleUserExtractorTests(this)
+    }
   }
 }
