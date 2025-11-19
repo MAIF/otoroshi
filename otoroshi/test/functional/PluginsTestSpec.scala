@@ -340,5 +340,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "User logged in expected" in {
       new NgAuthModuleExpectedUserTests(this)
     }
+    "IP block list" in {
+      new IpAddressBlockListTests(this)
+    }
   }
 }
