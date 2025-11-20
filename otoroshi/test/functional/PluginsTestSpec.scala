@@ -376,5 +376,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "GraphQL Composer - json" in {
       new GraphQLBackendTests(this).jsonDirective()
     }
+    "GraphQL Composer - mock" in {
+      new GraphQLBackendTests(this).mockDirective()
+    }
   }
 }
