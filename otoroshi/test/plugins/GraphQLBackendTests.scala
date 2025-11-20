@@ -181,4 +181,76 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
 
     deleteOtoroshiRoute(route).futureValue
   }
+
+  def permissions() = {
+    val id    = IdGenerator.uuid
+    val route = createRequestOtoroshiIORoute(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[GraphQLBackend],
+          config = NgPluginInstanceConfig(
+            GraphQLBackendConfig(
+              permissions = Seq("$.raw_request.headers.role"),
+              schema = """
+                  |type Query {
+                  |  users: [User] @json(data: "[{\"firstname\":\"Foo\",\"name\":\"Bar\"},{\"firstname\":\"Bar\",\"name\":\"Foo\"}]") @permission(value: "ONLY_THIS_ROLE")
+                  |}
+                  |
+                  |type User {
+                  |  name: String!
+                  |  firstname: String!
+                  |}
+                  |""".stripMargin
+            ).json.as[JsObject]
+          )
+        )
+      ),
+      domain = s"$id.oto.tools",
+      id
+    )
+
+    {
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/users")
+        .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
+        .post(
+          Json.obj(
+            "query" ->
+            """query {
+                | users {
+                |    name
+                |    firstname
+                | }
+                |}""".stripMargin
+          )
+        )
+        .futureValue
+
+      resp.status mustBe Status.OK
+      resp.body.contains("You're not authorized") mustBe true
+    }
+
+    {
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/users")
+        .withHttpHeaders("Host" -> route.frontend.domains.head.domain, "role" -> "ONLY_THIS_ROLE")
+        .post(
+          Json.obj(
+            "query" ->
+            """query {
+                | users {
+                |    name
+                |    firstname
+                | }
+                |}""".stripMargin
+          )
+        )
+        .futureValue
+
+      resp.status mustBe Status.OK
+      resp.body.contains("You're not authorized") mustBe false
+    }
+
+    deleteOtoroshiRoute(route).futureValue
+  }
 }
