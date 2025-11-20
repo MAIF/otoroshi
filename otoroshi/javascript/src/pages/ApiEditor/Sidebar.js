@@ -79,6 +79,13 @@ const LINKS = (id) =>
       tooltip: { ...createTooltip(`Show deployments tab`) },
     },
     {
+      to: `/apis/${id}/documentation`,
+      icon: 'fa-file',
+      title: 'Documentation',
+      tab: 'documentation',
+      tooltip: { ...createTooltip(`Show documentation tab`) },
+    },
+    {
       to: `/apis/${id}/testing`,
       icon: 'fa-play',
       title: 'Testing',

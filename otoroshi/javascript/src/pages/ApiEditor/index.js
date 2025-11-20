@@ -37,6 +37,7 @@ import { components } from 'react-select';
 import { HTTP_COLORS } from '../RouteDesigner/MocksDesigner';
 import { unsecuredCopyToClipboard } from '../../util';
 import { Row } from '../../components/Row';
+import MonacoEditor from "@monaco-editor/react";
 
 const RouteWithProps = ({ component: Component, ...rest }) => (
   <Route {...rest} component={(routeProps) => <Component {...routeProps} {...rest.props} />} />
@@ -149,6 +150,12 @@ export default function ApiEditor(props) {
             exact
             path="/apis/:apiId/deployments"
             component={Deployments}
+            props={props}
+          />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/documentation"
+            component={Documentation}
             props={props}
           />
           <RouteWithProps exact path="/apis/:apiId/testing" component={Testing} props={props} />
@@ -2137,6 +2144,72 @@ function Deployments(props) {
   );
 }
 
+function Documentation(props) {
+
+  const params = useParams();
+  const { item, updateItem } = useDraftOfAPI();
+  const [code, setCode] = useState('');
+  const [newItem, setNewItem] = useState(null);
+
+  useEffect(() => {
+    if (item && code === '') {
+      setCode(JSON.stringify(item.documentation, null, 2));
+    }
+  }, [item]);
+
+  const updateDoc = () => {
+    return updateItem({ ...item, documentation: newItem });
+  }
+
+  if (!item) return <SimpleLoader />;
+  return (
+    <>
+      <PageTitle title="Documentation" {...props}>
+        <FeedbackButton
+          type="success"
+          className="d-flex ms-auto"
+          onPress={updateDoc}
+          text={
+            <div className="d-flex align-items-center">
+              Update <VersionBadge size="xs" />
+            </div>
+          }
+        />
+      </PageTitle>
+      <div
+        style={{
+          maxWidth: MAX_WIDTH,
+          margin: 'auto',
+        }}
+      >
+        <MonacoEditor
+          height={window.innerHeight - 140}
+          width="100%"
+          theme="vs-dark"
+          defaultLanguage="json"
+          value={code}
+          options={{
+            automaticLayout: true,
+            selectOnLineNumbers: true,
+            minimap: { enabled: true },
+            lineNumbers: true,
+            glyphMargin: false,
+            folding: true,
+            lineDecorationsWidth: 0,
+            lineNumbersMinChars: 0,
+          }}
+          onChange={(newValue) => {
+            try {
+              setNewItem(JSON.parse(newValue));
+            } catch (e) {
+            }
+          }}
+        />
+      </div>
+    </>
+  )
+}
+
 function SidebarWithVersion({ params, state }) {
   const queryParams = new URLSearchParams(window.location.search);
   const queryVersion =
@@ -2996,6 +3069,7 @@ function VersionManager({ api, draft, owner, setState }) {
     consumers: getCompareStep('consumers'),
     subscriptions: getCompareStep('subscriptions'),
     deployments: getCompareStep('deployments'),
+    documentation: getCompareStep('documentation'),
     apiDefinition: {
       renderer: () => {
         return <PublisDraftModalContent draft={draft.content} currentItem={api} />;
@@ -3023,6 +3097,7 @@ function VersionManager({ api, draft, owner, setState }) {
     getCompareFlowGroup('consumers'),
     getCompareFlowGroup('subscriptions'),
     getCompareFlowGroup('deployments'),
+    getCompareFlowGroup('documentation'),
     {
       type: 'group',
       name: `Global: ${!mergeData(api[name], draft.content[name]) ? 'No changes' : `has changed`}`,
