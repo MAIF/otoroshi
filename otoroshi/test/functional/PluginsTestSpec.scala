@@ -373,5 +373,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Regex Response Headers Rewriter" in {
       new RegexResponseHeadersRewriterTests(this)
     }
+    "GraphQL Composer - json" in {
+      new GraphQLBackendTests(this).jsonDirective()
+    }
   }
 }
