@@ -367,5 +367,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Generic block list" in {
       new GenericBlockListTests(this)
     }
+    "Allowed users only" in {
+      new HasAllowedUsersValidatorTests(this)
+    }
+    "Regex Response Headers Rewriter" in {
+      new RegexResponseHeadersRewriterTests(this)
+    }
   }
 }

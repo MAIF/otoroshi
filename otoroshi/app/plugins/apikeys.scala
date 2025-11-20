@@ -130,8 +130,8 @@ class HasAllowedApiKeyValidator extends AccessValidator {
           allowedClientIds.contains(apiKey.clientId) ||
           allowedTags.exists(tag => apiKey.tags.contains(tag)) ||
           allowedMetadatas.exists(meta => apiKey.metadata.get(meta._1).contains(meta._2)) ||
-          (apikeyMatch.exists(JsonPathUtils.matchWith(apikeyJson, "apikey")) && !apikeyNotMatch.exists(
-            JsonPathUtils.matchWith(apikeyJson, "apikey")
+          (apikeyMatch.exists(JsonPathUtils.matchWith(apikeyJson)) && !apikeyNotMatch.exists(
+            JsonPathUtils.matchWith(apikeyJson)
           ))
         ) {
           FastFuture.successful(true)

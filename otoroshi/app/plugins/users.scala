@@ -82,11 +82,11 @@ class HasAllowedUsersValidator extends AccessValidator {
           allowedUsernames.contains(user.name) ||
           allowedEmails.contains(user.email) ||
           allowedEmailDomains.exists(domain => user.email.endsWith(domain)) ||
-          (metadataMatch.exists(JsonPathUtils.matchWith(userMetaRaw, "user metadata")) && !metadataNotMatch.exists(
-            JsonPathUtils.matchWith(userMetaRaw, "user metadata")
+          (metadataMatch.exists(JsonPathUtils.matchWith(userMetaRaw)) && !metadataNotMatch.exists(
+            JsonPathUtils.matchWith(userMetaRaw)
           )) ||
-          (profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !profileNotMatch.exists(
-            JsonPathUtils.matchWith(user.profile, "user profile")
+          (profileMatch.exists(JsonPathUtils.matchWith(user.profile)) && !profileNotMatch.exists(
+            JsonPathUtils.matchWith(user.profile)
           ))
         ) {
           FastFuture.successful(true)

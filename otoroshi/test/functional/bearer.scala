@@ -1,7 +1,6 @@
 package functional
 
 import com.typesafe.config.ConfigFactory
-import functional.Implicits.BetterFuture
 import play.api.Configuration
 import play.api.libs.json.JsObject
 
@@ -26,7 +25,7 @@ class ApikeyBearerSpec extends OtoroshiSpec {
         .map { response =>
           (response.json, response.status)
         }
-        .await()
+        .futureValue
       status mustBe 200
       body.as[Seq[JsObject]].size mustBe 2
     }

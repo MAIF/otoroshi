@@ -22,17 +22,21 @@ case class NgHasAllowedUsersValidatorConfig(
     emailDomains: Seq[String] = Seq.empty,
     metadataMatch: Seq[String] = Seq.empty,
     metadataNotMatch: Seq[String] = Seq.empty,
+    otoroshiDataMatch: Seq[String] = Seq.empty,
+    otoroshiDataNotMatch: Seq[String] = Seq.empty,
     profileMatch: Seq[String] = Seq.empty,
     profileNotMatch: Seq[String] = Seq.empty
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
-    "usernames"          -> usernames,
-    "emails"             -> emails,
-    "email_domains"      -> emailDomains,
-    "metadata_match"     -> metadataMatch,
-    "metadata_not_match" -> metadataNotMatch,
-    "profile_match"      -> profileMatch,
-    "profile_not_match"  -> profileNotMatch
+    "usernames"               -> usernames,
+    "emails"                  -> emails,
+    "email_domains"           -> emailDomains,
+    "metadata_match"          -> metadataMatch,
+    "metadata_not_match"      -> metadataNotMatch,
+    "otoroshi_data_match"     -> otoroshiDataMatch,
+    "otoroshi_data_not_match" -> otoroshiDataNotMatch,
+    "profile_match"           -> profileMatch,
+    "profile_not_match"       -> profileNotMatch
   )
 }
 
@@ -87,24 +91,47 @@ class NgHasAllowedUsersValidator extends NgAccessValidator {
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.user match {
       case Some(user) => {
-        val config      = ctx
+        val config = ctx
           .cachedConfig(internalName)(NgHasAllowedUsersValidatorConfig.format)
           .getOrElse(NgHasAllowedUsersValidatorConfig())
-        val userMetaRaw = user.otoroshiData.getOrElse(Json.obj())
-        if (
+
+        val userMetaRaw         = user.metadata
+        val otoroshiUserMetaRaw = user.otoroshiData.getOrElse(Json.obj())
+
+        // legacy FIX
+        //  - user otoroshi data are managed with metadata fields
+        //  - user metadata with otoroshi data fields
+
+        val metaAllowed = config.otoroshiDataMatch.isEmpty ||
+          config.otoroshiDataMatch.exists(userMetaRaw.contains)
+
+        val metaForbidden =
+          config.otoroshiDataNotMatch.isEmpty ||
+          config.otoroshiDataNotMatch.exists(userMetaRaw.contains)
+
+        val otoroshiMetaAllowed = config.metadataMatch.isEmpty ||
+          config.metadataMatch.exists(JsonPathUtils.matchWith(otoroshiUserMetaRaw))
+
+        val otoroshiMetaForbidden =
+          config.metadataNotMatch.isEmpty ||
+          config.metadataNotMatch.exists(JsonPathUtils.matchWith(otoroshiUserMetaRaw))
+
+        val profileAllowed = config.profileMatch.isEmpty ||
+          config.profileMatch.exists(JsonPathUtils.matchWith(user.profile))
+
+        val profileForbidden =
+          config.profileNotMatch.isEmpty ||
+          config.profileNotMatch.exists(JsonPathUtils.matchWith(user.profile))
+
+        val isAllowed =
           config.usernames.contains(user.name) ||
           config.emails.contains(user.email) ||
           config.emailDomains.exists(domain => user.email.endsWith(domain)) ||
-          (config.metadataMatch.exists(
-            JsonPathUtils.matchWith(userMetaRaw, "user metadata")
-          ) && !config.metadataNotMatch.exists(
-            JsonPathUtils.matchWith(userMetaRaw, "user metadata")
-          )) ||
-          (config.profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !config.profileNotMatch
-            .exists(
-              JsonPathUtils.matchWith(user.profile, "user profile")
-            ))
-        ) {
+          (otoroshiMetaAllowed && !otoroshiMetaForbidden) ||
+          (metaAllowed && !metaForbidden) ||
+          (profileAllowed && !profileForbidden)
+
+        if (isAllowed) {
           NgAccess.NgAllowed.vfuture
         } else {
           forbidden(ctx)
