@@ -12,7 +12,10 @@ class ApikeyBearerSpec extends OtoroshiSpec {
       startOtoroshi()
     }
     "be able to be used as opaque tokens" in {
-      val apikey         = otoroshiComponents.env.proxyState.apikey(otoroshiComponents.env.backOfficeApiKeyClientId).get
+      otoroshiComponents.env.proxyState.sync().futureValue
+      val apikey         = otoroshiComponents.env.proxyState.apikey(otoroshiComponents.env.backOfficeApiKeyClientId).getOrElse {
+        throw new RuntimeException(s"BackOffice apikey ${otoroshiComponents.env.backOfficeApiKeyClientId} not found in proxyState")
+      }
       val bearer         = apikey.toBearer()
       val (body, status) = wsClient
         .url(s"http://127.0.0.1:$port/apis/apim.otoroshi.io/v1/apikeys")

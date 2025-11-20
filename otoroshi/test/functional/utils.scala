@@ -1590,7 +1590,8 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
     if (result._2 == Status.CREATED) {
       newRoute
     } else {
-      throw new RuntimeException("failed to create a new route")
+      System.err.println(s"Failed to create route. Status: ${result._2}, Response: ${result._1}")
+      throw new RuntimeException(s"failed to create a new route (status: ${result._2})")
     }
   }
 
