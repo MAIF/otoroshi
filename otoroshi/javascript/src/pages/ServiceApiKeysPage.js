@@ -945,9 +945,9 @@ export class ServiceApiKeysPage extends Component {
   }
 
   fetchAllApiKeys = (paginationState) => {
-    return nextClient.forEntityNext(nextClient.ENTITIES.APIKEYS).findAllWithPagination({
-      ...paginationState,
-    });
+    return BackOfficeServices.fetchApiKeysForPage(
+      this.props.params.serviceId || this.props.params.routeId
+    );
   };
 
   createItem = (ak) => {

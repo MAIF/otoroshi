@@ -396,5 +396,20 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Generic block list" in {
       new GenericBlockListTests(this)
     }
+    "Allowed users only" in {
+      new HasAllowedUsersValidatorTests(this)
+    }
+    "Regex Response Headers Rewriter" in {
+      new RegexResponseHeadersRewriterTests(this)
+    }
+    "GraphQL Composer - json" in {
+      new GraphQLBackendTests(this).jsonDirective()
+    }
+    "GraphQL Composer - mock" in {
+      new GraphQLBackendTests(this).mockDirective()
+    }
+    "GraphQL Composer - permissions" in {
+      new GraphQLBackendTests(this).permissions()
+    }
   }
 }

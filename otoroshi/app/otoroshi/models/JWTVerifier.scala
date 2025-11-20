@@ -1424,7 +1424,8 @@ sealed trait JwtVerifier extends AsJson {
               JwtInjection().right[Result]
             }
         }
-      case Some(token) =>
+      case Some(_token) =>
+        val token = if (_token.startsWith("Bearer ")) _token.replaceFirst("Bearer ", "") else _token
         val tokenParts  = token.split("\\.")
         val signature   = tokenParts.last
         val tokenHeader = Try(Json.parse(JavaBase64.getDecoder.decode(tokenParts(0)))).getOrElse(Json.obj())
@@ -1754,7 +1755,8 @@ sealed trait JwtVerifier extends AsJson {
       //     )
       //     .left[A]
       // case None if !strict => f(JwtInjection()).right[Result]
-      case Some(token) =>
+      case Some(_token) =>
+        val token = if (_token.startsWith("Bearer ")) _token.replaceFirst("Bearer ", "") else _token
         val tokenParts  = token.split("\\.")
         val signature   = tokenParts.last
         val tokenHeader = Try(Json.parse(JavaBase64.getDecoder.decode(tokenParts(0)))).getOrElse(Json.obj())

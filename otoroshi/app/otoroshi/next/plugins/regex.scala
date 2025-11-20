@@ -511,7 +511,7 @@ object RegexHeadersRewriterConfig {
           "replacement" -> Json.obj("type" -> "string", "label" -> "Replacement", "placeholder" -> "href=$1/v2/$2$1"),
           "flags"       -> Json.obj("type" -> "string", "label" -> "Flags (imsu)", "placeholder" -> "i")
         ),
-        "flow"   -> Json.arr("pattern", "replacement", "flags")
+        "flow"   -> Json.arr("name", "pattern", "replacement", "flags")
       )
     )
   )
@@ -601,13 +601,17 @@ class RegexRequestHeadersRewriter extends NgRequestTransformer {
 
 class RegexResponseHeadersRewriter extends NgRequestTransformer {
 
-  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean            = true
+  override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = false
   override def transformsResponse: Boolean       = true
+  override def transformsError: Boolean          = false
+  override def isTransformRequestAsync: Boolean  = false
+  override def isTransformResponseAsync: Boolean = false
   override def noJsForm: Boolean                 = true
 
   override def name: String                                = "Regex response headers rewriter"
@@ -648,9 +652,9 @@ class RegexResponseHeadersRewriter extends NgRequestTransformer {
     headers
   }
 
-  override def transformResponse(
+  override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val conf       = ctx
       .cachedConfig(internalName)(RegexHeadersRewriterConfig.format)
       .getOrElse(RegexHeadersRewriterConfig())
@@ -659,6 +663,6 @@ class RegexResponseHeadersRewriter extends NgRequestTransformer {
       .copy(
         headers = newHeaders
       )
-      .rightf
+      .right
   }
 }

@@ -33,7 +33,7 @@ object JsonPathUtils {
 
   private val logger = Logger("otoroshi-jsonpath-utils")
 
-  def matchWith(payload: JsValue, what: String): String => Boolean = { (query: String) =>
+  def matchWith(payload: JsValue): String => Boolean = { (query: String) =>
     {
       getAtPolyJson(payload, query).isDefined
     }
