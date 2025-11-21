@@ -10,10 +10,10 @@ import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, PrivateAp
 import otoroshi.next.utils.Vault
 import otoroshi.storage.DataStoresBuilder
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Configuration
 import play.api.libs.json.{JsObject, JsResult, JsValue, Reads}
-import play.api.mvc._
+import play.api.mvc.*
 import play.twirl.api.Html
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -1,14 +1,14 @@
 package otoroshi.storage.stores
 
-import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.*
-import org.joda.time.DateTime
+import otoroshi.storage.{RedisLike, RedisLikeStore}
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.Format
-import otoroshi.storage.{RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success

@@ -7,14 +7,14 @@ import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.Canary
 import otoroshi.next.models.{NgBackend, NgTarget}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
-import play.api.libs.ws.WSBodyWritables._
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}

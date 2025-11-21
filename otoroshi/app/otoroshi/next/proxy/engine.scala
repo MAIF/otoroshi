@@ -22,12 +22,12 @@ import otoroshi.next.proxy.NgProxyEngineError.*
 import otoroshi.next.utils.{FEither, JsonHelpers}
 import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
-import otoroshi.utils.http.Implicits.*
-import otoroshi.utils.http.RequestImplicits.*
-import otoroshi.utils.http.ResponseImplicits.*
+import otoroshi.utils.http.Implicits.given
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.http.ResponseImplicits.given
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.streams.MaxLengthLimiter
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{RegexPool, TypedMap, UrlSanitizer}
 import play.api.Logger
 import play.api.http.websocket.Message as PlayWSMessage

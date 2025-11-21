@@ -1,27 +1,27 @@
 package otoroshi.next.plugins
 
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.http.WSCookieWithSameSite
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{WSAuthScheme, WSCookie}
-import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.{Cookie, Result, Results}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class NgIzanamiV1ProxyConfig(
     path: String = "/api/izanami",

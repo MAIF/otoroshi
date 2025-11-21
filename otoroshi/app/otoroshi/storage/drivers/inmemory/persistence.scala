@@ -4,9 +4,9 @@ import com.google.common.base.Charsets
 import org.apache.pekko.actor.Cancellable
 import org.apache.pekko.http.scaladsl.model.ContentTypes
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.connectors.s3.*
 import org.apache.pekko.stream.connectors.s3.headers.CannedAcl
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
-import org.apache.pekko.stream.connectors.s3._
 import org.apache.pekko.stream.scaladsl.{Framing, Keep, Sink, Source}
 import org.apache.pekko.stream.{Attributes, Materializer}
 import org.apache.pekko.util.ByteString
@@ -14,10 +14,10 @@ import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginConfig
 import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
-import otoroshi.utils.http.Implicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.Implicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.{SourceBody, WSBodyWritables}
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
@@ -27,9 +27,9 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
-import scala.util._
+import scala.util.*
 import scala.util.hashing.MurmurHash3
 
 sealed trait PersistenceKind
@@ -71,7 +71,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   override def message: String = s"Now using FileDb DataStores (loading '$dbPath')"
 
   override def onStart(): Future[Unit] = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
     val file = new File(dbPath)
     if (!file.exists()) {
       logger.info(s"Creating FileDb file and directory ('$dbPath')")
@@ -115,7 +115,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
@@ -169,7 +169,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
 class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
-  import WSBodyWritables._
+  import WSBodyWritables.*
 
   private val logger = Logger("otoroshi-http-db-datastores")
 
@@ -257,7 +257,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
@@ -506,7 +506,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))

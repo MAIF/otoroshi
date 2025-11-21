@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import org.apache.pekko.Done
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.mvc.Results
 

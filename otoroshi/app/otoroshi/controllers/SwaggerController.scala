@@ -3,8 +3,8 @@ package otoroshi.controllers
 import controllers.{Assets, AssetsBuilder}
 import otoroshi.env.Env
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.ExecutionContext
 
@@ -22,7 +22,7 @@ object Implicits {
 class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(using env: Env)
     extends AbstractController(cc) {
 
-  import Implicits._
+  import Implicits.given
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
 

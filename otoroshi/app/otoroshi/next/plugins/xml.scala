@@ -8,13 +8,13 @@ import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 import play.api.libs.ws.WSBodyWritables.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Success, Try}
 
 case class JsonTransformConfig(filter: Option[String] = None) extends NgPluginConfig {

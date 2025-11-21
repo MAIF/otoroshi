@@ -3,8 +3,8 @@ package otoroshi.storage.stores
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AlertEvent}
-import play.api.libs.json.{JsValue, Json}
 import otoroshi.storage.RedisLike
+import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 

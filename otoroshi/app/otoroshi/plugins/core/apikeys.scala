@@ -1,16 +1,16 @@
 package otoroshi.plugins.core.apikeys
 
-import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.env.Env
 import otoroshi.models.ApiKeyHelper.decodeBase64
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{PreRouting, PreRoutingContext}
-import otoroshi.utils.syntax.implicits._
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 
+import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 

@@ -2,20 +2,19 @@ package otoroshi.plugins.accesslog
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
+import org.joda.time.DateTime
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
-import otoroshi.events._
-import org.joda.time.DateTime
-import otoroshi.events.KafkaWrapper
+import otoroshi.events.*
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpResponse, RequestTransformer, TransformerErrorContext, TransformerResponseContext}
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
+import otoroshi.utils.future.Implicits.given
+import otoroshi.utils.http.RequestImplicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Result
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}

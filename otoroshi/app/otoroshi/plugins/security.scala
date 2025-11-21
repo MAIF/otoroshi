@@ -4,9 +4,9 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}
+import otoroshi.utils.future.Implicits.given
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 

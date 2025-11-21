@@ -1,18 +1,18 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.http.scaladsl.model.headers.`Last-Modified`
-import org.apache.pekko.stream.connectors.s3.scaladsl.S3
-import org.apache.pekko.stream.{Attributes, Materializer}
-import org.apache.pekko.stream.connectors.s3.{ApiVersion, MemoryBufferType, ObjectMetadata, S3Attributes, S3Exception, S3Settings}
-import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
-import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
+import org.apache.pekko.http.scaladsl.model.headers.`Last-Modified`
 import org.apache.pekko.stream.connectors.s3.AccessStyle.{PathAccessStyle, VirtualHostAccessStyle}
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3.*
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.stream.{Attributes, Materializer}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.storage.drivers.inmemory.S3Configuration
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region

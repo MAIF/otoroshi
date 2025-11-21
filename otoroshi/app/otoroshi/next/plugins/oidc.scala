@@ -9,17 +9,17 @@ import otoroshi.auth.{GenericOauth2Module, OAuth2ModuleConfig}
 import otoroshi.cluster.{Cluster, ClusterMode}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models._
-import otoroshi.next.plugins.api._
+import otoroshi.models.*
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
+import java.util.Base64 as JavaBase64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import java.util.{Base64 => JavaBase64}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}

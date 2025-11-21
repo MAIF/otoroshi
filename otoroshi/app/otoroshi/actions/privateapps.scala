@@ -1,19 +1,19 @@
 package otoroshi.actions
 
-import java.util.concurrent.TimeUnit
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.GenericOauth2Module
-import otoroshi.cluster._
+import otoroshi.cluster.*
 import otoroshi.env.Env
 import otoroshi.models.PrivateAppsUser
-import play.api.mvc._
-
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.given
 import otoroshi.utils.syntax.implicits.BetterSyntax
+import play.api.mvc.*
+
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.*
+import scala.concurrent.{ExecutionContext, Future}
 
 case class PrivateAppsActionContext[A](
     request: Request[A],

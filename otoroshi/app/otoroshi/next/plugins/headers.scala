@@ -9,12 +9,12 @@ import otoroshi.events.AlertEvent
 import otoroshi.gateway.Errors
 import otoroshi.models.RemainingQuotas
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}

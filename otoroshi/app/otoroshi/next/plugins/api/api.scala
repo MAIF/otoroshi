@@ -1,11 +1,11 @@
 package otoroshi.next.plugins.api
 
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.apache.pekko.Done
 import org.apache.pekko.http.scaladsl.model.{ContentType, StatusCodes, Uri}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, PrivateAppsUser, Target}
@@ -16,20 +16,13 @@ import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  Message,
-  PingMessage,
-  PongMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  TextMessage => PlayWSTextMessage
-}
-import play.api.libs.json._
+import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage as PlayWSBinaryMessage, TextMessage as PlayWSTextMessage}
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSResponse}
-import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
@@ -967,7 +960,7 @@ case class NgbBackendCallContext(
 
 case class BackendCallResponse(response: NgPluginHttpResponse, rawResponse: Option[WSResponse]) {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.given
 
   def status: Int                          = rawResponse.map(_.status).getOrElse(response.status)
   def contentLengthStr: Option[String]     = rawResponse.flatMap(_.contentLengthStr).orElse(response.contentLengthStr)
@@ -1540,7 +1533,7 @@ trait NgWebsocketPlugin extends NgPlugin {
 
 trait NgWebsocketBackendPlugin extends NgPlugin {
 
-  import play.api.http.websocket.{Message => PlayWSMessage}
+  import play.api.http.websocket.Message as PlayWSMessage
 
   def callBackendOrError(
       ctx: NgWebsocketPluginContext

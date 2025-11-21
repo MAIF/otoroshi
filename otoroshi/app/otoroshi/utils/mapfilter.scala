@@ -2,11 +2,11 @@ package otoroshi.utils
 
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import otoroshi.utils.json.JsonOperationsHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.workflow.{WorkFlowOperator, WorkFlowTaskContext}
-import play.api.libs.json._
+import play.api.libs.json.*
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 
 sealed trait Operator[T] {
   def apply(source: JsValue, key: String): T

@@ -3,17 +3,9 @@ package otoroshi.next.plugins
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, JwtInjection, PrivateAppsUser}
-import otoroshi.next.plugins.api.{
-  NgAccess,
-  NgAccessContext,
-  NgAccessValidator,
-  NgPluginCategory,
-  NgPluginConfig,
-  NgPluginVisibility,
-  NgStep
-}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -8,7 +8,7 @@ import otoroshi.models.ServiceDescriptor
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.CompilingPreRouting.funit
 import otoroshi.utils.TypedMap
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 import play.twirl.api.Html
 

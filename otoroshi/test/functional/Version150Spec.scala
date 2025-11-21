@@ -7,7 +7,7 @@ import com.google.common.base.Charsets
 import com.typesafe.config.ConfigFactory
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig}
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, ClientCertificateValidator}
@@ -20,7 +20,7 @@ import play.api.libs.ws.WSAuthScheme
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
 
 class ServiceGroupApiSpec(name: String, configurationSpec: => Configuration)

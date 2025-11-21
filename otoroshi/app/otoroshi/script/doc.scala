@@ -3,13 +3,13 @@ package otoroshi.script
 import com.google.common.base.Charsets
 import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 import otoroshi.events.CustomDataExporter
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.Try
 
 class PluginDocumentationGenerator(docPath: String) {

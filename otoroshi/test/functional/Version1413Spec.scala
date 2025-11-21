@@ -6,9 +6,9 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.next.models._
-import otoroshi.next.plugins.api._
+import otoroshi.models.*
+import otoroshi.next.models.*
+import otoroshi.next.plugins.api.*
 import otoroshi.next.plugins.{ApikeyCalls, NgApikeyCallsConfig, NgApikeyMatcher}
 import otoroshi.security.IdGenerator
 import play.api.Configuration

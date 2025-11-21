@@ -8,9 +8,9 @@ import otoroshi.env.Env
 import otoroshi.models.*
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.UrlSanitizer
-import otoroshi.utils.http.Implicits.*
+import otoroshi.utils.http.Implicits.given
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.*
 import play.api.libs.ws.WSBodyWritables.*
@@ -1202,7 +1202,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       root: String = "/apis"
   ): Source[Seq[ByteString], ?] = {
 
-    import otoroshi.utils.http.Implicits.*
+    import otoroshi.utils.http.Implicits.given
 
     val lastTime = new AtomicLong(0L)
     val last     = new AtomicReference[String]("0")

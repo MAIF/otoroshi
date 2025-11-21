@@ -1,12 +1,12 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
 import org.apache.commons.lang.StringEscapeUtils
+import org.apache.pekko.stream.Materializer
+import otoroshi.env.Env
+import otoroshi.next.plugins.api.*
+import otoroshi.next.proxy.NgProxyEngineError
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

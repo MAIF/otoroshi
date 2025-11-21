@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:41319",
+    "url" : "http://otoroshi-api.oto.tools:38241",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -21314,7 +21314,7 @@
           },
           "predicate" : {
             "$ref" : "#/components/schemas/otoroshi.models.TargetPredicate",
-            "default" : "otoroshi.models.AlwaysMatch$@61340e5a"
+            "default" : "otoroshi.models.AlwaysMatch$@4332cf66"
           },
           "ipAddress" : {
             "anyOf" : [ {
@@ -21717,7 +21717,7 @@
           },
           "predicate" : {
             "$ref" : "#/components/schemas/otoroshi.models.TargetPredicate",
-            "default" : "otoroshi.models.AlwaysMatch$@61340e5a"
+            "default" : "otoroshi.models.AlwaysMatch$@4332cf66"
           },
           "ipAddress" : {
             "anyOf" : [ {
@@ -22510,7 +22510,7 @@
           },
           "headerValue" : {
             "type" : "string",
-            "default" : "77b60799c-2510-44aa-a2ad-dba69b4d86c9"
+            "default" : "cbc9ac511-a1e7-4928-bb5b-a5ee438cd834"
           }
         },
         "required" : [ ]
@@ -22730,7 +22730,7 @@
           },
           "otoroshiId" : {
             "type" : "string",
-            "default" : "48030004d-19c9-41e6-94c6-aeb29dc067b1"
+            "default" : "c332eaaa7-8c40-4de8-9b19-b486edce2b77"
           },
           "snowMonkeyConfig" : {
             "$ref" : "#/components/schemas/otoroshi.models.SnowMonkeyConfig",
@@ -24160,15 +24160,15 @@
           },
           "createdAt" : {
             "$ref" : "#/components/schemas/org.joda.time.DateTime",
-            "default" : "2025-11-19T17:21:54.172+01:00"
+            "default" : "2025-11-21T10:45:22.166+01:00"
           },
           "expiredAt" : {
             "$ref" : "#/components/schemas/org.joda.time.DateTime",
-            "default" : "2025-11-19T17:21:54.172+01:00"
+            "default" : "2025-11-21T10:45:22.166+01:00"
           },
           "lastRefresh" : {
             "$ref" : "#/components/schemas/org.joda.time.DateTime",
-            "default" : "2025-11-19T17:21:54.172+01:00"
+            "default" : "2025-11-21T10:45:22.166+01:00"
           },
           "tags" : {
             "type" : "array",
@@ -24283,15 +24283,15 @@
           },
           "createdAt" : {
             "$ref" : "#/components/schemas/org.joda.time.DateTime",
-            "default" : "2025-11-19T17:21:54.168+01:00"
+            "default" : "2025-11-21T10:45:22.162+01:00"
           },
           "expiredAt" : {
             "$ref" : "#/components/schemas/org.joda.time.DateTime",
-            "default" : "2025-11-19T17:21:54.168+01:00"
+            "default" : "2025-11-21T10:45:22.162+01:00"
           },
           "lastRefresh" : {
             "$ref" : "#/components/schemas/org.joda.time.DateTime",
-            "default" : "2025-11-19T17:21:54.168+01:00"
+            "default" : "2025-11-21T10:45:22.162+01:00"
           },
           "tags" : {
             "type" : "array",
@@ -25037,7 +25037,7 @@
         "properties" : {
           "id" : {
             "type" : "string",
-            "default" : "FIQynMbiGuMV7Nk2VX2GOABZwTSaSRFd4A4i9qe39zuLzeOxqOQuVKr2C8Ovj27y"
+            "default" : "3gpqVUDHp88EEHt0VNKzyolURw9G66XkWJCuiGaE4liohslUvO2kokcrZR8dauIr"
           },
           "name" : {
             "type" : "string",
@@ -25622,7 +25622,7 @@
           },
           "targetsLoadBalancing" : {
             "$ref" : "#/components/schemas/otoroshi.models.LoadBalancing",
-            "default" : "otoroshi.models.RoundRobin$@5a623796"
+            "default" : "otoroshi.models.RoundRobin$@7e594cf8"
           },
           "targets" : {
             "type" : "array",
@@ -25753,11 +25753,11 @@
           },
           "secComVersion" : {
             "$ref" : "#/components/schemas/otoroshi.models.SecComVersion",
-            "default" : "otoroshi.models.SecComVersionV1$@1871db01"
+            "default" : "otoroshi.models.SecComVersionV1$@62bf9acf"
           },
           "secComInfoTokenVersion" : {
             "$ref" : "#/components/schemas/otoroshi.models.SecComInfoTokenVersion",
-            "default" : "otoroshi.models.SecComInfoTokenVersionLegacy$@2e9d8e96"
+            "default" : "otoroshi.models.SecComInfoTokenVersionLegacy$@5bedac62"
           },
           "secComExcludedPatterns" : {
             "type" : "array",
@@ -26235,11 +26235,11 @@
           },
           "from" : {
             "$ref" : "#/components/schemas/org.joda.time.DateTime",
-            "default" : "2025-11-19T17:21:54.164+01:00"
+            "default" : "2025-11-21T10:45:22.159+01:00"
           },
           "to" : {
             "$ref" : "#/components/schemas/org.joda.time.DateTime",
-            "default" : "2025-11-19T17:21:54.164+01:00"
+            "default" : "2025-11-21T10:45:22.159+01:00"
           },
           "sans" : {
             "type" : "array",

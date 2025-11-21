@@ -14,9 +14,8 @@ import otoroshi.next.models.NgTreeRouter
 import otoroshi.next.models.NgTreeRouter_Test.NgFakeRoute
 import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.JsonMarshaller.*
-import otoroshi.utils.JsonMarshaller.{given}
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.JsonMarshaller.{*, given}
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{JsonPathUtils, JsonPathValidator, TypedMap}
 import otoroshi.wasm.{WasmAuthorizations, WasmConfig, WasmDataRights}
 import play.api.libs.json.{*, given}
@@ -35,7 +34,7 @@ import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters.given
 import scala.util.*
 import scala.util.control.NoStackTrace
 

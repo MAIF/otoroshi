@@ -25,7 +25,7 @@ import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.DN
 import otoroshi.utils.letsencrypt.LetsEncryptHelper
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json.*
 import play.api.libs.ws.WSBodyWritables.*
@@ -194,7 +194,7 @@ case class Cert(
   def renew(
       _duration: Option[FiniteDuration] = None
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Cert] = {
-    import SSLImplicits.*
+    import SSLImplicits.given
     val duration = _duration.getOrElse(FiniteDuration(365, TimeUnit.DAYS))
     this match {
       case original if original.letsEncrypt => LetsEncryptHelper.renew(this)
@@ -430,7 +430,7 @@ case class Cert(
 
 object Cert {
 
-  import SSLImplicits.*
+  import SSLImplicits.given
 
   val OtoroshiCaDN: String             = s"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi"
   val OtoroshiCA                       = "otoroshi-root-ca"
@@ -1531,7 +1531,7 @@ object DynamicSSLEngineProvider {
 
   def createKeyStore(certificates: Seq[Cert]): KeyStore = {
 
-    import SSLImplicits.*
+    import SSLImplicits.given
 
     if (logger.isDebugEnabled) logger.debug(s"Creating keystore ...")
     val keyStore: KeyStore = KeyStore.getInstance("JKS")
@@ -1710,7 +1710,7 @@ object DynamicSSLEngineProvider {
       if (logger.isDebugEnabled) logger.debug(s"[$id] Found no private key :(")
       Left(s"[$id] Found no private key")
     } else {
-      import otoroshi.utils.syntax.implicits.*
+      import otoroshi.utils.syntax.implicits.given
       Try {
         // val reader = new PemReader(new StringReader(privateKey))
         val parser    = new PEMParser(new StringReader(content))
@@ -1899,9 +1899,9 @@ object noCATrustManager extends X509TrustManager {
 
 object CertificateData {
 
-  import otoroshi.ssl.SSLImplicits.*
+  import otoroshi.ssl.SSLImplicits.given
 
-  import scala.jdk.CollectionConverters.*
+  import scala.jdk.CollectionConverters.given
 
   private val logger                                 = Logger("otoroshi-cert-data")
   private val encoder                                = Base64.getEncoder
@@ -1993,7 +1993,7 @@ object PemHeaders {
 
 object FakeKeyStore {
 
-  import otoroshi.ssl.SSLImplicits.*
+  import otoroshi.ssl.SSLImplicits.given
 
   private val EMPTY_PASSWORD = Array.emptyCharArray
   private val encoder        = Base64.getEncoder
@@ -2334,7 +2334,7 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProto
   override def setHandshakeApplicationProtocolSelector(
       selector: BiFunction[SSLEngine, util.List[String], String]
   ): Unit = {
-    import scala.jdk.CollectionConverters.*
+    import scala.jdk.CollectionConverters.given
     if (!lock) {
       delegate.setHandshakeApplicationProtocolSelector(new BiFunction[SSLEngine, util.List[String], String] {
         override def apply(t: SSLEngine, u: util.List[String]): String = {
@@ -2505,7 +2505,7 @@ case class ClientCertificateValidator(
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
-  import otoroshi.utils.http.Implicits.*
+  import otoroshi.utils.http.Implicits.given
 
   /*
   TEST CODE
@@ -2535,7 +2535,7 @@ case class ClientCertificateValidator(
   app.listen(3000, () => console.log('certificate validation server'));
    */
 
-  import otoroshi.ssl.SSLImplicits.*
+  import otoroshi.ssl.SSLImplicits.given
   import play.api.http.websocket.Message as PlayWSMessage
 
   import scala.concurrent.duration.*
@@ -2801,7 +2801,7 @@ class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrus
 
 object SSLImplicits {
 
-  import scala.jdk.CollectionConverters.*
+  import scala.jdk.CollectionConverters.given
 
   private val logger = Logger("otoroshi-ssl-implicits")
 
@@ -2904,7 +2904,7 @@ case class RawCertificate(
     client: Boolean = false
 ) {
 
-  import SSLImplicits.*
+  import SSLImplicits.given
 
   def matchesDomain(dom: String): Boolean = sans.exists(d => RegexPool.apply(d).matches(dom))
 

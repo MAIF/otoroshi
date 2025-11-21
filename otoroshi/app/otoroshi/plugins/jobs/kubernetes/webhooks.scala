@@ -4,17 +4,16 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant}
+import otoroshi.models.*
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{RequestOrigin, RequestSink, RequestSinkContext, Script}
+import otoroshi.ssl.Cert
 import otoroshi.tcp.TcpService
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
-import otoroshi.ssl.Cert
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

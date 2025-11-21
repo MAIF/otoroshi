@@ -21,7 +21,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.http.{ManualResolveTransport, MtlsConfig}
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.http.HttpEntity
 import play.api.http.websocket.*
 import play.api.libs.json.*

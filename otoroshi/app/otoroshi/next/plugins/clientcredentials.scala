@@ -9,7 +9,7 @@ import org.biscuitsec.biscuit.token.builder.parser.Parser
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, ServiceGroupIdentifier}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.plugins.apikeys.ClientCredentialFlowBody
 import otoroshi.security.IdGenerator
@@ -17,17 +17,17 @@ import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.jwk.JWKSHelper
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.security.{KeyPair, SecureRandom}
-import java.util.{Base64 => JavaBase64}
-import scala.concurrent.duration._
+import java.util.Base64 as JavaBase64
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class BiscuitConf(
     privkey: Option[String] = None,
@@ -226,9 +226,9 @@ class NgClientCredentials extends NgRequestSink {
           case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() && bearerKind == "biscuit" =>
             import org.biscuitsec.biscuit.crypto.KeyPair
             import org.biscuitsec.biscuit.token.Biscuit
-            import org.biscuitsec.biscuit.token.builder.Utils._
+            import org.biscuitsec.biscuit.token.builder.Utils.*
 
-            import scala.jdk.CollectionConverters._
+            import scala.jdk.CollectionConverters.given
 
             val biscuitConf: BiscuitConf = conf.biscuit.getOrElse(BiscuitConf())
 

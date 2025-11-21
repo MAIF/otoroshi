@@ -5,16 +5,16 @@ import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.PrivateAppsUser
-import otoroshi.next.plugins.api.{NgPreRoutingError, _}
+import otoroshi.next.plugins.api.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.JsonPathUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class NgHasAllowedUsersValidatorConfig(
     usernames: Seq[String] = Seq.empty,

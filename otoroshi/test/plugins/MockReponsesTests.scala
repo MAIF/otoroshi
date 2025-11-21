@@ -6,7 +6,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{MockResponse, MockResponses, MockResponsesConfig, OverrideHost}
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.given
 
 class MockReponsesTests(parent: PluginsTestSpec) {

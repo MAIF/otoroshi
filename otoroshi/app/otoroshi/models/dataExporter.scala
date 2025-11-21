@@ -1,29 +1,29 @@
 package otoroshi.models
 
+import com.google.common.hash.Hashing
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import com.google.common.hash.Hashing
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.events.Exporters._
-import otoroshi.events._
+import otoroshi.events.*
+import otoroshi.events.Exporters.*
 import otoroshi.events.pulsar.PulsarConfig
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.TypedMap
-import otoroshi.utils.mailer._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.mailer.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.given
 import play.api.libs.ws.WSCookie
-import play.api.libs.ws.WSBodyWritables._
 
 import java.nio.charset.StandardCharsets
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -540,7 +540,7 @@ object JMSExporterSettings {
 
 object DataExporterConfig {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   private val log = Logger("otoroshi-data-exporter-config")
 

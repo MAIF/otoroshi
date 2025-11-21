@@ -1,31 +1,30 @@
 package otoroshi.plugins.loggers
 
-import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
+import com.google.common.base.Charsets
+import kaleidoscope.*
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.google.common.base.Charsets
-import kaleidoscope.*
-import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models.ServiceDescriptor
 import org.joda.time.DateTime
-import otoroshi.script._
-import play.api.libs.json._
+import otoroshi.env.Env
+import otoroshi.events.*
+import otoroshi.models.ServiceDescriptor
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.script.*
+import otoroshi.security.OtoroshiClaim
+import otoroshi.utils.RegexPool
+import otoroshi.utils.future.Implicits.given
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.json.JsonImplicits.given
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
-import otoroshi.security.OtoroshiClaim
-import otoroshi.utils.json.JsonImplicits._
-import otoroshi.utils.json.JsonImplicits.jodaDateTimeWrapper
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
-import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.utils.RegexPool
 
 import java.nio.charset.StandardCharsets
-import scala.concurrent.duration._
+import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 case class BodyLoggerFilterConfig(json: JsValue) {

@@ -1,18 +1,17 @@
 package otoroshi.events
 
+import com.codahale.metrics.{Counter, Gauge, Reporter}
+import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
+import github.gphat.censorinus.*
+import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, Cancellable, Props}
+import otoroshi.env.Env
+import play.api.Logger
+
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import org.apache.pekko.actor.{Actor, ActorSystem, Cancellable, Props}
-import com.codahale.metrics.{Counter, Gauge, Reporter}
-import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
-import otoroshi.env.Env
-import github.gphat.censorinus._
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
-import org.apache.pekko.actor.ActorRef
-import play.api.Logger
 
 case class StatsdConfig(datadog: Boolean, host: String, port: Int)
 

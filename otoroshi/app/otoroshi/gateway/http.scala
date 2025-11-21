@@ -11,12 +11,13 @@ import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.events.*
 import otoroshi.models.*
-import otoroshi.script.Implicits.*
+import otoroshi.script.Implicits.given
 import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.UrlSanitizer
-import otoroshi.utils.http.Implicits.*
-import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.http.Implicits.{*, given}
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.http.ResponseImplicits.given
 import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits.BetterSyntax
@@ -28,14 +29,6 @@ import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
 import play.api.mvc.*
 import play.api.mvc.Results.{BadGateway, Forbidden, HttpVersionNotSupported, NotFound, Status}
-import play.api.mvc._
-import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.http.ResponseImplicits._
-import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
-import otoroshi.utils.http.Implicits._
-import otoroshi.utils.streams.MaxLengthLimiter
-import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}

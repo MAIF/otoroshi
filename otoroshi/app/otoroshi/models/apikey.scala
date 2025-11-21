@@ -1,50 +1,35 @@
 package otoroshi.models
 
-import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
-import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.stream.scaladsl.Flow
-import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
-import otoroshi.env.Env
-import otoroshi.events.{
-  Alerts,
-  ApiKeyQuotasAlmostExceededAlert,
-  ApiKeyQuotasAlmostExceededReason,
-  ApiKeyQuotasExceededAlert,
-  ApiKeyQuotasExceededReason,
-  ApiKeySecretHasRotated,
-  ApiKeySecretWillRotate,
-  RevokedApiKeyUsageAlert
-}
-import otoroshi.gateway.Errors
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
+import otoroshi.env.Env
+import otoroshi.events.*
+import otoroshi.gateway.Errors
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.NgAccess
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, Unauthorized}
-import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
-import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{
-  BetterDecodedJWT,
-  BetterJsLookupResult,
-  BetterJsReadable,
-  BetterJsValue,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
+import play.api.Logger
+import play.api.libs.json.*
+import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, Unauthorized}
+import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.nio.charset.StandardCharsets
 import java.security.Signature
+import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Success, Try}
 
 case class RemainingQuotas(
@@ -370,7 +355,7 @@ case class ApiKey(
 
   def matchRouting(routing: ApiKeyRouteMatcher): Boolean = {
 
-    import SeqImplicits._
+    import SeqImplicits.given
 
     val shouldNotSearchForAnApiKey = routing.hasNoRoutingConstraints
 
@@ -877,8 +862,8 @@ object ApikeyTuple {
 
 object ApiKeyHelper {
 
-  import otoroshi.utils.http.RequestImplicits._
-  import otoroshi.utils.syntax.implicits._
+  import otoroshi.utils.http.RequestImplicits.given
+  import otoroshi.utils.syntax.implicits.given
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 

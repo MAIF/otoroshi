@@ -4,10 +4,10 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.utils.{JsonPathUtils, ReplaceAllWith}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.{JsonPathUtils, ReplaceAllWith}
 import play.api.Logger
 import play.api.libs.json.*
 import play.api.libs.ws.WSBodyWritables.*
@@ -159,7 +159,7 @@ object WorkFlowEl {
   import anticipation.Text
   import kaleidoscope.*
 
-  import scala.jdk.CollectionConverters.*
+  import scala.jdk.CollectionConverters.given
 
   val logger: Logger                     = Logger("workflow-el")
   val expressionReplacer: ReplaceAllWith = ReplaceAllWith("\\$\\{([^}]*)\\}")

@@ -6,25 +6,10 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
 import com.jayway.jsonpath.{Configuration, JsonPath}
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsBoolean,
-  JsError,
-  JsNull,
-  JsNumber,
-  JsObject,
-  JsResult,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json,
-  Reads,
-  Writes
-}
-import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.jackson.JacksonJson
+import play.api.libs.json.*
 
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}

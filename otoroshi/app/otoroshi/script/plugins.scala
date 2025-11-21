@@ -1,19 +1,19 @@
 package otoroshi.script.plugins
 
+import com.github.blemale.scaffeine.Scaffeine
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Flow, Source}
 import org.apache.pekko.util.ByteString
-import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.next.models.NgPlugins
-import otoroshi.script._
-import otoroshi.utils.RegexPool
-import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
-import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
 import otoroshi.utils
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.RegexPool
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.DurationInt

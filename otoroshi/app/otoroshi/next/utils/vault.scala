@@ -1,8 +1,5 @@
 package otoroshi.next.utils
 
-import org.apache.pekko.Done
-import org.apache.pekko.http.scaladsl.model.Uri
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.handlers.AsyncHandler
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerAsyncClientBuilder
@@ -12,31 +9,34 @@ import com.google.auth.oauth2.GoogleCredentials
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.JWK
 import com.typesafe.config.{ConfigFactory, ConfigParseOptions, ConfigResolveOptions, ConfigSyntax}
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
-import otoroshi.ssl.SSLImplicits._
+import otoroshi.ssl.SSLImplicits.given
 import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.libs.ws.WSAuthScheme
-import play.api.libs.ws.WSBodyWritables._
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.{Configuration, Logger}
 
 import java.io.{BufferedReader, File, InputStreamReader}
 import java.net.{Socket, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import java.security.{KeyFactory, PrivateKey, Signature}
 import java.security.spec.PKCS8EncodedKeySpec
+import java.security.{KeyFactory, PrivateKey, Signature}
 import java.time.Instant
-import java.util.{Base64, Locale}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import java.util.stream.Collectors
+import java.util.{Base64, Locale}
 import javax.crypto.Cipher
 import javax.crypto.spec.{GCMParameterSpec, SecretKeySpec}
 import scala.collection.compat.immutable.ArraySeq

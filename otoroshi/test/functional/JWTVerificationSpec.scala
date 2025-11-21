@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
+import otoroshi.models.*
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
@@ -237,7 +237,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
 
     "Re-sign JWT token" in {
 
-      import Implicit._
+      import Implicit.given
 
       import com.auth0.jwt.algorithms.Algorithm
       val key        = "very secret"
@@ -384,7 +384,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
 
     "Transform JWT token" in {
 
-      import Implicit._
+      import Implicit.given
 
       import com.auth0.jwt.algorithms.Algorithm
       val key        = "very secret"
@@ -410,7 +410,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
             .asOption
             .map(a => a.value())
             .foreach { a =>
-              import scala.jdk.CollectionConverters._
+              import scala.jdk.CollectionConverters.given
               val v        = JWT
                 .require(algorithm2)
                 .withIssuer("foo")

@@ -11,7 +11,7 @@ import otoroshi.next.plugins.{
   TimeRestrictedAccessPluginConfigRule
 }
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.duration.DurationInt
 

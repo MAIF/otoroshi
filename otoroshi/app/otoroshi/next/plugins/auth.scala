@@ -1,21 +1,21 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.auth._
+import otoroshi.auth.*
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{PrivateAppsUser, PrivateAppsUserHelper}
+import otoroshi.next.plugins.api.*
 import otoroshi.next.plugins.api.NgAccess.NgAllowed
-import otoroshi.next.plugins.api._
 import otoroshi.security.OtoroshiClaim
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.{Result, Results}
 

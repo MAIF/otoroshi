@@ -1,21 +1,21 @@
 package otoroshi.openapi
 
+import io.github.classgraph.*
 import org.apache.pekko.http.scaladsl.model.HttpProtocols
-import io.github.classgraph._
+import org.slf4j
 import otoroshi.models.Entity
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
-import scala.jdk.CollectionConverters._
-import org.slf4j
+import scala.jdk.CollectionConverters.given
 
 case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
 

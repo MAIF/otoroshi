@@ -5,7 +5,7 @@ import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, StaticBackend, StaticBackendConfig}
 import otoroshi.security.IdGenerator
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.nio.file.{Files, Path}
 

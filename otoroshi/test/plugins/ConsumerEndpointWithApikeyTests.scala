@@ -8,7 +8,7 @@ import otoroshi.next.plugins.{ApikeyCalls, ConsumerEndpoint, OverrideHost}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class ConsumerEndpointWithApikeyTests(parent: PluginsTestSpec) {
   import parent.{given, *}

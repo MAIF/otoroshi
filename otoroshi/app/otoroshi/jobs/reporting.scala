@@ -7,18 +7,18 @@ import otoroshi.jobs.newengine.NewEngine
 import otoroshi.models.GlobalConfig
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
-import play.api.libs.ws.WSBodyWritables._
 import play.api.{Configuration, Logger}
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 case class AnonymousReportingJobConfig(

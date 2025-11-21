@@ -1,21 +1,20 @@
 package otoroshi.storage.drivers.lettuce
 
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
-
+import io.lettuce.core.api.async.RedisAsyncCommands
+import io.lettuce.core.cluster.RedisClusterClient
+import io.lettuce.core.cluster.api.async.RedisAdvancedClusterAsyncCommands
+import io.lettuce.core.codec.RedisCodec
+import io.lettuce.core.{RedisClient, SetArgs}
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import io.lettuce.core.cluster.RedisClusterClient
-import io.lettuce.core.codec.RedisCodec
-import io.lettuce.core.{RedisClient, SetArgs}
-import play.api.Logger
-import otoroshi.storage._
+import otoroshi.storage.*
 import otoroshi.utils.syntax.implicits.{BetterString, BetterSyntax}
+import play.api.Logger
 
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
-import io.lettuce.core.api.async.RedisAsyncCommands
-import io.lettuce.core.cluster.api.async.RedisAdvancedClusterAsyncCommands
 
 class ByteStringRedisCodec extends RedisCodec[String, ByteString] {
 
@@ -40,8 +39,8 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
 
   import actorSystem.dispatcher
 
-  import scala.jdk.CollectionConverters._
-  import scala.compat.java8.FutureConverters._
+  import scala.compat.java8.FutureConverters.given
+  import scala.jdk.CollectionConverters.given
 
   lazy val redis: RedisAsyncCommands[String, ByteString] = client.connect(new ByteStringRedisCodec()).async()
 
@@ -296,8 +295,8 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
 
   import actorSystem.dispatcher
 
-  import scala.jdk.CollectionConverters._
-  import scala.compat.java8.FutureConverters._
+  import scala.compat.java8.FutureConverters.given
+  import scala.jdk.CollectionConverters.given
 
   lazy val redis: RedisAdvancedClusterAsyncCommands[String, ByteString] =
     client.connect(new ByteStringRedisCodec()).async()

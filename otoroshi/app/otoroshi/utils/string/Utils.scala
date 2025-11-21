@@ -1,6 +1,6 @@
 package otoroshi.utils.string
 
-import java.util.{Base64 => JavaBase64}
+import java.util.Base64 as JavaBase64
 
 object Utils {
   def replace(input: String, search: String, repl: String): String = {

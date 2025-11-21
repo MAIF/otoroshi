@@ -9,7 +9,7 @@ object CustomizePekkoMediaTypesParser {
       .getOptional[Boolean]("otoroshi.options.enable-json-media-type-with-open-charset")
       .getOrElse(false)
     if (enabled) {
-      import org.apache.pekko.http.scaladsl.model._
+      import org.apache.pekko.http.scaladsl.model.*
       env.logger.warn("application/json mediatype with open charset is enabled")
       val openJson  = MediaType.customWithOpenCharset("application", "json")
       val fieldName = "pekko$http$impl$util$ObjectRegistry$$_registry"

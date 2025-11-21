@@ -1,19 +1,18 @@
 package otoroshi.loader
 
-import com.softwaremill.macwire._
-import otoroshi.controllers.adminapi.InfosApiController
+import com.softwaremill.macwire.*
 import controllers.{Assets, AssetsComponents}
-import otoroshi.netty.ReactorNettyServer
-import otoroshi.actions._
+import otoroshi.actions.*
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.api.{GenericApiController, OtoroshiEnvHolder, OtoroshiLoaderHelper}
-import otoroshi.controllers._
-import otoroshi.controllers.adminapi._
+import otoroshi.controllers.*
+import otoroshi.controllers.adminapi.*
 import otoroshi.env.Env
-import otoroshi.gateway._
-import otoroshi.loader.modules._
+import otoroshi.gateway.*
+import otoroshi.loader.modules.*
+import otoroshi.netty.ReactorNettyServer
+import otoroshi.next.controllers.adminapi.*
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
-import otoroshi.next.controllers.adminapi._
 import otoroshi.next.tunnel.TunnelController
 import otoroshi.next.workflow.WorkflowsController
 import play.api.ApplicationLoader.Context

@@ -1,26 +1,26 @@
 package otoroshi.events
 
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 import org.apache.pekko.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.stream.{OverflowStrategy, QueueOfferResult}
+import org.joda.time.DateTime
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
 import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
-import otoroshi.models._
-import org.joda.time.DateTime
+import otoroshi.models.*
 import otoroshi.next.models.NgRoute
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.tcp.TcpService
 import otoroshi.utils.TypedMap
-import play.api.Logger
-import play.api.libs.json._
 import otoroshi.utils.json.JsonImplicits.given
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
+import play.api.Logger
+import play.api.libs.json.*
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}

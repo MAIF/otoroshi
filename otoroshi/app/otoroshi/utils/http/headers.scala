@@ -1,15 +1,15 @@
 package otoroshi.utils.http
 
+import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.SnowMonkeyContext
-import otoroshi.models._
-import otoroshi.el.HeadersExpressionLanguage
+import otoroshi.models.*
+import otoroshi.security.OtoroshiClaim
 import otoroshi.utils.TypedMap
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{RequestHeader, Result}
-import otoroshi.security.OtoroshiClaim
 
 import scala.concurrent.ExecutionContext
 

@@ -10,7 +10,7 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class QuotasSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

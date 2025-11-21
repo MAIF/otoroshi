@@ -1,24 +1,24 @@
 package plugins
 
-import com.microsoft.playwright._
+import com.microsoft.playwright.*
 import com.microsoft.playwright.options.AriaRole
 import functional.PluginsTestSpec
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters.given
 
 class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   private def getUser(email: String, name: String, metadata: JsObject): BasicAuthUser = {
     BasicAuthUser(
@@ -64,7 +64,7 @@ class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
         secure = c.secure,
         httpOnly = c.httpOnly
       )
-    }
+    }.toSeq
   }
 
   val user             = getUser("john@oto.tools", "john", Json.obj("foo" -> "bar", "bar" -> "baz"))
@@ -156,7 +156,7 @@ class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
     val resp    = ws
       .url(s"http://127.0.0.1:$port/")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-      .withCookies(cookies: _*)
+      .withCookies(cookies*)
       .get()
       .futureValue
 

@@ -8,12 +8,12 @@ import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
 import org.apache.pekko.{Done, NotUsed}
 import com.typesafe.config.ConfigFactory
 import functional.OtoroshiSpec
-import otoroshi.models._
+import otoroshi.models.*
 import play.api.Configuration
 import play.api.libs.json.{Json, Reads}
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

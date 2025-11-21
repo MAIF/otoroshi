@@ -3,7 +3,7 @@ package otoroshi.next.workflow
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicInteger

@@ -5,11 +5,11 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.actions.ApiAction
-import otoroshi.auth._
+import otoroshi.auth.*
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
+import otoroshi.models.*
 import otoroshi.models.ServiceDescriptor.toJson
-import otoroshi.models._
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.models.{NgRoute, StoredNgBackend}
 import otoroshi.plugins.loggers.{RequestBodyEvent, ResponseBodyEvent}
@@ -17,12 +17,12 @@ import otoroshi.plugins.mirror.MirroringEvent
 import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, ClientCertificateValidator}
-import otoroshi.tcp._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.tcp.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 

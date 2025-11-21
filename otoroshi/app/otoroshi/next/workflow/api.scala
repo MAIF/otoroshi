@@ -6,13 +6,13 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.*
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Success, Try}
 
 // TODO: time budget per node

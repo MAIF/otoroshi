@@ -1,21 +1,21 @@
 package otoroshi.events.impl
 
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.{AnalyticEvent, AnalyticsWritesService}
 import otoroshi.models.{GlobalConfig, HSAlgoSettings, Webhook}
-import org.joda.time.DateTime
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}
-import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.ws.WSBodyWritables._
+import play.api.libs.ws.WSBodyWritables.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends AnalyticsWritesService {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.given
 
   lazy val logger: Logger = Logger("otoroshi-analytics-webhook")
 

@@ -1,9 +1,9 @@
 package otoroshi.api
 
 import otoroshi.env.Env
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.yaml.Yaml
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 
 import java.nio.charset.StandardCharsets
 import scala.collection.concurrent.TrieMap

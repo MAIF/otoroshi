@@ -1,6 +1,5 @@
 package otoroshi.plugins.envoy
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
@@ -8,20 +7,14 @@ import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script.{
-  AfterRequestContext,
-  BeforeRequestContext,
-  HttpRequest,
-  RequestTransformer,
-  TransformerRequestBodyContext,
-  TransformerRequestContext
-}
-import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
-import play.api.mvc.{Result, Results}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
 import otoroshi.ssl.Cert
 import otoroshi.utils.cache.types.UnboundedTrieMap
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.mvc.{Result, Results}
 
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}
 

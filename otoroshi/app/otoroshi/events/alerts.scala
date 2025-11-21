@@ -1,42 +1,29 @@
 package otoroshi.events
 
-import java.util.concurrent.{Executors, TimeUnit}
+import org.apache.pekko.actor.SupervisorStrategy.*
 import org.apache.pekko.actor.{Actor, Cancellable, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated}
-import org.apache.pekko.actor.SupervisorStrategy._
-import org.apache.pekko.http.scaladsl.util.FastFuture._
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.stream.{OverflowStrategy, QueueOfferResult, ThrottleMode}
 import org.apache.pekko.util.ByteString
-import otoroshi.env.Env
-import otoroshi.models.{QuotasAlmostExceededSettings, _}
 import org.joda.time.DateTime
-import play.api.Logger
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsError,
-  JsNull,
-  JsObject,
-  JsResult,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json,
-  Writes
-}
-import play.api.libs.ws.WSAuthScheme
-import play.api.libs.ws.WSBodyWritables._
-import play.api.mvc.RequestHeader
+import otoroshi.env.Env
+import otoroshi.models.*
 import otoroshi.ssl.Cert
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.mailer.EmailLocation
+import otoroshi.utils.syntax.implicits.given
+import play.api.Logger
+import play.api.libs.json.*
+import play.api.libs.ws.WSAuthScheme
+import play.api.libs.ws.WSBodyWritables.*
+import play.api.mvc.RequestHeader
 
-import scala.concurrent.duration.Duration
+import java.util.concurrent.{Executors, TimeUnit}
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.duration.FiniteDuration
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.mailer.EmailLocation
-import otoroshi.utils.syntax.implicits._
 
 trait AlertEvent extends AnalyticEvent {
   override def `@type`: String = "AlertEvent"
@@ -1358,7 +1345,7 @@ class AlertsActor(using env: Env) extends Actor {
 
   import org.joda.time.DateTime
   import otoroshi.events.KafkaWrapper
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.given
 
   given ec  = env.analyticsExecutionContext
   given mat = env.analyticsMaterializer

@@ -3,8 +3,8 @@ package otoroshi.plugins.users
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.utils.JsonPathUtils
 import otoroshi.script.{AccessContext, AccessValidator}
+import otoroshi.utils.JsonPathUtils
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 

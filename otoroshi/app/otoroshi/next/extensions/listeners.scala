@@ -2,18 +2,18 @@ package otoroshi.next.extensions
 
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+import otoroshi.actions.ApiActionContext
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.models.{BackOfficeUser, EntityLocation, EntityLocationSupport}
-import otoroshi.netty._
+import otoroshi.netty.*
 import otoroshi.ssl.ClientAuth
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
-import otoroshi.actions.ApiActionContext
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}

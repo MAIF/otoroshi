@@ -1,13 +1,13 @@
 package otoroshi.utils.udp
 
-import java.net.InetSocketAddress
 import org.apache.pekko.actor.{ActorRef, ActorSystem}
 import org.apache.pekko.io.{IO, Udp}
-import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Outlet}
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler}
+import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Outlet}
 import org.apache.pekko.util.ByteString
 
+import java.net.InetSocketAddress
 import scala.compiletime.uninitialized
 import scala.concurrent.{Future, Promise}
 

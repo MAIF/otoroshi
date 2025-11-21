@@ -1,21 +1,18 @@
 package otoroshi.controllers.adminapi
 
-import otoroshi.actions.ApiAction
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
+import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit, GlobalConfigModification}
-import otoroshi.models.GlobalConfig
-import otoroshi.models.RightsChecker
+import otoroshi.models.{GlobalConfig, RightsChecker}
 import otoroshi.utils.json.JsonOperationsHelper
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents}
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
+import play.api.libs.json.*
+import play.api.{Logger, mvc}
+import play.api.mvc.{AbstractController, AnyContent, ControllerComponents}
 
 import scala.concurrent.ExecutionContext
-import play.api.mvc
-import play.api.mvc.AnyContent
 
 class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {

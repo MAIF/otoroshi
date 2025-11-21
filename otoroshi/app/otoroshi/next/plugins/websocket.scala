@@ -1,24 +1,24 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.networknt.schema.SpecVersion.VersionFlag
 import com.networknt.schema.{InputFormat, JsonSchemaFactory, PathType, SchemaValidatorsConfig}
 import io.otoroshi.wasm4s.scaladsl.WasmFunctionParameters
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.JsonPathValidator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
 import play.api.http.websocket.CloseCodes
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
-import scala.util._
+import scala.jdk.CollectionConverters.given
+import scala.util.*
 
 sealed trait RejectStrategy {
   def json: JsValue

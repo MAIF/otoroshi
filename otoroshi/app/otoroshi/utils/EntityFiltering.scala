@@ -2,7 +2,7 @@ package otoroshi.utils
 
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
-import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue}
+import play.api.libs.json.*
 import play.api.mvc.RequestHeader
 
 object EntityFiltering {

@@ -1,32 +1,23 @@
 package otoroshi.controllers.adminapi
 
 import org.apache.pekko.stream.Materializer
-import otoroshi.actions.ApiAction
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.RightsChecker.Anyone
 import otoroshi.next.plugins.WasmJob
 import otoroshi.next.workflow.WorkflowJob
-import otoroshi.script._
-import otoroshi.utils.controllers.{
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SeqEntityAndContext
-}
+import otoroshi.script.*
+import otoroshi.utils.controllers.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
-import play.api.mvc._
-import otoroshi.utils.syntax.implicits._
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import org.apache.pekko.stream.scaladsl.Source
 
 class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)

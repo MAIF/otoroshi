@@ -1,7 +1,7 @@
 package otoroshi.utils
 
-import play.api.libs.json._
-import sangria.marshalling._
+import play.api.libs.json.*
+import sangria.marshalling.*
 
 import scala.util.Try
 

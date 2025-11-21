@@ -6,7 +6,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, StaticAssetEndpoint, StaticAssetEndpointConfiguration}
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class HTTPStaticAssetTests(parent: PluginsTestSpec) {
   import parent.{given, *}

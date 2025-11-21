@@ -1,9 +1,9 @@
 package otoroshi.utils.xml
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
-import scala.util._
-import scala.xml._
+import scala.util.*
+import scala.xml.*
 
 // vendoring of project https://github.com/3tty0n/play-json-xml for scala 2.13 compat
 // licence Apache V2

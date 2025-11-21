@@ -1,7 +1,7 @@
 package otoroshi.utils.http
 
-import org.apache.pekko.http.scaladsl.model.Uri
 import com.github.blemale.scaffeine.Scaffeine
+import org.apache.pekko.http.scaladsl.model.Uri
 import otoroshi.env.Env
 import play.api.mvc.RequestHeader
 
@@ -116,7 +116,7 @@ object RequestImplicits {
     }
     @inline
     def clientCertChainPem: Seq[String] = {
-      import otoroshi.ssl.SSLImplicits._
+      import otoroshi.ssl.SSLImplicits.given
       requestHeader.clientCertificateChain
         .map(chain =>
           chain.map { cert =>

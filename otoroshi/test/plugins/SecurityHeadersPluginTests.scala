@@ -4,8 +4,8 @@ import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.CspMode.ENABLED
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins._
-import play.api.libs.json._
+import otoroshi.next.plugins.*
+import play.api.libs.json.*
 
 class SecurityHeadersPluginTests(parent: PluginsTestSpec) {
   import parent.{given, *}

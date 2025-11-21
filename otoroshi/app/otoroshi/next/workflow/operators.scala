@@ -5,10 +5,10 @@ import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters.given
 
 object WorkflowOperatorsInitializer {
   def initDefaults(): Unit = {

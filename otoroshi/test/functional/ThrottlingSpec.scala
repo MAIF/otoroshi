@@ -18,10 +18,10 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
 import org.slf4j.LoggerFactory
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models._
 import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.plugins.hmac.HMACUtils
 import otoroshi.security.IdGenerator
 import otoroshi.utils.crypto.Signatures
@@ -211,7 +211,7 @@ class ThrottlingTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       println(f"Rate : ${totalRequests.get() / elapsed}%.2f req/s")
 
       val windowSize    = 10000L
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.given
       val allTimestamps = timestamps200.asScala.toArray.sorted
 
       var maxIn10s        = 0

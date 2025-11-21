@@ -2,16 +2,16 @@ package otoroshi.next.plugins
 
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.time.format.DateTimeFormatter
 import java.time.{ZoneId, ZonedDateTime}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class NgSecurityTxtConfig(
     contact: Seq[String] = Seq("contact@foo.bar"),

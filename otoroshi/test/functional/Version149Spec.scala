@@ -8,9 +8,9 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.libs.ws.DefaultBodyReadables.readableAsString
@@ -24,7 +24,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
   given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(

@@ -14,49 +14,33 @@ import org.apache.pekko.{Done, NotUsed}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models._
+import otoroshi.events.*
+import otoroshi.models.*
 import otoroshi.next.models.{NgContextualPlugins, NgPluginInstance, NgRoute}
 import otoroshi.next.plugins.RejectStrategy
-import otoroshi.next.plugins.api.{
-  NgAccess,
-  NgPluginWrapper,
-  NgWebsocketError,
-  NgWebsocketPlugin,
-  NgWebsocketPluginContext,
-  NgWebsocketResponse,
-  NgWebsocketValidatorPlugin,
-  WebsocketMessage
-}
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.utils.FEither
-import otoroshi.script.Implicits._
+import otoroshi.script.Implicits.given
 import otoroshi.script.TransformerRequestContext
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.future.Implicits._
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.future.Implicits.given
+import otoroshi.utils.http.RequestImplicits.given
 import otoroshi.utils.http.{HeadersHelper, ManualResolveTransport, WSCookieWithSameSite, WSProxyServerUtils}
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import otoroshi.utils.udp._
+import otoroshi.utils.udp.*
 import otoroshi.utils.{TypedMap, UrlSanitizer}
 import play.api.Logger
-import play.api.http.websocket.{
-  CloseMessage,
-  PingMessage,
-  PongMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  Message => PlayWSMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage as PlayWSBinaryMessage, Message as PlayWSMessage, TextMessage as PlayWSTextMessage}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.streams.ActorFlow
+import play.api.mvc.*
 import play.api.mvc.Results.NotFound
-import play.api.mvc._
 
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
@@ -492,7 +476,7 @@ class WebSocketHandler()(using env: Env) {
               FastFuture.successful(Right(flow))
             case "udp" =>
               import org.apache.pekko.stream.scaladsl.{Flow, GraphDSL, UnzipWith, ZipWith}
-              import GraphDSL.Implicits._
+              import GraphDSL.Implicits.given
 
               val base64decoder = java.util.Base64.getDecoder
               val base64encoder = java.util.Base64.getEncoder
@@ -768,7 +752,7 @@ class WebSocketProxyActor(
                            env: Env
                          ) extends Actor {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   given ec: ExecutionContext = env.otoroshiExecutionContext
 

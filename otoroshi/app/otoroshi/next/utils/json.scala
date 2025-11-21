@@ -6,8 +6,8 @@ import otoroshi.next.plugins.api.{NgPluginHttpRequest, NgPluginHttpResponse}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.DN
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc.{Cookie, RequestHeader}
 

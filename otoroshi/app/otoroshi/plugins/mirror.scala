@@ -13,16 +13,14 @@ import otoroshi.script.*
 import otoroshi.utils.UrlSanitizer
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.HeadersHelper
-import otoroshi.utils.http.Implicits.*
-import otoroshi.utils.http.RequestImplicits.*
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.http.Implicits.{*, given}
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.http.ResponseImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{EmptyBody, InMemoryBody, WSRequest, WSResponse}
 import play.api.mvc.{RequestHeader, Result}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.http.ResponseImplicits._
-import otoroshi.utils.http.Implicits._
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.concurrent.TrieMap

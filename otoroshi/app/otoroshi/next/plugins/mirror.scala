@@ -9,22 +9,22 @@ import otoroshi.env.Env
 import otoroshi.events.AuditEvent
 import otoroshi.models.Target
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.mirror.MirroringPluginConfig
 import otoroshi.utils.UrlSanitizer
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.given
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.http.ResponseImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.http.ResponseImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{EmptyBody, InMemoryBody, WSRequest, WSResponse}
-import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.{RequestHeader, Result}
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util._
+import scala.util.*
 
 case class NgTrafficMirroringConfig(
     legacy: MirroringPluginConfig = MirroringPluginConfig(

@@ -1,19 +1,18 @@
 package otoroshi.controllers.adminapi
 
-import otoroshi.actions.{ApiAction, ApiActionContext}
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models.{BackOfficeUser, PrivateAppsUser}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.actions.{ApiAction, ApiActionContext}
+import otoroshi.env.Env
+import otoroshi.events.*
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.models.{UserRights, _}
-import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsValue, Json}
-import play.api.mvc._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
+import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 

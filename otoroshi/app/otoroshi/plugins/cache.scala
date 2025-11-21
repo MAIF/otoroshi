@@ -1,6 +1,5 @@
 package otoroshi.plugins.cache
 
-import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
@@ -9,15 +8,16 @@ import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext, TransformerResponseBodyContext}
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import otoroshi.utils.{RegexPool, SchedulerHelper}
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 
-import scala.concurrent.duration._
+import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 case class ResponseCacheFilterConfig(json: JsValue) {

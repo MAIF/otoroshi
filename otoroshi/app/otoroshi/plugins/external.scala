@@ -37,7 +37,7 @@ case class ExternalHttpValidatorConfig(config: JsValue) {
 // DEPRECATED
 class ExternalHttpValidator extends AccessValidator {
 
-  import otoroshi.utils.http.Implicits.*
+  import otoroshi.utils.http.Implicits.given
 
   override def deprecated: Boolean = true
 
@@ -160,7 +160,7 @@ class ExternalHttpValidator extends AccessValidator {
       user: Option[PrivateAppsUser] = None,
       cfg: ExternalHttpValidatorConfig
   )(using ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
-    import otoroshi.ssl.SSLImplicits.*
+    import otoroshi.ssl.SSLImplicits.given
     val globalConfig                        = env.datastores.globalConfigDataStore.latest()
     val certPayload                         = chain
       .map { cert =>

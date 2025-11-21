@@ -1,15 +1,15 @@
 package otoroshi.utils.gzip
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.stream._
-import org.apache.pekko.stream.scaladsl._
+import org.apache.pekko.stream.*
+import org.apache.pekko.stream.scaladsl.*
 import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
 import org.apache.pekko.util.ByteString
 import otoroshi.utils.RegexPool
 import play.api.Logger
-import play.api.http._
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.http.*
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Try
@@ -72,8 +72,8 @@ case class GzipConfig(
 
   def asJson: JsValue = GzipConfig._fmt.writes(this)
 
-  import play.api.http.HeaderNames._
-  import otoroshi.utils.http.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits.given
+  import play.api.http.HeaderNames.*
 
   private def createGzipFlow: Flow[ByteString, ByteString, ?] = GzipFlow.gzip(bufferSize, compressionLevel)
 
@@ -116,7 +116,7 @@ case class GzipConfig(
 
           case HttpEntity.Chunked(chunks, contentType) =>
             val gzipFlow = Flow.fromGraph(GraphDSL.create[FlowShape[HttpChunk, HttpChunk]]() { implicit builder =>
-              import GraphDSL.Implicits._
+              import GraphDSL.Implicits.given
 
               val extractChunks   = Flow[HttpChunk].collect { case HttpChunk.Chunk(data) => data }
               val createChunks    = Flow[ByteString].map[HttpChunk](HttpChunk.Chunk.apply)

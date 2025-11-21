@@ -8,7 +8,7 @@ import otoroshi.next.plugins.{AdditionalCookieInConfig, JsonToXmlRequest, JsonTr
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader}
 import otoroshi.utils.xml.Xml
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSBodyWritables.writeableOf_JsValue
 
 import scala.xml.Elem

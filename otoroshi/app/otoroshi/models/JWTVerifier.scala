@@ -1,16 +1,15 @@
 package otoroshi.models
 
+import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.exceptions.InvalidClaimException
+import com.auth0.jwt.interfaces.{Claim, DecodedJWT, Verification}
+import com.auth0.jwt.{JWT, RegisteredClaims}
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
 import org.apache.pekko.actor.Scheduler
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Flow
-import com.auth0.jwt.{JWT, RegisteredClaims}
-import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.exceptions.InvalidClaimException
-import com.auth0.jwt.interfaces.{Claim, DecodedJWT, Verification}
-import com.github.blemale.scaffeine.Scaffeine
-import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
-import java.util.{Base64 => JavaBase64}
 import otoroshi.actions.ApiActionContext
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.el.{GlobalExpressionLanguage, JwtExpressionLanguage}
@@ -23,23 +22,23 @@ import otoroshi.utils
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.http.Implicits.logger
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
-import play.api.http.websocket.{Message => PlayWSMessage}
-import play.api.libs.json._
+import play.api.http.websocket.Message as PlayWSMessage
+import play.api.libs.json.*
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.nio.charset.StandardCharsets
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
+import java.util.Base64 as JavaBase64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.BiPredicate
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
-import com.github.blemale.scaffeine.Cache
 
 trait AsJson {
   def asJson: JsValue
@@ -510,7 +509,7 @@ case class JWKSAlgoSettings(
                                                                                                           ec: ExecutionContext,
                                                                                                           env: Env
   ): Future[Option[Algorithm]] = {
-    import otoroshi.utils.http.Implicits._
+    import otoroshi.utils.http.Implicits.given
     given s: Scheduler = env.otoroshiScheduler
     // val protocol = url.split("://").toSeq.headOption.getOrElse("http")
     JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, true))
@@ -646,7 +645,7 @@ object RSAKPAlgoSettings                                extends FromJson[RSAKPAl
 }
 case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings                {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   def keyId: Option[String] = certId.some
 
@@ -698,7 +697,7 @@ object ESKPAlgoSettings                                extends FromJson[ESKPAlgo
 }
 case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings               {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   def keyId: Option[String] = certId.some
 
@@ -750,7 +749,7 @@ object KidAlgoSettings extends FromJson[KidAlgoSettings] {
 
 case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   def keyId: Option[String] = None
 
@@ -1303,7 +1302,7 @@ sealed trait JwtVerifier extends AsJson {
     "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-sync"
   ) {
 
-    import Implicits._
+    import Implicits.given
 
     source.token(request) match {
       case None        =>
@@ -1623,7 +1622,7 @@ sealed trait JwtVerifier extends AsJson {
     "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-async"
   ) {
 
-    import Implicits._
+    import Implicits.given
 
     source.token(request) match {
       case None        =>

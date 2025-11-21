@@ -6,7 +6,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, StaticResponse, StaticResponseConfig}
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class StaticResponseTests(parent: PluginsTestSpec) {
   import parent.{given, *}

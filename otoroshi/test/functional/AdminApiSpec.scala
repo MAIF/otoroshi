@@ -1,12 +1,12 @@
 package functional
 
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
+import otoroshi.models.*
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsSuccess, Json, Reads}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 
 import java.io.File
 import java.nio.file.Files

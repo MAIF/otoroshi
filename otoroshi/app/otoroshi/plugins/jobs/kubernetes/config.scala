@@ -1,17 +1,17 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import java.io.File
-import java.nio.file.Files
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import otoroshi.env.Env
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.JsonPathValidator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.yaml.Yaml
-import play.api.libs.json._
+import play.api.libs.json.*
 
+import java.io.File
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.util.Base64
 import scala.concurrent.ExecutionContext
 import scala.util.Try
@@ -79,7 +79,7 @@ case class KubernetesConfig(
 )
 
 object KubernetesConfig {
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.given
   def theConfig(ctx: ContextWithConfig)(using env: Env, ec: ExecutionContext): KubernetesConfig = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env)
     val conf         = ctx

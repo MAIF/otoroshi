@@ -6,7 +6,7 @@ import io.netty.channel.kqueue.KQueueIoHandler
 import io.netty.channel.nio.NioIoHandler
 import io.netty.channel.{EventLoopGroup, MultiThreadIoEventLoopGroup}
 import org.apache.pekko.util.ByteString
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.core.NamedThreadFactory
 import reactor.util.Logger
 

@@ -3,11 +3,11 @@ package plugins
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSAuthScheme
 
 class BasicAuthCallerTests(parent: PluginsTestSpec) {

@@ -6,11 +6,11 @@ import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.IpFiltering
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 import play.api.http.HttpEntity
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results.Status
 import play.api.mvc.{Result, Results}
 

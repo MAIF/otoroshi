@@ -1,11 +1,11 @@
 package otoroshi.next.proxy
 
-import org.apache.pekko.http.scaladsl.model.Uri
-import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, BackOfficeUser, HSAlgoSettings, SecComInfoTokenVersion}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader

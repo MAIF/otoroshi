@@ -9,7 +9,7 @@ import org.scalatestplus.play.PlaySpec
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Configuration
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

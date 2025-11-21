@@ -1,6 +1,7 @@
 package otoroshi.metrics.opentelemetry
 
-import io.opentelemetry.api.metrics.{DoubleCounter, DoubleHistogram, LongCounter, LongHistogram, Meter}
+import io.opentelemetry.api.common.AttributeKey
+import io.opentelemetry.api.metrics.*
 import io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter
 import io.opentelemetry.exporter.otlp.http.metrics.OtlpHttpMetricExporter
 import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter
@@ -11,11 +12,10 @@ import io.opentelemetry.sdk.logs.`export`.{BatchLogRecordProcessor, LogRecordExp
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.`export`.{MetricExporter, PeriodicMetricReader}
 import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.api.common.AttributeKey
 import otoroshi.env.Env
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, DurationLong}

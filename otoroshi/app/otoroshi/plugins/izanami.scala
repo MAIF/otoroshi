@@ -1,35 +1,25 @@
 package otoroshi.plugins.izanami
 
-import java.util.concurrent.atomic.AtomicBoolean
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script.{
-  AfterRequestContext,
-  BeforeRequestContext,
-  HttpRequest,
-  HttpResponse,
-  RequestTransformer,
-  TransformerRequestBodyContext,
-  TransformerRequestContext,
-  TransformerResponseContext
-}
-import otoroshi.utils.{RegexPool, TypedMap}
-import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
-import play.api.mvc.{Cookie, RequestHeader, Result, Results}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.ws.{DefaultWSCookie, WSAuthScheme, WSCookie}
-import play.api.libs.ws.WSBodyWritables._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.given
 import otoroshi.utils.http.{MtlsConfig, WSCookieWithSameSite}
-import otoroshi.utils.http.WSCookieWithSameSite
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.{RegexPool, TypedMap}
+import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
+import play.api.libs.ws.WSBodyWritables.*
+import play.api.libs.ws.{DefaultWSCookie, WSAuthScheme, WSCookie}
+import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future, Promise}

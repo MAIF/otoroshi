@@ -1,50 +1,49 @@
 package otoroshi.models
 
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
-import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
-import org.apache.pekko.stream.{Materializer, OverflowStrategy}
-import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
-import otoroshi.auth._
 import com.auth0.jwt.JWT
 import com.comcast.ip4s.{Cidr, IpAddress}
 import com.google.common.hash.Hashing
-import otoroshi.env.Env
-import otoroshi.gateway.Errors
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.stream.{Materializer, OverflowStrategy}
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
+import otoroshi.auth.*
 import otoroshi.el.RedirectionExpressionLanguage
+import otoroshi.env.Env
+import otoroshi.gateway.Errors
 import otoroshi.models.HttpProtocols.{HTTP_1_0, HTTP_1_1, HTTP_2_0, HTTP_3_0}
 import otoroshi.next.models.{NgOverflowStrategy, NgRoute, NgTarget}
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
-import play.api.Logger
-import play.api.http.websocket.{Message => PlayWSMessage}
-import play.api.libs.json._
-import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
-import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
-import play.api.mvc.Results.{NotFound, TooManyRequests}
-import play.api.mvc.{RequestHeader, Result, Results}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.script.plugins.Plugins
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.storage.stores.KvServiceDescriptorDataStore
-import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils.config.ConfigUtils
-import otoroshi.utils.gzip.GzipConfig
-import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
+import otoroshi.utils.config.ConfigUtils
+import otoroshi.utils.gzip.GzipConfig
+import otoroshi.utils.http.RequestImplicits.given
 import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
+import otoroshi.utils.infotoken.InfoTokenHelper
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
+import otoroshi.utils.{RegexPool, ReplaceAllWith, TypedMap}
+import play.api.Logger
+import play.api.http.websocket.Message as PlayWSMessage
+import play.api.libs.json.*
+import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
+import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
+import play.api.mvc.Results.{NotFound, TooManyRequests}
+import play.api.mvc.{RequestHeader, Result, Results}
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.{FiniteDuration, *}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
-import otoroshi.utils.infotoken.InfoTokenHelper
 
 case class ServiceDescriptorQuery(
     subdomain: String,
@@ -1635,7 +1634,7 @@ case class Restrictions(
       env: Env
   ): (Boolean, Future[Result]) = {
 
-    import otoroshi.utils.http.RequestImplicits._
+    import otoroshi.utils.http.RequestImplicits.given
 
     if (enabled) {
       val method = req.method
@@ -2002,7 +2001,7 @@ case class ServiceDescriptor(
     }
   }
 
-  import play.api.http.websocket.{Message => PlayWSMessage}
+  import play.api.http.websocket.Message as PlayWSMessage
 
   def wsValidateClientCertificates(
       snowflake: String,
@@ -2132,7 +2131,7 @@ case class ServiceDescriptor(
     )(using env)
   }
 
-  import otoroshi.utils.http.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits.given
 
   def preRoute(
       snowflake: String,
@@ -2155,7 +2154,7 @@ case class ServiceDescriptor(
       f: => Future[Either[Result, A]]
   )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
-    import otoroshi.utils.future.Implicits._
+    import otoroshi.utils.future.Implicits.given
 
     val plugs    = plugins.preRoutings(req)
     val gScripts = env.datastores.globalConfigDataStore.latestSafe

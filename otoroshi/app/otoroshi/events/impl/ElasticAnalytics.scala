@@ -1,26 +1,26 @@
 package otoroshi.events.impl
 
-import java.util.Base64
-import java.util.concurrent.ConcurrentHashMap
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.stream.{ActorMaterializer, Materializer}
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models.{ApiKey, ElasticAnalyticsConfig, IndexSettingsInterval, ServiceDescriptor, ServiceGroup}
+import org.apache.pekko.stream.{ActorMaterializer, Materializer}
 import org.joda.time.format.{DateTimeFormatterBuilder, ISODateTimeFormat}
 import org.joda.time.{DateTime, Interval}
+import otoroshi.env.Env
+import otoroshi.events.*
 import otoroshi.jobs.updates.Version
+import otoroshi.models.*
 import otoroshi.next.models.NgRoute
 import otoroshi.utils.cache.types.UnboundedTrieMap
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json._
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Environment, Logger}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.ws.WSBodyWritables._
 
+import java.util.Base64
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.duration.DurationLong
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -547,7 +547,7 @@ object ElasticVersion       {
 
 object ElasticUtils {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.given
 
   // private def indexUri: String = {
   //   val df = ISODateTimeFormat.date().print(DateTime.now())
@@ -787,7 +787,7 @@ object ElasticUtils {
 
 class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsWritesService {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.given
 
   lazy val logger: Logger = Logger("otoroshi-analytics-writes-elastic")
 

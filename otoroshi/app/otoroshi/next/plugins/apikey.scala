@@ -1,18 +1,18 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.Done
-import org.apache.pekko.stream.Materializer
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models._
-import otoroshi.next.plugins.api._
+import otoroshi.models.*
+import otoroshi.next.plugins.api.*
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.PreRoutingError
 import otoroshi.security.OtoroshiClaim
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.nio.charset.StandardCharsets
@@ -786,7 +786,7 @@ class ApikeyAuthModule extends NgPreRouting {
   }
 
   def validApikey(apikey: ApiKey, routing: ApiKeyRouteMatcher): Boolean = {
-    import otoroshi.models.SeqImplicits._
+    import otoroshi.models.SeqImplicits.given
 
     val matchOnRole: Boolean   = Option(routing.oneTagIn)
       .filter(_.nonEmpty)

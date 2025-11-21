@@ -2,13 +2,13 @@ package otoroshi.next.doc
 
 import com.google.common.base.Charsets
 import otoroshi.next.plugins.api.{NgNamedPlugin, NgPluginVisibility}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.Try
 
 class NgPluginDocumentationGenerator(docPath: String) {
@@ -19,7 +19,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.given
       val start                  = System.currentTimeMillis()
       val allPackages            = Seq("otoroshi") //, "otoroshi_plugins")
       val scanResult: ScanResult = new ClassGraph()

@@ -1,13 +1,11 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import com.nimbusds.jose.crypto.{RSADecrypter, RSAEncrypter}
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.{EncryptionMethod, JOSEException, JWEAlgorithm, JWEHeader, JWEObject}
 import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
-
-import java.util.Base64 as JavaBase64
+import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import otoroshi.el.JwtExpressionLanguage
 import otoroshi.env.Env
@@ -16,16 +14,16 @@ import otoroshi.next.plugins.Keys.JwtInjectionKey
 import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterString, BetterSyntax}
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
-import play.api.libs.ws.WSBodyWritables.*
+import play.api.libs.ws.WSBodyWritables.given
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.syntax.implicits.*
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
+import java.util.Base64 as JavaBase64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 

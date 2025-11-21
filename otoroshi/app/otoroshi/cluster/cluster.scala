@@ -11,7 +11,7 @@ import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, Uri}
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.connectors.s3.*
 import org.apache.pekko.stream.connectors.s3.headers.CannedAcl
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
 import org.apache.pekko.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source, SourceQueueWithComplete}
@@ -26,27 +26,27 @@ import otoroshi.env.{Env, JavaVersion, OS}
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 import otoroshi.jobs.updates.Version
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.{NgCustomQuotas, NgCustomThrottling}
 import otoroshi.next.workflow.PausedWorkflowSession
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.security.IdGenerator
-import otoroshi.ssl._
-import otoroshi.storage._
-import otoroshi.storage.drivers.inmemory._
-import otoroshi.storage.stores._
+import otoroshi.ssl.*
+import otoroshi.storage.*
+import otoroshi.storage.drivers.inmemory.*
+import otoroshi.storage.stores.*
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
 import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.given
 import otoroshi.utils.http.{ManualResolveTransport, MtlsConfig}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
-import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.RequestHeader
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
@@ -1254,7 +1254,7 @@ object CpuInfo {
 object ClusterLeaderAgent {
   def apply(config: ClusterConfig, env: Env) = new ClusterLeaderAgent(config, env)
   def getIpAddress(): String = {
-    import java.net._
+    import java.net.*
     val all   = "0.0.0.0"
     val local = "127.0.0.1"
     val res1  = Try {
@@ -1298,7 +1298,7 @@ object ClusterLeaderAgent {
 }
 
 class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer    = env.otoroshiMaterializer
@@ -1470,7 +1470,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
 
 class ClusterAgent(config: ClusterConfig, env: Env) {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer    = env.otoroshiMaterializer
@@ -2169,7 +2169,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
@@ -2849,7 +2849,7 @@ class SwappableInMemoryDataStores(
 
   import org.apache.pekko.stream.Materializer
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
   import scala.util.hashing.MurmurHash3
 
   lazy val redisStatsItems: Int                                           = configuration.betterGet[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
@@ -2879,7 +2879,7 @@ class SwappableInMemoryDataStores(
       environment: Environment,
       lifecycle: ApplicationLifecycle
   ): Future[Unit] = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
     Cluster.logger.info("Now using Swappable InMemory DataStores")
     dbPathOpt.foreach { dbPath =>
       val file = new File(dbPath)
@@ -2949,7 +2949,7 @@ class SwappableInMemoryDataStores(
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
@@ -3263,7 +3263,7 @@ class SwappableInMemoryDataStores(
 
   private def toJson(value: Any): (String, JsValue) = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     value match {
       case str: String                                                                => ("string", JsString(str))

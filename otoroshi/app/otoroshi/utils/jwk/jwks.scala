@@ -1,13 +1,13 @@
 package otoroshi.utils.jwk
 
-import java.security.interfaces.{ECPublicKey, RSAPublicKey}
 import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc.RequestHeader
 
 import java.security.PublicKey
+import java.security.interfaces.{ECPublicKey, RSAPublicKey}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 

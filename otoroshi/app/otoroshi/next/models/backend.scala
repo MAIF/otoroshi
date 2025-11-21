@@ -4,12 +4,12 @@ import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.OverflowStrategy
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.libs.ws.WSProxyServer
 
 import java.util.concurrent.atomic.AtomicBoolean

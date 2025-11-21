@@ -2,10 +2,10 @@ package otoroshi.models
 
 import otoroshi.actions.{ApiActionContext, BackOfficeActionContext, BackOfficeActionContextAuth}
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.utils.RegexPool
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

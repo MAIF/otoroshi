@@ -1,9 +1,9 @@
 package otoroshi.events.pulsar
 
-import com.sksamuel.pulsar4s._
+import com.sksamuel.pulsar4s.*
 import org.apache.pulsar.client.impl.auth.{AuthenticationBasic, AuthenticationToken}
-import PulsarPlayJsonSchema._
-import play.api.libs.json._
+import otoroshi.events.pulsar.PulsarPlayJsonSchema.*
+import play.api.libs.json.*
 
 object PulsarSetting {
   def client(_env: otoroshi.env.Env, config: PulsarConfig): PulsarClient = {

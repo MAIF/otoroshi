@@ -1,5 +1,7 @@
 package otoroshi.script
 
+import com.google.common.hash.Hashing
+import io.github.classgraph.ClassgraphUtils
 import org.apache.pekko.Done
 import org.apache.pekko.actor.Cancellable
 import org.apache.pekko.http.scaladsl.model.Uri
@@ -7,36 +9,33 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.google.common.hash.Hashing
-import io.github.classgraph.ClassgraphUtils
-import otoroshi.auth.AuthModule
+import otoroshi.auth.{AuthModule, AuthModuleConfig}
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.gateway.GwError
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.extensions.AdminExtension
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.config.ConfigUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{SchedulerHelper, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.cert.X509Certificate
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import javax.script._
-import scala.concurrent.duration._
+import javax.script.*
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
-import otoroshi.auth.AuthModuleConfig
 
 sealed trait PluginType {
   def name: String
@@ -790,7 +789,7 @@ class ScriptManager(env: Env) {
     Try {
       import io.github.classgraph.ClassInfo
 
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.given
       val start      = System.currentTimeMillis()
       val scanResult = env.openApiSchema.scanResult
 
@@ -1623,12 +1622,12 @@ trait ScriptDataStore extends BasicStore[Script] {
       code = """import org.apache.pekko.stream.Materializer
              |import otoroshi.env.Env
              |import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-             |import otoroshi.script._
+             |import otoroshi.script.*
              |import play.api.Logger
              |import play.api.mvc.{Result, Results}
-             |import scala.util._
+             |import scala.util.*
              |import scala.concurrent.{ExecutionContext, Future}
-             |import otoroshi.utils.syntax.implicits._
+             |import otoroshi.utils.syntax.implicits.given
              |
              |/**
              | * Your own request transformer

@@ -38,11 +38,12 @@ import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.storage.DataStores
 import otoroshi.tcp.TcpService
-import otoroshi.utils.JsonValidator
+import otoroshi.utils.EntityFiltering.PaginatedContent
+import otoroshi.utils.{EntityFiltering, JsonValidator}
 import otoroshi.utils.controllers.GenericAlert
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.json.{JsonOperationsHelper, JsonPatchHelpers}
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.yaml.Yaml
 import play.api.http.{DefaultHttpFilters, HttpEntity, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
@@ -57,8 +58,6 @@ import play.core.parsers.FormUrlEncodedParser
 import play.core.server.{PekkoHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
-import otoroshi.utils.EntityFiltering
-import otoroshi.utils.EntityFiltering.PaginatedContent
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.DurationInt
@@ -96,7 +95,7 @@ object OtoroshiLoaderHelper {
 
   def waitForReadiness(components: EnvContainer): Unit = {
 
-    import scala.concurrent.duration._
+    import scala.concurrent.duration.*
 
     given ec: ExecutionContext = components.env.otoroshiExecutionContext
     given scheduler: Scheduler = components.env.otoroshiScheduler

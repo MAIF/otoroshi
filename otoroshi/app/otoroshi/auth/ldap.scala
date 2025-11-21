@@ -1,17 +1,17 @@
 package otoroshi.auth
 
-import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.google.common.base.Charsets
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, _}
-import play.api.mvc._
+import play.api.libs.json.{JsArray, JsObject, *}
+import play.api.mvc.*
 
 import java.nio.charset.StandardCharsets
 import java.util
@@ -384,8 +384,8 @@ case class LdapAuthModuleConfig(
   }
 
   private def _bindUser(urls: Seq[String], username: String, password: String): Either[String, LdapAuthUser] = {
-    import javax.naming._
-    import scala.jdk.CollectionConverters._
+    import javax.naming.*
+    import scala.jdk.CollectionConverters.given
 
     if (urls.isEmpty)
       Left(s"Missing LDAP server URLs or all down")

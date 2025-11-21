@@ -1,17 +1,15 @@
 package otoroshi.script
 
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
-import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl._
-import org.apache.pekko.util.ByteString
-import otoroshi.cluster.ClusterMode
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
+import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.*
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
+import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
 import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedEvent}
 import otoroshi.models.GlobalConfig
@@ -19,17 +17,19 @@ import otoroshi.next.plugins.WasmJob
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.next.workflow.WorkflowJob
-import otoroshi.utils
-import otoroshi.utils.{future, JsonPathValidator, JsonValidator, SchedulerHelper, TypedMap}
-import play.api.Logger
-import play.api.libs.json._
 import otoroshi.security.IdGenerator
+import otoroshi.utils
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.config.ConfigUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.*
+import play.api.Logger
+import play.api.libs.json.*
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
 import scala.util.{Failure, Random, Success, Try}
 
@@ -409,9 +409,9 @@ case class RegisteredJobContext(
         job.cronExpression(ctx, env) match {
           case None             => ()
           case Some(expression) =>
-            import java.time.ZonedDateTime
-
             import com.cronutils.parser.CronParser
+
+            import java.time.ZonedDateTime
 
             val now           = ZonedDateTime.now
             val parser        = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))

@@ -1,27 +1,26 @@
 package otoroshi.el
 
+import anticipation.Text
+import kaleidoscope.*
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-import org.joda.time.DateTime
-import play.api.Logger
-import play.api.libs.json.*
-import play.api.mvc.RequestHeader
-
-import scala.util.Try
-import otoroshi.utils.http.RequestImplicits.*
-import kaleidoscope.*
-import anticipation.Text
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 import otoroshi.utils.http.DN
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
-import otoroshi.utils.syntax.implicits.*
+import play.api.Logger
+import play.api.libs.json.*
+import play.api.mvc.RequestHeader
 
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.util.Try
 
 object GlobalExpressionLanguage {
 

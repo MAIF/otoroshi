@@ -3,17 +3,17 @@ package otoroshi.auth
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
-import otoroshi.models.{UserRights, _}
+import otoroshi.models.*
 import otoroshi.next.models.{NgRoute, NgTlsConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
-import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
 import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.ws.{WSProxyServer, WSBodyWritables}
-import play.api.libs.ws.WSBodyWritables._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
+import play.api.libs.ws.{WSBodyWritables, WSProxyServer}
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
@@ -34,7 +34,7 @@ case class RemoteUserValidatorSettings(
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ErrorReason, JsValue]] = {
-    import WSBodyWritables._
+    import WSBodyWritables.given
     env.MtlsWs
       .url(url, tlsSettings.legacy)
       .withRequestTimeout(timeout)

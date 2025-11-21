@@ -1,16 +1,16 @@
 package otoroshi.next.models
 
-import com.github.blemale.scaffeine.Scaffeine
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, EntityLocation}
 import otoroshi.netty.NettyRequestKeys
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.typedmap
 import play.api.mvc.request.{RemoteConnection, RequestTarget}
 import play.api.mvc.{Headers, RequestHeader}
@@ -21,8 +21,7 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.duration._
-import com.github.blemale.scaffeine.Cache
+import scala.concurrent.duration.*
 
 sealed trait RoutingStrategy {
   def json: JsValue

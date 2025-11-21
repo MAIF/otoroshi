@@ -31,7 +31,7 @@ object ReactiveStreamUtils {
 
   }
   object FluxUtils {
-    import reactor.core.publisher._
+    import reactor.core.publisher.*
     def fromFPublisher[A](future: => Future[Publisher[A]])(using ec: ExecutionContext): Flux[A] = {
       Mono
         .create[Publisher[A]] { sink =>

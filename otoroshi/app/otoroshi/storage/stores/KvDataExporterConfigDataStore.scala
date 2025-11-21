@@ -2,22 +2,15 @@ package otoroshi.storage.stores
 
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
-import otoroshi.events.Exporters.{
-  CustomMetricsSettings,
-  MetricSettings,
-  MetricSettingsKind,
-  OtlpLogsExporterSettings,
-  OtlpMetricsExporterSettings,
-  WasmExporterSettings
-}
+import otoroshi.events.Exporters.*
 import otoroshi.events.KafkaConfig
 import otoroshi.events.pulsar.PulsarConfig
 import otoroshi.metrics.opentelemetry.OtlpSettings
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.mailer._
+import otoroshi.utils.mailer.*
 import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json.{Format, JsError, JsSuccess, Json}
 

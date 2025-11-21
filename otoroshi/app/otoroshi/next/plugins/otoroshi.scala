@@ -1,26 +1,26 @@
 package otoroshi.next.plugins
 
+import com.auth0.jwt.JWT
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
-import com.auth0.jwt.JWT
 import org.joda.time.DateTime
 import otoroshi.controllers.HealthController
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, StateRespInvalid}
 import otoroshi.models.{AlgoSettings, HSAlgoSettings, SecComInfoTokenVersion, SecComVersion}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.given
 import otoroshi.utils.infotoken.{AddFieldsSettings, InfoTokenHelper}
 import otoroshi.utils.jwk.JWKSHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
-import play.api.mvc.Results._
-import play.api.mvc._
+import play.api.mvc.*
+import play.api.mvc.Results.*
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}

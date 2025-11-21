@@ -8,18 +8,18 @@ import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, RemainingQuotas, RouteIdentifier}
 import otoroshi.next.models.NgTlsConfig
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.DN
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.security.cert.X509Certificate
-import java.util.{Base64 => JavaBase64}
+import java.util.Base64 as JavaBase64
 import scala.concurrent.duration.DurationLong
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

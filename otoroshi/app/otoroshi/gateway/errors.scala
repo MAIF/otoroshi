@@ -1,20 +1,20 @@
 package otoroshi.gateway
 
-import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.github.blemale.scaffeine.Scaffeine
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.gateway.Errors.{errorTemplate, messages}
 import otoroshi.models.{ErrorTemplate, RemainingQuotas, ServiceDescriptor, Target}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.{NgPluginHttpResponse, NgTransformerErrorContext}
 import otoroshi.next.proxy.NgExecutionReport
-import otoroshi.script.Implicits._
+import otoroshi.script.Implicits.given
 import otoroshi.script.{HttpResponse, TransformerErrorContext}
 import otoroshi.utils.TypedMap
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.given
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.DefaultWSCookie

@@ -1,27 +1,27 @@
 package otoroshi.next.plugins
 
+import io.otoroshi.wasm4s.scaladsl.*
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import io.otoroshi.wasm4s.scaladsl._
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.models.{NgMatchedRoute, NgRoute}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.utils.JsonHelpers
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{ConcurrentMutableTypedMap, TypedMap}
-import otoroshi.wasm._
+import otoroshi.wasm.*
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.WSCookie
-import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.{Request, Result, Results}
 
 import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}

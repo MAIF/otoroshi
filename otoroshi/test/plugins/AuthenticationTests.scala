@@ -5,13 +5,13 @@ import functional.PluginsTestSpec
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models.{ApiKey, RouteIdentifier, TeamAccess, TenantAccess, UserRight, UserRights}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
-import com.microsoft.playwright._
+import com.microsoft.playwright.*
 
 import scala.jdk.CollectionConverters.ListHasAsScala
 

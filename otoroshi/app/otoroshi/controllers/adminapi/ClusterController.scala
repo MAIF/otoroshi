@@ -8,22 +8,22 @@ import org.apache.pekko.stream.scaladsl.{Framing, Sink, Source}
 import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
-import otoroshi.cluster._
+import otoroshi.cluster.*
 import otoroshi.env.{Env, JavaVersion, OS}
 import otoroshi.models.{PrivateAppsUser, RightsChecker}
 import otoroshi.next.proxy.{ProxyEngine, RelayRoutingRequest}
 import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.http.HttpEntity
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.{Accumulator, ActorFlow}
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic._
+import java.util.concurrent.atomic.*
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(using
     env: Env

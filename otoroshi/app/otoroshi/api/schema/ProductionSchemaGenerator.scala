@@ -1,12 +1,12 @@
 package otoroshi.api.schema
 
 import com.github.benmanes.caffeine.cache.{Cache, Caffeine}
+import org.json4s.*
 import org.json4s.JsonAST.JField
-import org.json4s.JsonDSL._
-import org.json4s._
+import org.json4s.JsonDSL.*
 import org.slf4j.LoggerFactory
 
-import java.time._
+import java.time.*
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.reflect.ClassTag

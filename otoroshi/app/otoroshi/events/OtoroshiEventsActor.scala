@@ -5,7 +5,7 @@ import com.spotify.metrics.core.MetricId
 import io.netty.channel.ChannelOption
 import io.netty.channel.unix.DomainSocketAddress
 import io.opentelemetry.api.logs.Severity
-import io.otoroshi.wasm4s.scaladsl._
+import io.otoroshi.wasm4s.scaladsl.*
 import jakarta.jms.{Destination, JMSContext, JMSProducer}
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
 import org.apache.pekko.Done
@@ -13,14 +13,7 @@ import org.apache.pekko.actor.{Actor, Props}
 import org.apache.pekko.http.scaladsl.model.{ContentType, ContentTypes}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
-import org.apache.pekko.stream.connectors.s3.{
-  ApiVersion,
-  ListBucketResultContents,
-  MemoryBufferType,
-  MetaHeaders,
-  S3Attributes,
-  S3Settings
-}
+import org.apache.pekko.stream.connectors.s3.*
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import org.apache.pekko.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
 import org.joda.time.DateTime
@@ -29,11 +22,11 @@ import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import otoroshi.events.pulsar.{PulsarConfig, PulsarSetting}
 import otoroshi.metrics.opentelemetry.{OpenTelemetryMeter, OtlpSettings}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.plugins.FakeWasmContext
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
 import otoroshi.storage.drivers.inmemory.S3Configuration
@@ -41,9 +34,9 @@ import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import reactor.core.publisher.Mono
 import reactor.netty.{Connection, ConnectionObserver}
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
@@ -59,9 +52,9 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.function.Consumer
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Success, Try}
 
 object OtoroshiEventsActorSupervizer {

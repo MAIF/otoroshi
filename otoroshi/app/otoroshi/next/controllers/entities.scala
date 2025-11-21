@@ -3,10 +3,10 @@ package otoroshi.next.controllers.adminapi
 import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.*
 
 import scala.concurrent.ExecutionContext
 

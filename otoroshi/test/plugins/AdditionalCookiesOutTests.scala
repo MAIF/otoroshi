@@ -5,7 +5,7 @@ import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{AdditionalCookieOut, AdditionalCookieOutConfig, OverrideHost}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class AdditionalCookiesOutTests(parent: PluginsTestSpec) {
   import parent.{given, *}

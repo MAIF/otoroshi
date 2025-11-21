@@ -1,7 +1,7 @@
 package otoroshi.auth
 
 import org.opensaml.saml.common.SignableSAMLObject
-import org.opensaml.saml.saml2.core.{LogoutRequest, RequestAbstractType, Response, StatusCode, StatusResponseType}
+import org.opensaml.saml.saml2.core.*
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.support.SignatureValidator
 import play.api.Logger

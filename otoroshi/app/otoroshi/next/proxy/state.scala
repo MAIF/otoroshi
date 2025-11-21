@@ -4,19 +4,19 @@ import com.github.blemale.scaffeine.Scaffeine
 import next.models.{Api, ApiConsumerSubscription}
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.next.models._
-import otoroshi.next.plugins._
+import otoroshi.models.*
+import otoroshi.next.models.*
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginHelper}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.RequestHeader
 
 import java.util.concurrent.TimeUnit
@@ -691,8 +691,8 @@ class NgProxyStateLoaderJob extends Job {
 
 class NgInternalStateMonitor extends Job {
 
-  import squants.information._
-  import squants.time._
+  import squants.information.*
+  import squants.time.*
 
   private val logger = Logger("otoroshi-internal-state-monitor")
 

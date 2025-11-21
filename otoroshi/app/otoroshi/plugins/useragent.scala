@@ -1,19 +1,19 @@
 package otoroshi.plugins.useragent
 
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import org.apache.pekko.stream.Materializer
 import com.blueconic.browscap.{UserAgentParser, UserAgentService}
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.Keys
 import otoroshi.script.*
 import otoroshi.utils.cache.Caches
+import otoroshi.utils.future.Implicits.given
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.future.Implicits.*
 
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -21,7 +21,7 @@ import scala.util.{Failure, Success, Try}
 
 object UserAgentHelper {
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.given
 
   private val logger = Logger("otoroshi-plugins-user-agent-helper")
 

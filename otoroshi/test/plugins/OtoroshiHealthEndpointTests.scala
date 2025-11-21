@@ -1,7 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{JwtVerification, NgJwtVerificationConfig, OtoroshiHealthEndpoint, OverrideHost}

@@ -14,7 +14,7 @@ import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.ws.WSResponse
 
@@ -30,7 +30,7 @@ case class CheckFirstService(startedAt: DateTime, services: Seq[ServiceDescripto
 
 object HealthCheckLogic {
 
-  import otoroshi.utils.http.Implicits.*
+  import otoroshi.utils.http.Implicits.given
 
   val badHealth = new UnboundedTrieMap[String, Unit]()
 

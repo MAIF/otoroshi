@@ -1,6 +1,7 @@
 package otoroshi.models
 
 import otoroshi.env.Env
+
 import scala.concurrent.{ExecutionContext, Future}
 
 case class ServiceCanaryCampaign(canaryUsers: Long, standardUsers: Long)

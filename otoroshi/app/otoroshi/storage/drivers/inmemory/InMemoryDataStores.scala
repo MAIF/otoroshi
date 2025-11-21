@@ -1,33 +1,32 @@
 package otoroshi.storage.drivers.inmemory
 
+import com.typesafe.config.ConfigFactory
+import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.typesafe.config.ConfigFactory
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import otoroshi.storage.stores._
-import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore, SwappableRedisLikeMetricsWrapper}
+import otoroshi.storage.stores.*
+import otoroshi.storage.*
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
-import otoroshi.storage.{OptimizedRedisLike, RedisLike}
 
 class InMemoryDataStores(
     configuration: Configuration,
@@ -328,7 +327,7 @@ class InMemoryDataStores(
 
   private def toJson(value: Any): (String, JsValue) = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     value match {
       case str: String                                                     => ("string", JsString(str))

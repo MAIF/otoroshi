@@ -17,7 +17,7 @@ import otoroshi.next.plugins.{
   WebsocketJsonFormatValidatorConfig
 }
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationInt

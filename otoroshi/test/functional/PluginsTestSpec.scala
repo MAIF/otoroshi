@@ -33,7 +33,7 @@ import play.api.libs.ws.{DefaultWSCookie, WSRequest}
 import play.api.libs.ws.WSBodyWritables.{writeableOf_JsValue, writeableOf_String}
 import play.api.libs.ws.WSBodyReadables.readableAsString
 import play.api.{Configuration, Logger}
-import plugins._
+import plugins.*
 
 class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 

@@ -1,16 +1,16 @@
 package otoroshi.jobs.certs
 
-import java.util.concurrent.TimeUnit
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
+import otoroshi.script.*
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
-import play.api.Logger
-import otoroshi.utils.syntax.implicits._
 import otoroshi.ssl.{Cert, FakeKeyStore}
+import otoroshi.utils.syntax.implicits.given
+import play.api.Logger
 
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 
 class InitialCertsJob extends Job {
 

@@ -4,14 +4,12 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.jobs.AnonymousReportingJob
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents}
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.{Logger, mvc}
+import play.api.mvc.{AbstractController, AnyContent, ControllerComponents}
 
 import scala.concurrent.ExecutionContext
-import play.api.mvc
-import play.api.mvc.AnyContent
 
 class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc) {

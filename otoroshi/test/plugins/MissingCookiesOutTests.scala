@@ -7,7 +7,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{AdditionalCookieOutConfig, MissingCookieOut, OverrideHost}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 
 class MissingCookiesOutTests(parent: PluginsTestSpec) {

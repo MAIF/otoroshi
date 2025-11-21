@@ -4,28 +4,16 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.ApiKey
-import otoroshi.utils.controllers.{
-  AdminApiHelper,
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SeqEntityAndContext
-}
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Results}
 import otoroshi.security.IdGenerator
+import otoroshi.utils.controllers.*
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.{Logger, mvc}
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import play.api.mvc
-import play.api.mvc.AnyContent
 
 class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)

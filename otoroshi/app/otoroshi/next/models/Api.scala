@@ -1,26 +1,26 @@
 package next.models
 
+import next.models.ApiConsumerKind.Keyless
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.util.ByteString
-import next.models.ApiConsumerKind.Keyless
 import org.joda.time.DateTime
 import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, EntityLocationSupport, RoundRobin, ServiceDescriptor}
-import otoroshi.next.models._
-import otoroshi.next.plugins._
+import otoroshi.next.models.*
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
 import otoroshi.next.plugins.api.{NgPlugin, NgPluginConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.UrlSanitizer.sanitize
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.yaml.Yaml
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.net.URI
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}

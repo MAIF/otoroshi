@@ -1,22 +1,21 @@
 package otoroshi.controllers
 
-import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction, PrivateAppsActionContext}
 import otoroshi.auth.*
-import otoroshi.next.plugins.AuthModule
-import otoroshi.auth.implicits.*
+import otoroshi.auth.implicits.given
 import otoroshi.env.Env
 import otoroshi.events.*
 import otoroshi.gateway.Errors
-import otoroshi.models.{BackOfficeUser, CorsSettings, GlobalConfig, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgRoute}
-import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
+import otoroshi.next.plugins.{AuthModule, MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
 import play.api.libs.json.*
@@ -28,9 +27,9 @@ import java.util.Base64
 import java.util.concurrent.TimeUnit
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters.*
+import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.given
 import scala.reflect.ClassTag
 
 object AuthController {
@@ -283,7 +282,7 @@ class AuthController(
 
   def confidentialAppLoginPage(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
-      import otoroshi.utils.http.RequestImplicits._
+      import otoroshi.utils.http.RequestImplicits.given
       given req: Request[AnyContent] = ctx.request
 
       (req.getQueryString("desc"), req.getQueryString("route")) match {
@@ -575,7 +574,7 @@ class AuthController(
 
   def confidentialAppCallback(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
-      import otoroshi.utils.http.RequestImplicits._
+      import otoroshi.utils.http.RequestImplicits.given
 
       given req: Request[AnyContent] = ctx.request
 
@@ -972,7 +971,7 @@ class AuthController(
 
   def backOfficeLogout(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
-      import otoroshi.utils.http.RequestImplicits._
+      import otoroshi.utils.http.RequestImplicits.given
       given request: Request[AnyContent] = ctx.request
       val redirect                              = request.getQueryString("redirect")
       if (ctx.user.simpleLogin) {

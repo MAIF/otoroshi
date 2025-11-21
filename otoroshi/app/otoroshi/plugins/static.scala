@@ -5,7 +5,7 @@ import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.{JsNull, JsObject, Json}
 import play.api.mvc.{Result, Results}
 

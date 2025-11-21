@@ -1,35 +1,29 @@
 package otoroshi.events
 
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-import scala.util.{Failure, Success, Try}
-import scala.util.control.NonFatal
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.clients.producer._
-import org.apache.kafka.common.serialization.{
-  ByteArrayDeserializer,
-  ByteArraySerializer,
-  StringDeserializer,
-  StringSerializer
-}
+import org.apache.kafka.clients.consumer.Consumer
+import org.apache.kafka.clients.producer.*
+import org.apache.kafka.common.config.internals.BrokerSecurityConfigs
+import org.apache.kafka.common.config.{SaslConfigs, SslConfigs}
+import org.apache.kafka.common.security.auth.SecurityProtocol
+import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringDeserializer, StringSerializer}
 import org.apache.pekko.Done
-import org.apache.pekko.actor.{Actor, ActorSystem, Props}
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, Props}
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.kafka.{ConsumerSettings, ProducerSettings}
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.kafka.clients.consumer.Consumer
-import org.apache.kafka.common.config.{SaslConfigs, SslConfigs}
-import play.api.libs.json._
 import otoroshi.env.Env
 import otoroshi.models.Exporter
-import org.apache.kafka.common.config.internals.BrokerSecurityConfigs
-import org.apache.kafka.common.security.auth.SecurityProtocol
-import otoroshi.models.Exporter
-import otoroshi.utils.http.MtlsConfig
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits._
-import org.apache.pekko.actor.ActorRef
+import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
+import play.api.libs.json.*
+
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 case class KafkaConfig(
     servers: Seq[String],
@@ -124,7 +118,7 @@ object KafkaConfig {
 
 object KafkaSettings {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   def waitForFirstSetup(env: Env): Future[Unit] = {
     Source

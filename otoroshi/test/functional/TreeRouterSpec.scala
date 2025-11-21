@@ -6,7 +6,7 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import otoroshi.env.Env
-import otoroshi.next.models._
+import otoroshi.next.models.*
 import otoroshi.utils.TypedMap
 import play.api.Configuration
 
@@ -108,7 +108,7 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
     }
 
     "find route fast" in {
-      import otoroshi.utils.syntax.implicits._
+      import otoroshi.utils.syntax.implicits.given
       NgRouteComposition
         .fromOpenApi(
           "api.oto.tools",
