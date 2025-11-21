@@ -3,5 +3,6 @@ export const ValueToCheck = (label = 'Value to Check') => ({
   label: label,
   props: {
     mode: 'jsonOrPlaintext',
+    height: '120px'
   },
 });
