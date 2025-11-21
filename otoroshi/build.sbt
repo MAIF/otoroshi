@@ -54,27 +54,28 @@ inThisBuild(
 enablePlugins(PlayScala)
 disablePlugins(PlayFilters)
 
-lazy val scalaLangVersion   = "3.7.1"
-val playVersion             = "3.0.8"
-val metricsVersion          = "4.2.33"
+lazy val scalaLangVersion   = "3.7.4"
+val playVersion             = "3.0.9"
+val metricsVersion          = "4.2.37"
 val acme4jVersion           = "3.5.1"
 val prometheusVersion       = "0.16.0"
-val playJsonVersion         = "3.0.5"
+val playJsonVersion         = "3.0.6"
 val webAuthnVersion         = "2.7.0"
 val kubernetesVersion       = "24.0.0"
-val bouncyCastleVersion     = "1.81"
+val bouncyCastleVersion     = "1.82"
 val bouncyCastleExtVersion  = "1.78.1"
 val pulsarVersion           = "2.12.0.1"
-val openTelemetryVersion    = "1.53.0"
+val openTelemetryVersion    = "1.56.0"
 val jacksonVersion          = "2.19.2"
-val pekkoVersion            = "1.1.5"
-val pekkoHttpVersion        = "1.2.0"
-val pekkoConnectorsVersion  = "1.1.0"
-val reactorNettyVersion     = "1.2.8"
+val pekkoVersion            = "1.3.0"
+val pekkoHttpVersion        = "1.3.0"
+val pekkoConnectorsVersion  = "1.2.0"
+val reactorNettyVersion     = "1.3.0"
 val circeVersion            = "0.14.14"
-val nettyVersion            = "4.2.3.Final"
-val okhttpVersion           = "5.1.0"
-val okioVersion             = "3.16.0"
+val nettyVersion            = "4.2.7.Final"
+val okhttpVersion           = "5.3.2"
+val okioVersion             = "3.16.4"
+val scramVersion            = "3.2"
 val excludesJackson         = Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -154,26 +155,26 @@ dependencyOverrides ++= Seq(
     "com.squareup.okio" % "okio-jvm" % okioVersion,
 
     // SCRAM library - force version 3.1
-    "com.ongres.scram" % "scram-common" % "3.1",
-    "com.ongres.scram" % "scram-client" % "3.1",
+    "com.ongres.scram" % "scram-common" % scramVersion,
+    "com.ongres.scram" % "scram-client" % scramVersion,
 
     // Other common conflicts
     "org.slf4j" % "slf4j-api" % "2.0.17",
-    "com.google.guava" % "guava" % "33.4.8-jre"
+    "com.google.guava" % "guava" % "33.5.0-jre"
 )
 
 libraryDependencies ++= Seq(
     ws,
     filters,
-    "com.softwaremill.macwire"        %% "macros"                                    % "2.6.6" % "provided",
+    "com.softwaremill.macwire"        %% "macros"                                    % "2.6.7" % "provided",
     "org.scala-lang"                  %% "scala3-tasty-inspector"                    % scalaLangVersion,
     "org.playframework"               %% "play-json"                                 % playJsonVersion,
     "org.playframework"               %% "play-json-joda"                            % playJsonVersion,
     "joda-time"                        % "joda-time"                                 % "2.14.0",
     "io.github.rediscala"             %% "rediscala"                                 % "1.17.0",
     ("com.github.gphat"               %% "censorinus"                                % "2.1.16").cross(CrossVersion.for3Use2_13),
-    "org.apache.pekko"                %% "pekko-connectors-kafka"                    % pekkoConnectorsVersion,
-    "org.apache.pekko"                %% "pekko-connectors-s3"                       % pekkoHttpVersion,
+    "org.apache.pekko"                %% "pekko-connectors-kafka"                    % "1.1.0",
+    "org.apache.pekko"                %% "pekko-connectors-s3"                       % "1.2.0",
     "org.apache.pekko"                %% "pekko-actor"                               % pekkoVersion,
     "org.apache.pekko"                %% "pekko-stream"                              % pekkoVersion,
     "org.apache.pekko"                %% "pekko-slf4j"                               % pekkoVersion,
@@ -187,11 +188,11 @@ libraryDependencies ++= Seq(
     "io.prometheus"                    % "simpleclient_common"                       % prometheusVersion excludeAll (excludesJackson *),
     "io.prometheus"                    % "simpleclient_dropwizard"                   % prometheusVersion excludeAll (excludesJackson *),
     "com.auth0"                        % "java-jwt"                                  % "4.5.0" excludeAll (excludesJackson *),
-    "com.auth0"                        % "jwks-rsa"                                  % "0.22.2" excludeAll (excludesJackson *),
-    "com.nimbusds"                     % "nimbus-jose-jwt"                           % "10.4.1",
+    "com.auth0"                        % "jwks-rsa"                                  % "0.23.0" excludeAll (excludesJackson *),
+    "com.nimbusds"                     % "nimbus-jose-jwt"                           % "10.6",
     "de.svenkubiak"                    % "jBCrypt"                                   % "0.4.3",
-    "dev.soundness"                    % "kaleidoscope-core"                         % "0.40.0",
-    "io.github.classgraph"             % "classgraph"                                % "4.8.181" excludeAll (excludesJackson *),
+    "dev.soundness"                    % "kaleidoscope-core"                         % "0.46.0",
+    "io.github.classgraph"             % "classgraph"                                % "4.8.184" excludeAll (excludesJackson *),
     "com.comcast"                     %% "ip4s-core"                                 % "3.7.0",
     "com.yubico"                       % "webauthn-server-core"                      % webAuthnVersion excludeAll (excludesJackson *),
     "com.yubico"                       % "webauthn-server-attestation"               % webAuthnVersion excludeAll (excludesJackson *),
@@ -199,18 +200,18 @@ libraryDependencies ++= Seq(
     "com.maxmind.geoip2"               % "geoip2"                                    % "4.3.1",
     "com.blueconic"                    % "browscap-java"                             % "1.5.1",
     "javax.xml.bind"                   % "jaxb-api"                                  % "2.3.1",
-    "com.sun.xml.bind"                 % "jaxb-core"                                 % "4.0.5",
+    "com.sun.xml.bind"                 % "jaxb-core"                                 % "4.0.6",
     "com.github.blemale"              %% "scaffeine"                                 % "5.3.0",
     "org.shredzone.acme4j"             % "acme4j-client"                             % acme4jVersion excludeAll (excludeSlf4jAndJackson *),
-    "io.lettuce"                       % "lettuce-core"                              % "6.8.0.RELEASE" excludeAll (excludesJackson *),
+    "io.lettuce"                       % "lettuce-core"                              % "7.1.0.RELEASE" excludeAll (excludesJackson *),
     "io.vertx"                         % "vertx-pg-client"                           % "4.3.4",
-    "com.ongres.scram"                 % "scram-common"                              % "3.1",
-    "com.ongres.scram"                 % "scram-client"                              % "3.1",
-    "com.jayway.jsonpath"              % "json-path"                                 % "2.9.0",
+    "com.ongres.scram"                 % "scram-common"                              % scramVersion,
+    "com.ongres.scram"                 % "scram-client"                              % scramVersion,
+    "com.jayway.jsonpath"              % "json-path"                                 % "2.10.0",
     "com.cronutils"                    % "cron-utils"                                % "9.2.1",
     "commons-lang"                     % "commons-lang"                              % "2.6",
     "com.datastax.oss"                 % "java-driver-core"                          % "4.17.0" excludeAll (excludesJackson *),
-    "org.gnieh"                       %% "diffson-play-json"                         % "4.6.0" excludeAll ExclusionRule(organization = "org.apache.pekko"),
+    "org.gnieh"                       %% "diffson-play-json"                         % "4.6.1" excludeAll ExclusionRule(organization = "org.apache.pekko"),
     "io.kubernetes"                    % "client-java"                               % kubernetesVersion excludeAll (excludesJackson *),
     "io.kubernetes"                    % "client-java-extended"                      % kubernetesVersion excludeAll (excludesJackson *),
     "org.bouncycastle"                 % "bcpkix-jdk18on"                            % bouncyCastleVersion excludeAll (excludesJackson *),
@@ -219,7 +220,7 @@ libraryDependencies ++= Seq(
     "com.clever-cloud.pulsar4s"       %% "pulsar4s-play-json"                        % pulsarVersion excludeAll (excludesJackson *),
     "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                             % pulsarVersion excludeAll (excludesJackson *),
     "com.clever-cloud.pulsar4s"       %% "pulsar4s-pekko-streams"                    % pulsarVersion excludeAll (excludesJackson *),
-    "org.jsoup"                        % "jsoup"                                     % "1.21.1",
+    "org.jsoup"                        % "jsoup"                                     % "1.21.2",
     "org.biscuitsec"                   % "biscuit"                                   % "4.0.1",
     "org.opensaml"                     % "opensaml-core"                             % "4.0.1",
     "org.opensaml"                     % "opensaml-saml-api"                         % "4.0.1",
@@ -247,15 +248,15 @@ libraryDependencies ++= Seq(
     "io.opentelemetry"                 % "opentelemetry-exporter-otlp"               % openTelemetryVersion excludeAll (excludesJackson *),
     "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"             % openTelemetryVersion excludeAll (excludesJackson *),
     "io.opentelemetry"                 % "opentelemetry-exporter-sender-okhttp"      % openTelemetryVersion excludeAll (excludesJackson *),
-    "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"        % "2.18.1-alpha" excludeAll (excludesJackson *),
-    "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.788" excludeAll (excludesJackson *),
-    "org.apache.logging.log4j"         % "log4j-api"                                 % "2.25.1",
-    "org.sangria-graphql"             %% "sangria"                                   % "4.2.11",
+    "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"        % "2.22.0-alpha" excludeAll (excludesJackson *),
+    "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.793" excludeAll (excludesJackson *),
+    "org.apache.logging.log4j"         % "log4j-api"                                 % "2.25.2",
+    "org.sangria-graphql"             %% "sangria"                                   % "4.2.15",
     "org.bigtesting"                   % "routd"                                     % "1.0.7",
     "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
     "io.azam.ulidj"                    % "ulidj"                                     % "2.0.0",
     "fr.maif"                         %% "wasm4s"                                    % "5.0.3" classifier "bundle",
-    "com.google.crypto.tink"           % "tink"                                      % "1.18.0",
+    "com.google.crypto.tink"           % "tink"                                      % "1.19.0",
     "org.reflections"                  % "reflections"                               % "0.10.2",
     "org.json4s"                      %% "json4s-jackson"                            % "4.0.7",
     "org.json4s"                      %% "json4s-ast"                                % "4.0.7",
@@ -276,9 +277,9 @@ libraryDependencies ++= Seq(
     "org.scalatestplus.play"          %% "scalatestplus-play"                        % "7.0.2" % Test,
     "com.networknt"                    % "json-schema-validator"                     % "1.5.8" excludeAll (excludeSlf4jAndJackson *),
     "jakarta.jms"                      % "jakarta.jms-api"                           % "3.1.0",
-    "org.apache.activemq"              % "artemis-jakarta-client"                    % "2.42.0" excludeAll (excludeSlf4jAndJackson *),
+    "org.apache.activemq"              % "artemis-jakarta-client"                    % "2.44.0" excludeAll (excludeSlf4jAndJackson *),
   "com.dimafeng"                    %% "testcontainers-scala-scalatest"            % "0.43.6" % Test,
-  "com.microsoft.playwright"         % "playwright"                                % "1.47.0" % Test
+  "com.microsoft.playwright"         % "playwright"                                % "1.56.0" % Test
 )
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
