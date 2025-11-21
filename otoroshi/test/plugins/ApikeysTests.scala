@@ -175,4 +175,60 @@ class ApikeysTests(parent: PluginsTestSpec) {
     deleteOtoroshiApiKey(apikey).futureValue
     deleteOtoroshiRoute(route).futureValue
   }
+
+  def notMandatory() = {
+    val id    = IdGenerator.uuid
+    val route = createRequestOtoroshiIORoute(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[ApikeyCalls],
+          config = NgPluginInstanceConfig(
+            NgApikeyCallsConfig(
+              mandatory = false
+            ).json.as[JsObject]
+          )
+        )
+      ),
+      domain = s"$id.oto.tools",
+      id
+    )
+
+    val apikey = ApiKey(
+      clientId = "apikey-test",
+      clientSecret = "1234",
+      clientName = "apikey-test",
+      authorizedEntities = Seq(RouteIdentifier(PLUGINS_ROUTE_ID))
+    )
+    createOtoroshiApiKey(apikey).futureValue
+
+    {
+      val call = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host"                   -> route.frontend.domains.head.domain,
+          "Otoroshi-Client-Id"     -> apikey.clientId,
+          "Otoroshi-Client-Secret" -> apikey.clientSecret
+        )
+        .get()
+        .futureValue
+
+      call.status mustBe Status.OK
+    }
+
+    val authorizedCall = ws
+      .url(s"http://127.0.0.1:$port/api")
+      .withHttpHeaders(
+        "Host" -> route.frontend.domains.head.domain
+      )
+      .get()
+      .futureValue
+
+    authorizedCall.status mustBe Status.OK
+
+    deleteOtoroshiApiKey(apikey).futureValue
+    deleteOtoroshiRoute(route).futureValue
+  }
 }
