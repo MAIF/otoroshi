@@ -2176,36 +2176,29 @@ function Documentation(props) {
           }
         />
       </PageTitle>
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
+      <MonacoEditor
+        height={window.innerHeight - 140}
+        width="100%"
+        theme="vs-dark"
+        defaultLanguage="json"
+        value={code}
+        options={{
+          automaticLayout: true,
+          selectOnLineNumbers: true,
+          minimap: { enabled: true },
+          lineNumbers: true,
+          glyphMargin: false,
+          folding: true,
+          lineDecorationsWidth: 0,
+          lineNumbersMinChars: 0,
         }}
-      >
-        <MonacoEditor
-          height={window.innerHeight - 140}
-          width="100%"
-          theme="vs-dark"
-          defaultLanguage="json"
-          value={code}
-          options={{
-            automaticLayout: true,
-            selectOnLineNumbers: true,
-            minimap: { enabled: true },
-            lineNumbers: true,
-            glyphMargin: false,
-            folding: true,
-            lineDecorationsWidth: 0,
-            lineNumbersMinChars: 0,
-          }}
-          onChange={(newValue) => {
-            try {
-              setNewItem(JSON.parse(newValue));
-            } catch (e) {
-            }
-          }}
-        />
-      </div>
+        onChange={(newValue) => {
+          try {
+            setNewItem(JSON.parse(newValue));
+          } catch (e) {
+          }
+        }}
+      />
     </>
   )
 }
