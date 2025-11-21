@@ -306,7 +306,7 @@ export default {
               },
             },
           },
-          flow: ['enabled', 'client_secret_header_name', 'client_id_header_name'],
+          flow: ['enabled', 'client_id_header_name', 'client_secret_header_name'],
         },
       },
       flow: ['jwt', 'basic', 'client_id', 'custom_headers', 'oto_bearer'],

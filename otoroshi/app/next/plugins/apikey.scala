@@ -290,7 +290,13 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
         case _                                             => ctx.otoroshiRequest.right
       }
     } else {
-      ctx.otoroshiRequest.right
+      var headers: Map[String, String] = Map.empty
+      if (config.extractors.customHeaders.clientIdHeaderName.isEmpty)
+        headers = headers + (env.Headers.OtoroshiClientId -> ctx.request.headers(env.Headers.OtoroshiClientId))
+      if (config.extractors.customHeaders.clientSecretHeaderName.isEmpty)
+        headers = headers + (env.Headers.OtoroshiClientSecret -> ctx.request.headers(env.Headers.OtoroshiClientSecret))
+
+      ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ headers).right
     }
   }
 }
@@ -397,8 +403,16 @@ case class NgApikeyExtractorCustomHeaders(
   )
   def json: JsValue                             = Json.obj(
     "enabled"                   -> enabled,
-    "client_id_header_name"     -> clientIdHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "client_secret_header_name" -> clientSecretHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    "client_id_header_name"     -> clientIdHeaderName
+      .filterNot(_.trim.isEmpty)
+      .map(JsString.apply)
+      .getOrElse(JsNull)
+      .as[JsValue],
+    "client_secret_header_name" -> clientSecretHeaderName
+      .filterNot(_.trim.isEmpty)
+      .map(JsString.apply)
+      .getOrElse(JsNull)
+      .as[JsValue]
   )
 }
 
