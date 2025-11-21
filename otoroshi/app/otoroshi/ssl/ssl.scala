@@ -252,15 +252,6 @@ case class Cert(
                 caCert.cryptoKeyPair
               )
               copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
-            case _                  =>
-              // println("wait what ???")
-              val resp = FakeKeyStore.createSelfSignedCertificate(
-                domain,
-                duration,
-                Some(cryptoKeyPair),
-                certificate.map(_.getSerialNumber.longValue())
-              )
-              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
           }
         }
     }
@@ -604,8 +595,13 @@ object Cert {
                   .flatMap { _ =>
                     val cert = certs.find(c => RegexPool(c.domain).matches(host)).get
                     if (cert.autoRenew) {
-                      cert.renew()
+                      cert.renew().map { _ =>
+                        logger.info(s"Successfully created certificate for $host")
+                      }.recover { case err =>
+                        logger.error(s"Error while creating certificate for $host. $err")
+                      }
                     } else {
+                      logger.info(s"Successfully created certificate for $host")
                       FastFuture.successful(cert)
                     }
                   }
@@ -613,10 +609,6 @@ object Cert {
                     env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:local:create:$host"))
                   }
             }
-          }
-          .map {
-            case (host, Left(err)) => logger.error(s"Error while creating certificate for $host. $err")
-            case (host, Right(_))  => logger.info(s"Successfully created certificate for $host")
           }
           .runWith(Sink.ignore)
           .map(_ => ())

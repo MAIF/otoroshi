@@ -711,10 +711,6 @@ object WebSocketProxyActor {
                 case CloseMessage(status, reason) =>
                   logger.error(s"close message $status: $reason")
                   org.apache.pekko.http.scaladsl.model.ws.BinaryMessage(ByteString.empty)
-                // throw new RuntimeException(reason)
-                case m =>
-                  logger.error(s"Unknown message $m")
-                  throw new RuntimeException(s"Unknown message $m")
               },
               Source.fromPublisher(publisher).mapAsync(1) {
                 case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text) =>
@@ -727,7 +723,6 @@ object WebSocketProxyActor {
                   source
                     .runFold(ByteString.empty)((concat, str) => concat ++ str)
                     .map(data => PlayWSBinaryMessage(data))
-                case other => FastFuture.failed(new RuntimeException(s"Unkown message type $other"))
               }
             )
             FastFuture.successful(f)

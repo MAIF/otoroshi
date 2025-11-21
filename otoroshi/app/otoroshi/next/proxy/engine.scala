@@ -1051,18 +1051,15 @@ class ProxyEngine() extends RequestHandler {
       mat: Materializer
   ): FEither[NgProxyEngineError, NgRoute] = {
     val routers                            = global_plugins.routerPlugins(request)
-    val pluginRoute                        =
-      if (routers.nonEmpty)
-        routers.findFirstSome(p =>
-          p.plugin.findRoute(
-            NgRouterContext(
-              request = request,
-              config = p.instance.config.raw,
-              attrs = attrs
-            )
-          )
+    val pluginRoute = routers.collectFirst(Function.unlift { p =>
+      p.plugin.findRoute(
+        NgRouterContext(
+          request = request,
+          config = p.instance.config.raw,
+          attrs = attrs
         )
-      else None
+      )
+    })
     val maybeRoute: Option[NgMatchedRoute] = pluginRoute.orElse {
       if (useTree) {
         env.proxyState.findRoute(request, attrs)

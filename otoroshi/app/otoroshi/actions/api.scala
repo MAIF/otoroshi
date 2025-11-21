@@ -104,7 +104,6 @@ trait ApiActionContextCapable {
                     adminEntityValidators = Map.empty
                   )
                   Right(user.some)
-                case _                => Left("You're not authorized here (invalid setup) ! ")
               }
             case Some(userJwt) =>
               Try(JWT.require(Algorithm.HMAC512(apiKey.clientSecret)).build().verify(userJwt)) match {

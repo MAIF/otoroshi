@@ -227,7 +227,6 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
                 case _ if !promise.isCompleted => promise.trySuccess(false)
               }
             promise.future
-          case _                             => FastFuture.successful(true)
         }
       }
 
@@ -320,7 +319,6 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
                 Results.Ok("--").right.future
               }
               .map(_ => ())
-          case _                             => ().future
         }
       }
 

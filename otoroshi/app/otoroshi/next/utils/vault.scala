@@ -488,7 +488,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
     }
   }
 
-  private def getToken()(implicit env: Env, ec: ExecutionContext): Future[Option[String]] = {
+  private def getToken()(using env: Env, ec: ExecutionContext): Future[Option[String]] = {
     tokenCache.getIfPresent("singleton") match {
       case Some(token)                                      => token.some.vfuture
       case None if authMode.contains("google")              => {
@@ -578,7 +578,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
     new File(cloudConfigPath, WELL_KNOWN_CREDENTIALS_FILE)
   }
 
-  private def tokenFromMetadataServer()(implicit
+  private def tokenFromMetadataServer()(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[String]] = {
@@ -608,17 +608,25 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
       }
   }
 
-  private def tokenFromServiceAccountJson(serviceAccountJsonContent: String, scopes: Seq[String])(implicit
+  private def tokenFromServiceAccountJson(serviceAccountJsonContent: String, scopes: Seq[String])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[String]] = {
-    val js            = Json.parse(serviceAccountJsonContent)
-    val clientEmail   = (js \ "client_email")
-      .asOpt[String]
-      .getOrElse(return Future.failed(new RuntimeException("no client_email in SA json")))
-    val privateKeyPem = (js \ "private_key")
-      .asOpt[String]
-      .getOrElse(return Future.failed(new RuntimeException("no private_key in SA json")))
+    val js = Json.parse(serviceAccountJsonContent)
+
+    (for {
+      clientEmail   <- (js \ "client_email").asOpt[String].toRight("no client_email in SA json")
+      privateKeyPem <- (js \ "private_key").asOpt[String].toRight("no private_key in SA json")
+    } yield (clientEmail, privateKeyPem)) match {
+      case Left(error) => Future.failed(new RuntimeException(error))
+      case Right((clientEmail, privateKeyPem)) => processToken(clientEmail, privateKeyPem, scopes)
+    }
+  }
+
+  private def processToken(clientEmail: String, privateKeyPem: String, scopes: Seq[String])(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Option[String]] = {
     val now           = Instant.now().getEpochSecond
     val header        = Json.obj("alg" -> "RS256", "typ" -> "JWT")
     val scopeStr      = scopes.mkString(" ")

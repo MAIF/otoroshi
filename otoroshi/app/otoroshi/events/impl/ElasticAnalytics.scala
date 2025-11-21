@@ -703,9 +703,6 @@ object ElasticUtils {
                   r.ignore()
                   if (logger.isDebugEnabled) logger.debug("Otoroshi template updated")
                   ElasticWritesAnalytics.initialized(config, version)
-                case _                             =>
-                  if (logger.isDebugEnabled) logger.debug("Otoroshi template updated")
-                  ElasticWritesAnalytics.initialized(config, version)
               }
               tplCreated.map(_ => ())
             case 404 =>
@@ -718,9 +715,6 @@ object ElasticUtils {
                   logger.error("Error creating template", e)
                 case Success(r)                    =>
                   r.ignore()
-                  if (logger.isDebugEnabled) logger.debug("Otoroshi template created")
-                  ElasticWritesAnalytics.initialized(config, version)
-                case _                             =>
                   if (logger.isDebugEnabled) logger.debug("Otoroshi template created")
                   ElasticWritesAnalytics.initialized(config, version)
               }

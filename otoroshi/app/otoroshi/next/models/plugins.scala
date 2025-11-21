@@ -498,7 +498,6 @@ case class NgContextualPlugins(
                   (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper(Seq(wrap, plug)))
                 case NgPluginWrapper.NgMergedPreRoutingPluginWrapper(plugins) =>
                   (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper(plugins :+ plug))
-                case _                                                        => (true, coll :+ plug)
               }
             } else {
               (false, coll :+ plug)
@@ -536,7 +535,6 @@ case class NgContextualPlugins(
                   (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(Seq(wrap, plug)))
                 case NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(plugins) =>
                   (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(plugins :+ plug))
-                case _                                                             => (true, coll :+ plug)
               }
             } else {
               (false, coll :+ plug)

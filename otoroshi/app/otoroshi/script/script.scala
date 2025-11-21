@@ -111,8 +111,6 @@ trait NamedPlugin { self =>
                 Json.obj(prefix + key -> Json.obj("type" -> "string", "props" -> Json.obj("label" -> (prefix + key))))
               case (key, JsNumber(_))              =>
                 Json.obj(prefix + key -> Json.obj("type" -> "number", "props" -> Json.obj("label" -> (prefix + key))))
-              case (key, JsBoolean(_))             =>
-                Json.obj(prefix + key -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + key))))
               case (key, JsArray(values))          =>
                 if (values.isEmpty) {
                   Json.obj(prefix + key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key))))
@@ -150,6 +148,8 @@ trait NamedPlugin { self =>
                 )
               case ("not", JsBoolean(_))           =>
                 Json.obj(prefix + "not" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + "not"))))
+              case (key, JsBoolean(_))             =>
+                Json.obj(prefix + key -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + key))))
               case (key, JsObject(_))              =>
                 Json.obj(prefix + key -> Json.obj("type" -> "object", "props" -> Json.obj("label" -> (prefix + key))))
               case (key, JsNull)                   => Json.obj()

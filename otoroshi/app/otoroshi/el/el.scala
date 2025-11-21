@@ -69,7 +69,8 @@ object GlobalExpressionLanguage {
   private def jsValueToString(value: JsValue): String = value match {
     case JsString(s)       => s
     case JsNumber(s)       => s.toString()
-    case JsBoolean(s)      => s.toString()
+    case JsTrue            => "true"
+    case JsFalse           => "false"
     case JsNull            => "null"
     case obj @ JsObject(_) => obj.stringify
     case arr @ JsArray(_)  => arr.stringify

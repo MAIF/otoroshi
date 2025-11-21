@@ -457,7 +457,7 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
               "headers"   -> response.headers
                 .map {
                   case (key, value) if value.size == 1 => Json.obj(key -> value.headOption.map(JsString.apply))
-                  case (key, value) if value.size > 1  => Json.obj(key -> JsArray(value.map(JsString.apply)))
+                  case (key, value)                    => Json.obj(key -> JsArray(value.map(JsString.apply)))
                 }
                 .foldLeft(Json.obj())(_ ++ _),
               "bodyTxt"   -> bodyTxt,

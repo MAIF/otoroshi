@@ -2334,8 +2334,10 @@ object ApiKeyHelper {
         case Some(message) =>
           val key = "apikey_rejection_reason"
           attrs.update(otoroshi.plugins.Keys.ExtraAnalyticsDataKey) {
-            case Some(obj@JsObject(_)) => obj ++ Json.obj(key -> message)
-            case Some(other) => other
+            case Some(value) => value match {
+              case obj @ JsObject(_) => obj ++ Json.obj(key -> message)
+              case other => other
+            }
             case None => Json.obj(key -> message)
           }
       }

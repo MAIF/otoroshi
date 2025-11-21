@@ -588,7 +588,7 @@ case class JWKSAlgoSettings(
                   s"jwks cache 1 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}"
                 )
                 FastFuture.successful(algoFromJwk(alg, jwk))
-              case None      =>
+              case _      =>
                 logger.error(s"jwks cache 1 - requested: ${kid}/${alg} - not found")
                 FastFuture.successful(None)
             }

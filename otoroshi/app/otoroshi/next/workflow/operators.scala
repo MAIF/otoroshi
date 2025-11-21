@@ -167,7 +167,7 @@ class MapRenameOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                                 => value.at(path.get).asValue
         }
       }
     }
@@ -216,7 +216,7 @@ class MapLengthOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                                 => value.at(path.get).asValue
         }
       }
     }
@@ -255,7 +255,7 @@ class MapIsEmptyOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                             => value.at(path.get).asValue
         }
       }
     }
@@ -294,7 +294,7 @@ class ArrayIsEmptyOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -333,7 +333,7 @@ class ArrayDistinctOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -372,7 +372,7 @@ class ArrayReverseOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -413,7 +413,7 @@ class ArrayTakeOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -454,7 +454,7 @@ class ArrayDropOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -495,7 +495,7 @@ class ArrayJoinOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -534,7 +534,7 @@ class ArrayLengthOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -573,7 +573,7 @@ class ArrayInitOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -612,7 +612,7 @@ class ArrayTailOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -651,7 +651,7 @@ class ArrayHeadOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -2131,8 +2131,7 @@ class ContainsOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     (container match {
@@ -2186,8 +2185,7 @@ class IsTruthyOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     (value match {
@@ -2242,8 +2240,7 @@ class IsFalsyOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     val res            = value match {
@@ -2365,8 +2362,7 @@ class JsonParseOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2475,8 +2471,7 @@ class MapGetOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2543,8 +2538,7 @@ class MapDelOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2615,8 +2609,7 @@ class MapPutOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2681,8 +2674,7 @@ class ArrayAppendOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     // println("array_append", value)
@@ -2745,8 +2737,7 @@ class ArrayPrependOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2808,8 +2799,7 @@ class ArrayDelOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2870,8 +2860,7 @@ class ArrayAtOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2942,8 +2931,7 @@ class ArrayPageOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -3007,8 +2995,7 @@ class ProjectionOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     otoroshi.utils.Projection.project(value, blueprint, identity)

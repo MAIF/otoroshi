@@ -616,17 +616,9 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
 
         eventualDescriptors
           .map(_.filter(d => ctx.canUserRead(d)))
-          .map {
-            case seq: Seq[ServiceDescriptor] => Some(seq)
-            case Nil                         => None
-          }
-          .flatMap {
-            case Some(desc) =>
-              analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
-                case Some(value) => Ok(value)
-                case None        => NotFound(Json.obj("error" -> "No entity found"))
-              }
-            case None       => NotFound(Json.obj("error" -> "No entity found")).future
+          .flatMap { desc =>
+            analyticsService.fetchServicesStatus(desc, fromDate, toDate)
+              .map(_.map(Ok.apply).getOrElse(NotFound(Json.obj("error" -> "No entity found"))))
           }
       }
     }
@@ -669,17 +661,9 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
               .filter(d => d.healthCheck.enabled)
               .sortWith(_.name < _.name)
           )
-          .map {
-            case seq: Seq[ServiceDescriptor] => Some(seq)
-            case Nil                         => None
-          }
-          .flatMap {
-            case None       => NotFound(Json.obj("error" -> "No entity found")).future
-            case Some(desc) =>
-              analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
-                case Some(value) => Ok(value)
-                case None        => NotFound(Json.obj("error" -> "No entity found"))
-              }
+          .flatMap { desc =>
+            analyticsService.fetchServicesStatus(desc, fromDate, toDate)
+              .map(_.map(Ok.apply).getOrElse(NotFound(Json.obj("error" -> "No entity found"))))
           }
       }
     }

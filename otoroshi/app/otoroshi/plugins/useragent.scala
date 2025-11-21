@@ -55,7 +55,7 @@ object UserAgentHelper {
   def userAgentDetails(ua: String)(using env: Env): Future[Option[JsObject]] = {
     env.metrics.withTimer("otoroshi.plugins.useragent.details") {
       cache.getIfPresent(ua) match {
-        case details @ Some(_) => details.flatten.future
+        case Some(value)       => value.future
         case None              =>
           ensureInitialized().map { parser =>
           Try(parser.parse(ua)) match {
@@ -68,7 +68,6 @@ object UserAgentHelper {
           }
           cache.getIfPresent(ua).flatten
         }
-        case _                                      => None .future
       }
     }
   }

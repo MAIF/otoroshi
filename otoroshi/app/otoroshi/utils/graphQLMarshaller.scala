@@ -77,7 +77,7 @@ object JsonMarshaller extends PlayJsonSupportLowPrioImplicits {
 
     override def isScalarNode(node: JsValue): Boolean = node match {
       case _: JsValue => true
-      case _          => false
+      case null       => false
     }
 
     override def isVariableNode(node: JsValue): Boolean = false

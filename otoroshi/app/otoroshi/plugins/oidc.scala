@@ -248,7 +248,6 @@ class OIDCAccessTokenValidator extends AccessValidator {
                 case _ if !promise.isCompleted => promise.trySuccess(false)
               }
             promise.future
-          case _                             => FastFuture.successful(true)
         }
       }
 
@@ -356,7 +355,6 @@ class OIDCAccessTokenAsApikey extends PreRouting {
                 Results.Ok("--").right.future
               }
               .map(_ => ())
-          case _                             => ().future
         }
       }
 

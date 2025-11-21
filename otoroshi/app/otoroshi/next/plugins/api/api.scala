@@ -1389,7 +1389,6 @@ object WebsocketMessage {
       case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
-      case _                                                                      => ByteString.empty.future
     }
     override def str()(using m: Materializer, ec: ExecutionContext): Future[String]       = data match {
       case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.future
@@ -1400,7 +1399,6 @@ object WebsocketMessage {
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
           .map(_.utf8String)
-      case _                                                                      => "".future
     }
 
     override def size()(using m: Materializer, ec: ExecutionContext): Future[Int] = data match {
@@ -1412,7 +1410,6 @@ object WebsocketMessage {
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
           .map(_.size)
-      case _                                                                      => 0.future
     }
 
     override def isBinary: Boolean = !data.isText
@@ -1429,7 +1426,6 @@ object WebsocketMessage {
           source
             .runFold(ByteString.empty)((concat, str) => concat ++ str)
             .map(data => PlayWSBinaryMessage(data))
-        case other                                                                  => throw new RuntimeException(s"Unkown message type $other")
       }
     }
     override def asAkka(using env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message] = {

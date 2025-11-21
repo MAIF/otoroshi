@@ -709,20 +709,6 @@ object implicits {
       }
     }
 
-    def findFirstSome[B](f: A => Option[B]): Option[B] = {
-      if (seq.isEmpty) {
-        None
-      } else {
-        for (a <- seq) {
-          val res = f(a)
-          if (res.isDefined) {
-            return res
-          }
-        }
-        None
-      }
-    }
-
     def mapAsync[O](f: Function[A, Future[O]])(using ec: ExecutionContext): Future[Seq[O]] = {
       AsyncUtils.mapAsyncF[A, O](seq)(f)
     }

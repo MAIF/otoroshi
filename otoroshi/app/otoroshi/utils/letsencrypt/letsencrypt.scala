@@ -270,6 +270,7 @@ object LetsEncryptHelper {
           .map {
             case (host, Left(err)) => logger.error(s"Error while creating let's encrypt certificate for $host. $err")
             case (host, Right(_))  => logger.info(s"Successfully created let's encrypt certificate for $host")
+            case () => logger.error(s"Unexpected Result while creating let's encrypt certificate.")
           }
           .runWith(Sink.ignore)
           .map(_ => ())
