@@ -66,8 +66,17 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Allow HTTP Methods" in {
       new AllowHTTPMethodsTests(this)
     }
-    "Apikeys" in {
-      new ApikeysTests(this)
+    "Apikeys - default" in {
+      new ApikeysTests(this).default()
+    }
+    "Apikeys - passApikeyToBackend" in {
+      new ApikeysTests(this).passApikeyToBackend()
+    }
+    "Apikeys - passApikeyToBackend with custom headers" in {
+      new ApikeysTests(this).passApikeyToBackendWithCustomHeaders()
+    }
+    "Apikeys - mandatory" in {
+      new ApikeysTests(this).notMandatory()
     }
     "Additional headers in" in {
       new AdditionalHeadersInTests(this)
