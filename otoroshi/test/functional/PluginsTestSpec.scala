@@ -411,5 +411,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "GraphQL Composer - permissions" in {
       new GraphQLBackendTests(this).permissions()
     }
+    "Swagger UI Plugin" in {
+      new SwaggerUIPluginTests(this).run()
+    }
   }
 }
