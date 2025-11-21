@@ -333,7 +333,6 @@ case class ApiKey(
       val matchNoneRole: Boolean = !Option(routing.noneTagIn)
         .filter(_.nonEmpty)
         .exists(tags => this.tags.findOne(tags))
-
       val matchOneMeta: Boolean  = Option(routing.oneMetaIn.toSeq)
         .filter(_.nonEmpty)
         .forall(metas => this.metadata.toSeq.findOne(metas))

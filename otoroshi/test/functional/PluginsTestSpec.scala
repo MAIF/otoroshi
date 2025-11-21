@@ -49,6 +49,30 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikeys - mandatory" in {
       new ApikeysTests(this).notMandatory()
     }
+    "Apikeys - matchOneTagIn" in {
+      new ApikeysTests(this).matchOneTagIn()
+    }
+    "Apikeys - matchAllTagsIn" in {
+      new ApikeysTests(this).matchAllTagsIn()
+    }
+    "Apikeys - matchOneMetaIn" in {
+      new ApikeysTests(this).matchOneMetaIn()
+    }
+    "Apikeys - matchAllMetaIn" in {
+      new ApikeysTests(this).matchAllMetaIn()
+    }
+    "Apikeys - respectNoneMetaIn" in {
+      new ApikeysTests(this).respectNoneMetaIn()
+    }
+    "Apikeys - matchOneMetaKeyIn" in {
+      new ApikeysTests(this).matchOneMetaKeyIn()
+    }
+    "Apikeys - matchAllMetaKeysIn" in {
+      new ApikeysTests(this).matchAllMetaKeysIn()
+    }
+    "Apikeys - respectNoneMetaKeysIn" in {
+      new ApikeysTests(this).respectNoneMetaKeysIn()
+    }
     "Additional headers in" in {
       new AdditionalHeadersInTests(this)
     }
