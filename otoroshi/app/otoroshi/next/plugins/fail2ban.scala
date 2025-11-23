@@ -58,9 +58,8 @@ case class Fail2BanConfig(
     if (urlRegex.isEmpty) true
     else {
       urlRegex.find(_.matches(pathAndQuery)) match {
-        case None                                              => true
-        case Some(rule) if rule.mode.equalsIgnoreCase("allow") => true
         case Some(rule) if rule.mode.equalsIgnoreCase("block") => false
+        case _                                                 => true
       }
     }
   }

@@ -947,27 +947,17 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
                 WorkflowError(s"caught exception on task '${id}' at step: '${path.id}'", None, Some(t), id.some).left
               }
             }
-        )
-        .map { seq =>
-          val hasError = seq.exists(_.isLeft)
-          if (hasError) {
+        ).map(_.partitionMap(identity)).map {
+          case (errors, _) if errors.nonEmpty =>
             Left(
               WorkflowError(
-                "at least on path has failed",
-                Json
-                  .obj(
-                    "errors" -> JsArray(seq.collect { case Left(err) =>
-                      err.json
-                    })
-                  )
-                  .some,
+                "at least one path has failed",
+                Json.obj("errors" -> JsArray(errors.map(_.json))).some,
                 None,
                 id.some
               )
             )
-          } else {
-            Right(JsArray(seq.map(_.right.get)))
-          }
+          case (_, successes) => Right(JsArray(successes))
         }
     }
   }

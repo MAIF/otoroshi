@@ -1071,7 +1071,7 @@ class ReactivePgRedis(
         s"select mvalue from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;",
         Seq(key)
       ) { row =>
-        row.optJsObject("mvalue").map(_.value.mapValues(v => v.asString.byteString).toMap)
+        row.optJsObject("mvalue").map(_.value.view.mapValues(v => v.asString.byteString).toMap)
       }.map(_.getOrElse(Map.empty[String, ByteString]))
     }
 

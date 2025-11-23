@@ -69,7 +69,7 @@ class NgHtmlPatcher extends NgRequestTransformer {
           ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
         val isGzip        = ctx.otoroshiResponse.headers.getIgnoreCase("Content-Encoding").contains("gzip")
         val processedBody = if (isGzip) {
-          ctx.otoroshiResponse.body.via(GzipFlow.gunzip())
+          ctx.otoroshiResponse.body.via(GzipFlow.gzipDecompress())
         } else {
           ctx.otoroshiResponse.body
         }

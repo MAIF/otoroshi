@@ -191,9 +191,9 @@ class MemoryGetFunction extends WorkflowFunction {
     val name  = args.select("name").asString
     val path  = args.select("path").asOptString
     val value = wfr.memory.get(name) match {
-      case None                          => JsNull
-      case Some(value) if path.isEmpty   => value
-      case Some(value) if path.isDefined => value.at(path.get).asValue
+      case None                        => JsNull
+      case Some(value) if path.isEmpty => value
+      case Some(value)                 => value.at(path.get).asValue
     }
     value.rightf
   }

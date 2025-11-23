@@ -602,7 +602,7 @@ object Cert {
                       }
                     } else {
                       logger.info(s"Successfully created certificate for $host")
-                      FastFuture.successful(cert)
+                      FastFuture.successful(cert: Unit)
                     }
                   }
                   .andThen { case _ =>

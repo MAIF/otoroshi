@@ -106,7 +106,7 @@ class HMACValidator extends NgAccessValidator {
           authorizationHeader match {
             case Some(authorization) if ctx.request.headers.get(authorization).isDefined =>
               checkHMACSignature(ctx.request.headers.get(authorization).get, ctx, secret)
-            case None                                                                    =>
+            case _                                                                       =>
               (ctx.request.headers.get("Authorization"), ctx.request.headers.get("Proxy-Authorization")) match {
                 case (Some(authorization), None) => checkHMACSignature(authorization, ctx, secret)
                 case (None, Some(authorization)) => checkHMACSignature(authorization, ctx, secret)

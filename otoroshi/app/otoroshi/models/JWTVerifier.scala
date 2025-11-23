@@ -605,7 +605,7 @@ case class JWKSAlgoSettings(
                 logger.error(s"jwks cache 2 - requested: ${kid}/${alg} - not found")
                 FastFuture.successful(None)
             }
-          case None                                                           => fetchJWKS(alg, kid, System.currentTimeMillis() + ttl.toMillis, Map.empty)
+          case _                                                               => fetchJWKS(alg, kid, System.currentTimeMillis() + ttl.toMillis, Map.empty)
         }
       case _                         =>
         logger.error(s"jwks asAlgorithmF - not an input mode: ${mode}")

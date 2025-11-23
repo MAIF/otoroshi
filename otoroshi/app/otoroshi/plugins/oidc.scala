@@ -656,9 +656,10 @@ case class OIDCThirdPartyApiKeyConfig(
                                         }
                                     }
                                 }) flatMap { apiKey =>
-                                  (quotasEnabled match {
-                                    case true  => apiKey.withinQuotasAndRotation()
-                                    case false => FastFuture.successful(true)
+                                  (if (quotasEnabled) {
+                                    apiKey.withinQuotasAndRotation()
+                                  } else {
+                                    FastFuture.successful(true)
                                   }).flatMap {
                                     case true  =>
                                       if (localVerificationOnly) {

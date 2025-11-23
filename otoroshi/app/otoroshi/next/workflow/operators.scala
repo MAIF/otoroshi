@@ -9,6 +9,7 @@ import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 
 import scala.jdk.CollectionConverters.given
+import scala.collection.immutable
 
 object WorkflowOperatorsInitializer {
   def initDefaults(): Unit = {
@@ -120,9 +121,9 @@ class MergeObjectsOperator extends WorkflowOperator {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None                          => Seq.empty
-          case Some(value) if path.isEmpty   => value.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-          case Some(value) if path.isDefined => value.at(path.get).asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          case None                        => Seq.empty
+          case Some(value) if path.isEmpty => value.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          case Some(value)                 => value.at(path.get).asOpt[Seq[JsObject]].getOrElse(Seq.empty)
         }
       }
     }
@@ -176,11 +177,10 @@ class MapRenameOperator extends WorkflowOperator {
         val old_key = opts.select("old_key").asString
         val new_key = opts.select("new_key").asString
         obj.get(old_key) match {
-          case None            => JsObject(obj - old_key)
-          case Some(old_value) => {
-            val map = obj - old_key + (new_key -> old_value)
+          case None            => JsObject(obj)
+          case Some(old_value) =>
+            val map = obj.view.filterKeys(_ != old_key).toMap + (new_key -> old_value)
             JsObject(map)
-          }
         }
       }
       case _             => JsNull

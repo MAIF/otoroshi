@@ -478,7 +478,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
             } else if (response.status == 403) {
               CachedVaultSecretStatus.SecretReadForbidden
             } else {
-              CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+              CachedVaultSecretStatus.SecretReadError(response.status.toString + " - " + response.body)
             }
           }
           .recover { case e: Throwable =>
@@ -537,7 +537,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
             // GOOGLE_APPLICATION_CREDENTIALS env var
             sys.env.get("GOOGLE_APPLICATION_CREDENTIALS") match {
               case Some(value) if new File(value).exists() => Files.readString(new File(value).toPath).some
-              case None                                    => {
+              case _                                       => {
                 // well known file
                 val wellKnownFile = getWellKnownCredentialsFile()
                 println(wellKnownFile.getAbsolutePath)

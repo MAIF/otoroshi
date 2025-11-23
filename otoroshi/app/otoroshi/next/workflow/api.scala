@@ -579,7 +579,7 @@ object WorkflowOperator {
     case JsString("${memory}")                                                            => wfr.memory.json
     case JsString("${resume_token}")                                                      => PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env).json
     case JsString(str) if str.startsWith("${") && str.endsWith("}") && str.contains("||") =>
-      str.substring(2).init.split("\\|\\|").toStream.map(_.trim).filter(_.nonEmpty).map { part =>
+      str.substring(2).init.split("\\|\\|").view.map(_.trim).filter(_.nonEmpty).map { part =>
         val parts = part.split("\\.").toSeq
         val name = parts.head
         val path = if (parts.size > 1) Some(parts.tail.mkString(".")) else None
@@ -615,7 +615,7 @@ object WorkflowOperator {
     case JsString(str) if str.contains("${") && str.contains("}")                         =>
       val res = pattern.replaceAllIn(str, m => {
         val expr = m.group(1).trim
-        val value = expr.split("\\|\\|").toStream.map(_.trim).filter(_.nonEmpty).map { part =>
+        val value = expr.split("\\|\\|").view.map(_.trim).filter(_.nonEmpty).map { part =>
           val parts = part.split("\\.").toSeq
           val name = parts.head
           val path = if (parts.size > 1) Some(parts.tail.mkString(".")) else None

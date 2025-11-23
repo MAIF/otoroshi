@@ -255,7 +255,7 @@ class SwaggerUIPlugin extends NgBackendCall {
 
   private def isValidUrl(url: String): Boolean = {
     Try {
-      val u = new java.net.URL(url)
+      val u = new java.net.URI(url).toURL
       u.getProtocol == "http" || u.getProtocol == "https"
     }.getOrElse(false)
   }
