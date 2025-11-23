@@ -25,6 +25,7 @@ import moment from 'moment';
 import semver from 'semver';
 
 import { ApiStats } from './ApiStats';
+import { Documentation } from './Documentation';
 import { PublisDraftModalContent, queryClient } from '../../components/Drafts/DraftEditor';
 import { mergeData } from '../../components/Drafts/Compare/utils';
 import { useSignalValue } from 'signals-react-safe';
@@ -169,7 +170,7 @@ export default function ApiEditor(props) {
   );
 }
 
-function useDraftOfAPI() {
+export function useDraftOfAPI() {
   const params = useParams();
   const version = useSignalValue(signalVersion);
 
@@ -2144,65 +2145,6 @@ function Deployments(props) {
   );
 }
 
-function Documentation(props) {
-
-  const params = useParams();
-  const { item, updateItem } = useDraftOfAPI();
-  const [code, setCode] = useState('');
-  const [newItem, setNewItem] = useState(null);
-
-  useEffect(() => {
-    if (item && code === '') {
-      setCode(JSON.stringify(item.documentation, null, 2));
-    }
-  }, [item]);
-
-  const updateDoc = () => {
-    return updateItem({ ...item, documentation: newItem });
-  }
-
-  if (!item) return <SimpleLoader />;
-  return (
-    <>
-      <PageTitle title="Documentation" {...props}>
-        <FeedbackButton
-          type="success"
-          className="d-flex ms-auto"
-          onPress={updateDoc}
-          text={
-            <div className="d-flex align-items-center">
-              Update <VersionBadge size="xs" />
-            </div>
-          }
-        />
-      </PageTitle>
-      <MonacoEditor
-        height={window.innerHeight - 140}
-        width="100%"
-        theme="vs-dark"
-        defaultLanguage="json"
-        value={code}
-        options={{
-          automaticLayout: true,
-          selectOnLineNumbers: true,
-          minimap: { enabled: true },
-          lineNumbers: true,
-          glyphMargin: false,
-          folding: true,
-          lineDecorationsWidth: 0,
-          lineNumbersMinChars: 0,
-        }}
-        onChange={(newValue) => {
-          try {
-            setNewItem(JSON.parse(newValue));
-          } catch (e) {
-          }
-        }}
-      />
-    </>
-  )
-}
-
 function SidebarWithVersion({ params, state }) {
   const queryParams = new URLSearchParams(window.location.search);
   const queryVersion =
@@ -3264,7 +3206,7 @@ function Informations(props) {
   );
 }
 
-function VersionBadge({ size, className }) {
+export function VersionBadge({ size, className }) {
   const version = useSignalValue(signalVersion);
   return (
     <div
