@@ -129,37 +129,61 @@ class ResponseBodyLengthLimiter extends NgRequestTransformer {
   override def configFlow: Seq[String]                     = BodyLengthLimiterConfig.configFlow
   override def configSchema: Option[JsObject]              = BodyLengthLimiterConfig.configSchema
 
+  private def chunkResponse(ctx: NgTransformerResponseContext, max: Long) = {
+    val counter = new AtomicLong(0L)
+
+//    val newBody = ctx.otoroshiResponse.body.takeWhile { chunk =>
+//      val size = counter.addAndGet(chunk.size)
+//      size < max
+//    }
+    val newBody = ctx.otoroshiResponse.body.prefixAndTail(1).flatMapConcat { case (headSeq, tail) =>
+      val headChunk = headSeq.head
+      val remaining = max - counter.get()
+      val first     = if (headChunk.size > remaining) headChunk.take(remaining.toInt) else headChunk
+      counter.addAndGet(first.size)
+      Source.single(first) ++ tail.takeWhile { chunk =>
+        counter.addAndGet(chunk.size) < max
+      }
+    }
+
+    val updatedHeaders = ctx.otoroshiResponse.headers
+      .removeAll(Seq("Content-Length"))
+
+    Right(
+      ctx.otoroshiResponse.copy(
+        body = newBody,
+        headers = updatedHeaders
+      )
+    ).vfuture
+  }
+
   override def transformResponse(
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config    = ctx.cachedConfig(internalName)(BodyLengthLimiterConfig.format).getOrElse(BodyLengthLimiterConfig())
     val max: Long = config.maxLength.getOrElse(4 * 1024 * 1024)
-    ctx.otoroshiResponse.contentLength match {
-      case Some(contentLength) if config.fail && contentLength > max =>
-        Errors
-          .craftResponseResult(
-            "Response entity too large",
-            Results.EntityTooLarge,
-            ctx.request,
-            None,
-            Some("errors.failed.response.entityTooLarge"),
-            duration = ctx.report.getDurationNow(),
-            overhead = ctx.report.getOverheadInNow(),
-            attrs = ctx.attrs,
-            maybeRoute = ctx.route.some
-          )
-          .map(_.left)
-      case _ if config.fail                                          => {
-        Right(ctx.otoroshiResponse.copy(body = ctx.otoroshiResponse.body.limitWeighted(max)(_.size))).vfuture
+
+    if (config.fail) {
+      ctx.otoroshiResponse.contentLength match {
+        case Some(contentLength) if contentLength > max =>
+          Errors
+            .craftResponseResult(
+              "Response entity too large",
+              Results.EntityTooLarge,
+              ctx.request,
+              None,
+              Some("errors.failed.response.entityTooLarge"),
+              duration = ctx.report.getDurationNow(),
+              overhead = ctx.report.getOverheadInNow(),
+              attrs = ctx.attrs,
+              maybeRoute = ctx.route.some
+            )
+            .map(_.left)
+        case _                                          =>
+          Right(ctx.otoroshiResponse.copy(body = ctx.otoroshiResponse.body.limitWeighted(max)(_.size))).vfuture
       }
-      case _                                                         => {
-        val counter = new AtomicLong(0L)
-        Right(ctx.otoroshiResponse.copy(body = ctx.otoroshiResponse.body.takeWhile { chunk =>
-          val size = counter.addAndGet(chunk.size)
-          size < max
-        })).vfuture
-      }
-    }
+    } else
+      chunkResponse(ctx, max)
   }
 }
 
