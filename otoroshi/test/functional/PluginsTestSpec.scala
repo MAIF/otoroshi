@@ -427,5 +427,14 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Response Body length limiter - chunk body" in {
       new ResponseBodyLengthLimiterTests(this).chunkBody()
     }
+    "Request Body length limiter - valid call" in {
+      new RequestBodyLengthLimiterTests(this).validCall()
+    }
+    "Request Body length limiter - too big body" in {
+      new RequestBodyLengthLimiterTests(this).tooBigBody()
+    }
+    "Request Body length limiter - chunk body" in {
+      new RequestBodyLengthLimiterTests(this).chunkBody()
+    }
   }
 }
