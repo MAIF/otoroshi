@@ -1,6 +1,8 @@
 package otoroshi.utils
 
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.workflow.{WorkFlowOperator, WorkFlowTaskContext}
@@ -184,19 +186,40 @@ object Projection {
             case ("$remove", JsBoolean(true))                 => {
               dest = dest - key
             }
+            case ("$date_from_unix_fmt", obj @ JsObject(_)) => {
+              val path  = (obj \ "path").as[String]
+              val pattern = (obj \ "pattern").asOpt[String].getOrElse("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+              val formatted: JsValue = source.at(path).asOpt[Long].map(v => new DateTime(v).toString(DateTimeFormat.forPattern(pattern)).json).getOrElse(JsNull)
+              dest = dest ++ Json.obj(key -> formatted)
+            }
+            case ("$date_from_unix_fmt", JsString(field)) => {
+              val formatted: JsValue = source.at(field).asOpt[Long].map(v => new DateTime(v).toString(DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")).json).getOrElse(JsNull)
+              dest = dest ++ Json.obj(key -> formatted)
+            }
             case ("$at", JsString(searchPath))                => {
               dest = dest ++ Json.obj(key -> source.at(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
+            }
+            case ("$at", obj @ JsObject(_))                => {
+              val searchPath = (obj \ "path").as[String]
+              val default = (obj \ "default").asOpt[JsValue].getOrElse(JsNull).as[JsValue]
+              dest = dest ++ Json.obj(key -> source.at(searchPath).asOpt[JsValue].getOrElse(default).as[JsValue])
             }
             case ("$atIf", spec: JsObject)                    => {
               val path       = (spec \ "path").as[String]
               val predPath   = (spec \ "predicate" \ "at").as[String]
               val predValue  = (spec \ "predicate" \ "value").as[JsValue]
+              val default = (spec \ "default").asOpt[JsValue].getOrElse(JsNull).as[JsValue]
               val atPredPath = source.at(predPath)
               if (atPredPath.isDefined && atPredPath.as[JsValue] == predValue) {
                 dest = dest ++ Json.obj(key -> source.at(path).as[JsValue])
               } else {
-                dest = dest ++ Json.obj(key -> JsNull)
+                dest = dest ++ Json.obj(key -> default)
               }
+            }
+            case ("$pointer", obj @ JsObject(_))           => {
+              val searchPath = (obj \ "path").as[String]
+              val default = (obj \ "default").asOpt[JsValue].getOrElse(JsNull).as[JsValue]
+              dest = dest ++ Json.obj(key -> source.atPointer(searchPath).asOpt[JsValue].getOrElse(default).as[JsValue])
             }
             case ("$pointer", JsString(searchPath))           => {
               dest = dest ++ Json.obj(key -> source.atPointer(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
@@ -205,12 +228,18 @@ object Projection {
               val path       = (spec \ "path").as[String]
               val predPath   = (spec \ "predicate" \ "pointer").as[String]
               val predValue  = (spec \ "predicate" \ "value").as[JsValue]
+              val default = (spec \ "default").asOpt[JsValue].getOrElse(JsNull).as[JsValue]
               val atPredPath = source.atPointer(predPath)
               if (atPredPath.isDefined && atPredPath.as[JsValue] == predValue) {
                 dest = dest ++ Json.obj(key -> source.atPointer(path).as[JsValue])
               } else {
-                dest = dest ++ Json.obj(key -> JsNull)
+                dest = dest ++ Json.obj(key -> default)
               }
+            }
+            case ("$path", obj @ JsObject(_))              => {
+              val searchPath = (obj \ "path").as[String]
+              val default = (obj \ "default").asOpt[JsValue].getOrElse(JsNull).as[JsValue]
+              dest = dest ++ Json.obj(key -> source.atPath(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
             }
             case ("$path", JsString(searchPath))              => {
               dest = dest ++ Json.obj(key -> source.atPath(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
@@ -219,16 +248,18 @@ object Projection {
               val path       = (spec \ "path").as[String]
               val predPath   = (spec \ "predicate" \ "path").as[String]
               val predValue  = (spec \ "predicate" \ "value").as[JsValue]
+              val default = (spec \ "default").asOpt[JsValue].getOrElse(JsNull).as[JsValue]
               val atPredPath = source.atPath(predPath)
               if (atPredPath.isDefined && atPredPath.as[JsValue] == predValue) {
                 dest = dest ++ Json.obj(key -> source.atPath(path).as[JsValue])
               } else {
-                dest = dest ++ Json.obj(key -> JsNull)
+                dest = dest ++ Json.obj(key -> default)
               }
             }
             case ("$header", spec: JsObject)                  => {
               val path       = (spec \ "path").as[String]
               val headerName = (spec \ "name").as[String].toLowerCase()
+              val default = (spec \ "default").asOpt[JsValue].getOrElse(JsNull).as[JsValue]
               val headers    = source.at(path).as[JsArray]
               val header     = headers.value
                 .find { header =>
@@ -236,7 +267,7 @@ object Projection {
                   name == headerName
                 }
                 .map(_.select("value").as[JsString])
-                .getOrElse(JsNull)
+                .getOrElse(default)
               dest = dest ++ Json.obj(key -> header)
             }
             case ("$includeAllKeysMatching", JsArray(values)) => {
