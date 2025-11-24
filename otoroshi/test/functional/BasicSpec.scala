@@ -1,22 +1,18 @@
 package functional
 
-import java.util.Date
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import otoroshi.models.{SecComVersion, ServiceDescriptor, Target}
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.joda.time.DateTime
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatestplus.play.PlaySpec
-import play.api.Configuration
-import play.api.libs.json.{JsObject, Json}
-import play.api.libs.ws.DefaultBodyReadables.readableAsString
+import otoroshi.models.{SecComVersion, ServiceDescriptor, Target}
 import otoroshi.security.IdGenerator
+import play.api.Configuration
+import play.api.libs.json.Json
+import play.api.libs.ws.DefaultBodyReadables.readableAsString
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Try}
 
 class BasicSpec() extends OtoroshiSpec {
@@ -1201,7 +1197,7 @@ class BasicSpec() extends OtoroshiSpec {
 
     // FIXME there seem to be a side effect between the above test and this one, therefore we use a different subdomain
     "Validate sec. communication in V2" in {
-      import java.util.{Base64 => JavaBase64}
+      import java.util.Base64 as JavaBase64
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
       val server  = TargetService

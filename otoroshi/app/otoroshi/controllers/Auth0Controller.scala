@@ -376,10 +376,7 @@ class AuthController(
                   case redirectTo                  =>
                     val encodedRedirectTo =
                       Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
-                    val url               =
-                      new java.net.URL(
-                        redirectTo
-                      ) // new java.net.URL(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
+                    val url               = new java.net.URI(redirectTo).toURL
                     val host               = url.getHost
                     val scheme             = url.getProtocol
                     val setCookiesRedirect = url.getPort match {
@@ -492,10 +489,7 @@ class AuthController(
                     // TODO - check if ref is needed
                     val encodedRedirectTo =
                       Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
-                    val url               =
-                      new java.net.URL(
-                        redirectTo
-                      ) //s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
+                    val url                = new java.net.URI(redirectTo).toURL
                     val host               = url.getHost
                     val scheme             = url.getProtocol
                     val setCookiesRedirect = url.getPort match {

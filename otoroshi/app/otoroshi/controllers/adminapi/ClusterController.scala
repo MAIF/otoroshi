@@ -279,7 +279,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(using
           case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
           case Worker =>
             ctx.request.body
-              .via(env.clusterConfig.gunzip())
+              .via(env.clusterConfig.gzipDecompress())
               .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
               .mapAsync(4) { item =>
                 val jsItem = Json.parse(item.utf8String)
@@ -307,7 +307,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(using
                   bytesCounter.addAndGet(bs.size)
                   bs
                 })
-                .via(env.clusterConfig.gunzip())
+                .via(env.clusterConfig.gzipDecompress())
                 .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
                 .mapAsync(4) { item =>
                   val jsItem = Json.parse(item.utf8String)

@@ -340,8 +340,8 @@ case class ClusterConfig(
   def name: String                                    = if (mode.isOff) "standalone" else if (mode.isLeader) leader.name else worker.name
   def gzip(): Flow[ByteString, ByteString, NotUsed]   =
     if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
-  def gunzip(): Flow[ByteString, ByteString, NotUsed] =
-    if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
+  def gzipDecompress(): Flow[ByteString, ByteString, NotUsed] =
+    if (compression == -1) Flow.apply[ByteString] else Compression.gzipDecompress()
   def json: JsValue                                   = Json.obj(
     "mode"         -> mode.json,
     "compression"  -> compression,
@@ -2282,7 +2282,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val responseBody =
                   if (env.clusterConfig.streamed) resp.bodyAsSource else Source.single(resp.bodyAsBytes)
                 responseBody
-                  .via(env.clusterConfig.gunzip())
+                  .via(env.clusterConfig.gzipDecompress())
                   .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, allowTruncation = true))
                   .alsoTo(Sink.foreach { item =>
                     if (env.clusterConfig.backup.instanceCanWrite) {
@@ -2583,7 +2583,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
           csm.state
             .chunks(64 * 1024)
-            .via(env.clusterConfig.gunzip())
+            .via(env.clusterConfig.gzipDecompress())
             .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
             .alsoTo(Sink.foreach { item =>
               if (env.clusterConfig.backup.instanceCanWrite) {
@@ -2769,7 +2769,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               debug(s"uncompressing strict at level ${env.clusterConfig.compression}")
               data
                 .chunks(1024 * 32)
-                .via(config.gunzip())
+                .via(config.gzipDecompress())
                 .runFold(ByteString.empty)(_ ++ _)
                 .map(data => onClusterState(data.utf8String, streamed = false, compressed = true))
             case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>

@@ -659,9 +659,9 @@ case class OIDCThirdPartyApiKeyConfig(
                                   (if (quotasEnabled) {
                                     apiKey.withinQuotasAndRotation()
                                   } else {
-                                    FastFuture.successful(true)
+                                    FastFuture.successful((true, None))
                                   }).flatMap {
-                                    case true  =>
+                                    case (true, _)  =>
                                       if (localVerificationOnly) {
                                         f(Some(apiKey)).fright[Result]
                                       } else {
@@ -724,7 +724,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                               }
                                         }
                                       }
-                                    case false =>
+                                    case (false, _) =>
                                       Errors
                                         .craftResponseResult(
                                           "You performed too much requests",

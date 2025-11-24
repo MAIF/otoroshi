@@ -56,7 +56,7 @@ class NettySniSslContext(sslContext: QuicSslContext, host: String, port: Int) ex
     sslContext.newEngine(alloc, peerHost, peerPort)
   override def isClient: Boolean                                                                  = sslContext.isClient
   override def cipherSuites(): util.List[String]                                                  = sslContext.cipherSuites()
-  @SuppressWarnings(Array("deprecation")) // todo needs to be removed when the underlying method is also removed
+  @SuppressWarnings(Array("Deprecation")) // todo needs to be removed when the underlying method is also removed
   override def applicationProtocolNegotiator(): ApplicationProtocolNegotiator =
     sslContext.applicationProtocolNegotiator()
   override def sessionContext(): QuicSslSessionContext                        = sslContext.sessionContext()
