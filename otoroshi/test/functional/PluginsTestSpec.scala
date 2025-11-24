@@ -447,5 +447,29 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Swagger UI Plugin" in {
       new SwaggerUIPluginTests(this).run()
     }
+    "Response Body length limiter - valid call" in {
+      new ResponseBodyLengthLimiterTests(this).validCall()
+    }
+    "Response Body length limiter - too big body" in {
+      new ResponseBodyLengthLimiterTests(this).tooBigBody()
+    }
+    "Response Body length limiter - chunk body" in {
+      new ResponseBodyLengthLimiterTests(this).chunkBody()
+    }
+    "Request Body length limiter - valid call" in {
+      new RequestBodyLengthLimiterTests(this).validCall()
+    }
+    "Request Body length limiter - too big body" in {
+      new RequestBodyLengthLimiterTests(this).tooBigBody()
+    }
+    "Request Body length limiter - chunk body" in {
+      new RequestBodyLengthLimiterTests(this).chunkBody()
+    }
+    "Wasm Access Control - good" in {
+      new WasmAccessControlTests(this).good()
+    }
+    "Wasm Access Control - bad" in {
+      new WasmAccessControlTests(this).bad()
+    }
   }
 }
