@@ -61,9 +61,11 @@ case class IndexSettings(
     clientSide: Boolean = true,
     numberOfShards: Int = 1,
     numberOfReplicas: Int = 1,
+    action: String = "index",
     interval: IndexSettingsInterval = IndexSettingsInterval.Day
 ) {
   def json: JsValue = Json.obj(
+    "action"           -> action,
     "clientSide"       -> clientSide,
     "interval"         -> interval.json,
     "numberOfShards"   -> numberOfShards,
@@ -81,6 +83,7 @@ object IndexSettings {
   val format = new Format[IndexSettings] {
     override def reads(json: JsValue): JsResult[IndexSettings] = Try {
       IndexSettings(
+        action = json.select("action").asOpt[String].getOrElse("index"),
         clientSide = json.select("clientSide").asOpt[Boolean].getOrElse(true),
         numberOfShards = json.select("numberOfShards").asOpt[Int].getOrElse(1),
         numberOfReplicas = json.select("numberOfReplicas").asOpt[Int].getOrElse(1),

@@ -878,7 +878,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     val indexWithDate           = if (config.indexSettings.clientSide) s"$index-$df" else index
     val indexClause             = Json.stringify(
       Json.obj(
-        "index" -> Json
+        config.indexSettings.action -> Json
           .obj("_index" -> indexWithDate)
           .applyOnIf(version.underSeven)(_ ++ Json.obj("_type" -> `type`))
       )

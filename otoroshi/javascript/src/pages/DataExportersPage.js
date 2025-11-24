@@ -939,6 +939,7 @@ const possibleExporterConfigFormValues = {
       'checkConnection',
       '>>>Index settings',
       'indexSettings.clientSide',
+      'indexSettings.action',
       'indexSettings.interval',
       'indexSettings.numberOfShards',
       'indexSettings.numberOfReplicas',
@@ -1016,6 +1017,10 @@ const possibleExporterConfigFormValues = {
       'indexSettings.clientSide': {
         type: 'bool',
         props: { label: 'Client side temporal indexes handling' },
+      },
+      'indexSettings.action': {
+        type: 'string',
+        props: { label: 'Bulk action' },
       },
       'indexSettings.interval': {
         type: 'select',
