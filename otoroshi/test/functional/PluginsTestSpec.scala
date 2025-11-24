@@ -436,5 +436,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Request Body length limiter - chunk body" in {
       new RequestBodyLengthLimiterTests(this).chunkBody()
     }
+    "Wasm Access Control - good" in {
+      new WasmAccessControlTests(this).good()
+    }
+    "Wasm Access Control - bad" in {
+      new WasmAccessControlTests(this).bad()
+    }
   }
 }
