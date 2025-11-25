@@ -259,7 +259,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       env.datastores.globalConfigDataStore
         .latest()
         .tlsSettings
-        .trustedCAsServer
+        .trustedCAsServerWithLocalCAs(env)
         .flatMap(id => env.proxyState.certificate(id))
         .flatMap(certToJson)
     )

@@ -1499,12 +1499,12 @@ object DynamicSSLEngineProvider {
     val ctxClient                                         = setupContext(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1534,12 +1534,12 @@ object DynamicSSLEngineProvider {
     val ctxClient                                         = setupContext(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1552,12 +1552,12 @@ object DynamicSSLEngineProvider {
     val ctxClient                                         = setupContext(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)

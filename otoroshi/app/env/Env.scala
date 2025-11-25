@@ -1346,6 +1346,12 @@ class Env(
     version <- Option(System.getProperty("os.version"))
   } yield OS(name, version, arch)).getOrElse(OS.default)
 
+  val serverTrustedCAs: Seq[String] = {
+    val local = configuration.getOptional[Seq[String]]("otoroshi.ssl.trust.server_cas").getOrElse(Seq.empty)
+    val localStr = configuration.getOptional[String]("otoroshi.ssl.trust.server_cas_str").map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+    (local ++ localStr).distinct
+  }
+
   timeout(300.millis).andThen { case _ =>
     implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
 
@@ -1363,7 +1369,6 @@ class Env(
       logger.info(s"Running Otoroshi Worker agent !")
       clusterAgent.startF()
     }
-
     val modernTlsProtocols: Seq[String] =
       configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty)
     val protocolsJDK11: Seq[String]     =

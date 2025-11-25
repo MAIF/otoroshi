@@ -484,6 +484,10 @@ case class TlsSettings(
     clientAuth: ClientAuth = ClientAuth.None,
 )                  {
   def json: JsValue = TlsSettings.format.writes(this)
+  def trustedCAsServerWithLocalCAs(env: Env): Seq[String] = {
+    val global = trustedCAsServer
+    (global ++ env.serverTrustedCAs).distinct
+  }
 }
 object TlsSettings {
   val format = new Format[TlsSettings] {
