@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import org.joda.time.{DateTime, LocalTime}
+import org.joda.time.{DateTime, DateTimeZone, LocalTime}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
@@ -53,7 +53,7 @@ object TimeRestrictedAccessPluginConfigRule {
   }
 }
 
-case class TimeRestrictedAccessPluginConfig(rules: Seq[TimeRestrictedAccessPluginConfigRule] = Seq.empty)
+case class TimeRestrictedAccessPluginConfig(rules: Seq[TimeRestrictedAccessPluginConfigRule] = Seq.empty, timezone: Option[String] = None)
     extends NgPluginConfig {
   def json: JsValue = TimeRestrictedAccessPluginConfig.format.writes(this)
 
@@ -67,7 +67,8 @@ object TimeRestrictedAccessPluginConfig {
         .asOpt[Seq[JsObject]]
         .map(_.flatMap(o => TimeRestrictedAccessPluginConfigRule.format.reads(o).asOpt))
         .getOrElse(Seq.empty)
-      TimeRestrictedAccessPluginConfig(rules)
+      val timezone = json.select("timezone").asOptString.filter(_.trim.nonEmpty)
+      TimeRestrictedAccessPluginConfig(rules, timezone)
     } match {
       case Success(config) => JsSuccess(config)
       case Failure(e)      => JsError(e.getMessage)
@@ -75,15 +76,21 @@ object TimeRestrictedAccessPluginConfig {
 
     override def writes(o: TimeRestrictedAccessPluginConfig): JsValue = {
       Json.obj(
-        "rules" -> JsArray(o.rules.map(_.json))
+        "rules" -> JsArray(o.rules.map(_.json)),
+        "timezone" -> o.timezone.map(_.json).getOrElse(JsNull).asValue
       )
     }
   }
   val configFlow: Seq[String]        = Seq(
-    "rules"
+    "timezone",
+    "rules",
   )
   val configSchema: Option[JsObject] = Some(
     Json.obj(
+      "timezone" -> Json.obj(
+        "type" -> "string",
+        "label" -> "Timezone",
+      ),
       "rules" -> Json.obj(
         "type"   -> "array",
         "array"  -> true,
@@ -127,7 +134,11 @@ class TimeRestrictedAccessPlugin extends NgAccessValidator {
       .cachedConfig(internalName)(TimeRestrictedAccessPluginConfig.format)
       .getOrElse(TimeRestrictedAccessPluginConfig())
     val exists = config.rules.find { rule =>
-      val nowUtc = DateTime.now()
+      val timezone = config.timezone.flatMap(tz => Try(DateTimeZone.forID(tz)).toOption)
+      val nowUtc = timezone match {
+        case None => DateTime.now()
+        case Some(tz) => DateTime.now(tz)
+      }
       val dayOk  = rule.dayOk(nowUtc)
       val timeOk = rule.timeOk(nowUtc)
       dayOk && timeOk
