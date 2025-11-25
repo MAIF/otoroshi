@@ -94,13 +94,18 @@ case object ClientAuthNeed extends ClientAuth {
   def name: String                    = "Need"
   def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Need
 }
+case object ClientAuthDynamic extends ClientAuth {
+  def name: String                    = "Dynamic"
+  def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Need
+}
 object ClientAuth {
 
   val None = ClientAuthNone
   val Want = ClientAuthWant
   val Need = ClientAuthNeed
+  val Dynamic = ClientAuthDynamic
 
-  def values: Seq[ClientAuth] = Seq(None, Want, Need)
+  def values: Seq[ClientAuth] = Seq(None, Want, Need, Dynamic)
   def apply(name: String): Option[ClientAuth] = {
     name.toLowerCase match {
       case "None" => Some(None)
@@ -109,6 +114,8 @@ object ClientAuth {
       case "want" => Some(Want)
       case "Need" => Some(Need)
       case "need" => Some(Need)
+      case "Dynamic" => Some(Dynamic)
+      case "dynamic" => Some(Dynamic)
       case _      => scala.None
     }
   }
@@ -1798,12 +1805,13 @@ object DynamicSSLEngineProvider {
   def base64Decode(base64: String): Array[Byte] = Base64.getMimeDecoder.decode(base64.getBytes(US_ASCII))
 
   def createSSLEngine(
-      clientAuth: ClientAuth,
+      _clientAuth: ClientAuth,
       cipherSuites: Option[Seq[String]],
       protocols: Option[Seq[String]],
       appProto: Option[String],
       env: => Env
   ): SSLEngine = {
+    // println(s"create ssl engine: clientAuth: ${_clientAuth}")
     val context: SSLContext    = DynamicSSLEngineProvider.currentServer
     if (logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine              = context.createSSLEngine()
@@ -1818,6 +1826,14 @@ object DynamicSSLEngineProvider {
     )
     val sslParameters          = new SSLParameters
     val matchers               = new java.util.ArrayList[SNIMatcher]()
+
+    val clientAuth = _clientAuth match {
+      case ClientAuth.Dynamic => env.datastores.globalConfigDataStore
+        .latestSafe.map(_.tlsSettings.clientAuth)
+        .getOrElse(_clientAuth)
+        //.debug(ca => println(s"Dynamic SSL client auth: ${ca}"))
+      case _ => _clientAuth
+    }
 
     engine.setUseClientMode(false)
     clientAuth match {

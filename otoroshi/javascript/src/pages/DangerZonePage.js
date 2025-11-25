@@ -1230,6 +1230,18 @@ export class DangerZonePage extends Component {
         mode: 'json',
       },
     },
+    'tlsSettings.clientAuth': {
+      type: 'select',
+      props: {
+        label: 'Mutual TLS mode',
+        help: 'Enables mTLS on the server SSL Engine',
+        possibleValues: [
+          { label: 'None', value: 'None' },
+          { label: 'Want', value: 'Want' },
+          { label: 'Need', value: 'Need' },
+        ]
+      },
+    },
     templates: {
       type: 'code',
       props: {
@@ -1343,6 +1355,7 @@ export class DangerZonePage extends Component {
     'tlsSettings.includeJdkCaServer',
     'tlsSettings.includeJdkCaClient',
     'tlsSettings.trustedCAsServer',
+    'tlsSettings.clientAuth',
     'tlsSettings.bannedAlpnProtocols',
     '>>>Auto Generate Certificates',
     'autoCert.enabled',

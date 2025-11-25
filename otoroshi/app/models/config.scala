@@ -12,7 +12,7 @@ import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
 import otoroshi.script.plugins.Plugins
 import otoroshi.security.IdGenerator
-import otoroshi.ssl.{Cert, ClientCertificateValidator}
+import otoroshi.ssl.{Cert, ClientAuth, ClientCertificateValidator}
 import otoroshi.storage.BasicStore
 import otoroshi.tcp.TcpService
 import otoroshi.utils.RegexPool
@@ -480,7 +480,8 @@ case class TlsSettings(
     includeJdkCaServer: Boolean = true,
     includeJdkCaClient: Boolean = true,
     trustedCAsServer: Seq[String] = Seq.empty,
-    bannedAlpnProtocols: Map[String, Seq[String]] = Map.empty
+    bannedAlpnProtocols: Map[String, Seq[String]] = Map.empty,
+    clientAuth: ClientAuth = ClientAuth.None,
 )                  {
   def json: JsValue = TlsSettings.format.writes(this)
 }
@@ -493,7 +494,8 @@ object TlsSettings {
         "includeJdkCaServer"  -> o.includeJdkCaServer,
         "includeJdkCaClient"  -> o.includeJdkCaClient,
         "trustedCAsServer"    -> JsArray(o.trustedCAsServer.map(JsString.apply)),
-        "bannedAlpnProtocols" -> o.bannedAlpnProtocols
+        "bannedAlpnProtocols" -> o.bannedAlpnProtocols,
+        "clientAuth"          -> o.clientAuth.name,
       )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
@@ -504,7 +506,8 @@ object TlsSettings {
           includeJdkCaServer = (json \ "includeJdkCaServer").asOpt[Boolean].getOrElse(true),
           includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
           trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty),
-          bannedAlpnProtocols = (json \ "bannedAlpnProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty)
+          bannedAlpnProtocols = (json \ "bannedAlpnProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty),
+          clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).filterNot(_ == ClientAuth.Dynamic).getOrElse(ClientAuth.None),
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)

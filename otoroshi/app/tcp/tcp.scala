@@ -324,7 +324,7 @@ object TcpService {
                 }
                 Tcp().outgoingConnectionWithTls(
                   remoteAddress,
-                  () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None, None, env)
+                  () => DynamicSSLEngineProvider.createSSLEngine(service.clientAuth, None, None, None, env)
                 )
               }
               case false => {
@@ -487,7 +487,7 @@ object TcpService {
                       }
                       Tcp().outgoingConnectionWithTls(
                         remoteAddress,
-                        () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None, None, env)
+                        () => DynamicSSLEngineProvider.createSSLEngine(service.clientAuth, None, None, None, env)
                       )
                     }
                     case false => {
