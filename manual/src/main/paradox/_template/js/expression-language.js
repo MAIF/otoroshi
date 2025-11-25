@@ -732,6 +732,14 @@ document.addEventListener("DOMContentLoaded", function () {
           result: '{"foo": 1}',
         },
         {
+          name: "$date_from_unix_fmt",
+          doc: `{"<field>": { "$date_from_unix_fmt": {"path":"<source>", "pattern": "<pattern>"}}}`,
+          description: 'Formats a unix timestamp into a stringified datetime',
+          expression: `{"@timestamp": { "$date_from_unix_fmt": {"path":"@timestamp", "pattern": "yyyy-MM-dd'T'HH:mm:ss.SSSZ"}}}`,
+          data: '{"@timestamp": 1764086514458}',
+          result: '{"@timestamp": "2025-11-25T17.00.00.000Z"}',
+        },
+        {
           name: "$at",
           doc: `{"<target>": {"$at": "<location>"}}`,
           description: "Values <target> with value <at> location",
@@ -740,8 +748,16 @@ document.addEventListener("DOMContentLoaded", function () {
           result: '{"h1": "1"}',
         },
         {
+          name: "$at",
+          doc: `{"<target>": {"$at": { "path":"<location>", "default": "<default_value>"}}}`,
+          description: "Values <target> with value <at> location",
+          expression: '{"h1": {"$at": { "path":"headers.3.value", "default": "foo" }}',
+          data: '{"headers": [{"key": 1, "value": "1"}, {"key": 2, "value": "2"}]}',
+          result: '{"h3": "foo"}',
+        },
+        {
           name: "$atIf",
-          doc: `{"<target>": {"$atIf": {"path": "<path>", "predicate": {"at": "<at>", "value": "<value>"}}}}`,
+          doc: `{"<target>": {"$atIf": {"path": "<path>", "predicate": {"at": "<at>", "value": "<value>"}, "default": "<default_value>"}}}`,
           description:
             "Put <path> value in <target> if value at <at> match <value>",
           expression: `{"r": {
@@ -760,7 +776,7 @@ document.addEventListener("DOMContentLoaded", function () {
         {
           name: "$pointer",
           doc: `{"<target>": {"$pointer": "<jsonPointer>"}}`,
-          description: `Allow to get a json value using JSON pointer spec`,
+          description: `Allow to get a json value using JSON pointer spec. "<jsonPointer>" can be an object with "path" and "default"`,
           expression: `{
                           "h1": {
                             "$pointer": "/headers/0/value"
@@ -771,7 +787,7 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         {
           name: "$pointerIf",
-          doc: `{"<target>": {"$pointerIf": {"path": "<path>", "predicate": {"pointer": "<pointer>", "value": "<value>"}}}}`,
+          doc: `{"<target>": {"$pointerIf": {"path": "<path>", "predicate": {"pointer": "<pointer>", "value": "<value>"}, "default": "<default_value>"}}}`,
           description: `Put value at <path> in <target> field if and only if value at <pointer> equals <value>. <path> and <pointer> fields are resolved using json pointer spec.`,
           expression: `{
                           "h1": {
@@ -790,7 +806,7 @@ document.addEventListener("DOMContentLoaded", function () {
         {
           name: "$path",
           doc: `{"<target>": {"$path": "<jsonPath>"}}`,
-          description: `Put value located at <jsonPath> in <target>. <jsonPath> is resolved using json path specification.`,
+          description: `Put value located at <jsonPath> in <target>. <jsonPath> is resolved using json path specification. . "<jsonPath>" can be an object with "path" and "default"`,
           expression: `{
                          "hs": {
                            "$path": "$.headers[1:]"
@@ -827,7 +843,7 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         {
           name: "$pathIf",
-          doc: `{"<target>": {"$pathIf": {"path": "<jsonPath>", "predicate": {"path": "<predicateJsonPath>", "value": "<value>"}}}}`,
+          doc: `{"<target>": {"$pathIf": {"path": "<jsonPath>", "predicate": {"path": "<predicateJsonPath>", "value": "<value>"}, "default": "<default_value>"}}}`,
           description: `Put value located at <jsonPath> in <target>, if and only if value at <predicateJsonPath> equals <value>.`,
           expression: `{
                           "test": {
@@ -1116,7 +1132,8 @@ document.addEventListener("DOMContentLoaded", function () {
                   "<target>": {
                     "$header": {
                       "path": "<path>",
-                      "name": "<name>"
+                      "name": "<name>",
+                      "default": "<default_value>"
                     }
                   }
                 }`,
