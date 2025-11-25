@@ -442,5 +442,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Wasm Access Control - bad" in {
       new WasmAccessControlTests(this).bad()
     }
+    "Wasm Backend" in {
+      new WasmBackendTests(this)
+    }
   }
 }
