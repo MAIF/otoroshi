@@ -1020,7 +1020,8 @@ This plugin returns 128 Gb of 0 to the ip addresses is in the list
 ```json
 {
   "finger" : false,
-  "addresses" : [ ]
+  "addresses" : [ ],
+  "is_debug" : false
 }
 ```
 
@@ -3274,6 +3275,8 @@ This plugin only let allowed users pass
   "email_domains" : [ ],
   "metadata_match" : [ ],
   "metadata_not_match" : [ ],
+  "otoroshi_data_match" : [ ],
+  "otoroshi_data_not_match" : [ ],
   "profile_match" : [ ],
   "profile_not_match" : [ ]
 }
@@ -5148,7 +5151,7 @@ Note: replacement supports backrefs $1, $2, ...
 
 ### Defined on steps
 
-  - `TransformRequest`
+  - `TransformResponse`
 
 ### Plugin reference
 
@@ -5949,6 +5952,49 @@ This plugin returns static responses
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SwaggerUIPlugin }
+
+## Swagger UI
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.SwaggerUIPlugin`
+
+### Description
+
+Serves a Swagger UI page from a configurable OpenAPI specification URL
+
+
+
+### Default configuration
+
+```json
+{
+  "swagger_url" : "",
+  "title" : "",
+  "swagger_ui_version" : "5.30.2",
+  "filter" : true,
+  "show_models" : false,
+  "display_operation_id" : false,
+  "show_extensions" : false,
+  "layout" : "BaseLayout",
+  "sort_tags" : "alpha",
+  "sort_ops" : "alpha",
+  "theme" : "default"
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.TailscaleSelectTargetByName }
 
 ## Tailscale select target by name
@@ -6031,8 +6077,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-11-13T09:21:27.056Z",
-  "stop" : "2025-11-14T09:21:27.077Z",
+  "start" : "2025-11-25T16:07:43.254Z",
+  "stop" : "2025-11-26T16:07:43.277Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
@@ -6068,7 +6114,8 @@ This plugin restrict when a route is accessible
 
 ```json
 {
-  "rules" : [ ]
+  "rules" : [ ],
+  "timezone" : null
 }
 ```
 
