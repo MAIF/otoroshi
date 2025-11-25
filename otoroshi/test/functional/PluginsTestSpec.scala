@@ -469,5 +469,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Redirection" in {
       new RedirectionTests(this)
     }
+    "Endless HTTP responses" in {
+      new EndlessHTTPresponsesTests(this)
+    }
   }
 }

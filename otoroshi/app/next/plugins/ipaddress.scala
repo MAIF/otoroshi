@@ -137,8 +137,11 @@ class IpAddressBlockList extends NgAccessValidator {
   }
 }
 
-case class NgEndlessHttpResponseConfig(finger: Boolean = false, addresses: Seq[String] = Seq.empty)
-    extends NgPluginConfig {
+case class NgEndlessHttpResponseConfig(
+    finger: Boolean = false,
+    addresses: Seq[String] = Seq.empty,
+    isDebug: Boolean = false
+) extends NgPluginConfig {
   def json: JsValue = NgEndlessHttpResponseConfig.format.writes(this)
 }
 
@@ -147,14 +150,15 @@ object NgEndlessHttpResponseConfig {
     override def reads(json: JsValue): JsResult[NgEndlessHttpResponseConfig] = Try {
       NgEndlessHttpResponseConfig(
         addresses = json.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty),
-        finger = json.select("finger").asOpt[Boolean].getOrElse(false)
+        finger = json.select("finger").asOpt[Boolean].getOrElse(false),
+        isDebug = json.select("is_debug").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: NgEndlessHttpResponseConfig): JsValue             =
-      Json.obj("finger" -> o.finger, "addresses" -> o.addresses)
+      Json.obj("finger" -> o.finger, "addresses" -> o.addresses, "is_debug" -> o.isDebug)
   }
 }
 
@@ -182,12 +186,12 @@ class EndlessHttpResponse extends NgRequestTransformer {
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val remoteAddress                                  = ctx.request.theIpAddress
+    val remoteAddress                                           = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
     // val finger = ctx.config.select("finger").asOpt[Boolean].getOrElse(false)
-    val NgEndlessHttpResponseConfig(finger, addresses) =
+    val NgEndlessHttpResponseConfig(finger, addresses, isDebug) =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgEndlessHttpResponseConfig())
-    val shouldPass                                     = if (addresses.nonEmpty) {
+    val shouldPass                                              = if (addresses.nonEmpty) {
       addresses.exists { ip =>
         if (ip.contains("/")) {
           IpFiltering.cidr(ip).contains(remoteAddress)
@@ -196,7 +200,7 @@ class EndlessHttpResponse extends NgRequestTransformer {
         }
       }
     } else {
-      false
+      isDebug
     }
     if (shouldPass) {
       val gigas: Long            = 128L * 1024L * 1024L * 1024L
@@ -206,12 +210,13 @@ class EndlessHttpResponse extends NgRequestTransformer {
       val zeros                  = ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
       val characters: ByteString = if (finger) fingerCharacter else zeros
       val expected: Long         = (gigas / characters.size) + 1L
+      val count                  = if (isDebug) 1 else expected
       val result                 = Status(200)
         .sendEntity(
           HttpEntity.Streamed(
             Source
               .repeat(characters)
-              .take(expected), // 128 Go of zeros or fingers
+              .take(count), // 128 Go of zeros or fingers
             None,
             Some("application/octet-stream")
           )
