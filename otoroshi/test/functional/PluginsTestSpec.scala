@@ -463,5 +463,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Wasm Websocket transformer" in {
       new WasmWebsocketTransformerTests(this)
     }
+    "X-Forwarded-* headers" in {
+      new XForwardedHeadersTests(this)
+    }
   }
 }
