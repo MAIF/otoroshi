@@ -460,5 +460,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Wasm Route Matcher" in {
       new WasmRouteMatcherTests(this)
     }
+    "Wasm Websocket transformer" in {
+      new WasmWebsocketTransformerTests(this)
+    }
   }
 }
