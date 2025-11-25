@@ -11,7 +11,7 @@ import otoroshi.wasm.WasmConfig
 import play.api.http.Status
 import play.api.libs.json._
 
-class WasmResponseTransformerTests(parent: PluginsTestSpec) {
+class WasmRouteMatcherTests(parent: PluginsTestSpec) {
 
   import parent._
 
@@ -22,12 +22,12 @@ class WasmResponseTransformerTests(parent: PluginsTestSpec) {
         plugin = NgPluginHelper.pluginId[OverrideHost]
       ),
       NgPluginInstance(
-        plugin = NgPluginHelper.pluginId[WasmResponseTransformer],
+        plugin = NgPluginHelper.pluginId[WasmRouteMatcher],
         config = NgPluginInstanceConfig(
           WasmConfig(
-            source = WasmSource(WasmSourceKind.File, "./test/resources/wasm/response-1.0.0-dev.wasm", Json.obj()),
+            source = WasmSource(WasmSourceKind.File, "./test/resources/wasm/route-matcher-1.0.0-dev.wasm", Json.obj()),
             config = Map.empty,
-            functionName = "transform".some,
+            functionName = "match".some,
             wasi = true,
             allowedHosts = Seq.empty,
             allowedPaths = Map.empty
@@ -45,9 +45,15 @@ class WasmResponseTransformerTests(parent: PluginsTestSpec) {
     .get()
     .futureValue
 
-  getOutHeader(resp, "otoroshi_wasm_plugin_id").contains("OTOROSHI_WASM_RESPONSE_TRANSFORMER") mustBe true
-  Json.parse(resp.body) mustBe Json.obj("foo" -> "bar")
-  resp.status mustBe Status.OK
+  resp.status mustBe Status.NOT_FOUND
+
+  val authorize = ws
+    .url(s"http://127.0.0.1:$port/")
+    .withHttpHeaders("Host" -> route.frontend.domains.head.domain, "foo" -> "bar")
+    .get()
+    .futureValue
+
+  authorize.status mustBe Status.OK
 
   deleteOtoroshiRoute(route).futureValue
 }
