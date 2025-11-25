@@ -454,5 +454,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Wasm Request Transformer" in {
       new WasmRequestTransformerTests(this)
     }
+    "Wasm Response Transformer" in {
+      new WasmResponseTransformerTests(this)
+    }
   }
 }
