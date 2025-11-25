@@ -466,5 +466,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "X-Forwarded-* headers" in {
       new XForwardedHeadersTests(this)
     }
+    "Redirection" in {
+      new RedirectionTests(this)
+    }
   }
 }
