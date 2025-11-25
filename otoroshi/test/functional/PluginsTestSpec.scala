@@ -448,5 +448,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Open Policy Agent (OPA)" in {
       new WasmOPATests(this)
     }
+    "Wasm Pre Route" in {
+      new WasmPreRouteTests(this)
+    }
   }
 }
