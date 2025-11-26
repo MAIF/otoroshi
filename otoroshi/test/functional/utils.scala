@@ -46,6 +46,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Random, Success, Try}
 import otoroshi.utils.syntax.implicits._
+import otoroshi.wasm.proxywasm.CorazaWafConfig
 import play.api.http.Status
 
 trait AddConfiguration {
@@ -1307,6 +1308,24 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       }
   }
 
+  def createOtoroshiWAF(
+      coraza: CorazaWafConfig,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(coraza.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
   def createOtoroshiRoute(
       route: NgRoute,
       customPort: Option[Int] = None,
@@ -1511,6 +1530,23 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .put(Json.stringify(route.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def deleteOtoroshiWAF(
+      coraza: CorazaWafConfig,
+      customPort: Option[Int] = None
+  ): Future[(JsValue, Int)] = {
+    ws.url(
+      s"http://localhost:${customPort.getOrElse(port)}/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs/${coraza.id}"
+    ).withHttpHeaders(
+      "Host"         -> "otoroshi-api.oto.tools",
+      "Content-Type" -> "application/json"
+    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
       .map { resp =>
         (resp.json, resp.status)
       }

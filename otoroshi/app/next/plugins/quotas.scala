@@ -164,10 +164,10 @@ class ApikeyQuotas extends NgAccessValidator {
     // increments calls for apikey
     ctx.attrs
       .get(otoroshi.plugins.Keys.ApiKeyKey)
-      .map(_.updateQuotas())
-      .getOrElse(RemainingQuotas().vfuture)
+      .map(_.updateQuotasAndCheck())
+      .getOrElse((RemainingQuotas(), false).vfuture)
       .map { value =>
-        ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> value)
+        ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> value._1)
         NgAccess.NgAllowed
       }
   }

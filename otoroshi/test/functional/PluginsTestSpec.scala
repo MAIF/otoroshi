@@ -472,5 +472,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Endless HTTP responses" in {
       new EndlessHTTPresponsesTests(this)
     }
+    "Coraza WAF" in {
+      new CorazaWAFTests(this)
+    }
   }
 }
