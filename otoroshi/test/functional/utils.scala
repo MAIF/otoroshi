@@ -1635,7 +1635,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
     if (result._2 == Status.CREATED) {
       newRoute
     } else {
-      throw new RuntimeException("failed to create a new route")
+      throw new RuntimeException(s"failed to create a new route - ${result._2} - ${result._1.prettify}")
     }
   }
 
