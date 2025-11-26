@@ -80,16 +80,9 @@ object AnonymousReportingJobConfig {
 
 object AnonymousReportingJob {
 
-  private val ref = new AtomicReference[AnonymousReportingJobConfig](null)/*(AnonymousReportingJobConfig(
-    enabled = true,
-    redirect = false,
-    url = "http://localhost:3456",
-    timeout = 20.seconds,
-    proxy = None,
-    tlsConfig = NgTlsConfig()
-  ))*/
+  private val ref = new AtomicReference[AnonymousReportingJobConfig](null)
   def setProgrammaticConfig(conf: AnonymousReportingJobConfig): Unit = ref.set(conf)
-  def programmaticConfig() = Option(ref.get())
+  def programmaticConfig(): Option[AnonymousReportingJobConfig] = Option(ref.get())
 
   private def avgDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
     (if (value == Double.NaN || value == Double.NegativeInfinity || value == Double.PositiveInfinity) {
