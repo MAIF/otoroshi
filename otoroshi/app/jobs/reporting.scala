@@ -80,7 +80,7 @@ object AnonymousReportingJobConfig {
 
 object AnonymousReportingJob {
 
-  val programmaticConfig = new AtomicReference[AnonymousReportingJobConfig](null)/*(AnonymousReportingJobConfig(
+  private val ref = new AtomicReference[AnonymousReportingJobConfig](null)/*(AnonymousReportingJobConfig(
     enabled = true,
     redirect = false,
     url = "http://localhost:3456",
@@ -88,7 +88,8 @@ object AnonymousReportingJob {
     proxy = None,
     tlsConfig = NgTlsConfig()
   ))*/
-  def programmatic = Option(programmaticConfig.get())
+  def setProgrammaticConfig(conf: AnonymousReportingJobConfig): Unit = ref.set(conf)
+  def programmaticConfig() = Option(ref.get())
 
   private def avgDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
     (if (value == Double.NaN || value == Double.NegativeInfinity || value == Double.PositiveInfinity) {
@@ -470,7 +471,7 @@ class AnonymousReportingJob extends Job {
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val cfg_config = AnonymousReportingJobConfig.fromEnv(env)
-    val prog_config = AnonymousReportingJob.programmatic
+    val prog_config = AnonymousReportingJob.programmaticConfig()
     val config     = prog_config match {
       case Some(programmaticConfig) => programmaticConfig
       case None => cfg_config
