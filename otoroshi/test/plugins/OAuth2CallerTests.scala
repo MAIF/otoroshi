@@ -183,7 +183,7 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
       )
     )
 
-    val createUserResponse = env.Ws
+    env.Ws
       .url(s"$keycloakUrl/admin/realms/master/users")
       .withHttpHeaders(
         "Authorization" -> s"Bearer $adminToken",
@@ -228,8 +228,7 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
               .as[JsObject]
           )
         )
-      ),
-      id = IdGenerator.uuid
+      )
     )
   }
 

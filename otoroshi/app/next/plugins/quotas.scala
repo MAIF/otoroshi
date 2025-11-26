@@ -367,7 +367,7 @@ object NgCustomQuotasConfig {
     )
     override def reads(json: JsValue): JsResult[NgCustomQuotasConfig] = Try {
       NgCustomQuotasConfig(
-        perRoute = json.select("perRoute").asOpt[Boolean].getOrElse(true),
+        perRoute = json.select("per_route").asOpt[Boolean].getOrElse(true),
         global = json.select("global").asOpt[Boolean].getOrElse(false),
         group = json.select("group").asOpt[String],
         expression = json.select("expression").asOpt[String].getOrElse("${req.ip}"),
@@ -444,34 +444,6 @@ class NgCustomQuotas extends NgAccessValidator {
     NgCustomQuotas.updateQuotas(expr, group, increment)
   }
 
-//  private def withingQuotas(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(implicit
-//      ec: ExecutionContext,
-//      env: Env
-//  ): Future[Boolean] = {
-//    for {
-//      day <- withinDailyQuota(ctx, qconf)
-//      mon <- withinMonthlyQuota(ctx, qconf)
-//    } yield  day && mon
-//  }
-//
-//  private def withinDailyQuota(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(implicit
-//      ec: ExecutionContext,
-//      env: Env
-//  ): Future[Boolean] = {
-//    env.datastores.rawDataStore
-//      .get(NgCustomQuotas.dailyQuotaKey(qconf.computeExpression(ctx, env), qconf.computeGroup(ctx, env)))
-//      .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.dailyQuota)
-//  }
-//
-//  private def withinMonthlyQuota(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(implicit
-//      ec: ExecutionContext,
-//      env: Env
-//  ): Future[Boolean] = {
-//    env.datastores.rawDataStore
-//      .get(NgCustomQuotas.monthlyQuotaKey(qconf.computeExpression(ctx, env), qconf.computeGroup(ctx, env)))
-//      .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.monthlyQuota)
-//  }
-
   def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
       .craftResponseResult(
@@ -493,7 +465,7 @@ class NgCustomQuotas extends NgAccessValidator {
 
     updateQuotas(ctx, config)
       .flatMap(quotas => {
-        if (quotas._1 < config.dailyQuota && quotas._2 < config.monthlyQuota) {
+        if (quotas._1 <= config.dailyQuota && quotas._2 <= config.monthlyQuota) {
           NgAccess.NgAllowed.vfuture
         } else {
           forbidden(ctx)
