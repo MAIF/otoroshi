@@ -32,7 +32,7 @@ class HeadersValidationTests(parent: PluginsTestSpec) {
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> route.frontend.domains.head.domain
     )
     .get()
     .futureValue
@@ -42,7 +42,7 @@ class HeadersValidationTests(parent: PluginsTestSpec) {
   val resp2 = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host"       -> PLUGINS_HOST,
+      "Host"       -> route.frontend.domains.head.domain,
       "foo"        -> "bar",
       "bar"        -> "bar",
       "raw_header" -> "raw_value"
@@ -55,7 +55,7 @@ class HeadersValidationTests(parent: PluginsTestSpec) {
   val resp3 = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host"      -> PLUGINS_HOST,
+      "Host"      -> route.frontend.domains.head.domain,
       "foo"       -> "bar",
       "raw_value" -> "bar"
     )

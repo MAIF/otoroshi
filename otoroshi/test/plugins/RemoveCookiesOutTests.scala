@@ -4,6 +4,7 @@ import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins._
+import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
 import play.api.libs.json.JsObject
@@ -11,6 +12,7 @@ import play.api.libs.json.JsObject
 class RemoveCookiesOutTests(parent: PluginsTestSpec) {
   import parent._
 
+  val id    = IdGenerator.uuid
   val route = createRequestOtoroshiIORoute(
     Seq(
       NgPluginInstance(
@@ -22,7 +24,7 @@ class RemoveCookiesOutTests(parent: PluginsTestSpec) {
           AdditionalCookieOutConfig(
             name = "foo",
             value = "bar",
-            domain = PLUGINS_HOST.some
+            domain = s"$id.oto.tools".some
           ).json.as[JsObject]
         )
       ),
@@ -34,13 +36,14 @@ class RemoveCookiesOutTests(parent: PluginsTestSpec) {
           ).json.as[JsObject]
         )
       )
-    )
+    ),
+    id = id
   )
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> route.frontend.domains.head.domain
     )
     .get()
     .futureValue

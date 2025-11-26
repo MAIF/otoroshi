@@ -15,6 +15,7 @@ import otoroshi.next.plugins.{
   OverrideHost
 }
 import otoroshi.security.IdGenerator
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
@@ -37,12 +38,12 @@ class ApikeysTests(parent: PluginsTestSpec) {
       )
     )
 
-    createPluginsRouteApiKeys()
+    createPluginsRouteApiKeys(route.id)
 
     val unknownCaller = ws
       .url(s"http://127.0.0.1:$port/api")
       .withHttpHeaders(
-        "Host" -> PLUGINS_HOST
+        "Host" -> route.frontend.domains.head.domain
       )
       .get()
       .futureValue
@@ -52,21 +53,20 @@ class ApikeysTests(parent: PluginsTestSpec) {
     val authorizedCall = ws
       .url(s"http://127.0.0.1:$port/api")
       .withHttpHeaders(
-        "Host"                   -> PLUGINS_HOST,
-        "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute.clientId,
-        "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute.clientSecret
+        "Host"                   -> route.frontend.domains.head.domain,
+        "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute(route.id).clientId,
+        "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute(route.id).clientSecret
       )
       .get()
       .futureValue
 
     authorizedCall.status mustBe Status.OK
 
-    deletePluginsRouteApiKeys()
+    deletePluginsRouteApiKeys(route.id)
     deleteOtoroshiRoute(route).futureValue
   }
 
   def passApikeyToBackend() = {
-    val id    = IdGenerator.uuid
     val route = createRequestOtoroshiIORoute(
       Seq(
         NgPluginInstance(
@@ -80,9 +80,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
             ).json.as[JsObject]
           )
         )
-      ),
-      domain = s"$id.oto.tools",
-      id
+      )
     )
 
     val apikey = ApiKey(
@@ -112,7 +110,6 @@ class ApikeysTests(parent: PluginsTestSpec) {
   }
 
   def passApikeyToBackendWithCustomHeaders() = {
-    val id    = IdGenerator.uuid
     val route = createRequestOtoroshiIORoute(
       Seq(
         NgPluginInstance(
@@ -133,9 +130,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
             ).json.as[JsObject]
           )
         )
-      ),
-      domain = s"$id.oto.tools",
-      id
+      )
     )
 
     val apikey = ApiKey(
@@ -178,7 +173,6 @@ class ApikeysTests(parent: PluginsTestSpec) {
   }
 
   def notMandatory() = {
-    val id    = IdGenerator.uuid
     val route = createRequestOtoroshiIORoute(
       Seq(
         NgPluginInstance(
@@ -192,9 +186,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
             ).json.as[JsObject]
           )
         )
-      ),
-      domain = s"$id.oto.tools",
-      id
+      )
     )
 
     val apikey = ApiKey(
@@ -252,7 +244,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
           )
         )
       ),
-      domain = s"routing-$id.oto.tools",
+      domain = s"routing-$id.oto.tools".some,
       id
     )
 

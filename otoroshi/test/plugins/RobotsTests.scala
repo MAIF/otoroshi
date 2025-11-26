@@ -38,7 +38,7 @@ class RobotsTests(parent: PluginsTestSpec) {
   val authorizedCall = ws
     .url(s"http://127.0.0.1:$port/robots.txt")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> route.frontend.domains.head.domain
     )
     .get()
     .futureValue
@@ -50,7 +50,7 @@ class RobotsTests(parent: PluginsTestSpec) {
   val htmlResp = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> route.frontend.domains.head.domain
     )
     .get()
     .futureValue

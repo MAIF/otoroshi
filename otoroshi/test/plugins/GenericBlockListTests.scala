@@ -32,7 +32,7 @@ class GenericBlockListTests(parent: PluginsTestSpec) {
   val authorizedCall = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST,
+      "Host" -> route.frontend.domains.head.domain,
       "foo"  -> "bar"
     )
     .get()
@@ -43,7 +43,7 @@ class GenericBlockListTests(parent: PluginsTestSpec) {
   val unauthorizedCall = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST,
+      "Host" -> route.frontend.domains.head.domain,
       "foo"  -> "baz"
     )
     .get()
@@ -54,7 +54,7 @@ class GenericBlockListTests(parent: PluginsTestSpec) {
   val callMissingHeader = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> route.frontend.domains.head.domain
     )
     .get()
     .futureValue

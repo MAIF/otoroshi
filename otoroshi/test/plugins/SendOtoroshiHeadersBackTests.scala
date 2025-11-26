@@ -36,7 +36,7 @@ class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
     clientId = "apikey-test",
     clientSecret = "1234",
     clientName = "apikey-test",
-    authorizedEntities = Seq(RouteIdentifier(PLUGINS_ROUTE_ID)),
+    authorizedEntities = Seq(RouteIdentifier(route.id)),
     rotation = ApiKeyRotation(enabled = true)
   )
 
@@ -45,9 +45,9 @@ class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host"                   -> PLUGINS_HOST,
-      "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute.clientId,
-      "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute.clientSecret
+      "Host"                   -> route.frontend.domains.head.domain,
+      "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute(route.id).clientId,
+      "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute(route.id).clientSecret
     )
     .get()
     .futureValue

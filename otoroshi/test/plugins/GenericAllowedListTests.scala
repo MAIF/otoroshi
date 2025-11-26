@@ -31,7 +31,7 @@ class GenericAllowedListTests(parent: PluginsTestSpec) {
   val authorizedCall = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST,
+      "Host" -> route.frontend.domains.head.domain,
       "foo"  -> "bar"
     )
     .get()
@@ -42,7 +42,7 @@ class GenericAllowedListTests(parent: PluginsTestSpec) {
   val unauthorizedCall = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST,
+      "Host" -> route.frontend.domains.head.domain,
       "foo"  -> "bbar"
     )
     .get()
@@ -53,7 +53,7 @@ class GenericAllowedListTests(parent: PluginsTestSpec) {
   val unauthorizedCallMissingHeader = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> route.frontend.domains.head.domain
     )
     .get()
     .futureValue

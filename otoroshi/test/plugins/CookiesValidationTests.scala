@@ -37,7 +37,7 @@ class CookiesValidationTests(parent: PluginsTestSpec) {
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> route.frontend.domains.head.domain
     )
     .withCookies(
       Seq(
@@ -57,7 +57,7 @@ class CookiesValidationTests(parent: PluginsTestSpec) {
   val invalidCall = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> route.frontend.domains.head.domain
     )
     .get()
     .futureValue

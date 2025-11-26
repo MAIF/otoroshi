@@ -58,16 +58,14 @@ class NgAuthModuleExpectedUserTests(parent: PluginsTestSpec) {
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[AuthModule],
         config = NgPluginInstanceConfig(
-          NgAuthModuleConfig(module = moduleConfiguration.id.some)
-            .json
+          NgAuthModuleConfig(module = moduleConfiguration.id.some).json
             .as[JsObject]
         )
       ),
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[NgAuthModuleExpectedUser],
         config = NgPluginInstanceConfig(
-          NgAuthModuleExpectedUserConfig(onlyFrom = Seq("random"))
-            .json
+          NgAuthModuleExpectedUserConfig(onlyFrom = Seq("random")).json
             .as[JsObject]
         )
       )
@@ -97,25 +95,23 @@ class NgAuthModuleExpectedUserTests(parent: PluginsTestSpec) {
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[AuthModule],
         config = NgPluginInstanceConfig(
-          NgAuthModuleConfig(module = moduleConfiguration.id.some)
-            .json
+          NgAuthModuleConfig(module = moduleConfiguration.id.some).json
             .as[JsObject]
         )
       ),
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[NgAuthModuleExpectedUser],
         config = NgPluginInstanceConfig(
-          NgAuthModuleExpectedUserConfig(onlyFrom = Seq(moduleConfiguration.id))
-            .json
+          NgAuthModuleExpectedUserConfig(onlyFrom = Seq(moduleConfiguration.id)).json
             .as[JsObject]
         )
       )
     ),
-    domain = "authmodule.oto.tools",
+    domain = "authmodule.oto.tools".some,
     id = IdGenerator.uuid
   )
 
-  page       = context.newPage()
+  page = context.newPage()
   page.navigate(s"http://${route2.frontend.domains.head.domain}:$port")
   page.content().contains("GET") mustBe true
 

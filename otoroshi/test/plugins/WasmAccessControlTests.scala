@@ -41,7 +41,7 @@ class WasmAccessControlTests(parent: PluginsTestSpec) {
           )
         )
       ),
-      domain = s"$id.oto.tools",
+      domain = s"$id.oto.tools".some,
       id
     )
 
@@ -82,7 +82,7 @@ class WasmAccessControlTests(parent: PluginsTestSpec) {
           )
         )
       ),
-      domain = s"$id.oto.tools",
+      domain = s"$id.oto.tools".some,
       id
     )
 

@@ -26,12 +26,12 @@ class AdditionalHeadersOutTests(parent: PluginsTestSpec) {
     )
   )
 
-  createPluginsRouteApiKeys()
+  createPluginsRouteApiKeys(route.id)
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> route.frontend.domains.head.domain
     )
     .get()
     .futureValue
@@ -39,6 +39,6 @@ class AdditionalHeadersOutTests(parent: PluginsTestSpec) {
   resp.status mustBe Status.OK
   getOutHeader(resp, "foo") mustBe Some("bar")
 
-  deletePluginsRouteApiKeys()
+  deletePluginsRouteApiKeys(route.id)
   deleteOtoroshiRoute(route).futureValue
 }

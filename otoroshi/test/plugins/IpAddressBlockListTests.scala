@@ -36,7 +36,7 @@ class IpAddressBlockListTests(parent: PluginsTestSpec) {
   val unknownIP = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> route.frontend.domains.head.domain
     )
     .get()
     .futureValue
@@ -46,7 +46,7 @@ class IpAddressBlockListTests(parent: PluginsTestSpec) {
   val allowCall = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host"            -> PLUGINS_HOST,
+      "Host"            -> route.frontend.domains.head.domain,
       "X-Forwarded-For" -> "1.2.3.4"
     )
     .get()

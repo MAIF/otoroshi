@@ -5,7 +5,7 @@ import otoroshi.models.{EntityLocation, ErrorTemplate}
 import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{BuildMode, MaintenanceMode, OverrideHost}
-import otoroshi.utils.syntax.implicits.BetterJsValueReader
+import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json.Json
 
@@ -32,7 +32,7 @@ class CustomErrorTemplateTests(parent: PluginsTestSpec) {
         plugin = NgPluginHelper.pluginId[MaintenanceMode]
       )
     ),
-    domain = "maintenance.oto.tools",
+    domain = "maintenance.oto.tools".some,
     id = "maintenance route"
   )
 
@@ -60,7 +60,7 @@ class CustomErrorTemplateTests(parent: PluginsTestSpec) {
     val resp = ws
       .url(s"http://127.0.0.1:$port/api")
       .withHttpHeaders(
-        "Host"   -> PLUGINS_HOST,
+        "Host"   -> route.frontend.domains.head.domain,
         "Accept" -> "text/html"
       )
       .get()
@@ -72,7 +72,7 @@ class CustomErrorTemplateTests(parent: PluginsTestSpec) {
     val resp2 = ws
       .url(s"http://127.0.0.1:$port/api")
       .withHttpHeaders(
-        "Host" -> PLUGINS_HOST
+        "Host" -> route.frontend.domains.head.domain
       )
       .get()
       .futureValue

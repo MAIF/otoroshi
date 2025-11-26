@@ -5,7 +5,7 @@ import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins._
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader}
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json._
 
@@ -35,7 +35,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
           )
         )
       ),
-      domain = s"$id.oto.tools",
+      domain = s"$id.oto.tools".some,
       id
     )
 
@@ -130,7 +130,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
           )
         )
       ),
-      domain = s"$id.oto.tools",
+      domain = s"$id.oto.tools".some,
       id
     )
 
@@ -205,7 +205,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
           )
         )
       ),
-      domain = s"$id.oto.tools",
+      domain = s"$id.oto.tools".some,
       id
     )
 

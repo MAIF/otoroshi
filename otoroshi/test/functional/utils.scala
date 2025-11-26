@@ -1582,14 +1582,12 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .andWait(2000.millis)
   }
 
-  val PLUGINS_ROUTE_ID = "plugins-route"
-  val PLUGINS_HOST     = "plugins.oto.tools"
-  val LOCAL_HOST       = "local.oto.tools"
+  val LOCAL_HOST = "local.oto.tools"
 
   def createRequestOtoroshiIORoute(
       plugins: Seq[NgPluginInstance] = Seq.empty,
-      domain: String = "plugins.oto.tools",
-      id: String = PLUGINS_ROUTE_ID,
+      domain: Option[String] = None,
+      id: String = IdGenerator.uuid,
       hostname: String = "request.otoroshi.io",
       root: String = "/"
   ): NgRoute = {
@@ -1603,7 +1601,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       capture = false,
       exportReporting = false,
       frontend = NgFrontend(
-        domains = Seq(NgDomainAndPath(domain)),
+        domains = Seq(NgDomainAndPath(domain.getOrElse(s"$id.oto.tools"))),
         headers = Map(),
         cookies = Map(),
         query = Map(),
@@ -1728,20 +1726,20 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
     }
   }
 
-  def createPluginsRouteApiKeys() = {
-    createOtoroshiApiKey(getValidApiKeyForPluginsRoute).futureValue
+  def createPluginsRouteApiKeys(routeId: String) = {
+    createOtoroshiApiKey(getValidApiKeyForPluginsRoute(routeId)).futureValue
   }
 
-  def deletePluginsRouteApiKeys() = {
-    deleteOtoroshiApiKey(getValidApiKeyForPluginsRoute).futureValue
+  def deletePluginsRouteApiKeys(routeId: String) = {
+    deleteOtoroshiApiKey(getValidApiKeyForPluginsRoute(routeId)).futureValue
   }
 
-  def getValidApiKeyForPluginsRoute = {
+  def getValidApiKeyForPluginsRoute(routeId: String) = {
     ApiKey(
       clientId = "apikey-test",
       clientSecret = "1234",
       clientName = "apikey-test",
-      authorizedEntities = Seq(RouteIdentifier(PLUGINS_ROUTE_ID))
+      authorizedEntities = Seq(RouteIdentifier(routeId))
     )
   }
 

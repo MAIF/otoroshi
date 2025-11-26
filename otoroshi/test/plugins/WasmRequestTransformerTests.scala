@@ -35,7 +35,7 @@ class WasmRequestTransformerTests(parent: PluginsTestSpec) {
         )
       )
     ),
-    domain = s"$id.oto.tools",
+    domain = s"$id.oto.tools".some,
     id
   )
 

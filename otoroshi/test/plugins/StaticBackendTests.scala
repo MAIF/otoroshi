@@ -5,6 +5,7 @@ import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, StaticBackend, StaticBackendConfig}
 import otoroshi.security.IdGenerator
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.libs.json._
 
 import java.nio.file.{Files, Path}
@@ -37,7 +38,7 @@ class StaticBackendTests(parent: PluginsTestSpec) {
       )
     ),
     id = IdGenerator.uuid,
-    domain = "s3backend.oto.tools"
+    domain = "s3backend.oto.tools".some
   )
 
   val resp2 = ws

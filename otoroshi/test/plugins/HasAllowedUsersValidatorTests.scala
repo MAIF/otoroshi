@@ -107,7 +107,7 @@ class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
           config = NgPluginInstanceConfig(config.json.as[JsObject])
         )
       ),
-      domain = s"$id.oto.tools",
+      domain = s"$id.oto.tools".some,
       id
     )
   }

@@ -28,7 +28,7 @@ class SimpleBasicAuthTests(parent: PluginsTestSpec) {
         )
       ),
       id = IdGenerator.uuid,
-      domain = "basiauth.oto.tools"
+      domain = "basiauth.oto.tools".some
     )
   }
 
@@ -48,7 +48,7 @@ class SimpleBasicAuthTests(parent: PluginsTestSpec) {
         )
       ),
       id = IdGenerator.uuid,
-      domain = "basiauth.oto.tools"
+      domain = "basiauth.oto.tools".some
     )
   }
 

@@ -3550,7 +3550,9 @@ object ClusterLeaderUpdateMessage       {
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
     override def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-      NgCustomQuotas.updateQuotas(expr, group, calls.get())
+      NgCustomQuotas
+        .updateQuotas(expr, group, calls.get())
+        .map(_ => ())
     }
 
     override def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
