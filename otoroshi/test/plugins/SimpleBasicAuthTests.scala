@@ -32,25 +32,25 @@ class SimpleBasicAuthTests(parent: PluginsTestSpec) {
     )
   }
 
-  def basicAuthCallerRoute(): NgRoute = {
-    createRequestOtoroshiIORoute(
-      Seq(
-        NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[BasicAuthCaller],
-          config = NgPluginInstanceConfig(
-            BasicAuthCallerConfig(
-              username = "foo".some,
-              password = "bar".some
-            ).json
-              .as[JsObject]
-          )
-        )
-      ),
-      id = IdGenerator.uuid,
-      domain = "basiauth.oto.tools".some
-    )
-  }
+  // def basicAuthCallerRoute(): NgRoute = {
+  //   createRequestOtoroshiIORoute(
+  //     Seq(
+  //       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
+  //       NgPluginInstance(
+  //         plugin = NgPluginHelper.pluginId[BasicAuthCaller],
+  //         config = NgPluginInstanceConfig(
+  //           BasicAuthCallerConfig(
+  //             username = "foo".some,
+  //             password = "bar".some
+  //           ).json
+  //             .as[JsObject]
+  //         )
+  //       )
+  //     ),
+  //     id = IdGenerator.uuid,
+  //     domain = "basiauth.oto.tools".some
+  //   )
+  // }
 
   def verify(simpleBasicAuthRoute: NgRoute): Unit = {
     val resp = ws
@@ -72,9 +72,9 @@ class SimpleBasicAuthTests(parent: PluginsTestSpec) {
   }
 
   val basicAuthRoute = simpleBasicAuthRoute()
-  val callerRouter   = basicAuthCallerRoute()
+  //val callerRouter   = basicAuthCallerRoute()
   verify(basicAuthRoute)
 
   deleteOtoroshiRoute(basicAuthRoute).futureValue
-  deleteOtoroshiRoute(callerRouter).futureValue
+  //deleteOtoroshiRoute(callerRouter).futureValue
 }
