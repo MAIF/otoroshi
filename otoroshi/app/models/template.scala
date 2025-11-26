@@ -127,4 +127,21 @@ object ErrorTemplate {
   def fromJsonSafe(value: JsValue): JsResult[ErrorTemplate] = format.reads(value)
 }
 
-trait ErrorTemplateDataStore extends BasicStore[ErrorTemplate] {}
+trait ErrorTemplateDataStore extends BasicStore[ErrorTemplate] {
+  def template(env: Env): ErrorTemplate = {
+    ErrorTemplate(
+      location = EntityLocation.default,
+      serviceId = "route_id",
+      name = "error template",
+      description = "error template",
+      metadata = Map.empty,
+      tags = Seq.empty,
+      template40x = "",
+      template50x = "",
+      templateBuild = "",
+      templateMaintenance = "",
+      genericTemplates = Map.empty,
+      messages = Map.empty,
+    )
+  }
+}

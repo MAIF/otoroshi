@@ -152,6 +152,9 @@ object AnonymousReportingJob {
       val pluginsPlugins             = if (globalConfig.plugins.enabled) globalConfig.plugins.refs else Seq.empty
       val plugins                    = routePlugins ++ scriptPlugins ++ pluginsPlugins
       val counting                   = plugins.groupBy(identity).mapValues(v => JsNumber(v.size))
+      val genericEntities = JsObject(env.allResources.resources.map { res =>
+        (s"${res.group}/${res.pluralName}", res.access.all().size.json)
+      }.toMap)
       Json.obj(
         "@timestamp"           -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(DateTime.now()),
         "timestamp_str"        -> DateTime.now().toString(),
@@ -226,6 +229,7 @@ object AnonymousReportingJob {
             )
           })
         ),
+        "generic_entities" -> genericEntities,
         "entities"             -> Json.obj(
           "scripts"               -> Json.obj(
             "count"   -> env.proxyState.allScripts().size,
@@ -472,7 +476,6 @@ class AnonymousReportingJob extends Job {
       case None => cfg_config
     }
     if (prog_config.isDefined || (config.enabled && globalConfig.anonymousReporting)) {
-      println("send reporting")
       if (showLog.compareAndSet(true, false)) {
         displayYouCanDisableLog()
       }

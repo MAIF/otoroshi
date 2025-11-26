@@ -623,13 +623,17 @@ class OtoroshiResources(env: Env) {
       "error-templates",
       "proxy.otoroshi.io",
       ResourceVersion("v1", true, false, true),
-      GenericResourceAccessApii[ErrorTemplate](
+      GenericResourceAccessApiWithState[ErrorTemplate](
         ErrorTemplate.fmt,
         classOf[ErrorTemplate],
         env.datastores.errorTemplateDataStore.key,
         env.datastores.errorTemplateDataStore.extractId,
         json => json.select("serviceId").asString,
-        () => "serviceId"
+        () => "serviceId",
+        (v, p, ctx) => env.datastores.errorTemplateDataStore.template(env).json,
+        stateAll = () => Seq.empty,
+        stateOne = id => env.proxyState.errorTemplate(id),
+        stateUpdate = seq => env.proxyState.updateErrorTemplates(seq)
       )
     ),
     //////
