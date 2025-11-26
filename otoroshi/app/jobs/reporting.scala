@@ -80,7 +80,14 @@ object AnonymousReportingJobConfig {
 
 object AnonymousReportingJob {
 
-  val programmaticConfig = new AtomicReference[AnonymousReportingJobConfig](null)
+  val programmaticConfig = new AtomicReference[AnonymousReportingJobConfig](null)/*(AnonymousReportingJobConfig(
+    enabled = true,
+    redirect = false,
+    url = "http://localhost:3456",
+    timeout = 20.seconds,
+    proxy = None,
+    tlsConfig = NgTlsConfig()
+  ))*/
   def programmatic = Option(programmaticConfig.get())
 
   private def avgDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
@@ -465,6 +472,7 @@ class AnonymousReportingJob extends Job {
       case None => cfg_config
     }
     if (prog_config.isDefined || (config.enabled && globalConfig.anonymousReporting)) {
+      println("send reporting")
       if (showLog.compareAndSet(true, false)) {
         displayYouCanDisableLog()
       }
