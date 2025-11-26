@@ -316,6 +316,7 @@ case class ApiDocumentationPlan(raw: JsObject) {
   lazy val throttlingQuota: Long         = raw.select("throttling_quota").asOptLong.getOrElse(1000L)
   lazy val dailyQuota: Long              = raw.select("daily_quota").asOptLong.getOrElse(10000L)
   lazy val monthlyQuota: Long            = raw.select("monthly_quota").asOptLong.getOrElse(100000L)
+  lazy val consumerId: Option[String]    = raw.select("consumer_id").asOptString
   lazy val tags: Seq[String]             = raw.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
   lazy val metadata: Map[String, String] = raw.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
 }

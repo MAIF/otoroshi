@@ -66,6 +66,7 @@ function ApiDocumentationPlan(props) {
     'throttling_quota',
     'daily_quota',
     'monthly_quota',
+    'consumer_id',
     'tags',
     'metadata',
   ];
@@ -93,6 +94,10 @@ function ApiDocumentationPlan(props) {
     monthly_quota: {
       type: 'number',
       props: { label: 'Monthly Quota', suffix: 'calls/month' },
+    },
+    consumer_id: {
+      type: 'string',
+      props: { label: 'Consumer Id' },
     },
     tags: {
       type: 'array',
