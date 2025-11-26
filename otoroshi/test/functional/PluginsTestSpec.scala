@@ -6,6 +6,8 @@ import org.scalatest.BeforeAndAfterAll
 import play.api.{Configuration, Logger}
 import plugins._
 
+import scala.concurrent.duration.DurationInt
+
 class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
   implicit lazy val mat = otoroshiComponents.materializer
@@ -26,6 +28,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     startOtoroshi()
     getOtoroshiRoutes().futureValue // WARM UP
+    await(2.seconds) // wait for router sync
   }
 
   override def afterAll(): Unit = {
