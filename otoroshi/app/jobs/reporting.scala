@@ -16,7 +16,7 @@ import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
 import play.api.{Configuration, Logger}
 
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -79,6 +79,9 @@ object AnonymousReportingJobConfig {
 }
 
 object AnonymousReportingJob {
+
+  val programmaticConfig = new AtomicReference[AnonymousReportingJobConfig](null)
+  def programmatic = Option(programmaticConfig.get())
 
   private def avgDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
     (if (value == Double.NaN || value == Double.NegativeInfinity || value == Double.PositiveInfinity) {
@@ -455,8 +458,13 @@ class AnonymousReportingJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()
-    val config       = AnonymousReportingJobConfig.fromEnv(env)
-    if (config.enabled && globalConfig.anonymousReporting) {
+    val cfg_config = AnonymousReportingJobConfig.fromEnv(env)
+    val prog_config = AnonymousReportingJob.programmatic
+    val config     = prog_config match {
+      case Some(programmaticConfig) => programmaticConfig
+      case None => cfg_config
+    }
+    if (prog_config.isDefined || (config.enabled && globalConfig.anonymousReporting)) {
       if (showLog.compareAndSet(true, false)) {
         displayYouCanDisableLog()
       }
