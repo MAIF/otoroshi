@@ -475,5 +475,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Coraza WAF" in {
       new CorazaWAFTests(this)
     }
+    "Zip Backend" in {
+      new ZipBackendTests(this)
+    }
   }
 }
