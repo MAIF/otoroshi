@@ -172,7 +172,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
     val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
-
+    env.clusterAgent.incrementApi(apiKey.clientId, increment)
     for {
       secCalls <- redisCli.incrby(throttlingKey(apiKey.clientId), increment)
       _        <- redisCli.pttl(throttlingKey(apiKey.clientId)).flatMap {

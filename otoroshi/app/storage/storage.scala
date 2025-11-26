@@ -102,6 +102,7 @@ trait RawDataStore {
   def incr(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]           = incrby(key, 1L)
   def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def keys(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]]
+  def expire(key: String, seconds: Int): Future[Boolean]
   def pexpire(key: String, pttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def sadd(key: String, members: Seq[ByteString]): Future[Long]
   def sismember(key: String, member: ByteString): Future[Boolean]

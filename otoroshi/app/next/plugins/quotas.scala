@@ -234,19 +234,22 @@ class NgServiceQuotas extends NgAccessValidator {
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
     env.clusterAgent.incrementApi(route.id, increment)
     for {
-      _            <- env.datastores.rawDataStore.incrby(totalCallsKey(route.id), increment)
       secCalls     <- env.datastores.rawDataStore.incrby(throttlingKey(route.id), increment)
-      secTtl       <- env.datastores.rawDataStore.pttl(throttlingKey(route.id)).filter(_ > -1).recoverWith { case _ =>
-                        env.datastores.rawDataStore.pexpire(throttlingKey(route.id), env.throttlingWindow * 1000)
-                      }
+      secTtl       <- env.datastores.rawDataStore.pttl(throttlingKey(route.id)).flatMap {
+                    case -1 => env.datastores.rawDataStore.expire(throttlingKey(route.id), env.throttlingWindow)
+                    case _  => Future.successful(())
+                  }
       dailyCalls   <- env.datastores.rawDataStore.incrby(dailyQuotaKey(route.id), increment)
-      dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaKey(route.id)).filter(_ > -1).recoverWith { case _ =>
-                        env.datastores.rawDataStore.pexpire(dailyQuotaKey(route.id), toDayEnd.toInt)
-                      }
+      dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaKey(route.id)).flatMap {
+                      case -1 => env.datastores.rawDataStore.expire(dailyQuotaKey(route.id), (toDayEnd / 1000).toInt)
+                      case _  => Future.successful(())
+                    }
       monthlyCalls <- env.datastores.rawDataStore.incrby(monthlyQuotaKey(route.id), increment)
-      monthlyTtl   <- env.datastores.rawDataStore.pttl(monthlyQuotaKey(route.id)).filter(_ > -1).recoverWith { case _ =>
-                        env.datastores.rawDataStore.pexpire(monthlyQuotaKey(route.id), toMonthEnd.toInt)
+      monthlyTtl   <- env.datastores.rawDataStore.pttl(monthlyQuotaKey(route.id)).flatMap {
+                        case -1 => env.datastores.rawDataStore.expire(monthlyQuotaKey(route.id), (toMonthEnd / 1000).toInt)
+                        case _  => Future.successful(())
                       }
+      _            <- env.datastores.rawDataStore.incrby(totalCallsKey(route.id), increment)
     } yield ()
   }
 
