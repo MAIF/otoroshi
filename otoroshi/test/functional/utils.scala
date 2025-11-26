@@ -1592,7 +1592,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       id: String = PLUGINS_ROUTE_ID,
       hostname: String = "request.otoroshi.io",
       root: String = "/"
-  ) = {
+  ): NgRoute = {
     val newRoute = NgRoute(
       location = EntityLocation.default,
       id = id,
@@ -1635,7 +1635,13 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
     if (result._2 == Status.CREATED) {
       newRoute
     } else {
-      throw new RuntimeException(s"failed to create a new otoroshi route - ${result._2} - ${result._1.prettify}")
+      if (result._1.select("error_description").asOptString.contains("Entity already exists")) {
+        deleteOtoroshiRoute(newRoute).futureValue
+        await(2.seconds)
+        createRequestOtoroshiIORoute(plugins, domain, id, hostname, root)
+      } else {
+        throw new RuntimeException(s"failed to create a new otoroshi route - ${result._2} - ${result._1.prettify}")
+      }
     }
   }
 
