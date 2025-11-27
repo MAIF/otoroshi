@@ -9,6 +9,7 @@ import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.security.IdGenerator
+import otoroshi.utils.TypedMap
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 case class AnonymousReportingJobConfig(
     enabled: Boolean,
@@ -26,7 +28,8 @@ case class AnonymousReportingJobConfig(
     url: String,
     timeout: Duration,
     proxy: Option[WSProxyServer],
-    tlsConfig: NgTlsConfig
+    tlsConfig: NgTlsConfig,
+    additionalData: JsObject,
 )
 
 object AnonymousReportingJobConfig {
@@ -36,7 +39,8 @@ object AnonymousReportingJobConfig {
     url = "https://reporting.otoroshi.io/ingest",
     timeout = 60.seconds,
     proxy = None,
-    tlsConfig = NgTlsConfig.default
+    tlsConfig = NgTlsConfig.default,
+    additionalData = Json.obj(),
   )
 
   def fromEnv(env: Env): AnonymousReportingJobConfig = {
@@ -73,7 +77,8 @@ object AnonymousReportingJobConfig {
             encoding = configuration.getOptionalWithFileSupport[String]("proxy.encoding"),
             nonProxyHosts = None
           )
-        }
+        },
+      additionalData = Json.obj(),
     )
   }
 }
@@ -114,7 +119,7 @@ object AnonymousReportingJob {
     }
   }
 
-  def buildReport(globalConfig: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def buildReport(globalConfig: GlobalConfig, reportingConfig: AnonymousReportingJobConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     (for {
       members                   <- env.datastores.clusterStateDataStore.getMembers()
       calls                     <- env.datastores.serviceDescriptorDataStore.globalCalls()
@@ -160,6 +165,7 @@ object AnonymousReportingJob {
         "os"                   -> env.os.json,
         "datastore"            -> env.datastoreKind,
         "env"                  -> env.env,
+        "additional_data"     -> Try(reportingConfig.additionalData.stringify.evaluateEl(attrs).parseJson).toOption.getOrElse(Json.obj()).asValue,
         "features"             -> Json.obj(
           "snow_monkey"      -> globalConfig.snowMonkeyConfig.enabled,
           "clever_cloud"     -> globalConfig.cleverSettings.isDefined,
@@ -466,14 +472,16 @@ class AnonymousReportingJob extends Job {
     val cfg_config = AnonymousReportingJobConfig.fromEnv(env)
     val prog_config = AnonymousReportingJob.programmaticConfig()
     val config     = prog_config match {
-      case Some(programmaticConfig) => programmaticConfig
+      case Some(programmaticConfig) =>
+        showLog.set(false)
+        programmaticConfig
       case None => cfg_config
     }
     if (prog_config.isDefined || (config.enabled && globalConfig.anonymousReporting)) {
       if (showLog.compareAndSet(true, false)) {
         displayYouCanDisableLog()
       }
-      AnonymousReportingJob.buildReport(globalConfig).flatMap { report =>
+      AnonymousReportingJob.buildReport(globalConfig, config, ctx.attrs).flatMap { report =>
         if (env.isDev) logger.debug(report.prettify)
         val req = if (config.tlsConfig.enabled) {
           env.MtlsWs.url(config.url, config.tlsConfig.legacy)
