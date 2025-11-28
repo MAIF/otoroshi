@@ -1032,6 +1032,7 @@ const BackOfficeAppContainerWithRouter = withRouter(BackOfficeAppContainer);
 export class BackOfficeApp extends Component {
   render() {
     return (
+      // See constant defined in app/env/Env.scala
       <Router basename="/bo/dashboard">
         <BackOfficeAppContainerWithRouter />
       </Router>
