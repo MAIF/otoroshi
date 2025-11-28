@@ -493,5 +493,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikey auth module" in {
       new ApikeyAuthModuleTests(this)
     }
+    "Apikey quotas" in {
+      new ApikeyQuotasTests(this)
+    }
   }
 }
