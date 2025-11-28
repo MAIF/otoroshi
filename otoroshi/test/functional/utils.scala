@@ -833,7 +833,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       )
     )(materializer)
   }
-  private lazy implicit val scheduler: Scheduler       = actorSystem.scheduler
+  lazy implicit val scheduler: Scheduler               = actorSystem.scheduler
   lazy implicit val ec: ExecutionContext               = actorSystem.dispatcher
   private lazy val httpPort: Int = {
     Try {

@@ -487,5 +487,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Custom throttling" in {
       new NgCustomThrottlingTests(this)
     }
+    "Global Maintenance mode" in {
+      new GlobalMaintenanceModeTests(this)
+    }
   }
 }
