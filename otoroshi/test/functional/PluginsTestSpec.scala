@@ -496,5 +496,23 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikey quotas" in {
       new ApikeyQuotasTests(this)
     }
+    "RBAC - allow" in {
+      new RBACTests(this).allow()
+    }
+    "RBAC - unauthorized role" in {
+      new RBACTests(this).testUnauthorizedRole()
+    }
+    "RBAC - test no roles" in {
+      new RBACTests(this).testNoRoles()
+    }
+    "RBAC - test wrong role prefix" in {
+      new RBACTests(this).testWrongRolePrefix()
+    }
+    "RBAC - test deny rules" in {
+      new RBACTests(this).testDenyRules()
+    }
+    "RBAC - test allow all" in {
+      new RBACTests(this).testAllowAll()
+    }
   }
 }
