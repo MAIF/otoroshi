@@ -29,6 +29,7 @@ class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)
           "otoroshi_version_sem" -> env.otoroshiVersionSem.json,
           "java_version"         -> env.theJavaVersion.json,
           "os"                   -> env.os.json,
+          "backoffice_url"       -> env.backOfficeUrl,
           "datastore"            -> env.datastoreKind,
           "env"                  -> env.env
         )
