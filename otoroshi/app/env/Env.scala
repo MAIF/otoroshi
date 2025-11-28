@@ -603,6 +603,9 @@ class Env(
   lazy val backOfficeHost      = composeMainUrl(backOfficeSubDomain)
   lazy val privateAppsHost     = composeMainUrl(privateAppsSubDomain)
 
+  lazy val backOfficePath      = "/bo/dashboard"
+  lazy val backOfficeUrl       = s"$exposedRootScheme://$backOfficeHost$bestExposedPort$backOfficePath"
+
   lazy val adminApiExposedDomains = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.adminapi.exposedDomains")
     .orElse(
