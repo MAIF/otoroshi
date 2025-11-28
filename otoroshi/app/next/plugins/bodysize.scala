@@ -388,15 +388,16 @@ class RequestBandwidthThrottling extends NgAccessValidator with NgRequestTransfo
   private def updateQuotas(increment: Long, attrs: TypedMap, qconf: BandwidthThrottlingConfig, local: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Unit] = {
-    val group        = computeExpr(qconf.groupExpr, attrs, env)
-    val expr         = computeExpr(defaultExpr, attrs, env)
-    val windowMillis = computeExpr(qconf.windowMillis, attrs, env).trim.toLong
+  ): Future[Boolean] = {
+    val group                = computeExpr(qconf.groupExpr, attrs, env)
+    val expr                 = computeExpr(defaultExpr, attrs, env)
+    val windowMillis         = computeExpr(qconf.windowMillis, attrs, env).trim.toLong
+    val throtthlingThreshold = qconf.throttlingQuota(attrs, env)
     if (!local) {
       env.clusterAgent.incrementCustomThrottling(expr, group, increment, windowMillis)
-      NgCustomThrottling.updateQuotas(expr, group, increment, windowMillis)
+      NgCustomThrottling.updateQuotas(expr, group, increment, throtthlingThreshold, windowMillis)
     } else {
-      NgCustomThrottling.localUpdateQuotas(expr, group, increment, windowMillis)
+      NgCustomThrottling.localUpdateQuotas(expr, group, increment, throtthlingThreshold, windowMillis)
     }
   }
 
@@ -548,15 +549,16 @@ class ResponseBandwidthThrottling extends NgAccessValidator with NgRequestTransf
   private def updateQuotas(increment: Long, attrs: TypedMap, qconf: BandwidthThrottlingConfig, local: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Unit] = {
-    val group        = computeExpr(qconf.groupExpr, attrs, env)
-    val expr         = computeExpr(defaultExpr, attrs, env)
-    val windowMillis = computeExpr(qconf.windowMillis, attrs, env).trim.toLong
+  ): Future[Boolean] = {
+    val group                = computeExpr(qconf.groupExpr, attrs, env)
+    val expr                 = computeExpr(defaultExpr, attrs, env)
+    val windowMillis         = computeExpr(qconf.windowMillis, attrs, env).trim.toLong
+    val throttllingThreshold = qconf.throttlingQuota(attrs, env)
     if (!local) {
       env.clusterAgent.incrementCustomThrottling(expr, group, increment, windowMillis)
-      NgCustomThrottling.updateQuotas(expr, group, increment, windowMillis)
+      NgCustomThrottling.updateQuotas(expr, group, increment, throttllingThreshold, windowMillis)
     } else {
-      NgCustomThrottling.localUpdateQuotas(expr, group, increment, windowMillis)
+      NgCustomThrottling.localUpdateQuotas(expr, group, increment, throttllingThreshold, windowMillis)
     }
   }
 

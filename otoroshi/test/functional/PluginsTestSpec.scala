@@ -28,7 +28,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     startOtoroshi()
     getOtoroshiRoutes().futureValue // WARM UP
-    await(2.seconds) // wait for router sync
+    await(2.seconds)                // wait for router sync
   }
 
   override def afterAll(): Unit = {
@@ -480,6 +480,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
     "Zip Backend" in {
       new ZipBackendTests(this)
+    }
+    "Public quotas" in {
+      new NgServiceQuotasTests(this)
+    }
+    "Custom throttling" in {
+      new NgCustomThrottlingTests(this)
     }
   }
 }

@@ -3530,7 +3530,9 @@ object ClusterLeaderUpdateMessage       {
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
     override def updateLeader(member: MemberView)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-      NgCustomThrottling.updateQuotas(expr, group, calls.get(), ttl)
+      NgCustomThrottling
+        .updateQuotas(expr, group, calls.get(), 0, ttl.toInt)
+        .map(_ => ())
     }
 
     override def updateWorker(member: MemberView)(implicit env: Env): Future[Unit] = {
