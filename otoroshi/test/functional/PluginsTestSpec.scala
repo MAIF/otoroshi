@@ -490,5 +490,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Global Maintenance mode" in {
       new GlobalMaintenanceModeTests(this)
     }
+    "Apikey auth module" in {
+      new ApikeyAuthModuleTests(this)
+    }
   }
 }
