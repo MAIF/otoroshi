@@ -60,7 +60,9 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
           lastIcaClient =
             env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true)
           lastTrustedCA =
-            env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
+            env.datastores.globalConfigDataStore.latestSafe
+              .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+              .getOrElse(Seq.empty)
         } yield {
           if (
             last != lastUpdatedRef.get()

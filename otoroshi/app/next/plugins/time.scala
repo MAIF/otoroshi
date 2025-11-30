@@ -53,8 +53,10 @@ object TimeRestrictedAccessPluginConfigRule {
   }
 }
 
-case class TimeRestrictedAccessPluginConfig(rules: Seq[TimeRestrictedAccessPluginConfigRule] = Seq.empty, timezone: Option[String] = None)
-    extends NgPluginConfig {
+case class TimeRestrictedAccessPluginConfig(
+    rules: Seq[TimeRestrictedAccessPluginConfigRule] = Seq.empty,
+    timezone: Option[String] = None
+) extends NgPluginConfig {
   def json: JsValue = TimeRestrictedAccessPluginConfig.format.writes(this)
 
 }
@@ -63,7 +65,7 @@ object TimeRestrictedAccessPluginConfig {
   val format = new Format[TimeRestrictedAccessPluginConfig]() {
 
     override def reads(json: JsValue): JsResult[TimeRestrictedAccessPluginConfig] = Try {
-      val rules = (json \ "rules")
+      val rules    = (json \ "rules")
         .asOpt[Seq[JsObject]]
         .map(_.flatMap(o => TimeRestrictedAccessPluginConfigRule.format.reads(o).asOpt))
         .getOrElse(Seq.empty)
@@ -76,22 +78,22 @@ object TimeRestrictedAccessPluginConfig {
 
     override def writes(o: TimeRestrictedAccessPluginConfig): JsValue = {
       Json.obj(
-        "rules" -> JsArray(o.rules.map(_.json)),
+        "rules"    -> JsArray(o.rules.map(_.json)),
         "timezone" -> o.timezone.map(_.json).getOrElse(JsNull).asValue
       )
     }
   }
   val configFlow: Seq[String]        = Seq(
     "timezone",
-    "rules",
+    "rules"
   )
   val configSchema: Option[JsObject] = Some(
     Json.obj(
       "timezone" -> Json.obj(
-        "type" -> "string",
-        "label" -> "Timezone",
+        "type"  -> "string",
+        "label" -> "Timezone"
       ),
-      "rules" -> Json.obj(
+      "rules"    -> Json.obj(
         "type"   -> "array",
         "array"  -> true,
         "label"  -> s"Rules",
@@ -135,12 +137,12 @@ class TimeRestrictedAccessPlugin extends NgAccessValidator {
       .getOrElse(TimeRestrictedAccessPluginConfig())
     val exists = config.rules.find { rule =>
       val timezone = config.timezone.flatMap(tz => Try(DateTimeZone.forID(tz)).toOption)
-      val nowUtc = timezone match {
-        case None => DateTime.now()
+      val nowUtc   = timezone match {
+        case None     => DateTime.now()
         case Some(tz) => DateTime.now(tz)
       }
-      val dayOk  = rule.dayOk(nowUtc)
-      val timeOk = rule.timeOk(nowUtc)
+      val dayOk    = rule.dayOk(nowUtc)
+      val timeOk   = rule.timeOk(nowUtc)
       dayOk && timeOk
     }
     if (exists.isDefined) {

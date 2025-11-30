@@ -603,8 +603,8 @@ class Env(
   lazy val backOfficeHost      = composeMainUrl(backOfficeSubDomain)
   lazy val privateAppsHost     = composeMainUrl(privateAppsSubDomain)
 
-  lazy val backOfficePath      = "/bo/dashboard"
-  lazy val backOfficeUrl       = s"$exposedRootScheme://$backOfficeHost$bestExposedPort$backOfficePath"
+  lazy val backOfficePath = "/bo/dashboard"
+  lazy val backOfficeUrl  = s"$exposedRootScheme://$backOfficeHost$bestExposedPort$backOfficePath"
 
   lazy val adminApiExposedDomains = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.adminapi.exposedDomains")
@@ -1350,8 +1350,11 @@ class Env(
   } yield OS(name, version, arch)).getOrElse(OS.default)
 
   val serverTrustedCAs: Seq[String] = {
-    val local = configuration.getOptional[Seq[String]]("otoroshi.ssl.trust.server_cas").getOrElse(Seq.empty)
-    val localStr = configuration.getOptional[String]("otoroshi.ssl.trust.server_cas_str").map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+    val local    = configuration.getOptional[Seq[String]]("otoroshi.ssl.trust.server_cas").getOrElse(Seq.empty)
+    val localStr = configuration
+      .getOptional[String]("otoroshi.ssl.trust.server_cas_str")
+      .map(_.split(",").map(_.trim).toSeq)
+      .getOrElse(Seq.empty)
     (local ++ localStr).distinct
   }
 

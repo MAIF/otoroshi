@@ -38,7 +38,7 @@ import { components } from 'react-select';
 import { HTTP_COLORS } from '../RouteDesigner/MocksDesigner';
 import { unsecuredCopyToClipboard } from '../../util';
 import { Row } from '../../components/Row';
-import MonacoEditor from "@monaco-editor/react";
+import MonacoEditor from '@monaco-editor/react';
 
 const RouteWithProps = ({ component: Component, ...rest }) => (
   <Route {...rest} component={(routeProps) => <Component {...routeProps} {...rest.props} />} />
@@ -2457,33 +2457,37 @@ function NewAPI(props) {
     },
     action: {
       renderer: () => {
-        return <Row title=" " className="col-sm-10 d-flex align-items-center">
-          <Button
-            type="primaryColor"
-            className="btn-sm"
-            text="Read information from OpenAPI URL"
-            onClick={() => {
-              fetchWrapperNext(
-                `/${nextClient.ENTITIES.APIS}/_openapi`,
-                'POST',
-                value,
-                'apis.otoroshi.io'
-              ).then((api) => {
-                const hasBackends = api.backends?.length > 0
-                const firstBackend = hasBackends ? api.backends[0] : undefined
+        return (
+          <Row title=" " className="col-sm-10 d-flex align-items-center">
+            <Button
+              type="primaryColor"
+              className="btn-sm"
+              text="Read information from OpenAPI URL"
+              onClick={() => {
+                fetchWrapperNext(
+                  `/${nextClient.ENTITIES.APIS}/_openapi`,
+                  'POST',
+                  value,
+                  'apis.otoroshi.io'
+                ).then((api) => {
+                  const hasBackends = api.backends?.length > 0;
+                  const firstBackend = hasBackends ? api.backends[0] : undefined;
 
-                console.log(hasBackends, firstBackend)
-                setValue({
-                  ...value,
-                  serverURL: hasBackends && firstBackend.backend.targets.length > 0
-                    ? firstBackend.backend.targets[0].hostname : '',
-                  root: hasBackends && firstBackend.root ? firstBackend.root : '',
-                  api,
+                  console.log(hasBackends, firstBackend);
+                  setValue({
+                    ...value,
+                    serverURL:
+                      hasBackends && firstBackend.backend.targets.length > 0
+                        ? firstBackend.backend.targets[0].hostname
+                        : '',
+                    root: hasBackends && firstBackend.root ? firstBackend.root : '',
+                    api,
+                  });
                 });
-              });
-            }}
-          />
-        </Row>
+              }}
+            />
+          </Row>
+        );
       },
     },
     picker: {
@@ -2558,21 +2562,21 @@ function NewAPI(props) {
     step === 0
       ? ['picker']
       : [
-        'location',
-        choice === 'openapi'
-          ? {
-            type: 'group',
-            name: 'OpenAPI',
-            collapsable: false,
-            fields: ['openapi', 'domain', 'action', 'serverURL', 'root']
-          }
-          : {
-            type: 'group',
-            name: 'Informations',
-            collapsable: false,
-            fields: ['id', 'name', 'description'],
-          },
-      ];
+          'location',
+          choice === 'openapi'
+            ? {
+                type: 'group',
+                name: 'OpenAPI',
+                collapsable: false,
+                fields: ['openapi', 'domain', 'action', 'serverURL', 'root'],
+              }
+            : {
+                type: 'group',
+                name: 'Informations',
+                collapsable: false,
+                fields: ['id', 'name', 'description'],
+              },
+        ];
 
   const createApi = () => {
     if (choice === 'fromScratch') {
@@ -3671,14 +3675,14 @@ function RouteItem({ item, api, ports }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-        <span
-          key={`frontendmethod-${i}`}
-          className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}
-        >
-          {m}
-        </span>
-      ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}
+          >
+            {m}
+          </span>
+        ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');

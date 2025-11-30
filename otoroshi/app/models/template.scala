@@ -141,7 +141,7 @@ trait ErrorTemplateDataStore extends BasicStore[ErrorTemplate] {
       templateBuild = "",
       templateMaintenance = "",
       genericTemplates = Map.empty,
-      messages = Map.empty,
+      messages = Map.empty
     )
   }
 }

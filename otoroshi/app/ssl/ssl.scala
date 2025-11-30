@@ -82,15 +82,15 @@ sealed trait ClientAuth {
   def name: String
   def toAkkaClientAuth: TLSClientAuth
 }
-case object ClientAuthNone extends ClientAuth {
+case object ClientAuthNone    extends ClientAuth {
   def name: String                    = "None"
   def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.None
 }
-case object ClientAuthWant extends ClientAuth {
+case object ClientAuthWant    extends ClientAuth {
   def name: String                    = "Want"
   def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Want
 }
-case object ClientAuthNeed extends ClientAuth {
+case object ClientAuthNeed    extends ClientAuth {
   def name: String                    = "Need"
   def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Need
 }
@@ -100,23 +100,23 @@ case object ClientAuthDynamic extends ClientAuth {
 }
 object ClientAuth {
 
-  val None = ClientAuthNone
-  val Want = ClientAuthWant
-  val Need = ClientAuthNeed
+  val None    = ClientAuthNone
+  val Want    = ClientAuthWant
+  val Need    = ClientAuthNeed
   val Dynamic = ClientAuthDynamic
 
   def values: Seq[ClientAuth] = Seq(None, Want, Need, Dynamic)
   def apply(name: String): Option[ClientAuth] = {
     name.toLowerCase match {
-      case "None" => Some(None)
-      case "none" => Some(None)
-      case "Want" => Some(Want)
-      case "want" => Some(Want)
-      case "Need" => Some(Need)
-      case "need" => Some(Need)
+      case "None"    => Some(None)
+      case "none"    => Some(None)
+      case "Want"    => Some(Want)
+      case "want"    => Some(Want)
+      case "Need"    => Some(Need)
+      case "need"    => Some(Need)
       case "Dynamic" => Some(Dynamic)
       case "dynamic" => Some(Dynamic)
-      case _      => scala.None
+      case _         => scala.None
     }
   }
 }
@@ -1499,12 +1499,16 @@ object DynamicSSLEngineProvider {
     val ctxClient                                         = setupContext(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1534,12 +1538,16 @@ object DynamicSSLEngineProvider {
     val ctxClient                                         = setupContext(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1552,12 +1560,16 @@ object DynamicSSLEngineProvider {
     val ctxClient                                         = setupContext(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServerWithLocalCAs(env)).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1828,11 +1840,12 @@ object DynamicSSLEngineProvider {
     val matchers               = new java.util.ArrayList[SNIMatcher]()
 
     val clientAuth = _clientAuth match {
-      case ClientAuth.Dynamic => env.datastores.globalConfigDataStore
-        .latestSafe.map(_.tlsSettings.clientAuth)
-        .getOrElse(_clientAuth)
-        //.debug(ca => println(s"Dynamic SSL client auth: ${ca}"))
-      case _ => _clientAuth
+      case ClientAuth.Dynamic =>
+        env.datastores.globalConfigDataStore.latestSafe
+          .map(_.tlsSettings.clientAuth)
+          .getOrElse(_clientAuth)
+      //.debug(ca => println(s"Dynamic SSL client auth: ${ca}"))
+      case _                  => _clientAuth
     }
 
     engine.setUseClientMode(false)

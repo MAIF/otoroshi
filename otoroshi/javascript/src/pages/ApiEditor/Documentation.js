@@ -1,12 +1,12 @@
-import {useParams} from "react-router-dom";
-import React, {useEffect, useState} from "react";
-import SimpleLoader from "./SimpleLoader";
-import PageTitle from "../../components/PageTitle";
-import {FeedbackButton} from "../RouteDesigner/FeedbackButton";
-import MonacoEditor from "@monaco-editor/react";
-import { Form } from "../../components/inputs/Form"
+import { useParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import SimpleLoader from './SimpleLoader';
+import PageTitle from '../../components/PageTitle';
+import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
+import MonacoEditor from '@monaco-editor/react';
+import { Form } from '../../components/inputs/Form';
 
-import { useDraftOfAPI, VersionBadge } from "./index";
+import { useDraftOfAPI, VersionBadge } from './index';
 
 function ApiDocumentationResource(props) {
   const flow = [
@@ -27,21 +27,21 @@ function ApiDocumentationResource(props) {
     'http_follow_redirects',
   ];
   const schema = {
-    path: { type: 'string', props: { label: 'Path'}},
-    title: { type: 'string', props: { label: 'Title'}},
-    description: { type: 'string', props: { label: 'Description'}},
-    content_type: { type: 'string', props: { label: 'Content-Type'}},
-    text_content: { type: 'text', props: { label: 'Text Content'}},
-    css_icon_class: { type: 'string', props: { label: 'CSS Icon class'}},
-    json_content: { type: 'text', props: { label: 'Json Content'}},
-    base64_content: { type: 'text', props: { label: 'Base64 Content'}},
-    site_page: { type: 'bool', props: { label: 'Site page'}},
-    transform: { type: 'string', props: { label: 'Transform'}},
-    transform_wrapper: { type: 'string', props: { label: 'Transform wrapper'}},
-    url: { type: 'string', props: { label: 'URL'}},
-    http_headers: { type: 'object', props: { label: 'Http Headers'}},
-    http_timeout: { type: 'number', props: { label: 'Http timeout', suffix: 'milliseconds' }},
-    http_follow_redirects: { type: 'bool', props: { label: 'Http follow redirects'}},
+    path: { type: 'string', props: { label: 'Path' } },
+    title: { type: 'string', props: { label: 'Title' } },
+    description: { type: 'string', props: { label: 'Description' } },
+    content_type: { type: 'string', props: { label: 'Content-Type' } },
+    text_content: { type: 'text', props: { label: 'Text Content' } },
+    css_icon_class: { type: 'string', props: { label: 'CSS Icon class' } },
+    json_content: { type: 'text', props: { label: 'Json Content' } },
+    base64_content: { type: 'text', props: { label: 'Base64 Content' } },
+    site_page: { type: 'bool', props: { label: 'Site page' } },
+    transform: { type: 'string', props: { label: 'Transform' } },
+    transform_wrapper: { type: 'string', props: { label: 'Transform wrapper' } },
+    url: { type: 'string', props: { label: 'URL' } },
+    http_headers: { type: 'object', props: { label: 'Http Headers' } },
+    http_timeout: { type: 'number', props: { label: 'Http timeout', suffix: 'milliseconds' } },
+    http_follow_redirects: { type: 'bool', props: { label: 'Http follow redirects' } },
   };
   return (
     <div className="col-sm-12">
@@ -49,13 +49,17 @@ function ApiDocumentationResource(props) {
         flow={flow}
         schema={schema}
         value={props.itemValue || props.value}
-        onChange={props.itemValue ? (v => {
-          props.value[props.idx] = v;
-          props.onChange(props.value);
-        }) : (props.onChange)}
+        onChange={
+          props.itemValue
+            ? (v) => {
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
+            : props.onChange
+        }
       />
     </div>
-  )
+  );
 }
 
 function ApiDocumentationPlan(props) {
@@ -101,11 +105,11 @@ function ApiDocumentationPlan(props) {
     },
     tags: {
       type: 'array',
-      props: { label: 'tags' }
+      props: { label: 'tags' },
     },
     metadata: {
       type: 'object',
-      props: { label: 'Metadata' }
+      props: { label: 'Metadata' },
     },
   };
   return (
@@ -114,22 +118,21 @@ function ApiDocumentationPlan(props) {
         flow={flow}
         schema={schema}
         value={props.itemValue || props.value}
-        onChange={props.itemValue ? (v => {
-          props.value[props.idx] = v;
-          props.onChange(props.value);
-        }) : (props.onChange)}
+        onChange={
+          props.itemValue
+            ? (v) => {
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
+            : props.onChange
+        }
       />
     </div>
-  )
+  );
 }
 
 function ApiDocumentationResourceRef(props) {
-  const flow = [
-    'title',
-    'description',
-    'link',
-    'icon',
-  ];
+  const flow = ['title', 'description', 'link', 'icon'];
   const schema = {
     title: {
       type: 'string',
@@ -154,20 +157,21 @@ function ApiDocumentationResourceRef(props) {
         flow={flow}
         schema={schema}
         value={props.itemValue || props.value}
-        onChange={props.itemValue ? (v => {
-          props.value[props.idx] = v;
-          props.onChange(props.value);
-        }) : (props.onChange)}
+        onChange={
+          props.itemValue
+            ? (v) => {
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
+            : props.onChange
+        }
       />
     </div>
-  )
+  );
 }
 
 function ApiDocumentationRedirection(props) {
-  const flow = [
-    'from',
-    'to',
-  ];
+  const flow = ['from', 'to'];
   const schema = {
     from: {
       type: 'string',
@@ -184,27 +188,31 @@ function ApiDocumentationRedirection(props) {
         flow={flow}
         schema={schema}
         value={props.itemValue || props.value}
-        onChange={props.itemValue ? (v => {
-          props.value[props.idx] = v;
-          props.onChange(props.value);
-        }) : (props.onChange)}
+        onChange={
+          props.itemValue
+            ? (v) => {
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
+            : props.onChange
+        }
       />
     </div>
-  )
+  );
 }
 
 function ApiDocumentationSidebarItem(props) {
-  const flow = [
-    'kind',
-    'icon',
-    'label',
-    'link',
-    'links'
-  ];
+  const flow = ['kind', 'icon', 'label', 'link', 'links'];
   const schema = {
     kind: {
       type: 'select',
-      props: { label: 'Kind', possibleValues: [{ label: 'Category', value: 'category' }, { label: 'Link', value: 'link' }] },
+      props: {
+        label: 'Kind',
+        possibleValues: [
+          { label: 'Category', value: 'category' },
+          { label: 'Link', value: 'link' },
+        ],
+      },
     },
     link: { type: 'string', props: { label: 'Link' } },
     links: { type: 'array', props: { label: 'Links', component: ApiDocumentationSidebarItem } },
@@ -217,22 +225,21 @@ function ApiDocumentationSidebarItem(props) {
         flow={flow}
         schema={schema}
         value={props.itemValue || props.value}
-        onChange={props.itemValue ? (v => {
-          props.value[props.idx] = v;
-          props.onChange(props.value);
-        }) : (props.onChange)}
+        onChange={
+          props.itemValue
+            ? (v) => {
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
+            : props.onChange
+        }
       />
     </div>
-  )
+  );
 }
 
 function ApiDocumentationSidebar(props) {
-  const flow = [
-    'label',
-    'path',
-    'items',
-    'icon',
-  ];
+  const flow = ['label', 'path', 'items', 'icon'];
   const schema = {
     label: { type: 'string', props: { label: 'Label' } },
     path: { type: 'string', props: { label: 'Path' } },
@@ -245,17 +252,20 @@ function ApiDocumentationSidebar(props) {
         flow={flow}
         schema={schema}
         value={props.itemValue || props.value}
-        onChange={props.itemValue ? (v => {
-          props.value[props.idx] = v;
-          props.onChange(props.value);
-        }) : (props.onChange)}
+        onChange={
+          props.itemValue
+            ? (v) => {
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
+            : props.onChange
+        }
       />
     </div>
-  )
+  );
 }
 
 export function Documentation(props) {
-
   const params = useParams();
   const [showJson, setShowJson] = useState(false);
   const { item, updateItem } = useDraftOfAPI();
@@ -271,7 +281,7 @@ export function Documentation(props) {
 
   const updateDoc = () => {
     return updateItem({ ...item, documentation: newItem });
-  }
+  };
 
   const flow = [
     'enabled',
@@ -304,73 +314,73 @@ export function Documentation(props) {
     'resources',
   ];
   const schema = {
-    'enabled': {
-      'type': 'bool',
-      props: { 'label': 'Enabled' }
+    enabled: {
+      type: 'bool',
+      props: { label: 'Enabled' },
     },
-    'metadata': {
-      'type': 'object',
-      props: { 'label': 'Metadata' }
+    metadata: {
+      type: 'object',
+      props: { label: 'Metadata' },
     },
-    'tags': {
-      'type': 'array',
-      props: { 'label': 'Tags' }
+    tags: {
+      type: 'array',
+      props: { label: 'Tags' },
     },
     'source.url': {
-      'type': 'string',
-      props: { 'label': 'URL' }
+      type: 'string',
+      props: { label: 'URL' },
     },
     'source.headers': {
-      'type': 'object',
-      props: { 'label': 'Headers' }
+      type: 'object',
+      props: { label: 'Headers' },
     },
     'source.follow_redirects': {
-      'type': 'bool',
-      props: { 'label': 'Follow Redirects' }
+      type: 'bool',
+      props: { label: 'Follow Redirects' },
     },
     'source.timeout': {
-      'type': 'number',
-      props: { 'label': 'Timeout', 'suffix': 'milliseconds' },
+      type: 'number',
+      props: { label: 'Timeout', suffix: 'milliseconds' },
     },
-    'home': {
-      'type': ApiDocumentationResource,
-      props: { 'label': 'Home' }
+    home: {
+      type: ApiDocumentationResource,
+      props: { label: 'Home' },
     },
-    'logo': {
-      'type': ApiDocumentationResource,
-      props: { 'label': 'Logo' }
+    logo: {
+      type: ApiDocumentationResource,
+      props: { label: 'Logo' },
     },
-    'references': {
-      'type': 'array',
-      props: { component: ApiDocumentationResourceRef }
+    references: {
+      type: 'array',
+      props: { component: ApiDocumentationResourceRef },
     },
-    'resources': {
-      'type': 'array',
-      props: { component: ApiDocumentationResource }
+    resources: {
+      type: 'array',
+      props: { component: ApiDocumentationResource },
     },
-    'navigation': {
-      'type': 'array',
-      props: { 'label': 'Navigation', component: ApiDocumentationSidebar }
+    navigation: {
+      type: 'array',
+      props: { label: 'Navigation', component: ApiDocumentationSidebar },
     },
-    'redirections': {
-      'type': 'array',
-      props: { component: ApiDocumentationRedirection }
+    redirections: {
+      type: 'array',
+      props: { component: ApiDocumentationRedirection },
     },
-    'footer': {
-      'type': ApiDocumentationResource,
-      props: { 'label': 'Footer' }
+    footer: {
+      type: ApiDocumentationResource,
+      props: { label: 'Footer' },
     },
     'search.enabled': {
-      'type': 'bool',
-      props: { 'label': 'Search' }
+      type: 'bool',
+      props: { label: 'Search' },
     },
-    'banner': {
-      'type': ApiDocumentationResource,
-      props: { 'label': 'Banner' }
+    banner: {
+      type: ApiDocumentationResource,
+      props: { label: 'Banner' },
     },
-    'plans': {
-      'type': 'array',
-      props: { component: ApiDocumentationPlan }
+    plans: {
+      type: 'array',
+      props: { component: ApiDocumentationPlan },
     },
   };
 
@@ -379,8 +389,20 @@ export function Documentation(props) {
     <>
       <PageTitle title="Documentation" {...props}>
         <div className="btn-group" style={{ marginRight: 10 }}>
-          <button type="button" className={`btn btn-primary ${showJson ? '' : 'active'}`} onClick={e => setShowJson(!showJson)}>Form</button>
-          <button type="button" className={`btn btn-primary ${showJson ? 'active' : ''}`} onClick={e => setShowJson(!showJson)}>Json editor</button>
+          <button
+            type="button"
+            className={`btn btn-primary ${showJson ? '' : 'active'}`}
+            onClick={(e) => setShowJson(!showJson)}
+          >
+            Form
+          </button>
+          <button
+            type="button"
+            className={`btn btn-primary ${showJson ? 'active' : ''}`}
+            onClick={(e) => setShowJson(!showJson)}
+          >
+            Json editor
+          </button>
         </div>
         <FeedbackButton
           type="success"
@@ -393,37 +415,33 @@ export function Documentation(props) {
           }
         />
       </PageTitle>
-      {showJson && <MonacoEditor
-        height={window.innerHeight - 140}
-        width="100%"
-        theme="vs-dark"
-        defaultLanguage="json"
-        value={code}
-        options={{
-          automaticLayout: true,
-          selectOnLineNumbers: true,
-          minimap: { enabled: true },
-          lineNumbers: true,
-          glyphMargin: false,
-          folding: true,
-          lineDecorationsWidth: 0,
-          lineNumbersMinChars: 0,
-        }}
-        onChange={(newValue) => {
-          try {
-            setNewItem(JSON.parse(newValue));
-          } catch (e) {
-          }
-        }}
-      />}
-      {!showJson && (
-        <Form
-          flow={flow}
-          schema={schema}
-          value={newItem || {}}
-          onChange={e => setNewItem(e)}
+      {showJson && (
+        <MonacoEditor
+          height={window.innerHeight - 140}
+          width="100%"
+          theme="vs-dark"
+          defaultLanguage="json"
+          value={code}
+          options={{
+            automaticLayout: true,
+            selectOnLineNumbers: true,
+            minimap: { enabled: true },
+            lineNumbers: true,
+            glyphMargin: false,
+            folding: true,
+            lineDecorationsWidth: 0,
+            lineNumbersMinChars: 0,
+          }}
+          onChange={(newValue) => {
+            try {
+              setNewItem(JSON.parse(newValue));
+            } catch (e) {}
+          }}
         />
       )}
+      {!showJson && (
+        <Form flow={flow} schema={schema} value={newItem || {}} onChange={(e) => setNewItem(e)} />
+      )}
     </>
-  )
+  );
 }

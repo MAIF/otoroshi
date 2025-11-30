@@ -20,7 +20,9 @@ class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)
   def infos() = ApiAction.async { ctx =>
     val full = ctx.request.getQueryString("full").contains("true")
     if (full) {
-      AnonymousReportingJob.buildReport(env.datastores.globalConfigDataStore.latest(), AnonymousReportingJobConfig.default, TypedMap.empty).map(report => Ok(report))
+      AnonymousReportingJob
+        .buildReport(env.datastores.globalConfigDataStore.latest(), AnonymousReportingJobConfig.default, TypedMap.empty)
+        .map(report => Ok(report))
     } else {
       Ok(
         Json.obj(

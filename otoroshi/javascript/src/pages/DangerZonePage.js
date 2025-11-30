@@ -1239,7 +1239,7 @@ export class DangerZonePage extends Component {
           { label: 'None', value: 'None' },
           { label: 'Want', value: 'Want' },
           { label: 'Need', value: 'Need' },
-        ]
+        ],
       },
     },
     templates: {

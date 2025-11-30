@@ -581,18 +581,27 @@ object WorkflowOperator {
     case JsString("${memory}")                                                            => wfr.memory.json
     case JsString("${resume_token}")                                                      => PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env).json
     case JsString(str) if str.startsWith("${") && str.endsWith("}") && str.contains("||") => {
-      str.substring(2).init.split("\\|\\|").toStream.map(_.trim).filter(_.nonEmpty).map { part =>
-        val parts = part.split("\\.").toSeq
-        val name = parts.head
-        val path = if (parts.size > 1) Some(parts.tail.mkString(".")) else None
-        wfr.memory.get(name).flatMap { v =>
-          path match {
-            case Some(p) if p.contains(".") => v.at(p).asOpt[JsValue].filterNot(_ == JsNull)
-            case Some(p) => v.select(p).asOpt[JsValue].filterNot(_ == JsNull)
-            case None => v.some
+      str
+        .substring(2)
+        .init
+        .split("\\|\\|")
+        .toStream
+        .map(_.trim)
+        .filter(_.nonEmpty)
+        .map { part =>
+          val parts = part.split("\\.").toSeq
+          val name  = parts.head
+          val path  = if (parts.size > 1) Some(parts.tail.mkString(".")) else None
+          wfr.memory.get(name).flatMap { v =>
+            path match {
+              case Some(p) if p.contains(".") => v.at(p).asOpt[JsValue].filterNot(_ == JsNull)
+              case Some(p)                    => v.select(p).asOpt[JsValue].filterNot(_ == JsNull)
+              case None                       => v.some
+            }
           }
         }
-      }.collectFirst { case Some(x) => x }.getOrElse(JsNull)
+        .collectFirst { case Some(x) => x }
+        .getOrElse(JsNull)
     }
     case JsString(str) if str.startsWith("${") && str.endsWith("}") && !str.contains(".") => {
       val name = str.substring(2).init
@@ -616,29 +625,39 @@ object WorkflowOperator {
     case JsString(str) if str.contains("${resume_token}")                                 =>
       JsString(str.replace("${resume_token}", PausedWorkflowSession.computeToken(wfr.workflow_ref, wfr.id, env)))
     case JsString(str) if str.contains("${") && str.contains("}")                         => {
-      val res = pattern.replaceAllIn(str, m => {
-        val expr = m.group(1).trim
-        val value = expr.split("\\|\\|").toStream.map(_.trim).filter(_.nonEmpty).map { part =>
-          val parts = part.split("\\.").toSeq
-          val name = parts.head
-          val path = if (parts.size > 1) Some(parts.tail.mkString(".")) else None
-          wfr.memory.get(name).flatMap { v =>
-            path match {
-              case Some(p) if p.contains(".") => v.at(p).asOpt[JsValue].filterNot(_ == JsNull)
-              case Some(p) => v.select(p).asOpt[JsValue].filterNot(_ == JsNull)
-              case None => v.some
+      val res = pattern.replaceAllIn(
+        str,
+        m => {
+          val expr  = m.group(1).trim
+          val value = expr
+            .split("\\|\\|")
+            .toStream
+            .map(_.trim)
+            .filter(_.nonEmpty)
+            .map { part =>
+              val parts = part.split("\\.").toSeq
+              val name  = parts.head
+              val path  = if (parts.size > 1) Some(parts.tail.mkString(".")) else None
+              wfr.memory.get(name).flatMap { v =>
+                path match {
+                  case Some(p) if p.contains(".") => v.at(p).asOpt[JsValue].filterNot(_ == JsNull)
+                  case Some(p)                    => v.select(p).asOpt[JsValue].filterNot(_ == JsNull)
+                  case None                       => v.some
+                }
+              }
             }
-          }
-        }.collectFirst { case Some(x) => x }.getOrElse(JsNull)
+            .collectFirst { case Some(x) => x }
+            .getOrElse(JsNull)
 
-        value match {
-          case JsNull       => "null"
-          case JsNumber(n)  => n.toString
-          case JsBoolean(b) => b.toString
-          case JsString(s)  => s
-          case j            => j.stringify
+          value match {
+            case JsNull       => "null"
+            case JsNumber(n)  => n.toString
+            case JsBoolean(b) => b.toString
+            case JsString(s)  => s
+            case j            => j.stringify
+          }
         }
-      })
+      )
       res.json
     }
     case _                                                                                => value

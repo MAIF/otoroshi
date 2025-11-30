@@ -481,7 +481,7 @@ case class TlsSettings(
     includeJdkCaClient: Boolean = true,
     trustedCAsServer: Seq[String] = Seq.empty,
     bannedAlpnProtocols: Map[String, Seq[String]] = Map.empty,
-    clientAuth: ClientAuth = ClientAuth.None,
+    clientAuth: ClientAuth = ClientAuth.None
 )                  {
   def json: JsValue = TlsSettings.format.writes(this)
   def trustedCAsServerWithLocalCAs(env: Env): Seq[String] = {
@@ -499,7 +499,7 @@ object TlsSettings {
         "includeJdkCaClient"  -> o.includeJdkCaClient,
         "trustedCAsServer"    -> JsArray(o.trustedCAsServer.map(JsString.apply)),
         "bannedAlpnProtocols" -> o.bannedAlpnProtocols,
-        "clientAuth"          -> o.clientAuth.name,
+        "clientAuth"          -> o.clientAuth.name
       )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
@@ -511,7 +511,11 @@ object TlsSettings {
           includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
           trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty),
           bannedAlpnProtocols = (json \ "bannedAlpnProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty),
-          clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).filterNot(_ == ClientAuth.Dynamic).getOrElse(ClientAuth.None),
+          clientAuth = (json \ "clientAuth")
+            .asOpt[String]
+            .flatMap(ClientAuth.apply)
+            .filterNot(_ == ClientAuth.Dynamic)
+            .getOrElse(ClientAuth.None)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)

@@ -45,18 +45,18 @@ object SwaggerUIConfig {
   )
 
   val format = new Format[SwaggerUIConfig] {
-    override def writes(o: SwaggerUIConfig): JsValue = Json.obj(
-      "swagger_url"         -> o.swaggerUrl,
-      "title"               -> o.title,
-      "swagger_ui_version"  -> o.swaggerUIVersion,
-      "filter"              -> o.filter,
-      "show_models"         -> o.showModels,
+    override def writes(o: SwaggerUIConfig): JsValue             = Json.obj(
+      "swagger_url"          -> o.swaggerUrl,
+      "title"                -> o.title,
+      "swagger_ui_version"   -> o.swaggerUIVersion,
+      "filter"               -> o.filter,
+      "show_models"          -> o.showModels,
       "display_operation_id" -> o.displayOperationId,
-      "show_extensions"     -> o.showExtensions,
-      "layout"              -> o.layout,
-      "sort_tags"           -> o.sortTags,
-      "sort_ops"            -> o.sortOps,
-      "theme"               -> o.theme
+      "show_extensions"      -> o.showExtensions,
+      "layout"               -> o.layout,
+      "sort_tags"            -> o.sortTags,
+      "sort_ops"             -> o.sortOps,
+      "theme"                -> o.theme
     )
     override def reads(json: JsValue): JsResult[SwaggerUIConfig] = Try {
       val version =
@@ -96,30 +96,30 @@ object SwaggerUIConfig {
 
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "swagger_url"         -> Json.obj(
+      "swagger_url"          -> Json.obj(
         "type"        -> "string",
         "label"       -> "OpenAPI URL",
         "placeholder" -> "https://your-api.example.com/openapi.json",
         "help"        -> "URL pointing to your OpenAPI JSON or YAML file"
       ),
-      "title"               -> Json.obj(
+      "title"                -> Json.obj(
         "type"        -> "string",
         "label"       -> "Page Title",
         "placeholder" -> "API Docs",
         "help"        -> "Title displayed in the browser tab"
       ),
-      "swagger_ui_version"  -> Json.obj(
+      "swagger_ui_version"   -> Json.obj(
         "type"        -> "string",
         "label"       -> "Swagger UI",
         "placeholder" -> DefaultSwaggerUIVersion,
         "help"        -> s"Swagger UI version to load from unpkg.com CDN (default: $DefaultSwaggerUIVersion)"
       ),
-      "filter"              -> Json.obj(
+      "filter"               -> Json.obj(
         "type"  -> "bool",
         "label" -> "Filter",
         "help"  -> "Show search/filter field"
       ),
-      "show_models"         -> Json.obj(
+      "show_models"          -> Json.obj(
         "type"  -> "bool",
         "label" -> "Models",
         "help"  -> "Show model schemas"
@@ -129,12 +129,12 @@ object SwaggerUIConfig {
         "label" -> "Operation ID",
         "help"  -> "Show operation IDs"
       ),
-      "show_extensions"     -> Json.obj(
+      "show_extensions"      -> Json.obj(
         "type"  -> "bool",
         "label" -> "Extensions",
         "help"  -> "Show vendor extension fields (x-*)"
       ),
-      "layout"              -> Json.obj(
+      "layout"               -> Json.obj(
         "type"  -> "select",
         "label" -> "Layout",
         "props" -> Json.obj(
@@ -144,7 +144,7 @@ object SwaggerUIConfig {
           )
         )
       ),
-      "sort_tags"           -> Json.obj(
+      "sort_tags"            -> Json.obj(
         "type"  -> "select",
         "label" -> "Sort Tags",
         "props" -> Json.obj(
@@ -154,7 +154,7 @@ object SwaggerUIConfig {
           )
         )
       ),
-      "sort_ops"            -> Json.obj(
+      "sort_ops"             -> Json.obj(
         "type"  -> "select",
         "label" -> "Sort Ops",
         "props" -> Json.obj(
@@ -165,20 +165,20 @@ object SwaggerUIConfig {
           )
         )
       ),
-      "theme"               -> Json.obj(
+      "theme"                -> Json.obj(
         "type"  -> "select",
         "label" -> "Theme",
         "help"  -> "Themes from swagger-ui-themes loaded from unpkg.com CDN",
         "props" -> Json.obj(
           "options" -> Json.arr(
-            Json.obj("label" -> "Default", "value"       -> "default"),
-            Json.obj("label" -> "Feeling Blue", "value"  -> "feeling-blue"),
-            Json.obj("label" -> "Flattop", "value"       -> "flattop"),
-            Json.obj("label" -> "Material", "value"      -> "material"),
-            Json.obj("label" -> "Monokai", "value"       -> "monokai"),
-            Json.obj("label" -> "Muted", "value"         -> "muted"),
-            Json.obj("label" -> "Newspaper", "value"     -> "newspaper"),
-            Json.obj("label" -> "Outline", "value"       -> "outline")
+            Json.obj("label" -> "Default", "value"      -> "default"),
+            Json.obj("label" -> "Feeling Blue", "value" -> "feeling-blue"),
+            Json.obj("label" -> "Flattop", "value"      -> "flattop"),
+            Json.obj("label" -> "Material", "value"     -> "material"),
+            Json.obj("label" -> "Monokai", "value"      -> "monokai"),
+            Json.obj("label" -> "Muted", "value"        -> "muted"),
+            Json.obj("label" -> "Newspaper", "value"    -> "newspaper"),
+            Json.obj("label" -> "Outline", "value"      -> "outline")
           )
         )
       )
@@ -197,9 +197,9 @@ class SwaggerUIPlugin extends NgBackendCall {
   override def defaultConfigObject: Option[NgPluginConfig] = SwaggerUIConfig.default.some
   override def noJsForm: Boolean                           = true
 
-  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Custom("Documentation"))
-  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Custom("Documentation"))
+  override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
   override def configFlow: Seq[String]        = SwaggerUIConfig.configFlow
   override def configSchema: Option[JsObject] = SwaggerUIConfig.configSchema
@@ -238,7 +238,7 @@ class SwaggerUIPlugin extends NgBackendCall {
             htmlContent.byteString
           ).future
         }
-      case _                                                                    =>
+      case _                                                                   =>
         inMemoryBodyResponse(
           400,
           Map("Content-Type" -> "application/json"),

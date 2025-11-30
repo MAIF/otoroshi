@@ -29,7 +29,7 @@ case class AnonymousReportingJobConfig(
     timeout: Duration,
     proxy: Option[WSProxyServer],
     tlsConfig: NgTlsConfig,
-    additionalData: JsObject,
+    additionalData: JsObject
 )
 
 object AnonymousReportingJobConfig {
@@ -40,7 +40,7 @@ object AnonymousReportingJobConfig {
     timeout = 60.seconds,
     proxy = None,
     tlsConfig = NgTlsConfig.default,
-    additionalData = Json.obj(),
+    additionalData = Json.obj()
   )
 
   def fromEnv(env: Env): AnonymousReportingJobConfig = {
@@ -78,16 +78,16 @@ object AnonymousReportingJobConfig {
             nonProxyHosts = None
           )
         },
-      additionalData = Json.obj(),
+      additionalData = Json.obj()
     )
   }
 }
 
 object AnonymousReportingJob {
 
-  private val ref = new AtomicReference[AnonymousReportingJobConfig](null)
+  private val ref                                                    = new AtomicReference[AnonymousReportingJobConfig](null)
   def setProgrammaticConfig(conf: AnonymousReportingJobConfig): Unit = ref.set(conf)
-  def programmaticConfig(): Option[AnonymousReportingJobConfig] = Option(ref.get())
+  def programmaticConfig(): Option[AnonymousReportingJobConfig]      = Option(ref.get())
 
   private def avgDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
     (if (value == Double.NaN || value == Double.NegativeInfinity || value == Double.PositiveInfinity) {
@@ -119,7 +119,10 @@ object AnonymousReportingJob {
     }
   }
 
-  def buildReport(globalConfig: GlobalConfig, reportingConfig: AnonymousReportingJobConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def buildReport(globalConfig: GlobalConfig, reportingConfig: AnonymousReportingJobConfig, attrs: TypedMap)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[JsValue] = {
     (for {
       members                   <- env.datastores.clusterStateDataStore.getMembers()
       calls                     <- env.datastores.serviceDescriptorDataStore.globalCalls()
@@ -151,7 +154,7 @@ object AnonymousReportingJob {
       val pluginsPlugins             = if (globalConfig.plugins.enabled) globalConfig.plugins.refs else Seq.empty
       val plugins                    = routePlugins ++ scriptPlugins ++ pluginsPlugins
       val counting                   = plugins.groupBy(identity).mapValues(v => JsNumber(v.size))
-      val genericEntities = JsObject(env.allResources.resources.map { res =>
+      val genericEntities            = JsObject(env.allResources.resources.map { res =>
         (s"${res.group}/${res.pluralName}", res.access.all().size.json)
       }.toMap)
       Json.obj(
@@ -165,7 +168,9 @@ object AnonymousReportingJob {
         "os"                   -> env.os.json,
         "datastore"            -> env.datastoreKind,
         "env"                  -> env.env,
-        "additional_data"     -> Try(reportingConfig.additionalData.stringify.evaluateEl(attrs).parseJson).toOption.getOrElse(Json.obj()).asValue,
+        "additional_data"      -> Try(reportingConfig.additionalData.stringify.evaluateEl(attrs).parseJson).toOption
+          .getOrElse(Json.obj())
+          .asValue,
         "features"             -> Json.obj(
           "snow_monkey"      -> globalConfig.snowMonkeyConfig.enabled,
           "clever_cloud"     -> globalConfig.cleverSettings.isDefined,
@@ -229,7 +234,7 @@ object AnonymousReportingJob {
             )
           })
         ),
-        "generic_entities" -> genericEntities,
+        "generic_entities"     -> genericEntities,
         "entities"             -> Json.obj(
           "scripts"               -> Json.obj(
             "count"   -> env.proxyState.allScripts().size,
@@ -469,13 +474,13 @@ class AnonymousReportingJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()
-    val cfg_config = AnonymousReportingJobConfig.fromEnv(env)
-    val prog_config = AnonymousReportingJob.programmaticConfig()
-    val config     = prog_config match {
+    val cfg_config   = AnonymousReportingJobConfig.fromEnv(env)
+    val prog_config  = AnonymousReportingJob.programmaticConfig()
+    val config       = prog_config match {
       case Some(programmaticConfig) =>
         showLog.set(false)
         programmaticConfig
-      case None => cfg_config
+      case None                     => cfg_config
     }
     if (prog_config.isDefined || (config.enabled && globalConfig.anonymousReporting)) {
       if (showLog.compareAndSet(true, false)) {
