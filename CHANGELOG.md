@@ -10,6 +10,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 
 https://github.com/MAIF/otoroshi/milestone/129?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.9.0...v17.9.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.9.0
+
+
+### Added 
+
+- support euclidian division in workflow operators (#2328 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support || in workflow expressions (#2329 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support additional match rules in the HasAllowedUsersValidator plugin (#2334 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Fix RegexResponseHeadersRewriter: missing name field and incorrect flow position (#2335 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Autoremove Bearer when verifying jwt token (#2336 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Missing filter on the API Keys page (#2337 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Add basic documentation editor for APIs (#2339 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add form for API documentation section (#2341 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- configurable bulk action for Elastic exporter (#2342 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$at` projection (#2343 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$atIf` projection (#2344 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$pointer` projection (#2345 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$pointerIf` projection (#2346 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$path` projection (#2347 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$pathIf` projection (#2348 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$header` projection (#2349 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add new projection operator `$date_from_unix_fmt` (#2350 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Allow dynamic mTLS mode (based on global config. TLS settings) for the server (#2351 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Allow to declare trusted server CAs local to a node (#2352 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- Fix Cookies validation plugin (#2326 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Issue when selecting a path with custommetrics data exporter (#2327 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Fix Throttling (#2333 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+
+### Contributors
+
+* @Zwiterrion
+* @mathieuancelin
+
+## [17.9.0] - 2025-11-30
+
+
+https://github.com/MAIF/otoroshi/milestone/129?closed=1
 https://github.com/MAIF/otoroshi/compare/v17.8.1...v17.9.0
 https://github.com/MAIF/otoroshi/releases/tag/v17.9.0
 
