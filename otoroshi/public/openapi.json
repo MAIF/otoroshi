@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.8.1",
+    "version" : "17.9.0",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:45537",
+    "url" : "http://otoroshi-api.oto.tools:38855",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -22844,6 +22844,11 @@
           }
         }
       },
+      "clientauthdynamic" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Client auth dynamic"
+      },
       "jwtverifier" : {
         "anyOf" : [ {
           "$ref" : "#/components/schemas/globaljwtverifier"
@@ -24768,12 +24773,16 @@
           "numberOfReplicas" : {
             "type" : "number"
           },
+          "action" : {
+            "type" : "string",
+            "minLength" : 1
+          },
           "interval" : {
             "$ref" : "#/components/schemas/indexsettingsinterval"
           }
         },
         "title" : "Index settings",
-        "required" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
+        "required" : [ "clientSide", "numberOfShards", "numberOfReplicas", "action", "interval" ]
       },
       "indexsettingsintervalweek" : {
         "type" : "object",
@@ -27447,6 +27456,8 @@
       },
       "clientauth" : {
         "anyOf" : [ {
+          "$ref" : "#/components/schemas/clientauthdynamic"
+        }, {
           "$ref" : "#/components/schemas/clientauthneed"
         }, {
           "$ref" : "#/components/schemas/clientauthnone"
@@ -28889,10 +28900,13 @@
                 }
               }
             }
+          },
+          "clientAuth" : {
+            "$ref" : "#/components/schemas/clientauth"
           }
         },
         "title" : "Tls settings",
-        "required" : [ "randomIfNotFound", "includeJdkCaServer", "includeJdkCaClient", "trustedCAsServer", "bannedAlpnProtocols" ]
+        "required" : [ "randomIfNotFound", "includeJdkCaServer", "includeJdkCaClient", "trustedCAsServer", "bannedAlpnProtocols", "clientAuth" ]
       },
       "nameidformat" : {
         "anyOf" : [ {
