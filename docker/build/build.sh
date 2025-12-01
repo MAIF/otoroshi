@@ -57,6 +57,8 @@ build_and_push_jar_template_version_multi_arch () {
   docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-temurin-jdk$JDK_VERSION" -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" .
   echo "build and push version $OTO_VERSION with jdk $JDK_VERSION from amazon-correto"
   docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=amazoncorretto:$JDK_VERSION"  --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION" .
+  docker buildx prune -af || true
+  docker system prune -af || true
 }
 
 build_and_push_jar_template_version_multi_arch_latest () {
@@ -65,6 +67,8 @@ build_and_push_jar_template_version_multi_arch_latest () {
   echo "build and push version $OTO_VERSION with jdk $JDK_VERSION latest"
   docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION" .
   docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:latest" .
+  docker buildx prune -af || true
+  docker system prune -af || true
 }
 
 build_and_push_jar_template_version_multi_arch_temurin_and_dev () {
