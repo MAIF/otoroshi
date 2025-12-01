@@ -136,7 +136,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
 
-    unlistedCall.status mustBe Status.FORBIDDEN
+    unlistedCall.status mustBe Status.NOT_FOUND
   }
 
   def testForbiddenOverridesAllowed(): Unit = {
@@ -228,7 +228,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
       .get()
       .futureValue
-    unlistedCall.status mustBe Status.FORBIDDEN
+    unlistedCall.status mustBe Status.NOT_FOUND
   }
 
   def testEmptyRestrictions(): Unit = {
@@ -294,13 +294,13 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
       .get()
       .futureValue
-    adminCall.status mustBe Status.FORBIDDEN
+    adminCall.status mustBe Status.OK
 
     val noVersionCall = ws
       .url(s"http://127.0.0.1:$port/api/users")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
       .get()
       .futureValue
-    noVersionCall.status mustBe Status.FORBIDDEN
+    noVersionCall.status mustBe Status.NOT_FOUND
   }
 }

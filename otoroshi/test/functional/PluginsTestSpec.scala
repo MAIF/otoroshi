@@ -514,32 +514,32 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "RBAC - test allow all" in {
       new RBACTests(this).testAllowAll()
     }
-//    "Routing Restrictions - test AllowedPath" in {
-//      new RoutingRestrictionsTests(this).testAllowedPath()
-//    }
-//    "Routing Restrictions - test ForbiddenPath" in {
-//      new RoutingRestrictionsTests(this).testForbiddenPath()
-//    }
-//    "Routing Restrictions - test NotFoundPath" in {
-//      new RoutingRestrictionsTests(this).testNotFoundPath()
-//    }
-//    "Routing Restrictions - test AllowLastTrue" in {
-//      new RoutingRestrictionsTests(this).testAllowLastTrue()
-//    }
-//    "Routing Restrictions - test AllowLastFalse" in {
-//      new RoutingRestrictionsTests(this).testAllowLastFalse()
-//    }
-//    "Routing Restrictions - test ForbiddenOverridesAllowed" in {
-//      new RoutingRestrictionsTests(this).testForbiddenOverridesAllowed()
-//    }
-//    "Routing Restrictions - test MultiplePaths" in {
-//      new RoutingRestrictionsTests(this).testMultiplePaths()
-//    }
-//    "Routing Restrictions - test EmptyRestrictions" in {
-//      new RoutingRestrictionsTests(this).testEmptyRestrictions()
-//    }
-//    "Routing Restrictions - test RegexPatterns" in {
-//      new RoutingRestrictionsTests(this).testRegexPatterns()
-//    }
+    "Routing Restrictions - test AllowedPath" in {
+      new RoutingRestrictionsTests(this).testAllowedPath()
+    }
+    "Routing Restrictions - test ForbiddenPath" in {
+      new RoutingRestrictionsTests(this).testForbiddenPath()
+    }
+    "Routing Restrictions - test NotFoundPath" in {
+      new RoutingRestrictionsTests(this).testNotFoundPath()
+    }
+    "Routing Restrictions - test AllowLastTrue" in {
+      new RoutingRestrictionsTests(this).testAllowLastTrue()
+    }
+    "Routing Restrictions - test AllowLastFalse" in {
+      new RoutingRestrictionsTests(this).testAllowLastFalse()
+    }
+    "Routing Restrictions - test ForbiddenOverridesAllowed" in {
+      new RoutingRestrictionsTests(this).testForbiddenOverridesAllowed()
+    }
+    "Routing Restrictions - test MultiplePaths" in {
+      new RoutingRestrictionsTests(this).testMultiplePaths()
+    }
+    "Routing Restrictions - test EmptyRestrictions" in {
+      new RoutingRestrictionsTests(this).testEmptyRestrictions()
+    }
+    "Routing Restrictions - test RegexPatterns" in {
+      new RoutingRestrictionsTests(this).testRegexPatterns()
+    }
   }
 }

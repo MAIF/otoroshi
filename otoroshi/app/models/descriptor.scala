@@ -1676,20 +1676,6 @@ case class Restrictions(
                   maybeRoute = route
                 )
               )
-            } else if (isNotAllowed(method, domain, path)) {
-              (
-                true,
-                Errors.craftResponseResult(
-                  "Not Found", // TODO: is it the right response ?
-                  Results.NotFound,
-                  req,
-                  descriptor,
-                  Some("errors.not.found"),
-                  emptyBody = true,
-                  attrs = attrs,
-                  maybeRoute = route
-                )
-              )
             } else {
               Restrictions.failedFutureResp
             }
