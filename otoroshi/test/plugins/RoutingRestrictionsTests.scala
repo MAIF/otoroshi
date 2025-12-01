@@ -37,6 +37,8 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .futureValue
 
     allowedCall.status mustBe Status.OK
+
+    deleteOtoroshiRoute(route).futureValue
   }
 
   def testForbiddenPath(): Unit = {
@@ -62,6 +64,8 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .futureValue
 
     forbiddenCall.status mustBe Status.FORBIDDEN
+
+    deleteOtoroshiRoute(route).futureValue
   }
 
   def testNotFoundPath(): Unit = {
@@ -87,6 +91,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .futureValue
 
     notFoundCall.status mustBe Status.NOT_FOUND
+    deleteOtoroshiRoute(route).futureValue
   }
 
   def testAllowLastTrue(): Unit = {
@@ -112,6 +117,8 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .futureValue
 
     unlistedCall.status mustBe Status.OK
+
+    deleteOtoroshiRoute(route).futureValue
   }
 
   def testAllowLastFalse(): Unit = {
@@ -137,6 +144,8 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .futureValue
 
     unlistedCall.status mustBe Status.NOT_FOUND
+
+    deleteOtoroshiRoute(route).futureValue
   }
 
   def testForbiddenOverridesAllowed(): Unit = {
@@ -171,6 +180,8 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .futureValue
 
     allowedCall.status mustBe Status.OK
+
+    deleteOtoroshiRoute(route).futureValue
   }
 
   def testMultiplePaths(): Unit = {
@@ -229,6 +240,8 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
     unlistedCall.status mustBe Status.NOT_FOUND
+
+    deleteOtoroshiRoute(route).futureValue
   }
 
   def testEmptyRestrictions(): Unit = {
@@ -256,6 +269,8 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .futureValue
 
     anyCall.status mustBe Status.OK
+
+    deleteOtoroshiRoute(route).futureValue
   }
 
   def testRegexPatterns(): Unit = {
@@ -302,5 +317,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
     noVersionCall.status mustBe Status.NOT_FOUND
+
+    deleteOtoroshiRoute(route).futureValue
   }
 }

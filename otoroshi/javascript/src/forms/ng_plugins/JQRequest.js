@@ -4,7 +4,7 @@ export default {
     filter: {
       label: 'Filter',
       type: 'code',
-      help: 'Example: {user: .user, title: .title}',
+      help: 'Example: {username: .user.name}',
       props: {
         label: 'Filter',
         type: 'javascript',

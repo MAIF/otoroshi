@@ -541,5 +541,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Routing Restrictions - test RegexPatterns" in {
       new RoutingRestrictionsTests(this).testRegexPatterns()
     }
+    "JQ Transform request" in {
+      new JQTransformRequestTests(this)
+    }
   }
 }
