@@ -1,9 +1,5 @@
 package functional
 
-import java.net.ServerSocket
-import java.nio.file.Files
-import java.util.Optional
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import akka.NotUsed
 import akka.actor.{ActorSystem, Scheduler}
 import akka.http.scaladsl.Http
@@ -14,41 +10,34 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Framing, Sink, Source}
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
-import otoroshi.env.Env
-import otoroshi.models._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{MustMatchers, OptionValues, TestSuite, WordSpec}
-import org.scalatestplus.play.components.{OneServerPerSuiteWithComponents, OneServerPerTestWithComponents}
+import org.scalatest.{MustMatchers, OptionValues, WordSpec}
 import org.slf4j.LoggerFactory
 import otoroshi.api.Otoroshi
 import otoroshi.auth.AuthModuleConfig
-import otoroshi.models.DataExporterConfig
+import otoroshi.env.Env
 import otoroshi.loader.modules.OtoroshiComponentsInstances
-import otoroshi.next.models.{
-  NgBackend,
-  NgClientConfig,
-  NgDomainAndPath,
-  NgFrontend,
-  NgPluginInstance,
-  NgPlugins,
-  NgRoute,
-  NgTarget
-}
+import otoroshi.models._
+import otoroshi.next.models._
+import otoroshi.next.workflow.Workflow
 import otoroshi.security.IdGenerator
-import otoroshi.ssl.Cert
+import otoroshi.utils.syntax.implicits._
+import otoroshi.wasm.proxywasm.CorazaWafConfig
 import play.api.ApplicationLoader.Context
+import play.api.http.Status
 import play.api.libs.json._
 import play.api.libs.ws._
 import play.api.libs.ws.ahc.{AhcWSClient, AhcWSClientConfig}
-import play.api.{Application, BuiltInComponents, Configuration, Logger}
+import play.api.{Configuration, Logger}
 import play.core.server.ServerConfig
 
+import java.net.ServerSocket
+import java.nio.file.Files
+import java.util.Optional
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Random, Success, Try}
-import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm.proxywasm.CorazaWafConfig
-import play.api.http.Status
 
 trait AddConfiguration {
   def getConfiguration(configuration: Configuration): Configuration
@@ -1417,18 +1406,18 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .andWait(2000.millis)
   }
 
-  def createOtoroshiCertificate(
-      certificate: Cert,
+  def createOtoroshiWorkflow(
+      workflow: Workflow,
       customPort: Option[Int] = None,
       ws: WSClient = wsClient
   ): Future[(JsValue, Int)] = {
-    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/certificates")
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/apis/plugins.otoroshi.io/v1/workflows")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
-      .post(Json.stringify(certificate.toJson))
+      .post(Json.stringify(workflow.json))
       .map { resp =>
         (resp.json, resp.status)
       }
@@ -1575,6 +1564,20 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
   def deleteOtoroshiRoute(route: NgRoute, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
     wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${route.id}")
+      .withHttpHeaders(
+        "Host" -> "otoroshi-api.oto.tools"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def deleteOtoroshiWorkflow(workflow: Workflow, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
+    wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/apis/plugins.otoroshi.io/v1/workflows/${workflow.id}")
       .withHttpHeaders(
         "Host" -> "otoroshi-api.oto.tools"
       )
@@ -2114,7 +2117,7 @@ class WebsocketBackend(
     callback: String => Message = text => TextMessage(s"Echo: $text"),
     streamCallback: Source[String, _] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))
 ) {
-  import akka.http.scaladsl.server.Directives.{complete, get, handleWebSocketMessages, path}
+  import akka.http.scaladsl.server.Directives.{get, handleWebSocketMessages, path}
 
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit val mat: Materializer   = Materializer(system)

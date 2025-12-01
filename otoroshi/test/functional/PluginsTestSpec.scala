@@ -562,5 +562,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Otoroshi Metrics Endpoint" in {
       new OtoroshiMetricsEndpointTests(this)
     }
+    "Workflow Access Control" in {
+      new WorkflowAccessControlTests(this)
+    }
   }
 }
