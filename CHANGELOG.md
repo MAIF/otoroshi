@@ -6,6 +6,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.9.1] - 2025-12-01
+
+
+https://github.com/MAIF/otoroshi/milestone/120?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.9.0...v17.9.1
+https://github.com/MAIF/otoroshi/releases/tag/v17.9.1
+
+
+### Added 
+
+- add json version of consumer in the expression language (#2214 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Function to read env. variable from a workflow (#2221 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Function to read config. value from a workflow (#2222 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- $jq operator for workflows (#2223 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Workflow can be scheduled using interval or cron (#2224 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support local functions for a workflow (#2225 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Resumable workflows (#2227 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support more replacements in the Http data exporter (#2229 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Plugin to rewrite http responses body based on regexes (#2230 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Plugin to rewrite http request body based on regexes (#2231 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Fail2ban plugin (#2232 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Splunk data exporter (#2233 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- dedicated wysiwyg designer for workflows (#2234 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Workflow Editor: Node Creation & Predicates (#2235 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Workflow Editor: Automatic Linking & Orphan Handling (#2236 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Workflow Editor: Layout Persistence (#2237 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Workflow Editor: Usability Review (#2238 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Logging: Memory Export Fix (#2239 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Testing: Workflow Editor Regression Coverage (#2240 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+### Changed 
+
+- update sonatype publish process (#2213 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Enhance Group usage in the UI (#2217 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- Elastic data exporter limit of field (#2205 fixed by [mathieuancelin](https://github.com/mathieuancelin), [Zwiterrion](https://github.com/Zwiterrion))
+- "Robot txt content" should be a textarea (#2215 fixed by [sebprunierserli](https://github.com/sebprunierserli))
+- Identity field missing in gateway event log on error responses (e.g., 429) (#2219 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- NPE when reading malformed cookies (#2220 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Static response form tries to parse json (#2228 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @edouardouvrard
+* @sebprunierserli
+* @dmorvant-altima
+
 ## [17.9.0] - 2025-11-30
 
 
