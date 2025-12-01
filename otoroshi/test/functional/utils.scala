@@ -1654,13 +1654,22 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       jsonAPI: Boolean = true,
       responseContentType: String = "application/json",
       stringResult: HttpRequest => String = _ => "",
-      target: Option[NgTarget] = None
+      target: Option[NgTarget] = None,
+      rawResult: Option[HttpRequest => (Int, String, List[HttpHeader])] = None
   ) = {
 
     var _target: Option[TargetService] = None
 
     if (target.isEmpty)
-      _target = (if (jsonAPI)
+      _target = (if (rawResult.isDefined) {
+                   TargetService
+                     .full(
+                       Some(domain),
+                       frontendPath,
+                       contentType = responseContentType,
+                       rawResult.get
+                     )
+                 } else if (jsonAPI)
                    TargetService
                      .jsonFull(
                        Some(domain),

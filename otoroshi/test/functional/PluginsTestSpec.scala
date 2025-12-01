@@ -553,5 +553,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Otoroshi headers in" in {
       new OtoroshiHeadersInTests(this)
     }
+    "Otoroshi Challenge" in {
+      new OtoroshiChallengeTests(this)
+    }
   }
 }
