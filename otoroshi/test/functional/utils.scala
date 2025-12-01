@@ -35,6 +35,7 @@ import otoroshi.next.models.{
   NgTarget
 }
 import otoroshi.security.IdGenerator
+import otoroshi.ssl.Cert
 import play.api.ApplicationLoader.Context
 import play.api.libs.json._
 import play.api.libs.ws._
@@ -1410,6 +1411,24 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .post(Json.stringify(apiKey.toJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(2000.millis)
+  }
+
+  def createOtoroshiCertificate(
+      certificate: Cert,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/certificates")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(certificate.toJson))
       .map { resp =>
         (resp.json, resp.status)
       }

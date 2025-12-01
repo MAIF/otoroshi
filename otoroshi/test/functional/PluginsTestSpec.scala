@@ -556,5 +556,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Otoroshi Challenge" in {
       new OtoroshiChallengeTests(this)
     }
+    "Otoroshi JWKS endpoint" in {
+      new OtoroshiJWKSEndpointTests(this)
+    }
   }
 }
