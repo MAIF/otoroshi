@@ -550,5 +550,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "JQ" in {
       new JQTests(this)
     }
+    "Otoroshi headers in" in {
+      new OtoroshiHeadersInTests(this)
+    }
   }
 }
