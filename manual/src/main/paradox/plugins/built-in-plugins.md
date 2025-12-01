@@ -6077,8 +6077,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-12-01T08:40:27.728Z",
-  "stop" : "2025-12-02T08:40:27.755Z",
+  "start" : "2025-12-01T09:57:18.690Z",
+  "stop" : "2025-12-02T09:57:18.711Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
