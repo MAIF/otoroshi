@@ -9,6 +9,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [17.9.1] - 2025-12-01
 
 
+https://github.com/MAIF/otoroshi/milestone/130?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.9.1...v17.9.1
+https://github.com/MAIF/otoroshi/releases/tag/v17.9.1
+
+
+
+
+### Fixed 
+
+- cleanup docker images during publishing (#2358 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
+## [17.9.1] - 2025-12-01
+
+
 https://github.com/MAIF/otoroshi/milestone/120?closed=1
 https://github.com/MAIF/otoroshi/compare/v17.9.0...v17.9.1
 https://github.com/MAIF/otoroshi/releases/tag/v17.9.1
