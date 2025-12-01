@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:42547",
+    "url" : "http://otoroshi-api.oto.tools:33731",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -28291,13 +28291,10 @@
           },
           "x$3" : {
             "type" : "number"
-          },
-          "x$4" : {
-            "type" : "number"
           }
         },
         "title" : "Local time",
-        "required" : [ "x$1", "x$2", "x$3", "x$4" ]
+        "required" : [ "x$1", "x$2", "x$3" ]
       },
       "mappingsettings" : {
         "type" : "object",
