@@ -544,5 +544,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "JQ Transform request" in {
       new JQTransformRequestTests(this)
     }
+    "JQ Transform response" in {
+      new JQTransformResponseTests(this)
+    }
   }
 }
