@@ -29,7 +29,8 @@ case class AnonymousReportingJobConfig(
     timeout: Duration,
     proxy: Option[WSProxyServer],
     tlsConfig: NgTlsConfig,
-    additionalData: JsObject
+    additionalData: JsObject,
+    logErrors: Boolean = true,
 )
 
 object AnonymousReportingJobConfig {
@@ -40,7 +41,8 @@ object AnonymousReportingJobConfig {
     timeout = 60.seconds,
     proxy = None,
     tlsConfig = NgTlsConfig.default,
-    additionalData = Json.obj()
+    additionalData = Json.obj(),
+    logErrors = true,
   )
 
   def fromEnv(env: Env): AnonymousReportingJobConfig = {
@@ -482,9 +484,9 @@ class AnonymousReportingJob extends Job {
         programmaticConfig
       case None                     => cfg_config
     }
-    if (prog_config.isDefined || (config.enabled && globalConfig.anonymousReporting)) {
+    (if (prog_config.isDefined || (config.enabled && globalConfig.anonymousReporting)) {
       if (showLog.compareAndSet(true, false)) {
-        displayYouCanDisableLog()
+        if (config.logErrors) displayYouCanDisableLog()
       }
       AnonymousReportingJob.buildReport(globalConfig, config, ctx.attrs).flatMap { report =>
         if (env.isDev) logger.debug(report.prettify)
@@ -502,20 +504,20 @@ class AnonymousReportingJob extends Job {
           .post(report)
           .map { resp =>
             if (resp.status != 200 && resp.status != 201 && resp.status != 204) {
-              logger.error(s"error while sending anonymous reports: ${resp.status} - ${resp.body}")
+              if (config.logErrors) logger.error(s"error while sending anonymous reports: ${resp.status} - ${resp.body}")
             }
           }
           .recover { case e: Throwable =>
-            logger.error("error while sending anonymous reports", e)
+            if (config.logErrors) logger.error("error while sending anonymous reports", e)
             ()
           }
       }
     } else {
-      displayPleaseEnableLog()
+      if (config.logErrors) displayPleaseEnableLog()
       ().vfuture
+    }).recover { case e: Throwable =>
+      if (config.logErrors) logger.error("error job anonymous reports", e)
+      ()
     }
-  }.recover { case e: Throwable =>
-    logger.error("error job anonymous reports", e)
-    ()
   }
 }

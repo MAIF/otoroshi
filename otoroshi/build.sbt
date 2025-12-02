@@ -120,7 +120,7 @@ libraryDependencies ++= Seq(
     "com.github.blemale" %% "scaffeine" % "5.2.1"
   },
   "org.shredzone.acme4j"             % "acme4j-client"                             % acme4jVersion excludeAll (excludeSlf4jAndJackson: _*),
-  "io.lettuce"                       % "lettuce-core"                              % "6.2.2.RELEASE" excludeAll (excludesJackson: _*),
+  "io.lettuce"                       % "lettuce-core"                              % "6.8.1.RELEASE" excludeAll (excludesJackson: _*),
   "io.vertx"                         % "vertx-pg-client"                           % "4.5.22",
   "com.ongres.scram"                 % "common"                                    % "2.1",
   "com.ongres.scram"                 % "client"                                    % "2.1",
@@ -407,10 +407,12 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.next.state-sync-interval=1000",
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=ext:foo",
-  "-Dotoroshi.storage=file",
+  //"-Dotoroshi.storage=file",
+  "-Dotoroshi.storage=lettuce",
+  "-Dapp.redis.lettuce.pooling.enabled=true",
   //"-Dotoroshi.storage=inmemory",
-  "-DVAULT_VALUE=admin-api-apikey-secret"
-//  "-Dotoroshi.storage=pg"
-//  "-Dotoroshi.storage=redis"
-//   "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
+  "-DVAULT_VALUE=admin-api-apikey-secret",
+//  "-Dotoroshi.storage=pg",
+//  "-Dotoroshi.storage=redis",
+   "-Dotoroshi.redis.lettuce.uri=redis://:CjOnLBPN0EB9CgR5X3U@bs0dwgpefrijxnbbigur-redis.services.clever-cloud.com:40092/",
 )
