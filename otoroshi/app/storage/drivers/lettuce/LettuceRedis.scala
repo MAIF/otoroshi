@@ -452,7 +452,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
 
   lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)(actorSystem.dispatcher, env)
 
-  logger.info(s"Using lettuce connections pooling - ${maxTotal}")
+  logger.info(s"Using lettuce async connections pooling - ${maxTotal}")
 
   def withRedis[T](f: RedisAsyncCommands[String, ByteString] => Future[T]): Future[T] = {
     pool.acquire().flatMap {
@@ -776,7 +776,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem,
 
   lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)(actorSystem.dispatcher, env)
 
-  logger.info(s"Using lettuce connections pooling - ${maxTotal}")
+  logger.info(s"Using reactive lettuce connections pooling - ${maxTotal}")
 
   def withRedis[T](f: RedisReactiveCommands[String, ByteString] => Future[T]): Future[T] = {
     pool.acquire().flatMap {
