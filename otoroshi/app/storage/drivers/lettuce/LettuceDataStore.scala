@@ -103,6 +103,9 @@ class LettuceDataStores(
   lazy val usePool = configuration
     .getOptionalWithFileSupport[Boolean]("app.redis.lettuce.pooling.enabled")
     .getOrElse(false)
+  lazy val useReactive = configuration
+    .getOptionalWithFileSupport[Boolean]("app.redis.lettuce.pooling.reactive")
+    .getOrElse(false)
 
   lazy val redis: LettuceRedis = {
 
@@ -116,7 +119,11 @@ class LettuceDataStores(
       client.setOptions(clientOptions)
       clientRef.set(client)
       if (usePool) {
-        new PooledLettuceRedisStandaloneAndSentinels(redisActorSystem, client, nodesRaw.head, env)
+        if (useReactive) {
+          new ReactivePooledLettuceRedisStandaloneAndSentinels(redisActorSystem, client, nodesRaw.head, env)
+        } else {
+          new PooledLettuceRedisStandaloneAndSentinels(redisActorSystem, client, nodesRaw.head, env)
+        }
       } else {
         new LettuceRedisStandaloneAndSentinels(redisActorSystem, client, env)
       }
