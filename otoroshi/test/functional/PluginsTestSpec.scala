@@ -565,5 +565,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Workflow Access Control" in {
       new WorkflowAccessControlTests(this)
     }
+    "Workflow Backend" in {
+      new WorkflowBackendTests(this)
+    }
   }
 }
