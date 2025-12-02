@@ -3,7 +3,7 @@ package otoroshi.api
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
-import next.models.{Api, ApiConsumerSubscription}
+import next.models.{Api, ApiConsumerSubscription, RouteTemplate}
 import org.apache.commons.lang3.math.NumberUtils
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
@@ -1065,8 +1065,29 @@ class OtoroshiResources(env: Env) {
         writeValidator = ApiConsumerSubscription.writeValidator,
         deleteValidator = ApiConsumerSubscription.deleteValidator
       )
+    ),
+    //////
+    Resource(
+      "RouteTemplate",
+      "route-templates",
+      "route-template",
+      "proxy.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApiWithState[RouteTemplate](
+        RouteTemplate.format,
+        classOf[RouteTemplate],
+        env.datastores.routeTemplateDataStore.key,
+        env.datastores.routeTemplateDataStore.extractId,
+        json => json.select("id").asString,
+        () => "id",
+        (v, p, ctx) => env.datastores.routeTemplateDataStore.template(env).json,
+        stateAll = () => env.proxyState.allRouteTemplates(),
+        stateOne = id => env.proxyState.routeTemplate(id),
+        stateUpdate = seq => env.proxyState.updateRouteTemplates(seq)
+      )
     )
   ) ++ env.adminExtensions.resources()
+
 }
 
 class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)

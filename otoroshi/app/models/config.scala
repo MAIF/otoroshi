@@ -525,25 +525,26 @@ object TlsSettings {
 }
 
 case class DefaultTemplates(
-    route: Option[JsObject] = Json.obj().some,                  // Option[NgRoute],
-    service: Option[JsObject] = Json.obj().some,                // Option[NgService],
-    backend: Option[JsObject] = Json.obj().some,                // Option[NgBackend],
-    target: Option[JsObject] = Json.obj().some,                 // Option[NgTarget],
-    descriptor: Option[JsObject] = Json.obj().some,             // Option[ServiceDescriptor],
-    apikey: Option[JsObject] = Json.obj().some,                 // Option[ApiKey],
-    group: Option[JsObject] = Json.obj().some,                  // Option[ServiceGroup],
-    template: Option[JsObject] = Json.obj().some,               // Option[ErrorTemplate],
-    verifier: Option[JsObject] = Json.obj().some,               // Option[GlobalJwtVerifier],
-    authConfig: Option[JsObject] = Json.obj().some,             // Option[AuthModuleConfig],
-    certificate: Option[JsObject] = Json.obj().some,            // Option[Cert],
-    script: Option[JsObject] = Json.obj().some,                 // Option[Script],
-    draft: Option[JsObject] = Json.obj().some,                  // Option[Draft],
-    api: Option[JsObject] = Json.obj().some,                    // Option[Api],
-    tcpService: Option[JsObject] = Json.obj().some,             // Option[TcpService],
-    dataExporter: Option[JsObject] = Json.obj().some,           // Option[DataExporterConfig],
-    tenant: Option[JsObject] = Json.obj().some,                 // Option[Tenant],
-    team: Option[JsObject] = Json.obj().some,                   // Option[Team],
-    apiConsumerSubscription: Option[JsObject] = Json.obj().some // Option[ApiConsumerSubscription],
+    route: Option[JsObject] = Json.obj().some,                   // Option[NgRoute],
+    service: Option[JsObject] = Json.obj().some,                 // Option[NgService],
+    backend: Option[JsObject] = Json.obj().some,                 // Option[NgBackend],
+    target: Option[JsObject] = Json.obj().some,                  // Option[NgTarget],
+    descriptor: Option[JsObject] = Json.obj().some,              // Option[ServiceDescriptor],
+    apikey: Option[JsObject] = Json.obj().some,                  // Option[ApiKey],
+    group: Option[JsObject] = Json.obj().some,                   // Option[ServiceGroup],
+    template: Option[JsObject] = Json.obj().some,                // Option[ErrorTemplate],
+    verifier: Option[JsObject] = Json.obj().some,                // Option[GlobalJwtVerifier],
+    authConfig: Option[JsObject] = Json.obj().some,              // Option[AuthModuleConfig],
+    certificate: Option[JsObject] = Json.obj().some,             // Option[Cert],
+    script: Option[JsObject] = Json.obj().some,                  // Option[Script],
+    draft: Option[JsObject] = Json.obj().some,                   // Option[Draft],
+    api: Option[JsObject] = Json.obj().some,                     // Option[Api],
+    tcpService: Option[JsObject] = Json.obj().some,              // Option[TcpService],
+    dataExporter: Option[JsObject] = Json.obj().some,            // Option[DataExporterConfig],
+    tenant: Option[JsObject] = Json.obj().some,                  // Option[Tenant],
+    team: Option[JsObject] = Json.obj().some,                    // Option[Team],
+    apiConsumerSubscription: Option[JsObject] = Json.obj().some, // Option[ApiConsumerSubscription],
+    routeTemplate: Option[JsObject] = Json.obj().some            // Option[RouteTemplate],
 ) {
   def json: JsValue = DefaultTemplates.format.writes(this)
 }
@@ -571,7 +572,8 @@ object DefaultTemplates {
           dataExporter = json.select("dataExporter").asOpt[JsObject],
           tenant = json.select("tenant").asOpt[JsObject],
           team = json.select("team").asOpt[JsObject],
-          apiConsumerSubscription = json.select("apiConsumerSubscription").asOpt[JsObject]
+          apiConsumerSubscription = json.select("apiConsumerSubscription").asOpt[JsObject],
+          routeTemplate = json.select("routeTemplate").asOpt[JsObject]
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -597,7 +599,8 @@ object DefaultTemplates {
       "dataExporter"            -> o.dataExporter.getOrElse(JsNull).asValue,
       "tenant"                  -> o.tenant.getOrElse(JsNull).asValue,
       "team"                    -> o.team.getOrElse(JsNull).asValue,
-      "apiConsumerSubscription" -> o.apiConsumerSubscription.getOrElse(JsNull).asValue
+      "apiConsumerSubscription" -> o.apiConsumerSubscription.getOrElse(JsNull).asValue,
+      "routeTemplate"           -> o.routeTemplate.getOrElse(JsNull).asValue
     )
   }
 }

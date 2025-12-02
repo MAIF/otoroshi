@@ -1,4 +1,43 @@
-export function getPluginsPatterns(plugins, setNodes, addNodes, clearPLugins) {
+export function getOwnTemplates(plugins, setNodes, routeTemplates, setFrontendAndBackend) {
+  function findPlugin(id) {
+    return plugins.filter((p) => p.id === id)[0];
+  }
+
+  return routeTemplates.map(template => {
+    return {
+      config: {},
+      config_flow: [],
+      config_schema: {},
+      default_config: {},
+      description: template.description,
+      id: template.id,
+      name: template.name,
+      on_request: false,
+      on_response: false,
+      plugin_categories: ['My own templates'],
+      plugin_multi_inst: false,
+      plugin_steps: [],
+      plugin_tags: [],
+      plugin_type: 'ng',
+      plugin_visibility: 'userland',
+      shortcut: () => {
+        setFrontendAndBackend(template.route.frontend, template.route.backend, () => {
+          setNodes(template.route.plugins.map(plugin => {
+            return {
+              enabled: true,
+              ...findPlugin(plugin.plugin),
+              ...plugin
+            }
+          }))
+        })
+      },
+    }
+  })
+}
+
+
+
+export function getPluginsPatterns(plugins, setNodes) {
   return [
     {
       config: {},

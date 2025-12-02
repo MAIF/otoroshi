@@ -69,6 +69,7 @@ import { NgFormPlayground } from '../components/nginputs';
 import { NgSelectRenderer } from '../components/nginputs';
 import Loader from '../components/Loader';
 import { globalConfig } from 'antd/lib/config-provider';
+import { RouteTemplatesPage } from '../pages/RouteTemplatesPage';
 
 class ServiceDescriptorsMigrationPopup extends Component {
   render() {
@@ -721,6 +722,33 @@ class BackOfficeAppContainer extends Component {
                         path="/error-templates"
                         component={(props) =>
                           this.decorate(ErrorTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/route-templates/:taction/:titem"
+                        component={(props) =>
+                          this.decorate(RouteTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/route-templates/:taction"
+                        component={(props) =>
+                          this.decorate(RouteTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/route-templates"
+                        component={(props) =>
+                          this.decorate(RouteTemplatesPage, {
                             ...props,
                             env: this.state.env,
                           })

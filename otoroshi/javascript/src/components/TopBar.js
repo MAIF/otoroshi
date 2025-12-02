@@ -842,6 +842,12 @@ export class TopBar extends Component {
           label: 'Error Templates',
           value: 'error-templates',
         });
+        options.push({
+          action: () => this.routeTo('/route-templates'),
+          env: <span className="fas fa-bomb" />,
+          label: 'Route Templates',
+          value: 'route-templates',
+        });
         if (this.props.env.scriptingEnabled === true) {
           options.push({
             action: () => this.routeTo('/plugins'),

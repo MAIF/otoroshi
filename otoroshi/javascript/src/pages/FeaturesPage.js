@@ -168,6 +168,13 @@ export const graph = (env) => {
           link: '/error-templates',
         },
         {
+          title: 'Route Templates',
+          description: 'All your route templates',
+          img: 'error',
+          icon: () => 'fa-bomb',
+          link: '/route-templates',
+        },
+        {
           title: 'Scripts',
           description: 'All your live scripts',
           img: 'scripts',

@@ -32,7 +32,7 @@ import camelCase from 'lodash/camelCase';
 import isFunction from 'lodash/isFunction';
 import _ from 'lodash';
 
-import { getPluginsPatterns } from './patterns';
+import { getPluginsPatterns, getOwnTemplates } from './patterns';
 import { EurekaTargetForm } from './EurekaTargetForm';
 import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
@@ -469,6 +469,7 @@ class Designer extends React.Component {
   state = {
     backends: [],
     categories: [],
+    routeTemplates: [],
     nodes: [],
     plugins: [],
     ports: [],
@@ -541,7 +542,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) {}
+      } catch (_) { }
     }
   };
 
@@ -557,7 +558,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) {}
+      } catch (_) { }
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -583,10 +584,10 @@ class Designer extends React.Component {
             ...plugin,
             config_schema: isFunction(plugin.config_schema)
               ? plugin.config_schema({
-                  showAdvancedDesignerView: (pluginName) => {
-                    this.setState({ advancedDesignerView: pluginName });
-                  },
-                })
+                showAdvancedDesignerView: (pluginName) => {
+                  this.setState({ advancedDesignerView: pluginName });
+                },
+              })
               : plugin.config_schema,
           };
         })
@@ -594,7 +595,8 @@ class Designer extends React.Component {
       getOldPlugins(),
       getPlugins(),
       routePorts(),
-    ]).then(([backends, route, categories, plugins, oldPlugins, metadataPlugins, ports]) => {
+      nextClient.forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES).findAll()
+    ]).then(([backends, route, categories, plugins, oldPlugins, metadataPlugins, ports, routeTemplates]) => {
       if (route.error) {
         this.setState({
           loading: false,
@@ -673,6 +675,7 @@ class Designer extends React.Component {
       this.setState({
         ports,
         backends,
+        routeTemplates,
         loading: false,
         categories: categories.filter((category) => !['Job'].includes(category)),
         route: { ...routeWithNodeId },
@@ -913,14 +916,14 @@ class Designer extends React.Component {
                 bound_listeners: node.bound_listeners || [],
                 config: newNode.legacy
                   ? {
-                      plugin: newNode.id,
-                      // [newNode.configRoot]: {
-                      ...newNode.config,
-                      // },
-                    }
+                    plugin: newNode.id,
+                    // [newNode.configRoot]: {
+                    ...newNode.config,
+                    // },
+                  }
                   : {
-                      ...newNode.config,
-                    },
+                    ...newNode.config,
+                  },
               },
             ],
           },
@@ -1151,8 +1154,8 @@ class Designer extends React.Component {
         plugin_index: Object.fromEntries(
           Object.entries(
             plugin.plugin_index ||
-              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-              {}
+            this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+            {}
           ).map(([key, v]) => [snakeCase(key), v])
         ),
       })),
@@ -1438,20 +1441,33 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-            .map((p) => {
-              const id = p.plugin;
-              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-              if (pluginDef) {
-                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                  return { ...p, ...pluginDef };
-                }
+          .map((p) => {
+            const id = p.plugin;
+            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+            if (pluginDef) {
+              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                return { ...p, ...pluginDef };
               }
-              return null;
-            })
-            .filter((p) => !!p)
+            }
+            return null;
+          })
+          .filter((p) => !!p)
         : [];
 
-    const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
+    const ownTemplates = getOwnTemplates(
+      plugins,
+      this.setNodes,
+      this.state.routeTemplates,
+      (frontend, backend, callback) => this.setState({
+        route: {
+          ...this.state.route,
+          frontend: { ...this.state.route.frontend, ...frontend },
+          backend: { ...this.state.route.backend, ...backend }
+        }
+      }, callback))
+
+    const patterns = getPluginsPatterns(plugins, this.setNodes);
+
     plugins.map((p) => {
       if (p.legacy) {
         if (!p.plugin_categories) {
@@ -1525,8 +1541,8 @@ class Designer extends React.Component {
             onExpandAll={() => this.setState({ expandAll: !expandAll })}
             expandAll={expandAll}
             searched={searched}
-            plugins={[...plugins, ...patterns]}
-            categories={[...categories, 'Legacy', 'Patterns']}
+            plugins={[...plugins, ...patterns, ...ownTemplates]}
+            categories={[...categories, 'Legacy', 'Patterns', 'My own templates']}
             addNode={this.addNode}
             showPreview={(element) =>
               this.setState({
@@ -1802,6 +1818,42 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
+function FrontendInformations({ frontend, allMethods, domain, idx, routeEntries }) {
+  const [copyIconName, setCopyIconName] = useState('fas fa-copy');
+  const exact = frontend.exact;
+  const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
+  const start = 'http://';
+  return allMethods.map((method, i) => {
+    return (
+      <div className="d-flex align-items-center mx-3 mb-1" key={`allmethods-${i}`}>
+        <div style={{ minWidth: 60 }}>{method}</div>
+        <span style={{ fontSize: 15 }}>
+          {routeEntries(idx)}
+          {end}
+        </span>
+        <div className="d-flex align-items-center ms-auto">
+          <button
+            className="btn btn-sm btn-quiet"
+            title="Copy URL"
+            onClick={() => copy(routeEntries(idx), setCopyIconName)}
+          >
+            <i className={copyIconName} />
+          </button>
+          {draftVersionSignal.value.version === 'published' && (
+            <button
+              className="btn btn-sm btn-quiet ms-1"
+              title={`Go to ${start}${domain}`}
+              onClick={() => goTo(idx)}
+            >
+              <i className="fas fa-external-link-alt" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  });
+}
+
 const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports }) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
@@ -1812,14 +1864,14 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
     const allMethods =
       rawMethods && rawMethods.length > 0
         ? rawMethods.map((m, i) => (
-            <span
-              key={`frontendmethod-${i}`}
-              className={`badge me-1`}
-              style={{ backgroundColor: HTTP_COLORS[m] }}
-            >
-              {m}
-            </span>
-          ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}
+          >
+            {m}
+          </span>
+        ))
         : [<span className="badge bg-success">ALL</span>];
 
     const copy = (value, setCopyIconName) => {
@@ -1885,39 +1937,12 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
             }}
           >
             {frontend.domains.map((domain, idx) => {
-              const [copyIconName, setCopyIconName] = useState('fas fa-copy');
-              const exact = frontend.exact;
-              const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
-              const start = 'http://';
-              return allMethods.map((method, i) => {
-                return (
-                  <div className="d-flex align-items-center mx-3 mb-1" key={`allmethods-${i}`}>
-                    <div style={{ minWidth: 60 }}>{method}</div>
-                    <span style={{ fontSize: 15 }}>
-                      {routeEntries(idx)}
-                      {end}
-                    </span>
-                    <div className="d-flex align-items-center ms-auto">
-                      <button
-                        className="btn btn-sm btn-quiet"
-                        title="Copy URL"
-                        onClick={() => copy(routeEntries(idx), setCopyIconName)}
-                      >
-                        <i className={copyIconName} />
-                      </button>
-                      {draftVersionSignal.value.version === 'published' && (
-                        <button
-                          className="btn btn-sm btn-quiet ms-1"
-                          title={`Go to ${start}${domain}`}
-                          onClick={() => goTo(idx)}
-                        >
-                          <i className="fas fa-external-link-alt" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              });
+              return <FrontendInformations
+                frontend={frontend}
+                allMethods={allMethods}
+                domain={domain}
+                idx={idx}
+                routeEntries={routeEntries} />
             })}
           </div>
           {frontend.query && Object.keys(frontend.query).length > 0 && (
@@ -2001,9 +2026,9 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
                 );
                 const mtls =
                   target.tls &&
-                  target.tls_config &&
-                  target.tls_config.enabled &&
-                  [...(target.tls_config.certs || [])].length > 0 ? (
+                    target.tls_config &&
+                    target.tls_config.enabled &&
+                    [...(target.tls_config.certs || [])].length > 0 ? (
                     <span
                       className="badge bg-warning text-dark"
                       style={{
@@ -2087,9 +2112,8 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${
-          icon || 'bars'
-        } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${icon || 'bars'
+          } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>
