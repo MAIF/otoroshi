@@ -409,10 +409,10 @@ reStart / javaOptions ++= Seq(
   // "-Dotoroshi.storage=ext:foo",
   "-Dotoroshi.storage=file",
   //"-Dotoroshi.storage=lettuce",
-  //"-Dapp.redis.lettuce.pooling.enabled=true",
+  "-Dapp.redis.lettuce.pooling.enabled=true",
   //"-Dotoroshi.storage=inmemory",
   "-DVAULT_VALUE=admin-api-apikey-secret",
-//  "-Dotoroshi.storage=pg",
-//  "-Dotoroshi.storage=redis",
+  //"-Dotoroshi.storage=pg",
+  //"-Dotoroshi.storage=redis",
    "-Dotoroshi.redis.lettuce.uri=redis://localhost:5432/",
 )
