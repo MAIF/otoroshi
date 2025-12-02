@@ -568,5 +568,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Workflow Backend" in {
       new WorkflowBackendTests(this)
     }
+    "Workflow Transform Request" in {
+      new WorkflowTransformRequestTests(this)
+    }
   }
 }
