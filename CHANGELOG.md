@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.9.2] - 2025-12-03
+
+
+https://github.com/MAIF/otoroshi/milestone/131?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.9.1...v17.9.2
+https://github.com/MAIF/otoroshi/releases/tag/v17.9.2
+
+
+### Added 
+
+- Align NgServiceQuotas plugin logic with updateQuotasAndCheck (#2355 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Add support for route templates (reusable route configurations) (#2356 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+
+### Fixed 
+
+- Weird iowait behavior with lettuce client on linux (#2359 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @Zwiterrion
+* @sebprunierserli
+* @mathieuancelin
+
 ## [17.9.1] - 2025-12-01
 
 
