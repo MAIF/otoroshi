@@ -877,7 +877,7 @@ class HttpClientFunction extends WorkflowFunction {
           )
         response_selector match {
           case None           => response.right
-          case Some(selector) => response.at(selector).asValue.right
+          case Some(selector) => response.at(selector).asOpt[JsValue].getOrElse(JsNull).right
         }
       }
       .recover { case t: Throwable =>
