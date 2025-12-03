@@ -71,7 +71,49 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$str_replace", new StringReplaceOperator())
     WorkflowOperator.registerOperator("$str_replace_all", new StringReplaceAllOperator())
     WorkflowOperator.registerOperator("$jq", new JqOperator())
-    WorkflowOperator.registerOperator("$round", new Round())
+    WorkflowOperator.registerOperator("$round", new RoundOperator())
+    WorkflowOperator.registerOperator("$parse_number", new ParseNumberOperator())
+  }
+}
+
+
+class ParseNumberOperator extends WorkflowOperator {
+
+  override def documentationName: String                  = "$parse_number"
+  override def documentationDescription: String           = "This operator parse a number from a string"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "properties" -> Json.obj(
+        "value"   -> Json.obj("type" -> "string", "description" -> "value to parse"),
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$parse_number" -> Json.obj(
+        "value" -> "4.2"
+      )
+    )
+  )
+
+  override def documentationFormSchema: Option[JsObject] = Some(
+    Json.obj(
+      "value"   -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Value"
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val valueStr = opts.select("value").asOptString.getOrElse("0").trim
+    if (valueStr.isEmpty) {
+      JsNumber(0)
+    } else if (valueStr.contains(".")) {
+      JsNumber(valueStr.toDouble)
+    } else {
+      JsNumber(valueStr.toLong)
+    }
   }
 }
 
@@ -662,7 +704,7 @@ class ArrayHeadOperator extends WorkflowOperator {
   }
 }
 
-class Round extends WorkflowOperator {
+class RoundOperator extends WorkflowOperator {
   override def documentationName: String                  = "$round"
   override def documentationDisplayName: String           = "Round"
   override def documentationIcon: String                  = "fas fa-code"
