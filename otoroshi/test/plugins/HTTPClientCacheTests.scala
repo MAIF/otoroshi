@@ -12,7 +12,7 @@ class HTTPClientCacheTests(parent: PluginsTestSpec) {
   import parent.{given, *}
 
   def matchesWildcardMimeType() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -38,7 +38,7 @@ class HTTPClientCacheTests(parent: PluginsTestSpec) {
   }
 
   def doesNotAddCacheHeadersIfContentTypeDoesNotMatch() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -64,7 +64,7 @@ class HTTPClientCacheTests(parent: PluginsTestSpec) {
   }
 
   def doesNotAddCacheHeadersIfStatusDoesNotMatch() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -90,7 +90,7 @@ class HTTPClientCacheTests(parent: PluginsTestSpec) {
   }
 
   def doesNotAddCacheHeadersIfHTTPMethodDoesNotMatch() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -115,8 +115,8 @@ class HTTPClientCacheTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def addCacheHeadersWhenMethodStatusAndContentTypeMatch() = {
-    val route = createRequestOtoroshiIORoute(
+  def addCacheHeadersWhenMethodStatusAndContentTypeMatch() {
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]

@@ -45,7 +45,7 @@ class JwtVerifiersTests(parent: PluginsTestSpec) {
   createOtoroshiVerifier(verifier).futureValue
   createOtoroshiVerifier(verifier2).futureValue
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(

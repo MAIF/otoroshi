@@ -10,7 +10,7 @@ import play.api.libs.json.JsObject
 class AdditionalHeadersInTests(parent: PluginsTestSpec) {
   import parent.{given, *}
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

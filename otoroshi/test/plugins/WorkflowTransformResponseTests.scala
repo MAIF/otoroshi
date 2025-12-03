@@ -41,7 +41,7 @@ class WorkflowTransformResponseTests(parent: PluginsTestSpec) {
 
   createOtoroshiWorkflow(workflow).futureValue
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(

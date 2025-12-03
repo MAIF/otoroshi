@@ -11,7 +11,7 @@ import play.api.libs.ws.WSBodyWritables.given
 class AllowHTTPMethodsTests(parent: PluginsTestSpec) {
   import parent.{given, *}
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

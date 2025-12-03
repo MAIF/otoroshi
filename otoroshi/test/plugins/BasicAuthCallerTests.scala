@@ -15,7 +15,7 @@ class BasicAuthCallerTests(parent: PluginsTestSpec) {
 
   def checkProcess() = {
     def simpleBasicAuthRoute(): NgRoute = {
-      createRequestOtoroshiIORoute(
+      createRouteWithExternalTarget(
         Seq(
           NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
           NgPluginInstance(
@@ -34,7 +34,7 @@ class BasicAuthCallerTests(parent: PluginsTestSpec) {
     }
 
     def basicAuthCallerRoute(): NgRoute = {
-      createRequestOtoroshiIORoute(
+      createRouteWithExternalTarget(
         Seq(
           NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
           NgPluginInstance(
@@ -81,7 +81,7 @@ class BasicAuthCallerTests(parent: PluginsTestSpec) {
   }
 
   def checkValue() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]

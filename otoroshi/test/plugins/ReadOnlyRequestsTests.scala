@@ -10,7 +10,7 @@ import play.api.libs.ws.DefaultBodyWritables.given
 class ReadOnlyRequestsTests(parent: PluginsTestSpec) {
   import parent.{given, *}
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(NgPluginHelper.pluginId[ReadOnlyCalls])

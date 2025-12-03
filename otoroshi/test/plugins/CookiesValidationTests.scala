@@ -18,7 +18,7 @@ import play.api.libs.ws.DefaultWSCookie
 class CookiesValidationTests(parent: PluginsTestSpec) {
   import parent.{given, *}
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

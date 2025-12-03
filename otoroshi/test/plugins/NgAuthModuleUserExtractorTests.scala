@@ -54,7 +54,7 @@ class NgAuthModuleUserExtractorTests(parent: PluginsTestSpec) {
   )
   createAuthModule(moduleConfiguration).futureValue
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(
@@ -83,7 +83,7 @@ class NgAuthModuleUserExtractorTests(parent: PluginsTestSpec) {
   page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Login")).nth(0).click()
   page.content().contains("GET") mustBe true
 
-  val routeToCheck = createRequestOtoroshiIORoute(
+  val routeToCheck = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(

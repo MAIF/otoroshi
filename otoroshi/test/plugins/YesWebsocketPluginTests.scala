@@ -22,7 +22,7 @@ class YesWebsocketPluginTests(parent: PluginsTestSpec) {
   import parent.{given, *}
 
   def sendYMessagesPeriodicallyToWebsocketClients() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -65,7 +65,7 @@ class YesWebsocketPluginTests(parent: PluginsTestSpec) {
   }
 
   def rejectConnectionWithFailYesQueryParameter() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]

@@ -34,7 +34,7 @@ class CorazaWAFTests(parent: PluginsTestSpec) {
   )
   val wafResult = createOtoroshiWAF(coraza).futureValue
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

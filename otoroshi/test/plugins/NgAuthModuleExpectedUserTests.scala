@@ -52,7 +52,7 @@ class NgAuthModuleExpectedUserTests(parent: PluginsTestSpec) {
   )
   createAuthModule(moduleConfiguration).futureValue
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(
@@ -89,7 +89,7 @@ class NgAuthModuleExpectedUserTests(parent: PluginsTestSpec) {
 
   page.content().contains("You're not authorized here") mustBe true
 
-  val route2 = createRequestOtoroshiIORoute(
+  val route2 = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(

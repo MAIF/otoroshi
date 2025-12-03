@@ -20,7 +20,7 @@ class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
   given http: HttpExt       = Http()
   given env: otoroshi.env.Env = otoroshiComponents.env
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

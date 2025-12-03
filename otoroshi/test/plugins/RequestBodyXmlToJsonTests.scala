@@ -11,7 +11,7 @@ import play.api.libs.ws.DefaultBodyWritables.given
 class RequestBodyXmlToJsonTests(parent: PluginsTestSpec) {
   import parent.{given, *}
   
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(NgPluginHelper.pluginId[XmlToJsonRequest])

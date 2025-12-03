@@ -207,7 +207,7 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
   }
 
   def createRoute(keycloakPort: Int) = {
-    createRequestOtoroshiIORoute(
+    createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(

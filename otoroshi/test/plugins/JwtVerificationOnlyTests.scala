@@ -33,7 +33,7 @@ class JwtVerificationOnlyTests(parent: PluginsTestSpec) {
     )
     createOtoroshiVerifier(verifier).futureValue
 
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -79,7 +79,7 @@ class JwtVerificationOnlyTests(parent: PluginsTestSpec) {
     )
     createOtoroshiVerifier(verifier).futureValue
 
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -109,7 +109,7 @@ class JwtVerificationOnlyTests(parent: PluginsTestSpec) {
   }
 
   def withoutVerifier() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(

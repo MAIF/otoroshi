@@ -13,7 +13,7 @@ import play.api.libs.ws.WSBodyWritables.given
 class DefaultRequestBodyTests(parent: PluginsTestSpec) {
   import parent.{given, *}
 
-  val localRoute = createRequestOtoroshiIORoute(
+  val localRoute = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]
