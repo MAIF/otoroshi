@@ -1,7 +1,14 @@
 package storage.drivers.generic
 
 import com.typesafe.config.ConfigFactory
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
+import next.models.{
+  ApiConsumerSubscriptionDataStore,
+  ApiDataStore,
+  KvApiConsumerSubscriptionDataStore,
+  KvApiDataStore,
+  KvRouteTemplateDataStore,
+  RouteTemplateDataStore
+}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
@@ -181,6 +188,10 @@ class GenericDataStores(
   private lazy val _apiConsumerSubscriptionDataStore = new KvApiConsumerSubscriptionDataStore(redis, env)
 
   override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
+
+  private lazy val _routeTemplateDataStore = new KvRouteTemplateDataStore(redis, env)
+
+  override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
 
   private lazy val _adminPreferencesDatastore = new AdminPreferencesDatastore(env)
 

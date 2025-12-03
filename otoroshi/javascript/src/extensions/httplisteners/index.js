@@ -82,6 +82,7 @@ export function setupHttpListenersExtension(registerExtension) {
               { label: 'None', value: 'none' },
               { label: 'Want', value: 'want' },
               { label: 'Need', value: 'need' },
+              { label: 'Dynamic', value: 'dynamic' },
             ],
           },
         },

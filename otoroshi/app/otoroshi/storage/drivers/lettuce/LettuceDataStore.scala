@@ -4,8 +4,15 @@ import com.typesafe.config.ConfigFactory
 import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
 import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
-import io.lettuce.core.{AbstractRedisClient, ReadFrom, RedisClient, RedisURI}
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
+import io.lettuce.core.{AbstractRedisClient, ClientOptions, ReadFrom, RedisClient, RedisURI}
+import next.models.{
+  ApiConsumerSubscriptionDataStore,
+  ApiDataStore,
+  KvApiConsumerSubscriptionDataStore,
+  KvApiDataStore,
+  KvRouteTemplateDataStore,
+  RouteTemplateDataStore
+}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
@@ -101,13 +108,34 @@ class LettuceDataStores(
       .ioThreadPoolSize(ioThreadPoolSize)
       .build()
   }
+  lazy val usePool                = configuration
+    .getOptionalWithFileSupport[Boolean]("app.redis.lettuce.pooling.enabled")
+    .getOrElse(false)
+  lazy val useReactive            = configuration
+    .getOptionalWithFileSupport[Boolean]("app.redis.lettuce.pooling.reactive")
+    .getOrElse(false)
 
   lazy val redis: LettuceRedis = {
 
+    val clientOptions = ClientOptions
+      .builder()
+      .autoReconnect(true)
+      .pingBeforeActivateConnection(true)
+      .build()
+
     def standardConnection() = {
       val client = RedisClient.create(resources, nodesRaw.head)
+      client.setOptions(clientOptions)
       clientRef.set(client)
-      new LettuceRedisStandaloneAndSentinels(redisActorSystem, client, env)
+      if (usePool) {
+        if (useReactive) {
+          new ReactivePooledLettuceRedisStandaloneAndSentinels(redisActorSystem, client, nodesRaw.head, env)
+        } else {
+          new PooledLettuceRedisStandaloneAndSentinels(redisActorSystem, client, nodesRaw.head, env)
+        }
+      } else {
+        new LettuceRedisStandaloneAndSentinels(redisActorSystem, client, env)
+      }
     }
 
     redisConnection match {
@@ -234,6 +262,9 @@ class LettuceDataStores(
 
   private lazy val _apiConsumerSubscriptionDataStore                              = new KvApiConsumerSubscriptionDataStore(redis, env)
   override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
+
+  private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
+  override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore

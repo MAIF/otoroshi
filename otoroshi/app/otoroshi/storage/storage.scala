@@ -1,6 +1,6 @@
 package otoroshi.storage
 
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore}
+import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, RouteTemplateDataStore}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.*
@@ -85,6 +85,7 @@ trait DataStores {
   def draftsDataStore: DraftDataStore
   def apiDataStore: ApiDataStore
   def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore
+  def routeTemplateDataStore: RouteTemplateDataStore
   def adminPreferencesDatastore: AdminPreferencesDatastore
   ////
   def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit]
@@ -92,17 +93,18 @@ trait DataStores {
 }
 
 trait RawDataStore {
-  def exists(key: String)(using ec: ExecutionContext, env: Env): Future[Boolean]
-  def pttl(key: String)(using ec: ExecutionContext, env: Env): Future[Long]
-  def get(key: String)(using ec: ExecutionContext, env: Env): Future[Option[ByteString]]
-  def mget(keys: Seq[String])(using ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]]
-  def set(key: String, value: ByteString, ttl: Option[Long])(using ec: ExecutionContext, env: Env): Future[Boolean]
-  def setnx(key: String, value: ByteString, ttl: Option[Long])(using ec: ExecutionContext, env: Env): Future[Boolean]
-  def del(keys: Seq[String])(using ec: ExecutionContext, env: Env): Future[Long]
-  def incr(key: String)(using ec: ExecutionContext, env: Env): Future[Long]           = incrby(key, 1L)
-  def incrby(key: String, incr: Long)(using ec: ExecutionContext, env: Env): Future[Long]
-  def keys(pattern: String)(using ec: ExecutionContext, env: Env): Future[Seq[String]]
-  def pexpire(key: String, pttl: Long)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def exists(key: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def pttl(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def get(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ByteString]]
+  def mget(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]]
+  def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def setnx(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def del(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def incr(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]           = incrby(key, 1L)
+  def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def keys(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]]
+  def expire(key: String, seconds: Int): Future[Boolean]
+  def pexpire(key: String, pttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def sadd(key: String, members: Seq[ByteString]): Future[Long]
   def sismember(key: String, member: ByteString): Future[Boolean]
   def smembers(key: String): Future[Seq[ByteString]]

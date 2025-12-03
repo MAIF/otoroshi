@@ -17,6 +17,7 @@ import org.apache.pekko.stream.connectors.s3.scaladsl.S3
 import org.apache.pekko.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source, SourceQueueWithComplete}
 import org.apache.pekko.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
 import org.apache.pekko.util.ByteString
+import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.auth.AuthConfigsDataStore
@@ -3069,6 +3070,9 @@ class SwappableInMemoryDataStores(
   private lazy val _apiConsumerSubscriptionDataStore                              = new KvApiConsumerSubscriptionDataStore(redis, env)
   override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
 
+  private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
+  override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
+
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore
 
@@ -3504,7 +3508,9 @@ object ClusterLeaderUpdateMessage       {
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
     override def updateLeader(member: MemberView)(using env: Env, ec: ExecutionContext): Future[Unit] = {
-      NgCustomThrottling.updateQuotas(expr, group, calls.get(), ttl)
+      NgCustomThrottling
+        .updateQuotas(expr, group, calls.get(), 0, ttl.toInt)
+        .map(_ => ())
     }
 
     override def updateWorker(member: MemberView)(using env: Env): Future[Unit] = {
@@ -3524,7 +3530,9 @@ object ClusterLeaderUpdateMessage       {
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
     override def updateLeader(member: MemberView)(using env: Env, ec: ExecutionContext): Future[Unit] = {
-      NgCustomQuotas.updateQuotas(expr, group, calls.get())
+      NgCustomQuotas
+        .updateQuotas(expr, group, calls.get())
+        .map(_ => ())
     }
 
     override def updateWorker(member: MemberView)(using env: Env): Future[Unit] = {

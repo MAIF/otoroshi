@@ -3,7 +3,8 @@ package otoroshi.controllers.adminapi
 import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.jobs.AnonymousReportingJob
+import otoroshi.jobs.{AnonymousReportingJob, AnonymousReportingJobConfig}
+import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 import play.api.{Logger, mvc}
@@ -22,7 +23,9 @@ class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)
   def infos(): mvc.Action[AnyContent] = ApiAction.async { ctx =>
     val full = ctx.request.getQueryString("full").contains("true")
     if (full) {
-      AnonymousReportingJob.buildReport(env.datastores.globalConfigDataStore.latest()).map(report => Ok(report))
+      AnonymousReportingJob
+        .buildReport(env.datastores.globalConfigDataStore.latest(), AnonymousReportingJobConfig.default, TypedMap.empty)
+        .map(report => Ok(report))
     } else {
       Ok(
         Json.obj(
@@ -31,6 +34,7 @@ class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)
           "otoroshi_version_sem" -> env.otoroshiVersionSem.json,
           "java_version"         -> env.theJavaVersion.json,
           "os"                   -> env.os.json,
+          "backoffice_url"       -> env.backOfficeUrl,
           "datastore"            -> env.datastoreKind,
           "env"                  -> env.env
         )

@@ -35,6 +35,8 @@ import play.api.libs.ws.WSBodyReadables.readableAsString
 import play.api.{Configuration, Logger}
 import plugins.*
 
+import scala.concurrent.duration.DurationInt
+
 class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
   given mat: Materializer = otoroshiComponents.materializer
@@ -55,6 +57,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     startOtoroshi()
     getOtoroshiRoutes().futureValue // WARM UP
+    await(2.seconds)                // wait for router sync
   }
 
   override def afterAll(): Unit = {
@@ -470,6 +473,135 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
     "Wasm Access Control - bad" in {
       new WasmAccessControlTests(this).bad()
+    }
+    "Wasm Backend" in {
+      new WasmBackendTests(this)
+    }
+    "Open Policy Agent (OPA)" in {
+      new WasmOPATests(this)
+    }
+    "Wasm Pre Route" in {
+      new WasmPreRouteTests(this)
+    }
+    "Wasm Request Transformer" in {
+      new WasmRequestTransformerTests(this)
+    }
+    "Wasm Response Transformer" in {
+      new WasmResponseTransformerTests(this)
+    }
+    "Wasm Route Matcher" in {
+      new WasmRouteMatcherTests(this)
+    }
+    "Wasm Websocket transformer" in {
+      new WasmWebsocketTransformerTests(this)
+    }
+    "X-Forwarded-* headers" in {
+      new XForwardedHeadersTests(this)
+    }
+    "Redirection" in {
+      new RedirectionTests(this)
+    }
+    "Endless HTTP responses" in {
+      new EndlessHTTPresponsesTests(this)
+    }
+    "Coraza WAF" in {
+      new CorazaWAFTests(this)
+    }
+    "Zip Backend" in {
+      new ZipBackendTests(this)
+    }
+    "Public quotas" in {
+      new NgServiceQuotasTests(this)
+    }
+    "Custom throttling" in {
+      new NgCustomThrottlingTests(this)
+    }
+    "Global Maintenance mode" in {
+      new GlobalMaintenanceModeTests(this)
+    }
+    "Apikey auth module" in {
+      new ApikeyAuthModuleTests(this)
+    }
+    "Apikey quotas" in {
+      new ApikeyQuotasTests(this)
+    }
+    "RBAC - allow" in {
+      new RBACTests(this).allow()
+    }
+    "RBAC - unauthorized role" in {
+      new RBACTests(this).testUnauthorizedRole()
+    }
+    "RBAC - test no roles" in {
+      new RBACTests(this).testNoRoles()
+    }
+    "RBAC - test wrong role prefix" in {
+      new RBACTests(this).testWrongRolePrefix()
+    }
+    "RBAC - test deny rules" in {
+      new RBACTests(this).testDenyRules()
+    }
+    "RBAC - test allow all" in {
+      new RBACTests(this).testAllowAll()
+    }
+    "Routing Restrictions - test AllowedPath" in {
+      new RoutingRestrictionsTests(this).testAllowedPath()
+    }
+    "Routing Restrictions - test ForbiddenPath" in {
+      new RoutingRestrictionsTests(this).testForbiddenPath()
+    }
+    "Routing Restrictions - test NotFoundPath" in {
+      new RoutingRestrictionsTests(this).testNotFoundPath()
+    }
+    "Routing Restrictions - test AllowLastTrue" in {
+      new RoutingRestrictionsTests(this).testAllowLastTrue()
+    }
+    "Routing Restrictions - test AllowLastFalse" in {
+      new RoutingRestrictionsTests(this).testAllowLastFalse()
+    }
+    "Routing Restrictions - test ForbiddenOverridesAllowed" in {
+      new RoutingRestrictionsTests(this).testForbiddenOverridesAllowed()
+    }
+    "Routing Restrictions - test MultiplePaths" in {
+      new RoutingRestrictionsTests(this).testMultiplePaths()
+    }
+    "Routing Restrictions - test EmptyRestrictions" in {
+      new RoutingRestrictionsTests(this).testEmptyRestrictions()
+    }
+    "Routing Restrictions - test RegexPatterns" in {
+      new RoutingRestrictionsTests(this).testRegexPatterns()
+    }
+    "JQ Transform request" in {
+      new JQTransformRequestTests(this)
+    }
+    "JQ Transform response" in {
+      new JQTransformResponseTests(this)
+    }
+    "JQ" in {
+      new JQTests(this)
+    }
+    "Otoroshi headers in" in {
+      new OtoroshiHeadersInTests(this)
+    }
+    "Otoroshi Challenge" in {
+      new OtoroshiChallengeTests(this)
+    }
+    "Otoroshi JWKS endpoint" in {
+      new OtoroshiJWKSEndpointTests(this)
+    }
+    "Otoroshi Metrics Endpoint" in {
+      new OtoroshiMetricsEndpointTests(this)
+    }
+    "Workflow Access Control" in {
+      new WorkflowAccessControlTests(this)
+    }
+    "Workflow Backend" in {
+      new WorkflowBackendTests(this)
+    }
+    "Workflow Transform Request" in {
+      new WorkflowTransformRequestTests(this)
+    }
+    "Workflow Transform Response" in {
+      new WorkflowTransformResponseTests(this)
     }
   }
 }

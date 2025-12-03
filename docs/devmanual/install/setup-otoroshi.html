@@ -2112,7 +2112,7 @@ otoroshi {
     }
     # the mtls mode
     fromOutside {
-      clientAuth = &quot;None&quot;
+      clientAuth = &quot;Dynamic&quot;
       clientAuth = ${?SSL_OUTSIDE_CLIENT_AUTH}
       clientAuth = ${?OTOROSHI_SSL_OUTSIDE_CLIENT_AUTH}
       netty {
@@ -2123,6 +2123,8 @@ otoroshi {
     trust {
       all = false
       all = ${?OTOROSHI_SSL_TRUST_ALL}
+      server_cas = []
+      server_cas_str = ${?OTOROSHI_SSL_TRUST_SERVER_CAS}
     }
     rootCa {
     	ca = ${?OTOROSHI_SSL_ROOTCA_CA}
@@ -3466,6 +3468,7 @@ otoroshi {
     }
     trust {
       all = ${?OTOROSHI_SSL_TRUST_ALL}
+      server_cas_str = ${?OTOROSHI_SSL_TRUST_SERVER_CAS}
     }
     rootCa {
     	ca = ${?OTOROSHI_SSL_ROOTCA_CA}

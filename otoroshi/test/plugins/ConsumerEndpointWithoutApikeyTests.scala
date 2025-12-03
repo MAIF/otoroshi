@@ -27,7 +27,7 @@ class ConsumerEndpointWithoutApikeyTests(parent: PluginsTestSpec) {
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> route.frontend.domains.head.domain
     )
     .get()
     .futureValue

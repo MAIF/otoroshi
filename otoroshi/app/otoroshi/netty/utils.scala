@@ -63,14 +63,16 @@ object EventLoopUtils {
     if (config.isEpoll && io.netty.channel.epoll.Epoll.isAvailable) {
       val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, EpollIoHandler.newFactory())
       EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
-    } else if (config.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
-      // Note: IOUringEventLoopGroup might also be deprecated, check if there's an IOUringIoHandler
+    } /*else if (config.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
       val channelHttp  = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
       val evlGroupHttp = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(nThread, threadFactory)
       evlGroupHttp.register(channelHttp).sync().await()
       EventLoopGroupCreation(evlGroupHttp, Some("IO-Uring"))
-    } else if (config.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
-      val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, KQueueIoHandler.newFactory())
+    }*/
+    else if (config.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
+      val channelHttp  = new io.netty.channel.kqueue.KQueueServerSocketChannel()
+      val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(nThread, threadFactory)
+      evlGroupHttp.register(channelHttp).sync().await()
       EventLoopGroupCreation(evlGroupHttp, Some("KQueue"))
     } else {
       val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, NioIoHandler.newFactory())

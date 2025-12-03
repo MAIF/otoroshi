@@ -66,7 +66,7 @@ class ApikeyMandatoryTagsTests(parent: PluginsTestSpec) {
   val authorizedCall = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host"                   -> PLUGINS_HOST,
+      "Host"                   -> route.frontend.domains.head.domain,
       "Otoroshi-Client-Id"     -> apikey.clientId,
       "Otoroshi-Client-Secret" -> apikey.clientSecret
     )
@@ -78,7 +78,7 @@ class ApikeyMandatoryTagsTests(parent: PluginsTestSpec) {
   val invalidCall = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host"                   -> PLUGINS_HOST,
+      "Host"                   -> route.frontend.domains.head.domain,
       "Otoroshi-Client-Id"     -> invalidApikey.clientId,
       "Otoroshi-Client-Secret" -> invalidApikey.clientSecret
     )

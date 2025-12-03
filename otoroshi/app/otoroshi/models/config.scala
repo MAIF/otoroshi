@@ -12,7 +12,7 @@ import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
 import otoroshi.script.plugins.Plugins
 import otoroshi.security.IdGenerator
-import otoroshi.ssl.{Cert, ClientCertificateValidator}
+import otoroshi.ssl.{Cert, ClientAuth, ClientCertificateValidator}
 import otoroshi.storage.BasicStore
 import otoroshi.tcp.TcpService
 import otoroshi.utils.RegexPool
@@ -483,9 +483,14 @@ case class TlsSettings(
     includeJdkCaServer: Boolean = true,
     includeJdkCaClient: Boolean = true,
     trustedCAsServer: Seq[String] = Seq.empty,
-    bannedAlpnProtocols: Map[String, Seq[String]] = Map.empty
+    bannedAlpnProtocols: Map[String, Seq[String]] = Map.empty,
+    clientAuth: ClientAuth = ClientAuth.None
 )                  {
   def json: JsValue = TlsSettings.format.writes(this)
+  def trustedCAsServerWithLocalCAs(env: Env): Seq[String] = {
+    val global = trustedCAsServer
+    (global ++ env.serverTrustedCAs).distinct
+  }
 }
 object TlsSettings {
   val format: Format[TlsSettings] = new Format[TlsSettings] {
@@ -496,7 +501,8 @@ object TlsSettings {
         "includeJdkCaServer"  -> o.includeJdkCaServer,
         "includeJdkCaClient"  -> o.includeJdkCaClient,
         "trustedCAsServer"    -> JsArray(o.trustedCAsServer.map(JsString.apply)),
-        "bannedAlpnProtocols" -> o.bannedAlpnProtocols
+        "bannedAlpnProtocols" -> o.bannedAlpnProtocols,
+        "clientAuth"          -> o.clientAuth.name
       )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
@@ -507,7 +513,12 @@ object TlsSettings {
           includeJdkCaServer = (json \ "includeJdkCaServer").asOpt[Boolean].getOrElse(true),
           includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
           trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty),
-          bannedAlpnProtocols = (json \ "bannedAlpnProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty)
+          bannedAlpnProtocols = (json \ "bannedAlpnProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty),
+          clientAuth = (json \ "clientAuth")
+            .asOpt[String]
+            .flatMap(ClientAuth.apply)
+            .filterNot(_ == ClientAuth.Dynamic)
+            .getOrElse(ClientAuth.None)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -517,25 +528,26 @@ object TlsSettings {
 }
 
 case class DefaultTemplates(
-    route: Option[JsObject] = Json.obj().some,                  // Option[NgRoute],
-    service: Option[JsObject] = Json.obj().some,                // Option[NgService],
-    backend: Option[JsObject] = Json.obj().some,                // Option[NgBackend],
-    target: Option[JsObject] = Json.obj().some,                 // Option[NgTarget],
-    descriptor: Option[JsObject] = Json.obj().some,             // Option[ServiceDescriptor],
-    apikey: Option[JsObject] = Json.obj().some,                 // Option[ApiKey],
-    group: Option[JsObject] = Json.obj().some,                  // Option[ServiceGroup],
-    template: Option[JsObject] = Json.obj().some,               // Option[ErrorTemplate],
-    verifier: Option[JsObject] = Json.obj().some,               // Option[GlobalJwtVerifier],
-    authConfig: Option[JsObject] = Json.obj().some,             // Option[AuthModuleConfig],
-    certificate: Option[JsObject] = Json.obj().some,            // Option[Cert],
-    script: Option[JsObject] = Json.obj().some,                 // Option[Script],
-    draft: Option[JsObject] = Json.obj().some,                  // Option[Draft],
-    api: Option[JsObject] = Json.obj().some,                    // Option[Api],
-    tcpService: Option[JsObject] = Json.obj().some,             // Option[TcpService],
-    dataExporter: Option[JsObject] = Json.obj().some,           // Option[DataExporterConfig],
-    tenant: Option[JsObject] = Json.obj().some,                 // Option[Tenant],
-    team: Option[JsObject] = Json.obj().some,                   // Option[Team],
-    apiConsumerSubscription: Option[JsObject] = Json.obj().some // Option[ApiConsumerSubscription],
+    route: Option[JsObject] = Json.obj().some,                   // Option[NgRoute],
+    service: Option[JsObject] = Json.obj().some,                 // Option[NgService],
+    backend: Option[JsObject] = Json.obj().some,                 // Option[NgBackend],
+    target: Option[JsObject] = Json.obj().some,                  // Option[NgTarget],
+    descriptor: Option[JsObject] = Json.obj().some,              // Option[ServiceDescriptor],
+    apikey: Option[JsObject] = Json.obj().some,                  // Option[ApiKey],
+    group: Option[JsObject] = Json.obj().some,                   // Option[ServiceGroup],
+    template: Option[JsObject] = Json.obj().some,                // Option[ErrorTemplate],
+    verifier: Option[JsObject] = Json.obj().some,                // Option[GlobalJwtVerifier],
+    authConfig: Option[JsObject] = Json.obj().some,              // Option[AuthModuleConfig],
+    certificate: Option[JsObject] = Json.obj().some,             // Option[Cert],
+    script: Option[JsObject] = Json.obj().some,                  // Option[Script],
+    draft: Option[JsObject] = Json.obj().some,                   // Option[Draft],
+    api: Option[JsObject] = Json.obj().some,                     // Option[Api],
+    tcpService: Option[JsObject] = Json.obj().some,              // Option[TcpService],
+    dataExporter: Option[JsObject] = Json.obj().some,            // Option[DataExporterConfig],
+    tenant: Option[JsObject] = Json.obj().some,                  // Option[Tenant],
+    team: Option[JsObject] = Json.obj().some,                    // Option[Team],
+    apiConsumerSubscription: Option[JsObject] = Json.obj().some, // Option[ApiConsumerSubscription],
+    routeTemplate: Option[JsObject] = Json.obj().some            // Option[RouteTemplate],
 ) {
   def json: JsValue = DefaultTemplates.format.writes(this)
 }
@@ -563,7 +575,8 @@ object DefaultTemplates {
           dataExporter = json.select("dataExporter").asOpt[JsObject],
           tenant = json.select("tenant").asOpt[JsObject],
           team = json.select("team").asOpt[JsObject],
-          apiConsumerSubscription = json.select("apiConsumerSubscription").asOpt[JsObject]
+          apiConsumerSubscription = json.select("apiConsumerSubscription").asOpt[JsObject],
+          routeTemplate = json.select("routeTemplate").asOpt[JsObject]
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -589,7 +602,8 @@ object DefaultTemplates {
       "dataExporter"            -> o.dataExporter.getOrElse(JsNull).asValue,
       "tenant"                  -> o.tenant.getOrElse(JsNull).asValue,
       "team"                    -> o.team.getOrElse(JsNull).asValue,
-      "apiConsumerSubscription" -> o.apiConsumerSubscription.getOrElse(JsNull).asValue
+      "apiConsumerSubscription" -> o.apiConsumerSubscription.getOrElse(JsNull).asValue,
+      "routeTemplate"           -> o.routeTemplate.getOrElse(JsNull).asValue
     )
   }
 }

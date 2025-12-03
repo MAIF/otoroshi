@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.9.0-dev",
+    "version" : "17.9.2",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:41319",
+    "url" : "http://otoroshi-api.oto.tools:46503",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -87,6 +87,9 @@
   }, {
     "name" : "apiconsumersubscription",
     "description" : "all the operations about the apiconsumersubscription entity"
+  }, {
+    "name" : "route-template",
+    "description" : "all the operations about the route-template entity"
   }, {
     "name" : "workflow",
     "description" : "all the operations about the workflow entity"
@@ -4075,6 +4078,251 @@
               "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/proxy.otoroshi.io.ErrorTemplate"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/proxy.otoroshi.io/v1/route-templates/_bulk" : {
+      "post" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Create multiple RouteTemplate at the same time",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.bulk_create",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Update multiple RouteTemplate at the same time",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.bulk_update",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Update (using json-patch) multiple RouteTemplate at the same time",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.bulk_patch",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkPatchBody"
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Delete multiple RouteTemplate at the same time",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.bulk_delete",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
                 }
               }
             }
@@ -12800,6 +13048,66 @@
         }
       }
     },
+    "/apis/proxy.otoroshi.io/v1/route-templates/_count" : {
+      "get" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Get number of entity of kind RouteTemplate",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.count",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resources count",
+                  "type" : "object",
+                  "properties" : {
+                    "count" : {
+                      "type" : "number",
+                      "description" : "the number of resources"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/apis/organize.otoroshi.io/v1/tenants" : {
       "get" : {
         "tags" : [ "tenant", "organize.otoroshi.io" ],
@@ -13684,6 +13992,60 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/organize.otoroshi.io.Organization"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/proxy.otoroshi.io/v1/route-templates/_template" : {
+      "get" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Return a template of a resource of kind RouteTemplate",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.template",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resource of kind RouteTemplate",
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
               }
             }
           }
@@ -19270,6 +19632,267 @@
         }
       }
     },
+    "/apis/proxy.otoroshi.io/v1/route-templates/{id}" : {
+      "get" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Find resource of kind RouteTemplate by its id",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.findById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resource of kind RouteTemplate",
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Updates a specific RouteTemplate using its id",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.updateById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Updates (using json-patch) a specific RouteTemplate using its id",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.pathById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Deletes a specific RouteTemplate using its id",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.deleteById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/apis/config.otoroshi.io/v1/global-configs" : {
       "get" : {
         "tags" : [ "global-config", "config.otoroshi.io" ],
@@ -19924,6 +20547,124 @@
                     }
                   }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/proxy.otoroshi.io/v1/route-templates" : {
+      "get" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Find all possible RouteTemplate entities",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.findAll",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Creates a RouteTemplate",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.create",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
               }
             }
           }
@@ -22987,9 +23728,19 @@
         },
         "required" : [ ]
       },
-      "proxy.otoroshi.io.Route" : {
-        "$schema" : "http://json-schema.org/draft-07/schema#",
-        "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
+      "clientauthdynamic" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Client auth dynamic"
+      },
+      "jwtverifier" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/globaljwtverifier"
+        }, {
+          "$ref" : "#/components/schemas/localjwtverifier"
+        }, {
+          "$ref" : "#/components/schemas/refjwtverifier"
+        } ]
       },
       "otoroshi.next.models.StoredNgBackend" : {
         "type" : "object",
@@ -23860,6 +24611,123 @@
       "otoroshi.models.ClientIdAuthConstraints" : {
         "type" : "object",
         "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Filter node",
+        "required" : [ "json" ]
+      },
+      "config.otoroshi.io.GlobalConfig" : {
+        "type" : "object",
+        "properties" : {
+          "config" : {
+            "$ref" : "#/components/schemas/globalconfig"
+          }
+        },
+        "title" : "Tweaked global config",
+        "required" : [ "config" ]
+      },
+      "seccomversion" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/seccomversionv1"
+        }, {
+          "$ref" : "#/components/schemas/seccomversionv2"
+        } ]
+      },
+      "ngroute" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "debugFlow" : {
+            "type" : "boolean"
+          },
+          "capture" : {
+            "type" : "boolean"
+          },
+          "exportReporting" : {
+            "type" : "boolean"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "boundListeners" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "frontend" : {
+            "$ref" : "#/components/schemas/ngfrontend"
+          },
+          "backend" : {
+            "$ref" : "#/components/schemas/ngbackend"
+          },
+          "backendRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "plugins" : {
+            "$ref" : "#/components/schemas/ngplugins"
+          }
+        },
+        "title" : "Ng route",
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "enabled", "debugFlow", "capture", "exportReporting", "groups", "boundListeners", "frontend", "backend", "plugins" ]
+      },
+      "finiteduration" : {
+        "type" : "object",
+        "properties" : {
+          "length" : {
+            "type" : "number"
+          },
+          "unit" : {
+            "$ref" : "#/components/schemas/timeunit"
+          }
+        },
+        "title" : "Finite duration",
+        "required" : [ "length", "unit" ]
+      },
+      "clientidauthconstraints" : {
+        "type" : "object",
+        "properties" : {
           "enabled" : {
             "type" : "boolean",
             "default" : true
@@ -24233,9 +25101,28 @@
         "properties" : { },
         "required" : [ ]
       },
-      "organize.otoroshi.io.Tenant" : {
-        "$schema" : "http://json-schema.org/draft-07/schema#",
-        "$ref" : "#/components/schemas/otoroshi.models.Tenant"
+      "indexsettings" : {
+        "type" : "object",
+        "properties" : {
+          "clientSide" : {
+            "type" : "boolean"
+          },
+          "numberOfShards" : {
+            "type" : "number"
+          },
+          "numberOfReplicas" : {
+            "type" : "number"
+          },
+          "action" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "interval" : {
+            "$ref" : "#/components/schemas/indexsettingsinterval"
+          }
+        },
+        "title" : "Index settings",
+        "required" : [ "clientSide", "numberOfShards", "numberOfReplicas", "action", "interval" ]
       },
       "otoroshi.script.JobInstantiation" : {
         "type" : "object",
@@ -25460,10 +26347,40 @@
       "otoroshi.models.GlobalJwtVerifier" : {
         "type" : "object",
         "properties" : {
-          "logger$lzy3" : {
-            "type" : "object",
-            "properties" : { },
-            "required" : [ ]
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Index settings interval month",
+        "required" : [ "name" ]
+      },
+      "clientauth" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/clientauthdynamic"
+        }, {
+          "$ref" : "#/components/schemas/clientauthneed"
+        }, {
+          "$ref" : "#/components/schemas/clientauthnone"
+        }, {
+          "$ref" : "#/components/schemas/clientauthwant"
+        } ]
+      },
+      "valuenode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Value node",
+        "required" : [ "json" ]
+      },
+      "clientconfig" : {
+        "type" : "object",
+        "properties" : {
+          "useCircuitBreaker" : {
+            "type" : "boolean"
           },
           "id" : {
             "type" : "string"
@@ -26349,8 +27266,53 @@
           },
           "caFromChain$lzy1" : {
             "type" : "object",
-            "properties" : { },
-            "required" : [ ]
+            "patternProperties" : {
+              ".*" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string",
+                  "minLength" : 1
+                }
+              }
+            }
+          },
+          "clientAuth" : {
+            "$ref" : "#/components/schemas/clientauth"
+          }
+        },
+        "title" : "Tls settings",
+        "required" : [ "randomIfNotFound", "includeJdkCaServer", "includeJdkCaClient", "trustedCAsServer", "bannedAlpnProtocols", "clientAuth" ]
+      },
+      "nameidformat" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/nameidformatemailaddress"
+        }, {
+          "$ref" : "#/components/schemas/nameidformatentity"
+        }, {
+          "$ref" : "#/components/schemas/nameidformatkerberos"
+        }, {
+          "$ref" : "#/components/schemas/nameidformatpersistent"
+        }, {
+          "$ref" : "#/components/schemas/nameidformattransient"
+        }, {
+          "$ref" : "#/components/schemas/nameidformatunspecified"
+        } ]
+      },
+      "dataexporterconfigtypecustom" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type custom"
+      },
+      "http" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Http"
+      },
+      "defaulttemplates" : {
+        "type" : "object",
+        "properties" : {
+          "route" : {
+            "$ref" : "#/components/schemas/jsobject"
           },
           "metadata$lzy1" : {
             "type" : "object",
@@ -26362,10 +27324,56 @@
             "properties" : { },
             "required" : [ ]
           },
-          "cryptoKeyPair$lzy1" : {
-            "type" : "object",
-            "properties" : { },
-            "required" : [ ]
+          "target" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "descriptor" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "apikey" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "group" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "template" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "verifier" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "authConfig" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "certificate" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "script" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "draft" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "api" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "tcpService" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "dataExporter" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "tenant" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "team" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "apiConsumerSubscription" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "routeTemplate" : {
+            "$ref" : "#/components/schemas/jsobject"
           }
         },
         "required" : [ "id", "name", "description", "chain", "privateKey", "revoked", "cleanChain$lzy1", "certType$lzy1", "notRevoked$lzy1", "cacheKey$lzy1", "contentHash$lzy1", "bundle$lzy1", "allDomains$lzy1", "notExpired$lzy1", "notExpiredSoon$lzy1", "expired$lzy1", "isUsable$lzy1", "certificatesRaw$lzy1", "certificates$lzy1", "certificatesChain$lzy1", "certificate$lzy1", "caFromChain$lzy1", "metadata$lzy1", "isValid$lzy1", "cryptoKeyPair$lzy1" ]
@@ -26761,6 +27769,167 @@
         "type" : "object",
         "properties" : { },
         "required" : [ ]
+      },
+      "proxy.otoroshi.io.RouteTemplate" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "route" : {
+            "$ref" : "#/components/schemas/ngroute"
+          }
+        },
+        "title" : "Route template",
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "route" ]
+      },
+      "clientauthnone" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Client auth none"
+      },
+      "ngjwtverificationonlyconfig" : {
+        "type" : "object",
+        "properties" : {
+          "verifier" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "failIfAbsent" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "Ng jwt verification only config",
+        "required" : [ "failIfAbsent" ]
+      },
+      "proxy.otoroshi.io.Backend" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "backend" : {
+            "$ref" : "#/components/schemas/ngbackend"
+          }
+        },
+        "title" : "Stored ng backend",
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "backend" ]
+      },
+      "jsstring" : {
+        "type" : "object",
+        "properties" : {
+          "value" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Js string",
+        "required" : [ "value" ]
+      },
+      "apistaging" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api staging"
+      },
+      "httplistenerconfig" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "exclusive" : {
+            "type" : "boolean"
+          },
+          "tls" : {
+            "type" : "boolean"
+          },
+          "http1" : {
+            "type" : "boolean"
+          },
+          "http2" : {
+            "type" : "boolean"
+          },
+          "h2c" : {
+            "type" : "boolean"
+          },
+          "http3" : {
+            "type" : "boolean"
+          },
+          "port" : {
+            "type" : "number"
+          },
+          "exposedPort" : {
+            "type" : "number"
+          },
+          "host" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "accessLog" : {
+            "type" : "boolean"
+          },
+          "clientAuth" : {
+            "$ref" : "#/components/schemas/clientauth"
+          }
+        },
+        "title" : "Http listener config",
+        "required" : [ "enabled", "exclusive", "tls", "http1", "http2", "h2c", "http3", "port", "exposedPort", "host", "accessLog", "clientAuth" ]
       },
       "organize.otoroshi.io.ServiceGroup" : {
         "type" : "object",

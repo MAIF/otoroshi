@@ -32,7 +32,7 @@ import camelCase from 'lodash/camelCase';
 import isFunction from 'lodash/isFunction';
 import _ from 'lodash';
 
-import { getPluginsPatterns } from './patterns';
+import { getPluginsPatterns, getOwnTemplates } from './patterns';
 import { EurekaTargetForm } from './EurekaTargetForm';
 import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
@@ -469,6 +469,7 @@ class Designer extends React.Component {
   state = {
     backends: [],
     categories: [],
+    routeTemplates: [],
     nodes: [],
     plugins: [],
     ports: [],
@@ -594,113 +595,126 @@ class Designer extends React.Component {
       getOldPlugins(),
       getPlugins(),
       routePorts(),
-    ]).then(([backends, route, categories, plugins, oldPlugins, metadataPlugins, ports]) => {
-      if (route.error) {
-        this.setState({
-          loading: false,
-          notFound: true,
-        });
-        return;
-      }
+      nextClient.forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES).findAll(),
+    ]).then(
+      ([
+        backends,
+        route,
+        categories,
+        plugins,
+        oldPlugins,
+        metadataPlugins,
+        ports,
+        routeTemplates,
+      ]) => {
+        if (route.error) {
+          this.setState({
+            loading: false,
+            notFound: true,
+          });
+          return;
+        }
 
-      const formattedPlugins = [
-        ...plugins.map((p) => ({
-          ...(metadataPlugins.find((metaPlugin) => metaPlugin.id === p.id) || {}),
-          ...p,
-        })),
-        ...oldPlugins.map((p) => ({
-          ...p,
-          legacy: true,
-        })),
-        ...metadataPlugins.filter((p) => p.no_js_form),
-      ]
-        .filter(this.filterSpecificPlugin)
-        .map((plugin) => ({
-          ...plugin,
-          config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
-          config: plugin.default_config || plugin.defaultConfig,
-        }));
+        const formattedPlugins = [
+          ...plugins.map((p) => ({
+            ...(metadataPlugins.find((metaPlugin) => metaPlugin.id === p.id) || {}),
+            ...p,
+          })),
+          ...oldPlugins.map((p) => ({
+            ...p,
+            legacy: true,
+          })),
+          ...metadataPlugins.filter((p) => p.no_js_form),
+        ]
+          .filter(this.filterSpecificPlugin)
+          .map((plugin) => ({
+            ...plugin,
+            config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
+            config: plugin.default_config || plugin.defaultConfig,
+          }));
 
-      const routePlugins = route.plugins
-        .filter((ref) =>
-          formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
-        )
-        .map((ref) => ({
-          ...ref,
-          plugin_index: Object.fromEntries(
-            Object.entries(ref.plugin_index || {}).map(([key, v]) => [
-              firstLetterUppercase(camelCase(key)),
-              v,
-            ])
-          ),
-          ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin),
-        }));
-      const pluginsWithNodeId = this.generateInternalNodeId(routePlugins);
-
-      let routeWithNodeId = {
-        ...route,
-        plugins: route.plugins
+        const routePlugins = route.plugins
           .filter((ref) =>
             formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
           )
-          .map((plugin, i) => ({
-            ...plugin,
-            nodeId: pluginsWithNodeId[i].nodeId,
-          })),
-      };
+          .map((ref) => ({
+            ...ref,
+            plugin_index: Object.fromEntries(
+              Object.entries(ref.plugin_index || {}).map(([key, v]) => [
+                firstLetterUppercase(camelCase(key)),
+                v,
+              ])
+            ),
+            ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin),
+          }));
+        const pluginsWithNodeId = this.generateInternalNodeId(routePlugins);
 
-      this.loadHiddenStepsFromLocalStorage(routeWithNodeId);
-
-      const nodes = pluginsWithNodeId.some((p) => Object.keys(p.plugin_index || {}).length > 0)
-        ? pluginsWithNodeId
-        : this.generatedPluginIndex(pluginsWithNodeId);
-
-      if (
-        routeWithNodeId.backend_ref &&
-        !backends.find((back) => back.id === routeWithNodeId.backend_ref)
-      ) {
-        routeWithNodeId = {
-          ...routeWithNodeId,
-          backend_ref: undefined,
+        let routeWithNodeId = {
+          ...route,
+          plugins: route.plugins
+            .filter((ref) =>
+              formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
+            )
+            .map((plugin, i) => ({
+              ...plugin,
+              nodeId: pluginsWithNodeId[i].nodeId,
+            })),
         };
+
+        this.loadHiddenStepsFromLocalStorage(routeWithNodeId);
+
+        const nodes = pluginsWithNodeId.some((p) => Object.keys(p.plugin_index || {}).length > 0)
+          ? pluginsWithNodeId
+          : this.generatedPluginIndex(pluginsWithNodeId);
+
+        if (
+          routeWithNodeId.backend_ref &&
+          !backends.find((back) => back.id === routeWithNodeId.backend_ref)
+        ) {
+          routeWithNodeId = {
+            ...routeWithNodeId,
+            backend_ref: undefined,
+          };
+        }
+
+        const isApis = window.location.pathname.includes('/apis');
+
+        const frontendConfiguration = isApis ? ApiFrontend : Frontend;
+        const backendConfiguration = isApis ? ApiBackend : Backend;
+
+        this.setState({
+          ports,
+          backends,
+          routeTemplates,
+          loading: false,
+          categories: categories.filter((category) => !['Job'].includes(category)),
+          route: { ...routeWithNodeId },
+          originalRoute: { ...routeWithNodeId },
+          plugins: formattedPlugins.map((p) => ({
+            ...p,
+            selected: p.plugin_multi_inst
+              ? false
+              : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
+          })),
+          nodes,
+          frontend: {
+            ...frontendConfiguration,
+            config_schema: toUpperCaseLabels(frontendConfiguration.schema),
+            config_flow: frontendConfiguration.flow,
+            nodeId: 'Frontend',
+            readOnly: isApis,
+          },
+          backend: {
+            ...backendConfiguration,
+            config_schema: toUpperCaseLabels(backendConfiguration.schema),
+            config_flow: backendConfiguration.flow,
+            nodeId: 'Backend',
+            readOnly: isApis,
+          },
+          selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
+        });
       }
-
-      const isApis = window.location.pathname.includes('/apis');
-
-      const frontendConfiguration = isApis ? ApiFrontend : Frontend;
-      const backendConfiguration = isApis ? ApiBackend : Backend;
-
-      this.setState({
-        ports,
-        backends,
-        loading: false,
-        categories: categories.filter((category) => !['Job'].includes(category)),
-        route: { ...routeWithNodeId },
-        originalRoute: { ...routeWithNodeId },
-        plugins: formattedPlugins.map((p) => ({
-          ...p,
-          selected: p.plugin_multi_inst
-            ? false
-            : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
-        })),
-        nodes,
-        frontend: {
-          ...frontendConfiguration,
-          config_schema: toUpperCaseLabels(frontendConfiguration.schema),
-          config_flow: frontendConfiguration.flow,
-          nodeId: 'Frontend',
-          readOnly: isApis,
-        },
-        backend: {
-          ...backendConfiguration,
-          config_schema: toUpperCaseLabels(backendConfiguration.schema),
-          config_flow: backendConfiguration.flow,
-          nodeId: 'Backend',
-          readOnly: isApis,
-        },
-        selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
-      });
-    });
+    );
   };
 
   getSelectedNodeFromLocation = (routePlugins, plugins) => {
@@ -1451,7 +1465,25 @@ class Designer extends React.Component {
             .filter((p) => !!p)
         : [];
 
-    const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
+    const ownTemplates = getOwnTemplates(
+      plugins,
+      this.setNodes,
+      this.state.routeTemplates,
+      (frontend, backend, callback) =>
+        this.setState(
+          {
+            route: {
+              ...this.state.route,
+              frontend: { ...this.state.route.frontend, ...frontend },
+              backend: { ...this.state.route.backend, ...backend },
+            },
+          },
+          callback
+        )
+    );
+
+    const patterns = getPluginsPatterns(plugins, this.setNodes);
+
     plugins.map((p) => {
       if (p.legacy) {
         if (!p.plugin_categories) {
@@ -1525,8 +1557,8 @@ class Designer extends React.Component {
             onExpandAll={() => this.setState({ expandAll: !expandAll })}
             expandAll={expandAll}
             searched={searched}
-            plugins={[...plugins, ...patterns]}
-            categories={[...categories, 'Legacy', 'Patterns']}
+            plugins={[...plugins, ...patterns, ...ownTemplates]}
+            categories={[...categories, 'Legacy', 'Patterns', 'My own templates']}
             addNode={this.addNode}
             showPreview={(element) =>
               this.setState({
@@ -1802,6 +1834,42 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
+function FrontendInformations({ frontend, allMethods, domain, idx, routeEntries }) {
+  const [copyIconName, setCopyIconName] = useState('fas fa-copy');
+  const exact = frontend.exact;
+  const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
+  const start = 'http://';
+  return allMethods.map((method, i) => {
+    return (
+      <div className="d-flex align-items-center mx-3 mb-1" key={`allmethods-${i}`}>
+        <div style={{ minWidth: 60 }}>{method}</div>
+        <span style={{ fontSize: 15 }}>
+          {routeEntries(idx)}
+          {end}
+        </span>
+        <div className="d-flex align-items-center ms-auto">
+          <button
+            className="btn btn-sm btn-quiet"
+            title="Copy URL"
+            onClick={() => copy(routeEntries(idx), setCopyIconName)}
+          >
+            <i className={copyIconName} />
+          </button>
+          {draftVersionSignal.value.version === 'published' && (
+            <button
+              className="btn btn-sm btn-quiet ms-1"
+              title={`Go to ${start}${domain}`}
+              onClick={() => goTo(idx)}
+            >
+              <i className="fas fa-external-link-alt" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  });
+}
+
 const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports }) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
@@ -1885,39 +1953,15 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
             }}
           >
             {frontend.domains.map((domain, idx) => {
-              const [copyIconName, setCopyIconName] = useState('fas fa-copy');
-              const exact = frontend.exact;
-              const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
-              const start = 'http://';
-              return allMethods.map((method, i) => {
-                return (
-                  <div className="d-flex align-items-center mx-3 mb-1" key={`allmethods-${i}`}>
-                    <div style={{ minWidth: 60 }}>{method}</div>
-                    <span style={{ fontSize: 15 }}>
-                      {routeEntries(idx)}
-                      {end}
-                    </span>
-                    <div className="d-flex align-items-center ms-auto">
-                      <button
-                        className="btn btn-sm btn-quiet"
-                        title="Copy URL"
-                        onClick={() => copy(routeEntries(idx), setCopyIconName)}
-                      >
-                        <i className={copyIconName} />
-                      </button>
-                      {draftVersionSignal.value.version === 'published' && (
-                        <button
-                          className="btn btn-sm btn-quiet ms-1"
-                          title={`Go to ${start}${domain}`}
-                          onClick={() => goTo(idx)}
-                        >
-                          <i className="fas fa-external-link-alt" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              });
+              return (
+                <FrontendInformations
+                  frontend={frontend}
+                  allMethods={allMethods}
+                  domain={domain}
+                  idx={idx}
+                  routeEntries={routeEntries}
+                />
+              );
             })}
           </div>
           {frontend.query && Object.keys(frontend.query).length > 0 && (

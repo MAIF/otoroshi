@@ -125,11 +125,11 @@ class CustomMetrics extends Component {
                       if (item.label) {
                         return item;
                       }
-                      return {value: item, label: item}
-                    })
+                      return { value: item, label: item };
+                    });
                   }}
-                  onChange={v => {
-                    props.onChange(v.value)
+                  onChange={(v) => {
+                    props.onChange(v.value);
                   }}
                 />
               </LabelAndInput>

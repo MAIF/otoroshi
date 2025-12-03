@@ -599,6 +599,9 @@ class Env(
   lazy val backOfficeHost: String      = composeMainUrl(backOfficeSubDomain)
   lazy val privateAppsHost: String     = composeMainUrl(privateAppsSubDomain)
 
+  lazy val backOfficePath = "/bo/dashboard"
+  lazy val backOfficeUrl  = s"$exposedRootScheme://$backOfficeHost$bestExposedPort$backOfficePath"
+
   lazy val adminApiExposedDomains: Seq[String] = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.adminapi.exposedDomains")
     .orElse(
@@ -1268,7 +1271,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "17.9.0-dev"
+  lazy val otoroshiVersion    = "17.10.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -1343,6 +1346,15 @@ class Env(
     version <- Option(System.getProperty("os.version"))
   } yield OS(name, version, arch)).getOrElse(OS.default)
 
+  val serverTrustedCAs: Seq[String] = {
+    val local    = configuration.getOptional[Seq[String]]("otoroshi.ssl.trust.server_cas").getOrElse(Seq.empty)
+    val localStr = configuration
+      .getOptional[String]("otoroshi.ssl.trust.server_cas_str")
+      .map(_.split(",").map(_.trim).toSeq)
+      .getOrElse(Seq.empty)
+    (local ++ localStr).distinct
+  }
+
   timeout(300.millis).andThen { case _ =>
     given ec: ExecutionContext = otoroshiExecutionContext // internalActorSystem.dispatcher
 
@@ -1360,7 +1372,6 @@ class Env(
       logger.info(s"Running Otoroshi Worker agent !")
       clusterAgent.startF()
     }
-
     val modernTlsProtocols: Seq[String] =
       configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty)
     val protocolsJDK11: Seq[String]     =

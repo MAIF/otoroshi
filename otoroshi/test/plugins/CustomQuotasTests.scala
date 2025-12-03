@@ -30,8 +30,7 @@ class CustomQuotasTests(parent: PluginsTestSpec) {
             ).json.as[JsObject]
           )
         )
-      ),
-      id = IdGenerator.uuid
+      )
     )
 
     val secondRoute = createRequestOtoroshiIORoute(
@@ -112,7 +111,7 @@ class CustomQuotasTests(parent: PluginsTestSpec) {
       ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> PLUGINS_HOST,
+          "Host" -> route.frontend.domains.head.domain,
           "foo"  -> value
         )
         .get()

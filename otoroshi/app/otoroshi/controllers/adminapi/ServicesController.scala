@@ -553,8 +553,8 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
           desc.copy(enabled = false).save()
           Ok(
             route.json.asObject ++ Json.obj(
-              "resource_url"    -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:$port/api/routes/${route.id}",
-              "resource_ui_url" -> s"${ctx.request.theProtocol}://${env.backOfficeHost}:$port/bo/dashboard/routes/${route.id}"
+              "resource_url"    -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:${port}/api/routes/${route.id}",
+              "resource_ui_url" -> s"${ctx.request.theProtocol}://${env.backOfficeHost}:${port}${env.backOfficePath}/routes/${route.id}"
             )
           )
         }

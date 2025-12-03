@@ -77,8 +77,8 @@ class PublicPrivatePathsTests(parent: PluginsTestSpec) {
         .url(s"http://127.0.0.1:$port$path")
         .withHttpHeaders(
           "Host"                   -> route.frontend.domains.head.domain,
-          "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute.clientId,
-          "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute.clientSecret
+          "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute(route.id).clientId,
+          "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute(route.id).clientSecret
         )
         .get()
         .futureValue

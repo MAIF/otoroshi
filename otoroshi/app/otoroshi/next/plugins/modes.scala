@@ -58,7 +58,7 @@ class GlobalMaintenanceMode extends NgPreRouting {
   override def preRoute(
       ctx: NgPreRoutingContext
   )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
-    if (ctx.route.id != env.backOfficeServiceId && env.datastores.globalConfigDataStore.latest().maintenanceMode) {
+    if (ctx.route.id != env.backOfficeServiceId) {
       Errors
         .craftResponseResult(
           "Service in maintenance mode",

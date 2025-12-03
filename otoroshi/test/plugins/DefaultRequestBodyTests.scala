@@ -34,7 +34,7 @@ class DefaultRequestBodyTests(parent: PluginsTestSpec) {
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> localRoute.frontend.domains.head.domain
     )
     .get()
     .futureValue
@@ -45,7 +45,7 @@ class DefaultRequestBodyTests(parent: PluginsTestSpec) {
   val resp2 = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST
+      "Host" -> localRoute.frontend.domains.head.domain
     )
     .post(Json.obj("body_from_client" -> true))
     .futureValue

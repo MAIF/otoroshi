@@ -1305,7 +1305,7 @@ sealed trait JwtVerifier extends AsJson {
     import Implicits.given
 
     source.token(request) match {
-      case None        =>
+      case None         =>
         strategy match {
           case DefaultToken(true, newToken, _) =>
             // it's okay to use algoSettings here as it's the default token, so it's not used as an input but as output algo
@@ -1424,7 +1424,7 @@ sealed trait JwtVerifier extends AsJson {
             }
         }
       case Some(_token) =>
-        val token = if (_token.startsWith("Bearer ")) _token.replaceFirst("Bearer ", "") else _token
+        val token       = if (_token.startsWith("Bearer ")) _token.replaceFirst("Bearer ", "") else _token
         val tokenParts  = token.split("\\.")
         val signature   = tokenParts.last
         val tokenHeader = Try(Json.parse(JavaBase64.getDecoder.decode(tokenParts(0)))).getOrElse(Json.obj())
@@ -1625,7 +1625,7 @@ sealed trait JwtVerifier extends AsJson {
     import Implicits.given
 
     source.token(request) match {
-      case None        =>
+      case None         =>
         strategy match {
           case DefaultToken(true, newToken, _) =>
             // it's okay to use algoSettings here as it's the default token, so it's not used as an input but as output algo
@@ -1755,7 +1755,7 @@ sealed trait JwtVerifier extends AsJson {
       //     .left[A]
       // case None if !strict => f(JwtInjection()).right[Result]
       case Some(_token) =>
-        val token = if (_token.startsWith("Bearer ")) _token.replaceFirst("Bearer ", "") else _token
+        val token       = if (_token.startsWith("Bearer ")) _token.replaceFirst("Bearer ", "") else _token
         val tokenParts  = token.split("\\.")
         val signature   = tokenParts.last
         val tokenHeader = Try(Json.parse(JavaBase64.getDecoder.decode(tokenParts(0)))).getOrElse(Json.obj())

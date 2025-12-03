@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype.*
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "17.9.0-dev"
+version := "17.10.0-dev"
 scalaVersion := scalaLangVersion
 
 ThisBuild / evictionErrorLevel := Level.Warn
@@ -423,7 +423,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.privateapps.session.enabled=true",
   //"-Dotoroshi.loggers.otoroshi-papps-session-manager=DEBUG",
   //"-Dotoroshi.privateapps.subdomain=otoroshi",
-  "-Dotoroshi.ssl.fromOutside.clientAuth=None",
+  "-Dotoroshi.ssl.fromOutside.clientAuth=Dynamic",
   //"-Dotoroshi.ssl.fromOutside.clientAuth=Need",
   "-Dotoroshi.inmemory.modern=true",
   "-Dotoroshi.wasm.cache.ttl=2000",
@@ -442,9 +442,11 @@ reStart / javaOptions ++= Seq(
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=ext:foo",
   "-Dotoroshi.storage=file",
+  //"-Dotoroshi.storage=lettuce",
+  "-Dapp.redis.lettuce.pooling.enabled=true",
   //"-Dotoroshi.storage=inmemory",
-  "-DVAULT_VALUE=admin-api-apikey-secret"
-//  "-Dotoroshi.storage=pg"
-//  "-Dotoroshi.storage=redis"
-//   "-Dotoroshi.redis.lettuce.uri=redis://localhost:6379/",
+  "-DVAULT_VALUE=admin-api-apikey-secret",
+  //"-Dotoroshi.storage=pg",
+  //"-Dotoroshi.storage=redis",
+  "-Dotoroshi.redis.lettuce.uri=redis://localhost:5432/"
 )

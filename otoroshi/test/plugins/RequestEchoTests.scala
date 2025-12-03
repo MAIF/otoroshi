@@ -31,7 +31,7 @@ class RequestEchoTests(parent: PluginsTestSpec) {
     val resp = ws
       .url(s"http://127.0.0.1:$port/api")
       .withHttpHeaders(
-        "Host" -> PLUGINS_HOST
+        "Host" -> route.frontend.domains.head.domain
       )
       .post(Json.obj("f" -> "b"))
       .futureValue
@@ -43,7 +43,7 @@ class RequestEchoTests(parent: PluginsTestSpec) {
     val resp = ws
       .url(s"http://127.0.0.1:$port/api")
       .withHttpHeaders(
-        "Host" -> PLUGINS_HOST
+        "Host" -> route.frontend.domains.head.domain
       )
       .post(Json.obj("foo" -> "bar"))
       .futureValue

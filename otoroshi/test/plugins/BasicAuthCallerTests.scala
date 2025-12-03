@@ -29,7 +29,7 @@ class BasicAuthCallerTests(parent: PluginsTestSpec) {
           )
         ),
         id = IdGenerator.uuid,
-        domain = "basiauth.oto.tools"
+        domain = "basiauth.oto.tools".some
       )
     }
 
@@ -49,7 +49,7 @@ class BasicAuthCallerTests(parent: PluginsTestSpec) {
           )
         ),
         id = IdGenerator.uuid,
-        domain = "basiauth.oto.tools"
+        domain = "basiauth.oto.tools".some
       )
     }
 
@@ -103,7 +103,7 @@ class BasicAuthCallerTests(parent: PluginsTestSpec) {
     val resp = ws
       .url(s"http://127.0.0.1:$port/api")
       .withHttpHeaders(
-        "Host" -> PLUGINS_HOST
+        "Host" -> route.frontend.domains.head.domain
       )
       .get()
       .futureValue

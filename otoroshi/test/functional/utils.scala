@@ -23,6 +23,8 @@ import otoroshi.env.Env
 import otoroshi.loader.modules.OtoroshiComponentsInstances
 import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPlugins, NgRoute, NgTarget}
 import otoroshi.security.IdGenerator
+import otoroshi.utils.syntax.implicits._
+import otoroshi.wasm.proxywasm.CorazaWafConfig
 import play.api.ApplicationLoader.Context
 import play.api.libs.json.*
 import play.api.libs.ws.*
@@ -1298,6 +1300,24 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       }
   }
 
+  def createOtoroshiWAF(
+      coraza: CorazaWafConfig,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(coraza.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
   def createOtoroshiRoute(
       route: NgRoute,
       customPort: Option[Int] = None,
@@ -1382,6 +1402,24 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .post(Json.stringify(apiKey.toJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(2000.millis)
+  }
+
+  def createOtoroshiWorkflow(
+      workflow: Workflow,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/apis/plugins.otoroshi.io/v1/workflows")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(workflow.json))
       .map { resp =>
         (resp.json, resp.status)
       }
@@ -1508,9 +1546,40 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       .andWait(1000.millis)
   }
 
+  def deleteOtoroshiWAF(
+      coraza: CorazaWafConfig,
+      customPort: Option[Int] = None
+  ): Future[(JsValue, Int)] = {
+    ws.url(
+      s"http://localhost:${customPort.getOrElse(port)}/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs/${coraza.id}"
+    ).withHttpHeaders(
+      "Host"         -> "otoroshi-api.oto.tools",
+      "Content-Type" -> "application/json"
+    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
   def deleteOtoroshiRoute(route: NgRoute, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
     wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${route.id}")
+      .withHttpHeaders(
+        "Host" -> "otoroshi-api.oto.tools"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def deleteOtoroshiWorkflow(workflow: Workflow, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
+    wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/apis/plugins.otoroshi.io/v1/workflows/${workflow.id}")
       .withHttpHeaders(
         "Host" -> "otoroshi-api.oto.tools"
       )
@@ -1537,17 +1606,15 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       .andWait(2000.millis)
   }
 
-  val PLUGINS_ROUTE_ID = "plugins-route"
-  val PLUGINS_HOST     = "plugins.oto.tools"
-  val LOCAL_HOST       = "local.oto.tools"
+  val LOCAL_HOST = "local.oto.tools"
 
   def createRequestOtoroshiIORoute(
       plugins: Seq[NgPluginInstance] = Seq.empty,
-      domain: String = "plugins.oto.tools",
-      id: String = PLUGINS_ROUTE_ID,
+      domain: Option[String] = None,
+      id: String = IdGenerator.uuid,
       hostname: String = "request.otoroshi.io",
       root: String = "/"
-  ) = {
+  ): NgRoute = {
     val newRoute = NgRoute(
       location = EntityLocation.default,
       id = id,
@@ -1558,7 +1625,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       capture = false,
       exportReporting = false,
       frontend = NgFrontend(
-        domains = Seq(NgDomainAndPath(domain)),
+        domains = Seq(NgDomainAndPath(domain.getOrElse(s"$id.oto.tools"))),
         headers = Map(),
         cookies = Map(),
         query = Map(),
@@ -1590,8 +1657,13 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
     if (result._2 == Status.CREATED) {
       newRoute
     } else {
-      System.err.println(s"Failed to create route. Status: ${result._2}, Response: ${result._1}")
-      throw new RuntimeException(s"failed to create a new route (status: ${result._2})")
+      if (result._1.select("error_description").asOptString.contains("Entity already exists")) {
+        deleteOtoroshiRoute(newRoute).futureValue
+        await(2.seconds)
+        createRequestOtoroshiIORoute(plugins, domain, id, hostname, root)
+      } else {
+        throw new RuntimeException(s"failed to create a new otoroshi route - ${result._2} - ${result._1.prettify}")
+      }
     }
   }
 
@@ -1606,13 +1678,22 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       jsonAPI: Boolean = true,
       responseContentType: String = "application/json",
       stringResult: HttpRequest => String = _ => "",
-      target: Option[NgTarget] = None
+      target: Option[NgTarget] = None,
+      rawResult: Option[HttpRequest => (Int, String, List[HttpHeader])] = None
   ) = {
 
     var _target: Option[TargetService] = None
 
     if (target.isEmpty)
-      _target = (if (jsonAPI)
+      _target = (if (rawResult.isDefined) {
+                   TargetService
+                     .full(
+                       Some(domain),
+                       frontendPath,
+                       contentType = responseContentType,
+                       rawResult.get
+                     )
+                 } else if (jsonAPI)
                    TargetService
                      .jsonFull(
                        Some(domain),
@@ -1678,20 +1759,20 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
     }
   }
 
-  def createPluginsRouteApiKeys() = {
-    createOtoroshiApiKey(getValidApiKeyForPluginsRoute).futureValue
+  def createPluginsRouteApiKeys(routeId: String) = {
+    createOtoroshiApiKey(getValidApiKeyForPluginsRoute(routeId)).futureValue
   }
 
-  def deletePluginsRouteApiKeys() = {
-    deleteOtoroshiApiKey(getValidApiKeyForPluginsRoute).futureValue
+  def deletePluginsRouteApiKeys(routeId: String) = {
+    deleteOtoroshiApiKey(getValidApiKeyForPluginsRoute(routeId)).futureValue
   }
 
-  def getValidApiKeyForPluginsRoute = {
+  def getValidApiKeyForPluginsRoute(routeId: String) = {
     ApiKey(
       clientId = "apikey-test",
       clientSecret = "1234",
       clientName = "apikey-test",
-      authorizedEntities = Seq(RouteIdentifier(PLUGINS_ROUTE_ID))
+      authorizedEntities = Seq(RouteIdentifier(routeId))
     )
   }
 
@@ -2030,7 +2111,7 @@ class WebsocketBackend(
     callback: String => Message = text => TextMessage(s"Echo: $text"),
     streamCallback: Source[String, ?] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))
 ) {
-  import org.apache.pekko.http.scaladsl.server.Directives.{complete, get, handleWebSocketMessages, path}
+  import org.apache.pekko.http.scaladsl.server.Directives.{get, handleWebSocketMessages, path}
 
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit val mat: Materializer   = Materializer(system)

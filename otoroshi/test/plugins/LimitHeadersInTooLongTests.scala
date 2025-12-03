@@ -42,7 +42,7 @@ class LimitHeadersInTooLongTests(parent: PluginsTestSpec) {
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
-      "Host" -> PLUGINS_HOST,
+      "Host" -> route.frontend.domains.head.domain,
       "baz"  -> "very very very very very veyr long header value"
     )
     .get()

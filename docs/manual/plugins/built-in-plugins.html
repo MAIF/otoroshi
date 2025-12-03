@@ -845,7 +845,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;finger&quot; : false,
-  &quot;addresses&quot; : [ ]
+  &quot;addresses&quot; : [ ],
+  &quot;is_debug&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.EurekaServerSink" class="ng-plugin plugin-hidden pl">
 <h2><a href="#eureka-instance" name="eureka-instance" class="anchor"><span class="anchor-link"></span></a>Eureka instance</h2>
@@ -1878,6 +1879,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;email_domains&quot; : [ ],
   &quot;metadata_match&quot; : [ ],
   &quot;metadata_not_match&quot; : [ ],
+  &quot;otoroshi_data_match&quot; : [ ],
+  &quot;otoroshi_data_not_match&quot; : [ ],
   &quot;profile_match&quot; : [ ],
   &quot;profile_not_match&quot; : [ ]
 }
@@ -2796,7 +2799,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#regex-response-headers-rewriter" name="regex-response-headers-rewriter" class="anchor"><span class="anchor-link"></span></a>Regex response headers rewriter</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
-  <li><code>TransformRequest</code></li>
+  <li><code>TransformResponse</code></li>
 </ul>
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.RegexResponseHeadersRewriter</code></p>
@@ -3165,6 +3168,30 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;body&quot; : &quot;&quot;,
   &quot;apply_el&quot; : false
 }
+</code></pre></div><div id="otoroshi.next.plugins.SwaggerUIPlugin" class="ng-plugin plugin-hidden pl">
+<h2><a href="#swagger-ui" name="swagger-ui" class="anchor"><span class="anchor-link"></span></a>Swagger UI</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.SwaggerUIPlugin</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Serves a Swagger UI page from a configurable OpenAPI specification URL</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;swagger_url&quot; : &quot;&quot;,
+  &quot;title&quot; : &quot;&quot;,
+  &quot;swagger_ui_version&quot; : &quot;5.30.2&quot;,
+  &quot;filter&quot; : true,
+  &quot;show_models&quot; : false,
+  &quot;display_operation_id&quot; : false,
+  &quot;show_extensions&quot; : false,
+  &quot;layout&quot; : &quot;BaseLayout&quot;,
+  &quot;sort_tags&quot; : &quot;alpha&quot;,
+  &quot;sort_ops&quot; : &quot;alpha&quot;,
+  &quot;theme&quot; : &quot;default&quot;
+}
 </code></pre></div><div id="otoroshi.next.plugins.TailscaleSelectTargetByName" class="ng-plugin plugin-hidden pl">
 <h2><a href="#tailscale-select-target-by-name" name="tailscale-select-target-by-name" class="anchor"><span class="anchor-link"></span></a>Tailscale select target by name</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -3202,8 +3229,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin can split a portion of the traffic to canary backends between two dates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;start&quot; : &quot;2025-11-13T09:21:27.056Z&quot;,
-  &quot;stop&quot; : &quot;2025-11-14T09:21:27.077Z&quot;,
+  &quot;start&quot; : &quot;2025-12-03T08:27:36.471Z&quot;,
+  &quot;stop&quot; : &quot;2025-12-04T08:27:36.492Z&quot;,
   &quot;increment_percent&quot; : 1,
   &quot;targets&quot; : [ ],
   &quot;root&quot; : &quot;/&quot;
@@ -3220,7 +3247,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin restrict when a route is accessible</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;rules&quot; : [ ]
+  &quot;rules&quot; : [ ],
+  &quot;timezone&quot; : null
 }
 </code></pre></div><div id="otoroshi.next.plugins.UdpTunnel" class="ng-plugin plugin-hidden pl">
 <h2><a href="#udp-tunnel" name="udp-tunnel" class="anchor"><span class="anchor-link"></span></a>UDP Tunnel</h2>
@@ -4260,6 +4288,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#http-static-asset" class="header">Http static asset</a></li>
     <li><a href="../plugins/built-in-plugins.html#static-backend" class="header">Static backend</a></li>
     <li><a href="../plugins/built-in-plugins.html#static-response" class="header">Static Response</a></li>
+    <li><a href="../plugins/built-in-plugins.html#swagger-ui" class="header">Swagger UI</a></li>
     <li><a href="../plugins/built-in-plugins.html#tailscale-select-target-by-name" class="header">Tailscale select target by name</a></li>
     <li><a href="../plugins/built-in-plugins.html#tcp-tunnel" class="header">TCP Tunnel</a></li>
     <li><a href="../plugins/built-in-plugins.html#time-controlled-canary-mode" class="header">Time controlled Canary mode</a></li>

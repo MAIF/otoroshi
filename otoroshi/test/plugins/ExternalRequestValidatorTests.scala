@@ -5,6 +5,7 @@ import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgExternalValidator, NgExternalValidatorConfig, OverrideHost}
 import otoroshi.security.IdGenerator
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
@@ -44,7 +45,7 @@ class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
           )
         )
       ),
-      domain = "route.oto.tools",
+      domain = "route.oto.tools".some,
       id = IdGenerator.uuid
     )
 

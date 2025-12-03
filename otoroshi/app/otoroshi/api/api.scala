@@ -4,7 +4,7 @@ import ch.qos.logback.classic.LoggerContext
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers.{Assets, AssetsComponents}
-import next.models.{Api, ApiConsumerSubscription}
+import next.models.{Api, ApiConsumerSubscription, RouteTemplate}
 import org.apache.commons.lang3.math.NumberUtils
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import org.apache.pekko.http.scaladsl.util.FastFuture
@@ -1209,13 +1209,17 @@ class OtoroshiResources(env: Env) {
       "error-templates",
       "proxy.otoroshi.io",
       ResourceVersion("v1", served = true, deprecated = false, storage = true),
-      GenericResourceAccessApii[ErrorTemplate](
+      GenericResourceAccessApiWithState[ErrorTemplate](
         ErrorTemplate.fmt,
         classOf[ErrorTemplate],
         env.datastores.errorTemplateDataStore.key,
         env.datastores.errorTemplateDataStore.extractId,
         json => json.select("serviceId").asString,
-        () => "serviceId"
+        () => "serviceId",
+        (v, p, ctx) => env.datastores.errorTemplateDataStore.template(env).json,
+        stateAll = () => Seq.empty,
+        stateOne = id => env.proxyState.errorTemplate(id),
+        stateUpdate = seq => env.proxyState.updateErrorTemplates(seq)
       )
     ),
     //////
@@ -1647,8 +1651,29 @@ class OtoroshiResources(env: Env) {
         writeValidator = ApiConsumerSubscription.writeValidator,
         deleteValidator = ApiConsumerSubscription.deleteValidator
       )
+    ),
+    //////
+    Resource(
+      "RouteTemplate",
+      "route-templates",
+      "route-template",
+      "proxy.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApiWithState[RouteTemplate](
+        RouteTemplate.format,
+        classOf[RouteTemplate],
+        env.datastores.routeTemplateDataStore.key,
+        env.datastores.routeTemplateDataStore.extractId,
+        json => json.select("id").asString,
+        () => "id",
+        (v, p, ctx) => env.datastores.routeTemplateDataStore.template(env).json,
+        stateAll = () => env.proxyState.allRouteTemplates(),
+        stateOne = id => env.proxyState.routeTemplate(id),
+        stateUpdate = seq => env.proxyState.updateRouteTemplates(seq)
+      )
     )
   ) ++ env.adminExtensions.resources()
+
 }
 
 class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)

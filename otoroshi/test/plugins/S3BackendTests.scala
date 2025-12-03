@@ -16,6 +16,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, S3Backend}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.drivers.inmemory.S3Configuration
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.libs.json.JsObject
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
@@ -67,7 +68,7 @@ class S3BackendTests(parent: PluginsTestSpec) {
       )
     ),
     id = IdGenerator.uuid,
-    domain = "s3backend.oto.tools"
+    domain = "s3backend.oto.tools".some
   )
 
   def s3Client = {

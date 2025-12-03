@@ -129,7 +129,7 @@ class AuthenticationTests(parent: PluginsTestSpec) {
       clientId = "apikey-test",
       clientSecret = "1234",
       clientName = "apikey-test",
-      authorizedEntities = Seq(RouteIdentifier(PLUGINS_ROUTE_ID))
+      authorizedEntities = Seq(RouteIdentifier(route.id))
     )
 
     createOtoroshiApiKey(apikey).futureValue

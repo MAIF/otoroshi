@@ -26,7 +26,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
   def emailFlow() = {
     def createBasicAuthModule(): BasicAuthModuleConfig = {
       val basicModuleConfiguration = BasicAuthModuleConfig(
-        id = "inmemory",
+        id = s"inmemory-${IdGenerator.uuid}",
         name = "inmemory",
         desc = "inmemory",
         users = Seq(
@@ -246,7 +246,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
 
     def createOAuth2Module(keycloakHost: String, keycloakPort: Int): GenericOauth2ModuleConfig = {
       val oauth2Configuration = GenericOauth2ModuleConfig(
-        id = "keycloak",
+        id = s"keycloak-${IdGenerator.uuid}",
         name = "Keycloak",
         desc = "Keycloak",
         clientId = "otoroshi",
@@ -314,8 +314,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
                 )
             )
           )
-        ),
-        id = IdGenerator.uuid
+        )
       )
     }
 
@@ -429,7 +428,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
         clientId = "apikey-test",
         clientSecret = "1234",
         clientName = "apikey-test",
-        authorizedEntities = Seq(RouteIdentifier(PLUGINS_ROUTE_ID))
+        authorizedEntities = Seq(RouteIdentifier(route.id))
       )
 
       createOtoroshiApiKey(apikey).futureValue
@@ -493,7 +492,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
   def passWithApikey() = {
     def createBasicAuthModule(): BasicAuthModuleConfig = {
       val basicModuleConfiguration = BasicAuthModuleConfig(
-        id = "inmemory",
+        id = s"inmemory-${IdGenerator.uuid}",
         name = "inmemory",
         desc = "inmemory",
         users = Seq(
@@ -692,7 +691,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
         )
       )
 
-      val createUserResponse = env.Ws
+      env.Ws
         .url(s"$keycloakUrl/admin/realms/master/users")
         .withHttpHeaders(
           "Authorization" -> s"Bearer $adminToken",
@@ -713,7 +712,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
 
     def createOAuth2Module(keycloakHost: String, keycloakPort: Int): GenericOauth2ModuleConfig = {
       val oauth2Configuration = GenericOauth2ModuleConfig(
-        id = "keycloak",
+        id = s"keycloak-${IdGenerator.uuid}",
         name = "Keycloak",
         desc = "Keycloak",
         clientId = "otoroshi",
@@ -773,8 +772,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
                 )
             )
           )
-        ),
-        id = IdGenerator.uuid
+        )
       )
     }
 
@@ -864,7 +862,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
         clientId = "apikey-test",
         clientSecret = "1234",
         clientName = "apikey-test",
-        authorizedEntities = Seq(RouteIdentifier(PLUGINS_ROUTE_ID))
+        authorizedEntities = Seq(RouteIdentifier(route.id))
       )
 
       createOtoroshiApiKey(apikey).futureValue
@@ -927,7 +925,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
   def keycloakAndInMemoryAuthentication() = {
     def createBasicAuthModule(): BasicAuthModuleConfig = {
       val basicModuleConfiguration = BasicAuthModuleConfig(
-        id = "inmemory",
+        id = s"inmemory-${IdGenerator.uuid}",
         name = "inmemory",
         desc = "inmemory",
         users = Seq(
@@ -1098,7 +1096,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     }
 
     def createKeycloakClient(keycloakUrl: String, adminToken: String, clientConfig: String): Unit = {
-      val createClientResponse = env.Ws
+      env.Ws
         .url(s"$keycloakUrl/admin/realms/master/clients")
         .withHttpHeaders(
           "Authorization" -> s"Bearer $adminToken",
@@ -1147,7 +1145,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
 
     def createOAuth2Module(keycloakHost: String, keycloakPort: Int): GenericOauth2ModuleConfig = {
       val oauth2Configuration = GenericOauth2ModuleConfig(
-        id = "keycloak",
+        id = s"keycloak-${IdGenerator.uuid}",
         name = "Keycloak",
         desc = "Keycloak",
         clientId = "otoroshi",
@@ -1305,7 +1303,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
 
   def oneModule() = {
     val moduleConfiguration = BasicAuthModuleConfig(
-      id = "BasicAuthModuleConfig",
+      id = s"BasicAuthModuleConfig-${IdGenerator.uuid}",
       name = "BasicAuthModuleConfig",
       desc = "BasicAuthModuleConfig",
       users = Seq(
@@ -1347,8 +1345,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
               .as[JsObject]
           )
         )
-      ),
-      id = IdGenerator.uuid
+      )
     )
 
     val playwright = Playwright.create()
