@@ -10,30 +10,26 @@ import { Row } from '../components/Row';
 import Designer from './RouteDesigner/Designer';
 
 export function RouteTemplatesPage(props) {
-  return <QueryClientProvider client={queryClient}>
-    <RouteTemplatesTable {...props} />
-  </QueryClientProvider>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouteTemplatesTable {...props} />
+    </QueryClientProvider>
+  );
 }
 
 const FIELDS_SELECTOR = 'otoroshi-fields-selector';
 
-const CORE_FIELDS = [
-  'id',
-  'name',
-  'description',
-  'tags',
-  'metadata'
-];
+const CORE_FIELDS = ['id', 'name', 'description', 'tags', 'metadata'];
 
 export function RouteTemplatesTable(props) {
   const params = useParams();
   const history = useHistory();
 
   useEffect(() => {
-    props.setTitle('Route templates')
+    props.setTitle('Route templates');
 
-    return () => props.setTitle(undefined)
-  }, [])
+    return () => props.setTitle(undefined);
+  }, []);
 
   const [loading, setLoading] = useState(true);
   const [fields, setFields] = useState({
@@ -41,7 +37,7 @@ export function RouteTemplatesTable(props) {
     description: true,
     id: false,
     tags: false,
-    metadata: false
+    metadata: false,
   });
 
   const idColumn = {
@@ -78,7 +74,7 @@ export function RouteTemplatesTable(props) {
     idColumn,
     descriptionColumn,
     tagsColumn,
-    metadataColumn
+    metadataColumn,
   ].filter((c) => c && (fields[c.title?.toLowerCase()] || fields[c.filterId?.toLowerCase()]));
 
   const deleteItem = (item, table) => {
@@ -97,7 +93,8 @@ export function RouteTemplatesTable(props) {
     });
   };
 
-  const fetchTemplate = () => nextClient.forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES).template();
+  const fetchTemplate = () =>
+    nextClient.forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES).template();
 
   const ref = useRef();
 
@@ -113,9 +110,10 @@ export function RouteTemplatesTable(props) {
     loadFields();
   }, []);
 
-  const defaultRouteTemplate = useQuery('getRouteTemplate', nextClient
-    .forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES)
-    .template)
+  const defaultRouteTemplate = useQuery(
+    'getRouteTemplate',
+    nextClient.forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES).template
+  );
 
   const loadFields = () => {
     try {
@@ -149,42 +147,44 @@ export function RouteTemplatesTable(props) {
       type: 'string',
       label: 'Id',
       props: {
-        disabled: true
-      }
+        disabled: true,
+      },
     },
     name: {
       type: 'string',
       props: {
         label: 'Name',
-      }
+      },
     },
     description: {
       type: 'string',
       props: {
         label: 'Description',
-      }
+      },
     },
     metadata: {
       type: 'object',
-      label: 'Metadata'
+      label: 'Metadata',
     },
     tags: {
       type: 'array',
-      label: 'Tags'
+      label: 'Tags',
     },
     route: {
       renderer: (props) => {
-        return <div className="designer">
-          <Designer
-            history={history}
-            value={props.value}
-            setValue={props.onChange}
-            setSaveButton={() => { }}
-          />
-        </div>
-      }
-    }
-  }
+        return (
+          <div className="designer">
+            <Designer
+              history={history}
+              value={props.value}
+              setValue={props.onChange}
+              setSaveButton={() => {}}
+            />
+          </div>
+        );
+      },
+    },
+  };
 
   const flow = [
     {
@@ -195,9 +195,9 @@ export function RouteTemplatesTable(props) {
     {
       type: 'group',
       name: 'Plugins',
-      fields: ['route']
-    }
-  ]
+      fields: ['route'],
+    },
+  ];
 
   return (
     <Loader loading={loading || defaultRouteTemplate.isLoading}>
@@ -206,8 +206,8 @@ export function RouteTemplatesTable(props) {
           ref={ref}
           parentProps={props}
           navigateTo={(item) => {
-            console.log(item)
-            history.push(`/route-templates/edit/${item.id}`)
+            console.log(item);
+            history.push(`/route-templates/edit/${item.id}`);
           }}
           navigateOnEdit={(item) => history.push(`/route-templates/edit/${item.id}`)}
           selfUrl="route-templates"
@@ -241,12 +241,8 @@ export function RouteTemplatesTable(props) {
             onFieldsChange(newFields);
             setFields(newFields);
           }}
-          createItem={nextClient
-            .forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES)
-            .create}
-          updateItem={nextClient
-            .forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES)
-            .update}
+          createItem={nextClient.forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES).create}
+          updateItem={nextClient.forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES).update}
           deleteItem={(item) => deleteItem(item)}
           defaultSort="name"
           defaultSortDesc="true"
@@ -264,4 +260,3 @@ export function RouteTemplatesTable(props) {
     </Loader>
   );
 }
-

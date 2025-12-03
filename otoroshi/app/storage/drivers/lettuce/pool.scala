@@ -1,6 +1,5 @@
 package otoroshi.storage.drivers.lettuce
 
-
 import akka.http.scaladsl.util.FastFuture
 import io.lettuce.core._
 import io.lettuce.core.api.StatefulRedisConnection
@@ -16,12 +15,12 @@ object RedisConnectionPool {
 }
 
 class DumbRedisConnectionPool[K, V](
-  client: RedisClient,
-  codec: RedisCodec[K, V],
-  maxSize: Int,
+    client: RedisClient,
+    codec: RedisCodec[K, V],
+    maxSize: Int
 )(implicit ec: ExecutionContext, env: Env) {
 
-  private val counter = new AtomicInteger(0)
+  private val counter                                                = new AtomicInteger(0)
   private val connections: Seq[(Int, StatefulRedisConnection[K, V])] = (1 to maxSize).map { idx =>
     if (RedisConnectionPool.logger.isDebugEnabled) RedisConnectionPool.logger.debug(s"create redis connection: ${idx}")
     (idx, client.connect(codec))

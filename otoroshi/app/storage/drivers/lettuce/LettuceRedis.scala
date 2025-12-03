@@ -434,30 +434,31 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
   }
 }
 
-class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: RedisClient, uri: RedisURI, env: Env) extends LettuceRedis {
+class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: RedisClient, uri: RedisURI, env: Env)
+    extends LettuceRedis {
 
   import actorSystem.dispatcher
 
   import collection.JavaConverters._
   import scala.compat.java8.FutureConverters._
 
-  lazy val logger = Logger("otoroshi-lettuce-redis")
+  lazy val logger               = Logger("otoroshi-lettuce-redis")
   lazy val avoidCommandFailures =
     env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.avoid-command-failures").getOrElse(false)
   lazy val shimListCommands     =
     env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.shim-list-commands").getOrElse(false)
   lazy val shimSetCommands      =
     env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.shim-set-commands").getOrElse(false)
-  lazy val maxTotal = env.configuration.getOptional[Int]("otoroshi.redis.lettuce.pooling.maxTotal").getOrElse(8)
+  lazy val maxTotal             = env.configuration.getOptional[Int]("otoroshi.redis.lettuce.pooling.maxTotal").getOrElse(8)
 
   lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)(actorSystem.dispatcher, env)
 
   logger.info(s"Using lettuce async connections pooling - ${maxTotal}")
 
   def withRedis[T](f: RedisAsyncCommands[String, ByteString] => Future[T]): Future[T] = {
-    pool.acquire().flatMap {
-      case (id, conn) => f(conn.async()).andThen {
-        case _ => pool.release((id, conn))
+    pool.acquire().flatMap { case (id, conn) =>
+      f(conn.async()).andThen { case _ =>
+        pool.release((id, conn))
       }
     }
   }
@@ -483,7 +484,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
   override def flushall(): Future[Boolean] = withRedis { redis =>
     redis.flushall().toScala.map {
       case "OK" => true
-      case _ => false
+      case _    => false
     }
   }
 
@@ -495,17 +496,18 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
     redis.mget(keys: _*).toScala.map(_.asScala.toSeq.map(v => if (v.hasValue) Option(v.getValue) else None))
   }
 
-  override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] = withRedis { redis =>
-    setBS(key, ByteString(value), exSeconds, pxMilliseconds)
-  }
+  override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] =
+    withRedis { redis =>
+      setBS(key, ByteString(value), exSeconds, pxMilliseconds)
+    }
 
   override def setBS(
-                      key: String,
-                      value: ByteString,
-                      exSeconds: Option[Long],
-                      pxMilliseconds: Option[Long]
-                    ): Future[Boolean] = withRedis { redis =>
-  exSeconds
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long],
+      pxMilliseconds: Option[Long]
+  ): Future[Boolean] = withRedis { redis =>
+    exSeconds
       .map(v => SetArgs.Builder.ex(v))
       .orElse(
         pxMilliseconds.map(v => SetArgs.Builder.px(v))
@@ -634,7 +636,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
         .toScala
         .map {
           case "OK" => true
-          case _ => false
+          case _    => false
         }
         .applyOnIf(avoidCommandFailures)(_.recover { case _ =>
           false
@@ -745,10 +747,10 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
   }
 
   override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
-                                                                          ec: ExecutionContext,
-                                                                          env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] = withRedis { redis =>
-  val args = SetArgs.Builder.nx()
+    val args = SetArgs.Builder.nx()
     redis.set(key, value, ttl.map(v => args.px(v)).getOrElse(args)).toScala.map {
       case "OK" => true
       case _    => false
@@ -756,7 +758,12 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
   }
 }
 
-class ReactivePooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: RedisClient, uri: RedisURI, env: Env) extends LettuceRedis {
+class ReactivePooledLettuceRedisStandaloneAndSentinels(
+    actorSystem: ActorSystem,
+    client: RedisClient,
+    uri: RedisURI,
+    env: Env
+) extends LettuceRedis {
 
   import actorSystem.dispatcher
 
@@ -765,23 +772,23 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem,
 
   implicit val mat = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-lettuce-redis")
+  lazy val logger               = Logger("otoroshi-lettuce-redis")
   lazy val avoidCommandFailures =
     env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.avoid-command-failures").getOrElse(false)
   lazy val shimListCommands     =
     env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.shim-list-commands").getOrElse(false)
   lazy val shimSetCommands      =
     env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.shim-set-commands").getOrElse(false)
-  lazy val maxTotal = env.configuration.getOptional[Int]("otoroshi.redis.lettuce.pooling.maxTotal").getOrElse(8)
+  lazy val maxTotal             = env.configuration.getOptional[Int]("otoroshi.redis.lettuce.pooling.maxTotal").getOrElse(8)
 
   lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)(actorSystem.dispatcher, env)
 
   logger.info(s"Using reactive lettuce connections pooling - ${maxTotal}")
 
   def withRedis[T](f: RedisReactiveCommands[String, ByteString] => Future[T]): Future[T] = {
-    pool.acquire().flatMap {
-      case (id, conn) => f(conn.reactive()).andThen {
-        case _ => pool.release((id, conn))
+    pool.acquire().flatMap { case (id, conn) =>
+      f(conn.reactive()).andThen { case _ =>
+        pool.release((id, conn))
       }
     }
   }
@@ -807,7 +814,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem,
   override def flushall(): Future[Boolean] = withRedis { redis =>
     redis.flushall().toScala.map {
       case "OK" => true
-      case _ => false
+      case _    => false
     }
   }
 
@@ -819,16 +826,17 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem,
     redis.mget(keys: _*).toScala.map(_.map(v => if (v.hasValue) Option(v.getValue) else None))
   }
 
-  override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] = withRedis { redis =>
-    setBS(key, ByteString(value), exSeconds, pxMilliseconds)
-  }
+  override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] =
+    withRedis { redis =>
+      setBS(key, ByteString(value), exSeconds, pxMilliseconds)
+    }
 
   override def setBS(
-                      key: String,
-                      value: ByteString,
-                      exSeconds: Option[Long],
-                      pxMilliseconds: Option[Long]
-                    ): Future[Boolean] = withRedis { redis =>
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long],
+      pxMilliseconds: Option[Long]
+  ): Future[Boolean] = withRedis { redis =>
     exSeconds
       .map(v => SetArgs.Builder.ex(v))
       .orElse(
@@ -957,7 +965,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem,
         .toScala
         .map {
           case "OK" => true
-          case _ => false
+          case _    => false
         }
         .applyOnIf(avoidCommandFailures)(_.recover { case _ =>
           false
@@ -1067,8 +1075,8 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem,
   }
 
   override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
-                                                                          ec: ExecutionContext,
-                                                                          env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] = withRedis { redis =>
     val args = SetArgs.Builder.nx()
     redis.set(key, value, ttl.map(v => args.px(v)).getOrElse(args)).toScala.map {
@@ -1077,4 +1085,3 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem,
     }
   }
 }
-

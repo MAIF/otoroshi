@@ -3,7 +3,7 @@ export function getOwnTemplates(plugins, setNodes, routeTemplates, setFrontendAn
     return plugins.filter((p) => p.id === id)[0];
   }
 
-  return routeTemplates.map(template => {
+  return routeTemplates.map((template) => {
     return {
       config: {},
       config_flow: [],
@@ -22,20 +22,20 @@ export function getOwnTemplates(plugins, setNodes, routeTemplates, setFrontendAn
       plugin_visibility: 'userland',
       shortcut: () => {
         setFrontendAndBackend(template.route.frontend, template.route.backend, () => {
-          setNodes(template.route.plugins.map(plugin => {
-            return {
-              enabled: true,
-              ...findPlugin(plugin.plugin),
-              ...plugin
-            }
-          }))
-        })
+          setNodes(
+            template.route.plugins.map((plugin) => {
+              return {
+                enabled: true,
+                ...findPlugin(plugin.plugin),
+                ...plugin,
+              };
+            })
+          );
+        });
       },
-    }
-  })
+    };
+  });
 }
-
-
 
 export function getPluginsPatterns(plugins, setNodes) {
   return [

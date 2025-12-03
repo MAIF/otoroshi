@@ -542,7 +542,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) { }
+      } catch (_) {}
     }
   };
 
@@ -558,7 +558,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) { }
+      } catch (_) {}
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -584,10 +584,10 @@ class Designer extends React.Component {
             ...plugin,
             config_schema: isFunction(plugin.config_schema)
               ? plugin.config_schema({
-                showAdvancedDesignerView: (pluginName) => {
-                  this.setState({ advancedDesignerView: pluginName });
-                },
-              })
+                  showAdvancedDesignerView: (pluginName) => {
+                    this.setState({ advancedDesignerView: pluginName });
+                  },
+                })
               : plugin.config_schema,
           };
         })
@@ -595,115 +595,126 @@ class Designer extends React.Component {
       getOldPlugins(),
       getPlugins(),
       routePorts(),
-      nextClient.forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES).findAll()
-    ]).then(([backends, route, categories, plugins, oldPlugins, metadataPlugins, ports, routeTemplates]) => {
-      if (route.error) {
-        this.setState({
-          loading: false,
-          notFound: true,
-        });
-        return;
-      }
+      nextClient.forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES).findAll(),
+    ]).then(
+      ([
+        backends,
+        route,
+        categories,
+        plugins,
+        oldPlugins,
+        metadataPlugins,
+        ports,
+        routeTemplates,
+      ]) => {
+        if (route.error) {
+          this.setState({
+            loading: false,
+            notFound: true,
+          });
+          return;
+        }
 
-      const formattedPlugins = [
-        ...plugins.map((p) => ({
-          ...(metadataPlugins.find((metaPlugin) => metaPlugin.id === p.id) || {}),
-          ...p,
-        })),
-        ...oldPlugins.map((p) => ({
-          ...p,
-          legacy: true,
-        })),
-        ...metadataPlugins.filter((p) => p.no_js_form),
-      ]
-        .filter(this.filterSpecificPlugin)
-        .map((plugin) => ({
-          ...plugin,
-          config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
-          config: plugin.default_config || plugin.defaultConfig,
-        }));
+        const formattedPlugins = [
+          ...plugins.map((p) => ({
+            ...(metadataPlugins.find((metaPlugin) => metaPlugin.id === p.id) || {}),
+            ...p,
+          })),
+          ...oldPlugins.map((p) => ({
+            ...p,
+            legacy: true,
+          })),
+          ...metadataPlugins.filter((p) => p.no_js_form),
+        ]
+          .filter(this.filterSpecificPlugin)
+          .map((plugin) => ({
+            ...plugin,
+            config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
+            config: plugin.default_config || plugin.defaultConfig,
+          }));
 
-      const routePlugins = route.plugins
-        .filter((ref) =>
-          formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
-        )
-        .map((ref) => ({
-          ...ref,
-          plugin_index: Object.fromEntries(
-            Object.entries(ref.plugin_index || {}).map(([key, v]) => [
-              firstLetterUppercase(camelCase(key)),
-              v,
-            ])
-          ),
-          ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin),
-        }));
-      const pluginsWithNodeId = this.generateInternalNodeId(routePlugins);
-
-      let routeWithNodeId = {
-        ...route,
-        plugins: route.plugins
+        const routePlugins = route.plugins
           .filter((ref) =>
             formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
           )
-          .map((plugin, i) => ({
-            ...plugin,
-            nodeId: pluginsWithNodeId[i].nodeId,
-          })),
-      };
+          .map((ref) => ({
+            ...ref,
+            plugin_index: Object.fromEntries(
+              Object.entries(ref.plugin_index || {}).map(([key, v]) => [
+                firstLetterUppercase(camelCase(key)),
+                v,
+              ])
+            ),
+            ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin),
+          }));
+        const pluginsWithNodeId = this.generateInternalNodeId(routePlugins);
 
-      this.loadHiddenStepsFromLocalStorage(routeWithNodeId);
-
-      const nodes = pluginsWithNodeId.some((p) => Object.keys(p.plugin_index || {}).length > 0)
-        ? pluginsWithNodeId
-        : this.generatedPluginIndex(pluginsWithNodeId);
-
-      if (
-        routeWithNodeId.backend_ref &&
-        !backends.find((back) => back.id === routeWithNodeId.backend_ref)
-      ) {
-        routeWithNodeId = {
-          ...routeWithNodeId,
-          backend_ref: undefined,
+        let routeWithNodeId = {
+          ...route,
+          plugins: route.plugins
+            .filter((ref) =>
+              formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
+            )
+            .map((plugin, i) => ({
+              ...plugin,
+              nodeId: pluginsWithNodeId[i].nodeId,
+            })),
         };
+
+        this.loadHiddenStepsFromLocalStorage(routeWithNodeId);
+
+        const nodes = pluginsWithNodeId.some((p) => Object.keys(p.plugin_index || {}).length > 0)
+          ? pluginsWithNodeId
+          : this.generatedPluginIndex(pluginsWithNodeId);
+
+        if (
+          routeWithNodeId.backend_ref &&
+          !backends.find((back) => back.id === routeWithNodeId.backend_ref)
+        ) {
+          routeWithNodeId = {
+            ...routeWithNodeId,
+            backend_ref: undefined,
+          };
+        }
+
+        const isApis = window.location.pathname.includes('/apis');
+
+        const frontendConfiguration = isApis ? ApiFrontend : Frontend;
+        const backendConfiguration = isApis ? ApiBackend : Backend;
+
+        this.setState({
+          ports,
+          backends,
+          routeTemplates,
+          loading: false,
+          categories: categories.filter((category) => !['Job'].includes(category)),
+          route: { ...routeWithNodeId },
+          originalRoute: { ...routeWithNodeId },
+          plugins: formattedPlugins.map((p) => ({
+            ...p,
+            selected: p.plugin_multi_inst
+              ? false
+              : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
+          })),
+          nodes,
+          frontend: {
+            ...frontendConfiguration,
+            config_schema: toUpperCaseLabels(frontendConfiguration.schema),
+            config_flow: frontendConfiguration.flow,
+            nodeId: 'Frontend',
+            readOnly: isApis,
+          },
+          backend: {
+            ...backendConfiguration,
+            config_schema: toUpperCaseLabels(backendConfiguration.schema),
+            config_flow: backendConfiguration.flow,
+            nodeId: 'Backend',
+            readOnly: isApis,
+          },
+          selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
+        });
       }
-
-      const isApis = window.location.pathname.includes('/apis');
-
-      const frontendConfiguration = isApis ? ApiFrontend : Frontend;
-      const backendConfiguration = isApis ? ApiBackend : Backend;
-
-      this.setState({
-        ports,
-        backends,
-        routeTemplates,
-        loading: false,
-        categories: categories.filter((category) => !['Job'].includes(category)),
-        route: { ...routeWithNodeId },
-        originalRoute: { ...routeWithNodeId },
-        plugins: formattedPlugins.map((p) => ({
-          ...p,
-          selected: p.plugin_multi_inst
-            ? false
-            : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
-        })),
-        nodes,
-        frontend: {
-          ...frontendConfiguration,
-          config_schema: toUpperCaseLabels(frontendConfiguration.schema),
-          config_flow: frontendConfiguration.flow,
-          nodeId: 'Frontend',
-          readOnly: isApis,
-        },
-        backend: {
-          ...backendConfiguration,
-          config_schema: toUpperCaseLabels(backendConfiguration.schema),
-          config_flow: backendConfiguration.flow,
-          nodeId: 'Backend',
-          readOnly: isApis,
-        },
-        selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
-      });
-    });
+    );
   };
 
   getSelectedNodeFromLocation = (routePlugins, plugins) => {
@@ -916,14 +927,14 @@ class Designer extends React.Component {
                 bound_listeners: node.bound_listeners || [],
                 config: newNode.legacy
                   ? {
-                    plugin: newNode.id,
-                    // [newNode.configRoot]: {
-                    ...newNode.config,
-                    // },
-                  }
+                      plugin: newNode.id,
+                      // [newNode.configRoot]: {
+                      ...newNode.config,
+                      // },
+                    }
                   : {
-                    ...newNode.config,
-                  },
+                      ...newNode.config,
+                    },
               },
             ],
           },
@@ -1154,8 +1165,8 @@ class Designer extends React.Component {
         plugin_index: Object.fromEntries(
           Object.entries(
             plugin.plugin_index ||
-            this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-            {}
+              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+              {}
           ).map(([key, v]) => [snakeCase(key), v])
         ),
       })),
@@ -1441,30 +1452,35 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-          .map((p) => {
-            const id = p.plugin;
-            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-            if (pluginDef) {
-              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                return { ...p, ...pluginDef };
+            .map((p) => {
+              const id = p.plugin;
+              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+              if (pluginDef) {
+                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                  return { ...p, ...pluginDef };
+                }
               }
-            }
-            return null;
-          })
-          .filter((p) => !!p)
+              return null;
+            })
+            .filter((p) => !!p)
         : [];
 
     const ownTemplates = getOwnTemplates(
       plugins,
       this.setNodes,
       this.state.routeTemplates,
-      (frontend, backend, callback) => this.setState({
-        route: {
-          ...this.state.route,
-          frontend: { ...this.state.route.frontend, ...frontend },
-          backend: { ...this.state.route.backend, ...backend }
-        }
-      }, callback))
+      (frontend, backend, callback) =>
+        this.setState(
+          {
+            route: {
+              ...this.state.route,
+              frontend: { ...this.state.route.frontend, ...frontend },
+              backend: { ...this.state.route.backend, ...backend },
+            },
+          },
+          callback
+        )
+    );
 
     const patterns = getPluginsPatterns(plugins, this.setNodes);
 
@@ -1864,14 +1880,14 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
     const allMethods =
       rawMethods && rawMethods.length > 0
         ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
+            <span
+              key={`frontendmethod-${i}`}
+              className={`badge me-1`}
+              style={{ backgroundColor: HTTP_COLORS[m] }}
+            >
+              {m}
+            </span>
+          ))
         : [<span className="badge bg-success">ALL</span>];
 
     const copy = (value, setCopyIconName) => {
@@ -1937,12 +1953,15 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
             }}
           >
             {frontend.domains.map((domain, idx) => {
-              return <FrontendInformations
-                frontend={frontend}
-                allMethods={allMethods}
-                domain={domain}
-                idx={idx}
-                routeEntries={routeEntries} />
+              return (
+                <FrontendInformations
+                  frontend={frontend}
+                  allMethods={allMethods}
+                  domain={domain}
+                  idx={idx}
+                  routeEntries={routeEntries}
+                />
+              );
             })}
           </div>
           {frontend.query && Object.keys(frontend.query).length > 0 && (
@@ -2026,9 +2045,9 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
                 );
                 const mtls =
                   target.tls &&
-                    target.tls_config &&
-                    target.tls_config.enabled &&
-                    [...(target.tls_config.certs || [])].length > 0 ? (
+                  target.tls_config &&
+                  target.tls_config.enabled &&
+                  [...(target.tls_config.certs || [])].length > 0 ? (
                     <span
                       className="badge bg-warning text-dark"
                       style={{
@@ -2112,8 +2131,9 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${icon || 'bars'
-          } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${
+          icon || 'bars'
+        } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>

@@ -11,7 +11,14 @@ import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
 import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
 import io.lettuce.core.{AbstractRedisClient, ClientOptions, ReadFrom, RedisClient, RedisURI}
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
+import next.models.{
+  ApiConsumerSubscriptionDataStore,
+  ApiDataStore,
+  KvApiConsumerSubscriptionDataStore,
+  KvApiDataStore,
+  KvRouteTemplateDataStore,
+  RouteTemplateDataStore
+}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
@@ -100,16 +107,17 @@ class LettuceDataStores(
       .ioThreadPoolSize(ioThreadPoolSize)
       .build()
   }
-  lazy val usePool = configuration
+  lazy val usePool                = configuration
     .getOptionalWithFileSupport[Boolean]("app.redis.lettuce.pooling.enabled")
     .getOrElse(false)
-  lazy val useReactive = configuration
+  lazy val useReactive            = configuration
     .getOptionalWithFileSupport[Boolean]("app.redis.lettuce.pooling.reactive")
     .getOrElse(false)
 
   lazy val redis: LettuceRedis = {
 
-    val clientOptions = ClientOptions.builder()
+    val clientOptions = ClientOptions
+      .builder()
       .autoReconnect(true)
       .pingBeforeActivateConnection(true)
       .build()
