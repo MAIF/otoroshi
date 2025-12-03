@@ -1834,7 +1834,7 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
-function FrontendInformations({ frontend, allMethods, domain, idx, routeEntries }) {
+function FrontendInformations({ frontend, allMethods, domain, idx, routeEntries, copy }) {
   const [copyIconName, setCopyIconName] = useState('fas fa-copy');
   const exact = frontend.exact;
   const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
@@ -1960,6 +1960,7 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
                   domain={domain}
                   idx={idx}
                   routeEntries={routeEntries}
+                  copy={copy}
                 />
               );
             })}
