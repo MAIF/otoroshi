@@ -10,7 +10,7 @@ import play.api.libs.json.{JsObject, Json}
 
 class JQTransformResponseTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val route = createLocalRoute(
     Seq(

@@ -12,7 +12,7 @@ import play.api.libs.ws.WSAuthScheme
 
 class RBACTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   def allow() = {
     val route = createRequestOtoroshiIORoute(

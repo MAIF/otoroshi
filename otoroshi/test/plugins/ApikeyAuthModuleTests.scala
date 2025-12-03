@@ -10,7 +10,7 @@ import play.api.libs.json.JsObject
 import play.api.libs.ws.WSAuthScheme
 
 class ApikeyAuthModuleTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

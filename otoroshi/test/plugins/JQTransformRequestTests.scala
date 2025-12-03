@@ -7,10 +7,11 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.WSBodyWritables.writeableOf_String
 
 class JQTransformRequestTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(
@@ -32,8 +33,8 @@ class JQTransformRequestTests(parent: PluginsTestSpec) {
     .post(Json.stringify(Json.obj("user" -> Json.obj("name" -> "Julien"))))
     .futureValue
 
-  call.status mustBe Status.OK
-  Json.parse(Json.parse(call.body).selectAsString("body")) mustBe Json.obj("username" -> "Julien")
+  call.status.mustBe(Status.OK)
+  Json.parse(Json.parse(call.body).selectAsString("body")).mustBe(Json.obj("username" -> "Julien"))
 
   deleteOtoroshiRoute(route).futureValue
 }

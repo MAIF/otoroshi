@@ -583,7 +583,7 @@ object WorkflowOperator {
         .substring(2)
         .init
         .split("\\|\\|")
-        .toStream
+        .to(LazyList)
         .map(_.trim)
         .filter(_.nonEmpty)
         .map { part =>
@@ -628,7 +628,7 @@ object WorkflowOperator {
           val expr  = m.group(1).trim
           val value = expr
             .split("\\|\\|")
-            .toStream
+            .to(LazyList)
             .map(_.trim)
             .filter(_.nonEmpty)
             .map { part =>

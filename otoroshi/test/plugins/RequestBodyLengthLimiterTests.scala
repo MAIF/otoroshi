@@ -7,15 +7,17 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.writeableOf_String
+
 
 import java.net.SocketException
 
 class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
-  def validCall() {
+  def validCall() = {
     val id    = IdGenerator.uuid
     val route = createRequestOtoroshiIORoute(
       Seq(
@@ -42,12 +44,12 @@ class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
       .post("Hello from client!")
       .futureValue
 
-    resp.status mustBe Status.OK
+    resp.status.mustBe(Status.OK)
 
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def tooBigBody() {
+  def tooBigBody() = {
     val id    = IdGenerator.uuid
     val route = createRequestOtoroshiIORoute(
       Seq(
@@ -80,7 +82,7 @@ class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def chunkBody() {
+  def chunkBody() = {
     val id    = IdGenerator.uuid
     val route = createRequestOtoroshiIORoute(
       Seq(
@@ -107,7 +109,7 @@ class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
       .post("Hello from client!")
       .futureValue
 
-    Json.parse(resp.body).selectAsString("body") mustBe "Hello"
+    Json.parse(resp.body).selectAsString("body").mustBe("Hello")
     deleteOtoroshiRoute(route).futureValue
   }
 }

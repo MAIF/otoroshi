@@ -10,7 +10,7 @@ import play.api.libs.json.{JsObject, Json}
 
 class RedirectionTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

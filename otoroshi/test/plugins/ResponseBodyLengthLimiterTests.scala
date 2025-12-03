@@ -1,22 +1,23 @@
 package plugins
 
-import akka.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyReadables.readableAsString
 
 import java.net.SocketException
 
 class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
-  def validCall() {
+  def validCall() = {
     val message = Json.obj("message" -> "creation done")
     val route   = createLocalRoute(
       Seq(
@@ -51,7 +52,7 @@ class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def tooBigBody() {
+  def tooBigBody() = {
     val message = Json.obj("message" -> "creation done")
     val route   = createLocalRoute(
       Seq(
@@ -87,7 +88,7 @@ class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def chunkBody() {
+  def chunkBody() = {
     val message =
       "Hello from backend!, Hello from backend!, Hello from backend!, Hello from backend!, Hello from backend!"
     val route   = createLocalRoute(
@@ -118,7 +119,7 @@ class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
       .futureValue
 
     println(resp.body)
-    resp.body mustBe "Hello"
+    resp.body.mustBe("Hello")
     deleteOtoroshiRoute(route).futureValue
   }
 }

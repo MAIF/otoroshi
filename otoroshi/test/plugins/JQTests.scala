@@ -1,16 +1,17 @@
 package plugins
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.WSBodyWritables.writeableOf_String
 
 class JQTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val route = createLocalRoute(
     Seq(
@@ -40,8 +41,8 @@ class JQTests(parent: PluginsTestSpec) {
     .post(Json.stringify(Json.obj("user" -> Json.obj("name" -> "Julien"))))
     .futureValue
 
-  call.status mustBe Status.OK
-  Json.parse(call.body) mustBe Json.obj("username" -> "Julien")
+  call.status.mustBe(Status.OK)
+  Json.parse(call.body).mustBe(Json.obj("username" -> "Julien"))
 
   deleteOtoroshiRoute(route).futureValue
 }

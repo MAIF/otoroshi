@@ -3,7 +3,7 @@ package otoroshi.cluster
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
+import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
 import org.apache.pekko.http.scaladsl.ClientTransport
@@ -17,7 +17,6 @@ import org.apache.pekko.stream.connectors.s3.scaladsl.S3
 import org.apache.pekko.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source, SourceQueueWithComplete}
 import org.apache.pekko.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
 import org.apache.pekko.util.ByteString
-import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.auth.AuthConfigsDataStore

@@ -12,10 +12,13 @@ import play.api.Logger
 import io.lettuce.core.{RedisClient, RedisURI, SetArgs}
 import io.lettuce.core.codec.{RedisCodec, StringCodec}
 import io.lettuce.core.api.reactive.RedisReactiveCommands
+import org.apache.pekko.dispatch.Dispatcher
+import org.apache.pekko.stream.Materializer
+import otoroshi.utils.reactive.ReactiveStreamImplicits.*
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class ByteStringRedisCodec extends RedisCodec[String, ByteString] {
 
@@ -440,10 +443,12 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
 class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: RedisClient, uri: RedisURI, env: Env)
     extends LettuceRedis {
 
-  import actorSystem.dispatcher
+  import scala.jdk.CollectionConverters.given
+  import scala.compat.java8.FutureConverters.*
 
-  import collection.JavaConverters._
-  import scala.compat.java8.FutureConverters._
+  given Env = env
+  given Materializer = env.otoroshiMaterializer
+  given ExecutionContextExecutor = actorSystem.dispatcher
 
   lazy val logger               = Logger("otoroshi-lettuce-redis")
   lazy val avoidCommandFailures =
@@ -454,7 +459,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
     env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.shim-set-commands").getOrElse(false)
   lazy val maxTotal             = env.configuration.getOptional[Int]("otoroshi.redis.lettuce.pooling.maxTotal").getOrElse(8)
 
-  lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)(actorSystem.dispatcher, env)
+  lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)
 
   logger.info(s"Using lettuce async connections pooling - ${maxTotal}")
 
@@ -496,7 +501,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
   }
 
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = withRedis { redis =>
-    redis.mget(keys: _*).toScala.map(_.asScala.toSeq.map(v => if (v.hasValue) Option(v.getValue) else None))
+    redis.mget(keys*).toScala.map(_.asScala.toSeq.map(v => if (v.hasValue) Option(v.getValue) else None))
   }
 
   override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] =
@@ -529,7 +534,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
   }
 
   override def del(keys: String*): Future[Long] = withRedis { redis =>
-    redis.del(keys: _*).toScala.map(_.longValue())
+    redis.del(keys*).toScala.map(_.longValue())
   }
 
   override def incr(key: String): Future[Long] = withRedis { redis =>
@@ -549,7 +554,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
   }
 
   override def hdel(key: String, fields: String*): Future[Long] = withRedis { redis =>
-    redis.hdel(key, fields: _*).toScala.map(_.longValue())
+    redis.hdel(key, fields*).toScala.map(_.longValue())
   }
 
   override def hgetall(key: String): Future[Map[String, ByteString]] = withRedis { redis =>
@@ -579,13 +584,13 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
   }
 
   override def lpush(key: String, values: String*): Future[Long] = withRedis { redis =>
-    lpushBS(key, values.map(ByteString.apply): _*).applyOnIf(avoidCommandFailures)(_.recover { case _ =>
+    lpushBS(key, values.map(ByteString.apply)*).applyOnIf(avoidCommandFailures)(_.recover { case _ =>
       0L
     })
   }
 
   override def lpushLong(key: String, values: Long*): Future[Long] = withRedis { redis =>
-    lpushBS(key, values.map(v => ByteString(v.toString)): _*).applyOnIf(avoidCommandFailures)(_.recover { case _ =>
+    lpushBS(key, values.map(v => ByteString(v.toString))*).applyOnIf(avoidCommandFailures)(_.recover { case _ =>
       0L
     })
   }
@@ -602,7 +607,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
       }
     } else {
       redis
-        .lpush(key, values: _*)
+        .lpush(key, values*)
         .toScala
         .map(_.longValue())
         .applyOnIf(avoidCommandFailures)(_.recover { case _ =>
@@ -632,7 +637,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
 
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = withRedis { redis =>
     if (shimListCommands) {
-      hdel(key, (start to stop).map(_.toString): _*).map(_ > 0)
+      hdel(key, (start to stop).map(_.toString)*).map(_ > 0)
     } else {
       redis
         .ltrim(key, start, stop)
@@ -663,7 +668,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
     redis.pexpire(key, milliseconds).toScala.map(_.booleanValue())
   }
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply)*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] = withRedis { redis =>
     if (shimSetCommands) {
@@ -674,7 +679,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
         .map(_.size.toLong)
     } else {
       redis
-        .sadd(key, members: _*)
+        .sadd(key, members*)
         .toScala
         .map(_.longValue())
         .applyOnIf(avoidCommandFailures)(_.recover { case _ =>
@@ -715,14 +720,14 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
     }
   }
 
-  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
+  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply)*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = withRedis { redis =>
     if (shimSetCommands) {
-      hdel(key, members.map(_.encodeBase64.utf8String): _*)
+      hdel(key, members.map(_.encodeBase64.utf8String)*)
     } else {
       redis
-        .srem(key, members: _*)
+        .srem(key, members*)
         .toScala
         .map(_.longValue())
         .applyOnIf(avoidCommandFailures)(_.recover { case _ =>
@@ -768,12 +773,13 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
     env: Env
 ) extends LettuceRedis {
 
-  import actorSystem.dispatcher
+  import scala.jdk.CollectionConverters.given
+  import otoroshi.utils.reactive.ReactiveStreamImplicits.*
 
-  import collection.JavaConverters._
-  import otoroshi.utils.reactive.ReactiveStreamImplicits._
+  given Env = env
+  given Materializer = env.otoroshiMaterializer
+  given ExecutionContextExecutor = actorSystem.dispatcher
 
-  implicit val mat = env.otoroshiMaterializer
 
   lazy val logger               = Logger("otoroshi-lettuce-redis")
   lazy val avoidCommandFailures =
@@ -784,7 +790,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
     env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.shim-set-commands").getOrElse(false)
   lazy val maxTotal             = env.configuration.getOptional[Int]("otoroshi.redis.lettuce.pooling.maxTotal").getOrElse(8)
 
-  lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)(actorSystem.dispatcher, env)
+  lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)
 
   logger.info(s"Using reactive lettuce connections pooling - ${maxTotal}")
 
@@ -826,7 +832,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
   }
 
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = withRedis { redis =>
-    redis.mget(keys: _*).toScala.map(_.map(v => if (v.hasValue) Option(v.getValue) else None))
+    redis.mget(keys*).toScala.map(_.map(v => if (v.hasValue) Option(v.getValue) else None))
   }
 
   override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] =
@@ -859,7 +865,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
   }
 
   override def del(keys: String*): Future[Long] = withRedis { redis =>
-    redis.del(keys: _*).toScala.map(_.longValue())
+    redis.del(keys*).toScala.map(_.longValue())
   }
 
   override def incr(key: String): Future[Long] = withRedis { redis =>
@@ -879,7 +885,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
   }
 
   override def hdel(key: String, fields: String*): Future[Long] = withRedis { redis =>
-    redis.hdel(key, fields: _*).toScala.map(_.longValue())
+    redis.hdel(key, fields*).toScala.map(_.longValue())
   }
 
   override def hgetall(key: String): Future[Map[String, ByteString]] = withRedis { redis =>
@@ -909,13 +915,13 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
   }
 
   override def lpush(key: String, values: String*): Future[Long] = withRedis { redis =>
-    lpushBS(key, values.map(ByteString.apply): _*).applyOnIf(avoidCommandFailures)(_.recover { case _ =>
+    lpushBS(key, values.map(ByteString.apply)*).applyOnIf(avoidCommandFailures)(_.recover { case _ =>
       0L
     })
   }
 
   override def lpushLong(key: String, values: Long*): Future[Long] = withRedis { redis =>
-    lpushBS(key, values.map(v => ByteString(v.toString)): _*).applyOnIf(avoidCommandFailures)(_.recover { case _ =>
+    lpushBS(key, values.map(v => ByteString(v.toString))*).applyOnIf(avoidCommandFailures)(_.recover { case _ =>
       0L
     })
   }
@@ -932,7 +938,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
       }
     } else {
       redis
-        .lpush(key, values: _*)
+        .lpush(key, values*)
         .toScala
         .map(_.longValue())
         .applyOnIf(avoidCommandFailures)(_.recover { case _ =>
@@ -961,7 +967,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
 
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = withRedis { redis =>
     if (shimListCommands) {
-      hdel(key, (start to stop).map(_.toString): _*).map(_ > 0)
+      hdel(key, (start to stop).map(_.toString)*).map(_ > 0)
     } else {
       redis
         .ltrim(key, start, stop)
@@ -992,7 +998,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
     redis.pexpire(key, milliseconds).toScala.map(_.booleanValue())
   }
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply)*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] = withRedis { redis =>
     if (shimSetCommands) {
@@ -1003,7 +1009,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
         .map(_.size.toLong)
     } else {
       redis
-        .sadd(key, members: _*)
+        .sadd(key, members*)
         .toScala
         .map(_.longValue())
         .applyOnIf(avoidCommandFailures)(_.recover { case _ =>
@@ -1043,14 +1049,14 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
     }
   }
 
-  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
+  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply)*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = withRedis { redis =>
     if (shimSetCommands) {
-      hdel(key, members.map(_.encodeBase64.utf8String): _*)
+      hdel(key, members.map(_.encodeBase64.utf8String)*)
     } else {
       redis
-        .srem(key, members: _*)
+        .srem(key, members*)
         .toScala
         .map(_.longValue())
         .applyOnIf(avoidCommandFailures)(_.recover { case _ =>

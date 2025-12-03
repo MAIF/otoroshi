@@ -181,7 +181,6 @@ object Projection {
               dest = dest ++ Json.obj(key -> value)
             case ("$remove", JsBoolean(true))                 =>
               dest = dest - key
-            }
             case ("$date_from_unix_fmt", obj @ JsObject(_))   => 
               val path               = (obj \ "path").as[String]
               val pattern            = (obj \ "pattern").asOpt[String].getOrElse("yyyy-MM-dd'T'HH:mm:ss.SSSZ")

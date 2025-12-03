@@ -13,7 +13,7 @@ import play.api.libs.json._
 
 class WasmAccessControlTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   def good() = {
     val id    = IdGenerator.uuid

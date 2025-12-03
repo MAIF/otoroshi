@@ -13,7 +13,7 @@ import play.api.libs.json._
 
 class WasmBackendTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val id    = IdGenerator.uuid
   val route = createRequestOtoroshiIORoute(

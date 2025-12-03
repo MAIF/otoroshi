@@ -8,12 +8,13 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import play.api.http.Status
 import play.api.libs.json.Json
 import play.api.libs.ws.{WSAuthScheme, WSResponse}
+import play.api.libs.ws.WSBodyWritables.writeableOf_String
 
 import scala.concurrent.Future
 
 class GlobalMaintenanceModeTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   private def enableGlobalMaintenance(): Future[WSResponse] = {
     ws.url(s"http://localhost:$port/api/globalconfig")

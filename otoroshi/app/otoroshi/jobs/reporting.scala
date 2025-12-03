@@ -156,7 +156,7 @@ object AnonymousReportingJob {
         else Seq.empty
       val pluginsPlugins             = if (globalConfig.plugins.enabled) globalConfig.plugins.refs else Seq.empty
       val plugins                    = routePlugins ++ scriptPlugins ++ pluginsPlugins
-      val counting                   = plugins.groupBy(identity).mapValues(v => JsNumber(v.size))
+      val counting                   = plugins.groupBy(identity).view.mapValues(v => JsNumber(v.size))
       val genericEntities            = JsObject(env.allResources.resources.map { res =>
         (s"${res.group}/${res.pluralName}", res.access.all().size.json)
       }.toMap)

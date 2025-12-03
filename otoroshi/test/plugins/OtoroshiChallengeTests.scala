@@ -1,10 +1,10 @@
 package plugins
 
-import akka.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import functional.PluginsTestSpec
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import java.util.Base64
 import otoroshi.models.{HSAlgoSettings, SecComVersionV2}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins._
@@ -18,7 +18,7 @@ import scala.concurrent.duration.DurationInt
 
 class OtoroshiChallengeTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val route = createLocalRoute(
     Seq(
@@ -41,15 +41,15 @@ class OtoroshiChallengeTests(parent: PluginsTestSpec) {
     rawResult = Some(req => {
       val tokenBody           = req.headers.find(_.name() == "foo").get.value().split("\\.")(1)
       val requestTokenPayload = Json
-        .parse(ApacheBase64.decodeBase64(tokenBody))
+        .parse(Base64.getDecoder.decode(tokenBody))
         .as[JsObject]
       val rawPayload          = requestTokenPayload
         .deepMerge(Json.obj("aud" -> "Otoroshi", "state-resp" -> requestTokenPayload.selectAsString("state")))
       val headerJson          = Json.obj("alg" -> "HS256", "typ" -> "JWT")
       val header              =
-        ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
+        Base64.getUrlEncoder.withoutPadding.encodeToString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
       val payload             =
-        ApacheBase64.encodeBase64URLSafeString(Json.stringify(rawPayload).getBytes(StandardCharsets.UTF_8))
+        Base64.getUrlEncoder.withoutPadding.encodeToString(Json.stringify(rawPayload).getBytes(StandardCharsets.UTF_8))
       val content             = String.format("%s.%s", header, payload)
       val signatureBytes      =
         Algorithm
@@ -58,7 +58,7 @@ class OtoroshiChallengeTests(parent: PluginsTestSpec) {
             header.getBytes(StandardCharsets.UTF_8),
             payload.getBytes(StandardCharsets.UTF_8)
           )
-      val signature           = ApacheBase64.encodeBase64URLSafeString(signatureBytes)
+      val signature           = Base64.getUrlEncoder.withoutPadding.encodeToString(signatureBytes)
 
       val signedToken = s"$content.$signature"
       (200, "", List(RawHeader("bar", signedToken)))

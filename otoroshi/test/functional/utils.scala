@@ -23,7 +23,7 @@ import otoroshi.env.Env
 import otoroshi.loader.modules.OtoroshiComponentsInstances
 import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPlugins, NgRoute, NgTarget}
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.proxywasm.CorazaWafConfig
 import play.api.ApplicationLoader.Context
 import play.api.libs.json.*
@@ -41,6 +41,7 @@ import scala.concurrent.*
 import scala.util.{Random, Success, Try}
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import org.slf4j
+import otoroshi.next.workflow.Workflow
 import play.api.http.Status
 
 trait AddConfiguration {

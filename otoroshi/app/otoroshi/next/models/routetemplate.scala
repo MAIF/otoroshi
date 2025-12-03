@@ -9,6 +9,7 @@ import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterJsValueReader}
 import play.api.libs.json.{Format, JsError, JsResult, JsSuccess, JsValue, Json}
 
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
 case class RouteTemplate(
@@ -41,13 +42,13 @@ object RouteTemplate {
   val format                                    = new Format[RouteTemplate] {
     override def reads(json: JsValue): JsResult[RouteTemplate] = Try {
       RouteTemplate(
-        location = json.select("location").as(EntityLocation.format),
+        location = json.select("location").as[EntityLocation](using EntityLocation.format),
         id = json.selectAsString("id"),
         name = json.selectAsString("name"),
         description = json.selectAsString("description"),
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        route = json.select("route").asOpt(NgRoute.fmt).getOrElse(NgRoute.empty)
+        route = json.select("route").asOpt[NgRoute](using NgRoute.fmt).getOrElse(NgRoute.empty)
       )
     } match {
       case Failure(ex)    =>
@@ -70,17 +71,18 @@ object RouteTemplate {
 
 trait RouteTemplateDataStore extends BasicStore[RouteTemplate] {
   def template(env: Env): RouteTemplate = {
-    implicit val e = env
+    given Env = env
+    given ExecutionContext = env.otoroshiExecutionContext
 
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()
       .templates
       .routeTemplate
       .map { template =>
-        RouteTemplate.format.reads(RouteTemplate.defaultRouteTemplate.json.asObject.deepMerge(template)).get
+        RouteTemplate.format.reads(RouteTemplate.defaultRouteTemplate().json.asObject.deepMerge(template)).get
       }
       .getOrElse {
-        RouteTemplate.defaultRouteTemplate
+        RouteTemplate.defaultRouteTemplate()
       }
   }
 }

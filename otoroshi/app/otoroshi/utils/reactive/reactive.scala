@@ -1,7 +1,7 @@
 package otoroshi.utils.reactive
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.reactivestreams.Publisher
 
 import scala.concurrent.{ExecutionContext, Future, Promise}

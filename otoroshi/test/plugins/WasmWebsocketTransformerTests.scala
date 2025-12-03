@@ -1,10 +1,10 @@
 package plugins
 
-import akka.http.scaladsl.model.headers.Host
-import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.{Done, NotUsed}
+import org.apache.pekko.http.scaladsl.model.headers.Host
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.{Done, NotUsed}
 import functional.{PluginsTestSpec, WebsocketBackend}
 import io.otoroshi.wasm4s.scaladsl.{WasmSource, WasmSourceKind}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -28,9 +28,9 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
 class WasmWebsocketTransformerTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{given, *}
 
-  implicit val http: HttpExt = Http()(system)
+  implicit val http: HttpExt = Http()
 
   val backend = new WebsocketBackend().await()
 

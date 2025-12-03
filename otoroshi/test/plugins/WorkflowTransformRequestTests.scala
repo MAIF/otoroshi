@@ -13,7 +13,7 @@ import play.api.libs.json.{JsObject, Json}
 
 class WorkflowTransformRequestTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val workflow = Workflow(
     location = EntityLocation.default,

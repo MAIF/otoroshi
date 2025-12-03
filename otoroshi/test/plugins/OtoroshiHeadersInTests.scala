@@ -8,7 +8,7 @@ import play.api.http.Status
 
 class OtoroshiHeadersInTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(

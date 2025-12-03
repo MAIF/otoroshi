@@ -12,7 +12,7 @@ import play.api.libs.ws.WSAuthScheme
 
 class RoutingRestrictionsTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   def testAllowedPath(): Unit = {
     val route = createRequestOtoroshiIORoute(

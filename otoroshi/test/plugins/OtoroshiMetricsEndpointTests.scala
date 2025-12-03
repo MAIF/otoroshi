@@ -10,7 +10,7 @@ import play.api.libs.json.{JsArray, Json}
 
 class OtoroshiMetricsEndpointTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val route = createRequestOtoroshiIORoute(
     Seq(
