@@ -1204,13 +1204,14 @@ case class ForEachNode(json: JsObject) extends Node {
           .takeWhile(_.isRight, inclusive = true)
           .runWith(Sink.seq)(env.otoroshiMaterializer)
           .map { seq =>
-            val last = seq.last
-            if (last.isLeft) {
-              last
-            } else {
-              JsArray(seq.collect { case Right(v) =>
-                v
-              }).right
+            seq.lastOption match {
+              case None => JsArray().right
+              case Some(Left(err)) => Left(err)
+              case Some(Right(_)) => {
+                JsArray(seq.collect { case Right(v) =>
+                  v
+                }).right
+              }
             }
           }
       } else if (iterableArray.isDefined) {
@@ -1230,13 +1231,14 @@ case class ForEachNode(json: JsObject) extends Node {
           .takeWhile(_.isRight, inclusive = true)
           .runWith(Sink.seq)(env.otoroshiMaterializer)
           .map { seq =>
-            val last = seq.last
-            if (last.isLeft) {
-              last
-            } else {
-              JsArray(seq.collect { case Right(v) =>
-                v
-              }).right
+            seq.lastOption match {
+              case None => JsArray().right
+              case Some(Left(err)) => Left(err)
+              case Some(Right(_)) => {
+                JsArray(seq.collect { case Right(v) =>
+                  v
+                }).right
+              }
             }
           }
       } else {
@@ -1321,17 +1323,18 @@ case class MapNode(json: JsObject) extends Node {
             .takeWhile(_.isRight, inclusive = true)
             .runWith(Sink.seq)(env.otoroshiMaterializer)
             .map { seq =>
-              val last = seq.last
-              if (last.isLeft) {
-                last
-              } else {
-                val result = JsArray(seq.collect { case Right(v) =>
-                  v
-                })
-                json.select("destination").asOptString.foreach { destination =>
-                  wfr.memory.set(destination, result)
+              seq.lastOption match {
+                case None => JsArray().right
+                case Some(Left(err)) => Left(err)
+                case Some(Right(_)) => {
+                  val result = JsArray(seq.collect { case Right(v) =>
+                    v
+                  })
+                  json.select("destination").asOptString.foreach { destination =>
+                    wfr.memory.set(destination, result)
+                  }
+                  result.right
                 }
-                result.right
               }
             }
         }
@@ -1417,17 +1420,18 @@ case class FlatMapNode(json: JsObject) extends Node {
             .takeWhile(_.isRight, inclusive = true)
             .runWith(Sink.seq)(env.otoroshiMaterializer)
             .map { seq =>
-              val last = seq.last
-              if (last.isLeft) {
-                last
-              } else {
-                val result = JsArray(seq.collect { case Right(JsArray(v)) =>
-                  v
-                }.flatten)
-                json.select("destination").asOptString.foreach { destination =>
-                  wfr.memory.set(destination, result)
+              seq.lastOption match {
+                case None => JsArray().right
+                case Some(Left(err)) => Left(err)
+                case Some(Right(_)) => {
+                  val result = JsArray(seq.collect { case Right(JsArray(v)) =>
+                    v
+                  }.flatten)
+                  json.select("destination").asOptString.foreach { destination =>
+                    wfr.memory.set(destination, result)
+                  }
+                  result.right
                 }
-                result.right
               }
             }
         }
@@ -1520,28 +1524,29 @@ case class FilterNode(json: JsObject) extends Node {
             .takeWhile(_._2.isRight, inclusive = true)
             .runWith(Sink.seq)(env.otoroshiMaterializer)
             .map { seq =>
-              val last = seq.last
-              if (last._2.isLeft) {
-                last._2
-              } else {
-                val result = JsArray(
-                  seq
-                    .collect { case (JsBoolean(v), Right(e)) =>
-                      (v, e)
-                    }
-                    .filter { case (bool, _) =>
-                      if (not) {
-                        !bool
-                      } else {
-                        bool
+              seq.lastOption match {
+                case None => JsArray().right
+                case Some((_, Left(err))) => Left(err)
+                case Some((_, Right(_))) => {
+                  val result = JsArray(
+                    seq
+                      .collect { case (JsBoolean(v), Right(e)) =>
+                        (v, e)
                       }
-                    }
-                    .map(_._2)
-                )
-                json.select("destination").asOptString.foreach { destination =>
-                  wfr.memory.set(destination, result)
+                      .filter { case (bool, _) =>
+                        if (not) {
+                          !bool
+                        } else {
+                          bool
+                        }
+                      }
+                      .map(_._2)
+                  )
+                  json.select("destination").asOptString.foreach { destination =>
+                    wfr.memory.set(destination, result)
+                  }
+                  result.right
                 }
-                result.right
               }
             }
         }
