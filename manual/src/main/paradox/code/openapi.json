@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:34139",
+    "url" : "http://otoroshi-api.oto.tools:46503",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -87,6 +87,9 @@
   }, {
     "name" : "apiconsumersubscription",
     "description" : "all the operations about the apiconsumersubscription entity"
+  }, {
+    "name" : "route-template",
+    "description" : "all the operations about the route-template entity"
   }, {
     "name" : "workflow",
     "description" : "all the operations about the workflow entity"
@@ -4075,6 +4078,251 @@
               "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/proxy.otoroshi.io.ErrorTemplate"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/proxy.otoroshi.io/v1/route-templates/_bulk" : {
+      "post" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Create multiple RouteTemplate at the same time",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.bulk_create",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Update multiple RouteTemplate at the same time",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.bulk_update",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Update (using json-patch) multiple RouteTemplate at the same time",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.bulk_patch",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkPatchBody"
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Delete multiple RouteTemplate at the same time",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.bulk_delete",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
                 }
               }
             }
@@ -12800,6 +13048,66 @@
         }
       }
     },
+    "/apis/proxy.otoroshi.io/v1/route-templates/_count" : {
+      "get" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Get number of entity of kind RouteTemplate",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.count",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resources count",
+                  "type" : "object",
+                  "properties" : {
+                    "count" : {
+                      "type" : "number",
+                      "description" : "the number of resources"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/apis/organize.otoroshi.io/v1/tenants" : {
       "get" : {
         "tags" : [ "tenant", "organize.otoroshi.io" ],
@@ -13684,6 +13992,60 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/organize.otoroshi.io.Organization"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/proxy.otoroshi.io/v1/route-templates/_template" : {
+      "get" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Return a template of a resource of kind RouteTemplate",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.template",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resource of kind RouteTemplate",
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
               }
             }
           }
@@ -19270,6 +19632,267 @@
         }
       }
     },
+    "/apis/proxy.otoroshi.io/v1/route-templates/{id}" : {
+      "get" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Find resource of kind RouteTemplate by its id",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.findById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resource of kind RouteTemplate",
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Updates a specific RouteTemplate using its id",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.updateById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Updates (using json-patch) a specific RouteTemplate using its id",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.pathById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Deletes a specific RouteTemplate using its id",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.deleteById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/apis/config.otoroshi.io/v1/global-configs" : {
       "get" : {
         "tags" : [ "global-config", "config.otoroshi.io" ],
@@ -19924,6 +20547,124 @@
                     }
                   }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/proxy.otoroshi.io/v1/route-templates" : {
+      "get" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Find all possible RouteTemplate entities",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.findAll",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "route-template", "proxy.otoroshi.io" ],
+        "summary" : "Creates a RouteTemplate",
+        "operationId" : "proxy.otoroshi.io.RouteTemplate.create",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/proxy.otoroshi.io.RouteTemplate"
               }
             }
           }
@@ -21451,6 +22192,36 @@
         "properties" : { },
         "title" : "G r p c"
       },
+      "proxies" : {
+        "type" : "object",
+        "properties" : {
+          "alertEmails" : {
+            "$ref" : "#/components/schemas/wsproxyserver"
+          },
+          "eventsWebhooks" : {
+            "$ref" : "#/components/schemas/wsproxyserver"
+          },
+          "clevercloud" : {
+            "$ref" : "#/components/schemas/wsproxyserver"
+          },
+          "services" : {
+            "$ref" : "#/components/schemas/wsproxyserver"
+          },
+          "auth" : {
+            "$ref" : "#/components/schemas/wsproxyserver"
+          },
+          "authority" : {
+            "$ref" : "#/components/schemas/wsproxyserver"
+          },
+          "jwk" : {
+            "$ref" : "#/components/schemas/wsproxyserver"
+          },
+          "elastic" : {
+            "$ref" : "#/components/schemas/wsproxyserver"
+          }
+        },
+        "title" : "Proxies"
+      },
       "seccomheaders" : {
         "type" : "object",
         "properties" : {
@@ -21478,6 +22249,23 @@
         "type" : "object",
         "properties" : { },
         "title" : "Random"
+      },
+      "ipstackgeolocationsettings" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "apikey" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "timeout" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Ip stack geolocation settings",
+        "required" : [ "enabled", "apikey", "timeout" ]
       },
       "otoroshi.ssl.pki.models.GenCsrQuery" : {
         "type" : "object",
@@ -21872,6 +22660,36 @@
         "properties" : { },
         "title" : "Data exporter config type http"
       },
+      "tlsconfig" : {
+        "type" : "object",
+        "properties" : {
+          "certs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "trustedCerts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "loose" : {
+            "type" : "boolean"
+          },
+          "trustAll" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "Tls config",
+        "required" : [ "certs", "trustedCerts", "enabled", "loose", "trustAll" ]
+      },
       "rsalgosettings" : {
         "type" : "object",
         "properties" : {
@@ -21889,6 +22707,32 @@
         },
         "title" : "R s algo settings",
         "required" : [ "size", "publicKey" ]
+      },
+      "genericmailersettings" : {
+        "type" : "object",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "headers" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "to" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/emaillocation"
+            }
+          }
+        },
+        "title" : "Generic mailer settings",
+        "required" : [ "url", "headers", "to" ]
       },
       "plugins" : {
         "type" : "object",
@@ -22358,6 +23202,201 @@
         "properties" : { },
         "title" : "O auth1 provider get"
       },
+      "globalconfig" : {
+        "type" : "object",
+        "properties" : {
+          "letsEncryptSettings" : {
+            "$ref" : "#/components/schemas/letsencryptsettings"
+          },
+          "lines" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "anonymousReporting" : {
+            "type" : "boolean"
+          },
+          "initWithNewEngine" : {
+            "type" : "boolean"
+          },
+          "enableEmbeddedMetrics" : {
+            "type" : "boolean"
+          },
+          "streamEntityOnly" : {
+            "type" : "boolean"
+          },
+          "autoLinkToDefaultGroup" : {
+            "type" : "boolean"
+          },
+          "limitConcurrentRequests" : {
+            "type" : "boolean"
+          },
+          "maxConcurrentRequests" : {
+            "type" : "number"
+          },
+          "maxHttp10ResponseSize" : {
+            "type" : "number"
+          },
+          "useCircuitBreakers" : {
+            "type" : "boolean"
+          },
+          "apiReadOnly" : {
+            "type" : "boolean"
+          },
+          "u2fLoginOnly" : {
+            "type" : "boolean"
+          },
+          "maintenanceMode" : {
+            "type" : "boolean"
+          },
+          "trustXForwarded" : {
+            "type" : "boolean"
+          },
+          "ipFiltering" : {
+            "$ref" : "#/components/schemas/ipfiltering"
+          },
+          "throttlingQuota" : {
+            "type" : "number"
+          },
+          "perIpThrottlingQuota" : {
+            "type" : "number"
+          },
+          "elasticReadsConfig" : {
+            "$ref" : "#/components/schemas/elasticanalyticsconfig"
+          },
+          "elasticWritesConfigs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/elasticanalyticsconfig"
+            }
+          },
+          "analyticsWebhooks" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/webhook"
+            }
+          },
+          "logAnalyticsOnServer" : {
+            "type" : "boolean"
+          },
+          "useAkkaHttpClient" : {
+            "type" : "boolean"
+          },
+          "alertsWebhooks" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/webhook"
+            }
+          },
+          "alertsEmails" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "endlessIpAddresses" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "kafkaConfig" : {
+            "$ref" : "#/components/schemas/kafkaconfig"
+          },
+          "backOfficeAuthRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "cleverSettings" : {
+            "$ref" : "#/components/schemas/clevercloudsettings"
+          },
+          "mailerSettings" : {
+            "$ref" : "#/components/schemas/mailersettings"
+          },
+          "statsdConfig" : {
+            "$ref" : "#/components/schemas/statsdconfig"
+          },
+          "maxWebhookSize" : {
+            "type" : "number"
+          },
+          "middleFingers" : {
+            "type" : "boolean"
+          },
+          "maxLogsSize" : {
+            "type" : "number"
+          },
+          "otoroshiId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "snowMonkeyConfig" : {
+            "$ref" : "#/components/schemas/snowmonkeyconfig"
+          },
+          "proxies" : {
+            "$ref" : "#/components/schemas/proxies"
+          },
+          "scripts" : {
+            "$ref" : "#/components/schemas/globalscripts"
+          },
+          "geolocationSettings" : {
+            "$ref" : "#/components/schemas/geolocationsettings"
+          },
+          "userAgentSettings" : {
+            "$ref" : "#/components/schemas/useragentsettings"
+          },
+          "autoCert" : {
+            "$ref" : "#/components/schemas/autocert"
+          },
+          "tlsSettings" : {
+            "$ref" : "#/components/schemas/tlssettings"
+          },
+          "quotasSettings" : {
+            "$ref" : "#/components/schemas/quotasalmostexceededsettings"
+          },
+          "plugins" : {
+            "$ref" : "#/components/schemas/plugins"
+          },
+          "templates" : {
+            "$ref" : "#/components/schemas/defaulttemplates"
+          },
+          "wasmoSettings" : {
+            "$ref" : "#/components/schemas/tlswasmosettings"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "env" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "extensions" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "$ref" : "#/components/schemas/jsvalue"
+              }
+            }
+          }
+        },
+        "title" : "Global config",
+        "required" : [ "letsEncryptSettings", "lines", "anonymousReporting", "initWithNewEngine", "enableEmbeddedMetrics", "streamEntityOnly", "autoLinkToDefaultGroup", "limitConcurrentRequests", "maxConcurrentRequests", "maxHttp10ResponseSize", "useCircuitBreakers", "apiReadOnly", "u2fLoginOnly", "maintenanceMode", "trustXForwarded", "ipFiltering", "throttlingQuota", "perIpThrottlingQuota", "elasticWritesConfigs", "analyticsWebhooks", "logAnalyticsOnServer", "useAkkaHttpClient", "alertsWebhooks", "alertsEmails", "endlessIpAddresses", "maxWebhookSize", "middleFingers", "maxLogsSize", "otoroshiId", "snowMonkeyConfig", "proxies", "scripts", "geolocationSettings", "userAgentSettings", "autoCert", "tlsSettings", "quotasSettings", "plugins", "templates", "tags", "metadata", "env", "extensions" ]
+      },
       "dataexporterconfigtypefile" : {
         "type" : "object",
         "properties" : { },
@@ -22504,6 +23543,23 @@
           "$ref" : "#/components/schemas/oauth1providerpost"
         } ]
       },
+      "statsdconfig" : {
+        "type" : "object",
+        "properties" : {
+          "datadog" : {
+            "type" : "boolean"
+          },
+          "host" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "port" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Statsd config",
+        "required" : [ "datadog", "host", "port" ]
+      },
       "otoroshi.ssl.pki.models.SignCertResponse" : {
         "type" : "object",
         "description" : "Response for a certificate signing operation",
@@ -22602,10 +23658,20 @@
         "title" : "Oto bearer constraints",
         "required" : [ "enabled" ]
       },
+      "nonemailersettings" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "None mailer settings"
+      },
       "samlsignaturealgorithmdsa_sha1" : {
         "type" : "object",
         "properties" : { },
         "title" : "S a m l signature algorithm d s a-s h a1"
+      },
+      "oneservicepergroup" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "One service per group"
       },
       "workflowjobconfig" : {
         "type" : "object",
@@ -23009,6 +24075,19 @@
         "title" : "Jwt auth constraints",
         "required" : [ "enabled", "secretSigned", "keyPairSigned", "includeRequestAttributes" ]
       },
+      "tlswasmosettings" : {
+        "type" : "object",
+        "properties" : {
+          "settings" : {
+            "$ref" : "#/components/schemas/wasmosettings"
+          },
+          "tlsConfig" : {
+            "$ref" : "#/components/schemas/mtlsconfig"
+          }
+        },
+        "title" : "Tls wasmo settings",
+        "required" : [ "settings", "tlsConfig" ]
+      },
       "ipaddresshash" : {
         "type" : "object",
         "properties" : { },
@@ -23043,6 +24122,61 @@
         "type" : "object",
         "properties" : { },
         "title" : "Round robin"
+      },
+      "kafkaconfig" : {
+        "type" : "object",
+        "properties" : {
+          "servers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "keyPass" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "keystore" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "truststore" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "sendEvents" : {
+            "type" : "boolean"
+          },
+          "hostValidation" : {
+            "type" : "boolean"
+          },
+          "topic" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "mtlsConfig" : {
+            "$ref" : "#/components/schemas/mtlsconfig"
+          },
+          "securityProtocol" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "saslConfig" : {
+            "$ref" : "#/components/schemas/saslconfig"
+          },
+          "properties" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          }
+        },
+        "title" : "Kafka config",
+        "required" : [ "servers", "sendEvents", "hostValidation", "topic", "mtlsConfig", "securityProtocol" ]
       },
       "endnode" : {
         "type" : "object",
@@ -23758,6 +24892,35 @@
         "properties" : { },
         "title" : "S a m l protocol binding post"
       },
+      "wasmosettings" : {
+        "type" : "object",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "clientId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "clientSecret" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "pluginsFilter" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "legacyAuth" : {
+            "type" : "boolean"
+          },
+          "tlsConfig" : {
+            "$ref" : "#/components/schemas/tlsconfig"
+          }
+        },
+        "title" : "Wasmo settings",
+        "required" : [ "url", "clientId", "clientSecret", "legacyAuth" ]
+      },
       "filternode" : {
         "type" : "object",
         "properties" : {
@@ -23770,7 +24933,13 @@
       },
       "config.otoroshi.io.GlobalConfig" : {
         "type" : "object",
-        "description" : "A resource of kind GlobalConfig"
+        "properties" : {
+          "config" : {
+            "$ref" : "#/components/schemas/globalconfig"
+          }
+        },
+        "title" : "Tweaked global config",
+        "required" : [ "config" ]
       },
       "seccomversion" : {
         "anyOf" : [ {
@@ -23778,6 +24947,83 @@
         }, {
           "$ref" : "#/components/schemas/seccomversionv2"
         } ]
+      },
+      "ngroute" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "debugFlow" : {
+            "type" : "boolean"
+          },
+          "capture" : {
+            "type" : "boolean"
+          },
+          "exportReporting" : {
+            "type" : "boolean"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "boundListeners" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "frontend" : {
+            "$ref" : "#/components/schemas/ngfrontend"
+          },
+          "backend" : {
+            "$ref" : "#/components/schemas/ngbackend"
+          },
+          "backendRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "plugins" : {
+            "$ref" : "#/components/schemas/ngplugins"
+          }
+        },
+        "title" : "Ng route",
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "enabled", "debugFlow", "capture", "exportReporting", "groups", "boundListeners", "frontend", "backend", "plugins" ]
       },
       "finiteduration" : {
         "type" : "object",
@@ -24001,6 +25247,21 @@
         "title" : "Data center match",
         "required" : [ "dc" ]
       },
+      "mailersettings" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/consolemailersettings"
+        }, {
+          "$ref" : "#/components/schemas/genericmailersettings"
+        }, {
+          "$ref" : "#/components/schemas/mailgunsettings"
+        }, {
+          "$ref" : "#/components/schemas/mailjetsettings"
+        }, {
+          "$ref" : "#/components/schemas/nonemailersettings"
+        }, {
+          "$ref" : "#/components/schemas/sendgridsettings"
+        } ]
+      },
       "apitesting" : {
         "type" : "object",
         "properties" : {
@@ -24205,6 +25466,50 @@
         "properties" : { },
         "title" : "Cron"
       },
+      "snowmonkeyconfig" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "outageStrategy" : {
+            "$ref" : "#/components/schemas/outagestrategy"
+          },
+          "includeUserFacingDescriptors" : {
+            "type" : "boolean"
+          },
+          "dryRun" : {
+            "type" : "boolean"
+          },
+          "timesPerDay" : {
+            "type" : "number"
+          },
+          "startTime" : {
+            "$ref" : "#/components/schemas/localtime"
+          },
+          "stopTime" : {
+            "$ref" : "#/components/schemas/localtime"
+          },
+          "outageDurationFrom" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "outageDurationTo" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "targetGroups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "chaosConfig" : {
+            "$ref" : "#/components/schemas/chaosconfig"
+          }
+        },
+        "title" : "Snow monkey config",
+        "required" : [ "enabled", "outageStrategy", "includeUserFacingDescriptors", "dryRun", "timesPerDay", "startTime", "stopTime", "outageDurationFrom", "outageDurationTo", "targetGroups", "chaosConfig" ]
+      },
       "rsakpalgosettings" : {
         "type" : "object",
         "properties" : {
@@ -24330,6 +25635,28 @@
         "type" : "object",
         "properties" : { },
         "title" : "Time unit"
+      },
+      "consolemailersettings" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Console mailer settings"
+      },
+      "sendgridsettings" : {
+        "type" : "object",
+        "properties" : {
+          "apiKey" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "to" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/emaillocation"
+            }
+          }
+        },
+        "title" : "Sendgrid settings",
+        "required" : [ "apiKey", "to" ]
       },
       "apis.otoroshi.io.Api" : {
         "type" : "object",
@@ -25231,6 +26558,20 @@
         "title" : "Api deployment",
         "required" : [ "id", "apiRef", "owner", "at", "apiDefinition", "version" ]
       },
+      "maxmindgeolocationsettings" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "path" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Maxmind geolocation settings",
+        "required" : [ "enabled", "path" ]
+      },
       "dataexporterconfigfiltering" : {
         "type" : "object",
         "properties" : {
@@ -25274,6 +26615,42 @@
         }, {
           "$ref" : "#/components/schemas/scheduledonce"
         } ]
+      },
+      "letsencryptsettings" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "server" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "emails" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "contacts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "publicKey" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "privateKey" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Lets encrypt settings",
+        "required" : [ "enabled", "server", "emails", "contacts", "publicKey", "privateKey" ]
       },
       "basicauthconstraints" : {
         "type" : "object",
@@ -25346,6 +26723,15 @@
         "type" : "object",
         "properties" : { },
         "title" : "Data exporter config type metrics"
+      },
+      "geolocationsettings" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/ipstackgeolocationsettings"
+        }, {
+          "$ref" : "#/components/schemas/maxmindgeolocationsettings"
+        }, {
+          "$ref" : "#/components/schemas/nonegeolocationsettings"
+        } ]
       },
       "otoroshi.ssl.pki.models.GenKeyPairQuery" : {
         "type" : "object",
@@ -26771,10 +28157,77 @@
         "title" : "Rules route configuration",
         "required" : [ "states" ]
       },
+      "outagestrategy" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/allservicespergroup"
+        }, {
+          "$ref" : "#/components/schemas/oneservicepergroup"
+        } ]
+      },
       "oneinstanceperotoroshiinstance" : {
         "type" : "object",
         "properties" : { },
         "title" : "One instance per otoroshi instance"
+      },
+      "globalscripts" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "transformersRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "transformersConfig" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "validatorRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "validatorConfig" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "preRouteRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "preRouteConfig" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "sinkRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "sinkConfig" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "jobRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "jobConfig" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          }
+        },
+        "title" : "Global scripts",
+        "required" : [ "enabled", "transformersRefs", "transformersConfig", "validatorRefs", "validatorConfig", "preRouteRefs", "preRouteConfig", "sinkRefs", "sinkConfig", "jobRefs", "jobConfig" ]
       },
       "defaultwscookie" : {
         "type" : "object",
@@ -26970,6 +28423,11 @@
         "title" : "Index settings interval day",
         "required" : [ "name" ]
       },
+      "nonegeolocationsettings" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "None geolocation settings"
+      },
       "proxy.otoroshi.io.ErrorTemplate" : {
         "type" : "object",
         "properties" : {
@@ -27145,10 +28603,53 @@
           "$ref" : "#/components/schemas/jstrue"
         } ]
       },
+      "clevercloudsettings" : {
+        "type" : "object",
+        "properties" : {
+          "consumerKey" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "consumerSecret" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "token" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "secret" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "orgaId" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Clever cloud settings",
+        "required" : [ "consumerKey", "consumerSecret", "token", "secret", "orgaId" ]
+      },
       "dataexporterconfigtypewebhook" : {
         "type" : "object",
         "properties" : { },
         "title" : "Data exporter config type webhook"
+      },
+      "quotasalmostexceededsettings" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "dailyQuotasThreshold" : {
+            "type" : "number"
+          },
+          "monthlyQuotasThreshold" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Quotas almost exceeded settings",
+        "required" : [ "enabled", "dailyQuotasThreshold", "monthlyQuotasThreshold" ]
       },
       "ngminimalbackend" : {
         "type" : "object",
@@ -27481,6 +28982,11 @@
         "title" : "S3 configuration",
         "required" : [ "bucket", "endpoint", "region", "access", "secret", "key", "chunkSize", "v4auth", "writeEvery", "acl", "pathStyleAccess" ]
       },
+      "allservicespergroup" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "All services per group"
+      },
       "flatmapnode" : {
         "type" : "object",
         "properties" : {
@@ -27592,6 +29098,22 @@
         "title" : "Custom headers auth constraints",
         "required" : [ "enabled" ]
       },
+      "localtime" : {
+        "type" : "object",
+        "properties" : {
+          "x$1" : {
+            "type" : "number"
+          },
+          "x$2" : {
+            "type" : "number"
+          },
+          "x$3" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Local time",
+        "required" : [ "x$1", "x$2", "x$3" ]
+      },
       "mappingsettings" : {
         "type" : "object",
         "properties" : {
@@ -27664,6 +29186,21 @@
         },
         "title" : "Credential",
         "required" : [ "useOtoroshiCertificate" ]
+      },
+      "emaillocation" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "email" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Email location",
+        "required" : [ "name", "email" ]
       },
       "passthrough" : {
         "type" : "object",
@@ -27812,6 +29349,61 @@
         "title" : "Transform settings",
         "required" : [ "location", "mappingSettings" ]
       },
+      "mailgunsettings" : {
+        "type" : "object",
+        "properties" : {
+          "eu" : {
+            "type" : "boolean"
+          },
+          "apiKey" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "domain" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "to" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/emaillocation"
+            }
+          }
+        },
+        "title" : "Mailgun settings",
+        "required" : [ "eu", "apiKey", "domain", "to" ]
+      },
+      "autocert" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "caRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "allowed" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "notAllowed" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "replyNicely" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "Auto cert",
+        "required" : [ "enabled", "allowed", "notAllowed", "replyNicely" ]
+      },
       "accessvalidatorref" : {
         "type" : "object",
         "properties" : {
@@ -27838,6 +29430,16 @@
         },
         "title" : "Access validator ref",
         "required" : [ "enabled", "excludedPatterns", "refs", "config" ]
+      },
+      "useragentsettings" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "User agent settings",
+        "required" : [ "enabled" ]
       },
       "jsonpathvalidator" : {
         "type" : "object",
@@ -28082,6 +29684,48 @@
         "title" : "Latency injection fault config",
         "required" : [ "ratio", "from", "to" ]
       },
+      "tlssettings" : {
+        "type" : "object",
+        "properties" : {
+          "defaultDomain" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "randomIfNotFound" : {
+            "type" : "boolean"
+          },
+          "includeJdkCaServer" : {
+            "type" : "boolean"
+          },
+          "includeJdkCaClient" : {
+            "type" : "boolean"
+          },
+          "trustedCAsServer" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "bannedAlpnProtocols" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string",
+                  "minLength" : 1
+                }
+              }
+            }
+          },
+          "clientAuth" : {
+            "$ref" : "#/components/schemas/clientauth"
+          }
+        },
+        "title" : "Tls settings",
+        "required" : [ "randomIfNotFound", "includeJdkCaServer", "includeJdkCaClient", "trustedCAsServer", "bannedAlpnProtocols", "clientAuth" ]
+      },
       "nameidformat" : {
         "anyOf" : [ {
           "$ref" : "#/components/schemas/nameidformatemailaddress"
@@ -28106,6 +29750,72 @@
         "type" : "object",
         "properties" : { },
         "title" : "Http"
+      },
+      "defaulttemplates" : {
+        "type" : "object",
+        "properties" : {
+          "route" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "service" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "backend" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "target" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "descriptor" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "apikey" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "group" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "template" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "verifier" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "authConfig" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "certificate" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "script" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "draft" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "api" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "tcpService" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "dataExporter" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "tenant" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "team" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "apiConsumerSubscription" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "routeTemplate" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Default templates"
       },
       "largerequestfaultconfig" : {
         "type" : "object",
@@ -28418,6 +30128,50 @@
             "description" : "???"
           }
         }
+      },
+      "saslconfig" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "password" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "mechanism" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "jaasConfig" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Sasl config",
+        "required" : [ "username", "password", "mechanism" ]
+      },
+      "mailjetsettings" : {
+        "type" : "object",
+        "properties" : {
+          "apiKeyPublic" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "apiKeyPrivate" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "to" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/emaillocation"
+            }
+          }
+        },
+        "title" : "Mailjet settings",
+        "required" : [ "apiKeyPublic", "apiKeyPrivate", "to" ]
       },
       "groupfilter" : {
         "type" : "object",
@@ -28842,6 +30596,47 @@
         "type" : "object",
         "properties" : { },
         "title" : "O auth2"
+      },
+      "proxy.otoroshi.io.RouteTemplate" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "route" : {
+            "$ref" : "#/components/schemas/ngroute"
+          }
+        },
+        "title" : "Route template",
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "route" ]
       },
       "clientauthnone" : {
         "type" : "object",
