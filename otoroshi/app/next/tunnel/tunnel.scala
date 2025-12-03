@@ -97,6 +97,7 @@ class TunnelPlugin extends NgBackendCall {
           }
           .getOrElse(Seq.empty)
           .map(_.wsCookie)
+        if (logger.isDebugEnabled) logger.debug(s"response status '${result.header.status}'")
         Right(
           BackendCallResponse(
             NgPluginHttpResponse(
@@ -122,6 +123,7 @@ class TunnelAgent(env: Env) {
     env.configuration.getOptional[Configuration]("otoroshi.tunnels").map { config =>
       val genabled = config.getOptional[Boolean]("enabled").getOrElse(false)
       if (genabled) {
+        logger.debug("trying to register tunnels")
         config.subKeys
           .map { key =>
             (key, config.getOpt[Configuration](key))
@@ -353,6 +355,7 @@ class TunnelAgent(env: Env) {
     )
     val port    = target.thePort
     val start   = System.currentTimeMillis()
+    logger.debug(s"connecting to ${uri}, port - ${port} - target ${target}")
     val (fu, _) = env.Ws.ws(
       request = WebSocketRequest(
         uri = uri,
@@ -543,6 +546,9 @@ class TunnelManager(env: Env) {
   }
 
   def sendRequest(tunnelId: String, request: NgPluginHttpRequest, addr: String, secured: Boolean): Future[Result] = {
+    logger.debug(s"[sendRequest]: tunnelsEnabled=${tunnelsEnabled}")
+    logger.debug(s"[sendRequest]: tunnels length=${tunnels.asMap().size}")
+
     if (tunnelsEnabled) {
       tunnels.getIfPresent(tunnelId) match {
         case None          => {

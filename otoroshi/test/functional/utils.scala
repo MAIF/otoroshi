@@ -1606,12 +1606,14 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
 
   val LOCAL_HOST = "local.oto.tools"
 
-  def createRequestOtoroshiIORoute(
+  def createRouteWithExternalTarget(
       plugins: Seq[NgPluginInstance] = Seq.empty,
       domain: Option[String] = None,
       id: String = IdGenerator.uuid,
       hostname: String = "request.otoroshi.io",
-      root: String = "/"
+      root: String = "/",
+      target: Option[NgTarget] = None,
+      customOtoroshiPort: Option[Int] = None
   ): NgRoute = {
     val newRoute = NgRoute(
       location = EntityLocation.default,
@@ -1633,11 +1635,13 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       ),
       backend = NgBackend(
         targets = Seq(
-          NgTarget(
-            hostname = hostname,
-            port = 443,
-            id = "request.otoroshi.io.target",
-            tls = true
+          target.getOrElse(
+            NgTarget(
+              hostname = hostname,
+              port = 443,
+              id = "request.otoroshi.io.target",
+              tls = true
+            )
           )
         ),
         root,
@@ -1650,7 +1654,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       metadata = Map.empty
     )
 
-    val result = createOtoroshiRoute(newRoute).futureValue
+    val result = createOtoroshiRoute(newRoute, customOtoroshiPort).futureValue
 
     if (result._2 == Status.CREATED) {
       newRoute
@@ -1658,7 +1662,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       if (result._1.select("error_description").asOptString.contains("Entity already exists")) {
         deleteOtoroshiRoute(newRoute).futureValue
         await(2.seconds)
-        createRequestOtoroshiIORoute(plugins, domain, id, hostname, root)
+        createRouteWithExternalTarget(plugins, domain, id, hostname, root)
       } else {
         throw new RuntimeException(s"failed to create a new otoroshi route - ${result._2} - ${result._1.prettify}")
       }

@@ -13,7 +13,7 @@ import scala.concurrent.duration.DurationInt
 class DeferResponsesTests(parent: PluginsTestSpec) {
   import parent._
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

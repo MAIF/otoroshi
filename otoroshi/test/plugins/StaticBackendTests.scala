@@ -24,7 +24,7 @@ class StaticBackendTests(parent: PluginsTestSpec) {
 
   new String(Files.readAllBytes(file)).contains("Hello from file system") mustBe true
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

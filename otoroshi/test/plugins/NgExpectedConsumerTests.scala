@@ -53,7 +53,7 @@ class NgExpectedConsumerTests(parent: PluginsTestSpec) {
   )
   createAuthModule(moduleConfiguration).futureValue
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(

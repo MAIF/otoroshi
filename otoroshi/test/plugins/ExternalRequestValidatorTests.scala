@@ -25,7 +25,7 @@ class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
       frontendPath = "/check"
     )
 
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -72,7 +72,7 @@ class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
       frontendPath = "/check"
     )
 
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]

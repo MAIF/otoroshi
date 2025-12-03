@@ -12,7 +12,7 @@ import play.api.libs.json._
 class DefaultRequestBodyTests(parent: PluginsTestSpec) {
   import parent._
 
-  val localRoute = createRequestOtoroshiIORoute(
+  val localRoute = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

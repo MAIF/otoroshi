@@ -92,7 +92,7 @@ class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
 
   private def getRoute(config: NgHasAllowedUsersValidatorConfig): NgRoute = {
     val id = IdGenerator.uuid
-    createRequestOtoroshiIORoute(
+    createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(

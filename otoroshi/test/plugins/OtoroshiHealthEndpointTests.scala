@@ -13,7 +13,7 @@ import play.api.libs.json.{JsObject, Json}
 class OtoroshiHealthEndpointTests(parent: PluginsTestSpec) {
   import parent._
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(NgPluginHelper.pluginId[OtoroshiHealthEndpoint], include = Seq("/health"))

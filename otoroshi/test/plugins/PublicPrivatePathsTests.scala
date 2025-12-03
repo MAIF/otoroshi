@@ -12,7 +12,7 @@ import play.api.libs.json.JsObject
 class PublicPrivatePathsTests(parent: PluginsTestSpec) {
   import parent._
 
-  val strictRoute = createRequestOtoroshiIORoute(
+  val strictRoute = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(
@@ -37,7 +37,7 @@ class PublicPrivatePathsTests(parent: PluginsTestSpec) {
     id = IdGenerator.uuid
   )
 
-  val nonStrictRoute = createRequestOtoroshiIORoute(
+  val nonStrictRoute = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(

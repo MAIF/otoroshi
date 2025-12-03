@@ -15,7 +15,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
   import parent._
 
   def testAllowedPath(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -42,7 +42,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
   }
 
   def testForbiddenPath(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -69,7 +69,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
   }
 
   def testNotFoundPath(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -95,7 +95,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
   }
 
   def testAllowLastTrue(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -122,7 +122,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
   }
 
   def testAllowLastFalse(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -149,7 +149,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
   }
 
   def testForbiddenOverridesAllowed(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -185,7 +185,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
   }
 
   def testMultiplePaths(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -245,7 +245,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
   }
 
   def testEmptyRestrictions(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -274,7 +274,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
   }
 
   def testRegexPatterns(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(

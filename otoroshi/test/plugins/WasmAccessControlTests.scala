@@ -17,7 +17,7 @@ class WasmAccessControlTests(parent: PluginsTestSpec) {
 
   def good() = {
     val id    = IdGenerator.uuid
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -58,7 +58,7 @@ class WasmAccessControlTests(parent: PluginsTestSpec) {
 
   def bad() = {
     val id    = IdGenerator.uuid
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]

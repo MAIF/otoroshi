@@ -17,7 +17,7 @@ class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
 
   def validCall() {
     val id    = IdGenerator.uuid
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -49,7 +49,7 @@ class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
 
   def tooBigBody() {
     val id    = IdGenerator.uuid
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -82,7 +82,7 @@ class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
 
   def chunkBody() {
     val id    = IdGenerator.uuid
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]

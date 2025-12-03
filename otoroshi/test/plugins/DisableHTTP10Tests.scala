@@ -8,7 +8,7 @@ import otoroshi.next.plugins.{DisableHttp10, OverrideHost}
 class DisableHTTP10Tests(parent: PluginsTestSpec) {
   import parent._
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

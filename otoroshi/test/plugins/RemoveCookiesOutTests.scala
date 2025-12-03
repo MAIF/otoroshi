@@ -13,7 +13,7 @@ class RemoveCookiesOutTests(parent: PluginsTestSpec) {
   import parent._
 
   val id    = IdGenerator.uuid
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

@@ -10,7 +10,7 @@ class OtoroshiHeadersInTests(parent: PluginsTestSpec) {
 
   import parent._
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(

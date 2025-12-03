@@ -15,7 +15,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
 
   def jsonDirective() = {
     val id    = IdGenerator.uuid
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[GraphQLBackend],
@@ -77,7 +77,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
 
   def mockDirective() = {
     val id    = IdGenerator.uuid
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[GraphQLBackend],
@@ -184,7 +184,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
 
   def permissions() = {
     val id    = IdGenerator.uuid
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[GraphQLBackend],

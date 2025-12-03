@@ -14,7 +14,7 @@ class SimpleBasicAuthTests(parent: PluginsTestSpec) {
   import parent._
 
   def simpleBasicAuthRoute(): NgRoute = {
-    createRequestOtoroshiIORoute(
+    createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -33,7 +33,7 @@ class SimpleBasicAuthTests(parent: PluginsTestSpec) {
   }
 
   // def basicAuthCallerRoute(): NgRoute = {
-  //   createRequestOtoroshiIORoute(
+  //   createRouteWithExternalTarget(
   //     Seq(
   //       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
   //       NgPluginInstance(

@@ -42,7 +42,7 @@ class BasicAuthFromAuthModuleTests(parent: PluginsTestSpec) {
 
   createAuthModule(authenticationModule).futureValue
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

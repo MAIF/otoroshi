@@ -275,7 +275,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     }
 
     def createRoute(basicModuleId: String, oauth2ModuleId: String) = {
-      createRequestOtoroshiIORoute(
+      createRouteWithExternalTarget(
         Seq(
           NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
           NgPluginInstance(
@@ -741,7 +741,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     }
 
     def createRoute(basicModuleId: String, oauth2ModuleId: String) = {
-      createRequestOtoroshiIORoute(
+      createRouteWithExternalTarget(
         Seq(
           NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
           NgPluginInstance(
@@ -1174,7 +1174,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     }
 
     def createRoute(basicModuleId: String, oauth2ModuleId: String) = {
-      createRequestOtoroshiIORoute(
+      createRouteWithExternalTarget(
         Seq(
           NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
           NgPluginInstance(
@@ -1334,7 +1334,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     )
     createAuthModule(moduleConfiguration).futureValue
 
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(

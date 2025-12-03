@@ -44,7 +44,7 @@ class S3BackendTests(parent: PluginsTestSpec) {
 
   println(s"S3 endpoint: http://$s3Host:$s3Port")
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

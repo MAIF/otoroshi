@@ -12,7 +12,7 @@ class SwaggerUIPluginTests(parent: PluginsTestSpec) {
   import parent._
 
   def run() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]

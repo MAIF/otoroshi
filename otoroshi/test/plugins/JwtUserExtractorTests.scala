@@ -64,7 +64,7 @@ class JwtUserExtractorTests(parent: PluginsTestSpec) {
 
   createAuthModule(authenticationModule).futureValue
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(

@@ -18,7 +18,7 @@ class HMACAccessValidatorTests(parent: PluginsTestSpec) {
   import parent._
 
   def default() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -54,7 +54,7 @@ class HMACAccessValidatorTests(parent: PluginsTestSpec) {
   }
 
   def withApikeyAsSecret() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]

@@ -23,7 +23,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
   import parent._
 
   def default() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -67,7 +67,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
   }
 
   def passApikeyToBackend() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -110,7 +110,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
   }
 
   def passApikeyToBackendWithCustomHeaders() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -173,7 +173,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
   }
 
   def notMandatory() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -233,7 +233,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
       expectedStatusOnBad: Int = Status.NOT_FOUND,
       expectedStatusOnGood: Int = Status.OK
   ): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(

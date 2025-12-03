@@ -54,7 +54,7 @@ class GlobalMaintenanceModeTests(parent: PluginsTestSpec) {
     .map(resp => GlobalConfig._fmt.reads(resp.json).get)
     .futureValue
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost])
     )

@@ -12,7 +12,7 @@ class SecurityTxtTests(parent: PluginsTestSpec) {
   import parent._
 
   def test(config: NgSecurityTxtConfig, expected: Seq[String]) = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]

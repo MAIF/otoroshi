@@ -12,7 +12,7 @@ import play.api.libs.json.Json
 class CustomErrorTemplateTests(parent: PluginsTestSpec) {
   import parent._
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -23,7 +23,7 @@ class CustomErrorTemplateTests(parent: PluginsTestSpec) {
     )
   )
 
-  val maintenanceRoute = createRequestOtoroshiIORoute(
+  val maintenanceRoute = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]

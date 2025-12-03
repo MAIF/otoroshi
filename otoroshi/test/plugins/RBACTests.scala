@@ -15,7 +15,7 @@ class RBACTests(parent: PluginsTestSpec) {
   import parent._
 
   def allow() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -63,7 +63,7 @@ class RBACTests(parent: PluginsTestSpec) {
   }
 
   def testUnauthorizedRole(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(plugin = NgPluginHelper.pluginId[ApikeyAuthModule]),
@@ -105,7 +105,7 @@ class RBACTests(parent: PluginsTestSpec) {
   }
 
   def testNoRoles(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(plugin = NgPluginHelper.pluginId[ApikeyAuthModule]),
@@ -147,7 +147,7 @@ class RBACTests(parent: PluginsTestSpec) {
   }
 
   def testWrongRolePrefix(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(plugin = NgPluginHelper.pluginId[ApikeyAuthModule]),
@@ -189,7 +189,7 @@ class RBACTests(parent: PluginsTestSpec) {
   }
 
   def testDenyRules(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(plugin = NgPluginHelper.pluginId[ApikeyAuthModule]),
@@ -232,7 +232,7 @@ class RBACTests(parent: PluginsTestSpec) {
   }
 
   def testAllowAll(): Unit = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(plugin = NgPluginHelper.pluginId[ApikeyAuthModule]),

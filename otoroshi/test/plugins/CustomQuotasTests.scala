@@ -12,7 +12,7 @@ class CustomQuotasTests(parent: PluginsTestSpec) {
   import parent._
 
   def global() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -33,7 +33,7 @@ class CustomQuotasTests(parent: PluginsTestSpec) {
       )
     )
 
-    val secondRoute = createRequestOtoroshiIORoute(
+    val secondRoute = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -86,7 +86,7 @@ class CustomQuotasTests(parent: PluginsTestSpec) {
   }
 
   def perRoute() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]

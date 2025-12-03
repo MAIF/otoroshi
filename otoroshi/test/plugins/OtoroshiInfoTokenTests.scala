@@ -47,7 +47,7 @@ class OtoroshiInfoTokenTests(parent: PluginsTestSpec) {
 
     createAuthModule(authenticationModule).futureValue
 
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -100,7 +100,7 @@ class OtoroshiInfoTokenTests(parent: PluginsTestSpec) {
   }
 
   def default() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]
@@ -143,7 +143,7 @@ class OtoroshiInfoTokenTests(parent: PluginsTestSpec) {
   }
 
   def withApikeys() = {
-    val route = createRequestOtoroshiIORoute(
+    val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost]

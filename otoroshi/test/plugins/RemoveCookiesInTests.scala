@@ -12,7 +12,7 @@ import play.api.libs.ws.DefaultWSCookie
 class RemoveCookiesInTests(parent: PluginsTestSpec) {
   import parent._
 
-  val route = createRequestOtoroshiIORoute(
+  val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(
