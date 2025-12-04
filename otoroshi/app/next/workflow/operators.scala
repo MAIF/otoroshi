@@ -52,6 +52,8 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$basic_auth", new BasicAuthOperator())
     WorkflowOperator.registerOperator("$now", new NowOperator())
     WorkflowOperator.registerOperator("$not", new NotOperator())
+    WorkflowOperator.registerOperator("$and", new AndOperator())
+    WorkflowOperator.registerOperator("$or", new OrOperator())
     WorkflowOperator.registerOperator("$parse_datetime", new ParseDateTimeOperator())
     WorkflowOperator.registerOperator("$parse_date", new ParseDateOperator())
     WorkflowOperator.registerOperator("$parse_time", new ParseTimeOperator())
@@ -73,9 +75,134 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$jq", new JqOperator())
     WorkflowOperator.registerOperator("$round", new RoundOperator())
     WorkflowOperator.registerOperator("$parse_number", new ParseNumberOperator())
+    WorkflowOperator.registerOperator("$first_truthy", new FirstTruthyOperator())
   }
 }
 
+class FirstTruthyOperator extends WorkflowOperator {
+
+  override def documentationName: String                  = "$first_truthy"
+  override def documentationDescription: String           = "This operator return the first truthy value from an array of value"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "properties" -> Json.obj(
+        "values"   -> Json.obj("type" -> "array", "description" -> "values to check"),
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$first_truthy" -> Json.obj(
+        "values" -> Json.arr(JsNull, false, "hello")
+      )
+    )
+  )
+  override def documentationFormSchema: Option[JsObject] = Some(
+    Json.obj(
+      "values"   -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Values"
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val values = opts.select("values").asOpt[Seq[JsValue]].getOrElse(Seq.empty)
+    values.find(v => IsTruthyOperator.isTruthy(v)).getOrElse(JsNull)
+  }
+}
+
+class AndOperator extends WorkflowOperator {
+
+  override def documentationName: String                  = "$and"
+  override def documentationDescription: String           = "This operator makes a boolean and"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "properties" -> Json.obj(
+        "a" -> Json.obj("type" -> "string", "description" -> "the first value"),
+        "b" -> Json.obj("type" -> "string", "description" -> "the second value")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$and" -> Json.obj(
+        "a" -> true,
+        "b" -> true,
+      )
+    )
+  )
+  override def documentationFormSchema: Option[JsObject] = Some(
+    Json.obj(
+      "a" -> Json.obj(
+        "type"  -> "json",
+        "label" -> "A",
+        "props" -> Json.obj(
+          "description" -> "The first value"
+        )
+      ),
+      "b" -> Json.obj(
+        "type"  -> "json",
+        "label" -> "B",
+        "props" -> Json.obj(
+          "description" -> "The second value"
+        )
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val a = opts.select("a").asValue
+    val b = opts.select("b").asValue
+    (IsTruthyOperator.isTruthy(a) && IsTruthyOperator.isTruthy(b)).json
+  }
+}
+
+class OrOperator extends WorkflowOperator {
+
+  override def documentationName: String                  = "$or"
+  override def documentationDescription: String           = "This operator makes a boolean or"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "properties" -> Json.obj(
+        "a" -> Json.obj("type" -> "string", "description" -> "the first value"),
+        "b" -> Json.obj("type" -> "string", "description" -> "the second value")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$or" -> Json.obj(
+        "a" -> true,
+        "b" -> true,
+      )
+    )
+  )
+  override def documentationFormSchema: Option[JsObject] = Some(
+    Json.obj(
+      "a" -> Json.obj(
+        "type"  -> "json",
+        "label" -> "A",
+        "props" -> Json.obj(
+          "description" -> "The first value"
+        )
+      ),
+      "b" -> Json.obj(
+        "type"  -> "json",
+        "label" -> "B",
+        "props" -> Json.obj(
+          "description" -> "The second value"
+        )
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val a = opts.select("a").asValue
+    val b = opts.select("b").asValue
+    (IsTruthyOperator.isTruthy(a) || IsTruthyOperator.isTruthy(b)).json
+  }
+}
 
 class ParseNumberOperator extends WorkflowOperator {
 
@@ -2231,13 +2358,19 @@ class IsTruthyOperator extends WorkflowOperator {
         }
       }
     }
-    (value match {
+    IsTruthyOperator.isTruthy(value).json
+  }
+}
+
+object IsTruthyOperator {
+  def isTruthy(value: JsValue): Boolean = {
+    value match {
       case JsNull                                                   => false
       case JsString(str) if str.isEmpty                             => false
       case JsBoolean(false)                                         => false
       case JsNumber(v) if v.bigDecimal == java.math.BigDecimal.ZERO => false
       case _                                                        => true
-    }).json
+    }
   }
 }
 
