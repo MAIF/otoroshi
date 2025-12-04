@@ -127,9 +127,9 @@ class NgExpectedConsumerTests(parent: PluginsTestSpec) {
   callWithUser.status mustBe 200
 
   val apikey = ApiKey(
-    clientId = "apikey-test",
+    clientId = s"client-${IdGenerator.uuid}",
     clientSecret = "1234",
-    clientName = "apikey-test",
+    clientName = s"name-${IdGenerator.uuid}",
     authorizedEntities = Seq(RouteIdentifier(route.id))
   )
 

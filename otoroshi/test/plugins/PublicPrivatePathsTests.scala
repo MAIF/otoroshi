@@ -63,9 +63,9 @@ class PublicPrivatePathsTests(parent: PluginsTestSpec) {
   )
 
   val apikey = ApiKey(
-    clientId = "apikey-test",
+    clientId = s"client-${IdGenerator.uuid}",
     clientSecret = "1234",
-    clientName = "apikey-test",
+    clientName = s"name-${IdGenerator.uuid}",
     authorizedEntities = Seq(RouteIdentifier(strictRoute.id), RouteIdentifier(nonStrictRoute.id))
   )
 
@@ -77,8 +77,8 @@ class PublicPrivatePathsTests(parent: PluginsTestSpec) {
         .url(s"http://127.0.0.1:$port$path")
         .withHttpHeaders(
           "Host"                   -> route.frontend.domains.head.domain,
-          "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute(route.id).clientId,
-          "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute(route.id).clientSecret
+          "Otoroshi-Client-Id"     -> apikey.clientId,
+          "Otoroshi-Client-Secret" -> apikey.clientSecret
         )
         .get()
         .futureValue

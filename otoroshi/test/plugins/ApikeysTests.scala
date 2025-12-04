@@ -38,7 +38,14 @@ class ApikeysTests(parent: PluginsTestSpec) {
       )
     )
 
-    createPluginsRouteApiKeys(route.id)
+    val apikey = ApiKey(
+      clientId = s"client-${IdGenerator.uuid}",
+      clientSecret = "1234",
+      clientName = s"name-${IdGenerator.uuid}",
+      authorizedEntities = Seq(RouteIdentifier(route.id))
+    )
+
+    createOtoroshiApiKey(apikey).futureValue
 
     val unknownCaller = ws
       .url(s"http://127.0.0.1:$port/api")
@@ -54,15 +61,16 @@ class ApikeysTests(parent: PluginsTestSpec) {
       .url(s"http://127.0.0.1:$port/api")
       .withHttpHeaders(
         "Host"                   -> route.frontend.domains.head.domain,
-        "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute(route.id).clientId,
-        "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute(route.id).clientSecret
+        "Otoroshi-Client-Id"     -> apikey.clientId,
+        "Otoroshi-Client-Secret" -> apikey.clientSecret
       )
       .get()
       .futureValue
 
+    println(authorizedCall.body)
     authorizedCall.status mustBe Status.OK
 
-    deletePluginsRouteApiKeys(route.id)
+    deleteOtoroshiApiKey(apikey)
     deleteOtoroshiRoute(route).futureValue
   }
 
@@ -84,9 +92,9 @@ class ApikeysTests(parent: PluginsTestSpec) {
     )
 
     val apikey = ApiKey(
-      clientId = "apikey-test",
+      clientId = s"client-${IdGenerator.uuid}",
       clientSecret = "1234",
-      clientName = "apikey-test",
+      clientName = s"name-${IdGenerator.uuid}",
       authorizedEntities = Seq(RouteIdentifier(route.id))
     )
     createOtoroshiApiKey(apikey).futureValue
@@ -134,9 +142,9 @@ class ApikeysTests(parent: PluginsTestSpec) {
     )
 
     val apikey = ApiKey(
-      clientId = "apikey-test",
+      clientId = s"client-${IdGenerator.uuid}",
       clientSecret = "1234",
-      clientName = "apikey-test",
+      clientName = s"name-${IdGenerator.uuid}",
       authorizedEntities = Seq(RouteIdentifier(route.id))
     )
     createOtoroshiApiKey(apikey).futureValue
@@ -190,9 +198,9 @@ class ApikeysTests(parent: PluginsTestSpec) {
     )
 
     val apikey = ApiKey(
-      clientId = "apikey-test",
+      clientId = s"client-${IdGenerator.uuid}",
       clientSecret = "1234",
-      clientName = "apikey-test",
+      clientName = s"name-${IdGenerator.uuid}",
       authorizedEntities = Seq(RouteIdentifier(route.id))
     )
     createOtoroshiApiKey(apikey).futureValue

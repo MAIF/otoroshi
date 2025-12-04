@@ -57,7 +57,6 @@ class RBACTests(parent: PluginsTestSpec) {
 
     authorizedCall.status mustBe Status.OK
 
-    deletePluginsRouteApiKeys(route.id)
     deleteOtoroshiApiKey(goodApikey)
     deleteOtoroshiRoute(route).futureValue
   }
@@ -99,7 +98,6 @@ class RBACTests(parent: PluginsTestSpec) {
 
     unauthorizedCall.status mustBe Status.FORBIDDEN
 
-    deletePluginsRouteApiKeys(route.id)
     deleteOtoroshiApiKey(unauthorizedApikey)
     deleteOtoroshiRoute(route).futureValue
   }
@@ -141,7 +139,6 @@ class RBACTests(parent: PluginsTestSpec) {
 
     noRolesCall.status mustBe Status.FORBIDDEN
 
-    deletePluginsRouteApiKeys(route.id)
     deleteOtoroshiApiKey(noRolesApikey)
     deleteOtoroshiRoute(route).futureValue
   }
@@ -183,7 +180,6 @@ class RBACTests(parent: PluginsTestSpec) {
 
     wrongPrefixCall.status mustBe Status.FORBIDDEN
 
-    deletePluginsRouteApiKeys(route.id)
     deleteOtoroshiApiKey(wrongPrefixApikey)
     deleteOtoroshiRoute(route).futureValue
   }
@@ -226,7 +222,6 @@ class RBACTests(parent: PluginsTestSpec) {
 
     blockedCall.status mustBe Status.FORBIDDEN
 
-    deletePluginsRouteApiKeys(route.id)
     deleteOtoroshiApiKey(blockedApikey)
     deleteOtoroshiRoute(route).futureValue
   }
@@ -288,7 +283,6 @@ class RBACTests(parent: PluginsTestSpec) {
 
     allRolesCall.status mustBe Status.OK
 
-    deletePluginsRouteApiKeys(route.id)
     deleteOtoroshiApiKey(allRolesApikey)
     deleteOtoroshiApiKey(partialRolesApikey)
     deleteOtoroshiRoute(route).futureValue

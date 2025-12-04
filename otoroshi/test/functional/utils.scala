@@ -1762,23 +1762,6 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
     }
   }
 
-  def createPluginsRouteApiKeys(routeId: String) = {
-    createOtoroshiApiKey(getValidApiKeyForPluginsRoute(routeId)).futureValue
-  }
-
-  def deletePluginsRouteApiKeys(routeId: String) = {
-    deleteOtoroshiApiKey(getValidApiKeyForPluginsRoute(routeId)).futureValue
-  }
-
-  def getValidApiKeyForPluginsRoute(routeId: String) = {
-    ApiKey(
-      clientId = "apikey-test",
-      clientSecret = "1234",
-      clientName = "apikey-test",
-      authorizedEntities = Seq(RouteIdentifier(routeId))
-    )
-  }
-
   def getOutHeader(resp: WSRequest#Self#Response, headerName: String) = {
     resp.headers.find { case (k, _) => k.equalsIgnoreCase(headerName) }.map(_._2).flatMap(_.headOption)
   }

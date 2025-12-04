@@ -292,9 +292,6 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Websocket size validator" in {
       new WebsocketSizeValidatorTests(this)
     }
-    "Websocket JQ Transformer" in {
-      new WebsocketJQTransformerTests(this)
-    }
     "S3Backend" in {
       new S3BackendTests(this)
     }
@@ -576,6 +573,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
     "Remote tunnels calls - leader to leader - call a private API through a tunnel" in {
       new RemoteTunnelCallsTests(this).leaderToLeaderCallPrivateAPI()
+    }
+    "Websocket JQ Transformer" in {
+      new WebsocketJQTransformerTests(this)
     }
   }
 }

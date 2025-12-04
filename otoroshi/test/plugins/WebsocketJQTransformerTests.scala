@@ -1,5 +1,6 @@
 package plugins
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.Host
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.http.scaladsl.{Http, HttpExt}
@@ -21,6 +22,7 @@ import scala.concurrent.{Future, Promise}
 class WebsocketJQTransformerTests(parent: PluginsTestSpec) {
   import parent._
 
+  implicit val system        = ActorSystem("otoroshi-websocket-test")
   implicit val http: HttpExt = Http()(system)
 
   val backend = new WebsocketBackend(

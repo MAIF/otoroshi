@@ -11,6 +11,7 @@ import otoroshi.next.plugins.{
   OverrideHost,
   SendOtoroshiHeadersBack
 }
+import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.http.Status
 import play.api.libs.json._
@@ -33,9 +34,9 @@ class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
   )
 
   val apikey = ApiKey(
-    clientId = "apikey-test",
+    clientId = s"client-${IdGenerator.uuid}",
     clientSecret = "1234",
-    clientName = "apikey-test",
+    clientName = s"name-${IdGenerator.uuid}",
     authorizedEntities = Seq(RouteIdentifier(route.id)),
     rotation = ApiKeyRotation(enabled = true)
   )
@@ -46,8 +47,8 @@ class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
     .url(s"http://127.0.0.1:$port/api")
     .withHttpHeaders(
       "Host"                   -> route.frontend.domains.head.domain,
-      "Otoroshi-Client-Id"     -> getValidApiKeyForPluginsRoute(route.id).clientId,
-      "Otoroshi-Client-Secret" -> getValidApiKeyForPluginsRoute(route.id).clientSecret
+      "Otoroshi-Client-Id"     -> apikey.clientId,
+      "Otoroshi-Client-Secret" -> apikey.clientSecret
     )
     .get()
     .futureValue
