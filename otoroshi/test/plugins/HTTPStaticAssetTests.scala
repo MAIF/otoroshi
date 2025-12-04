@@ -4,7 +4,7 @@ import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, StaticAssetEndpoint, StaticAssetEndpointConfiguration}
-import otoroshi.utils.syntax.implicits.BetterJsValueReader
+import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json._
 
@@ -30,7 +30,7 @@ class HTTPStaticAssetTests(parent: PluginsTestSpec) {
 
   val staticAssetRoute = createLocalRoute(
     Seq(),
-    domain = "static-asset.oto.tools",
+    rawDomain = "static-asset.oto.tools".some,
     result = _ => Json.obj("foo" -> "bar_from_child")
   )
 

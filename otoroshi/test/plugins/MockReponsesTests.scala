@@ -4,7 +4,7 @@ import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{MockResponse, MockResponses, MockResponsesConfig, OverrideHost}
-import otoroshi.utils.syntax.implicits.BetterJsValue
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json._
 
@@ -37,7 +37,7 @@ class MockReponsesTests(parent: PluginsTestSpec) {
         )
       )
     ),
-    domain = "mock.oto.tools",
+    rawDomain = "mock.oto.tools".some,
     frontendPath = "/"
   )
 

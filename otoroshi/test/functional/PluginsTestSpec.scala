@@ -574,8 +574,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Workflow Transform Response" in {
       new WorkflowTransformResponseTests(this)
     }
-    "Remote tunnels calls - call a private API through a tunnel" in {
-      new RemoteTunnelCallsTests(this)
+    "Remote tunnels calls - leader to leader - call a private API through a tunnel" in {
+      new RemoteTunnelCallsTests(this).leaderToLeaderCallPrivateAPI()
     }
   }
 }

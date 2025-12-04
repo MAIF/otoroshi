@@ -4,6 +4,7 @@ import functional.PluginsTestSpec
 import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{ForceHttpsTraffic, OverrideHost}
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
 import play.api.libs.json._
 
@@ -20,7 +21,7 @@ class ForceHTTPsTrafficTests(parent: PluginsTestSpec) {
       )
     ),
     result = _ => Json.obj(),
-    domain = "force.oto.tools",
+    rawDomain = "force.oto.tools".some,
     https = true
   )
 
