@@ -17,7 +17,6 @@ import play.mvc.Http.Status
 
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 
 class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
@@ -83,19 +82,20 @@ class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
     }
   }
 
-  val publicInstance  = OtoroshiInstance(
-    10201,
-    s"""
+  def leaderToLeaderCallPrivateAPI() = {
+    val publicInstance  = OtoroshiInstance(
+      10201,
+      s"""
        |otoroshi.next.state-sync-interval=2000
        |otoroshi.tunnels.enabled=true
        |otoroshi.loggers.otoroshi-tunnel-agent=DEBUG
        |otoroshi.loggers.otoroshi-tunnel-plugin=DEBUG
        |otoroshi.loggers.otoroshi-tunnel-manager=DEBUG
        |"""
-  )
-  val privateInstance = OtoroshiInstance(
-    10200,
-    s"""
+    )
+    val privateInstance = OtoroshiInstance(
+      10200,
+      s"""
        |otoroshi {
        |  next.state-sync-interval = 2000
        |
@@ -120,71 +120,72 @@ class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
        |  }
        |}
        |"""
-  )
+    )
 
-  publicInstance.start()
-  getOtoroshiRoutes(publicInstance.port.some).futureValue
-  await(5.seconds)
+    publicInstance.start()
+    getOtoroshiRoutes(publicInstance.port.some).futureValue
+    await(5.seconds)
 
-  privateInstance.start()
-  getOtoroshiRoutes(privateInstance.port.some).futureValue
-  await(5.seconds)
+    privateInstance.start()
+    getOtoroshiRoutes(privateInstance.port.some).futureValue
+    await(5.seconds)
 
-  val privateRoute = createRouteWithExternalTarget(
-    Seq(
-      NgPluginInstance(
-        plugin = NgPluginHelper.pluginId[OverrideHost]
-      )
-    ),
-    customOtoroshiPort = privateInstance.port.some,
-    domain = "private-api.oto.tools".some
-  )
-
-  val publicRoute = createRouteWithExternalTarget(
-    Seq(
-      NgPluginInstance(
-        plugin = NgPluginHelper.pluginId[OverrideHost]
-      ),
-      NgPluginInstance(
-        plugin = NgPluginHelper.pluginId[TunnelPlugin],
-        config = NgPluginInstanceConfig(
-          TunnelPluginConfig(
-            tunnelId = "public-apis"
-          ).json
-            .as[JsObject]
+    val privateRoute = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
         )
+      ),
+      customOtoroshiPort = privateInstance.port.some,
+      domain = "private-api.oto.tools".some
+    )
+
+    val publicRoute = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[TunnelPlugin],
+          config = NgPluginInstanceConfig(
+            TunnelPluginConfig(
+              tunnelId = "public-apis"
+            ).json
+              .as[JsObject]
+          )
+        )
+      ),
+      target = NgTarget(
+        hostname = privateRoute.frontend.domains.head.domain,
+        port = privateInstance.port,
+        id = "private-api",
+        tls = false,
+        ipAddress = "127.0.0.1".some
+      ).some,
+      customOtoroshiPort = publicInstance.port.some
+    )
+
+    val privateRouteCall = ws
+      .url(s"http://127.0.0.1:${privateInstance.port}/")
+      .withHttpHeaders(
+        "Host" -> privateRoute.frontend.domains.head.domain
       )
-    ),
-    target = NgTarget(
-      hostname = privateRoute.frontend.domains.head.domain,
-      port = privateInstance.port,
-      id = "private-api",
-      tls = false,
-      ipAddress = "127.0.0.1".some
-    ).some,
-    customOtoroshiPort = publicInstance.port.some
-  )
+      .get()
+      .futureValue
 
-  val privateRouteCall = ws
-    .url(s"http://127.0.0.1:${privateInstance.port}/")
-    .withHttpHeaders(
-      "Host" -> privateRoute.frontend.domains.head.domain
-    )
-    .get()
-    .futureValue
+    privateRouteCall.status mustBe Status.OK
 
-  privateRouteCall.status mustBe Status.OK
+    val publicRouteCall = ws
+      .url(s"http://127.0.0.1:${publicInstance.port}/")
+      .withHttpHeaders(
+        "Host" -> publicRoute.frontend.domains.head.domain
+      )
+      .get()
+      .futureValue
 
-  val publicRouteCall = ws
-    .url(s"http://127.0.0.1:${publicInstance.port}/")
-    .withHttpHeaders(
-      "Host" -> publicRoute.frontend.domains.head.domain
-    )
-    .get()
-    .futureValue
+    publicRouteCall.status mustBe Status.OK
 
-  publicRouteCall.status mustBe Status.OK
-
-  privateInstance.stop()
-  publicInstance.stop()
+    privateInstance.stop()
+    publicInstance.stop()
+  }
 }

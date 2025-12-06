@@ -109,7 +109,6 @@ class ApikeyAuthModuleTests(parent: PluginsTestSpec) {
     call.status mustBe Status.UNAUTHORIZED
   }
 
-  deletePluginsRouteApiKeys(route.id)
   deleteOtoroshiApiKey(goodApikey)
   deleteOtoroshiApiKey(badApikey)
   deleteOtoroshiApiKey(apikeyWithBadTags)

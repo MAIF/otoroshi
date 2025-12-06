@@ -5,6 +5,7 @@ import functional.PluginsTestSpec
 import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, OverrideLocationHeader}
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
 import play.api.libs.json.Json
 
@@ -31,7 +32,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
     val resp = ws
       .url(s"http://127.0.0.1:$port/api")
       .withHttpHeaders(
-        "Host" -> LOCAL_HOST
+        "Host" -> route.frontend.domains.head.domain
       )
       .get()
       .futureValue
@@ -56,7 +57,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       result = _ => {
         Json.obj("message" -> "creation done")
       },
-      domain = "foo.oto.tools",
+      rawDomain = "foo.oto.tools".some,
       responseHeaders = List(RawHeader("Location", s"http://location.oto.tools:$port/api"))
     )
 
@@ -69,7 +70,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       result = _ => {
         Json.obj("message" -> "reached the target route")
       },
-      domain = "location.oto.tools"
+      rawDomain = "location.oto.tools".some
     )
 
     val resp = ws

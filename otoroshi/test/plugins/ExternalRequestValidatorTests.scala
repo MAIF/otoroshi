@@ -21,7 +21,7 @@ class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
       result = _ => {
         Json.obj("pass" -> false)
       },
-      domain = "invalid.oto.tools",
+      rawDomain = "invalid.oto.tools".some,
       frontendPath = "/check"
     )
 
@@ -68,7 +68,7 @@ class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
     val validatorRoute = createLocalRoute(
       Seq.empty,
       result = _ => Json.obj("pass" -> true),
-      domain = "validator.oto.tools",
+      rawDomain = "validator.oto.tools".some,
       frontendPath = "/check"
     )
 

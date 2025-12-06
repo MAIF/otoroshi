@@ -63,7 +63,7 @@ class MissingCookiesOutTests(parent: PluginsTestSpec) {
         )
       )
     ),
-    domain = "missing.oto.tools",
+    rawDomain = "missing.oto.tools".some,
     responseHeaders = List(
       `Set-Cookie`(cookie =
         HttpCookie(

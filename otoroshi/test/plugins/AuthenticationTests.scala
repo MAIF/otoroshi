@@ -126,9 +126,9 @@ class AuthenticationTests(parent: PluginsTestSpec) {
     Json.parse(callWithUser.body).selectAsString("name") mustBe "foo"
 
     val apikey = ApiKey(
-      clientId = "apikey-test",
+      clientId = s"client-${IdGenerator.uuid}",
       clientSecret = "1234",
-      clientName = "apikey-test",
+      clientName = s"name-${IdGenerator.uuid}",
       authorizedEntities = Seq(RouteIdentifier(route.id))
     )
 

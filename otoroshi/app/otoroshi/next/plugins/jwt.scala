@@ -27,21 +27,46 @@ import java.util.Base64 as JavaBase64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgJwtVerificationConfig(verifiers: Seq[String] = Seq.empty) extends NgPluginConfig {
+case class NgJwtVerificationConfig(
+  verifiers: Seq[String] = Seq.empty,
+  customResponse: Boolean = false,
+  customResponseStatus: Int = 401,
+  customResponseHeaders: Map[String, String] = Map.empty,
+  customResponseBody: String = Json.obj("error" -> "unauthorized").stringify,
+) extends NgPluginConfig {
   def json: JsValue = NgJwtVerificationConfig.format.writes(this)
+  def asResult: Option[Result] = {
+    if (customResponse) {
+      val ctype = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
+      val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+    } else {
+      None
+    }
+  }
 }
 
 object NgJwtVerificationConfig {
   val format: Format[NgJwtVerificationConfig] = new Format[NgJwtVerificationConfig] {
     override def reads(json: JsValue): JsResult[NgJwtVerificationConfig] = Try {
       NgJwtVerificationConfig(
-        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)
+        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
+        customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
+        customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseBody = json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify),
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: NgJwtVerificationConfig): JsValue             = Json.obj("verifiers" -> o.verifiers)
+    override def writes(o: NgJwtVerificationConfig): JsValue             = Json.obj(
+      "verifiers" -> o.verifiers,
+      "custom_response" -> o.customResponse,
+      "custom_response_status" -> o.customResponseStatus,
+      "custom_response_headers" -> o.customResponseHeaders,
+      "custom_response_body" -> o.customResponseBody,
+    )
   }
 }
 
@@ -71,7 +96,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
     config.verifiers match {
       case Nil         => JwtVerifierUtils.onError()
-      case verifierIds => JwtVerifierUtils.verify(ctx, verifierIds)
+      case verifierIds => JwtVerifierUtils.verify(ctx, verifierIds, config.asResult)
     }
   }
 
@@ -110,7 +135,7 @@ object JwtVerifierUtils {
       .vfuture
   }
 
-  def verify(ctx: NgAccessContext, verifierIds: Seq[String])(using
+  def verify(ctx: NgAccessContext, verifierIds: Seq[String], customResult: Option[Result])(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgAccess] = {
@@ -126,7 +151,7 @@ object JwtVerifierUtils {
           attrs = ctx.attrs
         )
         .flatMap {
-          case Left(result)     => onError(result.some)
+          case Left(result)     => onError(customResult.orElse(result.some))
           case Right(injection) =>
             ctx.attrs.put(JwtInjectionKey -> injection)
             NgAccess.NgAllowed.vfuture
@@ -140,7 +165,7 @@ object JwtVerifierUtils {
         elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
         attrs = ctx.attrs
       ) match {
-        case Left(result)     => onError(result.some)
+        case Left(result)     => onError(customResult.orElse(result.some))
         case Right(injection) =>
           ctx.attrs.put(JwtInjectionKey -> injection)
           NgAccess.NgAllowed.vfuture
@@ -149,9 +174,22 @@ object JwtVerifierUtils {
   }
 }
 
-case class NgJwtVerificationOnlyConfig(verifier: Option[String] = None, failIfAbsent: Boolean = true)
+case class NgJwtVerificationOnlyConfig(verifier: Option[String] = None, failIfAbsent: Boolean = true,
+                                       customResponse: Boolean = false,
+                                       customResponseStatus: Int = 401,
+                                       customResponseHeaders: Map[String, String] = Map.empty,
+                                       customResponseBody: String = Json.obj("error" -> "unauthorized").stringify)
     extends NgPluginConfig {
   def json: JsValue = NgJwtVerificationOnlyConfig.format.writes(this)
+  def asResult: Option[Result] = {
+    if (customResponse) {
+      val ctype = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
+      val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+    } else {
+      None
+    }
+  }
 }
 
 object NgJwtVerificationOnlyConfig {
@@ -159,7 +197,11 @@ object NgJwtVerificationOnlyConfig {
     override def reads(json: JsValue): JsResult[NgJwtVerificationOnlyConfig] = Try {
       NgJwtVerificationOnlyConfig(
         verifier = json.select("verifier").asOpt[String],
-        failIfAbsent = json.select("fail_if_absent").asOpt[Boolean].getOrElse(true)
+        failIfAbsent = json.select("fail_if_absent").asOpt[Boolean].getOrElse(true),
+        customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
+        customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
+        customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseBody = json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify),
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -167,7 +209,11 @@ object NgJwtVerificationOnlyConfig {
     }
     override def writes(o: NgJwtVerificationOnlyConfig): JsValue             = Json.obj(
       "verifier"       -> o.verifier,
-      "fail_if_absent" -> o.failIfAbsent
+      "fail_if_absent" -> o.failIfAbsent,
+      "custom_response" -> o.customResponse,
+      "custom_response_status" -> o.customResponseStatus,
+      "custom_response_headers" -> o.customResponseHeaders,
+      "custom_response_body" -> o.customResponseBody,
     )
   }
 }
@@ -206,7 +252,7 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
           case Some(verifier) =>
             verifier.source.token(ctx.request) match {
               case None if !config.failIfAbsent => NgAccess.NgAllowed.vfuture
-              case _                            => JwtVerifierUtils.verify(ctx, Seq(verifierId))
+              case _                            => JwtVerifierUtils.verify(ctx, Seq(verifierId), config.asResult)
             }
         }
     }

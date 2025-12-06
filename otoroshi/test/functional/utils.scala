@@ -1607,8 +1607,6 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       .andWait(2000.millis)
   }
 
-  val LOCAL_HOST = "local.oto.tools"
-
   def createRouteWithExternalTarget(
       plugins: Seq[NgPluginInstance] = Seq.empty,
       domain: Option[String] = None,
@@ -1677,7 +1675,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       responseStatus: Int = Status.OK,
       result: HttpRequest => JsValue = _ => Json.obj(),
       responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
-      domain: String = "local.oto.tools",
+      rawDomain: Option[String] = None,
       https: Boolean = false,
       frontendPath: String = "/api",
       jsonAPI: Boolean = true,
@@ -1688,12 +1686,15 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
   ) = {
 
     var _target: Option[TargetService] = None
+    val id                             = IdGenerator.uuid
+
+    val domain = rawDomain.getOrElse(s"$id.oto.tools")
 
     if (target.isEmpty)
       _target = (if (rawResult.isDefined) {
                    TargetService
                      .full(
-                       Some(domain),
+                       domain.some,
                        frontendPath,
                        contentType = responseContentType,
                        rawResult.get
@@ -1701,14 +1702,14 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
                  } else if (jsonAPI)
                    TargetService
                      .jsonFull(
-                       Some(domain),
+                       domain.some,
                        frontendPath,
                        r => (responseStatus, result(r), responseHeaders)
                      )
                  else
                    TargetService
                      .full(
-                       Some(domain),
+                       domain.some,
                        frontendPath,
                        contentType = responseContentType,
                        r => (responseStatus, stringResult(r), responseHeaders)
@@ -1718,7 +1719,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
 
     val newRoute = NgRoute(
       location = EntityLocation.default,
-      id = s"route_${IdGenerator.uuid}",
+      id = s"route_$id",
       name = "local-route",
       description = "local-route",
       enabled = true,
@@ -1762,23 +1763,6 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
     } else {
       throw new RuntimeException("failed to create a new local route")
     }
-  }
-
-  def createPluginsRouteApiKeys(routeId: String) = {
-    createOtoroshiApiKey(getValidApiKeyForPluginsRoute(routeId)).futureValue
-  }
-
-  def deletePluginsRouteApiKeys(routeId: String) = {
-    deleteOtoroshiApiKey(getValidApiKeyForPluginsRoute(routeId)).futureValue
-  }
-
-  def getValidApiKeyForPluginsRoute(routeId: String) = {
-    ApiKey(
-      clientId = "apikey-test",
-      clientSecret = "1234",
-      clientName = "apikey-test",
-      authorizedEntities = Seq(RouteIdentifier(routeId))
-    )
   }
 
   def getOutHeader(resp: WSRequest#Self#Response, headerName: String) = {

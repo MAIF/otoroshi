@@ -16,7 +16,7 @@ class GlobalMaintenanceModeTests(parent: PluginsTestSpec) {
 
   import parent.{given, *}
 
-  private def enableGlobalMaintenance(): Future[WSResponse] = {
+  private def enableGlobalMaintenance(globalConfig: GlobalConfig): Future[WSResponse] = {
     ws.url(s"http://localhost:$port/api/globalconfig")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.oto.tools",
@@ -41,6 +41,18 @@ class GlobalMaintenanceModeTests(parent: PluginsTestSpec) {
             )
             .toJson
         )
+      )
+  }
+
+  private def resetGlobalConfig(globalConfig: GlobalConfig): Future[WSResponse] = {
+    ws.url(s"http://localhost:$port/api/globalconfig")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .put(
+        Json.stringify(globalConfig.toJson)
       )
   }
 
@@ -71,7 +83,7 @@ class GlobalMaintenanceModeTests(parent: PluginsTestSpec) {
 
   resp.status mustBe Status.OK
 
-  enableGlobalMaintenance().futureValue
+  enableGlobalMaintenance(globalConfig).futureValue
 
   {
     val resp = ws
@@ -84,6 +96,8 @@ class GlobalMaintenanceModeTests(parent: PluginsTestSpec) {
 
     resp.status mustBe Status.SERVICE_UNAVAILABLE
   }
+
+  resetGlobalConfig(globalConfig).futureValue
 
   deleteOtoroshiRoute(route).futureValue
 }

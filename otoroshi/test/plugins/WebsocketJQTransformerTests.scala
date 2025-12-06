@@ -23,7 +23,7 @@ import scala.concurrent.{Future, Promise}
 class WebsocketJQTransformerTests(parent: PluginsTestSpec) {
   import parent.{given, *}
 
-  given system: ActorSystem = ActorSystem("otoroshi-test")
+  given system: ActorSystem = ActorSystem("otoroshi-websocket-test")
   given mat: Materializer = Materializer(system)
   given http: HttpExt = Http()
 

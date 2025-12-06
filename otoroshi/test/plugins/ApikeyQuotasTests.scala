@@ -75,7 +75,6 @@ class ApikeyQuotasTests(parent: PluginsTestSpec) {
   val dailyRemaining = call.header(env.Headers.OtoroshiDailyCallsRemaining).get
   dailyRemaining.toLong == 8 mustBe true
 
-  deletePluginsRouteApiKeys(route.id)
   deleteOtoroshiApiKey(goodApikey)
   deleteOtoroshiRoute(route).futureValue
 }

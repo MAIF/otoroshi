@@ -425,9 +425,9 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
 
     def callWithApikey(route: NgRoute): Unit = {
       val apikey = ApiKey(
-        clientId = "apikey-test",
+        clientId = s"client-${IdGenerator.uuid}",
         clientSecret = "1234",
-        clientName = "apikey-test",
+        clientName = s"name-${IdGenerator.uuid}",
         authorizedEntities = Seq(RouteIdentifier(route.id))
       )
 
@@ -859,9 +859,9 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
 
     def callWithApikey(route: NgRoute): Unit = {
       val apikey = ApiKey(
-        clientId = "apikey-test",
+        clientId = s"client-${IdGenerator.uuid}",
         clientSecret = "1234",
-        clientName = "apikey-test",
+        clientName = s"name-${IdGenerator.uuid}",
         authorizedEntities = Seq(RouteIdentifier(route.id))
       )
 
