@@ -70,9 +70,7 @@ object EventLoopUtils {
       EventLoopGroupCreation(evlGroupHttp, Some("IO-Uring"))
     }*/
     else if (config.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
-      val channelHttp  = new io.netty.channel.kqueue.KQueueServerSocketChannel()
-      val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(nThread, threadFactory)
-      evlGroupHttp.register(channelHttp).sync().await()
+      val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, KQueueIoHandler.newFactory())
       EventLoopGroupCreation(evlGroupHttp, Some("KQueue"))
     } else {
       val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, NioIoHandler.newFactory())

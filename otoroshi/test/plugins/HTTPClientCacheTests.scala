@@ -115,7 +115,7 @@ class HTTPClientCacheTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def addCacheHeadersWhenMethodStatusAndContentTypeMatch() {
+  def addCacheHeadersWhenMethodStatusAndContentTypeMatch() = {
     val route = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(

@@ -39,7 +39,7 @@ case class NgJwtVerificationConfig(
     if (customResponse) {
       val ctype = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
       val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
-      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
     } else {
       None
     }
@@ -185,7 +185,7 @@ case class NgJwtVerificationOnlyConfig(verifier: Option[String] = None, failIfAb
     if (customResponse) {
       val ctype = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
       val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
-      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
     } else {
       None
     }

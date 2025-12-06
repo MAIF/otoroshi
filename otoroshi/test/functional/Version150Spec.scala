@@ -1,10 +1,9 @@
 package functional
 
-import org.apache.pekko.actor.ActorSystem
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.google.common.base.Charsets
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.actor.ActorSystem
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig}
 import otoroshi.env.Env
 import otoroshi.models.*

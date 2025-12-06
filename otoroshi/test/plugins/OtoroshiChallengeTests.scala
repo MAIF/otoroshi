@@ -1,24 +1,23 @@
 package plugins
 
-import org.apache.pekko.http.scaladsl.model.headers.RawHeader
-import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import functional.PluginsTestSpec
-import java.util.Base64
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import otoroshi.models.{HSAlgoSettings, SecComVersionV2}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 import java.nio.charset.StandardCharsets
+import java.util.Base64
 import scala.concurrent.duration.DurationInt
 
 class OtoroshiChallengeTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createLocalRoute(
     Seq(

@@ -1,6 +1,6 @@
 package plugins
 
-import akka.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.PluginsTestSpec
 import otoroshi.api.Otoroshi
@@ -21,7 +21,7 @@ import scala.concurrent.duration.DurationInt
 
 class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   case class OtoroshiInstance(port: Int, configuration: String) {
     private val ref: AtomicReference[Otoroshi] = new AtomicReference[Otoroshi]()
