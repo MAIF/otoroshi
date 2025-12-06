@@ -1874,8 +1874,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter1.get() mustBe 3
 
       val resp1111 = ws
-        .url(s"http://127.0.0.1:$port/api/bar/foo")
-        .withHttpHeaders("Host" -> "restrictionservicesome.oto.tools")
+        .url(s"http://restrictionservicesome.oto.tools:$port/api/bar/foo")
         .delete()
         .futureValue
       resp1111.status mustBe 404
@@ -2016,9 +2015,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       counter1.get() mustBe 3
 
       val resp1111 = ws
-        .url(s"http://127.0.0.1:$port/api/bar/foo")
+        .url(s"http://restrictionservicesapikey.oto.tools:$port/api/bar/foo")
         .withHttpHeaders(
-          "Host"                   -> "restrictionservicesome.oto.tools",
           "Otoroshi-Client-Id"     -> apikey2.clientId,
           "Otoroshi-Client-Secret" -> apikey2.clientSecret
         )

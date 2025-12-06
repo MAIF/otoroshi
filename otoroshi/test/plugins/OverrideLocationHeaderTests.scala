@@ -61,6 +61,39 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       responseHeaders = List(RawHeader("Location", s"http://location.oto.tools:$port/api"))
     )
 
+    val resp = ws
+      .url(s"http://127.0.0.1:$port/api")
+      .withHttpHeaders(
+        "Host" -> "foo.oto.tools"
+      )
+      .withFollowRedirects(false)
+      .get()
+      .futureValue
+
+    resp.status mustBe Status.FOUND
+    getOutHeader(resp, "Location") mustBe Some(s"http://foo.oto.tools:$port/api")
+
+    deleteOtoroshiRoute(route).futureValue
+  }
+
+  def redirectToDomainAndPathFollowRedirect() = {
+    val route = createLocalRoute(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideLocationHeader]
+        )
+      ),
+      responseStatus = Status.FOUND,
+      result = _ => {
+        Json.obj("message" -> "creation done")
+      },
+        rawDomain = "foo.oto.tools".some,
+      responseHeaders = List(RawHeader("Location", s"http://127.0.0.1:$port/api"))
+    )
+
     val finalTargetRoute = createLocalRoute(
       Seq(
         NgPluginInstance(
@@ -82,6 +115,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
+    (resp.json \ "message").as[String] mustBe "reached the target route"
 
     deleteOtoroshiRoute(route).futureValue
     deleteOtoroshiRoute(finalTargetRoute).futureValue
