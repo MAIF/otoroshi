@@ -97,20 +97,15 @@ class React2SShellDetector extends NgRequestTransformer {
           (if (hasRscHeader) 1 else 0) +
             (if (hasFlightPatterns) 2 else 0) +
             (if (hasRecon) 3 else 0)
-        println(s"method: ${ctx.request.method} ${ctx.request.uri} ${bodyStr}")
-        println(s"hasRscHeader: ${hasRscHeader}")
-        println(s"hasFlightPatterns: ${hasFlightPatterns}")
-        println(s"hasRecon: ${hasRecon}")
-        println(s"suspiciousScore: ${suspiciousScore}")
         if (suspiciousScore >= 3) {
           sendAlert(ctx, bodyStr, suspiciousScore)
           if (config.block) {
             Results.Unauthorized(Json.obj("error" -> "You're not allowed here !")).left
           } else {
-            ctx.otoroshiRequest.right
+            ctx.otoroshiRequest.copy(body = bodyRaw.chunks(32 * 1024)).right
           }
         } else {
-          ctx.otoroshiRequest.right
+          ctx.otoroshiRequest.copy(body = bodyRaw.chunks(32 * 1024)).right
         }
       }
     } else {
