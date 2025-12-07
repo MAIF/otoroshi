@@ -307,7 +307,10 @@ class AuthController(
             case Some(descriptor) if !descriptor.privateApp =>
               NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
             case Some(descriptor)                           =>
-              env.datastores.routeDataStore.findById(descriptor.id).flatMap {
+              env.datastores.routeDataStore.findById(descriptor.id).map {
+                case None => env.proxyState.route(descriptor.id)
+                case Some(route) => Some(route)
+              }.flatMap {
                 case None if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id                 =>
                   withAuthConfig(descriptor, req) { auth => authCallback(auth, descriptor, ctx) }
                 case Some(route) if route.plugins.hasPlugin[AuthModule] && route.id != env.backOfficeDescriptor.id =>
