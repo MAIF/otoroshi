@@ -551,7 +551,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
 trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with ScalaFutures with IntegrationPatience {
 
-  import Implicits.given
+  import Implicits.{given, *}
 
   def getTestConfiguration(configuration: Configuration): Configuration
 
@@ -2136,7 +2136,7 @@ class WebsocketBackend(
 
 object TargetService {
 
-  import Implicits.given
+  import Implicits.{given, *}
 
   def apply(host: Option[String], contentType: String, result: HttpRequest => String): TargetService = {
     new TargetService(

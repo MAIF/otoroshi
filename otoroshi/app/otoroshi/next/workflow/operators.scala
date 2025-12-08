@@ -117,7 +117,7 @@ class ContainsIgnoreCaseOperator extends WorkflowOperator {
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val all                      = !opts.select("mode").asOptString.contains("contains_any")
-    val opt: Option[Seq[String]] =
+    val opt =
       opts.select("value").asOpt[JsValue].orElse(opts.select("values").asOpt[JsValue]).map {
         case JsString(str)    => Seq(str)
         case v @ JsNumber(_)  => Seq(v.toString())
@@ -2398,7 +2398,7 @@ class ContainsOperator extends WorkflowOperator {
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val all                  = !opts.select("mode").asOptString.contains("contains_any")
-    val values: Seq[JsValue] = opts
+    val values = opts
       .select("value")
       .asOpt[JsValue]
       .orElse(opts.select("values").asOpt[JsValue])

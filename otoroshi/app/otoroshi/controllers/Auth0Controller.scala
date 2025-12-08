@@ -320,7 +320,6 @@ class AuthController(
                     withMultiAuthConfig(route, req) { auth => multiAuthCallback(auth, route, ctx) }
                   case _                                                                                             => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
                 }
-            case _                                          => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
           }
         }
       }
