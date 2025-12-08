@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.9.2",
+    "version" : "17.10.0",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:46503",
+    "url" : "http://otoroshi-api.oto.tools:38503",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -29109,10 +29109,13 @@
           },
           "x$3" : {
             "type" : "number"
+          },
+          "x$4" : {
+            "type" : "number"
           }
         },
         "title" : "Local time",
-        "required" : [ "x$1", "x$2", "x$3" ]
+        "required" : [ "x$1", "x$2", "x$3", "x$4" ]
       },
       "mappingsettings" : {
         "type" : "object",
@@ -30652,10 +30655,29 @@
           },
           "failIfAbsent" : {
             "type" : "boolean"
+          },
+          "customResponse" : {
+            "type" : "boolean"
+          },
+          "customResponseStatus" : {
+            "type" : "number"
+          },
+          "customResponseHeaders" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "customResponseBody" : {
+            "type" : "string",
+            "minLength" : 1
           }
         },
         "title" : "Ng jwt verification only config",
-        "required" : [ "failIfAbsent" ]
+        "required" : [ "failIfAbsent", "customResponse", "customResponseStatus", "customResponseHeaders", "customResponseBody" ]
       },
       "proxy.otoroshi.io.Backend" : {
         "type" : "object",
