@@ -3,7 +3,13 @@ package plugins
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{NgRedirectionSettings, OverrideHost, React2SShellDetector, React2SShellDetectorConfig, Redirection}
+import otoroshi.next.plugins.{
+  NgRedirectionSettings,
+  OverrideHost,
+  React2SShellDetector,
+  React2SShellDetectorConfig,
+  Redirection
+}
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
@@ -21,7 +27,7 @@ class React2SShellDetectorTests(parent: PluginsTestSpec) {
         plugin = NgPluginHelper.pluginId[React2SShellDetector],
         config = NgPluginInstanceConfig(
           React2SShellDetectorConfig(
-            block = true,
+            block = true
           ).json.as[JsObject]
         )
       )
@@ -50,15 +56,14 @@ class React2SShellDetectorTests(parent: PluginsTestSpec) {
     .url(s"http://127.0.0.1:$port/api")
     .withFollowRedirects(false)
     .withHttpHeaders(
-      "Host" -> route.frontend.domains.head.domain,
-      "User-Agent" -> "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36 Assetnote/1.0.0",
-      "Next-Action" -> "x",
-      "X-Nextjs-Request-Id" -> "b5dce965",
-      "Content-Type" -> "multipart/form-data; boundary=----WebKitFormBoundaryx8jO2oVc6SWP3Sad",
-      "X-Nextjs-Html-Request-Id" -> "SSTMXm7OJ_g0Ncx6jpQt9",
+      "Host"                     -> route.frontend.domains.head.domain,
+      "User-Agent"               -> "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36 Assetnote/1.0.0",
+      "Next-Action"              -> "x",
+      "X-Nextjs-Request-Id"      -> "b5dce965",
+      "Content-Type"             -> "multipart/form-data; boundary=----WebKitFormBoundaryx8jO2oVc6SWP3Sad",
+      "X-Nextjs-Html-Request-Id" -> "SSTMXm7OJ_g0Ncx6jpQt9"
     )
-    .post(
-      s"""
+    .post(s"""
          |------WebKitFormBoundaryx8jO2oVc6SWP3Sad
          |Content-Disposition: form-data; name="0"
          |
@@ -93,8 +98,6 @@ class React2SShellDetectorTests(parent: PluginsTestSpec) {
   println(s"passingResp2.body: ${passingResp2.status} - ${passingResp2.body}")
   blockedResp.status mustBe Status.UNAUTHORIZED
   println(s"blockedResp.body: ${blockedResp.status} - ${blockedResp.body}")
-
-
 
   deleteOtoroshiRoute(route).futureValue
 }

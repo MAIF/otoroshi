@@ -83,69 +83,76 @@ object WorkflowOperatorsInitializer {
 class ContainsIgnoreCaseOperator extends WorkflowOperator {
 
   override def documentationName: String                  = "$contains_ignore_case"
-  override def documentationDescription: String           = "This operator return if a string contains another string case insensitive style"
+  override def documentationDescription: String           =
+    "This operator return if a string contains another string case insensitive style"
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
       "properties" -> Json.obj(
-        "value"   -> Json.obj("type" -> "string", "description" -> "value to check"),
-        "container"   -> Json.obj("type" -> "string", "description" -> "container value"),
+        "value"     -> Json.obj("type" -> "string", "description" -> "value to check"),
+        "container" -> Json.obj("type" -> "string", "description" -> "container value")
       )
     )
   )
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
       "$first_truthy" -> Json.obj(
-        "value" -> "hello",
+        "value"     -> "hello",
         "container" -> "Hello World !"
       )
     )
   )
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
-      "value"   -> Json.obj(
+      "value"     -> Json.obj(
         "type"  -> "string",
         "label" -> "Value"
       ),
       "container" -> Json.obj(
         "type"  -> "string",
         "label" -> "Container"
-      ),
+      )
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val all = !opts.select("mode").asOptString.contains("contains_any")
-    val opt: Option[Seq[String]] = opts.select("value").asOpt[JsValue].orElse(opts.select("values").asOpt[JsValue]).map {
-      case JsString(str) => Seq(str)
-      case v @ JsNumber(_) => Seq(v.toString())
-      case v @ JsBoolean(_) => Seq(v.toString())
-      case JsArray(values) => values.collect {
-        case JsString(str) => str
-        case v @ JsNumber(_) => v.toString()
-        case v @ JsBoolean(_) => v.toString()
+    val all                      = !opts.select("mode").asOptString.contains("contains_any")
+    val opt: Option[Seq[String]] =
+      opts.select("value").asOpt[JsValue].orElse(opts.select("values").asOpt[JsValue]).map {
+        case JsString(str)    => Seq(str)
+        case v @ JsNumber(_)  => Seq(v.toString())
+        case v @ JsBoolean(_) => Seq(v.toString())
+        case JsArray(values)  =>
+          values.collect {
+            case JsString(str)    => str
+            case v @ JsNumber(_)  => v.toString()
+            case v @ JsBoolean(_) => v.toString()
+          }
+        case _                => Seq.empty[String]
       }
-      case _ => Seq.empty[String]
-    }
-    opt.map { values =>
-      val predicate = (value: String) => {
-        opts.select("container").asValue match {
-          case JsString(str) => str.toLowerCase().contains(value.toLowerCase())
-          case JsObject(map) => map.exists {
-            case (key, _) => key.toLowerCase() == value.toLowerCase()
+    opt
+      .map { values =>
+        val predicate = (value: String) => {
+          opts.select("container").asValue match {
+            case JsString(str) => str.toLowerCase().contains(value.toLowerCase())
+            case JsObject(map) =>
+              map.exists { case (key, _) =>
+                key.toLowerCase() == value.toLowerCase()
+              }
+            case JsArray(seq)  =>
+              seq.exists {
+                case JsString(str) => str.toLowerCase() == value.toLowerCase()
+                case _             => false
+              }
+            case _             => false
           }
-          case JsArray(seq) => seq.exists {
-            case JsString(str) => str.toLowerCase() == value.toLowerCase()
-            case _ => false
-          }
-          case _ => false
+        }
+        if (all) {
+          values.forall(predicate).json
+        } else {
+          values.exists(predicate).json
         }
       }
-      if (all) {
-        values.forall(predicate).json
-      } else {
-        values.exists(predicate).json
-      }
-    }.getOrElse(false.json)
+      .getOrElse(false.json)
   }
 }
 
@@ -157,7 +164,7 @@ class FirstTruthyOperator extends WorkflowOperator {
     Json.obj(
       "type"       -> "object",
       "properties" -> Json.obj(
-        "values"   -> Json.obj("type" -> "array", "description" -> "values to check"),
+        "values" -> Json.obj("type" -> "array", "description" -> "values to check")
       )
     )
   )
@@ -168,9 +175,9 @@ class FirstTruthyOperator extends WorkflowOperator {
       )
     )
   )
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
-      "values"   -> Json.obj(
+      "values" -> Json.obj(
         "type"  -> "array",
         "label" -> "Values"
       )
@@ -199,11 +206,11 @@ class AndOperator extends WorkflowOperator {
     Json.obj(
       "$and" -> Json.obj(
         "a" -> true,
-        "b" -> true,
+        "b" -> true
       )
     )
   )
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "a" -> Json.obj(
         "type"  -> "json",
@@ -222,20 +229,24 @@ class AndOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.select("values").asOpt[Seq[JsValue]].map { values =>
-      if (values.size >= 2) {
-        val head = values.head
-        values.tail.foldLeft(head) {
-          case (a, b) => (IsTruthyOperator.isTruthy(a) && IsTruthyOperator.isTruthy(b)).json
+    opts
+      .select("values")
+      .asOpt[Seq[JsValue]]
+      .map { values =>
+        if (values.size >= 2) {
+          val head = values.head
+          values.tail.foldLeft(head) { case (a, b) =>
+            (IsTruthyOperator.isTruthy(a) && IsTruthyOperator.isTruthy(b)).json
+          }
+        } else {
+          false.json
         }
-      } else {
-        false.json
       }
-    }.getOrElse {
-      val a = opts.select("a").asValue
-      val b = opts.select("b").asValue
-      (IsTruthyOperator.isTruthy(a) && IsTruthyOperator.isTruthy(b)).json
-    }
+      .getOrElse {
+        val a = opts.select("a").asValue
+        val b = opts.select("b").asValue
+        (IsTruthyOperator.isTruthy(a) && IsTruthyOperator.isTruthy(b)).json
+      }
   }
 }
 
@@ -256,11 +267,11 @@ class OrOperator extends WorkflowOperator {
     Json.obj(
       "$or" -> Json.obj(
         "a" -> true,
-        "b" -> true,
+        "b" -> true
       )
     )
   )
-  override def documentationFormSchema: Option[JsObject] = Some(
+  override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "a" -> Json.obj(
         "type"  -> "json",
@@ -279,20 +290,24 @@ class OrOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.select("values").asOpt[Seq[JsValue]].map { values =>
-      if (values.size >= 2) {
-        val head = values.head
-        values.tail.foldLeft(head) {
-          case (a, b) => (IsTruthyOperator.isTruthy(a) || IsTruthyOperator.isTruthy(b)).json
+    opts
+      .select("values")
+      .asOpt[Seq[JsValue]]
+      .map { values =>
+        if (values.size >= 2) {
+          val head = values.head
+          values.tail.foldLeft(head) { case (a, b) =>
+            (IsTruthyOperator.isTruthy(a) || IsTruthyOperator.isTruthy(b)).json
+          }
+        } else {
+          false.json
         }
-      } else {
-        false.json
       }
-    }.getOrElse {
-      val a = opts.select("a").asValue
-      val b = opts.select("b").asValue
-      (IsTruthyOperator.isTruthy(a) || IsTruthyOperator.isTruthy(b)).json
-    }
+      .getOrElse {
+        val a = opts.select("a").asValue
+        val b = opts.select("b").asValue
+        (IsTruthyOperator.isTruthy(a) || IsTruthyOperator.isTruthy(b)).json
+      }
   }
 }
 
@@ -304,7 +319,7 @@ class ParseNumberOperator extends WorkflowOperator {
     Json.obj(
       "type"       -> "object",
       "properties" -> Json.obj(
-        "value"   -> Json.obj("type" -> "string", "description" -> "value to parse"),
+        "value" -> Json.obj("type" -> "string", "description" -> "value to parse")
       )
     )
   )
@@ -318,7 +333,7 @@ class ParseNumberOperator extends WorkflowOperator {
 
   override def documentationFormSchema: Option[JsObject] = Some(
     Json.obj(
-      "value"   -> Json.obj(
+      "value" -> Json.obj(
         "type"  -> "number",
         "label" -> "Value"
       )
@@ -2382,15 +2397,20 @@ class ContainsOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val all = !opts.select("mode").asOptString.contains("contains_any")
-    val values: Seq[JsValue] = opts.select("value").asOpt[JsValue].orElse(opts.select("values").asOpt[JsValue]).map {
-      case v @ JsString(_) => Seq(v)
-      case v @ JsNumber(_) => Seq(v)
-      case v @ JsBoolean(_) => Seq(v)
-      case JsArray(values) => values
-      case _ => Seq.empty[JsValue]
-    }.getOrElse(Seq.empty)
-    val container: JsValue = opts.select("container").asOpt[JsValue] match {
+    val all                  = !opts.select("mode").asOptString.contains("contains_any")
+    val values: Seq[JsValue] = opts
+      .select("value")
+      .asOpt[JsValue]
+      .orElse(opts.select("values").asOpt[JsValue])
+      .map {
+        case v @ JsString(_)  => Seq(v)
+        case v @ JsNumber(_)  => Seq(v)
+        case v @ JsBoolean(_) => Seq(v)
+        case JsArray(values)  => values
+        case _                => Seq.empty[JsValue]
+      }
+      .getOrElse(Seq.empty)
+    val container: JsValue   = opts.select("container").asOpt[JsValue] match {
       case Some(v) => v
       case None    => {
         val name = opts.select("name").asString
@@ -2404,17 +2424,19 @@ class ContainsOperator extends WorkflowOperator {
     }
     if (all) {
       (container match {
-        case JsObject(objValues) => values.filter(_.isInstanceOf[JsString]).forall(value => objValues.contains(value.asString))
-        case JsArray(arrvalues) => values.forall(value => arrvalues.contains(value))
-        case JsString(str) => values.filter(_.isInstanceOf[JsString]).forall(value => str.contains(value.asString))
-        case _ => false
+        case JsObject(objValues) =>
+          values.filter(_.isInstanceOf[JsString]).forall(value => objValues.contains(value.asString))
+        case JsArray(arrvalues)  => values.forall(value => arrvalues.contains(value))
+        case JsString(str)       => values.filter(_.isInstanceOf[JsString]).forall(value => str.contains(value.asString))
+        case _                   => false
       }).json
     } else {
       (container match {
-        case JsObject(objValues) => values.filter(_.isInstanceOf[JsString]).exists(value => objValues.contains(value.asString))
-        case JsArray(arrvalues) => values.exists(value => arrvalues.contains(value))
-        case JsString(str) => values.filter(_.isInstanceOf[JsString]).exists(value => str.contains(value.asString))
-        case _ => false
+        case JsObject(objValues) =>
+          values.filter(_.isInstanceOf[JsString]).exists(value => objValues.contains(value.asString))
+        case JsArray(arrvalues)  => values.exists(value => arrvalues.contains(value))
+        case JsString(str)       => values.filter(_.isInstanceOf[JsString]).exists(value => str.contains(value.asString))
+        case _                   => false
       }).json
     }
   }

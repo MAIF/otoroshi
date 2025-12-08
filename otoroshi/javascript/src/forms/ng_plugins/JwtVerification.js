@@ -7,19 +7,19 @@ export default {
   config_schema: {
     custom_response: {
       type: 'bool',
-      label: "Custom error",
+      label: 'Custom error',
     },
     custom_response_status: {
       type: 'number',
-      label: "Custom error status",
+      label: 'Custom error status',
     },
     custom_response_headers: {
       type: 'object',
-      label: "Custom error headers",
+      label: 'Custom error headers',
     },
     custom_response_body: {
       type: 'code',
-      label: "Custom error body",
+      label: 'Custom error body',
     },
     verifiers: {
       label: 'Chain of verifiers',
@@ -44,5 +44,11 @@ export default {
       },
     },
   },
-  config_flow: ['verifiers', 'custom_response', 'custom_response_status', 'custom_response_headers', 'custom_response_body'],
+  config_flow: [
+    'verifiers',
+    'custom_response',
+    'custom_response_status',
+    'custom_response_headers',
+    'custom_response_body',
+  ],
 };

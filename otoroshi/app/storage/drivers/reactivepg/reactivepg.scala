@@ -861,8 +861,8 @@ class ReactivePgRedis(
         ) { row =>
           val value = row.optString("type") match {
             case Some("counter") => row.optLong("counter").map(_.toString.byteString)
-            case Some("string") => row.optString("value").filter(_.nonEmpty).map(_.byteString)
-            case _ => None
+            case Some("string")  => row.optString("value").filter(_.nonEmpty).map(_.byteString)
+            case _               => None
           }
           row.optString("key").map(k => (k, value))
         }.map { tuples =>

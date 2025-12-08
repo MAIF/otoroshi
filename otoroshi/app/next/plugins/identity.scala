@@ -107,15 +107,15 @@ class UserLogoutEndpoint extends NgBackendCall {
   override def noJsForm: Boolean                           = true
 
   override def callBackend(
-    ctx: NgbBackendCallContext,
-    delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
   )(implicit
-    env: Env,
-    ec: ExecutionContext,
-    mat: Materializer
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     ctx.user match {
-      case None       =>
+      case None    =>
         BackendCallResponse(
           NgPluginHttpResponse.fromResult(Results.NoContent),
           None
