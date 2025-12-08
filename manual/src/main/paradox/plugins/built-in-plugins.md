@@ -2056,7 +2056,11 @@ This plugin verifies the current request with one or more jwt verifier
 
 ```json
 {
-  "verifiers" : [ ]
+  "verifiers" : [ ],
+  "custom_response" : false,
+  "custom_response_status" : 401,
+  "custom_response_headers" : { },
+  "custom_response_body" : "{\"error\":\"unauthorized\"}"
 }
 ```
 
@@ -2090,7 +2094,11 @@ This plugin verifies the current request with one jwt verifier
 ```json
 {
   "verifier" : null,
-  "fail_if_absent" : true
+  "fail_if_absent" : true,
+  "custom_response" : false,
+  "custom_response_status" : 401,
+  "custom_response_headers" : { },
+  "custom_response_body" : "{\"error\":\"unauthorized\"}"
 }
 ```
 
@@ -4905,6 +4913,39 @@ This plugin check if current user/apikey/jwt token has the right role
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.React2SShellDetector }
+
+## React2Shell detector
+
+### Defined on steps
+
+  - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.React2SShellDetector`
+
+### Description
+
+This plugin detects (and block) React2Shell attacks
+
+
+
+### Default configuration
+
+```json
+{
+  "block" : false
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ReadOnlyCalls }
 
 ## Read only requests
@@ -6077,8 +6118,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-12-03T08:27:36.471Z",
-  "stop" : "2025-12-04T08:27:36.492Z",
+  "start" : "2025-12-08T13:28:24.569Z",
+  "stop" : "2025-12-09T13:28:24.589Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
@@ -6141,6 +6182,31 @@ This plugin restrict when a route is accessible
 ### Description
 
 This plugin creates UDP tunnels through otoroshi
+
+
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.UserLogoutEndpoint }
+
+## User logout endpoint
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.UserLogoutEndpoint`
+
+### Description
+
+This plugin logout the current user
 
 
 

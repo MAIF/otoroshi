@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.10.0-dev",
+    "version" : "17.11.0-dev",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "everything about otoroshi"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:8080",
+    "url" : "http://otoroshi-api.oto.tools:38503",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -19591,6 +19591,113 @@
             "type" : "string",
             "description" : "???"
           },
+          "clientIdHeaderName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "clientSecretHeaderName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Custom headers auth constraints",
+        "required" : [ "enabled" ]
+      },
+      "localtime" : {
+        "type" : "object",
+        "properties" : {
+          "x$1" : {
+            "type" : "number"
+          },
+          "x$2" : {
+            "type" : "number"
+          },
+          "x$3" : {
+            "type" : "number"
+          },
+          "x$4" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Local time",
+        "required" : [ "x$1", "x$2", "x$3", "x$4" ]
+      },
+      "mappingsettings" : {
+        "type" : "object",
+        "properties" : {
+          "map" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "values" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "remove" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Mapping settings",
+        "required" : [ "map", "values", "remove" ]
+      },
+      "apipublished" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api published"
+      },
+      "samlcanocalizationmethodexclusivewithcomments" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "S a m l canocalization method exclusive with comments"
+      },
+      "tlsmodedisabled" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Tls mode disabled"
+      },
+      "dataexporterconfigtypejms" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type j m s"
+      },
+      "dataexporterconfigtypesplunk" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type splunk"
+      },
+      "credential" : {
+        "type" : "object",
+        "properties" : {
+          "certificate" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "privateKey" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "certId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "useOtoroshiCertificate" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "Credential",
+        "required" : [ "useOtoroshiCertificate" ]
+      },
+      "emaillocation" : {
+        "type" : "object",
+        "properties" : {
           "name" : {
             "type" : "string",
             "description" : "???"
@@ -19756,7 +19863,39 @@
             "type" : "string",
             "description" : "???"
           },
-          "serviceId" : {
+          "failIfAbsent" : {
+            "type" : "boolean"
+          },
+          "customResponse" : {
+            "type" : "boolean"
+          },
+          "customResponseStatus" : {
+            "type" : "number"
+          },
+          "customResponseHeaders" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "customResponseBody" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Ng jwt verification only config",
+        "required" : [ "failIfAbsent", "customResponse", "customResponseStatus", "customResponseHeaders", "customResponseBody" ]
+      },
+      "proxy.otoroshi.io.Backend" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
             "type" : "string",
             "description" : "???"
           }

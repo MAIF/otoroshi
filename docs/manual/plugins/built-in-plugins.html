@@ -1320,7 +1320,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin verifies the current request with one or more jwt verifier</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;verifiers&quot; : [ ]
+  &quot;verifiers&quot; : [ ],
+  &quot;custom_response&quot; : false,
+  &quot;custom_response_status&quot; : 401,
+  &quot;custom_response_headers&quot; : { },
+  &quot;custom_response_body&quot; : &quot;{\&quot;error\&quot;:\&quot;unauthorized\&quot;}&quot;
 }
 </code></pre></div><div id="otoroshi.next.plugins.JwtVerificationOnly" class="ng-plugin plugin-hidden pl">
 <h2><a href="#jwt-verification-only" name="jwt-verification-only" class="anchor"><span class="anchor-link"></span></a>Jwt verification only</h2>
@@ -1335,7 +1339,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;verifier&quot; : null,
-  &quot;fail_if_absent&quot; : true
+  &quot;fail_if_absent&quot; : true,
+  &quot;custom_response&quot; : false,
+  &quot;custom_response_status&quot; : 401,
+  &quot;custom_response_headers&quot; : { },
+  &quot;custom_response_body&quot; : &quot;{\&quot;error\&quot;:\&quot;unauthorized\&quot;}&quot;
 }
 </code></pre></div><div id="otoroshi.next.plugins.LimitHeaderInTooLong" class="ng-plugin plugin-hidden pl">
 <h2><a href="#limit-headers-in-too-long" name="limit-headers-in-too-long" class="anchor"><span class="anchor-link"></span></a>Limit headers in too long</h2>
@@ -2686,6 +2694,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;role_prefix&quot; : null,
   &quot;roles&quot; : &quot;roles&quot;
 }
+</code></pre></div><div id="otoroshi.next.plugins.React2SShellDetector" class="ng-plugin plugin-hidden pl">
+<h2><a href="#react2shell-detector" name="react2shell-detector" class="anchor"><span class="anchor-link"></span></a>React2Shell detector</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.React2SShellDetector</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin detects (and block) React2Shell attacks</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;block&quot; : false
+}
 </code></pre></div><div id="otoroshi.next.plugins.ReadOnlyCalls" class="ng-plugin plugin-hidden pl">
 <h2><a href="#read-only-requests" name="read-only-requests" class="anchor"><span class="anchor-link"></span></a>Read only requests</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -3229,8 +3251,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin can split a portion of the traffic to canary backends between two dates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;start&quot; : &quot;2025-12-03T08:27:36.471Z&quot;,
-  &quot;stop&quot; : &quot;2025-12-04T08:27:36.492Z&quot;,
+  &quot;start&quot; : &quot;2025-12-08T13:28:24.569Z&quot;,
+  &quot;stop&quot; : &quot;2025-12-09T13:28:24.589Z&quot;,
   &quot;increment_percent&quot; : 1,
   &quot;targets&quot; : [ ],
   &quot;root&quot; : &quot;/&quot;
@@ -3259,7 +3281,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.UdpTunnel</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin creates UDP tunnels through otoroshi</p></div><div id="otoroshi.next.plugins.UserProfileEndpoint" class="ng-plugin plugin-hidden pl">
+<p>This plugin creates UDP tunnels through otoroshi</p></div><div id="otoroshi.next.plugins.UserLogoutEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#user-logout-endpoint" name="user-logout-endpoint" class="anchor"><span class="anchor-link"></span></a>User logout endpoint</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.UserLogoutEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin logout the current user</p></div><div id="otoroshi.next.plugins.UserProfileEndpoint" class="ng-plugin plugin-hidden pl">
 <h2><a href="#user-profile-endpoint" name="user-profile-endpoint" class="anchor"><span class="anchor-link"></span></a>User profile endpoint</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -4260,6 +4291,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#public-private-paths" class="header">Public/Private paths</a></li>
     <li><a href="../plugins/built-in-plugins.html#query-param-transformer" class="header">Query param transformer</a></li>
     <li><a href="../plugins/built-in-plugins.html#rbac" class="header">RBAC</a></li>
+    <li><a href="../plugins/built-in-plugins.html#react2shell-detector" class="header">React2Shell detector</a></li>
     <li><a href="../plugins/built-in-plugins.html#read-only-requests" class="header">Read only requests</a></li>
     <li><a href="../plugins/built-in-plugins.html#redirection" class="header">Redirection</a></li>
     <li><a href="../plugins/built-in-plugins.html#regex-request-body-rewriter" class="header">Regex request body rewriter</a></li>
@@ -4294,6 +4326,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#time-controlled-canary-mode" class="header">Time controlled Canary mode</a></li>
     <li><a href="../plugins/built-in-plugins.html#time-restriction" class="header">Time Restriction</a></li>
     <li><a href="../plugins/built-in-plugins.html#udp-tunnel" class="header">UDP Tunnel</a></li>
+    <li><a href="../plugins/built-in-plugins.html#user-logout-endpoint" class="header">User logout endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#user-profile-endpoint" class="header">User profile endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#w3c-trace-context" class="header">W3C Trace Context</a></li>
     <li><a href="../plugins/built-in-plugins.html#wasm-access-control" class="header">Wasm Access control</a></li>

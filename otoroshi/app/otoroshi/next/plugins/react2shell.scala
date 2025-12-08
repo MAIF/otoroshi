@@ -21,18 +21,18 @@ case class React2SShellDetectorConfig(block: Boolean = false) extends NgPluginCo
 
 object React2SShellDetectorConfig {
   def configFlow: Seq[String] = Seq(
-    "block",
+    "block"
   )
-  def configSchema: JsObject = Json.obj(
-    "block" -> Json.obj("type" -> "bool", "label" -> "Block request", "default" -> true),
+  def configSchema: JsObject  = Json.obj(
+    "block" -> Json.obj("type" -> "bool", "label" -> "Block request", "default" -> true)
   )
-  val format = new Format[React2SShellDetectorConfig] {
+  val format                  = new Format[React2SShellDetectorConfig] {
     override def reads(json: JsValue): JsResult[React2SShellDetectorConfig] = Try {
       React2SShellDetectorConfig(
-        block = (json \ "block").asOpt[Boolean].getOrElse(false),
+        block = (json \ "block").asOpt[Boolean].getOrElse(false)
       )
     } match {
-      case Success(cfg) => JsSuccess(cfg)
+      case Success(cfg)       => JsSuccess(cfg)
       case Failure(exception) => JsError(exception.getMessage)
     }
     override def writes(o: React2SShellDetectorConfig): JsValue = {
@@ -60,8 +60,8 @@ class React2SShellDetector extends NgRequestTransformer {
   override def description: Option[String]       =
     "This plugin detects (and block) React2Shell attacks".some
   override def noJsForm: Boolean                 = true
-  override def configFlow: Seq[String]                     = React2SShellDetectorConfig.configFlow
-  override def configSchema: Option[JsObject]              = React2SShellDetectorConfig.configSchema.some
+  override def configFlow: Seq[String]           = React2SShellDetectorConfig.configFlow
+  override def configSchema: Option[JsObject]    = React2SShellDetectorConfig.configSchema.some
 
   private val rscHeaders = Set("next-action", "rsc-action-id")
 
@@ -80,23 +80,28 @@ class React2SShellDetector extends NgRequestTransformer {
     "constructor:constructor"
   )
 
-  private def sendAlert(ctx: NgTransformerRequestContext, payload: String, suspiciousScore: Int)(implicit env: Env): Unit = {
+  private def sendAlert(ctx: NgTransformerRequestContext, payload: String, suspiciousScore: Int)(implicit
+      env: Env
+  ): Unit = {
     ReactToShellDetectedAlert(UUID.randomUUID().toString, ctx, payload, suspiciousScore).toAnalytics()
   }
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     if (ctx.otoroshiRequest.hasBody && ctx.otoroshiRequest.method.toLowerCase == "post") {
-      val config = ctx.cachedConfig(internalName)(React2SShellDetectorConfig.format).getOrElse(React2SShellDetectorConfig())
-      val headers = ctx.otoroshiRequest.headers
+      val config       =
+        ctx.cachedConfig(internalName)(React2SShellDetectorConfig.format).getOrElse(React2SShellDetectorConfig())
+      val headers      = ctx.otoroshiRequest.headers
       val hasRscHeader = headers.keys.exists(k => rscHeaders.contains(k.toLowerCase()))
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val bodyStr = bodyRaw.utf8String
+        val bodyStr           = bodyRaw.utf8String
         val hasFlightPatterns = flightPatterns.exists(p => bodyStr.contains(p))
-        val hasRecon = reconKeywords.exists(bodyStr.contains)
-        val suspiciousScore =
+        val hasRecon          = reconKeywords.exists(bodyStr.contains)
+        val suspiciousScore   =
           (if (hasRscHeader) 1 else 0) +
-            (if (hasFlightPatterns) 2 else 0) +
-            (if (hasRecon) 3 else 0)
+          (if (hasFlightPatterns) 2 else 0) +
+          (if (hasRecon) 3 else 0)
         if (suspiciousScore >= 3) {
           sendAlert(ctx, bodyStr, suspiciousScore)
           if (config.block) {
@@ -114,10 +119,12 @@ class React2SShellDetector extends NgRequestTransformer {
   }
 }
 
-case class ReactToShellDetectedAlert(`@id`: String,
-                                     ctx: NgTransformerRequestContext,
-                                     payload: String,
-                                     suspiciousScore: Int) extends AlertEvent {
+case class ReactToShellDetectedAlert(
+    `@id`: String,
+    ctx: NgTransformerRequestContext,
+    payload: String,
+    suspiciousScore: Int
+) extends AlertEvent {
 
   override def `@service`: String            = "Otoroshi"
   override def `@serviceId`: String          = "--"
@@ -128,17 +135,17 @@ case class ReactToShellDetectedAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue =
     Json.obj(
-      "@id"            -> `@id`,
-      "@timestamp"     -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
-      "@type"          -> `@type`,
-      "@product"       -> _env.eventsName,
-      "@serviceId"     -> `@serviceId`,
-      "@service"       -> `@service`,
-      "@env"           -> "prod",
-      "alert"          -> "ReactToShellDetectedAlert",
-      "route"          -> ctx.route.json,
-      "payload"        -> payload,
+      "@id"              -> `@id`,
+      "@timestamp"       -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"            -> `@type`,
+      "@product"         -> _env.eventsName,
+      "@serviceId"       -> `@serviceId`,
+      "@service"         -> `@service`,
+      "@env"             -> "prod",
+      "alert"            -> "ReactToShellDetectedAlert",
+      "route"            -> ctx.route.json,
+      "payload"          -> payload,
       "suspicious_score" -> suspiciousScore,
-      "request"        -> JsonHelpers.requestToJson(ctx.request, ctx.attrs)
+      "request"          -> JsonHelpers.requestToJson(ctx.request, ctx.attrs)
     )
 }

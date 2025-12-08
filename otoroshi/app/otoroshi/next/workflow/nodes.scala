@@ -1211,9 +1211,9 @@ case class ForEachNode(json: JsObject) extends Node {
           .runWith(Sink.seq)(using env.otoroshiMaterializer)
           .map { seq =>
             seq.lastOption match {
-              case None => JsArray().right
+              case None            => JsArray().right
               case Some(Left(err)) => Left(err)
-              case Some(Right(_)) => {
+              case Some(Right(_))  => {
                 JsArray(seq.collect { case Right(v) =>
                   v
                 }).right
@@ -1238,9 +1238,9 @@ case class ForEachNode(json: JsObject) extends Node {
           .runWith(Sink.seq)(using env.otoroshiMaterializer)
           .map { seq =>
             seq.lastOption match {
-              case None => JsArray().right
+              case None            => JsArray().right
               case Some(Left(err)) => Left(err)
-              case Some(Right(_)) => {
+              case Some(Right(_))  => {
                 JsArray(seq.collect { case Right(v) =>
                   v
                 }).right
@@ -1330,9 +1330,9 @@ case class MapNode(json: JsObject) extends Node {
             .runWith(Sink.seq)(using env.otoroshiMaterializer)
             .map { seq =>
               seq.lastOption match {
-                case None => JsArray().right
+                case None            => JsArray().right
                 case Some(Left(err)) => Left(err)
-                case Some(Right(_)) => {
+                case Some(Right(_))  => {
                   val result = JsArray(seq.collect { case Right(v) =>
                     v
                   })
@@ -1427,9 +1427,9 @@ case class FlatMapNode(json: JsObject) extends Node {
             .runWith(Sink.seq)(using env.otoroshiMaterializer)
             .map { seq =>
               seq.lastOption match {
-                case None => JsArray().right
+                case None            => JsArray().right
                 case Some(Left(err)) => Left(err)
-                case Some(Right(_)) => {
+                case Some(Right(_))  => {
                   val result = JsArray(seq.collect { case Right(JsArray(v)) =>
                     v
                   }.flatten)
@@ -1531,9 +1531,9 @@ case class FilterNode(json: JsObject) extends Node {
             .runWith(Sink.seq)(using env.otoroshiMaterializer)
             .map { seq =>
               seq.lastOption match {
-                case None => JsArray().right
+                case None                 => JsArray().right
                 case Some((_, Left(err))) => Left(err)
-                case Some((_, Right(_))) => {
+                case Some((_, Right(_)))  => {
                   val result = JsArray(
                     seq
                       .collect { case (JsBoolean(v), Right(e)) =>
