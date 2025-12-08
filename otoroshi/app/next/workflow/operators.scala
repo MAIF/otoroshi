@@ -2341,7 +2341,13 @@ class ContainsOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val value              = opts.select("value").asValue
+    val values: Seq[JsValue] = opts.select("value").asOpt[JsValue].map {
+      case v @ JsString(_) => Seq(v)
+      case v @ JsNumber(_) => Seq(v)
+      case v @ JsBoolean(_) => Seq(v)
+      case JsArray(values) => values
+      case _ => Seq.empty[JsValue]
+    }.getOrElse(Seq.empty)
     val container: JsValue = opts.select("container").asOpt[JsValue] match {
       case Some(v) => v
       case None    => {
@@ -2355,10 +2361,10 @@ class ContainsOperator extends WorkflowOperator {
       }
     }
     (container match {
-      case JsObject(values) if value.isInstanceOf[JsString] => values.contains(value.asString)
-      case JsArray(values)                                  => values.contains(value)
-      case JsString(str) if value.isInstanceOf[JsString]    => str.contains(value.asString)
-      case _                                                => false
+      case JsObject(objValues) => values.filter(_.isInstanceOf[JsString]).forall(value => objValues.contains(value.asString))
+      case JsArray(arrvalues)  => values.forall(value => arrvalues.contains(value))
+      case JsString(str)       => values.filter(_.isInstanceOf[JsString]).forall(value => str.contains(value.asString))
+      case _                   => false
     }).json
   }
 }
