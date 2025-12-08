@@ -76,6 +76,57 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$round", new RoundOperator())
     WorkflowOperator.registerOperator("$parse_number", new ParseNumberOperator())
     WorkflowOperator.registerOperator("$first_truthy", new FirstTruthyOperator())
+    WorkflowOperator.registerOperator("$contains_ignore_case", new ContainsIgnoreCaseOperator())
+  }
+}
+
+class ContainsIgnoreCaseOperator extends WorkflowOperator {
+
+  override def documentationName: String                  = "$contains_ignore_case"
+  override def documentationDescription: String           = "This operator return if a string contains another string case insensitive style"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "properties" -> Json.obj(
+        "value"   -> Json.obj("type" -> "string", "description" -> "value to check"),
+        "container"   -> Json.obj("type" -> "string", "description" -> "container value"),
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$first_truthy" -> Json.obj(
+        "value" -> "hello",
+        "container" -> "Hello World !"
+      )
+    )
+  )
+  override def documentationFormSchema: Option[JsObject] = Some(
+    Json.obj(
+      "value"   -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Value"
+      ),
+      "container" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Container"
+      ),
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("value").asOptString.map { value =>
+      opts.select("container").asValue match {
+        case JsString(str) => str.toLowerCase().contains(value.toLowerCase()).json
+        case JsObject(map) => map.exists {
+          case (key, _) => key.toLowerCase() == value.toLowerCase()
+        }.json
+        case JsArray(seq) => seq.exists {
+          case JsString(str) => str.toLowerCase() == value.toLowerCase()
+          case _ => false
+        }.json
+        case _ => false.json
+      }
+    }.getOrElse(false.json)
   }
 }
 
@@ -1648,7 +1699,7 @@ class ParseDateTimeOperator extends WorkflowOperator {
       .map(p => DateTimeFormat.forPattern(p))
       .getOrElse(ISODateTimeFormat.dateTimeParser.withOffsetParsed)
 
-    println("ParseDateTimeOperator", DateTime.parse(opts.select("value").as[String], pattern).toDate.getTime.json)
+    //println("ParseDateTimeOperator", DateTime.parse(opts.select("value").as[String], pattern).toDate.getTime.json)
 
     opts.select("value").asOpt[String] match {
       case Some(dateStr) => DateTime.parse(dateStr, pattern).toDate.getTime.json
