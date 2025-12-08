@@ -1161,7 +1161,7 @@ class UppercaseOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.select("value").as[String].toUpperCase().json
+    opts.select("value").asOpt[String].map(_.toLowerCase().json).getOrElse(JsNull)
   }
 }
 
@@ -1198,7 +1198,7 @@ class LowercaseOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.select("value").as[String].toLowerCase().json
+    opts.select("value").asOpt[String].map(_.toLowerCase().json).getOrElse(JsNull)
   }
 }
 
