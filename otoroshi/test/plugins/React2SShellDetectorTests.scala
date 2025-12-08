@@ -7,10 +7,11 @@ import otoroshi.next.plugins.{NgRedirectionSettings, OverrideHost, React2SShellD
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.WSBodyWritables.given
 
 class React2SShellDetectorTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{given, *}
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -87,11 +88,11 @@ class React2SShellDetectorTests(parent: PluginsTestSpec) {
          |""".stripMargin)
     .futureValue
 
-  passingResp1.status mustBe Status.OK
+  passingResp1.status.mustBe(Status.OK)
   println(s"passingResp1.body: ${passingResp2.status} - ${passingResp1.body}")
-  passingResp2.status mustBe Status.OK
+  passingResp2.status.mustBe(Status.OK)
   println(s"passingResp2.body: ${passingResp2.status} - ${passingResp2.body}")
-  blockedResp.status mustBe Status.UNAUTHORIZED
+  blockedResp.status.mustBe(Status.UNAUTHORIZED)
   println(s"blockedResp.body: ${blockedResp.status} - ${blockedResp.body}")
 
 
