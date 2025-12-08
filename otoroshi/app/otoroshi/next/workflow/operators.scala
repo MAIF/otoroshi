@@ -115,17 +115,36 @@ class ContainsIgnoreCaseOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.select("value").asOptString.map { value =>
-      opts.select("container").asValue match {
-        case JsString(str) => str.toLowerCase().contains(value.toLowerCase()).json
-        case JsObject(map) => map.exists {
-          case (key, _) => key.toLowerCase() == value.toLowerCase()
-        }.json
-        case JsArray(seq) => seq.exists {
-          case JsString(str) => str.toLowerCase() == value.toLowerCase()
+    val all = !opts.select("mode").asOptString.contains("contains_any")
+    val opt: Option[Seq[String]] = opts.select("value").asOpt[JsValue].orElse(opts.select("values").asOpt[JsValue]).map {
+      case JsString(str) => Seq(str)
+      case v @ JsNumber(_) => Seq(v.toString())
+      case v @ JsBoolean(_) => Seq(v.toString())
+      case JsArray(values) => values.collect {
+        case JsString(str) => str
+        case v @ JsNumber(_) => v.toString()
+        case v @ JsBoolean(_) => v.toString()
+      }
+      case _ => Seq.empty[String]
+    }
+    opt.map { values =>
+      val predicate = (value: String) => {
+        opts.select("container").asValue match {
+          case JsString(str) => str.toLowerCase().contains(value.toLowerCase())
+          case JsObject(map) => map.exists {
+            case (key, _) => key.toLowerCase() == value.toLowerCase()
+          }
+          case JsArray(seq) => seq.exists {
+            case JsString(str) => str.toLowerCase() == value.toLowerCase()
+            case _ => false
+          }
           case _ => false
-        }.json
-        case _ => false.json
+        }
+      }
+      if (all) {
+        values.forall(predicate).json
+      } else {
+        values.exists(predicate).json
       }
     }.getOrElse(false.json)
   }
@@ -2341,7 +2360,14 @@ class ContainsOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val value              = opts.select("value").asValue
+    val all = !opts.select("mode").asOptString.contains("contains_any")
+    val values: Seq[JsValue] = opts.select("value").asOpt[JsValue].orElse(opts.select("values").asOpt[JsValue]).map {
+      case v @ JsString(_) => Seq(v)
+      case v @ JsNumber(_) => Seq(v)
+      case v @ JsBoolean(_) => Seq(v)
+      case JsArray(values) => values
+      case _ => Seq.empty[JsValue]
+    }.getOrElse(Seq.empty)
     val container: JsValue = opts.select("container").asOpt[JsValue] match {
       case Some(v) => v
       case None    =>
@@ -2353,12 +2379,21 @@ class ContainsOperator extends WorkflowOperator {
           case Some(value)                   => value.at(path.get).asValue
         }
     }
-    (container match {
-      case JsObject(values) if value.isInstanceOf[JsString] => values.contains(value.asString)
-      case JsArray(values)                                  => values.contains(value)
-      case JsString(str) if value.isInstanceOf[JsString]    => str.contains(value.asString)
-      case _                                                => false
-    }).json
+    if (all) {
+      (container match {
+        case JsObject(objValues) => values.filter(_.isInstanceOf[JsString]).forall(value => objValues.contains(value.asString))
+        case JsArray(arrvalues) => values.forall(value => arrvalues.contains(value))
+        case JsString(str) => values.filter(_.isInstanceOf[JsString]).forall(value => str.contains(value.asString))
+        case _ => false
+      }).json
+    } else {
+      (container match {
+        case JsObject(objValues) => values.filter(_.isInstanceOf[JsString]).exists(value => objValues.contains(value.asString))
+        case JsArray(arrvalues) => values.exists(value => arrvalues.contains(value))
+        case JsString(str) => values.filter(_.isInstanceOf[JsString]).exists(value => str.contains(value.asString))
+        case _ => false
+      }).json
+    }
   }
 }
 
