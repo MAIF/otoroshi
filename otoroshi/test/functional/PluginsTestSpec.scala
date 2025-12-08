@@ -609,5 +609,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Websocket JQ Transformer" in {
       new WebsocketJQTransformerTests(this)
     }
+    "React2SShellDetector" in {
+      new React2SShellDetectorTests(this)
+    }
   }
 }

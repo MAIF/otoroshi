@@ -2574,9 +2574,12 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         env.datastores.routeDataStore.findById(id) flatMap {
           case Some(service) => service.legacy.some.vfuture
           case None          =>
-            env.datastores.routeCompositionDataStore.findById(id) map {
-              case Some(service) => service.toRoutes.head.legacy.some
-              case None          => None
+            env.proxyState.route(id) match {
+              case Some(service) => service.legacy.some.vfuture
+              case None => env.datastores.routeCompositionDataStore.findById(id) map {
+                case Some(service) => service.toRoutes.head.legacy.some
+                case None          => None
+              }
             }
         }
     }
