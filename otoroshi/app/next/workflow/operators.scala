@@ -222,9 +222,20 @@ class AndOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val a = opts.select("a").asValue
-    val b = opts.select("b").asValue
-    (IsTruthyOperator.isTruthy(a) && IsTruthyOperator.isTruthy(b)).json
+    opts.select("values").asOpt[Seq[JsValue]].map { values =>
+      if (values.size >= 2) {
+        val head = values.head
+        values.tail.foldLeft(head) {
+          case (a, b) => (IsTruthyOperator.isTruthy(a) && IsTruthyOperator.isTruthy(b)).json
+        }
+      } else {
+        false.json
+      }
+    }.getOrElse {
+      val a = opts.select("a").asValue
+      val b = opts.select("b").asValue
+      (IsTruthyOperator.isTruthy(a) && IsTruthyOperator.isTruthy(b)).json
+    }
   }
 }
 
@@ -268,9 +279,20 @@ class OrOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val a = opts.select("a").asValue
-    val b = opts.select("b").asValue
-    (IsTruthyOperator.isTruthy(a) || IsTruthyOperator.isTruthy(b)).json
+    opts.select("values").asOpt[Seq[JsValue]].map { values =>
+      if (values.size >= 2) {
+        val head = values.head
+        values.tail.foldLeft(head) {
+          case (a, b) => (IsTruthyOperator.isTruthy(a) || IsTruthyOperator.isTruthy(b)).json
+        }
+      } else {
+        false.json
+      }
+    }.getOrElse {
+      val a = opts.select("a").asValue
+      val b = opts.select("b").asValue
+      (IsTruthyOperator.isTruthy(a) || IsTruthyOperator.isTruthy(b)).json
+    }
   }
 }
 
