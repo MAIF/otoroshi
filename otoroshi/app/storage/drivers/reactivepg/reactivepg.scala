@@ -849,24 +849,29 @@ class ReactivePgRedis(
       }
     }
 
-  override def mget(keys: String*): Future[Seq[Option[ByteString]]] =
-    measure("pg.ops.mget") {
-      val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count + 1}" }.mkString(", ")
-      querySeq(
-        s"select key, value, counter, type from $schemaDotTable where key in ($inValues) and (ttl_starting_at + ttl) > NOW();",
-        keys
-      ) { row =>
-        val value = row.optString("type") match {
-          case Some("counter") => row.optLong("counter").map(_.toString.byteString)
-          case Some("string")  => row.optString("value").filter(_.nonEmpty).map(_.byteString)
-          case _               => None
+  override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
+    if (keys.isEmpty) {
+      Seq.empty.vfuture
+    } else {
+      measure("pg.ops.mget") {
+        val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count + 1}" }.mkString(", ")
+        querySeq(
+          s"select key, value, counter, type from $schemaDotTable where key in ($inValues) and (ttl_starting_at + ttl) > NOW();",
+          keys
+        ) { row =>
+          val value = row.optString("type") match {
+            case Some("counter") => row.optLong("counter").map(_.toString.byteString)
+            case Some("string") => row.optString("value").filter(_.nonEmpty).map(_.byteString)
+            case _ => None
+          }
+          row.optString("key").map(k => (k, value))
+        }.map { tuples =>
+          val m = tuples.toMap
+          keys.map(k => m.get(k).flatten)
         }
-        row.optString("key").map(k => (k, value))
-      }.map { tuples =>
-        val m = tuples.toMap
-        keys.map(k => m.get(k).flatten)
       }
     }
+  }
 
   override def set(
       key: String,
@@ -879,16 +884,21 @@ class ReactivePgRedis(
 
   override def del(keys: String*): Future[Long] = hardDelete(keys: _*)
 
-  def hardDelete(keys: String*): Future[Long] =
-    measure("pg.ops.del") {
-      val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count + 1}" }.mkString(", ")
-      queryRaw(
-        s"delete from $schemaDotTable where key in ($inValues);",
-        keys
-      ) { _ =>
-        keys.size
+  def hardDelete(keys: String*): Future[Long] = {
+    if (keys.isEmpty) {
+      0L.vfuture
+    } else {
+      measure("pg.ops.del") {
+        val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count + 1}" }.mkString(", ")
+        queryRaw(
+          s"delete from $schemaDotTable where key in ($inValues);",
+          keys
+        ) { _ =>
+          keys.size
+        }
       }
     }
+  }
 
   override def incr(key: String): Future[Long] = incrby(key, 1)
 
