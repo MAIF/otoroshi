@@ -62,7 +62,7 @@ val prometheusVersion       = "0.16.0"
 val playJsonVersion         = "3.0.6"
 val webAuthnVersion         = "2.7.0"
 val kubernetesVersion       = "24.0.0"
-val bouncyCastleVersion     = "1.82"
+val bouncyCastleVersion     = "1.83"
 val bouncyCastleExtVersion  = "1.78.1"
 val pulsarVersion           = "2.12.0.1"
 val openTelemetryVersion    = "1.56.0"
@@ -209,7 +209,6 @@ libraryDependencies ++= Seq(
     "com.ongres.scram"                 % "scram-client"                              % scramVersion,
     "com.jayway.jsonpath"              % "json-path"                                 % "2.10.0",
     "com.cronutils"                    % "cron-utils"                                % "9.2.1",
-    "commons-lang"                     % "commons-lang"                              % "2.6",
     "com.datastax.oss"                 % "java-driver-core"                          % "4.17.0" excludeAll (excludesJackson *),
     "org.gnieh"                       %% "diffson-play-json"                         % "4.6.1" excludeAll ExclusionRule(organization = "org.apache.pekko"),
     "io.kubernetes"                    % "client-java"                               % kubernetesVersion excludeAll (excludesJackson *),
@@ -278,8 +277,8 @@ libraryDependencies ++= Seq(
     "com.networknt"                    % "json-schema-validator"                     % "1.5.8" excludeAll (excludeSlf4jAndJackson *),
     "jakarta.jms"                      % "jakarta.jms-api"                           % "3.1.0",
     "org.apache.activemq"              % "artemis-jakarta-client"                    % "2.44.0" excludeAll (excludeSlf4jAndJackson *),
-  "com.dimafeng"                    %% "testcontainers-scala-scalatest"            % "0.43.6" % Test,
-  "com.microsoft.playwright"         % "playwright"                                % "1.56.0" % Test
+  "com.dimafeng"                    %% "testcontainers-scala-scalatest"            % "0.44.0" % Test,
+  "com.microsoft.playwright"         % "playwright"                                % "1.57.0" % Test
 )
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")

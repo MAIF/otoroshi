@@ -5,7 +5,6 @@ import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers.{Assets, AssetsComponents}
 import next.models.{Api, ApiConsumerSubscription, RouteTemplate}
-import org.apache.commons.lang3.math.NumberUtils
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
@@ -1778,11 +1777,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using
                     case str if str == "null"                                     => JsNull
                     case str if str == "true"                                     => JsBoolean(true)
                     case str if str == "false"                                    => JsBoolean(false)
-                    case str if str.startsWith("{") && str.endsWith("}")          => Json.parse(str).asObject
-                    case str if str.startsWith("[") && str.endsWith("]")          => Json.parse(str).asArray
-                    case str if NumberUtils.isCreatable(str) && str.contains(".") => JsNumber(BigDecimal(str))
-                    case str if NumberUtils.isCreatable(str)                      => JsNumber(BigDecimal(str))
-                    case str                                                      => JsString(str)
+                    case str if str.startsWith("{") && str.endsWith("}")                        => Json.parse(str).asObject
+                    case str if str.startsWith("[") && str.endsWith("]")                        => Json.parse(str).asArray
+                    case str if Try(BigDecimal(str)).isSuccess && str.contains(".")             => JsNumber(BigDecimal(str))
+                    case str if Try(BigDecimal(str)).isSuccess                                  => JsNumber(BigDecimal(str))
+                    case str                                                                    => JsString(str)
                   }
                 )
               case (key, value)         => (key, value)
@@ -1818,11 +1817,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using
             case str if str == "null"                                     => JsNull
             case str if str == "true"                                     => JsBoolean(true)
             case str if str == "false"                                    => JsBoolean(false)
-            case str if str.startsWith("{") && str.endsWith("}")          => Json.parse(str).asObject
-            case str if str.startsWith("[") && str.endsWith("]")          => Json.parse(str).asArray
-            case str if NumberUtils.isCreatable(str) && str.contains(".") => JsNumber(BigDecimal(str))
-            case str if NumberUtils.isCreatable(str)                      => JsNumber(BigDecimal(str))
-            case str                                                      => JsString(str)
+            case str if str.startsWith("{") && str.endsWith("}")              => Json.parse(str).asObject
+            case str if str.startsWith("[") && str.endsWith("]")              => Json.parse(str).asArray
+            case str if Try(BigDecimal(str)).isSuccess && str.contains(".")   => JsNumber(BigDecimal(str))
+            case str if Try(BigDecimal(str)).isSuccess                        => JsNumber(BigDecimal(str))
+            case str                                                          => JsString(str)
           }.toMap
           Right(jsonValues.toSeq.foldLeft(default) {
             case (obj, (key, value)) if key.contains(".") =>

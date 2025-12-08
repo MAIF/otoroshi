@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import org.apache.commons.lang.StringEscapeUtils
+import play.twirl.api.HtmlFormat
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.*
@@ -275,11 +275,11 @@ class SwaggerUIPlugin extends NgBackendCall {
     }
 
     // Escape values to prevent XSS - use escapeHtml for values injected in HTML context
-    val safeTitle      = StringEscapeUtils.escapeHtml(config.title)
-    val safeSwaggerUrl = StringEscapeUtils.escapeHtml(config.swaggerUrl)
-    val safeVersion    = StringEscapeUtils.escapeHtml(config.swaggerUIVersion)
-    val safeLayout     = StringEscapeUtils.escapeHtml(config.layout)
-    val safeTheme      = StringEscapeUtils.escapeHtml(config.theme)
+    val safeTitle      = HtmlFormat.escape(config.title).toString
+    val safeSwaggerUrl = HtmlFormat.escape(config.swaggerUrl).toString
+    val safeVersion    = HtmlFormat.escape(config.swaggerUIVersion).toString
+    val safeLayout     = HtmlFormat.escape(config.layout).toString
+    val safeTheme      = HtmlFormat.escape(config.theme).toString
 
     val themeLink = if (config.theme.nonEmpty && config.theme != "default") {
       s"""    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-themes/themes/3.x/theme-$safeTheme.css">"""
