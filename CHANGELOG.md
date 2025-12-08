@@ -6,6 +6,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.10.0] - 2025-12-08
+
+
+https://github.com/MAIF/otoroshi/milestone/132?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.9.2...v17.10.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.10.0
+
+
+### Added 
+
+- `$parse_number` operator for workflows (#2360 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add an `$and` operator for workflows (#2364 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add an `$or` operator for workflows (#2365 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add a `$first_truthy` operator for workflows (#2366 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- allow to return custom error response on failed jwt verification (#2369 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add new `UserLogoutEndpoint` plugin (#2370 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add a plugin to detect and block `React2Shell` attacks (#2371 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- new `$contains_ignore_case` operator for workflows (#2372 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$contains` can now work as `contains_all` (#2374 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$contains_ignore_case` can now work as `contains_all` (#2375 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$contains_ignore_case` can now work as `contains_any` (#2376 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$contains` can now work as `contains_any` (#2377 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$or` can operator on sequence of values (#2378 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$and` can operator on sequence of values (#2379 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Update snow monkey page to use routes by default (#2373 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- Unable to Launch Chaos Engineering Plugin (v17.5.1) (#2361 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- avoid to fail when response path not present in the `http_call` function (#2362 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Avoid failing on empty array with `Map`, `FlatMap`, `Filter`, `Foreach` nodes (#2363 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Using authentication plugin in APIs does not work (#2367 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @dmorvant-altima
+
 ## [17.9.2] - 2025-12-03
 
 
