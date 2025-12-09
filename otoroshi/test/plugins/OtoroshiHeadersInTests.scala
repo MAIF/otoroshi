@@ -2,13 +2,13 @@ package plugins
 
 import functional.PluginsTestSpec
 import otoroshi.next.models.NgPluginInstance
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import play.api.http.Status
 
 class OtoroshiHeadersInTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

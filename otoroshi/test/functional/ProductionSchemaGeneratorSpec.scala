@@ -9,8 +9,8 @@ import otoroshi.api.schema.*
 
 import java.time.*
 import java.util.UUID
-import scala.reflect.runtime.universe.*
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe.*
 import scala.util.Try
 
 // Test data models
@@ -118,7 +118,7 @@ class ProductionSchemaGeneratorSpec extends AnyFlatSpec with Matchers {
     given formats: Formats = DefaultFormats
 
     def parseSchema(json: JValue): Map[String, Any] = {
-        import org.json4s.JsonAST._
+        import org.json4s.JsonAST.*
         
         def jValueToAny(jv: JValue): Any = jv match {
             case JString(s) => s

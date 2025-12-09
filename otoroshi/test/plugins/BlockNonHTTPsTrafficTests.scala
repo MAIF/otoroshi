@@ -13,7 +13,7 @@ import play.api.libs.json.*
 import scala.concurrent.duration.DurationInt
 
 class BlockNonHTTPsTrafficTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

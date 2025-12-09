@@ -1,21 +1,21 @@
 package plugins
 
 import functional.PluginsTestSpec
-import java.util.Base64
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.*
+import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
 import play.api.libs.json.*
 
+import java.util.Base64
 import scala.concurrent.duration.DurationInt
 
 class OtoroshiInfoTokenTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   def withUser() = {
     val authenticationModule = BasicAuthModuleConfig(

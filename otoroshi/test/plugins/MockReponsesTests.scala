@@ -10,7 +10,7 @@ import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.given
 
 class MockReponsesTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createLocalRoute(
     Seq(

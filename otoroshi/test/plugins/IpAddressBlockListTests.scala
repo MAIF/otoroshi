@@ -3,19 +3,13 @@ package plugins
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  AdditionalCookieIn,
-  AdditionalCookieInConfig,
-  IpAddressBlockList,
-  NgIpAddressesConfig,
-  OverrideHost
-}
+import otoroshi.next.plugins.*
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.http.Status
 import play.api.libs.json.*
 
 class IpAddressBlockListTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

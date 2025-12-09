@@ -1,7 +1,7 @@
 package plugins
 
-import org.apache.pekko.http.scaladsl.model.headers.{`Set-Cookie`, HttpCookie}
 import functional.PluginsTestSpec
+import org.apache.pekko.http.scaladsl.model.headers.{HttpCookie, `Set-Cookie`}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{AdditionalCookieOutConfig, MissingCookieOut, OverrideHost}
@@ -12,7 +12,7 @@ import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 
 class MissingCookiesOutTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val id    = IdGenerator.uuid
   val route = createRouteWithExternalTarget(

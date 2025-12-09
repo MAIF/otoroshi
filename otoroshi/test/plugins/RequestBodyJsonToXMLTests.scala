@@ -1,7 +1,7 @@
 package plugins
 
-import org.apache.pekko.util.ByteString
 import functional.PluginsTestSpec
+import org.apache.pekko.util.ByteString
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{AdditionalCookieInConfig, JsonToXmlRequest, JsonTransformConfig, OverrideHost}
@@ -14,7 +14,7 @@ import play.api.libs.ws.WSBodyWritables.writeableOf_JsValue
 import scala.xml.Elem
 
 class RequestBodyJsonToXMLTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

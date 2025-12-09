@@ -2,8 +2,8 @@ package plugins
 
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
-import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.*
+import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
@@ -11,7 +11,7 @@ import play.api.libs.json.*
 import play.api.libs.ws.WSAuthScheme
 
 class BasicAuthCallerTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   def checkProcess() = {
     def simpleBasicAuthRoute(): NgRoute = {

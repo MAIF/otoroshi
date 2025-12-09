@@ -1,15 +1,15 @@
 package plugins
 
+import com.dimafeng.testcontainers.GenericContainer
+import functional.PluginsTestSpec
 import org.apache.pekko.http.scaladsl.model.ContentTypes
 import org.apache.pekko.stream.Attributes
+import org.apache.pekko.stream.connectors.s3.*
 import org.apache.pekko.stream.connectors.s3.AccessStyle.PathAccessStyle
-import org.apache.pekko.stream.connectors.s3._
 import org.apache.pekko.stream.connectors.s3.headers.CannedAcl
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.dimafeng.testcontainers.GenericContainer
-import functional.PluginsTestSpec
 import org.testcontainers.containers.wait.strategy.Wait
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -25,7 +25,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider
 import scala.concurrent.duration.DurationInt
 
 class S3BackendTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val s3Container = GenericContainer(
     dockerImage = "quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z",

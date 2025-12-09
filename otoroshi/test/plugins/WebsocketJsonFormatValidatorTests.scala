@@ -1,21 +1,16 @@
 package plugins
 
+import functional.{PluginsTestSpec, WebsocketBackend}
 import org.apache.pekko.http.scaladsl.model.headers.Host
 import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import org.apache.pekko.http.scaladsl.{Http, HttpExt}
 import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
 import org.apache.pekko.{Done, NotUsed}
-import functional.{PluginsTestSpec, WebsocketBackend}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Seconds, Span}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  OverrideHost,
-  RejectStrategy,
-  WebsocketJsonFormatValidator,
-  WebsocketJsonFormatValidatorConfig
-}
+import otoroshi.next.plugins.{OverrideHost, RejectStrategy, WebsocketJsonFormatValidator, WebsocketJsonFormatValidatorConfig}
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.libs.json.*
 
@@ -25,7 +20,7 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
 class WebsocketJsonFormatValidatorTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   def closeConnection() = {
     implicit val http: HttpExt = Http()

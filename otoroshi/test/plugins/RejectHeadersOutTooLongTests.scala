@@ -1,7 +1,7 @@
 package plugins
 
-import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import functional.PluginsTestSpec
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, RejectHeaderConfig, RejectHeaderOutTooLong}
@@ -9,7 +9,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class RejectHeadersOutTooLongTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createLocalRoute(
     Seq(

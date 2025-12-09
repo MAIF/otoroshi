@@ -4,14 +4,14 @@ import functional.PluginsTestSpec
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.*
+import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class BasicAuthFromAuthModuleTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val authenticationModule = BasicAuthModuleConfig(
     id = IdGenerator.namedId("auth_mod", env),

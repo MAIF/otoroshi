@@ -1,10 +1,10 @@
 package functional
 
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.*
 import otoroshi.next.models.*
@@ -16,9 +16,9 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{Result, Results}
 
-import scala.util.{Failure, Success, Try}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success, Try}
 
 class Version1413Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

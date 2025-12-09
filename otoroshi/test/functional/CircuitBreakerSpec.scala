@@ -1,14 +1,14 @@
 package functional
 
-import java.util.concurrent.atomic.AtomicInteger
-import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import otoroshi.models.{ClientConfig, ServiceDescriptor, Target}
+import org.apache.pekko.actor.ActorSystem
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
+import otoroshi.models.{ClientConfig, ServiceDescriptor, Target}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Configuration
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.*
 
 class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {

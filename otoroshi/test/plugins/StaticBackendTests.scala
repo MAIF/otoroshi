@@ -12,7 +12,7 @@ import java.nio.file.{Files, Path}
 
 class StaticBackendTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val tempRoot: Path = Files.createTempDirectory("testRoot")
 

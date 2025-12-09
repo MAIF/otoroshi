@@ -5,22 +5,14 @@ import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  AuthModule,
-  JwtVerification,
-  NgAuthModuleConfig,
-  NgJwtUserExtractor,
-  NgJwtUserExtractorConfig,
-  NgJwtVerificationConfig,
-  OverrideHost
-}
+import otoroshi.next.plugins.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class JwtUserExtractorTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val verifier = GlobalJwtVerifier(
     id = IdGenerator.uuid,

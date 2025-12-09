@@ -9,7 +9,7 @@ import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class SwaggerUIPluginTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   def run() = {
     val route = createRouteWithExternalTarget(

@@ -1,10 +1,10 @@
 package plugins
 
-import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import ch.qos.logback.classic.spi.ILoggingEvent
-import ch.qos.logback.classic.{Level, Logger => LogbackLogger}
+import ch.qos.logback.classic.{Level, Logger as LogbackLogger}
 import ch.qos.logback.core.AppenderBase
 import functional.PluginsTestSpec
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.slf4j.LoggerFactory
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -13,7 +13,7 @@ import play.api.http.Status
 import play.api.libs.json.*
 
 class LimitHeadersOutTooLongTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createLocalRoute(
     Seq(

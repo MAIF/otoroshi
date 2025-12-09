@@ -10,7 +10,7 @@ import play.api.http.Status
 import play.api.libs.json.Json
 
 class UserAgentDetailsExtractorUserAgentEndpointTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

@@ -1,37 +1,12 @@
 package functional
 
+import com.typesafe.config.ConfigFactory
 import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.model.headers.{Host, HttpCookie, RawHeader, `Content-Type`, `Set-Cookie`}
-import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest}
-import org.apache.pekko.http.scaladsl.model.{HttpHeader, HttpRequest}
-import org.apache.pekko.http.scaladsl.{Http, HttpExt}
 import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
-import org.apache.pekko.util.ByteString
-import ch.qos.logback.classic.spi.ILoggingEvent
-import ch.qos.logback.core.AppenderBase
-import com.typesafe.config.ConfigFactory
 import org.scalatest.BeforeAndAfterAll
-import ch.qos.logback.classic.{Level, Logger as LogbackLogger}
-import org.joda.time.DateTime
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.time.{Minutes, Span}
-import org.slf4j.LoggerFactory
 import otoroshi.env.Env
-import otoroshi.models.*
-import otoroshi.next.models.*
-import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
-import otoroshi.next.plugins.{RejectHeaderOutTooLong, *}
-import otoroshi.plugins.hmac.HMACUtils
-import otoroshi.security.IdGenerator
-import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.syntax.implicits.given
-import play.api.http.Status
-import play.api.libs.json.{JsObject, JsString, JsValue, Json}
-import play.api.libs.ws.{DefaultWSCookie, WSRequest}
-import play.api.libs.ws.WSBodyWritables.{writeableOf_JsValue, writeableOf_String}
-import play.api.libs.ws.WSBodyReadables.readableAsString
+import otoroshi.next.plugins.RejectHeaderOutTooLong
 import play.api.{Configuration, Logger}
 import plugins.*
 

@@ -9,7 +9,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSBodyWritables.given
 
 class AllowHTTPMethodsTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

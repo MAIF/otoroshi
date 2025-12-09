@@ -3,19 +3,13 @@ package plugins
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  NgServiceQuotas,
-  NgServiceQuotasConfig,
-  OverrideHost,
-  ZipFileBackend,
-  ZipFileBackendConfig
-}
+import otoroshi.next.plugins.*
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class NgServiceQuotasTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

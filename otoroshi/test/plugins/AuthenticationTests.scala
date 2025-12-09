@@ -1,9 +1,10 @@
 package plugins
 
+import com.microsoft.playwright.*
 import com.microsoft.playwright.options.AriaRole
 import functional.PluginsTestSpec
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
-import otoroshi.models.{ApiKey, RouteIdentifier, TeamAccess, TenantAccess, UserRight, UserRights}
+import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -11,13 +12,12 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
-import com.microsoft.playwright.*
 
 import scala.jdk.CollectionConverters.ListHasAsScala
 
 class AuthenticationTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   def passWithApikey() = {
     val moduleConfiguration = BasicAuthModuleConfig(

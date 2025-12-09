@@ -1,7 +1,7 @@
 package functional
 
-import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.actor.ActorSystem
 import otoroshi.models.*
 import play.api.Configuration
 import play.api.libs.json.Json

@@ -11,7 +11,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.DefaultBodyReadables.readableAsString
 
 class CustomErrorTemplateTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

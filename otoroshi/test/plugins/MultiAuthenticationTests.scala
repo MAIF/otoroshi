@@ -13,15 +13,15 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.given
 import play.api.libs.ws.{DefaultWSCookie, WSBodyWritables}
-import WSBodyWritables.given
 
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.ListHasAsScala
 
 class MultiAuthenticationTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   def emailFlow() = {
     def createBasicAuthModule(): BasicAuthModuleConfig = {

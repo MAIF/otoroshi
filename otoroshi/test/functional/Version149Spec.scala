@@ -513,7 +513,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
 
   s"[$name] Otoroshi exchange protocol V2" should {
     "enforce token TTL (#290)" in {
-      import java.util.{Base64 => JavaBase64}
+      import java.util.Base64 as JavaBase64
       val counter  = new AtomicInteger(0)
       val body     = """{"message":"hello world"}"""
       val server   = TargetService
@@ -669,7 +669,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       stopServers()
     }
     "allow latest version of info token (#320)" in {
-      import java.util.{Base64 => JavaBase64}
+      import java.util.Base64 as JavaBase64
       val alg                        = HSAlgoSettings(
         512,
         "secret"

@@ -3,14 +3,14 @@ package plugins
 import functional.PluginsTestSpec
 import otoroshi.models.{ApiKey, ApiKeyRouteMatcher, RouteIdentifier}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import play.api.http.Status
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSAuthScheme
 
 class ApikeyQuotasTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

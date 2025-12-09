@@ -1,27 +1,27 @@
 package functional
 
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.classic.{Level, Logger as LogbackLogger}
+import ch.qos.logback.core.AppenderBase
+import com.typesafe.config.ConfigFactory
 import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.model.headers.{`Set-Cookie`, Host, HttpCookie, RawHeader}
+import org.apache.pekko.http.scaladsl.model.headers.{Host, HttpCookie, RawHeader, `Set-Cookie`}
 import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest}
 import org.apache.pekko.http.scaladsl.model.{HttpHeader, HttpRequest}
 import org.apache.pekko.http.scaladsl.{Http, HttpExt}
-import org.apache.pekko.stream.{Materializer, ThrottleMode}
 import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.stream.{Materializer, ThrottleMode}
 import org.apache.pekko.util.ByteString
-import ch.qos.logback.classic.spi.ILoggingEvent
-import ch.qos.logback.classic.{Level, Logger => LogbackLogger}
-import ch.qos.logback.core.AppenderBase
-import com.typesafe.config.ConfigFactory
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
 import org.slf4j.LoggerFactory
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models.*
-import otoroshi.next.models._
-import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
+import otoroshi.next.models.*
 import otoroshi.next.plugins.*
+import otoroshi.next.plugins.api.{NgPluginHelper, YesWebsocketBackend}
 import otoroshi.plugins.hmac.HMACUtils
 import otoroshi.security.IdGenerator
 import otoroshi.utils.crypto.Signatures

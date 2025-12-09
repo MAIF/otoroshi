@@ -10,7 +10,7 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.DefaultWSCookie
 
 class RemoveCookiesInTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

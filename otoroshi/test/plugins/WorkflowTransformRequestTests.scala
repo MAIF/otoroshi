@@ -3,9 +3,9 @@ package plugins
 import functional.PluginsTestSpec
 import otoroshi.models.EntityLocation
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.workflow._
+import otoroshi.next.workflow.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
@@ -13,7 +13,7 @@ import play.api.libs.json.{JsObject, Json}
 
 class WorkflowTransformRequestTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val workflow = Workflow(
     location = EntityLocation.default,

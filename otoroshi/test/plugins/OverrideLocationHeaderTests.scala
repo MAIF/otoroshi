@@ -1,7 +1,7 @@
 package plugins
 
-import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import functional.PluginsTestSpec
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, OverrideLocationHeader}
@@ -10,7 +10,7 @@ import play.api.http.Status
 import play.api.libs.json.Json
 
 class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   def redirectToRelativePath() = {
     val route = createLocalRoute(

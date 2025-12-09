@@ -15,7 +15,7 @@ import play.api.libs.json.*
 import java.util.Base64
 
 class HMACAccessValidatorTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   def default() = {
     val route = createRouteWithExternalTarget(

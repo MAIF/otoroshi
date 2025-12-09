@@ -3,8 +3,8 @@ package plugins
 import functional.PluginsTestSpec
 import otoroshi.models.ApiKey
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.*
+import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import play.api.http.Status
 import play.api.libs.json.JsObject
@@ -12,7 +12,7 @@ import play.api.libs.ws.DefaultBodyReadables.readableAsString
 
 class RobotsTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

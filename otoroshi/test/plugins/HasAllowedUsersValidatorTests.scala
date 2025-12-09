@@ -18,7 +18,7 @@ import scala.jdk.CollectionConverters.given
 
 class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   private def getUser(email: String, name: String, metadata: JsObject): BasicAuthUser = {
     BasicAuthUser(

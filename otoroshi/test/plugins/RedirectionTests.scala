@@ -10,7 +10,7 @@ import play.api.libs.json.{JsObject, Json}
 
 class RedirectionTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

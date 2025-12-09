@@ -9,7 +9,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.DefaultBodyWritables.given
 
 class RequestBodyXmlToJsonTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
   
   val route = createRouteWithExternalTarget(
     Seq(

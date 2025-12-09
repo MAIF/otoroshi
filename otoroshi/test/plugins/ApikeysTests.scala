@@ -4,23 +4,14 @@ import functional.PluginsTestSpec
 import otoroshi.models.{ApiKey, RouteIdentifier}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  AllowHttpMethods,
-  ApikeyCalls,
-  NgAllowedMethodsConfig,
-  NgApikeyCallsConfig,
-  NgApikeyExtractorCustomHeaders,
-  NgApikeyExtractors,
-  NgApikeyMatcher,
-  OverrideHost
-}
+import otoroshi.next.plugins.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class ApikeysTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   def default() = {
     val route = createRouteWithExternalTarget(

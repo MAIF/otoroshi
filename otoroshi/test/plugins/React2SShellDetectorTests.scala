@@ -3,13 +3,7 @@ package plugins
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  NgRedirectionSettings,
-  OverrideHost,
-  React2SShellDetector,
-  React2SShellDetectorConfig,
-  Redirection
-}
+import otoroshi.next.plugins.*
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
@@ -17,7 +11,7 @@ import play.api.libs.ws.WSBodyWritables.given
 
 class React2SShellDetectorTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

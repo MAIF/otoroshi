@@ -1,7 +1,6 @@
 package plugins
 
 import functional.PluginsTestSpec
-import java.util.Base64
 import otoroshi.models.{DefaultToken, GlobalJwtVerifier, HSAlgoSettings, InHeader}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -11,8 +10,10 @@ import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
+import java.util.Base64
+
 class JwtSignerTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   def default() = {
     val verifier = GlobalJwtVerifier(

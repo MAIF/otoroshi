@@ -9,7 +9,7 @@ import play.api.libs.json.*
 
 class HTTPClientCacheTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   def matchesWildcardMimeType() = {
     val route = createRouteWithExternalTarget(

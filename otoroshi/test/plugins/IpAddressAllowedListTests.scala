@@ -9,7 +9,7 @@ import play.api.libs.json.*
 
 class IpAddressAllowedListTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

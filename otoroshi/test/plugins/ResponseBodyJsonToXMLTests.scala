@@ -1,7 +1,7 @@
 package plugins
 
-import org.apache.pekko.util.ByteString
 import functional.PluginsTestSpec
+import org.apache.pekko.util.ByteString
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{JsonToXmlResponse, JsonTransformConfig, OverrideHost}
@@ -13,7 +13,7 @@ import scala.xml.Elem
 
 class ResponseBodyJsonToXMLTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

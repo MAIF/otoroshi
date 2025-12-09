@@ -11,7 +11,7 @@ import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 
 class MissingCookiesInTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val id    = IdGenerator.uuid
   val route = createRouteWithExternalTarget(

@@ -6,7 +6,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, XForwardedHeaders}
 
 class XForwardedHeadersTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

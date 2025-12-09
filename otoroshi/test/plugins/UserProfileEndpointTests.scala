@@ -17,7 +17,7 @@ import scala.jdk.CollectionConverters.ListHasAsScala
 
 class UserProfileEndpointTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val moduleConfiguration = BasicAuthModuleConfig(
     id = "BasicAuthModuleConfig",

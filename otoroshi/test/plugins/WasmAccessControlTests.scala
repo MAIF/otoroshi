@@ -3,17 +3,17 @@ package plugins
 import functional.PluginsTestSpec
 import io.otoroshi.wasm4s.scaladsl.{WasmSource, WasmSourceKind, WasmVmKillOptions}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.wasm.{WasmAuthorizations, WasmConfig}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class WasmAccessControlTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   def good() = {
     val id    = IdGenerator.uuid

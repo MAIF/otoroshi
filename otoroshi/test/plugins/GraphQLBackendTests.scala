@@ -12,7 +12,7 @@ import play.api.libs.ws.WSBodyWritables.writeableOf_JsValue
 
 class GraphQLBackendTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   def jsonDirective() = {
     val id    = IdGenerator.uuid

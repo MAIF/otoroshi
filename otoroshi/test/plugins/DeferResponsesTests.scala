@@ -11,7 +11,7 @@ import play.api.libs.json.*
 import scala.concurrent.duration.DurationInt
 
 class DeferResponsesTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

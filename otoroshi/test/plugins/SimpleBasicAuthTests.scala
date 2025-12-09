@@ -11,7 +11,7 @@ import play.api.libs.ws.WSAuthScheme
 
 class SimpleBasicAuthTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   def simpleBasicAuthRoute(): NgRoute = {
     createRouteWithExternalTarget(

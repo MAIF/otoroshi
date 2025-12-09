@@ -9,7 +9,7 @@ import play.api.http.Status
 import play.api.libs.json.*
 
 class ForceHTTPsTrafficTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createLocalRoute(
     Seq(

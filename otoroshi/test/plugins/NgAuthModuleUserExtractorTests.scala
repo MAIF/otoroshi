@@ -3,7 +3,6 @@ package plugins
 import com.microsoft.playwright.*
 import com.microsoft.playwright.options.AriaRole
 import functional.PluginsTestSpec
-import java.util.Base64
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
@@ -14,12 +13,13 @@ import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 
+import java.util.Base64
 import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters.given
 
 class NgAuthModuleUserExtractorTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val moduleConfiguration = BasicAuthModuleConfig(
     id = "BasicAuthModuleConfig",

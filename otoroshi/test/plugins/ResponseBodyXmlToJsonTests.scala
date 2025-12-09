@@ -1,8 +1,8 @@
 package plugins
 
+import functional.PluginsTestSpec
 import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.apache.pekko.util.ByteString
-import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{JsonTransformConfig, OverrideHost, XmlToJsonResponse}
@@ -11,7 +11,7 @@ import play.api.libs.json.{JsObject, Json}
 
 
 class ResponseBodyXmlToJsonTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createLocalRoute(
     Seq(

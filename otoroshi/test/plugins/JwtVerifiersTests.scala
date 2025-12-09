@@ -4,20 +4,14 @@ import functional.PluginsTestSpec
 import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  JwtVerification,
-  JwtVerificationOnly,
-  NgJwtVerificationConfig,
-  NgJwtVerificationOnlyConfig,
-  OverrideHost
-}
+import otoroshi.next.plugins.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class JwtVerifiersTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val verifier = GlobalJwtVerifier(
     id = IdGenerator.uuid,

@@ -4,19 +4,13 @@ import functional.PluginsTestSpec
 import otoroshi.models.ApiKey
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  ApikeyCalls,
-  NgApikeyCallsConfig,
-  NgApikeyMandatoryMetadata,
-  NgApikeyMandatoryMetadataConfig,
-  OverrideHost
-}
+import otoroshi.next.plugins.*
 import otoroshi.security.IdGenerator
 import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class ApikeyMandatoryMetadataTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

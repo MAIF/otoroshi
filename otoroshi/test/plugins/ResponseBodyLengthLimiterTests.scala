@@ -1,7 +1,7 @@
 package plugins
 
-import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import functional.PluginsTestSpec
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -15,7 +15,7 @@ import java.net.SocketException
 
 class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   def validCall() = {
     val message = Json.obj("message" -> "creation done")

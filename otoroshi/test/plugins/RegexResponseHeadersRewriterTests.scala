@@ -1,7 +1,7 @@
 package plugins
 
-import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import functional.PluginsTestSpec
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -10,7 +10,7 @@ import play.api.libs.json.*
 
 class RegexResponseHeadersRewriterTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createLocalRoute(
     Seq(

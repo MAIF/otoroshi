@@ -11,7 +11,7 @@ import play.api.http.Status
 import play.api.libs.json.*
 
 class ConsumerEndpointWithoutApikeyTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

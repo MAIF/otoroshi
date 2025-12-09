@@ -1,8 +1,8 @@
 package plugins
 
-import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.PluginsTestSpec
+import org.apache.pekko.stream.scaladsl.Source
 import otoroshi.api.Otoroshi
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
 import otoroshi.next.plugins.OverrideHost
@@ -21,7 +21,7 @@ import scala.concurrent.duration.DurationInt
 
 class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   case class OtoroshiInstance(port: Int, configuration: String) {
     private val ref: AtomicReference[Otoroshi] = new AtomicReference[Otoroshi]()

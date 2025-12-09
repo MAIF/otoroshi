@@ -4,19 +4,14 @@ import functional.PluginsTestSpec
 import org.joda.time.{DateTime, LocalTime}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  OverrideHost,
-  TimeRestrictedAccessPlugin,
-  TimeRestrictedAccessPluginConfig,
-  TimeRestrictedAccessPluginConfigRule
-}
+import otoroshi.next.plugins.{OverrideHost, TimeRestrictedAccessPlugin, TimeRestrictedAccessPluginConfig, TimeRestrictedAccessPluginConfigRule}
 import play.api.http.Status
 import play.api.libs.json.*
 
 import scala.concurrent.duration.DurationInt
 
 class TimeRestrictedAccessPluginTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val dnow  = DateTime.now()
   val now   = LocalTime.now()

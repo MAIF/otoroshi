@@ -1,31 +1,33 @@
 package functional
 
+import com.typesafe.config.ConfigFactory
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage}
-import org.apache.pekko.http.scaladsl.model.AttributeKeys
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.http.scaladsl.{Http, HttpExt}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Flow, Framing, Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.typesafe.config.ConfigFactory
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.OptionValues
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import org.slf4j
 import org.slf4j.LoggerFactory
 import otoroshi.api.Otoroshi
 import otoroshi.auth.AuthModuleConfig
-import otoroshi.models.*
 import otoroshi.env.Env
 import otoroshi.loader.modules.OtoroshiComponentsInstances
-import otoroshi.next.models.{NgBackend, NgClientConfig, NgDomainAndPath, NgFrontend, NgPluginInstance, NgPlugins, NgRoute, NgTarget}
+import otoroshi.models.*
+import otoroshi.next.models.*
+import otoroshi.next.workflow.Workflow
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.proxywasm.CorazaWafConfig
 import play.api.ApplicationLoader.Context
+import play.api.http.Status
 import play.api.libs.json.*
 import play.api.libs.ws.*
 import play.api.libs.ws.ahc.{AhcWSClient, AhcWSClientConfig}
@@ -36,13 +38,9 @@ import java.net.ServerSocket
 import java.nio.file.Files
 import java.util.Optional
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import scala.concurrent.duration.*
 import scala.concurrent.*
+import scala.concurrent.duration.*
 import scala.util.{Random, Success, Try}
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import org.slf4j
-import otoroshi.next.workflow.Workflow
-import play.api.http.Status
 
 trait AddConfiguration {
   def getConfiguration(configuration: Configuration): Configuration
@@ -551,7 +549,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
 trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with ScalaFutures with IntegrationPatience {
 
-  import Implicits.{given, *}
+  import Implicits.{*, given}
 
   def getTestConfiguration(configuration: Configuration): Configuration
 
@@ -2136,7 +2134,7 @@ class WebsocketBackend(
 
 object TargetService {
 
-  import Implicits.{given, *}
+  import Implicits.{*, given}
 
   def apply(host: Option[String], contentType: String, result: HttpRequest => String): TargetService = {
     new TargetService(

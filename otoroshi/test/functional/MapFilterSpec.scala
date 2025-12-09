@@ -1,15 +1,14 @@
 package functional
 
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.OptionValues
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import otoroshi.events.DataExporter
-import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType, Exporter, NoneExporter}
+import otoroshi.models.*
 import play.api.Logger
-import play.api.libs.json.{JsNumber, JsObject, Json}
+import play.api.libs.json.{JsNumber, JsObject, JsValue, Json}
 
 import scala.annotation.unused
-import play.api.libs.json.JsValue
 
 class MapFilterSpec extends AnyWordSpec with Matchers with OptionValues {
 

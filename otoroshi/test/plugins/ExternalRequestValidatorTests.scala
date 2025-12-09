@@ -13,7 +13,7 @@ import scala.concurrent.duration.DurationInt
 
 class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
 
-  import parent.{given, *}
+  import parent.{*, given}
 
   def rejectRequest() = {
     val invalidRoute = createLocalRoute(

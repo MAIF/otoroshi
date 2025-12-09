@@ -13,7 +13,7 @@ import play.api.libs.json.*
 import java.util.Base64
 
 class HMACCallerPluginTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(

@@ -1,13 +1,13 @@
 package plugins
 
+import functional.{PluginsTestSpec, WebsocketBackend}
+import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.headers.Host
 import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
 import org.apache.pekko.{Done, NotUsed}
-import functional.{PluginsTestSpec, WebsocketBackend}
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.Materializer
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Seconds, Span}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
@@ -21,7 +21,7 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
 class WebsocketJQTransformerTests(parent: PluginsTestSpec) {
-  import parent.{given, *}
+  import parent.{*, given}
 
   given system: ActorSystem = ActorSystem("otoroshi-websocket-test")
   given mat: Materializer = Materializer(system)
