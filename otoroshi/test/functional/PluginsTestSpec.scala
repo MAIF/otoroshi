@@ -592,5 +592,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Globally denied domain names" in {
       new NgIncomingRequestValidatorDeniedDomainNamesTests(this)
     }
+    "Globally allowed domain names" in {
+      new NgIncomingRequestValidatorAllowedDomainNamesTests(this)
+    }
   }
 }
