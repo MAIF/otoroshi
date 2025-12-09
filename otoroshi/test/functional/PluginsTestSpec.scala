@@ -589,5 +589,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Regex response body rewriter" in {
       new RegexResponseBodyRewriterTests(this)
     }
+    "Globally denied domain names" in {
+      new NgIncomingRequestValidatorDeniedDomainNamesTests(this)
+    }
   }
 }
