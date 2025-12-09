@@ -583,5 +583,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Traffic Mirroring" in {
       new TrafficMirroringTests(this)
     }
+    "Regex request body rewriter" in {
+      new RegexRequestBodyRewriterTests(this)
+    }
   }
 }
