@@ -16,6 +16,7 @@ import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.models.HttpProtocols.{HTTP_1_0, HTTP_1_1, HTTP_2_0, HTTP_3_0}
+import otoroshi.models.RoundRobin.reqCounter
 import otoroshi.next.models.{NgOverflowStrategy, NgRoute, NgTarget}
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
 import play.api.Logger
@@ -212,6 +213,9 @@ object LoadBalancing {
         case Some("LeastConnections")         => JsSuccess(LeastConnections)
         case Some("Random")                   => JsSuccess(Random)
         case Some("Sticky")                   => JsSuccess(Sticky)
+        case Some("HeaderHash")               => JsSuccess(new HeaderHash(json.select("header_name").asOpt[String].getOrElse("session-id")))
+        case Some("CookieHash")               => JsSuccess(new CookieHash(json.select("cookie_name").asOpt[String].getOrElse("session-id")))
+        case Some("QueryHash")                => JsSuccess(new QueryHash(json.select("query_name").asOpt[String].getOrElse("session-id")))
         case Some("IpAddressHash")            => JsSuccess(IpAddressHash)
         case Some("BestResponseTime")         => JsSuccess(BestResponseTime)
         case Some("WeightedBestResponseTime") =>
@@ -352,6 +356,93 @@ object Sticky extends LoadBalancing {
     val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
     val index: Int = Hashing.consistentHash(hash, targets.size)
     targets.apply(index)
+  }
+}
+
+object CookieHash {
+  val reqCounter = new AtomicInteger(0)
+}
+
+class CookieHash(cookieName: String) extends LoadBalancing {
+  override def needTrackingCookie: Boolean = false
+  override def toJson: JsValue = Json.obj("type" -> "CookieHash")
+  override def select(
+                       reqId: String,
+                       tid: String,
+                       req: RequestHeader,
+                       targets: Seq[Target],
+                       descId: String,
+                       attempts: Int
+                     )(implicit env: Env): Target = {
+    req.cookies.get(cookieName).map(_.value) match {
+      case None => {
+        val index: Int = CookieHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+        targets.apply(index)
+      }
+      case Some(trackingId) => {
+        val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
+        val index: Int = Hashing.consistentHash(hash, targets.size)
+        targets.apply(index)
+      }
+    }
+  }
+}
+
+object QueryHash {
+  val reqCounter = new AtomicInteger(0)
+}
+
+class QueryHash(queryName: String) extends LoadBalancing {
+  override def needTrackingCookie: Boolean = false
+  override def toJson: JsValue = Json.obj("type" -> "QueryHash")
+  override def select(
+                       reqId: String,
+                       tid: String,
+                       req: RequestHeader,
+                       targets: Seq[Target],
+                       descId: String,
+                       attempts: Int
+                     )(implicit env: Env): Target = {
+    req.getQueryString(queryName) match {
+      case None => {
+        val index: Int = QueryHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+        targets.apply(index)
+      }
+      case Some(trackingId) => {
+        val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
+        val index: Int = Hashing.consistentHash(hash, targets.size)
+        targets.apply(index)
+      }
+    }
+  }
+}
+
+object HeaderHash {
+  val reqCounter = new AtomicInteger(0)
+}
+
+class HeaderHash(headerName: String) extends LoadBalancing {
+  override def needTrackingCookie: Boolean = false
+  override def toJson: JsValue = Json.obj("type" -> "HeaderHash")
+  override def select(
+                       reqId: String,
+                       tid: String,
+                       req: RequestHeader,
+                       targets: Seq[Target],
+                       descId: String,
+                       attempts: Int
+                     )(implicit env: Env): Target = {
+    req.headers.get(headerName) match {
+      case None => {
+        val index: Int = HeaderHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+        targets.apply(index)
+      }
+      case Some(trackingId) => {
+        val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
+        val index: Int = Hashing.consistentHash(hash, targets.size)
+        targets.apply(index)
+      }
+    }
   }
 }
 
