@@ -586,5 +586,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Regex request body rewriter" in {
       new RegexRequestBodyRewriterTests(this)
     }
+    "Regex response body rewriter" in {
+      new RegexResponseBodyRewriterTests(this)
+    }
   }
 }
