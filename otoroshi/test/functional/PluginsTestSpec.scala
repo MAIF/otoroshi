@@ -580,5 +580,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "React2SShellDetector" in {
       new React2SShellDetectorTests(this)
     }
+    "Traffic Mirroring" in {
+      new TrafficMirroringTests(this)
+    }
   }
 }

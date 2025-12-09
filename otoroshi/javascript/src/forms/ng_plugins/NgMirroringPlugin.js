@@ -2,8 +2,13 @@ export default {
   id: 'cp:otoroshi.next.plugins.NgTrafficMirroring',
   config_schema: {
     to: {
-      type: 'String',
+      type: 'string',
       label: 'Target URL',
+    },
+    headers: {
+      label: 'headers',
+      type: 'object',
+      help: 'Specify headers',
     },
     enabled: {
       type: 'bool',
@@ -18,5 +23,5 @@ export default {
       label: 'Generate mirroring event',
     },
   },
-  config_flow: ['to', 'enabled', 'capture_response', 'generate_events'],
+  config_flow: ['to', 'headers', 'enabled', 'capture_response', 'generate_events'],
 };

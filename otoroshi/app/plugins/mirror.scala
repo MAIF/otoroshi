@@ -214,8 +214,9 @@ class MirroringPluginConfig(val conf: JsValue) {
 
   lazy val to: String                     = (conf \ "to").as[String]
   lazy val enabled: Boolean               = (conf \ "enabled").asOpt[Boolean].getOrElse(true)
-  lazy val shouldCaptureResponse: Boolean = (conf \ "captureResponse").asOpt[Boolean].getOrElse(false)
-  lazy val generateEvents: Boolean        = (conf \ "generateEvents").asOpt[Boolean].getOrElse(false)
+  lazy val shouldCaptureResponse: Boolean = (conf \ "capture_response").asOpt[Boolean].getOrElse(false)
+  lazy val generateEvents: Boolean        = (conf \ "generate_events").asOpt[Boolean].getOrElse(false)
+  lazy val headers: Map[String, String]   = (conf \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
 }
 
 object MirroringPluginConfig {

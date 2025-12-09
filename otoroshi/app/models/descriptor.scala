@@ -751,7 +751,8 @@ case class Target(
     mtlsConfig: MtlsConfig = MtlsConfig(),
     backup: Boolean = false,
     tags: Seq[String] = Seq.empty,
-    metadata: Map[String, String] = Map.empty
+    metadata: Map[String, String] = Map.empty,
+    port: Option[Int] = None
 ) {
 
   def toJson               = Target.format.writes(this)
@@ -765,14 +766,20 @@ case class Target(
 
   lazy val lkey = asKey
 
-  lazy val thePort: Int = if (host.contains(":")) {
-    host.split(":").last.toInt
-  } else
-    scheme.toLowerCase() match {
-      case "http"  => 80
-      case "https" => 443
-      case _       => 80
+  lazy val thePort: Int = {
+    port match {
+      case Some(value) => value
+      case None        =>
+        if (host.contains(":")) {
+          host.split(":").last.toInt
+        } else
+          scheme.toLowerCase() match {
+            case "http"  => 80
+            case "https" => 443
+            case _       => 80
+          }
     }
+  }
 
   lazy val theHost: String = if (host.contains(":")) {
     host.split(":").init.mkString("")

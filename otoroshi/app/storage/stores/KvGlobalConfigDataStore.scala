@@ -45,18 +45,22 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   ): Future[Long] = {
 
     @inline
-    def actualCall() =
-      redisCli.incrby(s"${_env.storageRoot}:throttling:perip:$ipAddress", 1L).flatMap { secCalls =>
-        if (!callsForIpAddressCache.containsKey(ipAddress)) {
-          callsForIpAddressCache.putIfAbsent(ipAddress, new java.util.concurrent.atomic.AtomicLong(secCalls))
-        } else {
-          callsForIpAddressCache.get(ipAddress).set(secCalls)
-        }
-        redisCli.pttl(s"${_env.storageRoot}:throttling:perip:$ipAddress").filter(_ > -1).recoverWith { case _ =>
-          callsForIpAddressCache.remove(ipAddress)
-          redisCli.expire(s"${_env.storageRoot}:throttling:perip:$ipAddress", _env.throttlingWindow)
-        } map (_ => secCalls)
+    def actualCall() = {
+      val key = s"${_env.storageRoot}:throttling:perip:$ipAddress"
+      redisCli.incrby(key, 1L).flatMap { secCalls =>
+        callsForIpAddressCache
+          .computeIfAbsent(ipAddress, _ => new java.util.concurrent.atomic.AtomicLong(0))
+          .set(secCalls)
+
+        redisCli
+          .pttl(key)
+          .filter(_ > -1)
+          .recoverWith { case _ =>
+            callsForIpAddressCache.remove(ipAddress)
+            redisCli.expire(key, _env.throttlingWindow)
+          } map (_ => secCalls)
       }
+    }
 
     if (callsForIpAddressCache.containsKey(ipAddress)) {
       for {
