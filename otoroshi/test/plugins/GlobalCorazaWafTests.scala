@@ -1,19 +1,38 @@
 package plugins
 
 import functional.PluginsTestSpec
-import otoroshi.models.GlobalConfig
-import otoroshi.next.models.NgPluginInstance
+import otoroshi.models.{EntityLocation, GlobalConfig}
+import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.api.NgPluginHelper
-import play.api.http.Status
-import play.api.libs.json.Json
+import otoroshi.security.IdGenerator
+import otoroshi.wasm.proxywasm.{CorazaWafConfig, NgCorazaWAF, NgCorazaWAFConfig}
+import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.{WSAuthScheme, WSResponse}
 
 import scala.concurrent.Future
 
-class NgIncomingRequestValidatorAllowedDomainNamesTests(parent: PluginsTestSpec) {
+class GlobalCorazaWafTests(parent: PluginsTestSpec) {
 
   import parent._
+
+  val coraza    = CorazaWafConfig(
+    location = EntityLocation.default,
+    id = IdGenerator.uuid,
+    name = "Coraza",
+    description = "Coraza",
+    tags = Seq.empty,
+    metadata = Map.empty,
+    inspectInputBody = true,
+    inspectOutputBody = true,
+    includeOwaspCRS = true,
+    isBlockingMode = true,
+    directives = Seq(
+      "SecRule REQUEST_URI \"@streq /admin\" \"id:101,phase:1,t:lowercase,deny,msg:'ADMIN PATH forbidden'\""
+    ),
+    poolCapacity = 2
+  )
+  val wafResult = createOtoroshiWAF(coraza).futureValue
 
   private def updateGlobalConfig(globalConfig: GlobalConfig) = {
     ws.url(s"http://localhost:$port/api/globalconfig")
@@ -32,11 +51,11 @@ class NgIncomingRequestValidatorAllowedDomainNamesTests(parent: PluginsTestSpec)
                   "incoming_request_validators" -> Json.arr(
                     Json.obj(
                       "config"  -> Json.obj(
-                        "domains" -> Json.arr("global-allowed-domain.oto.tools", "otoroshi-api.oto.tools")
+                        "ref" -> coraza.id
                       ),
                       "debug"   -> false,
                       "enabled" -> true,
-                      "plugin"  -> "cp:otoroshi.next.plugins.NgIncomingRequestValidatorAllowedDomainNames"
+                      "plugin"  -> "cp:otoroshi.wasm.proxywasm.NgIncomingRequestValidatorCorazaWAF"
                     )
                   )
                 )
@@ -72,20 +91,15 @@ class NgIncomingRequestValidatorAllowedDomainNamesTests(parent: PluginsTestSpec)
 
   val route = createRouteWithExternalTarget(
     Seq(
-      NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost])
-    ),
-    domain = Some("global-allowed-domain.oto.tools")
-  )
-
-  val route2 = createRouteWithExternalTarget(
-    Seq(
-      NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost])
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[OverrideHost]
+      )
     )
   )
 
-  updateGlobalConfig(globalConfig).futureValue
+  updateGlobalConfig(globalConfig)
 
-  val resp2 = ws
+  val resp = ws
     .url(s"http://127.0.0.1:$port/")
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain
@@ -93,20 +107,20 @@ class NgIncomingRequestValidatorAllowedDomainNamesTests(parent: PluginsTestSpec)
     .stream()
     .futureValue
 
-  resp2.status mustBe Status.OK
+  resp.status mustBe 200
 
-  val resp = ws
-    .url(s"http://127.0.0.1:$port/")
+  val unauthorizedCall = ws
+    .url(s"http://127.0.0.1:$port/admin")
     .withHttpHeaders(
-      "Host" -> route2.frontend.domains.head.domain
+      "Host" -> route.frontend.domains.head.domain
     )
     .stream()
     .futureValue
 
-  resp.status mustBe Status.FORBIDDEN
+  unauthorizedCall.status mustBe 403
 
-  resetGlobalConfig(globalConfig).futureValue
+  resetGlobalConfig(globalConfig)
 
+  deleteOtoroshiWAF(coraza).futureValue
   deleteOtoroshiRoute(route).futureValue
-  deleteOtoroshiRoute(route2).futureValue
 }
