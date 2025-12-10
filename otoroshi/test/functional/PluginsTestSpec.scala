@@ -587,5 +587,23 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "React2SShellDetector" in {
       new React2SShellDetectorTests(this)
     }
+    "Traffic Mirroring" in {
+      new TrafficMirroringTests(this)
+    }
+    "Regex request body rewriter" in {
+      new RegexRequestBodyRewriterTests(this)
+    }
+    "Regex response body rewriter" in {
+      new RegexResponseBodyRewriterTests(this)
+    }
+    "Globally denied domain names" in {
+      new NgIncomingRequestValidatorDeniedDomainNamesTests(this)
+    }
+    "Globally allowed domain names" in {
+      new NgIncomingRequestValidatorAllowedDomainNamesTests(this)
+    }
+    "Coraza WAF applies to all requests" in {
+      new GlobalCorazaWafTests(this)
+    }
   }
 }
