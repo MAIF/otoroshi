@@ -4,7 +4,6 @@ import akka.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.PluginsTestSpec
 import io.netty.handler.ssl.SslContextBuilder
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetNameResolver, InetSocketAddressResolver}
 import io.netty.util.CharsetUtil
 import io.netty.util.concurrent.{EventExecutor, Promise => NettyPromise}
@@ -14,21 +13,19 @@ import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
-import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Configuration
 import play.api.http.Status
 import play.core.server.ServerConfig
 import reactor.netty.http.client.HttpClient
 
-import java.io.{ByteArrayInputStream, File}
+import java.io.ByteArrayInputStream
 import java.net.{InetAddress, InetSocketAddress, UnknownHostException}
 import java.nio.file.Files
 import java.security.cert.CertificateFactory
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration.DurationInt
-import scala.util.Try
+import scala.concurrent.{Future, Promise}
 
 class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
   import parent._

@@ -11,7 +11,6 @@ import io.netty.channel.ChannelOption
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl.{ClientAuth, SslContextBuilder}
-import io.netty.resolver.AddressResolverGroup
 import org.apache.commons.codec.binary.Base64
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
@@ -63,7 +62,7 @@ object NettyHttpClient {
   val logger = Logger("otoroshi-netty-client")
 }
 
-class NettyHttpClient(env: Env, resolver: Option[AddressResolverGroup[InetSocketAddress]] = None) {
+class NettyHttpClient(env: Env) {
 
   // TODO: custom connection provider for clientconfig ?
   // TODO: support websockets
@@ -83,8 +82,7 @@ class NettyHttpClient(env: Env, resolver: Option[AddressResolverGroup[InetSocket
       targetOpt = None,
       clientConfig = ClientConfig(),
       alreadyFailed = AkkaWsClientRequest.atomicFalse,
-      env = env,
-      resolver = resolver
+      env = env
     )
   }
 }
@@ -104,8 +102,7 @@ case class NettyWsClientRequest(
     targetOpt: Option[Target] = None,
     clientConfig: ClientConfig = ClientConfig(),
     alreadyFailed: AtomicBoolean = AkkaWsClientRequest.atomicFalse,
-    env: Env,
-    resolver: Option[AddressResolverGroup[InetSocketAddress]] = None
+    env: Env
 ) extends WSRequest {
 
   private val _uri = Uri(_url)
@@ -415,9 +412,6 @@ case class NettyWsClientRequest(
                   }
               )
           }
-        }
-        .applyOnIf(resolver.isDefined) { client =>
-          client.resolver(resolver.get)
         }
         .applyOnIf(proto.toLowerCase().startsWith("http/2")) { client =>
           val tls = targetOpt.map(_.scheme.startsWith("https")).getOrElse(_uri.scheme.startsWith("https"))
