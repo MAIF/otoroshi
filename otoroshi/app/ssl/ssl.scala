@@ -1,7 +1,7 @@
 package otoroshi.ssl
 
 import java.io._
-import java.lang.reflect.Field
+import java.lang.reflect.{Field, InaccessibleObjectException}
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -36,11 +36,7 @@ import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import org.bouncycastle.asn1.ASN1ObjectIdentifier
 import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
-import org.bouncycastle.openssl.jcajce.{
-  JcaPEMKeyConverter,
-  JceOpenSSLPKCS8DecryptorProviderBuilder,
-  JcePEMDecryptorProviderBuilder
-}
+import org.bouncycastle.openssl.jcajce.{JcaPEMKeyConverter, JceOpenSSLPKCS8DecryptorProviderBuilder, JcePEMDecryptorProviderBuilder}
 import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
 import org.bouncycastle.operator.DefaultAlgorithmNameFinder
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
@@ -2287,12 +2283,26 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProto
   }
 
   def setEngineHostName(hostName: String): Unit = {
-    if (DynamicSSLEngineProvider.logger.isDebugEnabled)
-      DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
-    hostnameHolder.set(hostName)
-    // TODO: add try to avoid future issue ? fixed for now with '--add-opens java.base/javax.net.ssl=ALL-UNNAMED' in the java command line
-    field.set(this, hostName)
-    field.set(delegate, hostName)
+    try {
+      if (DynamicSSLEngineProvider.logger.isDebugEnabled)
+        DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
+      hostnameHolder.set(hostName)
+      field.set(this, hostName)
+      field.set(delegate, hostName)
+    } catch {
+      case e: InaccessibleObjectException if e.getMessage.contains("Unable to make field private java.lang.String javax.net.ssl.SSLEngine.peerHost accessible: module java.base does not \"opens javax.net.ssl\" to ") =>
+        DynamicSSLEngineProvider.logger.warn(
+          """
+            |It seems that you're trying to use the otoroshi TLS engine without opening the SSL modules.
+            |Please add the following options to your java configuration:
+            |
+            |--add-opens=java.base/javax.net.ssl=ALL-UNNAMED
+            |--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED
+            |--add-exports=java.base/sun.security.x509=ALL-UNNAMED
+            |--add-opens=java.base/sun.security.ssl=ALL-UNNAMED
+            |""".stripMargin)
+      case e => e.printStackTrace()
+    }
   }
 
   override def getPeerHost: String = Option(hostnameHolder.get()).getOrElse(delegate.getPeerHost)
