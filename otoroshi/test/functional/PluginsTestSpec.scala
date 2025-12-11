@@ -598,7 +598,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 //    "Coraza WAF applies to all requests" in {
 //      new GlobalCorazaWafTests(this)
 //    }
-    "Client Certificate Only" in {
+    "call route on *.oto.bar over HTTPS" in {
+      new OtoBarHttpsRouteSpec(this)
+    }
+    "Client certificate only" in {
       new NgHasClientCertValidatorTests(this)
     }
   }

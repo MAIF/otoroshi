@@ -254,6 +254,13 @@ Test / parallelExecution := false
 IntegrationTest / testForkedParallel := false
 IntegrationTest / fork := true
 
+Test / javaOptions ++= Seq(
+  "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED",
+  "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",
+  "--add-exports=java.base/sun.security.x509=ALL-UNNAMED",
+  "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED"
+)
+
 usePgpKeyHex("4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))
 sonatypeRepository := "https://ossrh-staging-api.central.sonatype.com/service/local/"
