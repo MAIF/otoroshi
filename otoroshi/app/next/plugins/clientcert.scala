@@ -192,12 +192,13 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
           .cachedConfig(internalName)(NgHasClientCertMatchingValidatorConfig.format)
           .getOrElse(NgHasClientCertMatchingValidatorConfig())
         if (
-          certs.exists(cert => config.serialNumbers.contains(cert.sn)) ||
-          certs.exists(cert => config.subjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify))) ||
-          certs.exists(cert => config.issuerDNs.exists(s => RegexPool(s).matches(cert.issuer.stringify))) ||
-          certs
-            .exists(cert => config.regexSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.subject.stringify))) ||
-          certs.exists(cert => config.regexIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.issuer.stringify)))
+          certs.exists { cert =>
+            config.serialNumbers.contains(cert.sn) ||
+            config.subjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify)) ||
+            config.issuerDNs.exists(s => RegexPool(s).matches(cert.issuer.stringify)) ||
+            config.regexSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.subject.stringify)) ||
+            config.regexIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.issuer.stringify))
+          }
         ) {
           NgAccess.NgAllowed.vfuture
         } else {

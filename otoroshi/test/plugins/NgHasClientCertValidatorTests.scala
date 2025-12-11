@@ -2,20 +2,12 @@ package plugins
 
 import akka.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
-import functional.PluginsTestSpec
-import io.netty.bootstrap.Bootstrap
-import io.netty.channel._
-import io.netty.channel.nio.NioEventLoopGroup
-import io.netty.channel.socket.SocketChannel
-import io.netty.channel.socket.nio.NioSocketChannel
-import io.netty.handler.codec.http._
-import io.netty.handler.ssl.{SslContext, SslContextBuilder, SslHandler}
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory
-import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetNameResolver, InetSocketAddressResolver}
+import functional.{CustomInetNameResolver, PluginsTestSpec}
+import io.netty.handler.ssl.SslContextBuilder
+import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetSocketAddressResolver}
 import io.netty.util.CharsetUtil
-import io.netty.util.concurrent.{EventExecutor, Promise => NettyPromise}
+import io.netty.util.concurrent.EventExecutor
 import otoroshi.api.Otoroshi
-import otoroshi.netty.OtoroshiSslHandler
 import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgHasClientCertValidator, OverrideHost}
@@ -25,15 +17,13 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Configuration
 import play.api.http.Status
 import play.core.server.ServerConfig
-import reactor.core.publisher.Mono
-import reactor.netty.http.client.{HttpClient, HttpClientResponse}
+import reactor.netty.http.client.HttpClient
 
 import java.io.ByteArrayInputStream
-import java.net.{InetAddress, InetSocketAddress, UnknownHostException}
+import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.security.cert.CertificateFactory
 import java.util.concurrent.atomic.AtomicReference
-import javax.net.ssl.SSLHandshakeException
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
@@ -97,41 +87,6 @@ class NgHasClientCertValidatorTests(parent: PluginsTestSpec) {
         .take(1)
         .runForeach(_ => ())
         .futureValue
-    }
-  }
-
-  class CustomInetNameResolver(executor: EventExecutor, mappings: Map[String, String])
-      extends InetNameResolver(executor) {
-
-    override def doResolve(inetHost: String, promise: NettyPromise[InetAddress]): Unit = {
-      try {
-        val targetHost = mappings.getOrElse(inetHost, inetHost)
-        println(s"[DNS] Resolving $inetHost -> $targetHost")
-        val address    = InetAddress.getByName(targetHost)
-        promise.setSuccess(address)
-      } catch {
-        case e: UnknownHostException =>
-          println(s"[DNS] Failed to resolve $inetHost: ${e.getMessage}")
-          promise.setFailure(e)
-        case e: Exception            =>
-          promise.setFailure(e)
-      }
-    }
-
-    override def doResolveAll(inetHost: String, promise: NettyPromise[java.util.List[InetAddress]]): Unit = {
-      try {
-        val targetHost = mappings.getOrElse(inetHost, inetHost)
-        println(s"[DNS] Resolving all $inetHost -> $targetHost")
-        val addresses  = InetAddress.getAllByName(targetHost)
-        val list       = java.util.Arrays.asList(addresses: _*)
-        promise.setSuccess(list)
-      } catch {
-        case e: UnknownHostException =>
-          println(s"[DNS] Failed to resolve all $inetHost: ${e.getMessage}")
-          promise.setFailure(e)
-        case e: Exception            =>
-          promise.setFailure(e)
-      }
     }
   }
 

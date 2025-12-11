@@ -10,6 +10,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Framing, Sink, Source}
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
+import io.netty.resolver.InetNameResolver
+import io.netty.util.concurrent.{EventExecutor, Promise => NettyPromise}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{MustMatchers, OptionValues, WordSpec}
 import org.slf4j.LoggerFactory
@@ -32,7 +34,7 @@ import play.api.libs.ws.ahc.{AhcWSClient, AhcWSClientConfig}
 import play.api.{Configuration, Logger}
 import play.core.server.ServerConfig
 
-import java.net.ServerSocket
+import java.net.{InetAddress, ServerSocket, UnknownHostException}
 import java.nio.file.Files
 import java.util.Optional
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
@@ -2771,6 +2773,41 @@ trait ApiTester[Entity] {
         delete,
         deleteBulk
       )
+    }
+  }
+}
+
+class CustomInetNameResolver(executor: EventExecutor, mappings: Map[String, String])
+    extends InetNameResolver(executor) {
+
+  override def doResolve(inetHost: String, promise: NettyPromise[InetAddress]): Unit = {
+    try {
+      val targetHost = mappings.getOrElse(inetHost, inetHost)
+      println(s"[DNS] Resolving $inetHost -> $targetHost")
+      val address    = InetAddress.getByName(targetHost)
+      promise.setSuccess(address)
+    } catch {
+      case e: UnknownHostException =>
+        println(s"[DNS] Failed to resolve $inetHost: ${e.getMessage}")
+        promise.setFailure(e)
+      case e: Exception            =>
+        promise.setFailure(e)
+    }
+  }
+
+  override def doResolveAll(inetHost: String, promise: NettyPromise[java.util.List[InetAddress]]): Unit = {
+    try {
+      val targetHost = mappings.getOrElse(inetHost, inetHost)
+      println(s"[DNS] Resolving all $inetHost -> $targetHost")
+      val addresses  = InetAddress.getAllByName(targetHost)
+      val list       = java.util.Arrays.asList(addresses: _*)
+      promise.setSuccess(list)
+    } catch {
+      case e: UnknownHostException =>
+        println(s"[DNS] Failed to resolve all $inetHost: ${e.getMessage}")
+        promise.setFailure(e)
+      case e: Exception            =>
+        promise.setFailure(e)
     }
   }
 }

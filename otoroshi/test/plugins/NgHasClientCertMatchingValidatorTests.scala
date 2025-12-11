@@ -8,14 +8,20 @@ import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetNameResolve
 import io.netty.util.CharsetUtil
 import io.netty.util.concurrent.{EventExecutor, Promise => NettyPromise}
 import otoroshi.api.Otoroshi
-import otoroshi.next.models.NgPluginInstance
-import otoroshi.next.plugins.OverrideHost
+import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
+import otoroshi.next.plugins.{
+  NgHasClientCertMatchingValidator,
+  NgHasClientCertMatchingValidatorConfig,
+  NgHasClientCertValidator,
+  OverrideHost
+}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Configuration
 import play.api.http.Status
+import play.api.libs.json.JsObject
 import play.core.server.ServerConfig
 import reactor.netty.http.client.HttpClient
 
@@ -27,7 +33,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
-class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
+class NgHasClientCertMatchingValidatorTests(parent: PluginsTestSpec) {
   import parent._
 
   case class OtoroshiInstance(port: Int, configuration: String) {
@@ -95,6 +101,8 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
     10201,
     s"""
        |otoroshi.next.state-sync-interval=2000
+       |play.server.https.wantClientAuth=true
+       |otoroshi.ssl.fromOutside.clientAuth=Want
        |"""
   )
   publicInstance.start()
@@ -103,6 +111,18 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]
+      ),
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[NgHasClientCertMatchingValidator],
+        config = NgPluginInstanceConfig(
+          NgHasClientCertMatchingValidatorConfig(
+            serialNumbers = Seq("0f:77:8e:bb:4e:21:9c:51:74:31:05:e1:b2:b2:8c:86:51:6a:f7:1e"),
+            subjectDNs = Seq("C=FR, ST=Paris, L=Paris, O=Client, OU=Dev, CN=test-client"),
+            issuerDNs = Seq("C=FR, ST=Paris, L=Paris, O=TestCA, OU=Dev, CN=TestCA"),
+            regexSubjectDNs = Seq(".*test-client.*"), // matches any DN containing "test-client"
+            regexIssuerDNs = Seq(".*TestCA.*")        // matches any DN containing "TestCA"
+          ).json.as[JsObject]
+        )
       )
     ),
     domain = "test-clientcertificate-chain-validator.oto.bar".some,
@@ -269,50 +289,114 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
                     |rQ==
                     |-----END CERTIFICATE-----""".stripMargin
 
-  val caCertInputStream = new ByteArrayInputStream(caCertPem.getBytes(CharsetUtil.UTF_8))
+  // resources/certificates/oto.bar/client-cert.pem
+  val clientCertPem = """-----BEGIN CERTIFICATE-----
+                        |MIIEjzCCAnegAwIBAgIUD3eOu04hnFF0MQXhsrKMhlFq9x4wDQYJKoZIhvcNAQEL
+                        |BQAwXTELMAkGA1UEBhMCRlIxDjAMBgNVBAgMBVBhcmlzMQ4wDAYDVQQHDAVQYXJp
+                        |czEPMA0GA1UECgwGVGVzdENBMQwwCgYDVQQLDANEZXYxDzANBgNVBAMMBlRlc3RD
+                        |QTAeFw0yNTEyMTExMDU3MDdaFw0yNjEyMTExMDU3MDdaMGIxCzAJBgNVBAYTAkZS
+                        |MQ4wDAYDVQQIDAVQYXJpczEOMAwGA1UEBwwFUGFyaXMxDzANBgNVBAoMBkNsaWVu
+                        |dDEMMAoGA1UECwwDRGV2MRQwEgYDVQQDDAt0ZXN0LWNsaWVudDCCASIwDQYJKoZI
+                        |hvcNAQEBBQADggEPADCCAQoCggEBALFc5W5h2QR76LgBj8IE9MxVYnDpDwVGfWxR
+                        |azBpdyE61TL291lqi6D4SSpOFJ0xetMqp0U14cHB2ev+OPU9Xzxg016aPgxpummC
+                        |Keq1EMrDNTo0+dQLzmJdy//3Pnv+XIbh71XDlI+Nk2QATFubOdZSZ/pNTBTORUU1
+                        |OnkVG/JhvBRdAFccoPA/H4GXWCUv4IYiJgjc4ve/TQWYZtZOoadG9z93Nljr1xio
+                        |56XrLe6fFY6ePgqJPFzzRoIRRDyHhFUtbuDSlofhjLrFbuUK0bXwbTf6QgKX1PtR
+                        |cNe8ffdVyDDtxQJ7ndpaJxZDzu2q5Sr2BKfRks+dnYqWEnkXfZkCAwEAAaNCMEAw
+                        |HQYDVR0OBBYEFETT5Oh/EnA7aorvC4DDc7SVznVgMB8GA1UdIwQYMBaAFEi065E6
+                        |0axl/v2dBjwzYwdyGzZvMA0GCSqGSIb3DQEBCwUAA4ICAQCfXbSyPET35yyfzSaK
+                        |LLTtOV0UKqn098E6XshIOYyOnk3rlJeMkleWdBoQ3zu9himbhMBw2y11Y5fmzAsL
+                        |8LCAVJfX3roNpJpDOer9bCL261QjYDopYNKgiq4sYZE5uqh9O0FNhUeef8pOSoaJ
+                        |rmQbrBOfmL4OjRqouhwGwq5vA5r7EmxUjzS8kiQIJcw55j6YyZW8AZxQN5HZdP65
+                        |qCFT8m1CFBtVoSIkSAIX5rshuJZdzrZnB68wSc4WKhDIpEK7Bw2mwkm3k481H2bo
+                        |Lac+y7RMVnHHA4gp1zcV/tRsjk81/0gbbD+pIZC8QZFhzrJKD0sUIlUzOwekM0c2
+                        |+3HdGuxrGVSowVqTnNGfNeirSFgSgaDmDgYxmLK+oNJkQStZflb0s+V+OEff5Kvo
+                        |gPYiyCpV/1rOvZrFcgJbQ5ww1N9J7z+WSNgoMqmLkWCWa7fDG3brtj3CzDIDpTL4
+                        |1ymUN/8jkSpLdHpRUwyFy2uTX5WVE5kl+2Bx0CHsKeTUCAG8HOAVbhwRlQkC4AhO
+                        |y0G5hOt5jOXiHAV8Ax560E9R8krzA/G4qA2v7akwqOXJw/E/xqz7xb3ixkD/RjNb
+                        |91TzEurOO1448Nmp1HEfj2NZzp26Ovr/26BUSFKvNdfIm6/e0E0tacvZMAMWWBhv
+                        |goFL0H2+JVbGjPwAWldtAcJaiA==
+                        |-----END CERTIFICATE-----
+                        |""".stripMargin
 
-  val pureNettyClient = HttpClient
-    .create()
-    .host("test-clientcertificate-chain-validator.oto.bar")
-    .port(customHttpsPort)
-    .protocol(reactor.netty.http.HttpProtocol.HTTP11)
-    .secure { spec =>
-      val certFactory = CertificateFactory.getInstance("X.509")
-      val caCert      = certFactory
-        .generateCertificate(caCertInputStream)
-        .asInstanceOf[java.security.cert.X509Certificate]
+  // resources/certificates/oto.bar/client-key.pem
+  val clientKeyPem = """-----BEGIN PRIVATE KEY-----
+                       |MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCxXOVuYdkEe+i4
+                       |AY/CBPTMVWJw6Q8FRn1sUWswaXchOtUy9vdZaoug+EkqThSdMXrTKqdFNeHBwdnr
+                       |/jj1PV88YNNemj4MabppginqtRDKwzU6NPnUC85iXcv/9z57/lyG4e9Vw5SPjZNk
+                       |AExbmznWUmf6TUwUzkVFNTp5FRvyYbwUXQBXHKDwPx+Bl1glL+CGIiYI3OL3v00F
+                       |mGbWTqGnRvc/dzZY69cYqOel6y3unxWOnj4KiTxc80aCEUQ8h4RVLW7g0paH4Yy6
+                       |xW7lCtG18G03+kICl9T7UXDXvH33Vcgw7cUCe53aWicWQ87tquUq9gSn0ZLPnZ2K
+                       |lhJ5F32ZAgMBAAECggEAHU7vhB0GgozYjkeGckDlaY/r03f/s8HL31wDmB1lbTKj
+                       |9mcEcAcriZmzEBrqTHYtCLtcpr2E+m1GeI6AP6445ZOjz1cyTP96VA2z+tqZgBgK
+                       |h1LSZxgzA42NCgAuQskWkHIXXZcTHoxTlcvNfQ8ahfBaHuzVAf8lR+QdhH1Y1TrL
+                       |PIPTzbDDyX7x3B3L51hMjLNY3QBz0nFLx5Llsuic0wvrcTvHUA/E/1AAP8op3MMB
+                       |YmbKaNkkKx3kMvGeUdmN+pxdnbfIWmtvTSytcM8X3ia93D49U/z6Mzd9BfM/l+tq
+                       |qZSlHCSGqJdrgZx9IW+YovTjpt3/Z4P+hMs7O7bw7QKBgQDpJm3Dd/LjwvS9df/d
+                       |v6E8e500hEB8uf0ZXQZoUJfLeuyIkC82TIu1bIHHw+47dEzlLvo1DB8gxOlX/g3K
+                       |7S6/zecwjQOx4AhZkUIOsKoDaul9UMQ5jgNKVthqXBrUaZK0xtSZyJTkgz3ZpfMl
+                       |WEhRLxwiB8gRoZANIrD9j7gOKwKBgQDCvs4gytoOoUTJtzGUKuGHV/hhwSh6oNNt
+                       |4D9Knr+Iu5o0whmx1tz/fSavjmhKiri7AV+CxAF9dc72FX+udmShab3NkYcHlsdD
+                       |vf8mTT/QUfpuk2jFn4pZS7+AqU+Za5aG0akOtwemTOeV8iu8pWMYrcSIbuiFqLyV
+                       |sK89Y+2FSwKBgERQuUrUI7xvDI1TPQS5uMHjKp4PvmGNkcbTxiPcsY2y2AnvzZWo
+                       |eitPvvtMwspy+nERAcl3YsuURxc8Xsg+FTuoVnyYZSPClE/CS0vIohhcREwu1UBU
+                       |B0zKA6GumUHyKUWFGRhyeIY4mm/iu0sPAimflyu1gf8Aixf+OUQiz3h/AoGAPqzx
+                       |4hPnAfZdER5oUmtKkih5w9xKjszbvu0A8Z8NvY/DHV+qrVWdYoyAutd2MSdcNLNI
+                       |belvIVWc+g4JPbjUwi4p69L+Ri78iozHZShPdVgs5RGEErY57Gs4gsv61kGN/G3V
+                       |nurBB4CQt+1srhX8QqEKM26eXwXjS7nFbFiQxOkCgYBog4Fj96sbYBJM9muYufDO
+                       |VHIfs8Qty1TcSYnoV6DmlR08lN3XyjyEUus2aZKB3PXI5PjOVS1bpb+lPd14M3hV
+                       |uZ+UUcN/BmsWXxKKJbhLa5JtDHYHwPDLuqAdxKJWO3VfKd9EJeW1AiGfgNUd0Dgj
+                       |iZU+jmM4znlhjjsPr5i5tQ==
+                       |-----END PRIVATE KEY-----
+                       |""".stripMargin
 
-      spec.sslContext(
-        SslContextBuilder
+  val caCertInputStream     = new ByteArrayInputStream(caCertPem.getBytes(CharsetUtil.UTF_8))
+  val clientCertInputStream = new ByteArrayInputStream(clientCertPem.getBytes(CharsetUtil.UTF_8))
+  val clientKeyInputStream  = new ByteArrayInputStream(clientKeyPem.getBytes(CharsetUtil.UTF_8))
+
+  def callWithOptionalClientCertificate(
+  ): Unit = {
+
+    val pureNettyClient = HttpClient
+      .create()
+      .host("test-clientcertificate-chain-validator.oto.bar")
+      .port(customHttpsPort)
+      .protocol(reactor.netty.http.HttpProtocol.HTTP11)
+      .secure { spec =>
+        val certFactory = CertificateFactory.getInstance("X.509")
+        val caCert      = certFactory
+          .generateCertificate(caCertInputStream)
+          .asInstanceOf[java.security.cert.X509Certificate]
+
+        val sslCtxBuilder = SslContextBuilder
           .forClient()
           .trustManager(caCert)
-      )
+          .keyManager(clientCertInputStream, clientKeyInputStream)
+
+        spec.sslContext(sslCtxBuilder)
+      }
+      .resolver(resolverGroup)
+
+    // Optional wait (but better to avoid Thread.sleep in reactive code)
+    Thread.sleep(5000)
+
+    val responseFuture: Future[Int] = {
+      val promise = Promise[Int]()
+      pureNettyClient
+        .get()
+        .uri("/foo")
+        .response()
+        .doOnNext(response => promise.success(response.status().code()))
+        .doOnError(error => promise.failure(error))
+        .subscribe()
+      promise.future
     }
-    .resolver(resolverGroup)
 
-  Thread.sleep(5000)
-
-  val responseFuture: Future[Int] = {
-    val promise = Promise[Int]()
-
-    pureNettyClient
-      .get()
-      .uri("/foo")
-      .response()
-      .doOnNext { response =>
-        val code = response.status().code()
-        promise.success(code)
-      }
-      .doOnError { error =>
-        promise.failure(error)
-      }
-      .subscribe()
-
-    promise.future
+    val code = responseFuture.futureValue
+    code mustBe Status.OK
   }
 
-  val code = responseFuture.futureValue
-  code mustBe Status.OK
+  callWithOptionalClientCertificate()
 
   publicInstance.stop()
 }
