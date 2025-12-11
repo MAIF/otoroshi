@@ -31,6 +31,7 @@ import reactor.netty.http.client.{HttpClient, HttpClientResponse}
 import java.io.ByteArrayInputStream
 import java.net.{InetAddress, InetSocketAddress, UnknownHostException}
 import java.nio.file.Files
+import java.security.cert.CertificateFactory
 import java.util.concurrent.atomic.AtomicReference
 import javax.net.ssl.SSLHandshakeException
 import scala.concurrent.duration.DurationInt
@@ -383,42 +384,51 @@ class NgHasClientCertValidatorTests(parent: PluginsTestSpec) {
   val clientCertInputStream = new ByteArrayInputStream(clientCertPem.getBytes(CharsetUtil.UTF_8))
   val clientKeyInputStream  = new ByteArrayInputStream(clientKeyPem.getBytes(CharsetUtil.UTF_8))
 
-  val client            = new otoroshi.netty.NettyHttpClient(env, resolverGroup.some)
-  val httpClientRequest = client
-    .url(s"https://test-clientcertificate-chain-validator.oto.bar:${customHttpsPort}")
-    .client
-    .secure { spec =>
-      spec.sslContext(
-        SslContextBuilder
-          .forClient()
-          .trustManager(caCertInputStream)
-//          .keyManager(clientCertInputStream, clientKeyInputStream)
-      )
+  def callWithOptionalClientCertificate(
+      useClientCert: Boolean
+  ): Unit = {
+
+    val pureNettyClient = HttpClient
+      .create()
+      .host("test-clientcertificate-chain-validator.oto.bar")
+      .port(customHttpsPort)
+      .protocol(reactor.netty.http.HttpProtocol.HTTP11)
+      .secure { spec =>
+        val certFactory = CertificateFactory.getInstance("X.509")
+        val caCert      = certFactory
+          .generateCertificate(caCertInputStream)
+          .asInstanceOf[java.security.cert.X509Certificate]
+
+        val sslCtxBuilder = SslContextBuilder.forClient().trustManager(caCert)
+
+        if (useClientCert)
+          sslCtxBuilder.keyManager(clientCertInputStream, clientKeyInputStream)
+
+        spec.sslContext(sslCtxBuilder)
+      }
+      .resolver(resolverGroup)
+
+    // Optional wait (but better to avoid Thread.sleep in reactive code)
+    Thread.sleep(5000)
+
+    val responseFuture: Future[Int] = {
+      val promise = Promise[Int]()
+      pureNettyClient
+        .get()
+        .uri("/foo")
+        .response()
+        .doOnNext(response => promise.success(response.status().code()))
+        .doOnError(error => promise.failure(error))
+        .subscribe()
+      promise.future
     }
 
-  println("Calling route")
+    val code = responseFuture.futureValue
+    code mustBe Status.FORBIDDEN
+  }
 
-  val result = for {
-    resp    <- httpClientRequest.get().future
-    content <- resp
-                 .response()
-                 .map(res => {
-                   println(res.status().code())
-                   res
-                 })
-                 .doOnError(error => println(s"Error: $error"))
-                 .flatMap(res => resp.responseContent().aggregate().asString())
-                 .map(content => {
-                   println(content)
-                   content
-                 })
-                 .subscribe()
-                 .future
-  } yield content
-
-  result.futureValue
-
-  println("STOPPING INSTNACE")
+  callWithOptionalClientCertificate(useClientCert = false)
+  callWithOptionalClientCertificate(useClientCert = true)
 
   publicInstance.stop()
 }

@@ -330,8 +330,6 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
   val responseFuture: Future[Int] = {
     val promise = Promise[Int]()
 
-    println("RUN QUERY")
-
     pureNettyClient
       .get()
       .uri("/foo")
