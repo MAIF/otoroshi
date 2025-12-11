@@ -35,7 +35,7 @@ class NgCustomThrottlingTests(parent: PluginsTestSpec) {
       "Host" -> route.frontend.domains.head.domain,
       "foo"  -> "bar"
     )
-    .stream()
+    .get()
     .futureValue
 
   resp.status mustBe Status.OK
@@ -46,7 +46,7 @@ class NgCustomThrottlingTests(parent: PluginsTestSpec) {
       "Host" -> route.frontend.domains.head.domain,
       "foo"  -> "bar"
     )
-    .stream()
+    .get()
     .futureValue
 
   notFoundFile.status mustBe Status.FORBIDDEN

@@ -11,6 +11,8 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Flow, Framing, Sink, Source}
 import org.apache.pekko.util.ByteString
 import org.scalatest.OptionValues
+import io.netty.resolver.InetNameResolver
+import io.netty.util.concurrent.{EventExecutor, Promise => NettyPromise}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -24,6 +26,7 @@ import otoroshi.models.*
 import otoroshi.next.models.*
 import otoroshi.next.workflow.Workflow
 import otoroshi.security.IdGenerator
+import otoroshi.ssl.Cert
 import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.proxywasm.CorazaWafConfig
 import play.api.ApplicationLoader.Context
@@ -34,7 +37,7 @@ import play.api.libs.ws.ahc.{AhcWSClient, AhcWSClientConfig}
 import play.api.{Configuration, Logger}
 import play.core.server.ServerConfig
 
-import java.net.ServerSocket
+import java.net.{InetAddress, ServerSocket, UnknownHostException}
 import java.nio.file.Files
 import java.util.Optional
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
@@ -836,7 +839,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       p
     }.getOrElse(8080)
   }
-  private lazy val httpsPort: Int = {
+  lazy val httpsPort: Int = {
     Try {
       val s = new ServerSocket(0)
       val p = s.getLocalPort
@@ -1311,6 +1314,41 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .post(Json.stringify(coraza.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def getOtoroshiCertificate(
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/certificates/_template")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .get()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def createOtoroshiCertificate(
+      certificate: Cert,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/certificates")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(certificate.json))
       .map { resp =>
         (resp.json, resp.status)
       }
@@ -2715,6 +2753,41 @@ trait ApiTester[Entity] {
         delete,
         deleteBulk
       )
+    }
+  }
+}
+
+class CustomInetNameResolver(executor: EventExecutor, mappings: Map[String, String])
+    extends InetNameResolver(executor) {
+
+  override def doResolve(inetHost: String, promise: NettyPromise[InetAddress]): Unit = {
+    try {
+      val targetHost = mappings.getOrElse(inetHost, inetHost)
+      println(s"[DNS] Resolving $inetHost -> $targetHost")
+      val address    = InetAddress.getByName(targetHost)
+      promise.setSuccess(address)
+    } catch {
+      case e: UnknownHostException =>
+        println(s"[DNS] Failed to resolve $inetHost: ${e.getMessage}")
+        promise.setFailure(e)
+      case e: Exception            =>
+        promise.setFailure(e)
+    }
+  }
+
+  override def doResolveAll(inetHost: String, promise: NettyPromise[java.util.List[InetAddress]]): Unit = {
+    try {
+      val targetHost = mappings.getOrElse(inetHost, inetHost)
+      println(s"[DNS] Resolving all $inetHost -> $targetHost")
+      val addresses  = InetAddress.getAllByName(targetHost)
+      val list       = java.util.Arrays.asList(addresses: _*)
+      promise.setSuccess(list)
+    } catch {
+      case e: UnknownHostException =>
+        println(s"[DNS] Failed to resolve all $inetHost: ${e.getMessage}")
+        promise.setFailure(e)
+      case e: Exception            =>
+        promise.setFailure(e)
     }
   }
 }

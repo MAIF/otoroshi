@@ -78,7 +78,7 @@ class GlobalMaintenanceModeTests(parent: PluginsTestSpec) {
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain
     )
-    .stream()
+    .get()
     .futureValue
 
   resp.status mustBe Status.OK
@@ -91,7 +91,7 @@ class GlobalMaintenanceModeTests(parent: PluginsTestSpec) {
       .withHttpHeaders(
         "Host" -> route.frontend.domains.head.domain
       )
-      .stream()
+      .get()
       .futureValue
 
     resp.status mustBe Status.SERVICE_UNAVAILABLE
