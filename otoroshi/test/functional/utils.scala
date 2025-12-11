@@ -3,7 +3,7 @@ package functional
 import akka.NotUsed
 import akka.actor.{ActorSystem, Scheduler}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.{ws, _}
 import akka.http.scaladsl.model.ws.{Message, TextMessage, UpgradeToWebSocket}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
@@ -21,6 +21,7 @@ import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.next.workflow.Workflow
 import otoroshi.security.IdGenerator
+import otoroshi.ssl.Cert
 import otoroshi.utils.syntax.implicits._
 import otoroshi.wasm.proxywasm.CorazaWafConfig
 import play.api.ApplicationLoader.Context
@@ -823,8 +824,9 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       )
     )(materializer)
   }
-  lazy implicit val scheduler: Scheduler               = actorSystem.scheduler
-  lazy implicit val ec: ExecutionContext               = actorSystem.dispatcher
+
+  lazy implicit val scheduler: Scheduler = actorSystem.scheduler
+  lazy implicit val ec: ExecutionContext = actorSystem.dispatcher
   private lazy val httpPort: Int = {
     Try {
       val s = new ServerSocket(0)
@@ -833,7 +835,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       p
     }.getOrElse(8080)
   }
-  private lazy val httpsPort: Int = {
+  lazy val httpsPort: Int = {
     Try {
       val s = new ServerSocket(0)
       val p = s.getLocalPort
@@ -1310,6 +1312,41 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .post(Json.stringify(coraza.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def getOtoroshiCertificate(
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/certificates/_template")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .get()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def createOtoroshiCertificate(
+      certificate: Cert,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/certificates")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(certificate.json))
       .map { resp =>
         (resp.json, resp.status)
       }

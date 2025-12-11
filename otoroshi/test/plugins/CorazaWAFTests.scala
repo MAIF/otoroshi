@@ -55,7 +55,7 @@ class CorazaWAFTests(parent: PluginsTestSpec) {
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain
     )
-    .stream()
+    .get()
     .futureValue
 
   resp.status mustBe 200
@@ -65,7 +65,7 @@ class CorazaWAFTests(parent: PluginsTestSpec) {
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain
     )
-    .stream()
+    .get()
     .futureValue
 
   unauthorizedCall.status mustBe 403

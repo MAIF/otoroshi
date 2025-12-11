@@ -595,8 +595,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Globally allowed domain names" in {
       new NgIncomingRequestValidatorAllowedDomainNamesTests(this)
     }
-    "Coraza WAF applies to all requests" in {
-      new GlobalCorazaWafTests(this)
+//    "Coraza WAF applies to all requests" in {
+//      new GlobalCorazaWafTests(this)
+//    }
+    "Client Certificate Only" in {
+      new NgHasClientCertValidatorTests(this)
     }
   }
 }

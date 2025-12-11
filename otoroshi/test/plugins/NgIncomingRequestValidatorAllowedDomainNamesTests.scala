@@ -90,7 +90,7 @@ class NgIncomingRequestValidatorAllowedDomainNamesTests(parent: PluginsTestSpec)
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain
     )
-    .stream()
+    .get()
     .futureValue
 
   resp2.status mustBe Status.OK
@@ -100,7 +100,7 @@ class NgIncomingRequestValidatorAllowedDomainNamesTests(parent: PluginsTestSpec)
     .withHttpHeaders(
       "Host" -> route2.frontend.domains.head.domain
     )
-    .stream()
+    .get()
     .futureValue
 
   resp.status mustBe Status.FORBIDDEN

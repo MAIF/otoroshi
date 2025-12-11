@@ -41,7 +41,7 @@ class ZipBackendTests(parent: PluginsTestSpec) {
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain
     )
-    .stream()
+    .get()
     .futureValue
 
   resp.status mustBe Status.OK
@@ -52,7 +52,7 @@ class ZipBackendTests(parent: PluginsTestSpec) {
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain
     )
-    .stream()
+    .get()
     .futureValue
 
   notFoundFile.status mustBe Status.NOT_FOUND

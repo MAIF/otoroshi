@@ -38,7 +38,7 @@ class NgServiceQuotasTests(parent: PluginsTestSpec) {
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain
     )
-    .stream()
+    .get()
     .futureValue
 
   resp.status mustBe Status.OK
@@ -48,7 +48,7 @@ class NgServiceQuotasTests(parent: PluginsTestSpec) {
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain
     )
-    .stream()
+    .get()
     .futureValue
 
   notFoundFile.status mustBe Status.FORBIDDEN
