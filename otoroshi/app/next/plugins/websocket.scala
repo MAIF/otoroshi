@@ -1,24 +1,25 @@
 package otoroshi.next.plugins
 
-import akka.Done
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.networknt.schema.SpecVersion.VersionFlag
 import com.networknt.schema.{InputFormat, JsonSchemaFactory, PathType, SchemaValidatorsConfig}
 import io.otoroshi.wasm4s.scaladsl.WasmFunctionParameters
 import otoroshi.env.Env
-import otoroshi.gateway.Errors
+import otoroshi.gateway.WebSocketProxyActor
 import otoroshi.next.plugins.api._
-import otoroshi.next.workflow.{Node, WorkflowAdminExtension, WorkflowBackendConfig}
-import otoroshi.utils.JsonPathValidator
+import otoroshi.next.proxy.NgProxyEngineError
+import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{JsonPathValidator, UrlSanitizer}
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
-import play.api.http.websocket.CloseCodes
+import play.api.http.websocket.{CloseCodes, Message}
 import play.api.libs.json._
-import play.api.mvc.Results
+import play.api.libs.streams.ActorFlow
+import reactor.core.publisher.Sinks
 
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
@@ -790,3 +791,122 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
 }
 
 
+case class WebsocketMirrorBackendConfig(url: Option[String] = None) extends NgPluginConfig {
+  def json: JsValue = WebsocketMirrorBackendConfig.format.writes(this)
+}
+
+object WebsocketMirrorBackendConfig {
+  val format = new Format[WebsocketMirrorBackendConfig] {
+
+    override def reads(json: JsValue): JsResult[WebsocketMirrorBackendConfig] = Try {
+      WebsocketMirrorBackendConfig(
+        url = json.select("url").asOpt[String].filter(_.trim.nonEmpty)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+
+    override def writes(o: WebsocketMirrorBackendConfig): JsValue = Json.obj(
+      "url" -> o.url.map(_.json).getOrElse(JsNull).asValue
+    )
+  }
+  def configFlow: Seq[String] = Seq(
+    "url"
+  )
+  def configSchema: JsObject  = Json.obj(
+    "url" -> Json.obj("type" -> "string", "label" -> "Target URL")
+  )
+}
+
+class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
+
+  override def name: String                                = "Websocket mirror backend"
+  override def description: Option[String]                 = "Mirror incoming websocket messages to another target".some
+  override def core: Boolean                               = false
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Websocket)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(WebsocketMirrorBackendConfig())
+  override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = WebsocketMirrorBackendConfig.configFlow
+  override def configSchema: Option[JsObject]              = WebsocketMirrorBackendConfig.configSchema.some
+
+  override def callBackendOrError(
+    ctx: NgWebsocketPluginContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
+    val config = ctx
+      .cachedConfig(internalName)(WebsocketMirrorBackendConfig.format)
+      .getOrElse(WebsocketMirrorBackendConfig())
+    val request = ctx.otoroshiRequest
+    // val ctxPlugins = ctx.attrs.get(Keys.ContextualPluginsKey).get
+    config.url match {
+      case None => {
+        ActorFlow
+          .actorRef(out =>
+            WebSocketProxyActor.props(
+              UrlSanitizer.sanitize(request.url),
+              out,
+              request.headers.toSeq,
+              ctx.request,
+              request,
+              ctx.route.serviceDescriptor,
+              ctx.route.some,
+              None, //ctxPlugins.some,
+              ctx.target,
+              ctx.attrs,
+              env,
+            )
+          )(env.otoroshiActorSystem, env.otoroshiMaterializer).rightf
+      }
+      case Some(url) => {
+        val hotSource = Sinks.many().unicast().onBackpressureBuffer[play.api.http.websocket.Message]()
+        val hotFlux   = hotSource.asFlux()
+        val cb = (m: play.api.http.websocket.Message) => {
+          hotSource.tryEmitNext(m)
+          ()
+        }
+        val mirrorFlow = ActorFlow
+          .actorRef(out =>
+            WebSocketProxyActor.props(
+              UrlSanitizer.sanitize(url).evaluateEl(ctx.attrs),
+              out,
+              request.headers.toSeq,
+              ctx.request,
+              request,
+              ctx.route.serviceDescriptor,
+              ctx.route.some,
+              None,//ctxPlugins.some,
+              ctx.target,
+              ctx.attrs,
+              env
+            )
+          )(env.otoroshiActorSystem, env.otoroshiMaterializer)
+        val response = ActorFlow
+          .actorRef(out =>
+            WebSocketProxyActor.props(
+              UrlSanitizer.sanitize(request.url),
+              out,
+              request.headers.toSeq,
+              ctx.request,
+              request,
+              ctx.route.serviceDescriptor,
+              ctx.route.some,
+              None,//ctxPlugins.some,
+              ctx.target,
+              ctx.attrs,
+              env,
+              Some(cb)
+            )
+          )(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          .alsoTo(Sink.onComplete {
+            case _ => hotSource.tryEmitComplete()
+          }).rightf
+        Source.fromPublisher(hotFlux).via(mirrorFlow).runWith(Sink.foreach { m: play.api.http.websocket.Message =>
+          //println("Got sink message: " + m)
+        })(env.otoroshiMaterializer)
+        response
+      }
+    }
+  }
+}

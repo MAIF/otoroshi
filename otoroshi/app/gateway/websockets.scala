@@ -1,36 +1,24 @@
 package otoroshi.gateway
 
+import akka.NotUsed
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import akka.http.scaladsl.ClientTransport
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
+import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
 import akka.http.scaladsl.settings.ClientConnectionSettings
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, Tcp}
 import akka.stream.{FlowShape, Materializer, OverflowStrategy}
 import akka.util.ByteString
-import akka.{Done, NotUsed}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models._
-import otoroshi.next.models.{NgContextualPlugins, NgPluginInstance, NgRoute}
+import otoroshi.next.models.{NgContextualPlugins, NgRoute}
 import otoroshi.next.plugins.RejectStrategy
-import otoroshi.next.plugins.api.{
-  NgAccess,
-  NgPluginWrapper,
-  NgWebsocketError,
-  NgWebsocketPlugin,
-  NgWebsocketPluginContext,
-  NgWebsocketResponse,
-  NgWebsocketValidatorPlugin,
-  WebsocketMessage
-}
-import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
-import otoroshi.next.utils.FEither
+import otoroshi.next.plugins.api._
 import otoroshi.script.Implicits._
 import otoroshi.script.TransformerRequestContext
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
@@ -41,14 +29,7 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.utils.udp._
 import otoroshi.utils.{TypedMap, UrlSanitizer}
 import play.api.Logger
-import play.api.http.websocket.{
-  CloseMessage,
-  PingMessage,
-  PongMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  Message => PlayWSMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.NotFound
@@ -57,8 +38,8 @@ import play.api.mvc._
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
 
 class WebSocketHandler()(implicit env: Env) {
 
@@ -612,6 +593,7 @@ class WebSocketHandler()(implicit env: Env) {
                       out,
                       httpRequest.headers.toSeq, //.filterNot(_._1 == "Cookie"),
                       req,
+                      NgPluginHttpRequest.fromRequest(req),
                       descriptor,
                       None,                      // TODO - check if we can pass the current route
                       None,
@@ -649,14 +631,16 @@ object WebSocketProxyActor {
       out: ActorRef,
       headers: Seq[(String, String)],
       rawRequest: RequestHeader,
+      request: NgPluginHttpRequest,
       descriptor: ServiceDescriptor,
       route: Option[NgRoute],
       ctxPlugins: Option[NgContextualPlugins],
       target: Target,
       attrs: TypedMap,
-      env: Env
+      env: Env,
+      cb: Option[Function[play.api.http.websocket.Message, Unit]] = None
   ) =
-    Props(new WebSocketProxyActor(url, out, headers, rawRequest, descriptor, route, ctxPlugins, target, attrs, env))
+    Props(new WebSocketProxyActor(url, out, headers, rawRequest, request, descriptor, route, ctxPlugins, target, attrs, env, cb))
 
   def wsCall(
       url: String,
@@ -788,12 +772,14 @@ class WebSocketProxyActor(
     out: ActorRef,
     headers: Seq[(String, String)],
     rawRequest: RequestHeader,
+    request: NgPluginHttpRequest,
     descriptor: ServiceDescriptor,
     route: Option[NgRoute],
     ctxPlugins: Option[NgContextualPlugins],
     target: Target,
     attrs: TypedMap,
-    env: Env
+    env: Env,
+    cb: Option[Function[play.api.http.websocket.Message, Unit]] = None
 ) extends Actor {
 
   import scala.concurrent.duration._
@@ -811,9 +797,9 @@ class WebSocketProxyActor(
   // Seq("Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Host")
 
   val wsEngine = if (route.isDefined && ctxPlugins.isDefined && ctxPlugins.get.hasWebsocketPlugins) {
-    new WebsocketEngine(route.get, ctxPlugins.get, rawRequest, target, attrs)
+    new WebsocketEngine(route.get, ctxPlugins.get, rawRequest, request, target, attrs)
   } else {
-    new WebsocketEngine(NgRoute.empty, NgContextualPlugins.empty(rawRequest), rawRequest, target, attrs)
+    new WebsocketEngine(NgRoute.empty, NgContextualPlugins.empty(rawRequest), rawRequest, request, target, attrs)
   }
 
   override def preStart() =
@@ -947,6 +933,9 @@ class WebSocketProxyActor(
             }
           }
           case Right(msg)  => {
+            if (cb.isDefined) {
+              msg.asPlay.map { msg => cb.foreach(f => f(msg))}
+            }
             msg.asAkka.map { msg =>
               if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from client: ${msg}")
               Option(queueRef.get()).foreach { q =>
@@ -963,6 +952,7 @@ class WebsocketEngine(
     route: NgRoute,
     ctxPlugins: NgContextualPlugins,
     rawRequest: RequestHeader,
+    request: NgPluginHttpRequest,
     target: Target,
     attrs: TypedMap
 ) {
@@ -992,6 +982,7 @@ class WebsocketEngine(
             snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
             route = route,
             request = rawRequest,
+            otoroshiRequest = request,
             attrs = attrs,
             config = wrapper.plugin.defaultConfig
               .map(dc => dc ++ wrapper.instance.config.raw)
