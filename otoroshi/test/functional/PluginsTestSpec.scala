@@ -628,5 +628,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .onlySendChain()
         .futureValue
     }
+    "Client certificate as apikey" in {
+      new NgCertificateAsApikeyTests(this)
+        .run()
+        .futureValue
+    }
   }
 }

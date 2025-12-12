@@ -9,17 +9,26 @@ import io.netty.handler.ssl.SslContextBuilder
 import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetSocketAddressResolver}
 import io.netty.util.CharsetUtil
 import io.netty.util.concurrent.EventExecutor
+import org.apache.commons.codec.binary.Base64
 import otoroshi.api.Otoroshi
+import otoroshi.models.ApiKey
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{NgClientCertChainHeader, NgClientCertChainHeaderConfig, OverrideHost}
+import otoroshi.next.plugins.{
+  NgCertificateAsApikey,
+  NgCertificateAsApikeyConfig,
+  NgClientCertChainHeader,
+  NgClientCertChainHeaderConfig,
+  OverrideHost
+}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
 import otoroshi.utils.http.DN
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.Configuration
 import play.api.http.Status
-import play.api.libs.json.{JsArray, JsNumber, JsObject, JsString, Json}
+import play.api.libs.json.{JsArray, JsObject, JsString, Json}
+import play.api.libs.ws.WSAuthScheme
 import play.core.server.ServerConfig
 import reactor.netty.http.client.HttpClient
 
@@ -31,7 +40,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
-class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
+class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
 
   import parent._
 
@@ -98,7 +107,7 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
   var customHttpsPort            = 0
 
   def createRouteWithConfig(
-      config: NgClientCertChainHeaderConfig,
+      config: NgCertificateAsApikeyConfig,
       rawResult: HttpRequest => (Int, String, List[HttpHeader])
   ) = {
     createLocalRoute(
@@ -107,7 +116,7 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
           plugin = NgPluginHelper.pluginId[OverrideHost]
         ),
         NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[NgClientCertChainHeader],
+          plugin = NgPluginHelper.pluginId[NgCertificateAsApikey],
           config = NgPluginInstanceConfig(config.json.as[JsObject])
         )
       ),
@@ -410,141 +419,42 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
 
   def afterEach() = instance.stop()
 
-  def onlySendPEM() = {
-    def test(req: HttpRequest, headerName: String) = {
-      req.headers.exists(_.name == headerName) mustBe true
-      req.headers.exists(_.name == "X-Client-Cert-DNs") mustBe false
-      req.headers.exists(_.name == "X-Client-Cert-Chain") mustBe false
-
-      req.headers
-        .find(_.name === headerName)
-        .get
-        .value()
-        .contains("-----BEGIN CERTIFICATE-----") mustBe true
-      req.headers
-        .find(_.name === headerName)
-        .get
-        .value()
-        .contains("-----END CERTIFICATE-----") mustBe true
-
+  def run() = {
+    def test(_req: HttpRequest) = {
       (200, "", List.empty)
     }
     for {
-      _      <- beforeEach()
-      route  <- createRouteWithConfig(
-                  NgClientCertChainHeaderConfig(
-                    sendPem = true,
-                    pemHeaderName = "pem-header"
-                  ),
-                  rawResult = req => test(req, "pem-header")
-                )
-      route2 <- createRouteWithConfig(
-                  NgClientCertChainHeaderConfig(
-                    sendPem = true,
-                    pemHeaderName = "X-Client-Cert-Pem"
-                  ),
-                  rawResult = req => test(req, "X-Client-Cert-Pem")
-                )
-      _      <- callRoute(route, Status.OK)
-      _      <- callRoute(route2, Status.OK)
-      _      <- afterEach()
-    } yield {}
-  }
+      _     <- beforeEach()
+      route <- createRouteWithConfig(
+                 NgCertificateAsApikeyConfig(
+                   tags = Seq("foo"),
+                   metadata = Map("foo" -> "bar")
+                 ),
+                 rawResult = test
+               )
+      _     <- callRoute(route, Status.OK)
+      _     <- {
+        val certFactory = CertificateFactory.getInstance("X.509")
+        val cert        = certFactory
+          .generateCertificate(new ByteArrayInputStream(clientCertInputStream))
+          .asInstanceOf[java.security.cert.X509Certificate]
 
-  def onlySendDNs() = {
-    def test(req: HttpRequest, headerName: String) = {
-      req.headers.exists(_.name == "X-Client-Cert-Pem") mustBe false
-      req.headers.exists(_.name == headerName) mustBe true
-      req.headers.exists(_.name == "X-Client-Cert-Chain") mustBe false
-
-      req.headers
-        .find(_.name === headerName)
-        .get
-        .value()
-        .contains(
-          Json.stringify(
-            Json.arr(JsString(DN("C=FR, ST=Paris, L=Paris, O=Client, OU=Dev, CN=test-client").stringify))
+        val serialNumber = cert.getSerialNumber.toString
+        val subjectDN    = DN(cert.getSubjectDN.getName).stringify
+        val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
+        wsClient
+          .url(s"http://localhost:${instance.port}/api/apikeys/$clientId")
+          .withHttpHeaders(
+            "Host"   -> "otoroshi-api.oto.tools",
+            "Accept" -> "application/json"
           )
-        ) mustBe true
-
-      (200, "", List.empty)
-    }
-    for {
-      _      <- beforeEach()
-      route  <- createRouteWithConfig(
-                  NgClientCertChainHeaderConfig(
-                    sendDns = true
-                  ),
-                  rawResult = req => test(req, "X-Client-Cert-DNs")
-                )
-      route2 <- createRouteWithConfig(
-                  NgClientCertChainHeaderConfig(
-                    sendDns = true,
-                    dnsHeaderName = "custom-name"
-                  ),
-                  rawResult = req => test(req, "custom-name")
-                )
-      _      <- callRoute(route, Status.OK)
-      _      <- callRoute(route2, Status.OK)
-      _      <- afterEach()
-    } yield {}
-  }
-
-  def onlySendChain() = {
-    def test(req: HttpRequest, headerName: String) = {
-      req.headers.exists(_.name == "X-Client-Cert-Pem") mustBe false
-      req.headers.exists(_.name == "X-Client-Cert-DNs") mustBe false
-      req.headers.exists(_.name == headerName) mustBe true
-
-      val chain = Json
-        .parse(
-          req.headers
-            .find(_.name === headerName)
-            .get
-            .value()
-        )
-        .asInstanceOf[JsArray]
-        .value
-        .head
-
-      val expected = Json.obj(
-        "subjectDN"    -> "ST=Paris, OU=Dev, O=Client, L=Paris, CN=test-client, C=FR",
-        "issuerDN"     -> "ST=Paris, OU=Dev, O=TestCA, L=Paris, CN=TestCA, C=FR",
-        "notAfter"     -> 1796986627000L,
-        "notBefore"    -> 1765450627000L,
-        "serialNumber" -> "f778ebb4e219c51743105e1b2b28c86516af71e",
-        "subjectCN"    -> "test-client",
-        "issuerCN"     -> "TestCA"
-      )
-
-      chain.selectAsString("subjectDN") mustBe expected.selectAsString("subjectDN")
-      chain.selectAsString("issuerDN") mustBe expected.selectAsString("issuerDN")
-      chain.selectAsLong("notAfter") mustBe expected.selectAsLong("notAfter")
-      chain.selectAsLong("notBefore") mustBe expected.selectAsLong("notBefore")
-      chain.selectAsString("serialNumber") mustBe expected.selectAsString("serialNumber")
-      chain.selectAsString("subjectCN") mustBe expected.selectAsString("subjectCN")
-      chain.selectAsString("issuerCN") mustBe expected.selectAsString("issuerCN")
-
-      (200, "", List.empty)
-    }
-    for {
-      _      <- beforeEach()
-      route  <- createRouteWithConfig(
-                  NgClientCertChainHeaderConfig(
-                    sendChain = true
-                  ),
-                  rawResult = req => test(req, "X-Client-Cert-Chain")
-                )
-      route2 <- createRouteWithConfig(
-                  NgClientCertChainHeaderConfig(
-                    sendChain = true,
-                    chainHeaderName = "custom-name"
-                  ),
-                  rawResult = req => test(req, "custom-name")
-                )
-      _      <- callRoute(route, Status.OK)
-      _      <- callRoute(route, Status.OK)
-      _      <- afterEach()
+          .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+          .get()
+          .map { response =>
+            response.status mustBe Status.OK
+          }
+      }
+      _     <- afterEach()
     } yield {}
   }
 }
