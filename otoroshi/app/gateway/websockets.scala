@@ -690,9 +690,10 @@ object WebSocketProxyActor {
       case (key, value)                                    =>
         Seq(RawHeader(key, value))
     }
-    val request                              = _headers.foldLeft[WebSocketRequest](WebSocketRequest(url))((r, header) =>
+    val protocol = headers.find(_._1.toLowerCase == "sec-websocket-protocol").map(_._2)
+    val request = _headers.foldLeft[WebSocketRequest](WebSocketRequest(url))((r, header) =>
       r.copy(extraHeaders = r.extraHeaders :+ header)
-    )
+    ).copy(subprotocol = protocol)
     // WARN: DOES NOT MAKE USE OF WS PLUGINS BECAUSE OF THE LIMITS OF THE AKKA STREAM SINK API
     val flow                                 = Flow.fromSinkAndSourceMat(
       Sink.asPublisher[akka.http.scaladsl.model.ws.Message](fanout = false),
@@ -836,9 +837,10 @@ class WebSocketProxyActor(
         case (key, value)                                    =>
           Seq(RawHeader(key, value))
       }
+      val protocol = headers.find(_._1.toLowerCase == "sec-websocket-protocol").map(_._2)
       val request                   = _headers.foldLeft[WebSocketRequest](WebSocketRequest(url))((r, header) =>
         r.copy(extraHeaders = r.extraHeaders :+ header)
-      )
+      ).copy(subprotocol = protocol)
       val (connected, materialized) = env.gatewayClient.ws(
         request = request,
         targetOpt = Some(target),
@@ -894,6 +896,9 @@ class WebSocketProxyActor(
             .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
         }
       )
+      materialized._1.andThen {
+        case Failure(e) => logger.error(s"[WEBSOCKET] mat error", e)
+      }
       queueRef.set(materialized._2)
       connected.andThen {
         case Success(r) => {
