@@ -28,7 +28,7 @@ class LimitHeadersInTooLongTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   val logger = LoggerFactory.getLogger("otoroshi-plugin-limit-headers-in-too-long").asInstanceOf[LogbackLogger]
 

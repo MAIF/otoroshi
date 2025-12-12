@@ -35,7 +35,7 @@ class PublicPrivatePathsTests(parent: PluginsTestSpec) {
       )
     ),
     id = IdGenerator.uuid
-  )
+  ).futureValue
 
   val nonStrictRoute = createRouteWithExternalTarget(
     Seq(
@@ -60,7 +60,7 @@ class PublicPrivatePathsTests(parent: PluginsTestSpec) {
       )
     ),
     id = IdGenerator.uuid
-  )
+  ).futureValue
 
   val apikey = ApiKey(
     clientId = s"client-${IdGenerator.uuid}",

@@ -40,7 +40,7 @@ class RegexResponseBodyRewriterTests(parent: PluginsTestSpec) {
       )
     ),
     result = _ => Json.obj("foo" -> "bar")
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/")

@@ -57,7 +57,7 @@ class JwtVerifiersTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   val token256    =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmb28iLCJpYXQiOjE3NjAxMDM1MzN9.TAj08m-Ax3dUFrZ2NU3oG3tPdIFOGvJdpO3Yhas63rw"

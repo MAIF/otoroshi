@@ -17,7 +17,7 @@ class OtoroshiMetricsEndpointTests(parent: PluginsTestSpec) {
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OtoroshiMetricsEndpoint])
     )
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/")

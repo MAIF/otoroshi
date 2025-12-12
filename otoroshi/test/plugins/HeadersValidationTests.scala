@@ -27,7 +27,7 @@ class HeadersValidationTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")

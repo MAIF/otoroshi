@@ -138,7 +138,7 @@ class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
       ),
       customOtoroshiPort = privateInstance.port.some,
       domain = "private-api.oto.tools".some
-    )
+    ).futureValue
 
     val publicRoute = createRouteWithExternalTarget(
       Seq(
@@ -163,7 +163,7 @@ class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
         ipAddress = "127.0.0.1".some
       ).some,
       customOtoroshiPort = publicInstance.port.some
-    )
+    ).futureValue
 
     val privateRouteCall = ws
       .url(s"http://127.0.0.1:${privateInstance.port}/")

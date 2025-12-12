@@ -466,7 +466,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     val keycloakPort        = keycloakContainer.mappedPort(8080)
     val oauth2Configuration = createOAuth2Module(keycloakHost, keycloakPort)
 
-    val route = createRoute(basicModuleConfiguration.id, oauth2Configuration.id)
+    val route = createRoute(basicModuleConfiguration.id, oauth2Configuration.id).futureValue
 
     verifyKeycloakTokenEndpoint(keycloakUrl)
 
@@ -900,7 +900,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     val keycloakPort        = keycloakContainer.mappedPort(8080)
     val oauth2Configuration = createOAuth2Module(keycloakHost, keycloakPort)
 
-    val route = createRoute(basicModuleConfiguration.id, oauth2Configuration.id)
+    val route = createRoute(basicModuleConfiguration.id, oauth2Configuration.id).futureValue
 
     verifyKeycloakTokenEndpoint(keycloakUrl)
 
@@ -1280,7 +1280,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     val keycloakPort        = keycloakContainer.mappedPort(8080)
     val oauth2Configuration = createOAuth2Module(keycloakHost, keycloakPort)
 
-    val route = createRoute(basicModuleConfiguration.id, oauth2Configuration.id)
+    val route = createRoute(basicModuleConfiguration.id, oauth2Configuration.id).futureValue
 
     verifyKeycloakTokenEndpoint(keycloakUrl)
 
@@ -1345,7 +1345,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val playwright = Playwright.create()
     val browser    = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))

@@ -21,7 +21,7 @@ class CustomErrorTemplateTests(parent: PluginsTestSpec) {
         plugin = NgPluginHelper.pluginId[BuildMode]
       )
     )
-  )
+  ).futureValue
 
   val maintenanceRoute = createRouteWithExternalTarget(
     Seq(
@@ -34,7 +34,7 @@ class CustomErrorTemplateTests(parent: PluginsTestSpec) {
     ),
     domain = "maintenance.oto.tools".some,
     id = "maintenance route"
-  )
+  ).futureValue
 
   val error = ErrorTemplate(
     location = EntityLocation.default,

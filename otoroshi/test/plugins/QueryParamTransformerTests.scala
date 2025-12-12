@@ -30,7 +30,7 @@ class QueryParamTransformerTests(parent: PluginsTestSpec) {
     result = req => {
       Json.obj("query_params" -> req.uri.query().toMap)
     }
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/api/?foo=bar&bar=foo")

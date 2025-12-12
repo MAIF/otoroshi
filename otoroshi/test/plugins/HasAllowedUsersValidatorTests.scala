@@ -90,7 +90,7 @@ class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
   )
   createAuthModule(moduleConfiguration).futureValue
 
-  private def getRoute(config: NgHasAllowedUsersValidatorConfig): NgRoute = {
+  private def getRoute(config: NgHasAllowedUsersValidatorConfig) = {
     val id = IdGenerator.uuid
     createRouteWithExternalTarget(
       Seq(
@@ -116,40 +116,40 @@ class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
     NgHasAllowedUsersValidatorConfig(
       usernames = Seq("john")
     )
-  )
+  ).futureValue
 
   val acceptOnlyEmails = getRoute(
     NgHasAllowedUsersValidatorConfig(
       emails = Seq("john@oto.tools")
     )
-  )
+  ).futureValue
 
   val acceptOnlyEmailDomains = getRoute(
     NgHasAllowedUsersValidatorConfig(
       emailDomains = Seq("oto.tools")
     )
-  )
+  ).futureValue
 
   val acceptOnlyMetadata = getRoute(
     NgHasAllowedUsersValidatorConfig(
       metadataMatch = Seq("foo"),
       metadataNotMatch = Seq("bar")
     )
-  )
+  ).futureValue
 
   val acceptEmptyMetadataMatch = getRoute(
     NgHasAllowedUsersValidatorConfig(
       metadataMatch = Seq.empty,
       metadataNotMatch = Seq("bar")
     )
-  )
+  ).futureValue
 
   val acceptOnlyProfile = getRoute(
     NgHasAllowedUsersValidatorConfig(
       profileMatch = Seq("email"),
       profileNotMatch = Seq("baz")
     )
-  )
+  ).futureValue
 
   private def call(user: BasicAuthUser, route: NgRoute, expected: Int) = {
     val cookies = login(user, route)

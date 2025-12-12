@@ -48,7 +48,7 @@ class WebsocketSizeValidatorTests(parent: PluginsTestSpec) {
       id = "local.target",
       tls = false
     ).some
-  )
+  ).futureValue
 
   val messagesPromise = Promise[Int]()
   val counter         = new AtomicInteger(0)

@@ -34,7 +34,7 @@ class RBACTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val goodApikey = ApiKey(
       clientName = "foo",
@@ -77,7 +77,7 @@ class RBACTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val unauthorizedApikey = ApiKey(
       clientName = "unauthorized",
@@ -118,7 +118,7 @@ class RBACTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val noRolesApikey = ApiKey(
       clientName = "noroles",
@@ -159,7 +159,7 @@ class RBACTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val wrongPrefixApikey = ApiKey(
       clientName = "wrongprefix",
@@ -201,7 +201,7 @@ class RBACTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val blockedApikey = ApiKey(
       clientName = "blocked",
@@ -243,7 +243,7 @@ class RBACTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val partialRolesApikey = ApiKey(
       clientName = "partial",

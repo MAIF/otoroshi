@@ -37,7 +37,7 @@ class WasmRequestTransformerTests(parent: PluginsTestSpec) {
     ),
     domain = s"$id.oto.tools".some,
     id
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/")

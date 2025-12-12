@@ -1,5 +1,8 @@
 package plugins
 
+import akka.Done
+import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
+import akka.http.scaladsl.model.headers.RawHeader
 import akka.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
@@ -7,17 +10,24 @@ import io.netty.handler.ssl.SslContextBuilder
 import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetSocketAddressResolver}
 import io.netty.util.CharsetUtil
 import io.netty.util.concurrent.EventExecutor
+import org.scalatest.Assertion
 import otoroshi.api.Otoroshi
 import otoroshi.models.{ApiKey, RouteIdentifier}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{ApikeyCalls, NgHasClientCertMatchingApikeyValidator, OverrideHost}
+import otoroshi.next.plugins.{
+  ApikeyCalls,
+  NgClientCertChainHeader,
+  NgClientCertChainHeaderConfig,
+  NgHasClientCertMatchingApikeyValidator,
+  OverrideHost
+}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Configuration
 import play.api.http.Status
-import play.api.libs.json.Json
+import play.api.libs.json.JsObject
 import play.core.server.ServerConfig
 import reactor.netty.http.client.HttpClient
 
@@ -29,14 +39,14 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
-class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
+class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
 
   import parent._
 
-  case class OtoroshiInstance(port: Int, configuration: String) {
+  case class OtoroshiInstance(port: Int, configuration: String, customHttpsPort: Int) {
     private val ref: AtomicReference[Otoroshi] = new AtomicReference[Otoroshi]()
 
-    def stop() = {
+    def stop(): Future[Done] = {
       ref.get().stop()
       Source
         .tick(1.millisecond, 1.second, ())
@@ -53,10 +63,9 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
         .filter(_ != play.mvc.Http.Status.OK)
         .take(1)
         .runForeach(_ => ())
-        .futureValue
     }
 
-    def start() = {
+    def start(): Future[Done] = {
       val instanceId = IdGenerator.uuid
       val otoroshi   = Otoroshi(
         ServerConfig(
@@ -90,73 +99,55 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
         .filter(_ == play.mvc.Http.Status.OK)
         .take(1)
         .runForeach(_ => ())
-        .futureValue
     }
   }
 
-  val customHttpsPort = TargetService.freePort
-  val publicInstance  = OtoroshiInstance(
-    TargetService.freePort,
-    s"""
+  var instance: OtoroshiInstance = _
+  var customHttpsPort            = 0
+
+  def createRouteWithConfig(
+      config: NgClientCertChainHeaderConfig,
+      rawResult: HttpRequest => (Int, String, List[HttpHeader])
+  ) = {
+    createLocalRoute(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[NgClientCertChainHeader],
+          config = NgPluginInstanceConfig(config.json.as[JsObject])
+        )
+      ),
+      rawDomain = s"${IdGenerator.uuid}.oto.bar".some,
+      customOtoroshiPort = instance.port.some,
+      rawResult = rawResult.some
+    )
+  }
+
+  def beforeEach(): Future[Object] = {
+    customHttpsPort = TargetService.freePort
+    instance = OtoroshiInstance(
+      TargetService.freePort,
+      s"""
        |otoroshi.next.state-sync-interval=2000
        |play.server.https.wantClientAuth=true
        |otoroshi.ssl.fromOutside.clientAuth=Want
-       |"""
-  )
-  publicInstance.start()
+       |""",
+      customHttpsPort
+    )
+    instance
+      .start()
+      .flatMap(_ => {
+        val certificateTemplate: Cert = Cert._fmt.reads(getOtoroshiCertificate().futureValue._1).get
 
-  val route = createRouteWithExternalTarget(
-    Seq(
-      NgPluginInstance(
-        plugin = NgPluginHelper.pluginId[OverrideHost]
-      ),
-      NgPluginInstance(
-        plugin = NgPluginHelper.pluginId[ApikeyCalls]
-      ),
-      NgPluginInstance(
-        plugin = NgPluginHelper.pluginId[NgHasClientCertMatchingApikeyValidator]
-      )
-    ),
-    domain = "foo.oto.bar".some,
-    customOtoroshiPort = publicInstance.port.some
-  ).futureValue
-
-  val goodApikey = ApiKey(
-    clientName = IdGenerator.uuid,
-    clientId = IdGenerator.uuid,
-    clientSecret = IdGenerator.uuid,
-    authorizedEntities = Seq(RouteIdentifier(route.id)),
-    metadata = Map("allowed-client-cert-dn" -> "C=FR, ST=Paris, L=Paris, O=Client, OU=Dev, CN=test-client")
-  )
-
-  val badApikey = ApiKey(
-    clientName = IdGenerator.uuid,
-    clientId = IdGenerator.uuid,
-    clientSecret = IdGenerator.uuid,
-    authorizedEntities = Seq(RouteIdentifier(route.id)),
-    metadata = Map("allowed-client-cert-dn" -> "C=EN")
-  )
-
-  val missingMetadataApikey = ApiKey(
-    clientName = IdGenerator.uuid,
-    clientId = IdGenerator.uuid,
-    clientSecret = IdGenerator.uuid,
-    authorizedEntities = Seq(RouteIdentifier(route.id))
-  )
-
-  createOtoroshiApiKey(goodApikey, publicInstance.port.some).futureValue
-  createOtoroshiApiKey(badApikey, publicInstance.port.some).futureValue
-  createOtoroshiApiKey(missingMetadataApikey, publicInstance.port.some).futureValue
-
-  val certificateTemplate: Cert = Cert._fmt.reads(getOtoroshiCertificate().futureValue._1).get
-
-  // resources/certificates/oto.bar/server-fullchain.pem + server-key.pem
-  val certificate = createOtoroshiCertificate(
-    certificateTemplate.copy(
-      domain = "*.oto.bar",
-      name = "a new certificate",
-      description = "A test server certificate",
-      chain = """-----BEGIN CERTIFICATE-----
+        // resources/certificates/oto.bar/server-fullchain.pem + server-key.pem
+        createOtoroshiCertificate(
+          certificateTemplate.copy(
+            domain = "*.oto.bar",
+            name = "a new certificate",
+            description = "A test server certificate",
+            chain = """-----BEGIN CERTIFICATE-----
           |MIIFJTCCAw2gAwIBAgIUD3eOu04hnFF0MQXhsrKMhlFq9x0wDQYJKoZIhvcNAQEL
           |BQAwXTELMAkGA1UEBhMCRlIxDjAMBgNVBAgMBVBhcmlzMQ4wDAYDVQQHDAVQYXJp
           |czEPMA0GA1UECgwGVGVzdENBMQwwCgYDVQQLDANEZXYxDzANBgNVBAMMBlRlc3RD
@@ -219,8 +210,8 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
           |j1Bb6RjWIAKIs3YlDuouk5LvnfwckTQ19z4jTRMbEphu0Fp38+FCSYp/Unj1ojU9
           |rQ==
           |-----END CERTIFICATE-----""".stripMargin,
-      caRef = None,
-      privateKey = """-----BEGIN PRIVATE KEY-----
+            caRef = None,
+            privateKey = """-----BEGIN PRIVATE KEY-----
           |MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCsBbBnFzHkMC8L
           |MAyf4cToRvxo2H2T6TOOvJ/RkF0YvxFC0ByQvr7exoE3aHDMCOBn+5NJnoGGYrut
           |8XZkRg4ch+CfU/YR2JNk+za05GDQ8z0UXqQfMA1pxDeUaFqERzHAk96iRh/Xw4SF
@@ -248,17 +239,19 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
           |jPJxDH0dZAt0u614HIJmmuO2MyCgNHHkyUbq5dSpDlGUIqkIodwrBJ/J/3yYKZ2Z
           |l7Tu/ohNidulLORKySi39vvx
           |-----END PRIVATE KEY-----""".stripMargin,
-      selfSigned = false,
-      ca = false,
-      valid = true,
-      exposed = false,
-      revoked = false,
-      autoRenew = false,
-      letsEncrypt = false,
-      sans = Seq("oto.bar", "*.oto.bar", "test-clientcertificate-chain-validator.oto.bar")
-    ),
-    customPort = publicInstance.port.some
-  )
+            selfSigned = false,
+            ca = false,
+            valid = true,
+            exposed = false,
+            revoked = false,
+            autoRenew = false,
+            letsEncrypt = false,
+            sans = Seq("oto.bar", "*.oto.bar", "test-clientcertificate-chain-validator.oto.bar")
+          ),
+          customPort = instance.port.some
+        )
+      })
+  }
 
   val dnsMappings = Map(
     "oto.bar"   -> "127.0.0.1",
@@ -271,8 +264,6 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
       new InetSocketAddressResolver(executor, nameResolver)
     }
   }
-
-  Thread.sleep(5000)
 
   // resources/certificates/oto.bar/ca-cert.pem
   val caCertPem =
@@ -311,8 +302,7 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
       |-----END CERTIFICATE-----""".stripMargin
 
   // resources/certificates/oto.bar/client-cert.pem
-  val clientCertPem =
-    """-----BEGIN CERTIFICATE-----
+  val clientCertPem = """-----BEGIN CERTIFICATE-----
       |MIIEjzCCAnegAwIBAgIUD3eOu04hnFF0MQXhsrKMhlFq9x4wDQYJKoZIhvcNAQEL
       |BQAwXTELMAkGA1UEBhMCRlIxDjAMBgNVBAgMBVBhcmlzMQ4wDAYDVQQHDAVQYXJp
       |czEPMA0GA1UECgwGVGVzdENBMQwwCgYDVQQLDANEZXYxDzANBgNVBAMMBlRlc3RD
@@ -375,13 +365,14 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
   val clientCertInputStream = clientCertPem.getBytes(CharsetUtil.UTF_8)
   val clientKeyInputStream  = clientKeyPem.getBytes(CharsetUtil.UTF_8)
 
+  case class ResponseData(status: Int, headers: Map[String, String])
+
   def callRoute(
       route: NgRoute,
-      apikey: ApiKey,
       status: Int
-  ): Unit = {
+  ): Future[ResponseData] = {
 
-    println(s"Calling ${route.frontend.domains.head.domain}, expected $status")
+    println(s"Calling ${route.frontend.domains.head.domain} with port ${customHttpsPort}")
 
     val pureNettyClient = HttpClient
       .create()
@@ -403,31 +394,52 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
       }
       .resolver(resolverGroup)
 
-    val responseFuture: Future[Int] = {
-      val promise = Promise[Int]()
-      pureNettyClient
-        .headers(h => {
-          h.set("Otoroshi-Client-Id", apikey.clientId)
-          h.set("Otoroshi-Client-Secret", apikey.clientSecret)
-        })
-        .get()
-        .uri("/foo")
-        .response()
-        .doOnNext(response => {
-          promise.success(response.status().code())
-        })
-        .doOnError(error => promise.failure(error))
-        .subscribe()
-      promise.future
-    }
-
-    val code = responseFuture.futureValue
-    code mustBe status
+    val promise = Promise[ResponseData]()
+    pureNettyClient
+      .get()
+      .uri("/")
+      .response()
+      .doOnNext(response => {
+        val headers = scala.collection.mutable.Map[String, String]()
+        response
+          .responseHeaders()
+          .entries()
+          .forEach(entry => {
+            headers.put(entry.getKey, entry.getValue)
+          })
+        val code    = response.status().code()
+        code mustBe status
+        promise.success(ResponseData(code, headers.toMap))
+      })
+      .doOnError(error => promise.failure(error))
+      .subscribe()
+    promise.future
   }
 
-  callRoute(route, goodApikey, Status.OK)
-  callRoute(route, badApikey, Status.FORBIDDEN)
-  callRoute(route, missingMetadataApikey, Status.FORBIDDEN)
+  def afterEach() = instance.stop()
 
-  publicInstance.stop()
+  def onlySendpemWithDefaultHeaderName() = {
+    for {
+      _        <- beforeEach()
+      route    <- createRouteWithConfig(
+                    NgClientCertChainHeaderConfig(
+                      sendPem = true,
+                      pemHeaderName = "pem-header",
+                      sendDns = false,
+                      dnsHeaderName = "X-Client-Cert-DNs",
+                      sendChain = false,
+                      chainHeaderName = "X-Client-Cert-Chain"
+                    ),
+                    rawResult = req => {
+                      req.headers.exists(_.name == "pem-header") mustBe true
+                      req.headers.exists(_.name == "X-Client-Cert-DNs") mustBe false
+                      req.headers.exists(_.name == "X-Client-Cert-Chain") mustBe false
+
+                      (200, "", List.empty)
+                    }
+                  )
+      response <- callRoute(route, Status.OK)
+      _        <- afterEach()
+    } yield {}
+  }
 }

@@ -32,7 +32,7 @@ class MissingCookiesOutTests(parent: PluginsTestSpec) {
       )
     ),
     id = id
-  )
+  ).futureValue
 
   {
     val resp = ws
@@ -73,7 +73,7 @@ class MissingCookiesOutTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   {
     val resp = ws

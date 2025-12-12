@@ -88,7 +88,7 @@ class NgExpectedConsumerTests(parent: PluginsTestSpec) {
       NgPluginInstance(plugin = NgPluginHelper.pluginId[NgExpectedConsumer])
     ),
     id = IdGenerator.uuid
-  )
+  ).futureValue
 
   val playwright = Playwright.create()
   val browser    = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))

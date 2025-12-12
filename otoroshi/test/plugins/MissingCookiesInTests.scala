@@ -32,7 +32,7 @@ class MissingCookiesInTests(parent: PluginsTestSpec) {
     ),
     id = id,
     domain = s"$id.oto.tools".some
-  )
+  ).futureValue
 
   {
     val resp = ws

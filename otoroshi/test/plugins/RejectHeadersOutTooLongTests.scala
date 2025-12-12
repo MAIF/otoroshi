@@ -28,7 +28,7 @@ class RejectHeadersOutTooLongTests(parent: PluginsTestSpec) {
     responseStatus = Status.OK,
     result = _ => Json.obj(),
     responseHeaders = List(RawHeader("foo", "bar"), RawHeader("baz", "very very very long header value"))
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")

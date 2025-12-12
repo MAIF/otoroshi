@@ -38,7 +38,7 @@ class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
       result = _ => {
         message
       }
-    )
+    ).futureValue
 
     val resp = ws
       .url(s"http://127.0.0.1:$port/")
@@ -73,7 +73,7 @@ class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
       result = _ => {
         message
       }
-    )
+    ).futureValue
 
     val resp = ws
       .url(s"http://127.0.0.1:$port/")
@@ -109,7 +109,7 @@ class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
       responseHeaders = List(RawHeader("Content-Length", message.length.toString)),
       jsonAPI = false,
       stringResult = _ => message
-    )
+    ).futureValue
 
     val resp = ws
       .url(s"http://127.0.0.1:$port/")

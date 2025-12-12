@@ -33,7 +33,7 @@ class HMACAccessValidatorTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val base      = System.currentTimeMillis().toString
     val signature = Base64.getEncoder.encodeToString(Signatures.hmac(HMACUtils.Algo("HMAC-SHA512"), base, "secret"))
@@ -71,7 +71,7 @@ class HMACAccessValidatorTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val apikey = ApiKey(
       clientId = IdGenerator.token(16),

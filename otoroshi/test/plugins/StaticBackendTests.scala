@@ -39,7 +39,7 @@ class StaticBackendTests(parent: PluginsTestSpec) {
     ),
     id = IdGenerator.uuid,
     domain = "s3backend.oto.tools".some
-  )
+  ).futureValue
 
   val resp2 = ws
     .url(s"http://127.0.0.1:$port/index.html")

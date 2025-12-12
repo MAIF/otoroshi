@@ -46,7 +46,7 @@ class JwtVerificationOnlyTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     {
       val resp = ws
@@ -92,7 +92,7 @@ class JwtVerificationOnlyTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val resp = ws
       .url(s"http://127.0.0.1:$port/api")
@@ -122,7 +122,7 @@ class JwtVerificationOnlyTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     {
       val resp = ws

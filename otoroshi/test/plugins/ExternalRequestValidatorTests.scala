@@ -23,7 +23,7 @@ class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
       },
       rawDomain = "invalid.oto.tools".some,
       frontendPath = "/check"
-    )
+    ).futureValue
 
     val route = createRouteWithExternalTarget(
       Seq(
@@ -47,7 +47,7 @@ class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
       ),
       domain = "route.oto.tools".some,
       id = IdGenerator.uuid
-    )
+    ).futureValue
 
     val resp = ws
       .url(s"http://127.0.0.1:$port/check")
@@ -70,7 +70,7 @@ class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
       result = _ => Json.obj("pass" -> true),
       rawDomain = "validator.oto.tools".some,
       frontendPath = "/check"
-    )
+    ).futureValue
 
     val route = createRouteWithExternalTarget(
       Seq(
@@ -92,7 +92,7 @@ class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val resp = ws
       .url(s"http://127.0.0.1:$port/check")

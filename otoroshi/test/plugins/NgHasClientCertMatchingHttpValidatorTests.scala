@@ -118,7 +118,7 @@ class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
         "regexIssuerDNs"  -> Json.arr(".*TestCA.*")       // matches any DN containing "TestCA"
       )
     }
-  )
+  ).futureValue
 
   val wrongRouteValidator = createLocalRoute(
     result = _ => {
@@ -127,7 +127,7 @@ class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
         "issuerDNs"     -> Json.arr("C=EN")
       )
     }
-  )
+  ).futureValue
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -148,7 +148,7 @@ class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
     ),
     domain = "foo.oto.bar".some,
     customOtoroshiPort = publicInstance.port.some
-  )
+  ).futureValue
 
   val routeWithWrongConfiguraiton = createRouteWithExternalTarget(
     Seq(
@@ -169,7 +169,7 @@ class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
     ),
     domain = "baz.oto.bar".some,
     customOtoroshiPort = publicInstance.port.some
-  )
+  ).futureValue
 
   val certificateTemplate: Cert = Cert._fmt.reads(getOtoroshiCertificate().futureValue._1).get
 
@@ -361,8 +361,7 @@ class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
       |y0G5hOt5jOXiHAV8Ax560E9R8krzA/G4qA2v7akwqOXJw/E/xqz7xb3ixkD/RjNb
       |91TzEurOO1448Nmp1HEfj2NZzp26Ovr/26BUSFKvNdfIm6/e0E0tacvZMAMWWBhv
       |goFL0H2+JVbGjPwAWldtAcJaiA==
-      |-----END CERTIFICATE-----
-      |""".stripMargin
+      |-----END CERTIFICATE-----""".stripMargin
 
   // resources/certificates/oto.bar/client-key.pem
   val clientKeyPem =
@@ -393,8 +392,7 @@ class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
       |VHIfs8Qty1TcSYnoV6DmlR08lN3XyjyEUus2aZKB3PXI5PjOVS1bpb+lPd14M3hV
       |uZ+UUcN/BmsWXxKKJbhLa5JtDHYHwPDLuqAdxKJWO3VfKd9EJeW1AiGfgNUd0Dgj
       |iZU+jmM4znlhjjsPr5i5tQ==
-      |-----END PRIVATE KEY-----
-      |""".stripMargin
+      |-----END PRIVATE KEY-----""".stripMargin
 
   val caCertInputStream     = caCertPem.getBytes(CharsetUtil.UTF_8)
   val clientCertInputStream = clientCertPem.getBytes(CharsetUtil.UTF_8)

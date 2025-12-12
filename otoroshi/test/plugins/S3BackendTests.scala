@@ -69,7 +69,7 @@ class S3BackendTests(parent: PluginsTestSpec) {
     ),
     id = IdGenerator.uuid,
     domain = "s3backend.oto.tools".some
-  )
+  ).futureValue
 
   def s3Client = {
     S3Attributes.settings(

@@ -66,7 +66,7 @@ class NgAuthModuleUserExtractorTests(parent: PluginsTestSpec) {
       )
     ),
     id = IdGenerator.uuid
-  )
+  ).futureValue
 
   val playwright = Playwright.create()
   val browser    = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
@@ -111,7 +111,7 @@ class NgAuthModuleUserExtractorTests(parent: PluginsTestSpec) {
       )
     ),
     id = IdGenerator.uuid
-  )
+  ).futureValue
 
   val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
     DefaultWSCookie(

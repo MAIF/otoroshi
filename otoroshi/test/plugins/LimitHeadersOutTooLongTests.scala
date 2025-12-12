@@ -32,7 +32,7 @@ class LimitHeadersOutTooLongTests(parent: PluginsTestSpec) {
     responseStatus = Status.OK,
     result = _ => Json.obj(),
     responseHeaders = List(RawHeader("foo", "bar"), RawHeader("baz", "very very very very very long header value"))
-  )
+  ).futureValue
 
   val logger = LoggerFactory.getLogger("otoroshi-plugin-limit-headers-out-too-long").asInstanceOf[LogbackLogger]
 

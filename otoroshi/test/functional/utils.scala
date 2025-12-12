@@ -1651,7 +1651,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       root: String = "/",
       target: Option[NgTarget] = None,
       customOtoroshiPort: Option[Int] = None
-  ): NgRoute = {
+  ): Future[NgRoute] = {
     val newRoute = NgRoute(
       location = EntityLocation.default,
       id = id,
@@ -1691,19 +1691,20 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       metadata = Map.empty
     )
 
-    val result = createOtoroshiRoute(newRoute, customOtoroshiPort).futureValue
-
-    if (result._2 == Status.CREATED) {
-      newRoute
-    } else {
-      if (result._1.select("error_description").asOptString.contains("Entity already exists")) {
-        deleteOtoroshiRoute(newRoute).futureValue
-        await(2.seconds)
-        createRouteWithExternalTarget(plugins, domain, id, hostname, root)
-      } else {
-        throw new RuntimeException(s"failed to create a new otoroshi route - ${result._2} - ${result._1.prettify}")
-      }
-    }
+    createOtoroshiRoute(newRoute, customOtoroshiPort)
+      .flatMap(result => {
+        if (result._2 == Status.CREATED) {
+          newRoute.future
+        } else {
+          if (result._1.select("error_description").asOptString.contains("Entity already exists")) {
+            deleteOtoroshiRoute(newRoute).futureValue
+            await(2.seconds)
+            createRouteWithExternalTarget(plugins, domain, id, hostname, root)
+          } else {
+            throw new RuntimeException(s"failed to create a new otoroshi route - ${result._2} - ${result._1.prettify}")
+          }
+        }
+      })
   }
 
   def createLocalRoute(
@@ -1718,8 +1719,9 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       responseContentType: String = "application/json",
       stringResult: HttpRequest => String = _ => "",
       target: Option[NgTarget] = None,
-      rawResult: Option[HttpRequest => (Int, String, List[HttpHeader])] = None
-  ) = {
+      rawResult: Option[HttpRequest => (Int, String, List[HttpHeader])] = None,
+      customOtoroshiPort: Option[Int] = None
+  ): Future[NgRoute] = {
 
     var _target: Option[TargetService] = None
     val id                             = IdGenerator.uuid
@@ -1792,13 +1794,14 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       metadata = Map.empty
     )
 
-    val resp = createOtoroshiRoute(newRoute).futureValue
-
-    if (resp._2 == Status.CREATED) {
-      newRoute
-    } else {
-      throw new RuntimeException("failed to create a new local route")
-    }
+    createOtoroshiRoute(newRoute, customOtoroshiPort)
+      .flatMap(resp => {
+        if (resp._2 == Status.CREATED) {
+          newRoute.future
+        } else {
+          throw new RuntimeException("failed to create a new local route")
+        }
+      })
   }
 
   def getOutHeader(resp: WSRequest#Self#Response, headerName: String) = {

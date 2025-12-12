@@ -30,7 +30,7 @@ class ApikeyAuthModuleTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   val goodApikey = ApiKey(
     clientName = "foo",

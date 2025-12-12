@@ -27,7 +27,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
         Json.obj("message" -> "creation done")
       },
       responseHeaders = List(RawHeader("Location", "/foo"))
-    )
+    ).futureValue
 
     val resp = ws
       .url(s"http://127.0.0.1:$port/api")
@@ -59,7 +59,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       },
       rawDomain = "foo.oto.tools".some,
       responseHeaders = List(RawHeader("Location", s"http://location.oto.tools:$port/api"))
-    )
+    ).futureValue
 
     val finalTargetRoute = createLocalRoute(
       Seq(
@@ -71,7 +71,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
         Json.obj("message" -> "reached the target route")
       },
       rawDomain = "location.oto.tools".some
-    )
+    ).futureValue
 
     val resp = ws
       .url(s"http://127.0.0.1:$port/api")

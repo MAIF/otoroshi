@@ -63,7 +63,7 @@ class OtoroshiChallengeTests(parent: PluginsTestSpec) {
       val signedToken = s"$content.$signature"
       (200, "", List(RawHeader("bar", signedToken)))
     })
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/api/users")

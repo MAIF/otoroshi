@@ -32,7 +32,7 @@ class YesWebsocketPluginTests(parent: PluginsTestSpec) {
         )
       ),
       id = IdGenerator.uuid
-    )
+    ).futureValue
 
     implicit val system: ActorSystem = ActorSystem("otoroshi-test")
     implicit val mat: Materializer   = Materializer(system)
@@ -75,7 +75,7 @@ class YesWebsocketPluginTests(parent: PluginsTestSpec) {
         )
       ),
       id = IdGenerator.uuid
-    )
+    ).futureValue
 
     implicit val system: ActorSystem = ActorSystem("otoroshi-test")
     implicit val mat: Materializer   = Materializer(system)

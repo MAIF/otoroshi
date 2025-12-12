@@ -284,17 +284,20 @@ class NgClientCertChainHeader extends NgRequestTransformer {
           .cachedConfig(internalName)(NgClientCertChainHeaderConfig.format)
           .getOrElse(NgClientCertChainHeaderConfig())
         val pemMap   =
-          if (config.sendPem) Map(config.pemHeaderName -> ctx.request.clientCertChainPemString) else Map.empty
+          if (config.sendPem)
+            Map(config.pemHeaderName -> ctx.request.inlinePem)
+          else Map.empty
         val dnsMap   =
           if (config.sendDns)
             Map(
               config.dnsHeaderName -> Json.stringify(
-                JsArray(chain.map(c => JsString(DN(c.getSubjectDN.getName).stringify)))
+                JsArray(chain.map(c => JsString(DN(c.getSubjectX500Principal.getName).stringify)))
               )
             )
           else Map.empty
         val chainMap =
           if (config.sendChain) Map(config.chainHeaderName -> Json.stringify(jsonChain(chain))) else Map.empty
+
         Right(
           ctx.otoroshiRequest.copy(
             headers = ctx.otoroshiRequest.headers ++ pemMap ++ dnsMap ++ chainMap

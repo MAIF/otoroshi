@@ -29,7 +29,7 @@ class RemoveHeadersOutTests(parent: PluginsTestSpec) {
       Json.obj()
     },
     responseHeaders = List(RawHeader("foo", "bar"), RawHeader("foo2", "baz"))
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")

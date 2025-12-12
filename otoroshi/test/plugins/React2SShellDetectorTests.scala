@@ -32,7 +32,7 @@ class React2SShellDetectorTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   val passingResp1 = ws
     .url(s"http://127.0.0.1:$port/api")

@@ -14,7 +14,7 @@ class BasicAuthCallerTests(parent: PluginsTestSpec) {
   import parent._
 
   def checkProcess() = {
-    def simpleBasicAuthRoute(): NgRoute = {
+    def simpleBasicAuthRoute() = {
       createRouteWithExternalTarget(
         Seq(
           NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
@@ -33,7 +33,7 @@ class BasicAuthCallerTests(parent: PluginsTestSpec) {
       )
     }
 
-    def basicAuthCallerRoute(): NgRoute = {
+    def basicAuthCallerRoute() = {
       createRouteWithExternalTarget(
         Seq(
           NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
@@ -72,8 +72,8 @@ class BasicAuthCallerTests(parent: PluginsTestSpec) {
       callWithUser.status mustBe 200
     }
 
-    val basicAuthRoute = simpleBasicAuthRoute()
-    val callerRouter   = basicAuthCallerRoute()
+    val basicAuthRoute = simpleBasicAuthRoute().futureValue
+    val callerRouter   = basicAuthCallerRoute().futureValue
     verify(basicAuthRoute)
 
     deleteOtoroshiRoute(basicAuthRoute).futureValue
@@ -98,7 +98,7 @@ class BasicAuthCallerTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val resp = ws
       .url(s"http://127.0.0.1:$port/api")

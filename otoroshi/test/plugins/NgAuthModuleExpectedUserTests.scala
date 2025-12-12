@@ -71,7 +71,7 @@ class NgAuthModuleExpectedUserTests(parent: PluginsTestSpec) {
       )
     ),
     id = IdGenerator.uuid
-  )
+  ).futureValue
 
   val playwright = Playwright.create()
   val browser    = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
@@ -109,7 +109,7 @@ class NgAuthModuleExpectedUserTests(parent: PluginsTestSpec) {
     ),
     domain = "authmodule.oto.tools".some,
     id = IdGenerator.uuid
-  )
+  ).futureValue
 
   page = context.newPage()
   page.navigate(s"http://${route2.frontend.domains.head.domain}:$port")

@@ -18,7 +18,7 @@ class OtoroshiHealthEndpointTests(parent: PluginsTestSpec) {
       NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(NgPluginHelper.pluginId[OtoroshiHealthEndpoint], include = Seq("/health"))
     )
-  )
+  ).futureValue
 
   {
     val resp = ws

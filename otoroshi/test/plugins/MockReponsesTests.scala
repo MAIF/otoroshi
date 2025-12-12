@@ -39,7 +39,7 @@ class MockReponsesTests(parent: PluginsTestSpec) {
     ),
     rawDomain = "mock.oto.tools".some,
     frontendPath = "/"
-  )
+  ).futureValue
 
   {
     val resp = ws

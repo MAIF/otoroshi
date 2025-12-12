@@ -28,7 +28,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val allowedCall = ws
       .url(s"http://127.0.0.1:$port/api/users")
@@ -55,7 +55,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val forbiddenCall = ws
       .url(s"http://127.0.0.1:$port/api/admin")
@@ -82,7 +82,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val notFoundCall = ws
       .url(s"http://127.0.0.1:$port/api/hidden")
@@ -108,7 +108,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val unlistedCall = ws
       .url(s"http://127.0.0.1:$port/api/other")
@@ -135,7 +135,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val unlistedCall = ws
       .url(s"http://127.0.0.1:$port/api/other")
@@ -163,7 +163,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val forbiddenCall = ws
       .url(s"http://127.0.0.1:$port/api/admin")
@@ -204,7 +204,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val usersCall = ws
       .url(s"http://127.0.0.1:$port/api/users")
@@ -260,7 +260,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val anyCall = ws
       .url(s"http://127.0.0.1:$port/api/anything")
@@ -288,7 +288,7 @@ class RoutingRestrictionsTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val v1Call = ws
       .url(s"http://127.0.0.1:$port/api/v1/users")

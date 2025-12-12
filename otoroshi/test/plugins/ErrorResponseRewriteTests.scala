@@ -30,7 +30,7 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   {
     val resp = ws

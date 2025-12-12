@@ -13,7 +13,7 @@ class SimpleBasicAuthTests(parent: PluginsTestSpec) {
 
   import parent._
 
-  def simpleBasicAuthRoute(): NgRoute = {
+  def simpleBasicAuthRoute() = {
     createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
@@ -71,10 +71,8 @@ class SimpleBasicAuthTests(parent: PluginsTestSpec) {
     callWithUser.status mustBe 200
   }
 
-  val basicAuthRoute = simpleBasicAuthRoute()
-  //val callerRouter   = basicAuthCallerRoute()
+  val basicAuthRoute = simpleBasicAuthRoute().futureValue
   verify(basicAuthRoute)
 
   deleteOtoroshiRoute(basicAuthRoute).futureValue
-  //deleteOtoroshiRoute(callerRouter).futureValue
 }

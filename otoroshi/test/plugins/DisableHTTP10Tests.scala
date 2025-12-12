@@ -17,7 +17,7 @@ class DisableHTTP10Tests(parent: PluginsTestSpec) {
         plugin = NgPluginHelper.pluginId[DisableHttp10]
       )
     )
-  )
+  ).futureValue
 
   import java.io._
   import java.net.Socket

@@ -37,7 +37,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
       ),
       domain = s"$id.oto.tools".some,
       id
-    )
+    ).futureValue
 
     {
       val resp = ws
@@ -132,7 +132,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
       ),
       domain = s"$id.oto.tools".some,
       id
-    )
+    ).futureValue
 
     {
       val resp = ws
@@ -207,7 +207,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
       ),
       domain = s"$id.oto.tools".some,
       id
-    )
+    ).futureValue
 
     {
       val resp = ws

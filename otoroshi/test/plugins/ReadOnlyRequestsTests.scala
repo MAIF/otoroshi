@@ -14,7 +14,7 @@ class ReadOnlyRequestsTests(parent: PluginsTestSpec) {
       NgPluginInstance(NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(NgPluginHelper.pluginId[ReadOnlyCalls])
     )
-  )
+  ).futureValue
 
   def req() = ws
     .url(s"http://127.0.0.1:$port/api")
