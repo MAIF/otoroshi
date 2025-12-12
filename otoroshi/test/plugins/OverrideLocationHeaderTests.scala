@@ -92,7 +92,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       },
         rawDomain = "foo.oto.tools".some,
       responseHeaders = List(RawHeader("Location", s"http://127.0.0.1:$port/api"))
-    )
+    ).futureValue
 
     val finalTargetRoute = createLocalRoute(
       Seq(

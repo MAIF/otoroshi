@@ -1,8 +1,8 @@
 package plugins
 
-import akka.Done
-import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
-import akka.stream.scaladsl.Source
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.{HttpHeader, HttpRequest}
+import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
 import io.netty.handler.ssl.SslContextBuilder
@@ -37,12 +37,13 @@ import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.security.cert.CertificateFactory
 import java.util.concurrent.atomic.AtomicReference
+import scala.compiletime.uninitialized
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
 class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{*, given}
 
   case class OtoroshiInstance(port: Int, configuration: String, customHttpsPort: Int) {
     private val ref: AtomicReference[Otoroshi] = new AtomicReference[Otoroshi]()
@@ -103,7 +104,7 @@ class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
     }
   }
 
-  var instance: OtoroshiInstance = _
+  var instance: OtoroshiInstance = uninitialized
   var customHttpsPort            = 0
 
   def createRouteWithConfig(
@@ -391,7 +392,7 @@ class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
           .trustManager(caCert)
           .keyManager(new ByteArrayInputStream(clientCertInputStream), new ByteArrayInputStream(clientKeyInputStream))
 
-        spec.sslContext(sslCtxBuilder)
+        spec.sslContext(sslCtxBuilder.build())
       }
       .resolver(resolverGroup)
 
@@ -399,6 +400,7 @@ class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
     pureNettyClient
       .get()
       .uri("/")
+      .asInstanceOf[HttpClient.ResponseReceiver[?]]
       .response()
       .doOnNext(response => {
         val headers = scala.collection.mutable.Map[String, String]()
@@ -440,7 +442,7 @@ class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
           .asInstanceOf[java.security.cert.X509Certificate]
 
         val serialNumber = cert.getSerialNumber.toString
-        val subjectDN    = DN(cert.getSubjectDN.getName).stringify
+        val subjectDN    = DN(cert.getSubjectX500Principal.getName).stringify
         val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
         wsClient
           .url(s"http://localhost:${instance.port}/api/apikeys/$clientId")

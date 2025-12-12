@@ -6,6 +6,7 @@ import com.networknt.schema.SpecVersion.VersionFlag
 import com.networknt.schema.{InputFormat, JsonSchemaFactory, PathType, SchemaValidatorsConfig}
 import io.otoroshi.wasm4s.scaladsl.WasmFunctionParameters
 import org.apache.pekko.stream.Materializer
+import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
@@ -837,7 +838,11 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
 
   override def callBackendOrError(
     ctx: NgWebsocketPluginContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, ?]]] = {
+
+    given system: ActorSystem = env.otoroshiActorSystem
+    given mat: Materializer = env.otoroshiMaterializer
+
     val config = ctx
       .cachedConfig(internalName)(WebsocketMirrorBackendConfig.format)
       .getOrElse(WebsocketMirrorBackendConfig())
@@ -860,7 +865,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               ctx.attrs,
               env,
             )
-          )(env.otoroshiActorSystem, env.otoroshiMaterializer).rightf
+          ).rightf
       }
       case Some(url) => {
         val hotSource = Sinks.many().unicast().onBackpressureBuffer[play.api.http.websocket.Message]()
@@ -884,7 +889,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               ctx.attrs,
               env
             )
-          )(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          )
         val response = ActorFlow
           .actorRef(out =>
             WebSocketProxyActor.props(
@@ -901,13 +906,11 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               env,
               Some(cb)
             )
-          )(env.otoroshiActorSystem, env.otoroshiMaterializer)
-          .alsoTo(Sink.onComplete {
-            case _ => hotSource.tryEmitComplete()
-          }).rightf
-        Source.fromPublisher(hotFlux).via(mirrorFlow).runWith(Sink.foreach { m: play.api.http.websocket.Message =>
+          )
+          .alsoTo(Sink.onComplete(_ => hotSource.tryEmitComplete())).rightf
+        Source.fromPublisher(hotFlux).via(mirrorFlow).runWith(Sink.foreach { (m: play.api.http.websocket.Message) =>
           //println("Got sink message: " + m)
-        })(env.otoroshiMaterializer)
+        })
         response
       }
     }

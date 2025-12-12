@@ -901,7 +901,6 @@ class WebSocketProxyActor(
                 Option(queueRef.get()).foreach(_.complete())
               case _ => // TODO - logging ??
             }
-          }
           case Right(msg)  => 
             if (cb.isDefined) {
               msg.asPlay.map { msg => cb.foreach(f => f(msg))}

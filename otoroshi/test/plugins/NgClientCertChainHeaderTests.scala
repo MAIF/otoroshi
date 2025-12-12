@@ -1,8 +1,8 @@
 package plugins
 
-import akka.Done
-import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
-import akka.stream.scaladsl.Source
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.{HttpHeader, HttpRequest}
+import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
 import io.netty.handler.ssl.SslContextBuilder
@@ -28,12 +28,13 @@ import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.security.cert.CertificateFactory
 import java.util.concurrent.atomic.AtomicReference
+import scala.compiletime.uninitialized
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
 class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{*, given}
 
   case class OtoroshiInstance(port: Int, configuration: String, customHttpsPort: Int) {
     private val ref: AtomicReference[Otoroshi] = new AtomicReference[Otoroshi]()
@@ -94,7 +95,7 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
     }
   }
 
-  var instance: OtoroshiInstance = _
+  var instance: OtoroshiInstance = uninitialized
   var customHttpsPort            = 0
 
   def createRouteWithConfig(
@@ -382,7 +383,7 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
           .trustManager(caCert)
           .keyManager(new ByteArrayInputStream(clientCertInputStream), new ByteArrayInputStream(clientKeyInputStream))
 
-        spec.sslContext(sslCtxBuilder)
+        spec.sslContext(sslCtxBuilder.build())
       }
       .resolver(resolverGroup)
 
@@ -390,6 +391,7 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
     pureNettyClient
       .get()
       .uri("/")
+      .asInstanceOf[HttpClient.ResponseReceiver[?]]
       .response()
       .doOnNext(response => {
         val headers = scala.collection.mutable.Map[String, String]()
@@ -412,20 +414,20 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
 
   def onlySendPEM() = {
     def test(req: HttpRequest, headerName: String) = {
-      req.headers.exists(_.name == headerName) mustBe true
-      req.headers.exists(_.name == "X-Client-Cert-DNs") mustBe false
-      req.headers.exists(_.name == "X-Client-Cert-Chain") mustBe false
+      req.headers.exists(_.name == headerName).mustBe(true)
+      req.headers.exists(_.name == "X-Client-Cert-DNs").mustBe(false)
+      req.headers.exists(_.name == "X-Client-Cert-Chain").mustBe(false)
 
       req.headers
         .find(_.name === headerName)
         .get
         .value()
-        .contains("-----BEGIN CERTIFICATE-----") mustBe true
+        .contains("-----BEGIN CERTIFICATE-----").mustBe(true)
       req.headers
         .find(_.name === headerName)
         .get
         .value()
-        .contains("-----END CERTIFICATE-----") mustBe true
+        .contains("-----END CERTIFICATE-----").mustBe(true)
 
       (200, "", List.empty)
     }
@@ -453,9 +455,9 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
 
   def onlySendDNs() = {
     def test(req: HttpRequest, headerName: String) = {
-      req.headers.exists(_.name == "X-Client-Cert-Pem") mustBe false
-      req.headers.exists(_.name == headerName) mustBe true
-      req.headers.exists(_.name == "X-Client-Cert-Chain") mustBe false
+      req.headers.exists(_.name == "X-Client-Cert-Pem").mustBe(false)
+      req.headers.exists(_.name == headerName).mustBe(true)
+      req.headers.exists(_.name == "X-Client-Cert-Chain").mustBe(false)
 
       req.headers
         .find(_.name === headerName)
@@ -517,13 +519,13 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
         "issuerCN"     -> "TestCA"
       )
 
-      chain.selectAsString("subjectDN") mustBe expected.selectAsString("subjectDN")
-      chain.selectAsString("issuerDN") mustBe expected.selectAsString("issuerDN")
-      chain.selectAsLong("notAfter") mustBe expected.selectAsLong("notAfter")
-      chain.selectAsLong("notBefore") mustBe expected.selectAsLong("notBefore")
-      chain.selectAsString("serialNumber") mustBe expected.selectAsString("serialNumber")
-      chain.selectAsString("subjectCN") mustBe expected.selectAsString("subjectCN")
-      chain.selectAsString("issuerCN") mustBe expected.selectAsString("issuerCN")
+      chain.selectAsString("subjectDN").mustBe(expected.selectAsString("subjectDN"))
+      chain.selectAsString("issuerDN").mustBe(expected.selectAsString("issuerDN"))
+      chain.selectAsLong("notAfter").mustBe(expected.selectAsLong("notAfter"))
+      chain.selectAsLong("notBefore").mustBe(expected.selectAsLong("notBefore"))
+      chain.selectAsString("serialNumber").mustBe(expected.selectAsString("serialNumber"))
+      chain.selectAsString("subjectCN").mustBe(expected.selectAsString("subjectCN"))
+      chain.selectAsString("issuerCN").mustBe(expected.selectAsString("issuerCN"))
 
       (200, "", List.empty)
     }

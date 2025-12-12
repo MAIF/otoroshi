@@ -1,6 +1,6 @@
 package plugins
 
-import akka.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
 import io.netty.handler.ssl.SslContextBuilder
@@ -31,7 +31,7 @@ import scala.concurrent.{Future, Promise}
 
 class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{*, given}
 
   case class OtoroshiInstance(port: Int, configuration: String) {
     private val ref: AtomicReference[Otoroshi] = new AtomicReference[Otoroshi]()
@@ -399,7 +399,7 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
           .trustManager(caCert)
           .keyManager(new ByteArrayInputStream(clientCertInputStream), new ByteArrayInputStream(clientKeyInputStream))
 
-        spec.sslContext(sslCtxBuilder)
+        spec.sslContext(sslCtxBuilder.build())
       }
       .resolver(resolverGroup)
 
@@ -412,6 +412,7 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
         })
         .get()
         .uri("/foo")
+        .asInstanceOf[HttpClient.ResponseReceiver[?]]
         .response()
         .doOnNext(response => {
           promise.success(response.status().code())
