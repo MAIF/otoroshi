@@ -607,5 +607,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Client certificate matching" in {
       new NgHasClientCertMatchingValidatorTests(this)
     }
+    "Client certificate matching (over http)" in {
+      new NgHasClientCertMatchingHttpValidatorTests(this)
+    }
   }
 }

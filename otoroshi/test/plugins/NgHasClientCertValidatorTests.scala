@@ -2,7 +2,7 @@ package plugins
 
 import akka.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
-import functional.{CustomInetNameResolver, PluginsTestSpec}
+import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
 import io.netty.handler.ssl.SslContextBuilder
 import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetSocketAddressResolver}
 import io.netty.util.CharsetUtil
@@ -90,9 +90,9 @@ class NgHasClientCertValidatorTests(parent: PluginsTestSpec) {
     }
   }
 
-  val customHttpsPort = 32900
+  val customHttpsPort = TargetService.freePort
   val publicInstance  = OtoroshiInstance(
-    10201,
+    TargetService.freePort,
     s"""
        |otoroshi.next.state-sync-interval=2000
        |play.server.https.wantClientAuth=true
@@ -227,9 +227,8 @@ class NgHasClientCertValidatorTests(parent: PluginsTestSpec) {
   )
 
   val dnsMappings = Map(
-    "test-clientcertificate-chain-validator.oto.bar" -> "127.0.0.1",
-    "oto.bar"                                        -> "127.0.0.1",
-    "*.oto.bar"                                      -> "127.0.0.1"
+    "oto.bar"   -> "127.0.0.1",
+    "*.oto.bar" -> "127.0.0.1"
   )
 
   val resolverGroup = new AddressResolverGroup[InetSocketAddress]() {
@@ -238,6 +237,8 @@ class NgHasClientCertValidatorTests(parent: PluginsTestSpec) {
       new InetSocketAddressResolver(executor, nameResolver)
     }
   }
+
+  Thread.sleep(5000)
 
   // resources/certificates/oto.bar/ca-cert.pem
   val caCertPem = """-----BEGIN CERTIFICATE-----
@@ -335,12 +336,13 @@ class NgHasClientCertValidatorTests(parent: PluginsTestSpec) {
                        |-----END PRIVATE KEY-----
                        |""".stripMargin
 
-  val caCertInputStream     = new ByteArrayInputStream(caCertPem.getBytes(CharsetUtil.UTF_8))
-  val clientCertInputStream = new ByteArrayInputStream(clientCertPem.getBytes(CharsetUtil.UTF_8))
-  val clientKeyInputStream  = new ByteArrayInputStream(clientKeyPem.getBytes(CharsetUtil.UTF_8))
+  val caCertInputStream     = caCertPem.getBytes(CharsetUtil.UTF_8)
+  val clientCertInputStream = clientCertPem.getBytes(CharsetUtil.UTF_8)
+  val clientKeyInputStream  = clientKeyPem.getBytes(CharsetUtil.UTF_8)
 
   def callWithOptionalClientCertificate(
-      useClientCert: Boolean
+      useClientCert: Boolean,
+      status: Int
   ): Unit = {
 
     val pureNettyClient = HttpClient
@@ -351,20 +353,20 @@ class NgHasClientCertValidatorTests(parent: PluginsTestSpec) {
       .secure { spec =>
         val certFactory = CertificateFactory.getInstance("X.509")
         val caCert      = certFactory
-          .generateCertificate(caCertInputStream)
+          .generateCertificate(new ByteArrayInputStream(caCertInputStream))
           .asInstanceOf[java.security.cert.X509Certificate]
 
         val sslCtxBuilder = SslContextBuilder.forClient().trustManager(caCert)
 
         if (useClientCert)
-          sslCtxBuilder.keyManager(clientCertInputStream, clientKeyInputStream)
+          sslCtxBuilder.keyManager(
+            new ByteArrayInputStream(clientCertInputStream),
+            new ByteArrayInputStream(clientKeyInputStream)
+          )
 
         spec.sslContext(sslCtxBuilder)
       }
       .resolver(resolverGroup)
-
-    // Optional wait (but better to avoid Thread.sleep in reactive code)
-    Thread.sleep(5000)
 
     val responseFuture: Future[Int] = {
       val promise = Promise[Int]()
@@ -379,11 +381,11 @@ class NgHasClientCertValidatorTests(parent: PluginsTestSpec) {
     }
 
     val code = responseFuture.futureValue
-    code mustBe Status.FORBIDDEN
+    code mustBe status
   }
 
-  callWithOptionalClientCertificate(useClientCert = false)
-  callWithOptionalClientCertificate(useClientCert = true)
+  callWithOptionalClientCertificate(useClientCert = false, Status.FORBIDDEN)
+  callWithOptionalClientCertificate(useClientCert = true, Status.OK)
 
   publicInstance.stop()
 }

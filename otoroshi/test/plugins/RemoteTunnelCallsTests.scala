@@ -2,7 +2,7 @@ package plugins
 
 import akka.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
-import functional.PluginsTestSpec
+import functional.{PluginsTestSpec, TargetService}
 import otoroshi.api.Otoroshi
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
 import otoroshi.next.plugins.OverrideHost
@@ -84,7 +84,7 @@ class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
 
   def leaderToLeaderCallPrivateAPI() = {
     val publicInstance  = OtoroshiInstance(
-      10201,
+      TargetService.freePort,
       s"""
        |otoroshi.next.state-sync-interval=2000
        |otoroshi.tunnels.enabled=true
@@ -94,7 +94,7 @@ class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
        |"""
     )
     val privateInstance = OtoroshiInstance(
-      10200,
+      TargetService.freePort,
       s"""
        |otoroshi {
        |  next.state-sync-interval = 2000

@@ -460,7 +460,7 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
   override def name: String                                = "Client certificate matching (over http)"
   override def description: Option[String]                 =
     "Check if client certificate matches the following fetched from an http endpoint".some
-  override def defaultConfigObject: Option[NgPluginConfig] = NgHasClientCertMatchingValidatorConfig().some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgHasClientCertMatchingHttpValidatorConfig().some
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
@@ -499,17 +499,14 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
     val regexAllowedIssuerDNs  =
       (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
     if (
-      certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
-      certs
-        .exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectDN.getName).stringify))) ||
-      certs
-        .exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerDN.getName).stringify))) ||
-      certs.exists(cert =>
-        regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectDN.getName).stringify))
-      ) ||
-      certs.exists(cert =>
-        regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getIssuerDN.getName).stringify))
-      )
+      certs.exists { cert =>
+        allowedSerialNumbers.exists(_ == cert.getSerialNumber.toString(16)) ||
+        allowedSubjectDNs.exists(r => RegexPool(r).matches(DN(cert.getSubjectX500Principal.getName).stringify)) ||
+        allowedIssuerDNs.exists(r => RegexPool(r).matches(DN(cert.getIssuerX500Principal.getName).stringify)) ||
+        regexAllowedSubjectDNs
+          .exists(r => RegexPool.regex(r).matches(DN(cert.getSubjectX500Principal.getName).stringify)) ||
+        regexAllowedIssuerDNs.exists(r => RegexPool.regex(r).matches(DN(cert.getIssuerX500Principal.getName).stringify))
+      }
     ) {
       NgAccess.NgAllowed.vfuture
     } else {

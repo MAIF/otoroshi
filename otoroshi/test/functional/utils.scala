@@ -2780,12 +2780,28 @@ trait ApiTester[Entity] {
 class CustomInetNameResolver(executor: EventExecutor, mappings: Map[String, String])
     extends InetNameResolver(executor) {
 
+  /** Resolve exact match or wildcard like *.domain.tld */
+  private def resolveMapping(host: String): String = {
+    mappings.get(host) match {
+      case Some(ip) => ip
+      case None     =>
+        mappings
+          .collectFirst {
+            case (pattern, ip) if pattern.startsWith("*.") && host.endsWith(pattern.drop(1)) =>
+              ip
+          }
+          .getOrElse(host)
+    }
+  }
+
   override def doResolve(inetHost: String, promise: NettyPromise[InetAddress]): Unit = {
     try {
-      val targetHost = mappings.getOrElse(inetHost, inetHost)
+      val targetHost = resolveMapping(inetHost)
       println(s"[DNS] Resolving $inetHost -> $targetHost")
-      val address    = InetAddress.getByName(targetHost)
+
+      val address = InetAddress.getByName(targetHost)
       promise.setSuccess(address)
+
     } catch {
       case e: UnknownHostException =>
         println(s"[DNS] Failed to resolve $inetHost: ${e.getMessage}")
@@ -2797,11 +2813,13 @@ class CustomInetNameResolver(executor: EventExecutor, mappings: Map[String, Stri
 
   override def doResolveAll(inetHost: String, promise: NettyPromise[java.util.List[InetAddress]]): Unit = {
     try {
-      val targetHost = mappings.getOrElse(inetHost, inetHost)
+      val targetHost = resolveMapping(inetHost)
       println(s"[DNS] Resolving all $inetHost -> $targetHost")
-      val addresses  = InetAddress.getAllByName(targetHost)
-      val list       = java.util.Arrays.asList(addresses: _*)
+
+      val addresses = InetAddress.getAllByName(targetHost)
+      val list      = java.util.Arrays.asList(addresses: _*)
       promise.setSuccess(list)
+
     } catch {
       case e: UnknownHostException =>
         println(s"[DNS] Failed to resolve all $inetHost: ${e.getMessage}")

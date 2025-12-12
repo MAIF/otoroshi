@@ -2,7 +2,7 @@ package plugins
 
 import akka.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
-import functional.{CustomInetNameResolver, PluginsTestSpec}
+import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
 import io.netty.handler.ssl.SslContextBuilder
 import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetNameResolver, InetSocketAddressResolver}
 import io.netty.util.CharsetUtil
@@ -90,9 +90,9 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
     }
   }
 
-  val customHttpsPort = 32900
+  val customHttpsPort = TargetService.freePort
   val publicInstance  = OtoroshiInstance(
-    10201,
+    TargetService.freePort,
     s"""
        |otoroshi.next.state-sync-interval=2000
        |"""
@@ -222,9 +222,8 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
   )
 
   val dnsMappings = Map(
-    "test-clientcertificate-chain-validator.oto.bar" -> "127.0.0.1",
-    "oto.bar"                                        -> "127.0.0.1",
-    "*.oto.bar"                                      -> "127.0.0.1"
+    "oto.bar"   -> "127.0.0.1",
+    "*.oto.bar" -> "127.0.0.1"
   )
 
   val resolverGroup = new AddressResolverGroup[InetSocketAddress]() {
@@ -233,6 +232,8 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
       new InetSocketAddressResolver(executor, nameResolver)
     }
   }
+
+  Thread.sleep(5000)
 
   // resources/certificates/oto.bar/ca-cert.pem
   val caCertPem = """-----BEGIN CERTIFICATE-----
@@ -289,8 +290,6 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
       )
     }
     .resolver(resolverGroup)
-
-  Thread.sleep(5000)
 
   val responseFuture: Future[Int] = {
     val promise = Promise[Int]()
