@@ -12,11 +12,12 @@ import otoroshi.next.plugins.{
 }
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.writeableOf_JsValue
 
 class RegexResponseBodyRewriterTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{*, given}
 
   val route = createLocalRoute(
     Seq(
@@ -50,8 +51,8 @@ class RegexResponseBodyRewriterTests(parent: PluginsTestSpec) {
     .post(Json.obj("foo" -> "bar"))
     .futureValue
 
-  Json.parse(resp.body) mustBe Json.obj("bar" -> "bar")
+  Json.parse(resp.body).mustBe(Json.obj("bar" -> "bar"))
 
-  resp.status mustBe Status.OK
+  resp.status.mustBe(Status.OK)
   deleteOtoroshiRoute(route).futureValue
 }

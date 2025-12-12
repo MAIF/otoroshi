@@ -188,7 +188,7 @@ case class NgRequestContext(
     mirroredRequest.set(mReq)
     val finalTarget: Target =
       Target(host = url.authority.host.toString(), scheme = url.scheme, port = url.effectivePort.some)
-    val globalConfig        = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
+    val globalConfig        = env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env)
     val clientReq           = route.useAkkaHttpClient match {
       case _ if finalTarget.mtlsConfig.mtls =>
         env.gatewayClient.akkaUrlWithTarget(
@@ -220,7 +220,7 @@ case class NgRequestContext(
       .withMethod(httpRequest.method)
       .withHttpHeaders(
         (httpRequest.headers.toSeq
-          .filterNot(_._1 == "Host") ++ Seq("Host" -> host) ++ configHeaders): _*
+          .filterNot(_._1 == "Host") ++ Seq("Host" -> host) ++ configHeaders)*
       )
       .withCookies(httpRequest.cookies*)
       .withFollowRedirects(false)
@@ -249,7 +249,7 @@ case class NgRequestContext(
         }
       }
       .recover { case e =>
-        println("[ERROR]", e.getMessage)
+        println(s"[ERROR] ${e.getMessage}")
       }
   }
 }

@@ -1,6 +1,6 @@
 package plugins
 
-import akka.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.{CustomInetNameResolver, PluginsTestSpec}
 import io.netty.handler.ssl.SslContextBuilder
@@ -28,7 +28,7 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
 class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{*, given}
 
   case class OtoroshiInstance(port: Int, configuration: String) {
     private val ref: AtomicReference[Otoroshi] = new AtomicReference[Otoroshi]()
@@ -286,6 +286,7 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
         SslContextBuilder
           .forClient()
           .trustManager(caCert)
+          .build()
       )
     }
     .resolver(resolverGroup)
@@ -298,6 +299,7 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
     pureNettyClient
       .get()
       .uri("/foo")
+      .asInstanceOf[HttpClient.ResponseReceiver[?]]
       .response()
       .doOnNext { response =>
         val code = response.status().code()

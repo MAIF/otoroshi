@@ -2780,7 +2780,7 @@ class CustomInetNameResolver(executor: EventExecutor, mappings: Map[String, Stri
       val targetHost = mappings.getOrElse(inetHost, inetHost)
       println(s"[DNS] Resolving all $inetHost -> $targetHost")
       val addresses  = InetAddress.getAllByName(targetHost)
-      val list       = java.util.Arrays.asList(addresses: _*)
+      val list       = java.util.Arrays.asList(addresses*)
       promise.setSuccess(list)
     } catch {
       case e: UnknownHostException =>

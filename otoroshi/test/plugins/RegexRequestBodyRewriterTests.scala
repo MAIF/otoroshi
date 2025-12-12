@@ -16,14 +16,15 @@ import otoroshi.next.plugins.{
 import otoroshi.plugins.mirror.MirroringPluginConfig
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.writeableOf_JsValue
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Promise
 
 class RegexRequestBodyRewriterTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{*, given}
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -56,8 +57,8 @@ class RegexRequestBodyRewriterTests(parent: PluginsTestSpec) {
     .post(Json.obj("foo" -> "bar"))
     .futureValue
 
-  Json.parse(resp.body).selectAsObject("body") mustBe Json.obj("bar" -> "bar")
+  Json.parse(resp.body).selectAsObject("body").mustBe(Json.obj("bar" -> "bar"))
 
-  resp.status mustBe Status.OK
+  resp.status.mustBe(Status.OK)
   deleteOtoroshiRoute(route).futureValue
 }

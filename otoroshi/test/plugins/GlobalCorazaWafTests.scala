@@ -16,7 +16,7 @@
 //
 //class GlobalCorazaWafTests(parent: PluginsTestSpec) {
 //
-//  import parent._
+//  import parent.{*, given}
 //
 //  val coraza    = CorazaWafConfig(
 //    location = EntityLocation.default,

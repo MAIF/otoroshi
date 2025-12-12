@@ -15,7 +15,7 @@ import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
 import otoroshi.actions.{ApiAction, ApiActionContext}
-import com.github.blemale.scaffeine.Scaffeine
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import org.apache.pekko.http.scaladsl.util.FastFuture

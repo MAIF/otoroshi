@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Promise
 
 class TrafficMirroringTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{*, given}
 
   val counter         = new AtomicInteger(0)
   val messagesPromise = Promise[Int]()
