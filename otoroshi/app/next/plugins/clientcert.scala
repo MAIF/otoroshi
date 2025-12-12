@@ -250,29 +250,39 @@ class NgClientCertChainHeader extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Headers)
   override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest)
 
-  private def jsonChain(chain: Seq[X509Certificate]): JsArray = {
+  private def jsonChain(chain: Seq[X509Certificate]): JsArray =
     JsArray(
-      chain.map(c =>
+      chain.map { c =>
+        val subjectDN = DN(c.getSubjectX500Principal.getName).stringify
+        val issuerDN  = DN(c.getIssuerX500Principal.getName).stringify
+
+        val subjectCN: String = subjectDN
+          .split(",")
+          .iterator
+          .map(_.trim)
+          .find(_.toLowerCase.startsWith("cn="))
+          .map(_.drop(3))
+          .getOrElse(subjectDN)
+
+        val issuerCN: String = issuerDN
+          .split(",")
+          .iterator
+          .map(_.trim)
+          .find(_.toLowerCase.startsWith("cn="))
+          .map(_.drop(3))
+          .getOrElse(issuerDN)
+
         Json.obj(
-          "subjectDN"    -> DN(c.getSubjectDN.getName).stringify,
-          "issuerDN"     -> DN(c.getIssuerDN.getName).stringify,
+          "subjectDN"    -> subjectDN,
+          "issuerDN"     -> issuerDN,
           "notAfter"     -> c.getNotAfter.getTime,
           "notBefore"    -> c.getNotBefore.getTime,
           "serialNumber" -> c.getSerialNumber.toString(16),
-          "subjectCN"    -> Option(DN(c.getSubjectDN.getName).stringify)
-            .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
-            .map(_.replace("CN=", "").replace("cn=", ""))
-            .getOrElse(DN(c.getSubjectDN.getName).stringify)
-            .asInstanceOf[String],
-          "issuerCN"     -> Option(DN(c.getIssuerDN.getName).stringify)
-            .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
-            .map(_.replace("CN=", "").replace("cn=", ""))
-            .getOrElse(DN(c.getIssuerDN.getName).stringify)
-            .asInstanceOf[String]
+          "subjectCN"    -> subjectCN,
+          "issuerCN"     -> issuerCN
         )
-      )
+      }
     )
-  }
 
   override def transformRequest(
       ctx: NgTransformerRequestContext

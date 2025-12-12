@@ -100,7 +100,7 @@ class NgHasClientCertMatchingValidatorTests(parent: PluginsTestSpec) {
   val publicInstance  = OtoroshiInstance(
     TargetService.freePort,
     s"""
-       |otoroshi.next.state-sync-interval=2000
+       |otoroshi.next.state-sync-interval=5
        |play.server.https.wantClientAuth=true
        |otoroshi.ssl.fromOutside.clientAuth=Want
        |"""

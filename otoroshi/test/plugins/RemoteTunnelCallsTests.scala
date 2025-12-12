@@ -86,7 +86,7 @@ class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
     val publicInstance  = OtoroshiInstance(
       TargetService.freePort,
       s"""
-       |otoroshi.next.state-sync-interval=2000
+       |otoroshi.next.state-sync-interval=5
        |otoroshi.tunnels.enabled=true
        |otoroshi.loggers.otoroshi-tunnel-agent=DEBUG
        |otoroshi.loggers.otoroshi-tunnel-plugin=DEBUG

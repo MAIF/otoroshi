@@ -94,7 +94,7 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
   val publicInstance  = OtoroshiInstance(
     TargetService.freePort,
     s"""
-       |otoroshi.next.state-sync-interval=2000
+       |otoroshi.next.state-sync-interval=5
        |"""
   )
   publicInstance.start()
