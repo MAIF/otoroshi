@@ -613,9 +613,14 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Client Certificate + Api Key only" in {
       new NgHasClientCertMatchingApikeyValidatorTests(this)
     }
-    "Client certificate header - Only send PEM with default header name" in {
+    "Client certificate header - Only send PEM with custom header name" in {
       new NgClientCertChainHeaderTests(this)
-        .onlySendpemWithDefaultHeaderName()
+        .onlySendPEMWithCustomHeaderName()
+        .futureValue
+    }
+    "Client certificate header - Only send DNs with default header name" in {
+      new NgClientCertChainHeaderTests(this)
+        .onlySendDNsWithCustomHeaderName()
         .futureValue
     }
   }

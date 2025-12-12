@@ -2,7 +2,6 @@ package plugins
 
 import akka.Done
 import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
-import akka.http.scaladsl.model.headers.RawHeader
 import akka.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
@@ -10,24 +9,17 @@ import io.netty.handler.ssl.SslContextBuilder
 import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetSocketAddressResolver}
 import io.netty.util.CharsetUtil
 import io.netty.util.concurrent.EventExecutor
-import org.scalatest.Assertion
 import otoroshi.api.Otoroshi
-import otoroshi.models.{ApiKey, RouteIdentifier}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  ApikeyCalls,
-  NgClientCertChainHeader,
-  NgClientCertChainHeaderConfig,
-  NgHasClientCertMatchingApikeyValidator,
-  OverrideHost
-}
+import otoroshi.next.plugins.{NgClientCertChainHeader, NgClientCertChainHeaderConfig, OverrideHost}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
+import otoroshi.utils.http.DN
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Configuration
 import play.api.http.Status
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsArray, JsObject, JsString, Json}
 import play.core.server.ServerConfig
 import reactor.netty.http.client.HttpClient
 
@@ -418,22 +410,59 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
 
   def afterEach() = instance.stop()
 
-  def onlySendpemWithDefaultHeaderName() = {
+  def onlySendPEMWithCustomHeaderName() = {
     for {
       _        <- beforeEach()
       route    <- createRouteWithConfig(
                     NgClientCertChainHeaderConfig(
                       sendPem = true,
-                      pemHeaderName = "pem-header",
-                      sendDns = false,
-                      dnsHeaderName = "X-Client-Cert-DNs",
-                      sendChain = false,
-                      chainHeaderName = "X-Client-Cert-Chain"
+                      pemHeaderName = "pem-header"
                     ),
                     rawResult = req => {
                       req.headers.exists(_.name == "pem-header") mustBe true
                       req.headers.exists(_.name == "X-Client-Cert-DNs") mustBe false
                       req.headers.exists(_.name == "X-Client-Cert-Chain") mustBe false
+
+                      req.headers
+                        .find(_.name === "pem-header")
+                        .get
+                        .value()
+                        .contains("-----BEGIN CERTIFICATE-----") mustBe true
+                      req.headers
+                        .find(_.name === "pem-header")
+                        .get
+                        .value()
+                        .contains("-----END CERTIFICATE-----") mustBe true
+
+                      (200, "", List.empty)
+                    }
+                  )
+      response <- callRoute(route, Status.OK)
+      _        <- afterEach()
+    } yield {}
+  }
+
+  def onlySendDNsWithCustomHeaderName() = {
+    for {
+      _        <- beforeEach()
+      route    <- createRouteWithConfig(
+                    NgClientCertChainHeaderConfig(
+                      sendDns = true
+                    ),
+                    rawResult = req => {
+                      req.headers.exists(_.name == "pem-header") mustBe false
+                      req.headers.exists(_.name == "X-Client-Cert-DNs") mustBe true
+                      req.headers.exists(_.name == "X-Client-Cert-Chain") mustBe false
+
+                      req.headers
+                        .find(_.name === "X-Client-Cert-DNs")
+                        .get
+                        .value()
+                        .contains(
+                          Json.stringify(
+                            Json.arr(JsString(DN("C=FR, ST=Paris, L=Paris, O=Client, OU=Dev, CN=test-client").stringify))
+                          )
+                        ) mustBe true
 
                       (200, "", List.empty)
                     }
