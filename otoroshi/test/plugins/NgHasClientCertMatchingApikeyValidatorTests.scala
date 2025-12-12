@@ -8,19 +8,16 @@ import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetSocketAddre
 import io.netty.util.CharsetUtil
 import io.netty.util.concurrent.EventExecutor
 import otoroshi.api.Otoroshi
+import otoroshi.models.{ApiKey, RouteIdentifier}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{
-  NgHasClientCertMatchingHttpValidator,
-  NgHasClientCertMatchingHttpValidatorConfig,
-  OverrideHost
-}
+import otoroshi.next.plugins.{ApikeyCalls, NgHasClientCertMatchingApikeyValidator, OverrideHost}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Configuration
 import play.api.http.Status
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json
 import play.core.server.ServerConfig
 import reactor.netty.http.client.HttpClient
 
@@ -32,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
-class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
+class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
 
   import parent._
 
@@ -108,68 +105,48 @@ class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
   )
   publicInstance.start()
 
-  val routeValidator = createLocalRoute(
-    result = _ => {
-      Json.obj(
-        "serialNumbers"   -> Json.arr("0f:77:8e:bb:4e:21:9c:51:74:31:05:e1:b2:b2:8c:86:51:6a:f7:1e"),
-        "subjectDNs"      -> Json.arr("C=FR, ST=Paris, L=Paris, O=Client, OU=Dev, CN=test-client"),
-        "issuerDNs"       -> Json.arr("C=FR, ST=Paris, L=Paris, O=TestCA, OU=Dev, CN=TestCA"),
-        "regexSubjectDNs" -> Json.arr(".*test-client.*"), // matches any DN containing "test-client"
-        "regexIssuerDNs"  -> Json.arr(".*TestCA.*")       // matches any DN containing "TestCA"
-      )
-    }
-  )
-
-  val wrongRouteValidator = createLocalRoute(
-    result = _ => {
-      Json.obj(
-        "serialNumbers" -> Json.arr("0f:77:8e:bb:4e:21:9c:51:74:31:05:e1:b2:b2:8c:86:51:6a:f7"),
-        "issuerDNs"     -> Json.arr("C=EN")
-      )
-    }
-  )
-
   val route = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost]
       ),
       NgPluginInstance(
-        plugin = NgPluginHelper.pluginId[NgHasClientCertMatchingHttpValidator],
-        config = NgPluginInstanceConfig(
-          NgHasClientCertMatchingHttpValidatorConfig(
-            url = s"http://127.0.0.1:$port",
-            method = "GET",
-            timeout = 5000,
-            headers = Map("Host" -> routeValidator.frontend.domains.head.domain)
-          ).json.as[JsObject]
-        )
+        plugin = NgPluginHelper.pluginId[ApikeyCalls]
+      ),
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[NgHasClientCertMatchingApikeyValidator]
       )
     ),
     domain = "foo.oto.bar".some,
     customOtoroshiPort = publicInstance.port.some
   )
 
-  val routeWithWrongConfiguraiton = createRouteWithExternalTarget(
-    Seq(
-      NgPluginInstance(
-        plugin = NgPluginHelper.pluginId[OverrideHost]
-      ),
-      NgPluginInstance(
-        plugin = NgPluginHelper.pluginId[NgHasClientCertMatchingHttpValidator],
-        config = NgPluginInstanceConfig(
-          NgHasClientCertMatchingHttpValidatorConfig(
-            url = s"http://127.0.0.1:$port/invalid",
-            method = "GET",
-            timeout = 5000,
-            headers = Map("Host" -> wrongRouteValidator.frontend.domains.head.domain)
-          ).json.as[JsObject]
-        )
-      )
-    ),
-    domain = "baz.oto.bar".some,
-    customOtoroshiPort = publicInstance.port.some
+  val goodApikey = ApiKey(
+    clientName = IdGenerator.uuid,
+    clientId = IdGenerator.uuid,
+    clientSecret = IdGenerator.uuid,
+    authorizedEntities = Seq(RouteIdentifier(route.id)),
+    metadata = Map("allowed-client-cert-dn" -> "C=FR, ST=Paris, L=Paris, O=Client, OU=Dev, CN=test-client")
   )
+
+  val badApikey = ApiKey(
+    clientName = IdGenerator.uuid,
+    clientId = IdGenerator.uuid,
+    clientSecret = IdGenerator.uuid,
+    authorizedEntities = Seq(RouteIdentifier(route.id)),
+    metadata = Map("allowed-client-cert-dn" -> "C=EN")
+  )
+
+  val missingMetadataApikey = ApiKey(
+    clientName = IdGenerator.uuid,
+    clientId = IdGenerator.uuid,
+    clientSecret = IdGenerator.uuid,
+    authorizedEntities = Seq(RouteIdentifier(route.id))
+  )
+
+  createOtoroshiApiKey(goodApikey, publicInstance.port.some).futureValue
+  createOtoroshiApiKey(badApikey, publicInstance.port.some).futureValue
+  createOtoroshiApiKey(missingMetadataApikey, publicInstance.port.some).futureValue
 
   val certificateTemplate: Cert = Cert._fmt.reads(getOtoroshiCertificate().futureValue._1).get
 
@@ -402,8 +379,12 @@ class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
 
   def callRoute(
       route: NgRoute,
+      apikey: ApiKey,
       status: Int
   ): Unit = {
+
+    println(s"Calling ${route.frontend.domains.head.domain}, expected $status")
+
     val pureNettyClient = HttpClient
       .create()
       .host(route.frontend.domains.head.domain)
@@ -427,10 +408,16 @@ class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
     val responseFuture: Future[Int] = {
       val promise = Promise[Int]()
       pureNettyClient
+        .headers(h => {
+          h.set("Otoroshi-Client-Id", apikey.clientId)
+          h.set("Otoroshi-Client-Secret", apikey.clientSecret)
+        })
         .get()
         .uri("/foo")
         .response()
-        .doOnNext(response => promise.success(response.status().code()))
+        .doOnNext(response => {
+          promise.success(response.status().code())
+        })
         .doOnError(error => promise.failure(error))
         .subscribe()
       promise.future
@@ -440,8 +427,9 @@ class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
     code mustBe status
   }
 
-  callRoute(route, Status.OK)
-  callRoute(routeWithWrongConfiguraiton, Status.FORBIDDEN)
+  callRoute(route, goodApikey, Status.OK)
+  callRoute(route, badApikey, Status.FORBIDDEN)
+  callRoute(route, missingMetadataApikey, Status.FORBIDDEN)
 
   publicInstance.stop()
 }

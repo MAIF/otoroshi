@@ -340,7 +340,7 @@ class NgHasClientCertValidatorTests(parent: PluginsTestSpec) {
   val clientCertInputStream = clientCertPem.getBytes(CharsetUtil.UTF_8)
   val clientKeyInputStream  = clientKeyPem.getBytes(CharsetUtil.UTF_8)
 
-  def callWithOptionalClientCertificate(
+  def callRoute(
       useClientCert: Boolean,
       status: Int
   ): Unit = {
@@ -384,8 +384,8 @@ class NgHasClientCertValidatorTests(parent: PluginsTestSpec) {
     code mustBe status
   }
 
-  callWithOptionalClientCertificate(useClientCert = false, Status.FORBIDDEN)
-  callWithOptionalClientCertificate(useClientCert = true, Status.OK)
+  callRoute(useClientCert = false, Status.FORBIDDEN)
+  callRoute(useClientCert = true, Status.OK)
 
   publicInstance.stop()
 }

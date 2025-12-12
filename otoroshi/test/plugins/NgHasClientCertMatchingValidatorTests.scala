@@ -355,7 +355,7 @@ class NgHasClientCertMatchingValidatorTests(parent: PluginsTestSpec) {
   val clientCertInputStream = clientCertPem.getBytes(CharsetUtil.UTF_8)
   val clientKeyInputStream  = clientKeyPem.getBytes(CharsetUtil.UTF_8)
 
-  def callWithOptionalClientCertificate(
+  def callRoute(
   ): Unit = {
 
     val pureNettyClient = HttpClient
@@ -394,7 +394,7 @@ class NgHasClientCertMatchingValidatorTests(parent: PluginsTestSpec) {
     code mustBe Status.OK
   }
 
-  callWithOptionalClientCertificate()
+  callRoute()
 
   publicInstance.stop()
 }

@@ -90,30 +90,20 @@ class NgHasClientCertMatchingApikeyValidator extends NgAccessValidator {
   }
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    ctx.request.clientCertificateChain match {
-      case Some(_) =>
-        ctx.apikey match {
-          case Some(apikey) =>
-            apikey.metadata.get("allowed-client-cert-dn") match {
-              case Some(dn) =>
-                ctx.request.clientCertificateChain match {
-                  case Some(chain) =>
-                    chain.headOption match {
-                      case Some(cert) =>
-                        RegexPool(dn).matches(DN(cert.getIssuerDN.getName).stringify) match {
-                          case false => forbidden(ctx)
-                          case true  => NgAccess.NgAllowed.vfuture
-                        }
-                      case None       => forbidden(ctx)
-                    }
-                  case None        => forbidden(ctx)
-                }
-              case None     => forbidden(ctx)
-            }
-          case None         => forbidden(ctx)
-        }
-      case _       => forbidden(ctx)
-    }
+    ctx.request.clientCertificateChain
+      .flatMap(_.headOption)
+      .flatMap { cert =>
+        ctx.apikey
+          .flatMap(_.metadata.get("allowed-client-cert-dn"))
+          .map { dn =>
+            val subject = DN(cert.getSubjectX500Principal.getName).stringify
+            if (RegexPool(DN(dn).stringify).matches(subject))
+              NgAccess.NgAllowed.vfuture
+            else
+              forbidden(ctx)
+          }
+      }
+      .getOrElse(forbidden(ctx))
   }
 }
 
