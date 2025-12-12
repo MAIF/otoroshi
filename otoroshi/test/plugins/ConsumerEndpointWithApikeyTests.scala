@@ -25,7 +25,7 @@ class ConsumerEndpointWithApikeyTests(parent: PluginsTestSpec) {
         plugin = NgPluginHelper.pluginId[ConsumerEndpoint]
       )
     )
-  )
+  ).futureValue
 
   val apikey = ApiKey(
     clientId = IdGenerator.token(16),

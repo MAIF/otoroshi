@@ -27,7 +27,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val apikey = ApiKey(
       clientId = s"client-${IdGenerator.uuid}",
@@ -80,7 +80,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val apikey = ApiKey(
       clientId = s"client-${IdGenerator.uuid}",
@@ -130,7 +130,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val apikey = ApiKey(
       clientId = s"client-${IdGenerator.uuid}",
@@ -186,7 +186,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val apikey = ApiKey(
       clientId = s"client-${IdGenerator.uuid}",
@@ -245,7 +245,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
       ),
       domain = s"routing-$id.oto.tools".some,
       id
-    )
+    ).futureValue
 
     createOtoroshiApiKey(goodKey).futureValue
     createOtoroshiApiKey(badKey).futureValue

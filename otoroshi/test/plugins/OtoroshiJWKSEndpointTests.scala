@@ -17,7 +17,7 @@ class OtoroshiJWKSEndpointTests(parent: PluginsTestSpec) {
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OtoroshiJWKSEndpoint])
     )
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/")

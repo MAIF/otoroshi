@@ -65,7 +65,7 @@ class UserProfileEndpointTests(parent: PluginsTestSpec) {
       NgPluginInstance(plugin = NgPluginHelper.pluginId[UserProfileEndpoint])
     ),
     id = IdGenerator.uuid
-  )
+  ).futureValue
 
   val playwright = Playwright.create()
   val browser    = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))

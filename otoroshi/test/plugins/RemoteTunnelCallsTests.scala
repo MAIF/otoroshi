@@ -1,7 +1,7 @@
 package plugins
 
 import com.typesafe.config.ConfigFactory
-import functional.PluginsTestSpec
+import functional.{PluginsTestSpec, TargetService}
 import org.apache.pekko.stream.scaladsl.Source
 import otoroshi.api.Otoroshi
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
@@ -84,9 +84,9 @@ class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
 
   def leaderToLeaderCallPrivateAPI() = {
     val publicInstance  = OtoroshiInstance(
-      10201,
+      TargetService.freePort,
       s"""
-       |otoroshi.next.state-sync-interval=2000
+       |otoroshi.next.state-sync-interval=5
        |otoroshi.tunnels.enabled=true
        |otoroshi.loggers.otoroshi-tunnel-agent=DEBUG
        |otoroshi.loggers.otoroshi-tunnel-plugin=DEBUG
@@ -94,7 +94,7 @@ class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
        |"""
     )
     val privateInstance = OtoroshiInstance(
-      10200,
+      TargetService.freePort,
       s"""
        |otoroshi {
        |  next.state-sync-interval = 2000
@@ -138,7 +138,7 @@ class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
       ),
       customOtoroshiPort = privateInstance.port.some,
       domain = "private-api.oto.tools".some
-    )
+    ).futureValue
 
     val publicRoute = createRouteWithExternalTarget(
       Seq(
@@ -163,7 +163,7 @@ class RemoteTunnelCallsTests(parent: PluginsTestSpec) {
         ipAddress = "127.0.0.1".some
       ).some,
       customOtoroshiPort = publicInstance.port.some
-    )
+    ).futureValue
 
     val privateRouteCall = ws
       .url(s"http://127.0.0.1:${privateInstance.port}/")

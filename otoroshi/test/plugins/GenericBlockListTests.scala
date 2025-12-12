@@ -27,7 +27,7 @@ class GenericBlockListTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   val authorizedCall = ws
     .url(s"http://127.0.0.1:$port/api")

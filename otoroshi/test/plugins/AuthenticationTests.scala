@@ -85,7 +85,7 @@ class AuthenticationTests(parent: PluginsTestSpec) {
         )
       ),
       id = IdGenerator.uuid
-    )
+    ).futureValue
 
     val playwright = Playwright.create()
     val browser    = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))
@@ -211,7 +211,7 @@ class AuthenticationTests(parent: PluginsTestSpec) {
         )
       ),
       id = IdGenerator.uuid
-    )
+    ).futureValue
 
     val playwright = Playwright.create()
     val browser    = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))

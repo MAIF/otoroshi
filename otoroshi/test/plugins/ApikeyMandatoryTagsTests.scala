@@ -34,7 +34,7 @@ class ApikeyMandatoryTagsTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   val apikey = ApiKey(
     clientId = IdGenerator.token(16),

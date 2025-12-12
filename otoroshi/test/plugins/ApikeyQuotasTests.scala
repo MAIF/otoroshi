@@ -36,7 +36,7 @@ class ApikeyQuotasTests(parent: PluginsTestSpec) {
         plugin = NgPluginHelper.pluginId[SendOtoroshiHeadersBack]
       )
     )
-  )
+  ).futureValue
 
   val goodApikey = ApiKey(
     clientName = "foo",

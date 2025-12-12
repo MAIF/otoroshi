@@ -25,7 +25,7 @@ class RequestEchoTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   {
     val resp = ws

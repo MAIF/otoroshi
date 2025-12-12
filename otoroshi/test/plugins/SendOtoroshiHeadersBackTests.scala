@@ -33,7 +33,7 @@ class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
         plugin = NgPluginHelper.pluginId[SendOtoroshiHeadersBack]
       )
     )
-  )
+  ).futureValue
 
   val apikey = ApiKey(
     clientId = s"client-${IdGenerator.uuid}",

@@ -31,7 +31,7 @@ class CustomQuotasTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     val secondRoute = createRouteWithExternalTarget(
       Seq(
@@ -53,7 +53,7 @@ class CustomQuotasTests(parent: PluginsTestSpec) {
         )
       ),
       id = IdGenerator.uuid
-    )
+    ).futureValue
 
     def call(route: NgRoute) = {
       ws
@@ -105,7 +105,7 @@ class CustomQuotasTests(parent: PluginsTestSpec) {
           )
         )
       )
-    )
+    ).futureValue
 
     def call(value: String) = {
       ws

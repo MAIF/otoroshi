@@ -1651,7 +1651,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       root: String = "/",
       target: Option[NgTarget] = None,
       customOtoroshiPort: Option[Int] = None
-  ): NgRoute = {
+  ): Future[NgRoute] = {
     val newRoute = NgRoute(
       location = EntityLocation.default,
       id = id,
@@ -1691,19 +1691,20 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       metadata = Map.empty
     )
 
-    val result = createOtoroshiRoute(newRoute, customOtoroshiPort).futureValue
-
-    if (result._2 == Status.CREATED) {
-      newRoute
-    } else {
-      if (result._1.select("error_description").asOptString.contains("Entity already exists")) {
-        deleteOtoroshiRoute(newRoute).futureValue
-        await(2.seconds)
-        createRouteWithExternalTarget(plugins, domain, id, hostname, root)
-      } else {
-        throw new RuntimeException(s"failed to create a new otoroshi route - ${result._2} - ${result._1.prettify}")
-      }
-    }
+    createOtoroshiRoute(newRoute, customOtoroshiPort)
+      .flatMap(result => {
+        if (result._2 == Status.CREATED) {
+          newRoute.future
+        } else {
+          if (result._1.select("error_description").asOptString.contains("Entity already exists")) {
+            deleteOtoroshiRoute(newRoute).futureValue
+            await(2.seconds)
+            createRouteWithExternalTarget(plugins, domain, id, hostname, root)
+          } else {
+            throw new RuntimeException(s"failed to create a new otoroshi route - ${result._2} - ${result._1.prettify}")
+          }
+        }
+      })
   }
 
   def createLocalRoute(
@@ -1718,8 +1719,9 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       responseContentType: String = "application/json",
       stringResult: HttpRequest => String = _ => "",
       target: Option[NgTarget] = None,
-      rawResult: Option[HttpRequest => (Int, String, List[HttpHeader])] = None
-  ) = {
+      rawResult: Option[HttpRequest => (Int, String, List[HttpHeader])] = None,
+      customOtoroshiPort: Option[Int] = None
+  ): Future[NgRoute] = {
 
     var _target: Option[TargetService] = None
     val id                             = IdGenerator.uuid
@@ -1792,13 +1794,14 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       metadata = Map.empty
     )
 
-    val resp = createOtoroshiRoute(newRoute).futureValue
-
-    if (resp._2 == Status.CREATED) {
-      newRoute
-    } else {
-      throw new RuntimeException("failed to create a new local route")
-    }
+    createOtoroshiRoute(newRoute, customOtoroshiPort)
+      .flatMap(resp => {
+        if (resp._2 == Status.CREATED) {
+          newRoute.future
+        } else {
+          throw new RuntimeException("failed to create a new local route")
+        }
+      })
   }
 
   def getOutHeader(resp: WSRequest#Self#Response, headerName: String) = {
@@ -2760,12 +2763,28 @@ trait ApiTester[Entity] {
 class CustomInetNameResolver(executor: EventExecutor, mappings: Map[String, String])
     extends InetNameResolver(executor) {
 
+  /** Resolve exact match or wildcard like *.domain.tld */
+  private def resolveMapping(host: String): String = {
+    mappings.get(host) match {
+      case Some(ip) => ip
+      case None     =>
+        mappings
+          .collectFirst {
+            case (pattern, ip) if pattern.startsWith("*.") && host.endsWith(pattern.drop(1)) =>
+              ip
+          }
+          .getOrElse(host)
+    }
+  }
+
   override def doResolve(inetHost: String, promise: NettyPromise[InetAddress]): Unit = {
     try {
-      val targetHost = mappings.getOrElse(inetHost, inetHost)
+      val targetHost = resolveMapping(inetHost)
       println(s"[DNS] Resolving $inetHost -> $targetHost")
-      val address    = InetAddress.getByName(targetHost)
+
+      val address = InetAddress.getByName(targetHost)
       promise.setSuccess(address)
+
     } catch {
       case e: UnknownHostException =>
         println(s"[DNS] Failed to resolve $inetHost: ${e.getMessage}")
@@ -2777,11 +2796,12 @@ class CustomInetNameResolver(executor: EventExecutor, mappings: Map[String, Stri
 
   override def doResolveAll(inetHost: String, promise: NettyPromise[java.util.List[InetAddress]]): Unit = {
     try {
-      val targetHost = mappings.getOrElse(inetHost, inetHost)
+      val targetHost = resolveMapping(inetHost)
       println(s"[DNS] Resolving all $inetHost -> $targetHost")
       val addresses  = InetAddress.getAllByName(targetHost)
       val list       = java.util.Arrays.asList(addresses*)
       promise.setSuccess(list)
+
     } catch {
       case e: UnknownHostException =>
         println(s"[DNS] Failed to resolve all $inetHost: ${e.getMessage}")

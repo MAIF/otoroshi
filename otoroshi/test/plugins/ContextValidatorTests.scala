@@ -38,7 +38,7 @@ class ContextValidatorTests(parent: PluginsTestSpec) {
       )
     ),
     id = IdGenerator.uuid
-  )
+  ).futureValue
 
   val apikey = ApiKey(
     clientId = IdGenerator.token(16),

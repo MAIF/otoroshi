@@ -76,7 +76,7 @@ class JwtUserExtractorTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   {
     val resp = ws

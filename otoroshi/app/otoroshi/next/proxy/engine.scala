@@ -2918,13 +2918,15 @@ class ProxyEngine() extends RequestHandler {
     } else if (ctxPlugins.hasWebsocketBackendPlugins) {
       val handler  = ctxPlugins.websocketBackendPlugins.head
       val wsEngine = if (ctxPlugins.hasWebsocketPlugins) {
-        new WebsocketEngine(route, ctxPlugins, rawRequest, finalTarget, attrs)
+        new WebsocketEngine(route, ctxPlugins, rawRequest, request, finalTarget, attrs)
+        //new WebsocketEngine(route, NgContextualPlugins.empty(rawRequest), rawRequest, request, finalTarget, attrs)
       } else {
-        new WebsocketEngine(NgRoute.empty, NgContextualPlugins.empty(rawRequest), rawRequest, finalTarget, attrs)
+        new WebsocketEngine(NgRoute.empty, NgContextualPlugins.empty(rawRequest), rawRequest, request, finalTarget, attrs)
       }
       val ctx      = NgWebsocketPluginContext(
         snowflake = snowflake,
         request = rawRequest,
+        otoroshiRequest = request,
         route = route,
         config = handler.instance.config.raw,
         attrs = attrs,
@@ -2985,6 +2987,7 @@ class ProxyEngine() extends RequestHandler {
                 out,
                 request.headers.toSeq,
                 rawRequest, // TODO: custom header size
+                request,
                 route.serviceDescriptor,
                 route.some,
                 ctxPlugins.some,

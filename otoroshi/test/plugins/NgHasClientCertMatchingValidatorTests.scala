@@ -2,7 +2,7 @@ package plugins
 
 import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
-import functional.{CustomInetNameResolver, PluginsTestSpec}
+import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
 import io.netty.handler.ssl.SslContextBuilder
 import io.netty.resolver.{AddressResolver, AddressResolverGroup, InetNameResolver, InetSocketAddressResolver}
 import io.netty.util.CharsetUtil
@@ -96,11 +96,11 @@ class NgHasClientCertMatchingValidatorTests(parent: PluginsTestSpec) {
     }
   }
 
-  val customHttpsPort = 32900
+  val customHttpsPort = TargetService.freePort
   val publicInstance  = OtoroshiInstance(
-    10201,
+    TargetService.freePort,
     s"""
-       |otoroshi.next.state-sync-interval=2000
+       |otoroshi.next.state-sync-interval=5
        |play.server.https.wantClientAuth=true
        |otoroshi.ssl.fromOutside.clientAuth=Want
        |"""
@@ -242,9 +242,8 @@ class NgHasClientCertMatchingValidatorTests(parent: PluginsTestSpec) {
   )
 
   val dnsMappings = Map(
-    "test-clientcertificate-chain-validator.oto.bar" -> "127.0.0.1",
-    "oto.bar"                                        -> "127.0.0.1",
-    "*.oto.bar"                                      -> "127.0.0.1"
+    "oto.bar"   -> "127.0.0.1",
+    "*.oto.bar" -> "127.0.0.1"
   )
 
   val resolverGroup = new AddressResolverGroup[InetSocketAddress]() {
@@ -253,6 +252,8 @@ class NgHasClientCertMatchingValidatorTests(parent: PluginsTestSpec) {
       new InetSocketAddressResolver(executor, nameResolver)
     }
   }
+
+  Thread.sleep(5000)
 
   // resources/certificates/oto.bar/ca-cert.pem
   val caCertPem = """-----BEGIN CERTIFICATE-----
@@ -350,11 +351,11 @@ class NgHasClientCertMatchingValidatorTests(parent: PluginsTestSpec) {
                        |-----END PRIVATE KEY-----
                        |""".stripMargin
 
-  val caCertInputStream     = new ByteArrayInputStream(caCertPem.getBytes(CharsetUtil.UTF_8))
-  val clientCertInputStream = new ByteArrayInputStream(clientCertPem.getBytes(CharsetUtil.UTF_8))
-  val clientKeyInputStream  = new ByteArrayInputStream(clientKeyPem.getBytes(CharsetUtil.UTF_8))
+  val caCertInputStream     = caCertPem.getBytes(CharsetUtil.UTF_8)
+  val clientCertInputStream = clientCertPem.getBytes(CharsetUtil.UTF_8)
+  val clientKeyInputStream  = clientKeyPem.getBytes(CharsetUtil.UTF_8)
 
-  def callWithOptionalClientCertificate(
+  def callRoute(
   ): Unit = {
 
     val pureNettyClient = HttpClient
@@ -365,20 +366,17 @@ class NgHasClientCertMatchingValidatorTests(parent: PluginsTestSpec) {
       .secure { spec =>
         val certFactory = CertificateFactory.getInstance("X.509")
         val caCert      = certFactory
-          .generateCertificate(caCertInputStream)
+          .generateCertificate(new ByteArrayInputStream(caCertInputStream))
           .asInstanceOf[java.security.cert.X509Certificate]
 
         val sslCtxBuilder = SslContextBuilder
           .forClient()
           .trustManager(caCert)
-          .keyManager(clientCertInputStream, clientKeyInputStream)
+          .keyManager(new ByteArrayInputStream(clientCertInputStream), new ByteArrayInputStream(clientKeyInputStream))
 
         spec.sslContext(sslCtxBuilder.build())
       }
       .resolver(resolverGroup)
-
-    // Optional wait (but better to avoid Thread.sleep in reactive code)
-    Thread.sleep(5000)
 
     val responseFuture: Future[Int] = {
       val promise = Promise[Int]()
@@ -397,7 +395,7 @@ class NgHasClientCertMatchingValidatorTests(parent: PluginsTestSpec) {
     code mustBe Status.OK
   }
 
-  callWithOptionalClientCertificate()
+  callRoute()
 
   publicInstance.stop()
 }

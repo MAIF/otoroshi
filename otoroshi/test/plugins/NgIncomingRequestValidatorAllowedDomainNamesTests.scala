@@ -76,13 +76,13 @@ class NgIncomingRequestValidatorAllowedDomainNamesTests(parent: PluginsTestSpec)
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost])
     ),
     domain = Some("global-allowed-domain.oto.tools")
-  )
+  ).futureValue
 
   val route2 = createRouteWithExternalTarget(
     Seq(
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost])
     )
-  )
+  ).futureValue
 
   updateGlobalConfig(globalConfig).futureValue
 

@@ -27,7 +27,7 @@ class TrafficMirroringTests(parent: PluginsTestSpec) {
       messagesPromise.trySuccess(counter.get)
       Json.obj("foo" -> "bar")
     }
-  )
+  ).futureValue
 
   val route = createRouteWithExternalTarget(
     Seq(
@@ -51,7 +51,7 @@ class TrafficMirroringTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/")

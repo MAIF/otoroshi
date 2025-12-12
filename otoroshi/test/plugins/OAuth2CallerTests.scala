@@ -272,7 +272,7 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
 
   verifyKeycloakTokenEndpoint(keycloakUrl)
 
-  val route = createRoute(keycloakContainer.mappedPort(8080))
+  val route = createRoute(keycloakContainer.mappedPort(8080)).futureValue
   verify(route)
 
   deleteOtoroshiRoute(route).futureValue

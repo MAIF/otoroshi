@@ -23,7 +23,7 @@ class SecurityTxtTests(parent: PluginsTestSpec) {
         )
       ),
       id = IdGenerator.uuid
-    )
+    ).futureValue
 
     val resp = ws
       .url(s"http://127.0.0.1:$port/.well-known/security.txt")

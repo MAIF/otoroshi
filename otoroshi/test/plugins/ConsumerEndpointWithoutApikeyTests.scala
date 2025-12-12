@@ -22,7 +22,7 @@ class ConsumerEndpointWithoutApikeyTests(parent: PluginsTestSpec) {
         plugin = NgPluginHelper.pluginId[ConsumerEndpoint]
       )
     )
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/api")

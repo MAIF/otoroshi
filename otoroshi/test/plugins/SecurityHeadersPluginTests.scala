@@ -34,7 +34,7 @@ class SecurityHeadersPluginTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   def call(): Map[String, String] = {
     ws

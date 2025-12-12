@@ -76,7 +76,7 @@ class NgIncomingRequestValidatorDeniedDomainNamesTests(parent: PluginsTestSpec) 
       NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost])
     ),
     domain = Some("global-forbidden-domain.oto.tools")
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/")

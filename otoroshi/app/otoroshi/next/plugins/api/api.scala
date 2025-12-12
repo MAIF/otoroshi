@@ -1354,6 +1354,7 @@ case class NgWebsocketPluginContext(
     snowflake: String,
     idx: Int = 0,
     request: RequestHeader,
+    otoroshiRequest: NgPluginHttpRequest,
     route: NgRoute,
     attrs: TypedMap,
     target: Target
@@ -1363,6 +1364,7 @@ case class NgWebsocketPluginContext(
     "snowflake" -> snowflake,
     "idx"       -> idx,
     "request"   -> JsonHelpers.requestToJson(request, attrs),
+    "otoroshi_request" -> otoroshiRequest.json,
     "config"    -> config,
     "target"    -> target.json,
     "attrs"     -> attrs.json

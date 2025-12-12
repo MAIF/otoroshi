@@ -26,7 +26,7 @@ class ImageReplacerTests(parent: PluginsTestSpec) {
     },
     jsonAPI = false,
     responseContentType = "image/jpeg"
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/")

@@ -42,7 +42,7 @@ class TimeRestrictedAccessPluginTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   def call(): Int = {
     ws

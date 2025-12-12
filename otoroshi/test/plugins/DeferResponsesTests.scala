@@ -28,7 +28,7 @@ class DeferResponsesTests(parent: PluginsTestSpec) {
       )
     ),
     id = IdGenerator.uuid
-  )
+  ).futureValue
 
   val lastStart = System.currentTimeMillis()
 

@@ -26,13 +26,13 @@ class HTTPStaticAssetTests(parent: PluginsTestSpec) {
         )
       )
     )
-  )
+  ).futureValue
 
   val staticAssetRoute = createLocalRoute(
     Seq(),
     rawDomain = "static-asset.oto.tools".some,
     result = _ => Json.obj("foo" -> "bar_from_child")
-  )
+  ).futureValue
 
   val resp = ws
     .url(s"http://127.0.0.1:$port/api/assets/foo")
