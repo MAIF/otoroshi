@@ -10,6 +10,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
+import java.net.InetAddress
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -294,7 +295,9 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
     val ip   = conf.identifier.evaluateEl(ctx.attrs)
-    val now  = System.currentTimeMillis()
+
+    val now = System.currentTimeMillis()
+
     if (conf.isIgnored(ip)) {
       NgAccess.NgAllowed.vfuture
     } else if (conf.isBlocked(ip)) {

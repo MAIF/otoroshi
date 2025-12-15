@@ -1720,11 +1720,11 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       stringResult: HttpRequest => String = _ => "",
       target: Option[NgTarget] = None,
       rawResult: Option[HttpRequest => (Int, String, List[HttpHeader])] = None,
-      customOtoroshiPort: Option[Int] = None
+      customOtoroshiPort: Option[Int] = None,
+      id: String = IdGenerator.uuid
   ): Future[NgRoute] = {
 
     var _target: Option[TargetService] = None
-    val id                             = IdGenerator.uuid
 
     val domain = rawDomain.getOrElse(s"$id.oto.tools")
 

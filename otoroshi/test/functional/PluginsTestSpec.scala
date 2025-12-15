@@ -636,5 +636,32 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Canary mode" in {
       new CanaryModeTests(this)
     }
+    "Fail2ban - ban client after max failed attempts" in {
+      new Fail2BanTests(this).banClientAfterMaxFailedAttempts()
+    }
+    "Fail2ban - not ban client on successful requests" in {
+      new Fail2BanTests(this).notBanClientOnSuccessfulRequests()
+    }
+    "Fail2ban - not ban ignored identifiers" in {
+      new Fail2BanTests(this).notBanIgnoredIdentifiers()
+    }
+    "Fail2ban - permanently block blocked identifiers" in {
+      new Fail2BanTests(this).permanentlyBlockBlockedIdentifiers()
+    }
+    "Fail2ban - only apply to URLs matching allow rules" in {
+      new Fail2BanTests(this).onlyApplyToURLsMatchingAllowRules()
+    }
+    "Fail2ban - only apply to URLs matching block rules" in {
+      new Fail2BanTests(this).notApplyToURLsMatchingBlockRules()
+    }
+    "Fail2ban - count failures from multiple status codes" in {
+      new Fail2BanTests(this).countFailuresFromMultipleStatusSodes()
+    }
+    "Fail2ban - unban client after ban time expires" in {
+      new Fail2BanTests(this).unbanClientAfterBanTimeExpires()
+    }
+    "Fail2ban - reset counter after detection window expires" in {
+      new Fail2BanTests(this).resetCounterAfterDetectionWindowExpires()
+    }
   }
 }
