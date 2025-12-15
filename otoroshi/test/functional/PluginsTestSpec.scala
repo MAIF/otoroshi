@@ -633,5 +633,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .run()
         .futureValue
     }
+    "Canary mode" in {
+      new CanaryModeTests(this)
+    }
   }
 }
