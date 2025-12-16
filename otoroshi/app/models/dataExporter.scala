@@ -422,6 +422,108 @@ case class DatadogCallSettings(
   }
 }
 
+case class NewRelicCallSettings(
+                                 url: String,
+                                 headers: Map[String, String],
+                                 token: Option[String],
+                                 logtype: Option[String],
+                                 service: Option[String],
+                                 hostname: Option[String],
+                                 timeout: FiniteDuration,
+                                 tlsConfig: NgTlsConfig
+                               ) extends Exporter {
+
+  override def toJson: JsValue = {
+    Json
+      .obj(
+        "token"      -> token,
+        "url"        -> url,
+        "headers"    -> headers,
+        "timeout"    -> timeout.toMillis,
+        "tls_config" -> tlsConfig.json
+      )
+      .applyOnWithOpt(token) { case (obj, token) =>
+        obj ++ Json.obj("token" -> token)
+      }
+      .applyOnWithOpt(logtype) { case (obj, logtype) =>
+        obj ++ Json.obj("logtype" -> logtype)
+      }
+      .applyOnWithOpt(service) { case (obj, service) =>
+        obj ++ Json.obj("service" -> service)
+      }
+      .applyOnWithOpt(hostname) { case (obj, hostname) =>
+        obj ++ Json.obj("hostname" -> hostname)
+      }
+  }
+
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+                                                                                         env: Env,
+                                                                                         ec: ExecutionContext
+  ): Future[ExportResult] = {
+    env.MtlsWs
+      .url(url, tlsConfig.legacy)
+      .withRequestTimeout(timeout)
+      .withMethod("POST")
+      .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
+        headers :+ ("Api-Key" -> token)
+      }: _*)
+      .withBody(JsArray(
+        events
+          .map { evt =>
+            Json.obj(
+              "common" -> Json.obj(
+                "service" -> service.getOrElse("otoroshi").json,
+                "logtype" -> logtype.getOrElse("accesslogs").json,
+                "hostname" -> evt.at("to.host").asOptString.getOrElse("--").json,
+              ),
+              "logs" -> Json.obj(
+                "timestamp" -> (System.currentTimeMillis() / 1000).json,
+                "message" -> evt.stringify
+              )
+            )
+          })
+      )
+      .execute()
+      .map { resp =>
+        val status = resp.status
+        if (resp.status > 199 && resp.status < 299) {
+          ExportResult.ExportResultSuccess
+        } else {
+          ExportResult.ExportResultFailure(s"bad status code: ${status} - ${resp.body}")
+        }
+      }
+      .recover { case t: Throwable =>
+        ExportResult.ExportResultFailure(s"caught exception on http call: ${t.getMessage}")
+      }
+  }
+}
+
+
+object NewRelicCallSettings {
+  val format = new Format[NewRelicCallSettings] {
+    override def reads(json: JsValue): JsResult[NewRelicCallSettings] = Try {
+      NewRelicCallSettings(
+        url = json.select("url").asOptString.getOrElse("https://log-api.eu.newrelic.com/log/v1"),
+        headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        timeout = json.select("timeout").asOptLong.map(_.millis).getOrElse(60.seconds),
+        token = json.select("token").asOptString,
+        logtype = json.select("logtype").asOptString,
+        service = json.select("service").asOptString,
+        hostname = json.select("hostname").asOptString,
+        tlsConfig = json
+          .select("tls_config")
+          .asOpt[JsObject]
+          .flatMap(v => NgTlsConfig.format.reads(v).asOpt)
+          .getOrElse(NgTlsConfig())
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: NewRelicCallSettings): JsValue             = o.toJson
+  }
+}
+
 object WorkflowCallSettings {
   val format = new Format[WorkflowCallSettings] {
     override def reads(json: JsValue): JsResult[WorkflowCallSettings] = Try {
@@ -707,6 +809,7 @@ object DataExporterConfig {
             case "http"          => HttpCallSettings.format.reads((json \ "config").as[JsObject]).get
             case "splunk"        => SplunkCallSettings.format.reads((json \ "config").as[JsObject]).get
             case "datadog"       => DatadogCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "newrelic"      => NewRelicCallSettings.format.reads((json \ "config").as[JsObject]).get
             case "workflow"      => WorkflowCallSettings.format.reads((json \ "config").as[JsObject]).get
             case "kafka"         => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
             case "pulsar"        => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
@@ -812,6 +915,10 @@ case object DataExporterConfigTypeDatadog extends DataExporterConfigType {
   def name: String = "datadog"
 }
 
+case object DataExporterConfigTypeNewRelic extends DataExporterConfigType {
+  def name: String = "newrelic"
+}
+
 case object DataExporterConfigTypeWorkflow extends DataExporterConfigType {
   def name: String = "workflow"
 }
@@ -877,6 +984,7 @@ object DataExporterConfigType {
   val Http          = DataExporterConfigTypeHttp
   val Splunk        = DataExporterConfigTypeSplunk
   val Datadog       = DataExporterConfigTypeDatadog
+  val NewRelic      = DataExporterConfigTypeNewRelic
   val Workflow      = DataExporterConfigTypeWorkflow
   val File          = DataExporterConfigTypeFile
   val GoReplayFile  = DataExporterConfigTypeGoReplayFile
@@ -906,6 +1014,7 @@ object DataExporterConfigType {
       case "workflow"      => Workflow
       case "splunk"        => Splunk
       case "datadog"       => Datadog
+      case "newrelic"      => NewRelic
       case "file"          => File
       case "goreplayfile"  => GoReplayFile
       case "goreplays3"    => GoReplayS3
@@ -968,6 +1077,7 @@ case class DataExporterConfig(
       case c: HttpCallSettings            => new HttpCallExporter(this)
       case c: WorkflowCallSettings        => new WorkflowCallExporter(this)
       case c: DatadogCallSettings         => new DatadogCallExporter(this)
+      case c: NewRelicCallSettings        => new NewRelicCallExporter(this)
       case c: SplunkCallSettings          => new SplunkCallExporter(this)
       case c: FileSettings                => new FileAppenderExporter(this)
       case c: S3ExporterSettings          => new S3Exporter(this)

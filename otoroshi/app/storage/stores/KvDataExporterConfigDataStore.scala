@@ -385,6 +385,28 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             tlsConfig = NgTlsConfig(),
           )
         )
+      case Some("newrelic")   =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.NewRelic,
+          id = IdGenerator.namedId("data_exporter", env),
+          name = "New New Relic exporter config",
+          desc = "New New Relic exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation.ownEntityLocation(ctx)(env),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = NewRelicCallSettings(
+            url = "https://log-api.eu.newrelic.com/log/v1",
+            headers = Map.empty,
+            token = Some("secret"),
+            logtype = None,
+            service = None,
+            hostname = None,
+            timeout = 30000.millis,
+            tlsConfig = NgTlsConfig(),
+          )
+        )
       case _                      =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
