@@ -473,7 +473,7 @@ case class NewRelicCallSettings(
             Json.obj(
               "common" -> Json.obj(
                 "service" -> service.getOrElse("otoroshi").json,
-                "logtype" -> logtype.getOrElse("accesslogs").json,
+                "logtype" -> logtype.orElse(evt.select("@type").asOptString).getOrElse("accesslogs").json,
                 "hostname" -> evt.at("to.host").asOptString.getOrElse("--").json,
               ),
               "logs" -> Json.obj(
