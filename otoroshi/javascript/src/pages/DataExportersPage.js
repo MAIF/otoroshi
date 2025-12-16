@@ -1279,6 +1279,64 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
+  datadog: {
+    flow: [
+      'url',
+      'headers',
+      'timeout',
+      'token',
+      'hostname',
+      'service',
+      'ddsource',
+      'ddtags',
+      'tls_config',
+    ],
+    schema: {
+      url: {
+        type: 'string',
+        props: {
+          label: 'URL',
+          placeholder: 'example: https://http-intake.logs.datadoghq.eu/api/v2/logs',
+        },
+      },
+      token: {
+        type: 'string',
+        props: { label: 'DD Apikey', placeholder: 'The datadog apikey' },
+      },
+      ddsource: {
+        type: 'string',
+        props: { label: 'Source', placeholder: 'example: otoroshi' },
+      },
+      ddtags: {
+        type: 'string',
+        props: { label: 'Tags', placeholder: 'example: otoroshi:prod, foo:bar' },
+      },
+      hostname: {
+        type: 'string',
+        props: { label: 'Hostname', placeholder: 'example: otoroshi' },
+      },
+      service: {
+        type: 'string',
+        props: { label: 'Service', placeholder: 'example: otoroshi' },
+      },
+      headers: {
+        type: 'object',
+        props: {
+          label: 'Http Headers',
+          placeholderKey: 'Name of the header',
+          placeholderValue: 'Value of the header',
+        },
+      },
+      timeout: {
+        type: 'number',
+        props: { label: 'HTTP Timeout', suffix: 'ms.' },
+      },
+      tls_config: {
+        type: 'jsonobjectcode',
+        props: { label: 'TLS Config' },
+      },
+    },
+  },
   workflow: {
     flow: ['ref'],
     schema: {

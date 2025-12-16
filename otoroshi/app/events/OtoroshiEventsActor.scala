@@ -1057,6 +1057,19 @@ object Exporters {
     }
   }
 
+  class DatadogCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+    extends DefaultDataExporter(config)(ec, env) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        exporter[DatadogCallSettings].map { eec =>
+          eec.call(events, config, globalConfig)
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
   class WorkflowCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
       extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {

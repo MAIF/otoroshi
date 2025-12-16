@@ -2,17 +2,11 @@ package otoroshi.storage.stores
 
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
-import otoroshi.events.Exporters.{
-  CustomMetricsSettings,
-  MetricSettings,
-  MetricSettingsKind,
-  OtlpLogsExporterSettings,
-  OtlpMetricsExporterSettings,
-  WasmExporterSettings
-}
+import otoroshi.events.Exporters.{CustomMetricsSettings, MetricSettings, MetricSettingsKind, OtlpLogsExporterSettings, OtlpMetricsExporterSettings, WasmExporterSettings}
 import otoroshi.events.{KafkaConfig, PulsarConfig}
 import otoroshi.metrics.opentelemetry.OtlpSettings
 import otoroshi.models._
+import otoroshi.next.models.NgTlsConfig
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
@@ -308,6 +302,87 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
                 labels = Map.empty
               )
             )
+          )
+        )
+      case Some("splunk")   =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.Splunk,
+          id = IdGenerator.namedId("data_exporter", env),
+          name = "New Splunk exporter config",
+          desc = "New Splunk metrics exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation.ownEntityLocation(ctx)(env),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = SplunkCallSettings(
+            url = "",
+            headers = Map.empty,
+            token = Some("secret"),
+            sourceType = None,
+            index = None,
+            fields = Map.empty,
+            timeout = 30000.millis,
+            tlsConfig = NgTlsConfig(),
+          )
+        )
+      case Some("http")   =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.Http,
+          id = IdGenerator.namedId("data_exporter", env),
+          name = "New Http exporter config",
+          desc = "New Http exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation.ownEntityLocation(ctx)(env),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = HttpCallSettings(
+            url = "http://localhost:3465/logs",
+            method = "POST",
+            headers = Map.empty,
+            cookies = Seq.empty,
+            body = "${events.nd_stringify}",
+            timeout = 3000.millis,
+            tlsConfig = NgTlsConfig(),
+          )
+        )
+      case Some("workflow")   =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.Workflow,
+          id = IdGenerator.namedId("data_exporter", env),
+          name = "New Workflow exporter config",
+          desc = "New Workflow exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation.ownEntityLocation(ctx)(env),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = WorkflowCallSettings(
+            ref = ""
+          )
+        )
+      case Some("datadog")   =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.Datadog,
+          id = IdGenerator.namedId("data_exporter", env),
+          name = "New Datadog exporter config",
+          desc = "New Datadog exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation.ownEntityLocation(ctx)(env),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = DatadogCallSettings(
+            url = "https://http-intake.logs.datadoghq.eu/api/v2/logs",
+            headers = Map.empty,
+            token = Some("secret"),
+            ddsource = None,
+            ddtags = None,
+            service = None,
+            hostname = None,
+            timeout = 30000.millis,
+            tlsConfig = NgTlsConfig(),
           )
         )
       case _                      =>

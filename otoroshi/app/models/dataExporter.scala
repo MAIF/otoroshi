@@ -318,6 +318,110 @@ case class SplunkCallSettings(
   }
 }
 
+object DatadogCallSettings {
+  val format = new Format[DatadogCallSettings] {
+    override def reads(json: JsValue): JsResult[DatadogCallSettings] = Try {
+      DatadogCallSettings(
+        url = json.select("url").asOptString.getOrElse("https://http-intake.logs.datadoghq.eu/api/v2/logs"),
+        headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        timeout = json.select("timeout").asOptLong.map(_.millis).getOrElse(60.seconds),
+        token = json.select("token").asOptString,
+        ddsource = json.select("ddsource").asOptString,
+        ddtags = json.select("ddtags").asOptString,
+        service = json.select("service").asOptString,
+        hostname = json.select("hostname").asOptString,
+        tlsConfig = json
+          .select("tls_config")
+          .asOpt[JsObject]
+          .flatMap(v => NgTlsConfig.format.reads(v).asOpt)
+          .getOrElse(NgTlsConfig())
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: DatadogCallSettings): JsValue             = o.toJson
+  }
+}
+
+case class DatadogCallSettings(
+  url: String,
+  headers: Map[String, String],
+  token: Option[String],
+  ddsource: Option[String],
+  ddtags: Option[String],
+  service: Option[String],
+  hostname: Option[String],
+  timeout: FiniteDuration,
+  tlsConfig: NgTlsConfig
+) extends Exporter {
+
+  override def toJson: JsValue = {
+    Json
+      .obj(
+        "token"      -> token,
+        "url"        -> url,
+        "headers"    -> headers,
+        "timeout"    -> timeout.toMillis,
+        "tls_config" -> tlsConfig.json
+      )
+      .applyOnWithOpt(token) { case (obj, token) =>
+        obj ++ Json.obj("token" -> token)
+      }
+      .applyOnWithOpt(ddsource) { case (obj, ddsource) =>
+        obj ++ Json.obj("ddsource" -> ddsource)
+      }
+      .applyOnWithOpt(ddtags) { case (obj, ddtags) =>
+        obj ++ Json.obj("ddtags" -> ddtags)
+      }
+      .applyOnWithOpt(service) { case (obj, service) =>
+        obj ++ Json.obj("service" -> service)
+      }
+      .applyOnWithOpt(hostname) { case (obj, hostname) =>
+        obj ++ Json.obj("hostname" -> hostname)
+      }
+  }
+
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+                                                                                         env: Env,
+                                                                                         ec: ExecutionContext
+  ): Future[ExportResult] = {
+    env.MtlsWs
+      .url(url, tlsConfig.legacy)
+      .withRequestTimeout(timeout)
+      .withMethod("POST")
+      .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
+        headers :+ ("DD-API-KEY" -> token)
+      }: _*)
+      .withBody(
+        JsArray(events
+          .map { evt =>
+            Json
+              .obj(
+                //"time"       -> scala.math.BigDecimal(System.currentTimeMillis.toDouble / 1000.0).toString,
+                "hostname"   -> hostname.getOrElse(env.clusterConfig.name).json,
+                "ddsource"   -> ddsource.getOrElse("otoroshi").json,
+                "ddtags"     -> ddtags.getOrElse("").json,
+                "service"    -> service.orElse(evt.at("route.name").asOptString).getOrElse("--").json,
+                "message"    -> evt.stringify
+              )
+          })
+      )
+      .execute()
+      .map { resp =>
+        val status = resp.status
+        if (resp.status > 199 && resp.status < 299) {
+          ExportResult.ExportResultSuccess
+        } else {
+          ExportResult.ExportResultFailure(s"bad status code: ${status} - ${resp.body}")
+        }
+      }
+      .recover { case t: Throwable =>
+        ExportResult.ExportResultFailure(s"caught exception on http call: ${t.getMessage}")
+      }
+  }
+}
+
 object WorkflowCallSettings {
   val format = new Format[WorkflowCallSettings] {
     override def reads(json: JsValue): JsResult[WorkflowCallSettings] = Try {
@@ -575,7 +679,8 @@ object DataExporterConfig {
         "config"        -> o.config.toJson
       )
     }
-    override def reads(json: JsValue): JsResult[DataExporterConfig] =
+    override def reads(json: JsValue): JsResult[DataExporterConfig] = {
+      val expType = (json \ "type").as[String]
       Try {
         DataExporterConfig(
           typ = DataExporterConfigType.parse((json \ "type").as[String]),
@@ -596,11 +701,12 @@ object DataExporterConfig {
             include = (json \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
             exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
           ),
-          config = (json \ "type").as[String] match {
+          config = expType match {
             case "elastic"       => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
             case "webhook"       => Webhook.format.reads((json \ "config").as[JsObject]).get
             case "http"          => HttpCallSettings.format.reads((json \ "config").as[JsObject]).get
             case "splunk"        => SplunkCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "datadog"       => DatadogCallSettings.format.reads((json \ "config").as[JsObject]).get
             case "workflow"      => WorkflowCallSettings.format.reads((json \ "config").as[JsObject]).get
             case "kafka"         => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
             case "pulsar"        => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
@@ -649,10 +755,12 @@ object DataExporterConfig {
         )
       } match {
         case Failure(e) =>
+          log.error(s"exporter type was: '${expType}' - ${json.prettify}")
           e.printStackTrace()
           JsError(e.getMessage)
         case Success(e) => JsSuccess(e)
       }
+    }
   }
 }
 
@@ -698,6 +806,10 @@ case object DataExporterConfigTypeHttp extends DataExporterConfigType {
 
 case object DataExporterConfigTypeSplunk extends DataExporterConfigType {
   def name: String = "splunk"
+}
+
+case object DataExporterConfigTypeDatadog extends DataExporterConfigType {
+  def name: String = "datadog"
 }
 
 case object DataExporterConfigTypeWorkflow extends DataExporterConfigType {
@@ -764,6 +876,7 @@ object DataExporterConfigType {
   val Webhook       = DataExporterConfigTypeWebhook
   val Http          = DataExporterConfigTypeHttp
   val Splunk        = DataExporterConfigTypeSplunk
+  val Datadog       = DataExporterConfigTypeDatadog
   val Workflow      = DataExporterConfigTypeWorkflow
   val File          = DataExporterConfigTypeFile
   val GoReplayFile  = DataExporterConfigTypeGoReplayFile
@@ -792,6 +905,7 @@ object DataExporterConfigType {
       case "http"          => Http
       case "workflow"      => Workflow
       case "splunk"        => Splunk
+      case "datadog"       => Datadog
       case "file"          => File
       case "goreplayfile"  => GoReplayFile
       case "goreplays3"    => GoReplayS3
@@ -853,6 +967,7 @@ case class DataExporterConfig(
       case c: Webhook                     => new WebhookExporter(this)
       case c: HttpCallSettings            => new HttpCallExporter(this)
       case c: WorkflowCallSettings        => new WorkflowCallExporter(this)
+      case c: DatadogCallSettings         => new DatadogCallExporter(this)
       case c: SplunkCallSettings          => new SplunkCallExporter(this)
       case c: FileSettings                => new FileAppenderExporter(this)
       case c: S3ExporterSettings          => new S3Exporter(this)
