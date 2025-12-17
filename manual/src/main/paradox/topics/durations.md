@@ -29,7 +29,8 @@ Example (shortened):
   "requestStreamingDuration": 0,
   "responseStreamingDuration": 1,
   "backendDuration": 12,
-  "backendResponseStreamingDuration": 1
+  "backendResponseStreamingDuration": 1,
+  ...
 }
 ```
 
@@ -47,7 +48,7 @@ The lifecycle of a request in Otoroshi can be summarized as:
 4. The backend processes the request and sends the response headers
 5. The response body is streamed back through Otoroshi to the client
 
-The following sequence diagram represents the **reference flow** used for all durations described in this document:
+The following sequence diagram represents a very simplified version of the **reference flow** used for all durations described in this document:
 
 @@@ div { .centered-img }
 <img src="../imgs/durations.png" />
