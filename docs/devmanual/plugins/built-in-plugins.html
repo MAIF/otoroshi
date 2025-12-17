@@ -96,6 +96,7 @@ latest
     <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
     <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
+    <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -222,6 +223,7 @@ latest
     <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
     <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
+    <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -905,7 +907,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like). Client is identified by the &lsquo;identifier&rsquo; that can use the Otoroshi expression language to extract informations like user id, apikey, ip address, etc.</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;identifier&quot; : &quot;${req.ip}&quot;,
+  &quot;identifier&quot; : &quot;${route.id}-${req.ip}&quot;,
   &quot;detect_time&quot; : 600000,
   &quot;ban_time&quot; : 10800000,
   &quot;max_retry&quot; : 4,
@@ -1320,7 +1322,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin verifies the current request with one or more jwt verifier</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;verifiers&quot; : [ ]
+  &quot;verifiers&quot; : [ ],
+  &quot;custom_response&quot; : false,
+  &quot;custom_response_status&quot; : 401,
+  &quot;custom_response_headers&quot; : { },
+  &quot;custom_response_body&quot; : &quot;{\&quot;error\&quot;:\&quot;unauthorized\&quot;}&quot;
 }
 </code></pre></div><div id="otoroshi.next.plugins.JwtVerificationOnly" class="ng-plugin plugin-hidden pl">
 <h2><a href="#jwt-verification-only" name="jwt-verification-only" class="anchor"><span class="anchor-link"></span></a>Jwt verification only</h2>
@@ -1335,7 +1341,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;verifier&quot; : null,
-  &quot;fail_if_absent&quot; : true
+  &quot;fail_if_absent&quot; : true,
+  &quot;custom_response&quot; : false,
+  &quot;custom_response_status&quot; : 401,
+  &quot;custom_response_headers&quot; : { },
+  &quot;custom_response_body&quot; : &quot;{\&quot;error\&quot;:\&quot;unauthorized\&quot;}&quot;
 }
 </code></pre></div><div id="otoroshi.next.plugins.LimitHeaderInTooLong" class="ng-plugin plugin-hidden pl">
 <h2><a href="#limit-headers-in-too-long" name="limit-headers-in-too-long" class="anchor"><span class="anchor-link"></span></a>Limit headers in too long</h2>
@@ -1905,11 +1915,17 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Check if client certificate matches the following fetched from an http endpoint</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;serial_numbers&quot; : [ ],
-  &quot;subject_dns&quot; : [ ],
-  &quot;issuer_dns&quot; : [ ],
-  &quot;regex_subject_dns&quot; : [ ],
-  &quot;regex_issuer_dns&quot; : [ ]
+  &quot;url&quot; : &quot;https://validate.foo.bar&quot;,
+  &quot;method&quot; : &quot;GET&quot;,
+  &quot;timeout&quot; : 2000,
+  &quot;headers&quot; : { },
+  &quot;tls&quot; : {
+    &quot;certs&quot; : [ ],
+    &quot;trusted_certs&quot; : [ ],
+    &quot;enabled&quot; : false,
+    &quot;loose&quot; : false,
+    &quot;trust_all&quot; : false
+  }
 }
 </code></pre></div><div id="otoroshi.next.plugins.NgHasClientCertMatchingValidator" class="ng-plugin plugin-hidden pl">
 <h2><a href="#client-certificate-matching" name="client-certificate-matching" class="anchor"><span class="anchor-link"></span></a>Client certificate matching</h2>
@@ -2262,7 +2278,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;to&quot; : &quot;https://foo.bar.dev&quot;,
   &quot;enabled&quot; : true,
   &quot;capture_response&quot; : false,
-  &quot;generate_events&quot; : false
+  &quot;generate_events&quot; : false,
+  &quot;headers&quot; : { }
 }
 </code></pre></div><div id="otoroshi.next.plugins.NgUserAgentExtractor" class="ng-plugin plugin-hidden pl">
 <h2><a href="#user-agent-details-extractor" name="user-agent-details-extractor" class="anchor"><span class="anchor-link"></span></a>User-Agent details extractor</h2>
@@ -2685,6 +2702,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;user_path&quot; : null,
   &quot;role_prefix&quot; : null,
   &quot;roles&quot; : &quot;roles&quot;
+}
+</code></pre></div><div id="otoroshi.next.plugins.React2SShellDetector" class="ng-plugin plugin-hidden pl">
+<h2><a href="#react2shell-detector" name="react2shell-detector" class="anchor"><span class="anchor-link"></span></a>React2Shell detector</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.React2SShellDetector</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin detects (and block) React2Shell attacks</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;block&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.ReadOnlyCalls" class="ng-plugin plugin-hidden pl">
 <h2><a href="#read-only-requests" name="read-only-requests" class="anchor"><span class="anchor-link"></span></a>Read only requests</h2>
@@ -3229,8 +3260,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin can split a portion of the traffic to canary backends between two dates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;start&quot; : &quot;2025-11-25T16:07:43.254Z&quot;,
-  &quot;stop&quot; : &quot;2025-11-26T16:07:43.277Z&quot;,
+  &quot;start&quot; : &quot;2025-12-17T14:42:19.963Z&quot;,
+  &quot;stop&quot; : &quot;2025-12-18T14:42:19.988Z&quot;,
   &quot;increment_percent&quot; : 1,
   &quot;targets&quot; : [ ],
   &quot;root&quot; : &quot;/&quot;
@@ -3259,7 +3290,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.UdpTunnel</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin creates UDP tunnels through otoroshi</p></div><div id="otoroshi.next.plugins.UserProfileEndpoint" class="ng-plugin plugin-hidden pl">
+<p>This plugin creates UDP tunnels through otoroshi</p></div><div id="otoroshi.next.plugins.UserLogoutEndpoint" class="ng-plugin plugin-hidden pl">
+<h2><a href="#user-logout-endpoint" name="user-logout-endpoint" class="anchor"><span class="anchor-link"></span></a>User logout endpoint</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.UserLogoutEndpoint</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin logout the current user</p></div><div id="otoroshi.next.plugins.UserProfileEndpoint" class="ng-plugin plugin-hidden pl">
 <h2><a href="#user-profile-endpoint" name="user-profile-endpoint" class="anchor"><span class="anchor-link"></span></a>User profile endpoint</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -3800,7 +3840,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;isJS&quot; : false
 }
 </code></pre></div><div id="otoroshi.next.plugins.WasmWebsocketTransformer" class="ng-plugin plugin-hidden pl">
-<h2><a href="#wasm-websocket-transformer" name="wasm-websocket-transformer" class="anchor"><span class="anchor-link"></span></a>Wasm Websocket transformer</h2>
+<h2><a href="#websocket-wasm-transformer" name="websocket-wasm-transformer" class="anchor"><span class="anchor-link"></span></a>Websocket Wasm transformer</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
   <li><code>TransformResponse</code></li>
@@ -3892,6 +3932,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;specification&quot; : &quot;https://json-schema.org/draft/2020-12/schema&quot;,
   &quot;reject_strategy&quot; : &quot;drop&quot;
 }
+</code></pre></div><div id="otoroshi.next.plugins.WebsocketMirrorBackend" class="ng-plugin plugin-hidden pl">
+<h2><a href="#websocket-mirror-backend" name="websocket-mirror-backend" class="anchor"><span class="anchor-link"></span></a>Websocket mirror backend</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.WebsocketMirrorBackend</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Mirror incoming websocket messages to another target</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;url&quot; : null
+}
 </code></pre></div><div id="otoroshi.next.plugins.WebsocketSizeValidator" class="ng-plugin plugin-hidden pl">
 <h2><a href="#websocket-size-validator" name="websocket-size-validator" class="anchor"><span class="anchor-link"></span></a>Websocket size validator</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -3923,6 +3977,22 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-json">{
   &quot;allowed_format&quot; : &quot;all&quot;,
   &quot;reject_strategy&quot; : &quot;drop&quot;
+}
+</code></pre></div><div id="otoroshi.next.plugins.WorkflowWebsocketTransformer" class="ng-plugin plugin-hidden pl">
+<h2><a href="#websocket-workflow-transformer" name="websocket-workflow-transformer" class="anchor"><span class="anchor-link"></span></a>Websocket Workflow transformer</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.WorkflowWebsocketTransformer</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Transform messages and filter websocket messages</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;incoming_workflow&quot; : null,
+  &quot;outgoing_workflow&quot; : null
 }
 </code></pre></div><div id="otoroshi.next.plugins.XForwardedHeaders" class="ng-plugin plugin-hidden pl">
 <h2><a href="#x-forwarded-headers" name="x-forwarded-headers" class="anchor"><span class="anchor-link"></span></a>X-Forwarded-* headers</h2>
@@ -4260,6 +4330,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#public-private-paths" class="header">Public/Private paths</a></li>
     <li><a href="../plugins/built-in-plugins.html#query-param-transformer" class="header">Query param transformer</a></li>
     <li><a href="../plugins/built-in-plugins.html#rbac" class="header">RBAC</a></li>
+    <li><a href="../plugins/built-in-plugins.html#react2shell-detector" class="header">React2Shell detector</a></li>
     <li><a href="../plugins/built-in-plugins.html#read-only-requests" class="header">Read only requests</a></li>
     <li><a href="../plugins/built-in-plugins.html#redirection" class="header">Redirection</a></li>
     <li><a href="../plugins/built-in-plugins.html#regex-request-body-rewriter" class="header">Regex request body rewriter</a></li>
@@ -4294,6 +4365,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#time-controlled-canary-mode" class="header">Time controlled Canary mode</a></li>
     <li><a href="../plugins/built-in-plugins.html#time-restriction" class="header">Time Restriction</a></li>
     <li><a href="../plugins/built-in-plugins.html#udp-tunnel" class="header">UDP Tunnel</a></li>
+    <li><a href="../plugins/built-in-plugins.html#user-logout-endpoint" class="header">User logout endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#user-profile-endpoint" class="header">User profile endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#w3c-trace-context" class="header">W3C Trace Context</a></li>
     <li><a href="../plugins/built-in-plugins.html#wasm-access-control" class="header">Wasm Access control</a></li>
@@ -4305,11 +4377,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#wasm-route-matcher" class="header">Wasm Route Matcher</a></li>
     <li><a href="../plugins/built-in-plugins.html#wasm-router" class="header">Wasm Router</a></li>
     <li><a href="../plugins/built-in-plugins.html#wasm-sink" class="header">Wasm Sink</a></li>
-    <li><a href="../plugins/built-in-plugins.html#wasm-websocket-transformer" class="header">Wasm Websocket transformer</a></li>
+    <li><a href="../plugins/built-in-plugins.html#websocket-wasm-transformer" class="header">Websocket Wasm transformer</a></li>
     <li><a href="../plugins/built-in-plugins.html#websocket-content-validator-in" class="header">Websocket content validator in</a></li>
     <li><a href="../plugins/built-in-plugins.html#websocket-json-format-validator" class="header">Websocket json format validator</a></li>
+    <li><a href="../plugins/built-in-plugins.html#websocket-mirror-backend" class="header">Websocket mirror backend</a></li>
     <li><a href="../plugins/built-in-plugins.html#websocket-size-validator" class="header">Websocket size validator</a></li>
     <li><a href="../plugins/built-in-plugins.html#websocket-type-validator" class="header">Websocket type validator</a></li>
+    <li><a href="../plugins/built-in-plugins.html#websocket-workflow-transformer" class="header">Websocket Workflow transformer</a></li>
     <li><a href="../plugins/built-in-plugins.html#x-forwarded-headers" class="header">X-Forwarded-* headers</a></li>
     <li><a href="../plugins/built-in-plugins.html#request-body-xml-to-json" class="header">request body xml-to-json</a></li>
     <li><a href="../plugins/built-in-plugins.html#response-body-xml-to-json" class="header">response body xml-to-json</a></li>

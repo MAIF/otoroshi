@@ -96,6 +96,7 @@ latest
     <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
     <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
+    <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -222,6 +223,7 @@ latest
     <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
     <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
+    <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -1272,6 +1274,23 @@ play.http {
       shim-set-commands = false
       shim-set-commands = ${?REDIS_LETTUCE_SHIM_SET_COMMANDS}
       shim-set-commands = ${?OTOROSHI_REDIS_LETTUCE_SHIM_SET_COMMANDS}
+      computationThreadPoolSize = 4
+      computationThreadPoolSize =  ${?REDIS_LETTUCE_COMPUTATION_THEAD_POOL_SIZE}
+      computationThreadPoolSize =  ${?OTOROSHI_REDIS_LETTUCE_COMPUTATION_THEAD_POOL_SIZE}
+      ioThreadPoolSize = 4
+      ioThreadPoolSize = ${?REDIS_LETTUCE_IO_THEAD_POOL_SIZE}
+      ioThreadPoolSize = ${?OTOROSHI_REDIS_LETTUCE_IO_THEAD_POOL_SIZE}
+      pooling {
+        enabled = false
+        enabled = ${?REDIS_LETTUCE_POOLING_ENABLED}
+        enabled = ${?OTOROSHI_REDIS_LETTUCE_POOLING_ENABLED}
+        reactive = false
+        reactive = ${?REDIS_LETTUCE_POOLING_REACTIVE}
+        reactive = ${?OTOROSHI_REDIS_LETTUCE_POOLING_REACTIVE}
+        maxTotal = 1
+        maxTotal = ${?REDIS_LETTUCE_POOLING_MAX_TOTAL}
+        maxTotal = ${?OTOROSHI_REDIS_LETTUCE_POOLING_MAX_TOTAL}
+      }
     }
   }
   inmemory { # configuration to fetch/store otoroshi state in memory
@@ -2971,6 +2990,18 @@ akka { # akka specific configuration
       shim-list-commands = ${?OTOROSHI_REDIS_LETTUCE_SHIM_LIST_COMMANDS}
       shim-set-commands = ${?REDIS_LETTUCE_SHIM_SET_COMMANDS}
       shim-set-commands = ${?OTOROSHI_REDIS_LETTUCE_SHIM_SET_COMMANDS}
+      computationThreadPoolSize =  ${?REDIS_LETTUCE_COMPUTATION_THEAD_POOL_SIZE}
+      computationThreadPoolSize =  ${?OTOROSHI_REDIS_LETTUCE_COMPUTATION_THEAD_POOL_SIZE}
+      ioThreadPoolSize = ${?REDIS_LETTUCE_IO_THEAD_POOL_SIZE}
+      ioThreadPoolSize = ${?OTOROSHI_REDIS_LETTUCE_IO_THEAD_POOL_SIZE}
+      pooling {
+        enabled = ${?REDIS_LETTUCE_POOLING_ENABLED}
+        enabled = ${?OTOROSHI_REDIS_LETTUCE_POOLING_ENABLED}
+        reactive = ${?REDIS_LETTUCE_POOLING_REACTIVE}
+        reactive = ${?OTOROSHI_REDIS_LETTUCE_POOLING_REACTIVE}
+        maxTotal = ${?REDIS_LETTUCE_POOLING_MAX_TOTAL}
+        maxTotal = ${?OTOROSHI_REDIS_LETTUCE_POOLING_MAX_TOTAL}
+      }
     }
   }
   inmemory { # configuration to fetch/store otoroshi state in memory

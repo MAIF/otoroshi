@@ -1159,7 +1159,7 @@ Temporarily bans client when too many failed requests occur within a detection w
 
 ```json
 {
-  "identifier" : "${req.ip}",
+  "identifier" : "${route.id}-${req.ip}",
   "detect_time" : 600000,
   "ban_time" : 10800000,
   "max_retry" : 4,
@@ -3345,11 +3345,17 @@ Check if client certificate matches the following fetched from an http endpoint
 
 ```json
 {
-  "serial_numbers" : [ ],
-  "subject_dns" : [ ],
-  "issuer_dns" : [ ],
-  "regex_subject_dns" : [ ],
-  "regex_issuer_dns" : [ ]
+  "url" : "https://validate.foo.bar",
+  "method" : "GET",
+  "timeout" : 2000,
+  "headers" : { },
+  "tls" : {
+    "certs" : [ ],
+    "trusted_certs" : [ ],
+    "enabled" : false,
+    "loose" : false,
+    "trust_all" : false
+  }
 }
 ```
 
@@ -4038,7 +4044,8 @@ This plugin will mirror every request to other targets
   "to" : "https://foo.bar.dev",
   "enabled" : true,
   "capture_response" : false,
-  "generate_events" : false
+  "generate_events" : false,
+  "headers" : { }
 }
 ```
 
@@ -6118,8 +6125,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-12-08T13:28:24.569Z",
-  "stop" : "2025-12-09T13:28:24.589Z",
+  "start" : "2025-12-17T14:42:19.963Z",
+  "stop" : "2025-12-18T14:42:19.988Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
@@ -6965,7 +6972,7 @@ Handle unmatched requests with a wasm plugin
 
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmWebsocketTransformer }
 
-## Wasm Websocket transformer
+## Websocket Wasm transformer
 
 ### Defined on steps
 
@@ -7113,6 +7120,39 @@ Validate the json
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WebsocketMirrorBackend }
+
+## Websocket mirror backend
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.WebsocketMirrorBackend`
+
+### Description
+
+Mirror incoming websocket messages to another target
+
+
+
+### Default configuration
+
+```json
+{
+  "url" : null
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WebsocketSizeValidator }
 
 ## Websocket size validator
@@ -7173,6 +7213,41 @@ Validate the type of each frame
 {
   "allowed_format" : "all",
   "reject_strategy" : "drop"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WorkflowWebsocketTransformer }
+
+## Websocket Workflow transformer
+
+### Defined on steps
+
+  - `TransformRequest`
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.WorkflowWebsocketTransformer`
+
+### Description
+
+Transform messages and filter websocket messages
+
+
+
+### Default configuration
+
+```json
+{
+  "incoming_workflow" : null,
+  "outgoing_workflow" : null
 }
 ```
 
