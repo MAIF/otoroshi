@@ -51,7 +51,7 @@ The lifecycle of a request in Otoroshi can be summarized as:
 The following sequence diagram represents a very simplified version of the **reference flow** used for all durations described in this document:
 
 @@@ div { .centered-img }
-<img src="../imgs/durations.png" />
+<img src="../imgs/durations2.png" />
 @@@
 
 This diagram should be used as the **mental model** when interpreting GatewayEvent durations.
