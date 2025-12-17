@@ -27,6 +27,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Sunsetting Service Descriptors](./deprecating-sd.md)
 * @ref:[Otoroshi workflows](./workflows.md)
 * @ref:[Circuit Breaker](./circuit-breaker.md)
+* @ref:[⏱️ Understanding GatewayEvent Durations in Otoroshi](./durations.md)
 
 
 @@@ index
@@ -56,4 +57,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Sunsetting Service Descriptors](./deprecating-sd.md)
 * [Otoroshi workflows](./workflows.md)
 * [Circuit Breaker](./circuit-breaker.md)
+* [⏱️ Understanding GatewayEvent Durations in Otoroshi](./durations.md)
+
 @@@
