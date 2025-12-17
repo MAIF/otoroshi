@@ -4,6 +4,9 @@ import akka.http.scaladsl.util.FastFuture
 import com.dimafeng.testcontainers.GenericContainer
 import functional.PluginsTestSpec
 import io.netty.handler.ssl.SslContextBuilder
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.time.{Minutes, Span}
+import org.testcontainers.containers.Network
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.libs.json.Json
@@ -14,13 +17,18 @@ import reactor.netty.http.client.HttpClient
 import java.io.FileInputStream
 import java.nio.file.{Files, Paths}
 import java.security.cert.CertificateFactory
-import scala.concurrent.{Future, Promise}
+import scala.annotation.tailrec
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future, Promise}
+import scala.util.Try
 
 class KubernetesIntegrationTests(parent: PluginsTestSpec) {
 
   import parent._
 
   val instanceId = IdGenerator.uuid
+
+  val network = Network.newNetwork()
 
   def isReady(k3sContainer: GenericContainer) = {
     println(".Waiting for k3s to start..")
@@ -60,6 +68,8 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       c.withPrivilegedMode(true)
       c.withEnv("K3S_KUBECONFIG_OUTPUT", "/output/kubeconfig.yaml")
       c.withEnv("K3S_KUBECONFIG_MODE", "666")
+      c.withNetwork(network)
+      c.withNetworkAliases("k3s")
     }
 
     k3sContainer.start()
@@ -166,7 +176,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
             promise.failure(new RuntimeException(s"readyz check failed: status=$status, body=$body"))
           }
 
-          body // Return something to satisfy Mono requirement
+          body
         }
       }
       .doOnError(error => {
@@ -174,60 +184,194 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
         promise.failure(error)
       })
       .subscribe(
-        _ => {}, // Already handled in the map above
+        _ => {},
         err => promise.failure(err)
       )
     promise.future
   }
 
   def createKubectl(k3sContainer: GenericContainer) = {
-    println("createKubectl")
-    val kubeconfigResult = k3sContainer.execInContainer("cat", "/etc/rancher/k3s/k3s.yaml")
-    if (kubeconfigResult.getExitCode != 0) {
-      throw new RuntimeException(s"Failed to get kubeconfig: ${kubeconfigResult.getStderr}")
+    Future {
+      println("createKubectl")
+      val kubeconfigResult = k3sContainer.execInContainer("cat", "/etc/rancher/k3s/k3s.yaml")
+      if (kubeconfigResult.getExitCode != 0) {
+        throw new RuntimeException(s"Failed to get kubeconfig: ${kubeconfigResult.getStderr}")
+      }
+      val kubeconfig       = kubeconfigResult.getStdout
+
+      val internalIp         =
+        k3sContainer.container.getContainerInfo.getNetworkSettings.getNetworks.values().iterator().next().getIpAddress
+      val modifiedKubeconfig = kubeconfig.replace("127.0.0.1:6443", s"$internalIp:6443")
+
+      println(s"k3s internal IP: $internalIp")
+
+      val tempKubeconfig = Files.createTempFile("kubeconfig", ".yaml")
+      Files.write(tempKubeconfig, modifiedKubeconfig.getBytes())
+
+      val resourceUrl = getClass.getResource("/kubernetes")
+      if (resourceUrl == null) {
+        throw new RuntimeException(s"Resource path not found: kubernetes")
+      }
+
+      val resourcePath = Paths.get(resourceUrl.toURI).toString
+
+      val kubectlContainer = GenericContainer(
+        dockerImage = "alpine/k8s:1.34.1"
+      ).configure { c =>
+        c.withCommand("sh", "-c", "while true; do sleep 30; done")
+        c.withFileSystemBind(
+          tempKubeconfig.toString,
+          "/root/.kube/config",
+          org.testcontainers.containers.BindMode.READ_ONLY
+        )
+        c.withFileSystemBind(
+          resourcePath,
+          "/manifests",
+          org.testcontainers.containers.BindMode.READ_ONLY
+        )
+        c.withNetwork(network)
+      }
+
+      kubectlContainer.start()
+      println("kubectl container started!")
+
+      val testResult = kubectlContainer.execInContainer("kubectl", "version", "--client")
+      println(s"kubectl version: ${testResult.getStdout}")
+
+      kubectlContainer
     }
-    val kubeconfig       = kubeconfigResult.getStdout
+  }
 
-    val k3sInternalIp      =
-      k3sContainer.container.getContainerInfo.getNetworkSettings.getNetworks.values().iterator().next().getIpAddress
-    val modifiedKubeconfig =
-      kubeconfig.replace("https://127.0.0.1:6443", s"https://$k3sInternalIp:${k3sContainer.mappedPort(6443)}")
+  def cleanup(k3sContainer: GenericContainer, kubectlContainer: GenericContainer) = Future {
+    val clientCert = s"/tmp/${instanceId}client-admin.crt"
+    val clientKey  = s"/tmp/${instanceId}client-admin.key"
+    val serverCa   = s"/tmp/${instanceId}server-ca.crt"
 
-    println(s"k3s internal IP: $k3sInternalIp")
+    Files.deleteIfExists(Paths.get(clientCert))
+    Files.deleteIfExists(Paths.get(clientKey))
+    Files.deleteIfExists(Paths.get(serverCa))
 
-    val tempKubeconfig = Files.createTempFile("kubeconfig", ".yaml")
-    Files.write(tempKubeconfig, modifiedKubeconfig.getBytes())
+    network.close()
+    k3sContainer.close()
+    kubectlContainer.close()
+  }
 
-    val kubectlContainer = GenericContainer(
-      dockerImage = "bitnami/kubectl:latest"
-    ).configure { c =>
-      c.withCommand("sleep", "infinity")
-      c.withFileSystemBind(
-        tempKubeconfig.toString,
-        "/root/.kube/config",
-        org.testcontainers.containers.BindMode.READ_ONLY
+  def applyManifest(kubectlContainer: GenericContainer, manifestFilename: String, namespace: String = "default") =
+    Future {
+      val applyResult = kubectlContainer.execInContainer(
+        "kubectl",
+        "apply",
+        "-f",
+        s"/manifests/$manifestFilename",
+        "-n",
+        namespace
       )
-      c.withNetwork(k3sContainer.network)
+
+      if (applyResult.getExitCode != 0) {
+        println(s"Failed to apply manifests: ${applyResult.getStderr}")
+        throw new RuntimeException("Failed to apply manifests")
+      }
+
+      println(s"Successfully applied manifests: ${applyResult.getStdout}")
     }
 
-    kubectlContainer.start()
-    println("kubectl container started!")
+  def waitForResource(
+      kubectlContainer: GenericContainer,
+      resourceType: String,
+      resourceName: String,
+      namespace: String = "foo",
+      timeoutSeconds: Int = 120
+  ): Future[String] = {
 
-    // Test kubectl connection
-    Thread.sleep(2000)
-    val testResult = kubectlContainer.execInContainer("kubectl", "version", "--client")
-    println(s"kubectl version: ${testResult.getStdout}")
+    println(s"Waiting for $resourceType/$resourceName to be ready...")
+
+    waitForReady(
+      Seq(
+        "kubectl",
+        "get",
+        s"$resourceType/$resourceName",
+        s"--timeout=${timeoutSeconds}s",
+        "-n",
+        namespace,
+        "-o",
+        "jsonpath={.status}"
+      ),
+      kubectlContainer,
+      timeoutSeconds
+    )
+  }
+
+  def waitForReady(
+      commands: Seq[String],
+      kubectlContainer: GenericContainer,
+      timeoutSeconds: Int = 120
+  ): Future[String] = Future {
+
+    @tailrec
+    def check(attemptsLeft: Int): String = {
+      if (attemptsLeft <= 0) {
+        throw new RuntimeException(s"Timeout waiting after ${timeoutSeconds}s")
+      }
+
+      val getResult = kubectlContainer.execInContainer(commands: _*)
+      val output    = getResult.getStdout
+      val stderr    = getResult.getStderr
+
+      println(s"Exit code: ${getResult.getExitCode}")
+      println(s"Stdout: $output")
+      println(s"Stderr: $stderr")
+
+      if (getResult.getExitCode != 0) {
+        println(s"Command failed, retrying... ($attemptsLeft left)")
+        Thread.sleep(2000)
+        check(attemptsLeft - 1)
+      } else if (output.isEmpty || !output.contains("Running")) {
+        println(s"Empty output, retrying... ($attemptsLeft left)")
+        Thread.sleep(2000)
+        check(attemptsLeft - 1)
+      } else {
+        output
+      }
+    }
+
+    check(timeoutSeconds / 2)
   }
 
   def run() = {
     val k3sContainer: GenericContainer = deployK3s()
+    val namespace                      = "foo"
 
     for {
-      token <- mintToken(k3sContainer)
-      _     <- callReadyz(k3sContainer, token)
-    } yield {
-      createKubectl(k3sContainer)
-    }
+      token            <- mintToken(k3sContainer)
+      _                <- callReadyz(k3sContainer, token)
+      kubectlContainer <- createKubectl(k3sContainer)
+      _                <- applyManifest(kubectlContainer, "namespace.yaml")
+      _                <- applyManifest(kubectlContainer, "common/serviceAccount.yaml", namespace)
+      _                <- applyManifest(kubectlContainer, "common/crds.yaml")
+      _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
+      _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
+      _                <- applyManifest(kubectlContainer, "leader.yaml", namespace)
+//      _                <- Future {
+//                            println("Waiting for resources to be registered...")
+//                            Thread.sleep(5000000)
+//                          }
+      _                <- waitForReady(
+                            Seq("kubectl", "get", "pods", "-n", namespace),
+                            kubectlContainer,
+                            120
+                          )
+//      _                <- Future {
+//                            Thread.sleep(5000000)
+//                          }
+//      _                <- waitForResource(kubectlContainer, "statefulset", "redis-leader-deployment")
+//      _                <- waitForResource(kubectlContainer, "statefulset", "redis-follower-deployment")
+//      _                <- waitForPodsReady(kubectlContainer, namespace, 120)
+
+//    _ <- applyManifest(kubectlContainer, "/k8s/deployment.yaml")
+//    _ <- applyAndWait(kubectlContainer, "/k8s/service.yaml", "service", "my-service")
+
+//      _ <- cleanup(k3sContainer, kubectlContainer)
+    } yield {}
   }
 
 }

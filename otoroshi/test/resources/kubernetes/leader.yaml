@@ -1,0 +1,244 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-leader-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-leader-deployment
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        run: otoroshi-leader-deployment
+    spec:
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      restartPolicy: Always
+      initContainers:
+        - name: wait-for-redis
+          image: busybox:1.28
+          command: [ 'sh', '-c', 'until nc -z redis-leader-service 6379; do echo waiting for redis; sleep 2; done' ]
+      containers:
+      - image: maif/otoroshi:17.10.0
+        imagePullPolicy: IfNotPresent
+        name: otoroshi-leader
+        ports:
+          - containerPort: 8080
+            name: "http"
+            protocol: TCP
+          - containerPort: 8443
+            name: "https"
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: password
+          - name: APP_DOMAIN
+            value: k3s.local
+          - name: APP_STORAGE
+            value: lettuce
+          - name: REDIS_URL
+            value: redis://redis-leader-service:6379/0
+          - name: CLUSTER_MODE
+            value: Leader
+          - name: CLUSTER_AUTO_UPDATE_STATE
+            value: 'true'
+          - name: CLUSTER_MTLS_ENABLED
+            value: 'true'
+          - name: CLUSTER_MTLS_LOOSE
+            value: 'true'
+          - name: CLUSTER_MTLS_TRUST_ALL
+            value: 'true'
+          - name: CLUSTER_LEADER_URL
+            value: https://otoroshi-leader-api-service.default.svc.cluster.local:8443
+          - name: CLUSTER_LEADER_HOST
+            value: otoroshi-leader-api-service.default.svc.cluster.local
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-leader-api-service.default.svc.cluster.local
+          - name: ADMIN_API_CLIENT_ID
+            value: clientId
+          - name: CLUSTER_LEADER_CLIENT_ID
+            value: clientId
+          - name: ADMIN_API_CLIENT_SECRET
+            value: clientSecret
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            value: clientSecret
+          - name: OTOROSHI_SECRET
+            value: otoroshiSecret
+          - name: HEALTH_LIMIT
+            value: "5000"
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: "true"
+          - name: OTOROSHI_LOGGERS_OTOROSHI_PLUGINS_KUBERNETES_CLIENT
+            value: "DEBUG"
+          - name: OTOROSHI_VAULTS_INSTANCES_SOAPI
+            value: '{"type":"kubernetes"}'
+          - name: OTOROSHI_VAULTS_ENABLED
+            value: "true"
+          - name: OTOROSHI_INITIAL_CUSTOMIZATION
+            value: >
+              {
+                "config":{
+                  "tlsSettings": {
+                    "defaultDomain": "www.k3s.local",
+                    "randomIfNotFound": false
+                  },
+                  "scripts":{
+                    "enabled":true,
+                    "sinkRefs":[
+                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator",
+                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector"
+                    ],
+                    "sinkConfig": {},
+                    "jobRefs":[
+                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob"
+                    ],
+                    "jobConfig":{
+                      "KubernetesConfig": {
+                        "trust": false,
+                        "namespaces": [
+                          "*"
+                        ],
+                        "labels": {},
+                        "namespacesLabels": {},
+                        "ingressClasses": [
+                          "otoroshi"
+                        ],
+                        "defaultGroup": "default",
+                        "ingresses": false,
+                        "crds": true,
+                        "coreDnsIntegration": false,
+                        "coreDnsIntegrationDryRun": false,
+                        "kubeLeader": false,
+                        "restartDependantDeployments": false,
+                        "watch": false,
+                        "syncDaikokuApikeysOnly": false,
+                        "kubeSystemNamespace": "kube-system",
+                        "coreDnsConfigMapName": "coredns",
+                        "coreDnsDeploymentName": "coredns",
+                        "corednsPort": 53,
+                        "otoroshiServiceName": "otoroshi-worker-service",
+                        "otoroshiNamespace": "default",
+                        "clusterDomain": "cluster.local",
+                        "syncIntervalSeconds": 60,
+                        "coreDnsEnv": null,
+                        "watchTimeoutSeconds": 60,
+                        "watchGracePeriodSeconds": 5,
+                        "mutatingWebhookName": "otoroshi-admission-webhook-injector",
+                        "validatingWebhookName": "otoroshi-admission-webhook-validation",
+                        "templates": {
+                          "service-group": {},
+                          "service-descriptor": {},
+                          "apikeys": {},
+                          "global-config": {},
+                          "jwt-verifier": {},
+                          "tcp-service": {},
+                          "certificate": {},
+                          "auth-module": {},
+                          "script": {},
+                          "organizations": {},
+                          "teams": {},
+                          "webhooks": {
+                            "flags": {
+                              "requestCert": true,
+                              "originCheck": true,
+                              "tokensCheck": true,
+                              "displayEnv": false,
+                              "tlsTrace": false
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+          - name: JAVA_OPTS
+            value: '-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0'
+        readinessProbe:
+          httpGet:
+            path: /.well-known/otoroshi/monitoring/ready
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /.well-known/otoroshi/monitoring/live
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-leader-api-service
+spec:
+  selector:
+    run: otoroshi-leader-deployment
+  ports:
+  - port: 8080
+    name: "http"
+    targetPort: "http"
+  - port: 8443
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-leader-service
+spec:
+  type: NodePort
+  selector:
+    run: otoroshi-leader-deployment
+  ports:
+  - port: 8080
+    nodePort: 31080
+    name: "http"
+    targetPort: "http"
+  - port: 8443
+    nodePort: 31443
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: proxy.otoroshi.io/v1
+kind: Certificate
+metadata:
+  name: otoroshi-service-certificate
+spec:
+  description: certificate for otoroshi-service
+  autoRenew: true
+  csr:
+    issuer: CN=Otoroshi Root
+    hosts:
+    - otoroshi-service
+    - otoroshi-service.default.svc.cluster.local
+    - otoroshi-api-service.default.svc.cluster.local
+    - otoroshi.k3s.local
+    - otoroshi-api.k3s.local
+    - privateapps.k3s.local
+    key:
+      algo: rsa
+      size: 2048
+    subject: uid=otoroshi-service-cert, O=Otoroshi
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256

@@ -3,6 +3,8 @@ package functional
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.time.{Minutes, Span}
 import play.api.{Configuration, Logger}
 import plugins._
 
@@ -669,7 +671,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Kubernetes integration" in {
       new KubernetesIntegrationTests(this)
         .run()
-        .futureValue
+        .futureValue(Timeout(Span(30, Minutes)))
     }
   }
 }
