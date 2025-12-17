@@ -663,5 +663,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Fail2ban - reset counter after detection window expires" in {
       new Fail2BanTests(this).resetCounterAfterDetectionWindowExpires()
     }
+    "Kubernetes integration" in {
+      new KubernetesIntegrationTests(this)
+        .run()
+        .futureValue
+    }
   }
 }
