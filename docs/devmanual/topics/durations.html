@@ -330,7 +330,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;requestStreamingDuration&quot;: 0,
   &quot;responseStreamingDuration&quot;: 1,
   &quot;backendDuration&quot;: 12,
-  &quot;backendResponseStreamingDuration&quot;: 1
+  &quot;backendResponseStreamingDuration&quot;: 1,
+  ...
 }
 </code></pre>
 <p>All durations are expressed in <strong>milliseconds</strong>.</p>
@@ -344,8 +345,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>The backend processes the request and sends the response headers</li>
   <li>The response body is streamed back through Otoroshi to the client</li>
 </ol>
-<p>The following sequence diagram represents the <strong>reference flow</strong> used for all durations described in this document:</p><div class="centered-img">
-<img src="../imgs/durations.png" /></div>
+<p>The following sequence diagram represents a very simplified version of the <strong>reference flow</strong> used for all durations described in this document:</p><div class="centered-img">
+<img src="../imgs/durations2.png" /></div>
 <p>This diagram should be used as the <strong>mental model</strong> when interpreting GatewayEvent durations.</p>
 <hr/>
 <h2><a href="#duration-fields-explained" name="duration-fields-explained" class="anchor"><span class="anchor-link"></span></a>Duration Fields Explained</h2>

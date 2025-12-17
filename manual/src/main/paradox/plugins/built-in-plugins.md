@@ -4431,6 +4431,52 @@ This plugin injects headers containing tokens and profile from current OIDC prov
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OpenFGAValidator }
+
+## OpenFGA validator
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OpenFGAValidator`
+
+### Description
+
+Enforces fine-grained authorizations using OpenFGA
+
+
+
+### Default configuration
+
+```json
+{
+  "url" : "http://localhost:8088",
+  "token" : null,
+  "tls_config" : {
+    "certs" : [ ],
+    "trusted_certs" : [ ],
+    "enabled" : false,
+    "loose" : false,
+    "trust_all" : false
+  },
+  "timeout" : 10000,
+  "store_id" : "--",
+  "model_id" : "--",
+  "tuple_key" : { },
+  "contextual_tuples" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiAIAEndpoint }
 
 ## Otoroshi AIA endpoint
@@ -6125,8 +6171,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-12-17T14:48:43.287Z",
-  "stop" : "2025-12-18T14:48:43.308Z",
+  "start" : "2025-12-17T17:05:33.251Z",
+  "stop" : "2025-12-18T17:05:33.273Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"

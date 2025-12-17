@@ -2483,6 +2483,33 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;jwt&quot; : true
   }
 }
+</code></pre></div><div id="otoroshi.next.plugins.OpenFGAValidator" class="ng-plugin plugin-hidden pl">
+<h2><a href="#openfga-validator" name="openfga-validator" class="anchor"><span class="anchor-link"></span></a>OpenFGA validator</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.OpenFGAValidator</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Enforces fine-grained authorizations using OpenFGA</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;url&quot; : &quot;http://localhost:8088&quot;,
+  &quot;token&quot; : null,
+  &quot;tls_config&quot; : {
+    &quot;certs&quot; : [ ],
+    &quot;trusted_certs&quot; : [ ],
+    &quot;enabled&quot; : false,
+    &quot;loose&quot; : false,
+    &quot;trust_all&quot; : false
+  },
+  &quot;timeout&quot; : 10000,
+  &quot;store_id&quot; : &quot;--&quot;,
+  &quot;model_id&quot; : &quot;--&quot;,
+  &quot;tuple_key&quot; : { },
+  &quot;contextual_tuples&quot; : [ ]
+}
 </code></pre></div><div id="otoroshi.next.plugins.OtoroshiAIAEndpoint" class="ng-plugin plugin-hidden pl">
 <h2><a href="#otoroshi-aia-endpoint" name="otoroshi-aia-endpoint" class="anchor"><span class="anchor-link"></span></a>Otoroshi AIA endpoint</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -3260,8 +3287,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin can split a portion of the traffic to canary backends between two dates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;start&quot; : &quot;2025-12-17T14:48:43.287Z&quot;,
-  &quot;stop&quot; : &quot;2025-12-18T14:48:43.308Z&quot;,
+  &quot;start&quot; : &quot;2025-12-17T17:05:33.251Z&quot;,
+  &quot;stop&quot; : &quot;2025-12-18T17:05:33.273Z&quot;,
   &quot;increment_percent&quot; : 1,
   &quot;targets&quot; : [ ],
   &quot;root&quot; : &quot;/&quot;
@@ -4315,6 +4342,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#oidc-access-token-validator" class="header">OIDC access_token validator</a></li>
     <li><a href="../plugins/built-in-plugins.html#oidc-access-token-authentication" class="header">OIDC access_token authentication</a></li>
     <li><a href="../plugins/built-in-plugins.html#oidc-headers" class="header">OIDC headers</a></li>
+    <li><a href="../plugins/built-in-plugins.html#openfga-validator" class="header">OpenFGA validator</a></li>
     <li><a href="../plugins/built-in-plugins.html#otoroshi-aia-endpoint" class="header">Otoroshi AIA endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#otoroshi-challenge-token" class="header">Otoroshi challenge token</a></li>
     <li><a href="../plugins/built-in-plugins.html#otoroshi-headers-in" class="header">Otoroshi headers in</a></li>
