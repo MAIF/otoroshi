@@ -1,5 +1,6 @@
 package otoroshi.next.plugins
 
+import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api._
@@ -19,9 +20,14 @@ case class OpenFGAValidatorConfig(
   storeId: String = "--",
   modelId: String = "--",
   tupleKey: JsObject = Json.obj(),
-  contextualTuples: JsArray = Json.arr()
+  contextualTuples: JsArray = Json.arr(),
+  cache: Boolean = false,
+  ttl: FiniteDuration = 10.seconds,
 ) extends NgPluginConfig {
   def json: JsValue = OpenFGAValidatorConfig.format.writes(this)
+  def asKey: String = {
+    s"$url/$storeId/$modelId/${tupleKey.stringify}/${contextualTuples.stringify}".sha512
+  }
 }
 
 object OpenFGAValidatorConfig {
@@ -30,11 +36,13 @@ object OpenFGAValidatorConfig {
     "url",
     "timeout",
     "token",
-    "tls_config",
+    "cache",
+    "ttl",
     "store_id",
     "model_id",
     "tuple_key",
-    "contextual_tuples"
+    "contextual_tuples",
+    "tls_config",
   )
 
   def configSchema: JsObject = Json.obj(
@@ -46,6 +54,8 @@ object OpenFGAValidatorConfig {
     "model_id" -> Json.obj("type" -> "string", "label" -> "Model ID", "default" -> "--"),
     "tuple_key" -> Json.obj("type" -> "json", "label" -> "Authorization tuple", "default" -> "{}"),
     "contextual_tuples" -> Json.obj("type" -> "json", "label" -> "Contextual tuples", "default" -> "[]"),
+    "cache" -> Json.obj("type" -> "bool", "label" -> "Enable cache", "default" -> false),
+    "ttl" -> Json.obj("type" -> "number", "label" -> "TTL", "default" -> 10000),
   )
 
   def default: OpenFGAValidatorConfig = OpenFGAValidatorConfig()
@@ -61,7 +71,9 @@ object OpenFGAValidatorConfig {
         storeId = json.select("store_id").asOptString.getOrElse("--"),
         modelId = json.select("model_id").asOptString.getOrElse("--"),
         tupleKey = json.select("tuple_key").asOpt[JsObject].getOrElse(Json.obj()),
-        contextualTuples = json.select("contextual_tuples").asOpt[JsArray].getOrElse(Json.arr())
+        contextualTuples = json.select("contextual_tuples").asOpt[JsArray].getOrElse(Json.arr()),
+        cache = json.select("cache").asOpt[Boolean].getOrElse(false),
+        ttl = json.select("ttl").asOpt[Long].map(_.millis).getOrElse(10.seconds),
       )
     } match {
       case Success(config)    => JsSuccess(config)
@@ -77,8 +89,18 @@ object OpenFGAValidatorConfig {
       "model_id" -> o.modelId,
       "tuple_key" -> o.tupleKey,
       "contextual_tuples" -> o.contextualTuples,
+      "cache" -> o.cache,
+      "ttl" -> o.ttl.toMillis,
     )
   }
+}
+
+object OpenFGAValidator {
+  val cache = Scaffeine().maximumSize(1000).expireAfter[String, (Boolean, FiniteDuration)](
+    create = (k, v) => v._2,
+    update = (k, v, d) => v._2,
+    read = (k, v, d) => v._2,
+  ).build[String, (Boolean, FiniteDuration)]
 }
 
 class OpenFGAValidator extends NgAccessValidator {
@@ -107,31 +129,42 @@ class OpenFGAValidator extends NgAccessValidator {
         val json = config.json.stringify.evaluateEl(ctx.attrs).parseJson
         OpenFGAValidatorConfig.format.reads(json).get
       }
-    env.MtlsWs
-      .url(s"${conf.url}/stores/${conf.storeId}/check", conf.tlsConfig.legacy)
-      .withRequestTimeout(conf.timeout)
-      .withHttpHeaders(
-        "content-type" -> "application/json",
-        "accept" -> "application/json",
-      )
-      .applyOnWithOpt(conf.token) {
-        case (builder, token) => builder.addHttpHeaders("Authorization" -> s"Bearer ${token}")
-      }
-      .post(Json.obj(
-        "authorization_model_id" -> conf.modelId,
-        "tuple_key" -> conf.tupleKey,
-      ).applyOnIf(conf.contextualTuples.value.nonEmpty)(_ ++
-        Json.obj("contextual_tuples" -> Json.obj("tuple_keys" -> conf.contextualTuples)))
-      )
-      .map { resp =>
-        if (resp.status == 200) {
-          resp.json.select("allowed").asOptBoolean.getOrElse(false) match {
-            case true => NgAccess.NgAllowed
-            case false => NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
+    val key = conf.asKey
+    OpenFGAValidator.cache.getIfPresent(key) match {
+      case Some((true, _)) => NgAccess.NgAllowed.vfuture
+      case Some((false, _)) => NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized"))).vfuture
+      case None => {
+        env.MtlsWs
+          .url(s"${conf.url}/stores/${conf.storeId}/check", conf.tlsConfig.legacy)
+          .withRequestTimeout(conf.timeout)
+          .withHttpHeaders(
+            "content-type" -> "application/json",
+            "accept" -> "application/json",
+          )
+          .applyOnWithOpt(conf.token) {
+            case (builder, token) => builder.addHttpHeaders("Authorization" -> s"Bearer ${token}")
           }
-        } else {
-          NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
-        }
+          .post(Json.obj(
+            "authorization_model_id" -> conf.modelId,
+            "tuple_key" -> conf.tupleKey,
+          ).applyOnIf(conf.contextualTuples.value.nonEmpty)(_ ++
+            Json.obj("contextual_tuples" -> Json.obj("tuple_keys" -> conf.contextualTuples)))
+          )
+          .map { resp =>
+            if (resp.status == 200) {
+              resp.json.select("allowed").asOptBoolean.getOrElse(false) match {
+                case true =>
+                  OpenFGAValidator.cache.put(key, (true, conf.ttl))
+                  NgAccess.NgAllowed
+                case false =>
+                  OpenFGAValidator.cache.put(key, (false, conf.ttl))
+                  NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
+              }
+            } else {
+              NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
+            }
+          }
       }
+    }
   }
 }
