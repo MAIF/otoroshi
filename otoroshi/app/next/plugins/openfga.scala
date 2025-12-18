@@ -131,9 +131,9 @@ class OpenFGAValidator extends NgAccessValidator {
       }
     val key = conf.asKey
     OpenFGAValidator.cache.getIfPresent(key) match {
-      case Some((true, _)) => NgAccess.NgAllowed.vfuture
-      case Some((false, _)) => NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized"))).vfuture
-      case None => {
+      case Some((true, _)) if conf.cache => NgAccess.NgAllowed.vfuture
+      case Some((false, _)) if conf.cache => NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized"))).vfuture
+      case _ => {
         env.MtlsWs
           .url(s"${conf.url}/stores/${conf.storeId}/check", conf.tlsConfig.legacy)
           .withRequestTimeout(conf.timeout)
@@ -161,7 +161,7 @@ class OpenFGAValidator extends NgAccessValidator {
                   NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
               }
             } else {
-              NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
+              NgAccess.NgDenied(Results.InternalServerError(Json.obj("error" -> "internal_error", "error_details" -> resp.json)))
             }
           }
       }
