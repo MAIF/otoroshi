@@ -30,7 +30,11 @@ class OpenFGAValidatorTests(parent: PluginsTestSpec) {
     val openFgaHost = openFgaContainer.host
     val openFgaPort = openFgaContainer.mappedPort(8080)
     val baseUrl = s"http://${openFgaHost}:${openFgaPort}"
-    val storeResp = ws.url(s"${baseUrl}/stores").post(Json.obj("name" -> "test_store")).futureValue.json
+    val storeResp = ws.url(s"${baseUrl}/stores").post(
+      Json.obj(
+        "name" -> "test_store"
+      )
+    ).futureValue.json
     val storeId = storeResp.select("id").asString
     val model = Json.parse("""{
                              |    "schema_version": "1.1",
@@ -178,7 +182,10 @@ class OpenFGAValidatorTests(parent: PluginsTestSpec) {
       clientId = IdGenerator.token(16),
       clientSecret = IdGenerator.token(64),
       clientName = "test",
-      authorizedEntities = Seq(RouteIdentifier(route1.id), RouteIdentifier(route2.id)),
+      authorizedEntities = Seq(
+        RouteIdentifier(route1.id),
+        RouteIdentifier(route2.id)
+      ),
       metadata = Map(
         "user" -> "mathieu.ancelin@cloud-apim.com"
       )
