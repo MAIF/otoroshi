@@ -668,9 +668,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "OpenFGA Validator" in {
       new OpenFGAValidatorTests(this).run()
     }
-    "Kubernetes integration" in {
+    "Kubernetes integration - leader should be healthy" in {
       new KubernetesIntegrationTests(this)
-        .run()
+        .clusterWithOneLeader()
         .futureValue(Timeout(Span(30, Minutes)))
     }
   }

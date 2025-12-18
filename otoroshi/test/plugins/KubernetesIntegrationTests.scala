@@ -1,12 +1,13 @@
 package plugins
 
-import akka.http.scaladsl.util.FastFuture
+import akka.Done
+import akka.stream.scaladsl.Source
 import com.dimafeng.testcontainers.GenericContainer
+import com.github.dockerjava.api.model.ExposedPort
 import functional.PluginsTestSpec
 import io.netty.handler.ssl.SslContextBuilder
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.time.{Minutes, Span}
 import org.testcontainers.containers.Network
+import org.testcontainers.containers.wait.strategy.Wait
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.libs.json.Json
@@ -19,8 +20,7 @@ import java.nio.file.{Files, Paths}
 import java.security.cert.CertificateFactory
 import scala.annotation.tailrec
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future, Promise}
-import scala.util.Try
+import scala.concurrent.{Future, Promise}
 
 class KubernetesIntegrationTests(parent: PluginsTestSpec) {
 
@@ -61,8 +61,9 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
   def deployK3s(): GenericContainer = {
     val k3sContainer = GenericContainer(
       dockerImage = "rancher/k3s:v1.28.5-k3s1",
-      exposedPorts = Seq(6443),
-      command = Seq("server", "--disable=traefik")
+      exposedPorts = Seq(6443, 31080),
+      command = Seq("server", "--disable=traefik"),
+      waitStrategy = Wait.forLogMessage(".*k3s is up and running.*", 1)
     ).configure { c =>
       println("Configuring container...")
       c.withPrivilegedMode(true)
@@ -70,6 +71,9 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       c.withEnv("K3S_KUBECONFIG_MODE", "666")
       c.withNetwork(network)
       c.withNetworkAliases("k3s")
+//      c.withCreateContainerCmdModifier(cmd => {
+//        cmd.withExposedPorts(ExposedPort.tcp(6443), ExposedPort.tcp(31080))
+//      })
     }
 
     k3sContainer.start()
@@ -325,8 +329,8 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
         println(s"Command failed, retrying... ($attemptsLeft left)")
         Thread.sleep(2000)
         check(attemptsLeft - 1)
-      } else if (output.isEmpty || !output.contains("Running")) {
-        println(s"Empty output, retrying... ($attemptsLeft left)")
+      } else if (output.isEmpty || !output.contains("Running") || output.contains("Init")) {
+        println(s"($attemptsLeft left)")
         Thread.sleep(2000)
         check(attemptsLeft - 1)
       } else {
@@ -337,7 +341,35 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
     check(timeoutSeconds / 2)
   }
 
-  def run() = {
+  def waitForLeaderHealth(k3sContainer: GenericContainer): Future[Done] = {
+    println("Wait leader health ...")
+
+    val hostPort = k3sContainer.mappedPort(31080)
+
+    Source
+      .tick(1.millisecond, 1.second, ())
+      .mapAsync(1) { _ =>
+        ws
+          .url(s"http://127.0.0.1:${hostPort}/health")
+          .withHttpHeaders("Host" -> "otoroshi.k3s.local")
+          .withRequestTimeout(1.second)
+          .get()
+          .map(r => {
+            println(s"Status: ${r.status}, Body: ${r.body}")
+            r.status mustBe play.mvc.Http.Status.OK
+            r.status
+          })
+          .recover { case e =>
+            println(s"Error: ${e.getMessage}")
+            0
+          }
+      }
+      .filter(_ == play.mvc.Http.Status.OK)
+      .take(1)
+      .run()
+  }
+
+  def clusterWithOneLeader() = {
     val k3sContainer: GenericContainer = deployK3s()
     val namespace                      = "foo"
 
@@ -351,26 +383,9 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
       _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
       _                <- applyManifest(kubectlContainer, "leader.yaml", namespace)
-//      _                <- Future {
-//                            println("Waiting for resources to be registered...")
-//                            Thread.sleep(5000000)
-//                          }
-      _                <- waitForReady(
-                            Seq("kubectl", "get", "pods", "-n", namespace),
-                            kubectlContainer,
-                            120
-                          )
-//      _                <- Future {
-//                            Thread.sleep(5000000)
-//                          }
-//      _                <- waitForResource(kubectlContainer, "statefulset", "redis-leader-deployment")
-//      _                <- waitForResource(kubectlContainer, "statefulset", "redis-follower-deployment")
-//      _                <- waitForPodsReady(kubectlContainer, namespace, 120)
-
-//    _ <- applyManifest(kubectlContainer, "/k8s/deployment.yaml")
-//    _ <- applyAndWait(kubectlContainer, "/k8s/service.yaml", "service", "my-service")
-
-//      _ <- cleanup(k3sContainer, kubectlContainer)
+      _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
+      _                <- waitForLeaderHealth(k3sContainer)
+      _                <- cleanup(k3sContainer, kubectlContainer)
     } yield {}
   }
 
