@@ -341,8 +341,8 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
     check(timeoutSeconds / 2)
   }
 
-  def waitForLeaderHealth(k3sContainer: GenericContainer): Future[Done] = {
-    println("Wait leader health ...")
+  def call(k3sContainer: GenericContainer, waitingMessage: String, host: String, path: String): Future[Done] = {
+    println(waitingMessage)
 
     val hostPort = k3sContainer.mappedPort(31080)
 
@@ -350,8 +350,8 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       .tick(1.millisecond, 1.second, ())
       .mapAsync(1) { _ =>
         ws
-          .url(s"http://127.0.0.1:${hostPort}/health")
-          .withHttpHeaders("Host" -> "otoroshi.k3s.local")
+          .url(s"http://127.0.0.1:$hostPort$path")
+          .withHttpHeaders("Host" -> host)
           .withRequestTimeout(1.second)
           .get()
           .map(r => {
@@ -384,7 +384,29 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
       _                <- applyManifest(kubectlContainer, "leader.yaml", namespace)
       _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
-      _                <- waitForLeaderHealth(k3sContainer)
+      _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
+      _                <- cleanup(k3sContainer, kubectlContainer)
+    } yield {}
+  }
+
+  def scanEntities() = {
+    val k3sContainer: GenericContainer = deployK3s()
+    val namespace                      = "foo"
+
+    for {
+      token            <- mintToken(k3sContainer)
+      _                <- callReadyz(k3sContainer, token)
+      kubectlContainer <- createKubectl(k3sContainer)
+      _                <- applyManifest(kubectlContainer, "namespace.yaml")
+      _                <- applyManifest(kubectlContainer, "common/serviceAccount.yaml", namespace)
+      _                <- applyManifest(kubectlContainer, "common/crds.yaml")
+      _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
+      _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
+      _                <- applyManifest(kubectlContainer, "leader.yaml", namespace)
+      _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
+      _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
+      _                <- applyManifest(kubectlContainer, "foo-route.yaml", namespace)
+      _                <- call(k3sContainer, "Wait foo route", "foo.k3s.local", "/")
       _                <- cleanup(k3sContainer, kubectlContainer)
     } yield {}
   }

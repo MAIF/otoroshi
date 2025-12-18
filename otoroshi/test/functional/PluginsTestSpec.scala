@@ -673,5 +673,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .clusterWithOneLeader()
         .futureValue(Timeout(Span(30, Minutes)))
     }
+    "Kubernetes integration - be able to scan entities in a namespace" in {
+      new KubernetesIntegrationTests(this)
+        .scanEntities()
+        .futureValue(Timeout(Span(30, Minutes)))
+    }
   }
 }
