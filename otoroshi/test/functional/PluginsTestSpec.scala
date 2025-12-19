@@ -678,5 +678,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .scanEntities()
         .futureValue(Timeout(Span(30, Minutes)))
     }
+//    "Kubernetes integration - build at runtime" in {
+//      new KubernetesIntegrationTests(this)
+//        .build()
+//        .futureValue(Timeout(Span(30, Minutes)))
+//    }
   }
 }
