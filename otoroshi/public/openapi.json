@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.10.0",
+    "version" : "17.11.0",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:38503",
+    "url" : "http://otoroshi-api.oto.tools:40211",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -24088,6 +24088,17 @@
         "title" : "Tls wasmo settings",
         "required" : [ "settings", "tlsConfig" ]
       },
+      "cookiehash" : {
+        "type" : "object",
+        "properties" : {
+          "cookieName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Cookie hash",
+        "required" : [ "cookieName" ]
+      },
       "ipaddresshash" : {
         "type" : "object",
         "properties" : { },
@@ -24349,6 +24360,48 @@
         },
         "title" : "While node",
         "required" : [ "json" ]
+      },
+      "newreliccallsettings" : {
+        "type" : "object",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "headers" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "token" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "logtype" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "service" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "hostname" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "timeout" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "tlsConfig" : {
+            "$ref" : "#/components/schemas/ngtlsconfig"
+          }
+        },
+        "title" : "New relic call settings",
+        "required" : [ "url", "headers", "timeout", "tlsConfig" ]
       },
       "customtimeouts" : {
         "type" : "object",
@@ -25927,6 +25980,8 @@
         }, {
           "$ref" : "#/components/schemas/dataexporterconfigtypecustommetrics"
         }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypedatadog"
+        }, {
           "$ref" : "#/components/schemas/dataexporterconfigtypeelastic"
         }, {
           "$ref" : "#/components/schemas/dataexporterconfigtypefile"
@@ -25944,6 +25999,8 @@
           "$ref" : "#/components/schemas/dataexporterconfigtypemailer"
         }, {
           "$ref" : "#/components/schemas/dataexporterconfigtypemetrics"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypenewrelic"
         }, {
           "$ref" : "#/components/schemas/dataexporterconfigtypenone"
         }, {
@@ -26057,6 +26114,8 @@
         "anyOf" : [ {
           "$ref" : "#/components/schemas/consolesettings"
         }, {
+          "$ref" : "#/components/schemas/datadogcallsettings"
+        }, {
           "$ref" : "#/components/schemas/elasticanalyticsconfig"
         }, {
           "$ref" : "#/components/schemas/exporterref"
@@ -26072,6 +26131,8 @@
           "$ref" : "#/components/schemas/jmsexportersettings"
         }, {
           "$ref" : "#/components/schemas/metricssettings"
+        }, {
+          "$ref" : "#/components/schemas/newreliccallsettings"
         }, {
           "$ref" : "#/components/schemas/noneexporter"
         }, {
@@ -26169,6 +26230,11 @@
           "$ref" : "#/components/schemas/indexsettingsintervalyear"
         } ]
       },
+      "dataexporterconfigtypedatadog" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type datadog"
+      },
       "seccominfotokenversionurl" : {
         "type" : "object",
         "properties" : { },
@@ -26214,6 +26280,17 @@
           }
         },
         "title" : "Plugin index"
+      },
+      "queryhash" : {
+        "type" : "object",
+        "properties" : {
+          "queryName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Query hash",
+        "required" : [ "queryName" ]
       },
       "sign" : {
         "type" : "object",
@@ -26682,13 +26759,19 @@
         "anyOf" : [ {
           "$ref" : "#/components/schemas/bestresponsetime"
         }, {
+          "$ref" : "#/components/schemas/cookiehash"
+        }, {
           "$ref" : "#/components/schemas/failover"
+        }, {
+          "$ref" : "#/components/schemas/headerhash"
         }, {
           "$ref" : "#/components/schemas/ipaddresshash"
         }, {
           "$ref" : "#/components/schemas/leastconnections"
         }, {
           "$ref" : "#/components/schemas/poweroftworandomchoices"
+        }, {
+          "$ref" : "#/components/schemas/queryhash"
         }, {
           "$ref" : "#/components/schemas/random"
         }, {
@@ -26732,6 +26815,11 @@
         }, {
           "$ref" : "#/components/schemas/nonegeolocationsettings"
         } ]
+      },
+      "dataexporterconfigtypenewrelic" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type new relic"
       },
       "otoroshi.ssl.pki.models.GenKeyPairQuery" : {
         "type" : "object",
@@ -28144,6 +28232,17 @@
         "title" : "Api key constraints",
         "required" : [ "basicAuth", "customHeadersAuth", "clientIdAuth", "jwtAuth", "otoBearerAuth", "routing" ]
       },
+      "headerhash" : {
+        "type" : "object",
+        "properties" : {
+          "headerName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Header hash",
+        "required" : [ "headerName" ]
+      },
       "rulesrouteconfiguration" : {
         "type" : "object",
         "properties" : {
@@ -28719,6 +28818,9 @@
                 "minLength" : 1
               }
             }
+          },
+          "port" : {
+            "type" : "number"
           }
         },
         "title" : "Target",
@@ -29109,13 +29211,10 @@
           },
           "x$3" : {
             "type" : "number"
-          },
-          "x$4" : {
-            "type" : "number"
           }
         },
         "title" : "Local time",
-        "required" : [ "x$1", "x$2", "x$3", "x$4" ]
+        "required" : [ "x$1", "x$2", "x$3" ]
       },
       "mappingsettings" : {
         "type" : "object",
@@ -29245,6 +29344,52 @@
             "description" : "Private key (PEM encoded)"
           }
         }
+      },
+      "datadogcallsettings" : {
+        "type" : "object",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "headers" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "token" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "ddsource" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "ddtags" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "service" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "hostname" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "timeout" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "tlsConfig" : {
+            "$ref" : "#/components/schemas/ngtlsconfig"
+          }
+        },
+        "title" : "Datadog call settings",
+        "required" : [ "url", "headers", "timeout", "tlsConfig" ]
       },
       "defaultwsproxyserver" : {
         "type" : "object",
