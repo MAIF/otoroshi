@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.11.0] - 2025-12-31
+
+
+https://github.com/MAIF/otoroshi/milestone/133?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.10.0...v17.11.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.11.0
+
+
+### Added 
+
+- support new `HeaderHash` loadbalancing strategy (#2380 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support new `CookieHash` loadbalancing strategy (#2381 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support new `QueryHash` loadbalancing strategy (#2382 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add workflow support for websocket message transformations (#2383 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Provide helpful log message when ssl modules not open (#2386 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Plugin to mirror websocket traffic to another target (#2388 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- new `Datadog` data exporter (#2390 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- new `New Relic` data exporter (#2392 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Enforce fine-grained authorizations through OpenFGA API (#2394 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- update coraza plugin to use OWASP CoreRuleSet 4.21.0 (#2389 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- WebSocket sub protocol is not forwarded anymore (#2387 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Documentation 
+
+- documentation page about `Understanding GatewayEvent Durations in Otoroshi` (#2393 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Contributors
+
+* @mathieuancelin
+
 ## [17.10.0] - 2025-12-08
 
 
