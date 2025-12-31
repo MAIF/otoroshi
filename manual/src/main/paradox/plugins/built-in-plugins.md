@@ -4466,7 +4466,9 @@ Enforces fine-grained authorizations using OpenFGA
   "store_id" : "--",
   "model_id" : "--",
   "tuple_key" : { },
-  "contextual_tuples" : [ ]
+  "contextual_tuples" : [ ],
+  "cache" : false,
+  "ttl" : 10000
 }
 ```
 
@@ -6171,8 +6173,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2025-12-17T17:05:33.251Z",
-  "stop" : "2025-12-18T17:05:33.273Z",
+  "start" : "2025-12-31T16:56:46.881Z",
+  "stop" : "2026-01-01T16:56:46.902Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
