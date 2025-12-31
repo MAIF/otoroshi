@@ -624,30 +624,31 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
   }
 }
 
-case class WorkflowWebsocketConfig(incomingWorkflow: Option[String] = None, outgoingWorkflow: Option[String] = None) extends NgPluginConfig {
+case class WorkflowWebsocketConfig(incomingWorkflow: Option[String] = None, outgoingWorkflow: Option[String] = None)
+    extends NgPluginConfig {
   def json: JsValue = WorkflowWebsocketConfig.format.writes(this)
 }
 
 object WorkflowWebsocketConfig {
-  val format = new Format[WorkflowWebsocketConfig] {
+  val format                         = new Format[WorkflowWebsocketConfig] {
     override def reads(json: JsValue): JsResult[WorkflowWebsocketConfig] = Try {
       WorkflowWebsocketConfig(
         incomingWorkflow = json.select("incoming_workflow").asOptString,
-        outgoingWorkflow = json.select("outgoing_workflow").asOptString,
+        outgoingWorkflow = json.select("outgoing_workflow").asOptString
       )
     } match {
       case Failure(e: Throwable) => JsError(e.getMessage)
-      case Success(e)          => JsSuccess(e)
+      case Success(e)            => JsSuccess(e)
     }
-    override def writes(o: WorkflowWebsocketConfig): JsValue = Json.obj(
+    override def writes(o: WorkflowWebsocketConfig): JsValue             = Json.obj(
       "incoming_workflow" -> o.incomingWorkflow,
-      "outgoing_workflow" -> o.outgoingWorkflow,
+      "outgoing_workflow" -> o.outgoingWorkflow
     )
   }
   val configFlowNoAsync: Seq[String] = Seq("incoming_workflow", "outgoing_workflow")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "incoming_workflow"   -> Json.obj(
+      "incoming_workflow" -> Json.obj(
         "type"  -> "select",
         "label" -> s"Incoming message workflow",
         "props" -> Json.obj(
@@ -658,7 +659,7 @@ object WorkflowWebsocketConfig {
           )
         )
       ),
-      "outgoing_workflow"   -> Json.obj(
+      "outgoing_workflow" -> Json.obj(
         "type"  -> "select",
         "label" -> s"Outgoing message workflow",
         "props" -> Json.obj(
@@ -675,52 +676,52 @@ object WorkflowWebsocketConfig {
 
 class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
 
-  override def multiInstance: Boolean = true
-  override def defaultConfigObject: Option[NgPluginConfig] = Some(WorkflowWebsocketConfig())
-  override def core: Boolean = true
-  override def name: String = "Websocket Workflow transformer"
-  override def description: Option[String] = "Transform messages and filter websocket messages".some
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Websocket, NgPluginCategory.Custom("Workflow"))
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
-  override def onRequestFlow: Boolean = true
-  override def onResponseFlow: Boolean = true
+  override def multiInstance: Boolean                                        = true
+  override def defaultConfigObject: Option[NgPluginConfig]                   = Some(WorkflowWebsocketConfig())
+  override def core: Boolean                                                 = true
+  override def name: String                                                  = "Websocket Workflow transformer"
+  override def description: Option[String]                                   = "Transform messages and filter websocket messages".some
+  override def visibility: NgPluginVisibility                                = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]                             = Seq(NgPluginCategory.Websocket, NgPluginCategory.Custom("Workflow"))
+  override def steps: Seq[NgStep]                                            = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def onRequestFlow: Boolean                                        = true
+  override def onResponseFlow: Boolean                                       = true
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
-  override def noJsForm: Boolean = true
-  override def configFlow: Seq[String]        = WorkflowWebsocketConfig.configFlowNoAsync
-  override def configSchema: Option[JsObject] = WorkflowWebsocketConfig.configSchema
+  override def noJsForm: Boolean                                             = true
+  override def configFlow: Seq[String]                                       = WorkflowWebsocketConfig.configFlowNoAsync
+  override def configSchema: Option[JsObject]                                = WorkflowWebsocketConfig.configSchema
 
   def onMessage(
-                 ctx: NgWebsocketPluginContext,
-                 message: WebsocketMessage,
-                 workflowId: String,
-                 action: String,
-               )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+      ctx: NgWebsocketPluginContext,
+      message: WebsocketMessage,
+      workflowId: String,
+      action: String
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val mat = env.otoroshiMaterializer
     (if (message.isText) {
-      message.str().map { str =>
-        ctx.wasmJson.as[JsObject] ++ Json.obj(
-          "action" -> action,
-          "message" -> Json.obj(
-            "kind"    -> "text",
-            "payload" -> str
-          )
-        )
-      }
-    } else {
-      message.bytes().map { bytes =>
-        ctx.wasmJson.as[JsObject] ++ Json.obj(
-          "action" -> action,
-          "message" -> Json.obj(
-            "kind"    -> "binary",
-            "payload" -> bytes
-          )
-        )
-      }
-    }).flatMap { input =>
+       message.str().map { str =>
+         ctx.wasmJson.as[JsObject] ++ Json.obj(
+           "action"  -> action,
+           "message" -> Json.obj(
+             "kind"    -> "text",
+             "payload" -> str
+           )
+         )
+       }
+     } else {
+       message.bytes().map { bytes =>
+         ctx.wasmJson.as[JsObject] ++ Json.obj(
+           "action"  -> action,
+           "message" -> Json.obj(
+             "kind"    -> "binary",
+             "payload" -> bytes
+           )
+         )
+       }
+     }).flatMap { input =>
       val ext = env.adminExtensions.extension[WorkflowAdminExtension].get
       ext.workflow(workflowId) match {
-        case None => message.rightf
+        case None           => message.rightf
         case Some(workflow) => {
           ext.engine
             .run(workflowId, Node.from(workflow.config), input.asObject, ctx.attrs, workflow.functions)
@@ -729,18 +730,18 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
                 Left(NgWebsocketError(500, res.error.get.json.stringify))
               } else {
                 res.returned match {
-                  case None => message.right
-                  case Some(JsNull) => message.right
+                  case None           => message.right
+                  case Some(JsNull)   => message.right
                   case Some(response) => {
                     AttrsHelper.updateAttrs(ctx.attrs, response)
                     val error = response.select("error").asOpt[Boolean].getOrElse(false)
                     if (error) {
-                      val reason: String = response.select("reason").asOpt[String].getOrElse("error")
+                      val reason: String  = response.select("reason").asOpt[String].getOrElse("error")
                       val statusCode: Int = response.select("statusCode").asOpt[Int].getOrElse(500)
                       Left(NgWebsocketError(statusCode, reason))
                     } else {
-                      val msg = response.select("message").asOpt[JsObject].getOrElse(Json.obj())
-                      val kind = msg.select("kind").asOpt[String].getOrElse("text")
+                      val msg                       = response.select("message").asOpt[JsObject].getOrElse(Json.obj())
+                      val kind                      = msg.select("kind").asOpt[String].getOrElse("text")
                       val message: WebsocketMessage = if (kind == "text") {
                         val payload = msg.select("payload").asOpt[String].getOrElse("")
                         WebsocketMessage.PlayMessage(play.api.http.websocket.TextMessage(payload))
@@ -764,32 +765,31 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
   }
 
   override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
-                                                                                          env: Env,
-                                                                                          ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     val config = ctx
       .cachedConfig(internalName)(WorkflowWebsocketConfig.format)
       .getOrElse(WorkflowWebsocketConfig())
     config.incomingWorkflow match {
-      case None => message.rightf
+      case None             => message.rightf
       case Some(workflowId) => onMessage(ctx, message, workflowId, "incoming_message")
     }
   }
 
   override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
-                                                                                           env: Env,
-                                                                                           ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     val config = ctx
       .cachedConfig(internalName)(WorkflowWebsocketConfig.format)
       .getOrElse(WorkflowWebsocketConfig())
     config.incomingWorkflow match {
-      case None => message.rightf
+      case None             => message.rightf
       case Some(workflowId) => onMessage(ctx, message, workflowId, "outgoing_message")
     }
   }
 }
-
 
 case class WebsocketMirrorBackendConfig(url: Option[String] = None) extends NgPluginConfig {
   def json: JsValue = WebsocketMirrorBackendConfig.format.writes(this)
@@ -833,15 +833,15 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
   override def configSchema: Option[JsObject]              = WebsocketMirrorBackendConfig.configSchema.some
 
   override def callBackendOrError(
-    ctx: NgWebsocketPluginContext
+      ctx: NgWebsocketPluginContext
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
-    val config = ctx
+    val config  = ctx
       .cachedConfig(internalName)(WebsocketMirrorBackendConfig.format)
       .getOrElse(WebsocketMirrorBackendConfig())
     val request = ctx.otoroshiRequest
     // val ctxPlugins = ctx.attrs.get(Keys.ContextualPluginsKey).get
     config.url match {
-      case None => {
+      case None      => {
         ActorFlow
           .actorRef(out =>
             WebSocketProxyActor.props(
@@ -855,14 +855,15 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               None, //ctxPlugins.some,
               ctx.target,
               ctx.attrs,
-              env,
+              env
             )
-          )(env.otoroshiActorSystem, env.otoroshiMaterializer).rightf
+          )(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          .rightf
       }
       case Some(url) => {
-        val hotSource = Sinks.many().unicast().onBackpressureBuffer[play.api.http.websocket.Message]()
-        val hotFlux   = hotSource.asFlux()
-        val cb = (m: play.api.http.websocket.Message) => {
+        val hotSource  = Sinks.many().unicast().onBackpressureBuffer[play.api.http.websocket.Message]()
+        val hotFlux    = hotSource.asFlux()
+        val cb         = (m: play.api.http.websocket.Message) => {
           hotSource.tryEmitNext(m)
           ()
         }
@@ -876,13 +877,13 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               request,
               ctx.route.serviceDescriptor,
               ctx.route.some,
-              None,//ctxPlugins.some,
+              None, //ctxPlugins.some,
               ctx.target,
               ctx.attrs,
               env
             )
           )(env.otoroshiActorSystem, env.otoroshiMaterializer)
-        val response = ActorFlow
+        val response   = ActorFlow
           .actorRef(out =>
             WebSocketProxyActor.props(
               UrlSanitizer.sanitize(request.url),
@@ -892,19 +893,23 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               request,
               ctx.route.serviceDescriptor,
               ctx.route.some,
-              None,//ctxPlugins.some,
+              None, //ctxPlugins.some,
               ctx.target,
               ctx.attrs,
               env,
               Some(cb)
             )
           )(env.otoroshiActorSystem, env.otoroshiMaterializer)
-          .alsoTo(Sink.onComplete {
-            case _ => hotSource.tryEmitComplete()
-          }).rightf
-        Source.fromPublisher(hotFlux).via(mirrorFlow).runWith(Sink.foreach { m: play.api.http.websocket.Message =>
-          //println("Got sink message: " + m)
-        })(env.otoroshiMaterializer)
+          .alsoTo(Sink.onComplete { case _ =>
+            hotSource.tryEmitComplete()
+          })
+          .rightf
+        Source
+          .fromPublisher(hotFlux)
+          .via(mirrorFlow)
+          .runWith(Sink.foreach { m: play.api.http.websocket.Message =>
+            //println("Got sink message: " + m)
+          })(env.otoroshiMaterializer)
         response
       }
     }

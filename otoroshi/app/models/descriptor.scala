@@ -213,9 +213,12 @@ object LoadBalancing {
         case Some("LeastConnections")         => JsSuccess(LeastConnections)
         case Some("Random")                   => JsSuccess(Random)
         case Some("Sticky")                   => JsSuccess(Sticky)
-        case Some("HeaderHash")               => JsSuccess(new HeaderHash(json.select("header_name").asOpt[String].getOrElse("session-id")))
-        case Some("CookieHash")               => JsSuccess(new CookieHash(json.select("cookie_name").asOpt[String].getOrElse("session-id")))
-        case Some("QueryHash")                => JsSuccess(new QueryHash(json.select("query_name").asOpt[String].getOrElse("session-id")))
+        case Some("HeaderHash")               =>
+          JsSuccess(new HeaderHash(json.select("header_name").asOpt[String].getOrElse("session-id")))
+        case Some("CookieHash")               =>
+          JsSuccess(new CookieHash(json.select("cookie_name").asOpt[String].getOrElse("session-id")))
+        case Some("QueryHash")                =>
+          JsSuccess(new QueryHash(json.select("query_name").asOpt[String].getOrElse("session-id")))
         case Some("IpAddressHash")            => JsSuccess(IpAddressHash)
         case Some("BestResponseTime")         => JsSuccess(BestResponseTime)
         case Some("WeightedBestResponseTime") =>
@@ -365,17 +368,17 @@ object CookieHash {
 
 class CookieHash(cookieName: String) extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue = Json.obj("type" -> "CookieHash")
+  override def toJson: JsValue             = Json.obj("type" -> "CookieHash")
   override def select(
-                       reqId: String,
-                       tid: String,
-                       req: RequestHeader,
-                       targets: Seq[Target],
-                       descId: String,
-                       attempts: Int
-                     )(implicit env: Env): Target = {
+      reqId: String,
+      tid: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      descId: String,
+      attempts: Int
+  )(implicit env: Env): Target = {
     req.cookies.get(cookieName).map(_.value) match {
-      case None => {
+      case None             => {
         val index: Int = CookieHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
         targets.apply(index)
       }
@@ -394,17 +397,17 @@ object QueryHash {
 
 class QueryHash(queryName: String) extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue = Json.obj("type" -> "QueryHash")
+  override def toJson: JsValue             = Json.obj("type" -> "QueryHash")
   override def select(
-                       reqId: String,
-                       tid: String,
-                       req: RequestHeader,
-                       targets: Seq[Target],
-                       descId: String,
-                       attempts: Int
-                     )(implicit env: Env): Target = {
+      reqId: String,
+      tid: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      descId: String,
+      attempts: Int
+  )(implicit env: Env): Target = {
     req.getQueryString(queryName) match {
-      case None => {
+      case None             => {
         val index: Int = QueryHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
         targets.apply(index)
       }
@@ -423,17 +426,17 @@ object HeaderHash {
 
 class HeaderHash(headerName: String) extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue = Json.obj("type" -> "HeaderHash")
+  override def toJson: JsValue             = Json.obj("type" -> "HeaderHash")
   override def select(
-                       reqId: String,
-                       tid: String,
-                       req: RequestHeader,
-                       targets: Seq[Target],
-                       descId: String,
-                       attempts: Int
-                     )(implicit env: Env): Target = {
+      reqId: String,
+      tid: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      descId: String,
+      attempts: Int
+  )(implicit env: Env): Target = {
     req.headers.get(headerName) match {
-      case None => {
+      case None             => {
         val index: Int = HeaderHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
         targets.apply(index)
       }

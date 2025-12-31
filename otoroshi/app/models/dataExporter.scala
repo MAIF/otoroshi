@@ -345,15 +345,15 @@ object DatadogCallSettings {
 }
 
 case class DatadogCallSettings(
-  url: String,
-  headers: Map[String, String],
-  token: Option[String],
-  ddsource: Option[String],
-  ddtags: Option[String],
-  service: Option[String],
-  hostname: Option[String],
-  timeout: FiniteDuration,
-  tlsConfig: NgTlsConfig
+    url: String,
+    headers: Map[String, String],
+    token: Option[String],
+    ddsource: Option[String],
+    ddtags: Option[String],
+    service: Option[String],
+    hostname: Option[String],
+    timeout: FiniteDuration,
+    tlsConfig: NgTlsConfig
 ) extends Exporter {
 
   override def toJson: JsValue = {
@@ -383,8 +383,8 @@ case class DatadogCallSettings(
   }
 
   def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
-                                                                                         env: Env,
-                                                                                         ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[ExportResult] = {
     env.MtlsWs
       .url(url, tlsConfig.legacy)
@@ -394,18 +394,20 @@ case class DatadogCallSettings(
         headers :+ ("DD-API-KEY" -> token)
       }: _*)
       .withBody(
-        JsArray(events
-          .map { evt =>
-            Json
-              .obj(
-                //"time"       -> scala.math.BigDecimal(System.currentTimeMillis.toDouble / 1000.0).toString,
-                "hostname"   -> hostname.getOrElse(env.clusterConfig.name).json,
-                "ddsource"   -> ddsource.getOrElse("otoroshi").json,
-                "ddtags"     -> ddtags.getOrElse("").json,
-                "service"    -> service.orElse(evt.at("route.name").asOptString).getOrElse("--").json,
-                "message"    -> evt.stringify
-              )
-          })
+        JsArray(
+          events
+            .map { evt =>
+              Json
+                .obj(
+                  //"time"       -> scala.math.BigDecimal(System.currentTimeMillis.toDouble / 1000.0).toString,
+                  "hostname" -> hostname.getOrElse(env.clusterConfig.name).json,
+                  "ddsource" -> ddsource.getOrElse("otoroshi").json,
+                  "ddtags"   -> ddtags.getOrElse("").json,
+                  "service"  -> service.orElse(evt.at("route.name").asOptString).getOrElse("--").json,
+                  "message"  -> evt.stringify
+                )
+            }
+        )
       )
       .execute()
       .map { resp =>
@@ -423,15 +425,15 @@ case class DatadogCallSettings(
 }
 
 case class NewRelicCallSettings(
-                                 url: String,
-                                 headers: Map[String, String],
-                                 token: Option[String],
-                                 logtype: Option[String],
-                                 service: Option[String],
-                                 hostname: Option[String],
-                                 timeout: FiniteDuration,
-                                 tlsConfig: NgTlsConfig
-                               ) extends Exporter {
+    url: String,
+    headers: Map[String, String],
+    token: Option[String],
+    logtype: Option[String],
+    service: Option[String],
+    hostname: Option[String],
+    timeout: FiniteDuration,
+    tlsConfig: NgTlsConfig
+) extends Exporter {
 
   override def toJson: JsValue = {
     Json
@@ -457,8 +459,8 @@ case class NewRelicCallSettings(
   }
 
   def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
-                                                                                         env: Env,
-                                                                                         ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[ExportResult] = {
     env.MtlsWs
       .url(url, tlsConfig.legacy)
@@ -467,21 +469,23 @@ case class NewRelicCallSettings(
       .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
         headers :+ ("Api-Key" -> token)
       }: _*)
-      .withBody(JsArray(
-        events
-          .map { evt =>
-            Json.obj(
-              "common" -> Json.obj(
-                "service" -> service.getOrElse("otoroshi").json,
-                "logtype" -> logtype.orElse(evt.select("@type").asOptString).getOrElse("accesslogs").json,
-                "hostname" -> evt.at("to.host").asOptString.getOrElse("--").json,
-              ),
-              "logs" -> Json.obj(
-                "timestamp" -> (System.currentTimeMillis() / 1000).json,
-                "message" -> evt.stringify
+      .withBody(
+        JsArray(
+          events
+            .map { evt =>
+              Json.obj(
+                "common" -> Json.obj(
+                  "service"  -> service.getOrElse("otoroshi").json,
+                  "logtype"  -> logtype.orElse(evt.select("@type").asOptString).getOrElse("accesslogs").json,
+                  "hostname" -> evt.at("to.host").asOptString.getOrElse("--").json
+                ),
+                "logs"   -> Json.obj(
+                  "timestamp" -> (System.currentTimeMillis() / 1000).json,
+                  "message"   -> evt.stringify
+                )
               )
-            )
-          })
+            }
+        )
       )
       .execute()
       .map { resp =>
@@ -497,7 +501,6 @@ case class NewRelicCallSettings(
       }
   }
 }
-
 
 object NewRelicCallSettings {
   val format = new Format[NewRelicCallSettings] {

@@ -1371,13 +1371,13 @@ case class NgWebsocketPluginContext(
 ) extends NgCachedConfigContext {
   def wasmJson: JsValue = json.asObject ++ Json.obj("route" -> route.json)
   def json: JsValue     = Json.obj(
-    "snowflake" -> snowflake,
-    "idx"       -> idx,
-    "request"   -> JsonHelpers.requestToJson(request, attrs),
+    "snowflake"        -> snowflake,
+    "idx"              -> idx,
+    "request"          -> JsonHelpers.requestToJson(request, attrs),
     "otoroshi_request" -> otoroshiRequest.json,
-    "config"    -> config,
-    "target"    -> target.json,
-    "attrs"     -> attrs.json
+    "config"           -> config,
+    "target"           -> target.json,
+    "attrs"            -> attrs.json
   )
 }
 

@@ -1338,16 +1338,7 @@ const possibleExporterConfigFormValues = {
     },
   },
   newrelic: {
-    flow: [
-      'url',
-      'headers',
-      'timeout',
-      'token',
-      'hostname',
-      'service',
-      'logtype',
-      'tls_config',
-    ],
+    flow: ['url', 'headers', 'timeout', 'token', 'hostname', 'service', 'logtype', 'tls_config'],
     schema: {
       url: {
         type: 'string',

@@ -1058,7 +1058,7 @@ object Exporters {
   }
 
   class DatadogCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(config)(ec, env) {
+      extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[DatadogCallSettings].map { eec =>
@@ -1071,7 +1071,7 @@ object Exporters {
   }
 
   class NewRelicCallExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(config)(ec, env) {
+      extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[NewRelicCallSettings].map { eec =>

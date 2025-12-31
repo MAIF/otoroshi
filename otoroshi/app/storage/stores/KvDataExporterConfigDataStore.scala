@@ -2,7 +2,14 @@ package otoroshi.storage.stores
 
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
-import otoroshi.events.Exporters.{CustomMetricsSettings, MetricSettings, MetricSettingsKind, OtlpLogsExporterSettings, OtlpMetricsExporterSettings, WasmExporterSettings}
+import otoroshi.events.Exporters.{
+  CustomMetricsSettings,
+  MetricSettings,
+  MetricSettingsKind,
+  OtlpLogsExporterSettings,
+  OtlpMetricsExporterSettings,
+  WasmExporterSettings
+}
 import otoroshi.events.{KafkaConfig, PulsarConfig}
 import otoroshi.metrics.opentelemetry.OtlpSettings
 import otoroshi.models._
@@ -304,7 +311,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             )
           )
         )
-      case Some("splunk")   =>
+      case Some("splunk")         =>
         DataExporterConfig(
           typ = DataExporterConfigType.Splunk,
           id = IdGenerator.namedId("data_exporter", env),
@@ -323,10 +330,10 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             index = None,
             fields = Map.empty,
             timeout = 30000.millis,
-            tlsConfig = NgTlsConfig(),
+            tlsConfig = NgTlsConfig()
           )
         )
-      case Some("http")   =>
+      case Some("http")           =>
         DataExporterConfig(
           typ = DataExporterConfigType.Http,
           id = IdGenerator.namedId("data_exporter", env),
@@ -344,10 +351,10 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             cookies = Seq.empty,
             body = "${events.nd_stringify}",
             timeout = 3000.millis,
-            tlsConfig = NgTlsConfig(),
+            tlsConfig = NgTlsConfig()
           )
         )
-      case Some("workflow")   =>
+      case Some("workflow")       =>
         DataExporterConfig(
           typ = DataExporterConfigType.Workflow,
           id = IdGenerator.namedId("data_exporter", env),
@@ -362,7 +369,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             ref = ""
           )
         )
-      case Some("datadog")   =>
+      case Some("datadog")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Datadog,
           id = IdGenerator.namedId("data_exporter", env),
@@ -382,10 +389,10 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             service = None,
             hostname = None,
             timeout = 30000.millis,
-            tlsConfig = NgTlsConfig(),
+            tlsConfig = NgTlsConfig()
           )
         )
-      case Some("newrelic")   =>
+      case Some("newrelic")       =>
         DataExporterConfig(
           typ = DataExporterConfigType.NewRelic,
           id = IdGenerator.namedId("data_exporter", env),
@@ -404,7 +411,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             service = None,
             hostname = None,
             timeout = 30000.millis,
-            tlsConfig = NgTlsConfig(),
+            tlsConfig = NgTlsConfig()
           )
         )
       case _                      =>

@@ -23,20 +23,24 @@ class OpenFGAValidatorTests(parent: PluginsTestSpec) {
       dockerImage = "openfga/openfga",
       exposedPorts = Seq(8080),
       env = Map.empty,
-      command = Seq("run"),
+      command = Seq("run")
     )
     openFgaContainer.start()
     await(5.seconds)
-    val openFgaHost = openFgaContainer.host
-    val openFgaPort = openFgaContainer.mappedPort(8080)
-    val baseUrl = s"http://${openFgaHost}:${openFgaPort}"
-    val storeResp = ws.url(s"${baseUrl}/stores").post(
-      Json.obj(
-        "name" -> "test_store"
+    val openFgaHost      = openFgaContainer.host
+    val openFgaPort      = openFgaContainer.mappedPort(8080)
+    val baseUrl          = s"http://${openFgaHost}:${openFgaPort}"
+    val storeResp        = ws
+      .url(s"${baseUrl}/stores")
+      .post(
+        Json.obj(
+          "name" -> "test_store"
+        )
       )
-    ).futureValue.json
-    val storeId = storeResp.select("id").asString
-    val model = Json.parse("""{
+      .futureValue
+      .json
+    val storeId          = storeResp.select("id").asString
+    val model            = Json.parse("""{
                              |    "schema_version": "1.1",
                              |    "type_definitions": [
                              |        {
@@ -83,10 +87,9 @@ class OpenFGAValidatorTests(parent: PluginsTestSpec) {
                              |        }
                              |    ]
                              |}""".stripMargin)
-    val modelResp = ws.url(s"${baseUrl}/stores/${storeId}/authorization-models").post(model).futureValue.json
-    val modelId = modelResp.select("authorization_model_id").asString
-    val tuple1 = Json.parse(
-      s"""{
+    val modelResp        = ws.url(s"${baseUrl}/stores/${storeId}/authorization-models").post(model).futureValue.json
+    val modelId          = modelResp.select("authorization_model_id").asString
+    val tuple1           = Json.parse(s"""{
         |  "writes": {
         |    "tuple_keys": [
         |      {
@@ -98,8 +101,7 @@ class OpenFGAValidatorTests(parent: PluginsTestSpec) {
         |  },
         |  "authorization_model_id": "${modelId}"
         |}""".stripMargin)
-    val tuple2 = Json.parse(
-      s"""{
+    val tuple2           = Json.parse(s"""{
          |  "writes": {
          |    "tuple_keys": [
          |      {
@@ -120,7 +122,7 @@ class OpenFGAValidatorTests(parent: PluginsTestSpec) {
       storeId = storeId,
       modelId = modelId,
       tupleKey = Json.obj(),
-      contextualTuples = Json.arr(),
+      contextualTuples = Json.arr()
     )
     (openFgaContainer, config)
   }
@@ -128,17 +130,21 @@ class OpenFGAValidatorTests(parent: PluginsTestSpec) {
   def run(): Unit = {
     val (container, openFGAValidatorConfig) = setupOpenFGA()
 
-    val readConfig = openFGAValidatorConfig.copy(tupleKey = Json.obj(
-      "user" -> "user:${apikey.metadata.user}",
-      "relation" -> "reader",
-      "object" -> "document:${req.pathparams.doc}"
-    ))
+    val readConfig = openFGAValidatorConfig.copy(tupleKey =
+      Json.obj(
+        "user"     -> "user:${apikey.metadata.user}",
+        "relation" -> "reader",
+        "object"   -> "document:${req.pathparams.doc}"
+      )
+    )
 
-    val writeConfig = openFGAValidatorConfig.copy(tupleKey = Json.obj(
-      "user" -> "user:${apikey.metadata.user}",
-      "relation" -> "writer",
-      "object" -> "document:${req.pathparams.doc}"
-    ))
+    val writeConfig = openFGAValidatorConfig.copy(tupleKey =
+      Json.obj(
+        "user"     -> "user:${apikey.metadata.user}",
+        "relation" -> "writer",
+        "object"   -> "document:${req.pathparams.doc}"
+      )
+    )
 
     val route1 = createRouteWithExternalTarget(
       domain = "openfgaread.oto.tools/docs/:doc".some,
@@ -178,24 +184,26 @@ class OpenFGAValidatorTests(parent: PluginsTestSpec) {
       )
     ).futureValue
 
-    val apikeyJson = createOtoroshiApiKey(ApiKey(
-      clientId = IdGenerator.token(16),
-      clientSecret = IdGenerator.token(64),
-      clientName = "test",
-      authorizedEntities = Seq(
-        RouteIdentifier(route1.id),
-        RouteIdentifier(route2.id)
-      ),
-      metadata = Map(
-        "user" -> "mathieu.ancelin@cloud-apim.com"
+    val apikeyJson = createOtoroshiApiKey(
+      ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
+        clientName = "test",
+        authorizedEntities = Seq(
+          RouteIdentifier(route1.id),
+          RouteIdentifier(route2.id)
+        ),
+        metadata = Map(
+          "user" -> "mathieu.ancelin@cloud-apim.com"
+        )
       )
-    )).futureValue
-    val apikey = ApiKey._fmt.reads(apikeyJson._1).get
+    ).futureValue
+    val apikey     = ApiKey._fmt.reads(apikeyJson._1).get
 
     val respAllowed = ws
       .url(s"http://127.0.0.1:$port/docs/foo.doc")
       .withHttpHeaders(
-        "Host" -> route1.frontend.domains.head.domain,
+        "Host"          -> route1.frontend.domains.head.domain,
         "Authorization" -> s"Bearer ${apikey.toBearer()}"
       )
       .get()
@@ -206,7 +214,7 @@ class OpenFGAValidatorTests(parent: PluginsTestSpec) {
     val respNotAllowed = ws
       .url(s"http://127.0.0.1:$port/docs/food.doc")
       .withHttpHeaders(
-        "Host" -> route1.frontend.domains.head.domain,
+        "Host"          -> route1.frontend.domains.head.domain,
         "Authorization" -> s"Bearer ${apikey.toBearer()}"
       )
       .get()
@@ -217,7 +225,7 @@ class OpenFGAValidatorTests(parent: PluginsTestSpec) {
     val respNotAllowed2 = ws
       .url(s"http://127.0.0.1:$port/docs/foo.doc")
       .withHttpHeaders(
-        "Host" -> route2.frontend.domains.head.domain,
+        "Host"          -> route2.frontend.domains.head.domain,
         "Authorization" -> s"Bearer ${apikey.toBearer()}"
       )
       .get()
@@ -228,7 +236,7 @@ class OpenFGAValidatorTests(parent: PluginsTestSpec) {
     val respAllowed2 = ws
       .url(s"http://127.0.0.1:$port/docs/bar.doc")
       .withHttpHeaders(
-        "Host" -> route2.frontend.domains.head.domain,
+        "Host"          -> route2.frontend.domains.head.domain,
         "Authorization" -> s"Bearer ${apikey.toBearer()}"
       )
       .get()
