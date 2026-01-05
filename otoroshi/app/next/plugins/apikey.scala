@@ -291,11 +291,16 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
       }
     } else {
       var headers: Map[String, String] = Map.empty
-      if (config.extractors.customHeaders.clientIdHeaderName.isEmpty)
-        headers = headers + (env.Headers.OtoroshiClientId -> ctx.request.headers(env.Headers.OtoroshiClientId))
-      if (config.extractors.customHeaders.clientSecretHeaderName.isEmpty)
-        headers = headers + (env.Headers.OtoroshiClientSecret -> ctx.request.headers(env.Headers.OtoroshiClientSecret))
-
+      if (config.extractors.customHeaders.clientIdHeaderName.isEmpty) {
+        ctx.request.headers.get(env.Headers.OtoroshiClientId).foreach { cid =>
+          headers = headers + (env.Headers.OtoroshiClientId -> cid)
+        }
+      }
+      if (config.extractors.customHeaders.clientSecretHeaderName.isEmpty) {
+        ctx.request.headers.get(env.Headers.OtoroshiClientSecret).foreach { csec =>
+          headers = headers + (env.Headers.OtoroshiClientSecret -> csec)
+        }
+      }
       ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ headers).right
     }
   }
