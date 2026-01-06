@@ -457,127 +457,151 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
     tempFileName
   }
 
-  def importOtoroshiDevImageToK3s(k3sContainer: GenericContainer) = Future {
-    val importResult = k3sContainer.execInContainer(
-      "ctr",
-      "-n",
-      "k8s.io",
-      "images",
-      "import",
-      "/var/lib/rancher/k3s/agent/images/otoroshi-local.tar"
-    )
+  def buildOtoroshiJar(): Option[GenericContainer] = {
+    val projectRoot  = new File("../..").getCanonicalFile
+    val otoroshiPath = new File(projectRoot, "otoroshi").getAbsolutePath
+    val outputJar    = new File("/tmp/otoroshi.jar")
 
-    println(s"Import result: ${importResult.getStdout}")
-    println(s"Import errors: ${importResult.getStderr}")
+    if (outputJar.exists() && outputJar.length() > 0) {
+      println(s"✓ Using existing JAR: ${outputJar.getAbsolutePath}")
+      None
+    } else {
+      println(s"Building from: $otoroshiPath")
 
-    val verifyResult = k3sContainer.execInContainer("crictl", "images")
-    println(s"Available images: ${verifyResult.getStdout}")
-  }
-
-  def build() = {
-
-    val projectRoot                            = new File("../..").getCanonicalFile
-    val otoroshiPath                           = new File(projectRoot, "otoroshi").getAbsolutePath
-    val outputJar                              = new File("/tmp/otoroshi.jar")
-    var sbtContainer: Option[GenericContainer] = None
-
-    if (outputJar.exists() && outputJar.length() > 0) {} else {
-      println(s"Building from: $otoroshiPath to ${outputJar.getAbsolutePath}")
-
-      val logConsumer = new ToStringConsumer()
-
-      sbtContainer = new GenericContainer(
+      val sbtContainer = new GenericContainer(
         "sbtscala/scala-sbt:eclipse-temurin-17.0.15_6_1.11.7_3.7.4"
       ).configure { c =>
         c.withFileSystemBind(otoroshiPath, "/app", BindMode.READ_WRITE)
         c.withWorkingDirectory("/app")
         c.withCommand("tail", "-f", "/dev/null")
-        c.withLogConsumer(logConsumer)
-      }.some
+        c.withLogConsumer(new ToStringConsumer())
+      }
 
-      sbtContainer.get.start()
+      sbtContainer.start()
 
-      println("Running sbt packageBin...")
-      val result = sbtContainer.get.execInContainer(
+      val result = sbtContainer.execInContainer(
         "sh",
         "-c",
         "cd /app/otoroshi && sbt ';set Test / skip := true;clean;compile;dist;assembly'"
       )
 
-      println(result.getStdout)
-
       if (result.getExitCode != 0) {
-        System.err.println("=== Build Errors ===")
-        System.err.println(result.getStderr)
-        throw new RuntimeException(s"Build failed with exit code: ${result.getExitCode}")
+        throw new RuntimeException(s"Build failed: ${result.getStderr}")
       }
 
-      sbtContainer.get.copyFileFromContainer(
+      sbtContainer.copyFileFromContainer(
         "/app/otoroshi/target/scala-2.12/otoroshi.jar",
         outputJar.getAbsolutePath
       )
-      println(s"✓ JAR copied to: ${outputJar.getAbsolutePath}")
+      println(s"✓ JAR built successfully")
+      Some(sbtContainer)
     }
+  }
 
-    val imageName = "otoroshi-local"
-
+  def buildAndSaveDockerImage(imageName: String): Unit = {
     val dockerClient = GenericContainer("docker:27-cli")
       .configure { c =>
         c.withNetwork(network)
         c.withCreateContainerCmdModifier { cmd =>
-          cmd.getHostConfig
-            .withBinds(
-              new Bind("/var/run/docker.sock", new Volume("/var/run/docker.sock"))
-            )
+          cmd.getHostConfig.withBinds(
+            new Bind("/var/run/docker.sock", new Volume("/var/run/docker.sock"))
+          )
         }
         c.withCommand("sh", "-c", "sleep infinity")
       }
 
     dockerClient.start()
 
-    dockerClient.copyFileToContainer(
-      MountableFile.forHostPath("/tmp/otoroshi.jar"),
-      "/build/otoroshi.jar"
+    try {
+      val resourcePath = Paths.get(getClass.getResource("/kubernetes").toURI).toString
+
+      // Copy build artifacts
+      dockerClient.copyFileToContainer(MountableFile.forHostPath("/tmp/otoroshi.jar"), "/build/otoroshi.jar")
+      dockerClient.copyFileToContainer(
+        MountableFile.forHostPath(s"$resourcePath/entrypoint-jar.sh"),
+        "/build/entrypoint-jar.sh"
+      )
+      dockerClient.copyFileToContainer(MountableFile.forHostPath(s"$resourcePath/Dockerfile"), "/build/Dockerfile")
+
+      // Build
+      println(s"Building Docker image: $imageName:latest")
+      val buildResult = dockerClient.execInContainer("docker", "build", "-t", s"$imageName:latest", "/build")
+      if (buildResult.getExitCode != 0) {
+        throw new RuntimeException(s"Docker build failed: ${buildResult.getStderr}")
+      }
+
+      // Save to tar
+      val saveResult =
+        dockerClient.execInContainer("docker", "save", "-o", s"/tmp/$imageName.tar", s"$imageName:latest")
+      if (saveResult.getExitCode != 0) {
+        throw new RuntimeException(s"Docker save failed: ${saveResult.getStderr}")
+      }
+
+      // Copy to host
+      dockerClient.copyFileFromContainer(s"/tmp/$imageName.tar", s"/tmp/$imageName.tar")
+      println(s"✓ Image saved to /tmp/$imageName.tar")
+
+    } finally {
+      dockerClient.stop()
+    }
+  }
+
+  def importImageToK3s(k3sContainer: GenericContainer, imageName: String): Future[Unit] = Future {
+    println(s"Importing $imageName to k3s...")
+
+    k3sContainer.execInContainer("mkdir", "-p", "/var/lib/rancher/k3s/agent/images")
+    k3sContainer.copyFileToContainer(
+      MountableFile.forHostPath(s"/tmp/$imageName.tar"),
+      s"/var/lib/rancher/k3s/agent/images/$imageName.tar"
     )
 
-    val resourceUrl  = getClass.getResource("/kubernetes")
-    val resourcePath = Paths.get(resourceUrl.toURI).toString
-
-    dockerClient.copyFileToContainer(
-      MountableFile.forHostPath(s"$resourcePath/entrypoint-jar.sh"),
-      "/build/entrypoint-jar.sh"
+    val importResult = k3sContainer.execInContainer(
+      "ctr",
+      "-n",
+      "k8s.io",
+      "images",
+      "import",
+      s"/var/lib/rancher/k3s/agent/images/$imageName.tar"
     )
 
-    dockerClient.copyFileToContainer(
-      MountableFile.forHostPath(s"$resourcePath/Dockerfile"),
-      "/build/Dockerfile"
-    )
-    dockerClient.execInContainer("docker", "build", "-t", s"$imageName:latest", "/build")
-    dockerClient.execInContainer("docker", "save", "-o", s"/tmp/$imageName.tar", s"$imageName:latest")
+    if (importResult.getExitCode != 0) {
+      throw new RuntimeException(s"Import failed: ${importResult.getStderr}")
+    }
 
-    dockerClient.copyFileFromContainer(s"/tmp/$imageName.tar", s"/tmp/$imageName.tar")
+    println(s"✓ Image imported successfully")
 
-    val k3sContainer: GenericContainer = deployK3s(s"$imageName:latest".some)
-    val namespace                      = "foo"
+    // Verify
+    val images = k3sContainer.execInContainer("crictl", "images").getStdout
+    println(s"Available images:\n$images")
+  }
 
-    for {
+  def build(): Future[Unit] = {
+    val imageName = "otoroshi-local"
+    val namespace = "foo"
+
+    val sbtContainer = buildOtoroshiJar()
+
+    buildAndSaveDockerImage(imageName)
+
+    val k3sContainer = deployK3s(Some(s"$imageName:latest"))
+
+    val workflow = for {
       token            <- mintToken(k3sContainer)
       _                <- callReadyz(k3sContainer, token)
-      _                <- importOtoroshiDevImageToK3s(k3sContainer)
+      _                <- importImageToK3s(k3sContainer, imageName)
       kubectlContainer <- createKubectl(k3sContainer)
       _                <- applyManifest(kubectlContainer, "namespace.yaml")
       _                <- applyManifest(kubectlContainer, "common/serviceAccount.yaml", namespace)
       _                <- applyManifest(kubectlContainer, "common/crds.yaml")
       _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
       _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
-      leaderFilename   <- prepareManifest("leader.yaml", "otoroshi-local:latest")
+      leaderFilename   <- prepareManifest("leader.yaml", s"$imageName:latest")
       _                <- applyManifest(kubectlContainer, s"tmp/$leaderFilename", namespace)
       _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
       _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
       _                <- cleanup(k3sContainer, kubectlContainer)
-      _                <- Future {
-                            sbtContainer.map(_.stop())
-                          }
-    } yield {}
+    } yield ()
+
+    workflow.andThen { case _ => sbtContainer.foreach(_.stop()) }
   }
 }
