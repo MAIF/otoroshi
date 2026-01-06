@@ -26,8 +26,8 @@ spec:
           image: busybox:1.28
           command: [ 'sh', '-c', 'until nc -z redis-leader-service 6379; do echo waiting for redis; sleep 2; done' ]
       containers:
-      - image: maif/otoroshi:17.10.0
-#      - image: @@IMAGE_FROM_REGISTRY@@
+#      - image: maif/otoroshi:17.10.0
+      - image: @@IMAGE_FROM_REGISTRY@@
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
