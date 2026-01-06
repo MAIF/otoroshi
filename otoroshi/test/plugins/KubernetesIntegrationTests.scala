@@ -3,13 +3,13 @@ package plugins
 import akka.Done
 import akka.stream.scaladsl.Source
 import com.dimafeng.testcontainers.GenericContainer
-import com.github.dockerjava.api.model.{Bind, Volume}
+import com.github.dockerjava.api.model.{Bind, ExposedPort, HostConfig, PortBinding, Ports, Volume}
 import functional.PluginsTestSpec
 import io.netty.handler.ssl.SslContextBuilder
 import org.testcontainers.containers.output.ToStringConsumer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.containers.{BindMode, Network}
-import org.testcontainers.images.builder.ImageFromDockerfile
+import org.testcontainers.images.builder.{ImageFromDockerfile, Transferable}
 import org.testcontainers.utility.MountableFile
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
@@ -63,7 +63,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
     }
   }
 
-  def deployK3s(registries: Option[String] = None): GenericContainer = {
+  def deployK3s(otoroshiDevImageName: Option[String] = None): GenericContainer = {
     val k3sContainer = GenericContainer(
       dockerImage = "rancher/k3s:v1.28.5-k3s1",
       exposedPorts = Seq(6443, 31080),
@@ -76,13 +76,6 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       c.withEnv("K3S_KUBECONFIG_MODE", "666")
       c.withNetwork(network)
       c.withNetworkAliases("k3s")
-
-      registries.foreach { path =>
-        c.withCopyToContainer(
-          MountableFile.forHostPath(path),
-          "/etc/rancher/k3s/registries.yaml"
-        )
-      }
     }
 
     k3sContainer.start()
@@ -100,6 +93,16 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       "/var/lib/rancher/k3s/server/tls/server-ca.crt",
       s"/tmp/${instanceId}server-ca.crt"
     )
+
+    otoroshiDevImageName.foreach { imageName =>
+      k3sContainer.execInContainer("mkdir", "-p", "/var/lib/rancher/k3s/agent/images")
+
+      // Copy the tar file to the container
+      k3sContainer.copyFileToContainer(
+        MountableFile.forHostPath("/tmp/otoroshi-local.tar"),
+        "/var/lib/rancher/k3s/agent/images/otoroshi-local.tar"
+      )
+    }
 
     k3sContainer
   }
@@ -454,6 +457,23 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
     tempFileName
   }
 
+  def importOtoroshiDevImageToK3s(k3sContainer: GenericContainer) = Future {
+    val importResult = k3sContainer.execInContainer(
+      "ctr",
+      "-n",
+      "k8s.io",
+      "images",
+      "import",
+      "/var/lib/rancher/k3s/agent/images/otoroshi-local.tar"
+    )
+
+    println(s"Import result: ${importResult.getStdout}")
+    println(s"Import errors: ${importResult.getStderr}")
+
+    val verifyResult = k3sContainer.execInContainer("crictl", "images")
+    println(s"Available images: ${verifyResult.getStdout}")
+  }
+
   def build() = {
 
     val projectRoot                            = new File("../..").getCanonicalFile
@@ -469,7 +489,6 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       sbtContainer = new GenericContainer(
         "sbtscala/scala-sbt:eclipse-temurin-17.0.15_6_1.11.7_3.7.4"
       ).configure { c =>
-        // Mount the source code
         c.withFileSystemBind(otoroshiPath, "/app", BindMode.READ_WRITE)
         c.withWorkingDirectory("/app")
         c.withCommand("tail", "-f", "/dev/null")
@@ -485,8 +504,6 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
         "cd /app/otoroshi && sbt ';set Test / skip := true;clean;compile;dist;assembly'"
       )
 
-      // Print output
-      println("=== Build Output ===")
       println(result.getStdout)
 
       if (result.getExitCode != 0) {
@@ -497,30 +514,12 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
 
       sbtContainer.get.copyFileFromContainer(
         "/app/otoroshi/target/scala-2.12/otoroshi.jar",
-        outputJar.getAbsolutePath // Destination on host
+        outputJar.getAbsolutePath
       )
       println(s"✓ JAR copied to: ${outputJar.getAbsolutePath}")
     }
 
-//    val registry = GenericContainer("registry:3", exposedPorts = Seq(5000))
-//      .configure { c =>
-//        {
-//          c.withNetwork(network)
-//          c.withNetworkAliases("registry")
-//
-//        }
-//      }
-//
-//    println("Start registry")
-//    registry.start()
-//    println("registry started")
-
-//    val registryPort = registry.mappedPort(5000)
-//    val registryUrl  = s"${registry.host}:${registryPort}"
-//    println(s"Local registry running at: $registryUrl")
-
     val imageName = "otoroshi-local"
-//    val fullImageName = s"$registryUrl/$imageName"
 
     val dockerClient = GenericContainer("docker:27-cli")
       .configure { c =>
@@ -537,80 +536,48 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
     dockerClient.start()
 
     dockerClient.copyFileToContainer(
-      MountableFile.forHostPath("./target/otoroshi.jar"),
+      MountableFile.forHostPath("/tmp/otoroshi.jar"),
       "/build/otoroshi.jar"
     )
+
+    val resourceUrl  = getClass.getResource("/kubernetes")
+    val resourcePath = Paths.get(resourceUrl.toURI).toString
+
     dockerClient.copyFileToContainer(
-      MountableFile.forHostPath("./scripts/entrypoint-jar.sh"),
+      MountableFile.forHostPath(s"$resourcePath/entrypoint-jar.sh"),
       "/build/entrypoint-jar.sh"
     )
 
-    val dockerfile   = """FROM eclipse-temurin:17
-RUN mkdir -p /usr/app
-WORKDIR /usr/app
-COPY otoroshi.jar /usr/app/otoroshi.jar
-COPY entrypoint-jar.sh /usr/app/entrypoint-jar.sh
-RUN chmod +x /usr/app/entrypoint-jar.sh
-ENTRYPOINT ["/usr/app/entrypoint-jar.sh"]
-EXPOSE 8080
-"""
-    val k3sImageName = "registry:5000/otoroshi-local:latest"
+    dockerClient.copyFileToContainer(
+      MountableFile.forHostPath(s"$resourcePath/Dockerfile"),
+      "/build/Dockerfile"
+    )
+    dockerClient.execInContainer("docker", "build", "-t", s"$imageName:latest", "/build")
+    dockerClient.execInContainer("docker", "save", "-o", s"/tmp/$imageName.tar", s"$imageName:latest")
 
-    dockerClient.execInContainer("sh", "-c", s"echo '$dockerfile' > /build/Dockerfile")
-    val result = dockerClient.execInContainer("docker", "build", "-t", imageName, "/build")
-//    val result = dockerClient.execInContainer("docker", "push", imageName)
+    dockerClient.copyFileFromContainer(s"/tmp/$imageName.tar", s"/tmp/$imageName.tar")
 
-    println(s"Exit code: ${result.getExitCode}")
-    println(s"Stdout: ${result.getStdout}")
-    println(s"Stderr: ${result.getStderr}")
-
-    println(s"✅ Pushed to $imageName")
-
-//    val containerRegistryUrl  = "registry:5000"
-//    val registriesYamlContent =
-//      s"""
-//         |mirrors:
-//         |  "$containerRegistryUrl":
-//         |    endpoint:
-//         |      - "http://$containerRegistryUrl"
-//         |configs:
-//         |  "$containerRegistryUrl":
-//         |    tls:
-//         |      insecure_skip_verify: true
-//         |""".stripMargin
-//
-//    val tmpYamlPath = Paths.get("/tmp/registries.yaml")
-//    Files.write(
-//      tmpYamlPath,
-//      registriesYamlContent.getBytes(),
-//      StandardOpenOption.CREATE,
-//      StandardOpenOption.TRUNCATE_EXISTING
-//    )
-
-    val k3sContainer: GenericContainer = deployK3s()
+    val k3sContainer: GenericContainer = deployK3s(s"$imageName:latest".some)
     val namespace                      = "foo"
 
     for {
       token            <- mintToken(k3sContainer)
       _                <- callReadyz(k3sContainer, token)
+      _                <- importOtoroshiDevImageToK3s(k3sContainer)
       kubectlContainer <- createKubectl(k3sContainer)
       _                <- applyManifest(kubectlContainer, "namespace.yaml")
       _                <- applyManifest(kubectlContainer, "common/serviceAccount.yaml", namespace)
       _                <- applyManifest(kubectlContainer, "common/crds.yaml")
       _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
       _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
-      leaderFilename   <- prepareManifest("leader.yaml", imageName)
+      leaderFilename   <- prepareManifest("leader.yaml", "otoroshi-local:latest")
       _                <- applyManifest(kubectlContainer, s"tmp/$leaderFilename", namespace)
       _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
       _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
       _                <- cleanup(k3sContainer, kubectlContainer)
       _                <- Future {
-//                            registry.stop()
                             sbtContainer.map(_.stop())
                           }
     } yield {}
-
-    // TODO -The JAR is built and pushed to the registry, but the image cannot be pulled.
-    // Consider avoiding the local registry and pushing the image directly to Docker without creating a new registry.
   }
 }
