@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class CanaryModeTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{*, given}
 
   val route = createLocalRoute(
     Seq(
@@ -44,10 +44,10 @@ class CanaryModeTests(parent: PluginsTestSpec) {
     .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
     .get()
 
-  val user       = call.futureValue
+  val user       = call().futureValue
   val userCookie = user.cookie("otoroshi-canary")
 
-  val user1       = call.futureValue
+  val user1       = call().futureValue
   val user1Cookie = user1.cookie("otoroshi-canary")
 
   user.status mustBe Status.OK

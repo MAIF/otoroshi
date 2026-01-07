@@ -395,7 +395,7 @@ case class DatadogCallSettings(
       .withMethod("POST")
       .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
         headers :+ ("DD-API-KEY" -> token)
-      }: _*)
+      }*)
       .withBody(
         JsArray(
           events
@@ -471,7 +471,7 @@ case class NewRelicCallSettings(
       .withMethod("POST")
       .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
         headers :+ ("Api-Key" -> token)
-      }: _*)
+      }*)
       .withBody(
         JsArray(
           events

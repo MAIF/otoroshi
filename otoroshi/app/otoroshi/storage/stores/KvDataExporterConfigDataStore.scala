@@ -18,6 +18,9 @@ import play.api.libs.json.{Format, JsError, JsSuccess, Json}
 import scala.concurrent.duration.{DurationInt, DurationLong}
 
 class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLikeStore[DataExporterConfig] {
+
+  private given Env = env
+
   override def fmt: Format[DataExporterConfig] = DataExporterConfig.format
 
   override def redisLike(using env: Env): RedisLike = redisCli
@@ -36,7 +39,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New webhook exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = Webhook(
@@ -53,7 +56,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New elastic exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = ElasticAnalyticsConfig(
@@ -68,7 +71,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New pulsar exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = PulsarConfig(
@@ -90,7 +93,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New kafka exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = KafkaConfig(
@@ -105,7 +108,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New mailer exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           groupSize = 25,
           groupDuration = 60.seconds,
@@ -120,7 +123,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New generic mailer exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           groupSize = 25,
           groupDuration = 60.seconds,
           projection = Json.obj(),
@@ -139,7 +142,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New mailgun exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           groupSize = 25,
           groupDuration = 60.seconds,
           projection = Json.obj(),
@@ -159,7 +162,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New mailjet exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           groupSize = 25,
           groupDuration = 60.seconds,
           projection = Json.obj(),
@@ -178,7 +181,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New none mailer exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = NoneMailerSettings()
@@ -191,7 +194,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New sendgrid mailer exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           groupSize = 25,
           groupDuration = 60.seconds,
           projection = Json.obj(),
@@ -210,7 +213,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           metadata = Map.empty,
           enabled = false,
           sendWorkers = 1,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = FileSettings(path = "/tmp/otoroshi-events.log", None)
@@ -223,7 +226,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New metrics exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = MetricsSettings()
@@ -236,7 +239,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New custom metrics exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = CustomMetricsSettings()
@@ -249,7 +252,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New custom exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = ExporterRef("", Json.obj())
@@ -262,7 +265,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New wasm exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = WasmExporterSettings(Json.obj(), None)
@@ -275,7 +278,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New OTLP logs exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = OtlpLogsExporterSettings(OtlpSettings.defaultLogs)
@@ -288,7 +291,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New OTLP metrics exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = OtlpMetricsExporterSettings(
@@ -313,7 +316,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New Splunk metrics exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = SplunkCallSettings(
@@ -335,7 +338,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New Http exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = HttpCallSettings(
@@ -356,7 +359,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New Workflow exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = WorkflowCallSettings(
@@ -371,7 +374,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New Datadog exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = DatadogCallSettings(
@@ -394,7 +397,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New New Relic exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = NewRelicCallSettings(
@@ -416,7 +419,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New console exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(using env),
+          location = EntityLocation.ownEntityLocation(ctx),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = ConsoleMailerSettings()

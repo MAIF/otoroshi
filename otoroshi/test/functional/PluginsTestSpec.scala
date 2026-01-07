@@ -5,6 +5,8 @@ import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.Materializer
 import org.scalatest.BeforeAndAfterAll
+import otoroshi.env.Env
+import otoroshi.next.plugins.RejectHeaderOutTooLong
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
 import play.api.{Configuration, Logger}

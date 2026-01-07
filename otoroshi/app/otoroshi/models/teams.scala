@@ -149,7 +149,7 @@ object EntityLocation {
       .getOrElse(EntityLocation.default)
   }
   private def getOwnEntityLocation[T <: EntityLocationSupport](currentTenant: TenantId, canUserRead: T => Boolean)(
-      implicit env: Env
+      using env: Env
   ) = {
     EntityLocation(
       tenant = currentTenant,

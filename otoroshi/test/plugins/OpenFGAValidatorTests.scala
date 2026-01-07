@@ -3,19 +3,20 @@ package plugins
 import com.dimafeng.testcontainers.GenericContainer
 import functional.PluginsTestSpec
 import otoroshi.models.{ApiKey, RouteIdentifier}
-import otoroshi.next.models._
-import otoroshi.next.plugins._
+import otoroshi.next.models.*
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.WSBodyWritables.writeableOf_JsValue
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class OpenFGAValidatorTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{*, given}
 
   def setupOpenFGA(): (GenericContainer, OpenFGAValidatorConfig) = {
     System.setProperty("api.version", "1.44")

@@ -1,11 +1,11 @@
 package plugins
 
-import akka.Done
-import akka.stream.scaladsl.Source
 import com.dimafeng.testcontainers.GenericContainer
-import com.github.dockerjava.api.model.{Bind, ExposedPort, HostConfig, PortBinding, Ports, Volume}
+import com.github.dockerjava.api.model.*
 import functional.PluginsTestSpec
 import io.netty.handler.ssl.SslContextBuilder
+import org.apache.pekko.Done
+import org.apache.pekko.stream.scaladsl.Source
 import org.testcontainers.containers.output.ToStringConsumer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.containers.{BindMode, Network}
@@ -15,21 +15,23 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.libs.json.Json
 import reactor.core.publisher.Mono
-import reactor.netty.ByteBufFlux
-import reactor.netty.http.client.HttpClient
+import reactor.netty.{ByteBufFlux, ByteBufMono}
+import reactor.netty.http.client.{HttpClient, HttpClientResponse}
 
 import java.io.{File, FileInputStream}
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.security.cert.CertificateFactory
+import java.util.function.BiFunction
 import scala.annotation.tailrec
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
-import scala.sys.process._
+import scala.jdk.FutureConverters.*
+import scala.sys.process.*
 import scala.util.{Failure, Success, Try}
 
 class KubernetesIntegrationTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{*, given}
 
   val instanceId = IdGenerator.uuid
 
@@ -130,7 +132,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
           .trustManager(caCert)
           .keyManager(clientCertFile, clientKeyFile)
 
-        spec.sslContext(sslCtxBuilder)
+        spec.sslContext(sslCtxBuilder.build())
       }
 
     pureNettyClient
@@ -150,60 +152,60 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
 
     val promise = Promise[String]()
     pureNettyClient
+      .headers(h => h.set("Content-Type", "application/json"))
       .post()
       .uri("/api/v1/namespaces/default/serviceaccounts/default/token")
       .send(ByteBufFlux.fromString(Mono.just(Json.stringify(body))))
-      .responseSingle((res, content) => content.asString())
+      .responseContent()
+      .aggregate()
+      .asString()
+      .map { json =>
+        Json
+          .parse(json)
+          .selectAsObject("status")
+          .selectAsString("token")
+      }
       .doOnError(error => promise.failure(error))
       .subscribe(
-        json => {
-          promise.success(
-            Json
-              .parse(json)
-              .selectAsObject("status")
-              .selectAsString("token")
-          )
-        },
+        token => promise.success(token),
         err => promise.failure(err)
       )
     promise.future
   }
 
-  def callReadyz(container: GenericContainer, token: String) = {
-    println("callReadyz", token)
+  def callReadyz(container: GenericContainer, token: String): Future[Unit] = {
+    println(s"callReadyz $token")
 
-    val pureNettyClient = getNettyClient(container)
+    val client = getNettyClient(container)
 
-    val promise = Promise[Unit]()
-    pureNettyClient
-      .headers(h => h.set("Authorization", s"Bearer $token"))
-      .get()
-      .uri("/readyz")
-      .responseSingle { (res, content) =>
-        // Need to return a Mono
-        content.asString().map { body =>
-          val status = res.status().code()
-          println(s"readyz response: status=$status, body=$body")
+    // Cast to the "real" receiver type so Scala 3 can see responseSingle
+    val receiver =
+      client
+          .headers(h => h.set("Authorization", s"Bearer $token"))
+          .get()
+          .uri("/readyz")
+          .asInstanceOf[HttpClient.ResponseReceiver[?]]
 
-          if (status == 200 && body == "ok") {
-            println("✓ readyz check passed")
-            promise.success(())
-          } else {
-            promise.failure(new RuntimeException(s"readyz check failed: status=$status, body=$body"))
+    val mono: Mono[Unit] =
+      receiver.responseSingle(
+        new BiFunction[HttpClientResponse, ByteBufMono, Mono[Unit]] {
+          override def apply(resp: HttpClientResponse, bytes: ByteBufMono): Mono[Unit] = {
+            val status = resp.status().code()
+            bytes.asString().map { body =>
+              val b = body.trim
+              println(s"readyz response: status=$status, body=$b")
+
+              if (status == 200 && b == "ok") ()
+              else throw new RuntimeException(s"readyz check failed: status=$status, body=$b")
+            }
           }
-
-          body
         }
-      }
-      .doOnError(error => {
-        println(s"ERROR during readyz check: ${error.getMessage}")
-        promise.failure(error)
-      })
-      .subscribe(
-        _ => {},
-        err => promise.failure(err)
       )
-    promise.future
+
+    mono
+        .doOnError(err => println(s"ERROR during readyz check: ${err.getMessage}"))
+        .toFuture
+        .asScala
   }
 
   def createKubectl(k3sContainer: GenericContainer) = {
@@ -331,7 +333,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
         throw new RuntimeException(s"Timeout waiting after ${timeoutSeconds}s")
       }
 
-      val getResult = kubectlContainer.execInContainer(commands: _*)
+      val getResult = kubectlContainer.execInContainer(commands*)
       val output    = getResult.getStdout
       val stderr    = getResult.getStderr
 

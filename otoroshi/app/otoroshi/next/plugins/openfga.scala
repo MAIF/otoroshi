@@ -3,14 +3,15 @@ package otoroshi.next.plugins
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Results
+import play.api.libs.ws.WSBodyWritables.*
 
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.util._
+import scala.concurrent.*
+import scala.concurrent.duration.*
+import scala.util.*
 
 case class OpenFGAValidatorConfig(
     url: String = "http://localhost:8088",
@@ -107,7 +108,7 @@ object OpenFGAValidator {
       update = (k, v, d) => v._2,
       read = (k, v, d) => v._2
     )
-    .build[String, (Boolean, FiniteDuration)]
+    .build[String, (Boolean, FiniteDuration)]()
 }
 
 class OpenFGAValidator extends NgAccessValidator {
@@ -165,13 +166,12 @@ class OpenFGAValidator extends NgAccessValidator {
           )
           .map { resp =>
             if (resp.status == 200) {
-              resp.json.select("allowed").asOptBoolean.getOrElse(false) match {
-                case true  =>
-                  OpenFGAValidator.cache.put(key, (true, conf.ttl))
-                  NgAccess.NgAllowed
-                case false =>
-                  OpenFGAValidator.cache.put(key, (false, conf.ttl))
-                  NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
+              if (resp.json.select("allowed").asOptBoolean.getOrElse(false)) {
+                OpenFGAValidator.cache.put(key, (true, conf.ttl))
+                NgAccess.NgAllowed
+              } else {
+                OpenFGAValidator.cache.put(key, (false, conf.ttl))
+                NgAccess.NgDenied(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
               }
             } else {
               NgAccess.NgDenied(

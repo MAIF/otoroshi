@@ -250,9 +250,9 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
       )
       .futureValue
 
-    response.status mustBe 200
+    response.status.mustBe(200)
     val accessToken = Json.parse(response.body).selectAsString("access_token")
-    accessToken.isEmpty mustBe false
+    accessToken.isEmpty.mustBe(false)
   }
 
   def verify(route: NgRoute): Unit = {
