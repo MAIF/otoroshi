@@ -315,7 +315,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#create-your-first-api" name="create-your-first-api" class="anchor"><span class="anchor-link"></span></a>Create your first API</h1>
-<p>This guide walks you through creating your first API in Otoroshi. You&rsquo;ll learn how to define reusable backends, declare plugin flows that can be applied across different routes, manage consumers and subscriptions, and track the state of an API throughout its lifecycle.</p>
+<p>This guide walks you through creating your first API in Otoroshi. You&rsquo;ll learn how to define reusable backends, declare plugin flows that can be applied across different routes, manage consumers and subscriptions, and track the state of an API throughout its lifecycle.</p><div class="callout note "><div class="callout-title">Note</div>
+<p><strong>Why use APIs instead of routes?</strong></p>
+<p>Think of an API in Otoroshi as a way to group one or more routes into a single service you can manage. Routes still do the work of matching requests and forwarding them, but an API lets you organize them together, with optional shared backends or HTTP settings. You can work in draft mode to test changes with real traffic before publishing, and every deployment is tracked so you can see what changed. You can attach consumers to control access, manage subscriptions, and even provide documentation or a developer portal. Routes move the traffic, and APIs give you the tools to manage, secure, and present it as a proper, versioned service.</p></div>
 <h2><a href="#prerequisites" name="prerequisites" class="anchor"><span class="anchor-link"></span></a>Prerequisites</h2><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
 <div id="instructions-toggle">
 <span class="instructions-title">Set up an Otoroshi</span>
