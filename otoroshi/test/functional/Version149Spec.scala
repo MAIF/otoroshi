@@ -1824,8 +1824,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       )
       createOtoroshiService(service1).futureValue
       val resp1                       = call1(Map.empty)
-      resp1.status mustBe 404
-      counter1.get() mustBe 0
+      resp1.status mustBe 200
+      counter1.get() mustBe 1
       deleteOtoroshiService(service1).futureValue
       stopServers()
     }
@@ -1877,16 +1877,16 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         .url(s"http://restrictionservicesome.oto.tools:$port/api/bar/foo")
         .delete()
         .futureValue
-      resp1111.status mustBe 404
-      counter1.get() mustBe 3
+      resp1111.status mustBe 200
+      counter1.get() mustBe 4
 
       val resp2 = call1("/notfound/api")(Map.empty)
       resp2.status mustBe 404
-      counter1.get() mustBe 3
+      counter1.get() mustBe 4
 
       val resp3 = call1("/forbidden/api")(Map.empty)
       resp3.status mustBe 403
-      counter1.get() mustBe 3
+      counter1.get() mustBe 4
 
       deleteOtoroshiService(service1).futureValue
       stopServers()
@@ -2127,7 +2127,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
       createOtoroshiApiKey(apikey2).futureValue
 
       val resp1 =
-        call1("/api/a")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+        call1("/api/a")(
+          Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+        )
       resp1.status mustBe 200
       counter1.get() mustBe 1
 

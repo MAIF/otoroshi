@@ -2,6 +2,12 @@
 
 This guide walks you through creating your first API in Otoroshi. You'll learn how to define reusable backends, declare plugin flows that can be applied across different routes, manage consumers and subscriptions, and track the state of an API throughout its lifecycle.
 
+@@@ note 
+**Why use APIs instead of routes?**
+
+Think of an API in Otoroshi as a way to group one or more routes into a single service you can manage. Routes still do the work of matching requests and forwarding them, but an API lets you organize them together, with optional shared backends or HTTP settings. You can work in draft mode to test changes with real traffic before publishing, and every deployment is tracked so you can see what changed. You can attach consumers to control access, manage subscriptions, and even provide documentation or a developer portal. Routes move the traffic, and APIs give you the tools to manage, secure, and present it as a proper, versioned service.
+@@@
+
 ## Prerequisites
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
