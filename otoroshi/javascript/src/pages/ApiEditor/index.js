@@ -38,7 +38,6 @@ import { components } from 'react-select';
 import { HTTP_COLORS } from '../RouteDesigner/MocksDesigner';
 import { unsecuredCopyToClipboard } from '../../util';
 import { Row } from '../../components/Row';
-import MonacoEditor from '@monaco-editor/react';
 
 const RouteWithProps = ({ component: Component, ...rest }) => (
   <Route {...rest} component={(routeProps) => <Component {...routeProps} {...rest.props} />} />
@@ -283,8 +282,6 @@ function Subscriptions(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    return () => props.setTitle(undefined);
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS);
@@ -359,6 +356,10 @@ function SubscriptionDesigner(props) {
   const [subscription, setSubscription] = useState();
 
   const { item } = useDraftOfAPI();
+
+  useEffect(() => {
+    props.setTitle(undefined)
+  }, [])
 
   const rawSubscription = useQuery(
     ['getSubscription', params.subscriptionId],
@@ -483,7 +484,11 @@ function NewSubscription(props) {
 
   const { item, version } = useDraftOfAPI();
 
-  const templatesQuery = useQuery(
+  useEffect(() => {
+    props.setTitle(undefined)
+  }, [])
+
+  useQuery(
     ['getTemplate'],
     () => nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS).template(),
     {
@@ -593,6 +598,10 @@ function RouteDesigner(props) {
       onSuccess: setBackends,
     }
   );
+
+  useEffect(() => {
+    props.setTitle(undefined)
+  }, [])
 
   useEffect(() => {
     if (item && backendsQuery.data !== undefined) {
@@ -752,7 +761,7 @@ const ROUTE_FORM_SETTINGS = {
       collapsable: true,
       collapsed: false,
       name: '2. Add your domains',
-      fields: ['frontend'],
+      fields: ['frontend']
     },
     {
       type: 'group',
@@ -801,6 +810,10 @@ function NewRoute(props) {
   );
 
   const { item, updateItem } = useDraftOfAPI();
+
+  useEffect(() => {
+    props.setTitle(undefined)
+  }, [])
 
   useEffect(() => {
     if (item && !backendsQuery.isLoading && !schema) {
@@ -889,7 +902,6 @@ function Consumers(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-    return () => props.setTitle('');
   }, []);
 
   const deleteItem = (newItem) =>
@@ -1176,6 +1188,10 @@ function NewConsumer(props) {
 
   const { item, updateItem } = useDraftOfAPI();
 
+  useEffect(() => {
+    props.setTitle(undefined)
+  }, [])
+
   const savePlan = () => {
     return updateItem({
       ...item,
@@ -1221,6 +1237,10 @@ function ConsumerDesigner(props) {
   const [consumer, setConsumer] = useState();
 
   const { item, updateItem } = useDraftOfAPI();
+
+  useEffect(() => {
+    props.setTitle(undefined)
+  }, [])
 
   useEffect(() => {
     if (item && !consumer) {
@@ -1313,8 +1333,6 @@ function Routes(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    return () => props.setTitle(undefined);
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.APIS);
@@ -1414,8 +1432,6 @@ function Backends(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    return () => props.setTitle('');
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS);
@@ -1480,6 +1496,10 @@ function NewBackend(props) {
   const [backend, setBackend] = useState();
 
   const { item, updateItem } = useDraftOfAPI();
+
+  useEffect(() => {
+    props.setTitle(undefined)
+  }, [])
 
   const saveBackend = () => {
     return updateItem({
@@ -1588,6 +1608,7 @@ function EditBackend(props) {
   const [backend, setBackend] = useState();
 
   useEffect(() => {
+    props.setTitle(undefined)
     if (item && !backend) {
       setBackend(item.backends.find((item) => item.id === params.backendId));
     }
@@ -1698,8 +1719,6 @@ function HttpClientSettings(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    return () => props.setTitle('');
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.BACKEND_CLIENTS);
@@ -1978,8 +1997,6 @@ function Testing(props) {
 
   useEffect(() => {
     props.setTitle('Testing mode');
-
-    return () => props.setTitle(undefined);
   }, []);
 
   if (!item) return <SimpleLoader />;
@@ -2111,7 +2128,6 @@ function Deployments(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-    return () => props.setTitle(undefined);
   }, []);
 
   if (!item) return <SimpleLoader />;
@@ -2232,7 +2248,6 @@ function EditFlow(props) {
         });
       }
     }
-    return () => props.setTitle(undefined);
   }, [item]);
 
   const updateFlow = () => {
@@ -2325,8 +2340,6 @@ function NewFlow(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    return () => props.setTitle(undefined);
   }, []);
 
   const [flow, setFlow] = useState({
@@ -2392,7 +2405,6 @@ function NewAPI(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-    return () => props.setTitle(undefined);
   }, []);
 
   const [value, setValue] = useState();
@@ -2473,7 +2485,6 @@ function NewAPI(props) {
                   const hasBackends = api.backends?.length > 0;
                   const firstBackend = hasBackends ? api.backends[0] : undefined;
 
-                  console.log(hasBackends, firstBackend);
                   setValue({
                     ...value,
                     serverURL:
@@ -2562,21 +2573,21 @@ function NewAPI(props) {
     step === 0
       ? ['picker']
       : [
-          'location',
-          choice === 'openapi'
-            ? {
-                type: 'group',
-                name: 'OpenAPI',
-                collapsable: false,
-                fields: ['openapi', 'domain', 'action', 'serverURL', 'root'],
-              }
-            : {
-                type: 'group',
-                name: 'Informations',
-                collapsable: false,
-                fields: ['id', 'name', 'description'],
-              },
-        ];
+        'location',
+        choice === 'openapi'
+          ? {
+            type: 'group',
+            name: 'OpenAPI',
+            collapsable: false,
+            fields: ['openapi', 'domain', 'action', 'serverURL', 'root'],
+          }
+          : {
+            type: 'group',
+            name: 'Informations',
+            collapsable: false,
+            fields: ['id', 'name', 'description'],
+          },
+      ];
 
   const createApi = () => {
     if (choice === 'fromScratch') {
@@ -2623,7 +2634,6 @@ function NewAPI(props) {
 }
 
 function Apis(props) {
-  const ref = useRef();
   const params = useParams();
   const history = useHistory();
   const location = useLocation();
@@ -2638,7 +2648,6 @@ function Apis(props) {
         </div>
       ),
     });
-    return () => props.setTitle(undefined);
   }, []);
 
   const columns = [
@@ -2678,7 +2687,6 @@ function Apis(props) {
   return (
     <>
       <Table
-        ref={ref}
         parentProps={{ params }}
         navigateTo={(item) => historyPush(history, location, `/apis/${item.id}`)}
         navigateOnEdit={(item) => historyPush(history, location, `/apis/${item.id}`)}
@@ -2706,6 +2714,7 @@ function Apis(props) {
           <div className="btn-group input-group-btn">
             <Link
               className="btn btn-primary btn-sm"
+              to="#"
               onClick={() => {
                 nextClient
                   .forEntityNext(nextClient.ENTITIES.APIS)
@@ -2769,13 +2778,14 @@ function FlowDesigner(props) {
   }, [item]);
 
   const saveFlow = () => {
-    const { id, name, plugins } = ref.current.value;
+    const { id, name, plugins } = ref.current;
 
     return updateItem({
       ...item,
       flows: item.flows.map((flow) => {
         if (flow.id === id)
           return {
+            ...flow,
             id,
             name,
             plugins,
@@ -2792,8 +2802,8 @@ function FlowDesigner(props) {
       <Designer
         history={history}
         value={flow}
-        setValue={(value) => setFlow({ value })}
-        setSaveButton={() => {}}
+        setValue={(value) => setFlow({ ...value || {} })}
+        setSaveButton={() => { }}
       />
     </div>
   );
@@ -2852,8 +2862,6 @@ function Flows(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    return () => props.setTitle(undefined);
   }, []);
 
   const fetchItems = (_) => Promise.resolve(item.flows);
@@ -3189,8 +3197,6 @@ function Informations(props) {
         noThumbtack: true,
         children: <VersionBadge />,
       });
-
-      return () => props.setTitle(undefined);
     }
   }, [item]);
 
@@ -3317,6 +3323,10 @@ function Dashboard(props) {
   const history = useHistory();
   const location = useLocation();
 
+  useEffect(() => {
+    props.setTitle(undefined)
+  }, [])
+
   const { item, draft, draftWrapper, version, api } = useDraftOfAPI();
 
   const hasCreateFlow = item && item.flows.filter((f) => f.name !== 'default_flow').length > 0;
@@ -3327,7 +3337,7 @@ function Dashboard(props) {
   const hasTestingEnabled = item && item.testing.enabled;
 
   const isStaging = item && item.state === API_STATE.STAGING;
-  const showGettingStarted = !hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging;
+  const showGettingStarted = item && item.state !== API_STATE.DEPRECATED && (!hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging);
 
   const getStep = () => {
     return (
@@ -3407,7 +3417,7 @@ function Dashboard(props) {
               />
             )}
 
-            {currentStep >= 3 && item?.state !== API_STATE.PUBLISHED && (
+            {currentStep >= 3 && (item?.state !== API_STATE.PUBLISHED) && (
               <ObjectiveCard
                 onClick={() => publishAPI(draft, item, history)}
                 title="Deploy your API"
@@ -3675,14 +3685,14 @@ function RouteItem({ item, api, ports }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}
+        >
+          {m}
+        </span>
+      ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');

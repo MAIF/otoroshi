@@ -357,8 +357,6 @@ export function RoutesTable(props) {
     }
   };
 
-  console.log(queryFilters);
-
   return (
     <Loader loading={loading}>
       <div className="designer">
