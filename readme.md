@@ -16,6 +16,8 @@ The reference documentation is available at https://maif.github.io/otoroshi/manu
 
 ## Roadmap
 
+You can find the roadmap or topics considered for the roadmap in the [Roadmap 2026](https://github.com/orgs/MAIF/projects/20/views/1) project.
+
 You can find the roadmap or topics considered for the roadmap in the [Roadmap 2025](https://github.com/orgs/MAIF/projects/17/views/1) project.
 
 ## Community
