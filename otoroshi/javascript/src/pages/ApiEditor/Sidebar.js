@@ -94,28 +94,36 @@ const LINKS = (id) =>
     },
   ].filter((link) => !link.enabled);
 
+// function getApiId(pathname) {
+//   let apiId
+//   try {
+//     apiId = pathname.split('/apis')[1].split("/")[1]
+//   } catch (err) {
+//     apiId = ""
+//   }
+//   return apiId
+// }
+
 export default (props) => {
   const location = useLocation();
+  const { openedSidebar } = useContext(SidebarContext);
 
   const params = props.params;
 
-  const { openedSidebar } = useContext(SidebarContext);
+  // const apiId = getApiId(location.pathname)
+  const currentTab = location.pathname.split('/')[3]
+  const noneTabIsActive = !LINKS().find((r) => r.tab?.toLowerCase() === currentTab?.toLowerCase());
 
-  const currentTab = location.pathname.split('/').slice(-1)[0];
-
-  const noneTabIsActive = !LINKS().find((r) => r.tab === currentTab);
-
-  const isActive = (tab) => {
-    if (tab === 'overview' && noneTabIsActive) return 'active';
-
-    return currentTab === tab ? 'active' : null;
-  };
 
   const isOnApisHome = location.pathname.endsWith('/apis');
-
   const isOnNewAPIView = location.pathname.endsWith(`${params.apiId}/new`);
-
   const version = useSignalValue(signalVersion);
+
+  const isActive = (tab) => {
+    if (tab.toLowerCase() === 'overview' && noneTabIsActive) return 'active';
+
+    return currentTab?.toLowerCase() === tab.toLowerCase() ? 'active' : null;
+  };
 
   return (
     <div
@@ -229,9 +237,8 @@ export default (props) => {
                     search: location.search,
                   }}
                   {...(tooltip || {})}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                    openedSidebar ? 'ms-3' : ''
-                  } m-0 ${isActive(tab)}`}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                    } m-0 ${isActive(tab)}`}
                 >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className={`fas ${icon}`} />

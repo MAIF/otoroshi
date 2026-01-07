@@ -1057,6 +1057,32 @@ object Exporters {
     }
   }
 
+  class DatadogCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        exporter[DatadogCallSettings].map { eec =>
+          eec.call(events, config, globalConfig)
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
+  class NewRelicCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        exporter[NewRelicCallSettings].map { eec =>
+          eec.call(events, config, globalConfig)
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
   class WorkflowCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
       extends DefaultDataExporter(config) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {

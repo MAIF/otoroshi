@@ -23,7 +23,11 @@ import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.stream.{Materializer, TLSClientAuth}
 import org.apache.pekko.util.ByteString
 import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
-import org.bouncycastle.openssl.jcajce.{JcaPEMKeyConverter, JceOpenSSLPKCS8DecryptorProviderBuilder, JcePEMDecryptorProviderBuilder}
+import org.bouncycastle.openssl.jcajce.{
+  JcaPEMKeyConverter,
+  JceOpenSSLPKCS8DecryptorProviderBuilder,
+  JcePEMDecryptorProviderBuilder
+}
 import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.joda.time.{DateTime, Interval}
@@ -2270,9 +2274,11 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProto
       field.set(this, hostName)
       field.set(delegate, hostName)
     } catch {
-      case e: InaccessibleObjectException if e.getMessage.contains("Unable to make field private java.lang.String javax.net.ssl.SSLEngine.peerHost accessible: module java.base does not \"opens javax.net.ssl\" to ") =>
-        DynamicSSLEngineProvider.logger.warn(
-          """
+      case e: InaccessibleObjectException
+          if e.getMessage.contains(
+            "Unable to make field private java.lang.String javax.net.ssl.SSLEngine.peerHost accessible: module java.base does not \"opens javax.net.ssl\" to "
+          ) =>
+        DynamicSSLEngineProvider.logger.warn("""
             |It seems that you're trying to use the otoroshi TLS engine without opening the SSL modules.
             |Please add the following options to your java configuration:
             |

@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.11.0-dev",
+    "version" : "17.11.0",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "everything about otoroshi"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:8080",
+    "url" : "http://otoroshi-api.oto.tools:40211",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -18904,6 +18904,514 @@
             "$ref" : "#/components/schemas/otoroshi.models.JwtTokenLocation",
             "description" : "???"
           },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "sessionMaxAge" : {
+            "type" : "number"
+          },
+          "clientSideSessionEnabled" : {
+            "type" : "boolean"
+          },
+          "sessionCookieValues" : {
+            "$ref" : "#/components/schemas/sessioncookievalues"
+          },
+          "userValidators" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/jsonpathvalidator"
+            }
+          },
+          "remoteValidators" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/remoteuservalidatorsettings"
+            }
+          },
+          "wasmRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "allowedUsers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "deniedUsers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Wasm auth module config",
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "sessionMaxAge", "clientSideSessionEnabled", "sessionCookieValues", "userValidators", "remoteValidators", "allowedUsers", "deniedUsers" ]
+      },
+      "hsalgosettings" : {
+        "type" : "object",
+        "properties" : {
+          "size" : {
+            "type" : "number"
+          },
+          "secret" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "base64" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "H s algo settings",
+        "required" : [ "size", "secret", "base64" ]
+      },
+      "pki.otoroshi.io.Certificate" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "chain" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "privateKey" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "caRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "domain" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "selfSigned" : {
+            "type" : "boolean"
+          },
+          "ca" : {
+            "type" : "boolean"
+          },
+          "valid" : {
+            "type" : "boolean"
+          },
+          "exposed" : {
+            "type" : "boolean"
+          },
+          "revoked" : {
+            "type" : "boolean"
+          },
+          "autoRenew" : {
+            "type" : "boolean"
+          },
+          "letsEncrypt" : {
+            "type" : "boolean"
+          },
+          "client" : {
+            "type" : "boolean"
+          },
+          "keypair" : {
+            "type" : "boolean"
+          },
+          "subject" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "from" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "to" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "sans" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "entityMetadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "password" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          }
+        },
+        "title" : "Cert",
+        "required" : [ "id", "name", "description", "chain", "privateKey", "domain", "selfSigned", "ca", "valid", "exposed", "revoked", "autoRenew", "letsEncrypt", "client", "keypair", "subject", "from", "to", "sans", "entityMetadata", "tags", "location" ]
+      },
+      "dataexporterconfigtypemailer" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type mailer"
+      },
+      "dataexporterconfigtypeudp" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type u d p"
+      },
+      "verificationsettings" : {
+        "type" : "object",
+        "properties" : {
+          "fields" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "arrayFields" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          }
+        },
+        "title" : "Verification settings",
+        "required" : [ "fields", "arrayFields" ]
+      },
+      "wsproxyserver" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/defaultwsproxyserver"
+        } ]
+      },
+      "apiconsumersubscriptiondates" : {
+        "type" : "object",
+        "properties" : {
+          "created_at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "processed_at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "started_at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "paused_at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "ending_at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "closed_at" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        },
+        "title" : "Api consumer subscription dates",
+        "required" : [ "created_at", "processed_at", "started_at", "paused_at", "ending_at", "closed_at" ]
+      },
+      "goreplays3settings" : {
+        "type" : "object",
+        "properties" : {
+          "s3" : {
+            "$ref" : "#/components/schemas/s3configuration"
+          },
+          "maxFileSize" : {
+            "type" : "number"
+          },
+          "captureRequests" : {
+            "type" : "boolean"
+          },
+          "captureResponses" : {
+            "type" : "boolean"
+          },
+          "preferBackendRequest" : {
+            "type" : "boolean"
+          },
+          "preferBackendResponse" : {
+            "type" : "boolean"
+          },
+          "methods" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Go replay s3 settings",
+        "required" : [ "s3", "maxFileSize", "captureRequests", "captureResponses", "preferBackendRequest", "preferBackendResponse", "methods" ]
+      },
+      "jwtauthconstraints" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "secretSigned" : {
+            "type" : "boolean"
+          },
+          "keyPairSigned" : {
+            "type" : "boolean"
+          },
+          "includeRequestAttributes" : {
+            "type" : "boolean"
+          },
+          "maxJwtLifespanSecs" : {
+            "type" : "number"
+          },
+          "headerName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "queryName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "cookieName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "pathName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Jwt auth constraints",
+        "required" : [ "enabled", "secretSigned", "keyPairSigned", "includeRequestAttributes" ]
+      },
+      "tlswasmosettings" : {
+        "type" : "object",
+        "properties" : {
+          "settings" : {
+            "$ref" : "#/components/schemas/wasmosettings"
+          },
+          "tlsConfig" : {
+            "$ref" : "#/components/schemas/mtlsconfig"
+          }
+        },
+        "title" : "Tls wasmo settings",
+        "required" : [ "settings", "tlsConfig" ]
+      },
+      "cookiehash" : {
+        "type" : "object",
+        "properties" : {
+          "cookieName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Cookie hash",
+        "required" : [ "cookieName" ]
+      },
+      "ipaddresshash" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Ip address hash"
+      },
+      "seccominfotokenversion" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/seccominfotokenversionlatest"
+        }, {
+          "$ref" : "#/components/schemas/seccominfotokenversionlegacy"
+        }, {
+          "$ref" : "#/components/schemas/seccominfotokenversionurl"
+        } ]
+      },
+      "dataexporterconfigtypesyslog" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type syslog"
+      },
+      "verifierstrategy" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/defaulttoken"
+        }, {
+          "$ref" : "#/components/schemas/passthrough"
+        }, {
+          "$ref" : "#/components/schemas/sign"
+        }, {
+          "$ref" : "#/components/schemas/transform"
+        } ]
+      },
+      "roundrobin" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Round robin"
+      },
+      "kafkaconfig" : {
+        "type" : "object",
+        "properties" : {
+          "servers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "keyPass" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "keystore" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "truststore" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "sendEvents" : {
+            "type" : "boolean"
+          },
+          "hostValidation" : {
+            "type" : "boolean"
+          },
+          "topic" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "mtlsConfig" : {
+            "$ref" : "#/components/schemas/mtlsconfig"
+          },
+          "securityProtocol" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "saslConfig" : {
+            "$ref" : "#/components/schemas/saslconfig"
+          },
+          "properties" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          }
+        },
+        "title" : "Kafka config",
+        "required" : [ "servers", "sendEvents", "hostValidation", "topic", "mtlsConfig", "securityProtocol" ]
+      },
+      "endnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "End node",
+        "required" : [ "json" ]
+      },
+      "ngclientconfig" : {
+        "type" : "object",
+        "properties" : {
+          "retries" : {
+            "type" : "number"
+          },
+          "maxErrors" : {
+            "type" : "number"
+          },
+          "retryInitialDelay" : {
+            "type" : "number"
+          },
+          "backoffFactor" : {
+            "type" : "number"
+          },
+          "connectionTimeout" : {
+            "type" : "number"
+          },
+          "idleTimeout" : {
+            "type" : "number"
+          },
+          "callAndStreamTimeout" : {
+            "type" : "number"
+          },
+          "callTimeout" : {
+            "type" : "number"
+          },
+          "globalTimeout" : {
+            "type" : "number"
+          },
+          "sampleInterval" : {
+            "type" : "number"
+          },
+          "proxy" : {
+            "$ref" : "#/components/schemas/wsproxyserver"
+          },
+          "customTimeouts" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ngcustomtimeouts"
+            }
+          },
+          "cacheConnectionSettings" : {
+            "$ref" : "#/components/schemas/ngcacheconnectionsettings"
+          }
+        },
+        "title" : "Ng client config",
+        "required" : [ "retries", "maxErrors", "retryInitialDelay", "backoffFactor", "connectionTimeout", "idleTimeout", "callAndStreamTimeout", "callTimeout", "globalTimeout", "sampleInterval", "customTimeouts", "cacheConnectionSettings" ]
+      },
+      "rest" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "R e s t"
+      },
+      "ngcacheconnectionsettings" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "queueSize" : {
+            "type" : "number"
+          },
           "strategy" : {
             "$ref" : "#/components/schemas/otoroshi.models.VerifierStrategy",
             "description" : "???"
@@ -18915,6 +19423,181 @@
           "location" : {
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation",
             "description" : "???"
+          },
+          "adminEntityValidators" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/jsonvalidator"
+                }
+              }
+            }
+          }
+        },
+        "title" : "Simple otoroshi admin",
+        "required" : [ "username", "password", "label", "createdAt", "typ", "tags", "metadata", "rights", "location", "adminEntityValidators" ]
+      },
+      "published" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Published"
+      },
+      "otoroshiadmintype" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/otoroshiadmintypesimpleadmin"
+        }, {
+          "$ref" : "#/components/schemas/otoroshiadmintypewebauthnadmin"
+        } ]
+      },
+      "seccominfotokenversionlatest" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Sec com info token version latest"
+      },
+      "whilenode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "While node",
+        "required" : [ "json" ]
+      },
+      "newreliccallsettings" : {
+        "type" : "object",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "headers" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "token" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "logtype" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "service" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "hostname" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "timeout" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "tlsConfig" : {
+            "$ref" : "#/components/schemas/ngtlsconfig"
+          }
+        },
+        "title" : "New relic call settings",
+        "required" : [ "url", "headers", "timeout", "tlsConfig" ]
+      },
+      "customtimeouts" : {
+        "type" : "object",
+        "properties" : {
+          "path" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "connectionTimeout" : {
+            "type" : "number"
+          },
+          "idleTimeout" : {
+            "type" : "number"
+          },
+          "callAndStreamTimeout" : {
+            "type" : "number"
+          },
+          "callTimeout" : {
+            "type" : "number"
+          },
+          "globalTimeout" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Custom timeouts",
+        "required" : [ "path", "connectionTimeout", "idleTimeout", "callAndStreamTimeout", "callTimeout", "globalTimeout" ]
+      },
+      "dropbufferngoverflowstrategy" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Drop buffer ng overflow strategy"
+      },
+      "tenantaccess" : {
+        "type" : "object",
+        "properties" : {
+          "value" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "canRead" : {
+            "type" : "boolean"
+          },
+          "canWrite" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "Tenant access",
+        "required" : [ "value", "canRead", "canWrite" ]
+      },
+      "apikey" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Apikey"
+      },
+      "apiconsumersettings" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/apikey"
+        }, {
+          "$ref" : "#/components/schemas/jwt"
+        }, {
+          "$ref" : "#/components/schemas/keyless"
+        }, {
+          "$ref" : "#/components/schemas/mtls"
+        }, {
+          "$ref" : "#/components/schemas/oauth2"
+        } ]
+      },
+      "proxy.otoroshi.io.Route" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
           },
           "metadata" : {
             "type" : "object",
@@ -18999,7 +19682,62 @@
           }
         }
       },
-      "otoroshi.models.ServiceDescriptor" : {
+      "dataexporterconfigtype" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/dataexporterconfigtypeconsole"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypecustom"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypecustommetrics"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypedatadog"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypeelastic"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypefile"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypegoreplayfile"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypegoreplays3"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypehttp"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypejms"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypekafka"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypemailer"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypemetrics"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypenewrelic"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypenone"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypeotlplogs"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypeotlpmetrics"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypepulsar"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypes3file"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypesplunk"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypesyslog"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypetcp"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypeudp"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypewasm"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypewebhook"
+        }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypeworkflow"
+        } ]
+      },
+      "breakpointnode" : {
         "type" : "object",
         "description" : "???",
         "properties" : {
@@ -19014,6 +19752,521 @@
           "env" : {
             "type" : "string",
             "description" : "???"
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "desc" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "bufferSize" : {
+            "type" : "number"
+          },
+          "jsonWorkers" : {
+            "type" : "number"
+          },
+          "sendWorkers" : {
+            "type" : "number"
+          },
+          "groupSize" : {
+            "type" : "number"
+          },
+          "groupDuration" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "filtering" : {
+            "$ref" : "#/components/schemas/dataexporterconfigfiltering"
+          },
+          "projection" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "config" : {
+            "$ref" : "#/components/schemas/exporter"
+          }
+        },
+        "title" : "Data exporter config",
+        "required" : [ "enabled", "typ", "id", "name", "desc", "metadata", "tags", "location", "bufferSize", "jsonWorkers", "sendWorkers", "groupSize", "groupDuration", "filtering", "projection", "config" ]
+      },
+      "exporter" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/consolesettings"
+        }, {
+          "$ref" : "#/components/schemas/datadogcallsettings"
+        }, {
+          "$ref" : "#/components/schemas/elasticanalyticsconfig"
+        }, {
+          "$ref" : "#/components/schemas/exporterref"
+        }, {
+          "$ref" : "#/components/schemas/filesettings"
+        }, {
+          "$ref" : "#/components/schemas/goreplayfilesettings"
+        }, {
+          "$ref" : "#/components/schemas/goreplays3settings"
+        }, {
+          "$ref" : "#/components/schemas/httpcallsettings"
+        }, {
+          "$ref" : "#/components/schemas/jmsexportersettings"
+        }, {
+          "$ref" : "#/components/schemas/metricssettings"
+        }, {
+          "$ref" : "#/components/schemas/newreliccallsettings"
+        }, {
+          "$ref" : "#/components/schemas/noneexporter"
+        }, {
+          "$ref" : "#/components/schemas/s3exportersettings"
+        }, {
+          "$ref" : "#/components/schemas/splunkcallsettings"
+        }, {
+          "$ref" : "#/components/schemas/syslogexportersettings"
+        }, {
+          "$ref" : "#/components/schemas/tcpexportersettings"
+        }, {
+          "$ref" : "#/components/schemas/udpexportersettings"
+        }, {
+          "$ref" : "#/components/schemas/webhook"
+        }, {
+          "$ref" : "#/components/schemas/workflowcallsettings"
+        } ]
+      },
+      "jumpnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Jump node",
+        "required" : [ "json" ]
+      },
+      "security.otoroshi.io.AuthModule" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/basicauthmoduleconfig"
+        }, {
+          "$ref" : "#/components/schemas/genericoauth2moduleconfig"
+        }, {
+          "$ref" : "#/components/schemas/ldapauthmoduleconfig"
+        }, {
+          "$ref" : "#/components/schemas/oauth1moduleconfig"
+        }, {
+          "$ref" : "#/components/schemas/samlauthmoduleconfig"
+        }, {
+          "$ref" : "#/components/schemas/wasmauthmoduleconfig"
+        } ]
+      },
+      "Done" : {
+        "type" : "object",
+        "description" : "operation is done",
+        "properties" : {
+          "done" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "jsnumber" : {
+        "type" : "object",
+        "properties" : {
+          "value" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Js number",
+        "required" : [ "value" ]
+      },
+      "apidescriptor" : {
+        "type" : "object",
+        "properties" : {
+          "exposeApi" : {
+            "type" : "boolean"
+          },
+          "openApiDescriptorUrl" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Api descriptor",
+        "required" : [ "exposeApi" ]
+      },
+      "dataexporterconfigtypeotlplogs" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type otlp logs"
+      },
+      "requirement" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Requirement"
+      },
+      "indexsettingsinterval" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/indexsettingsintervalday"
+        }, {
+          "$ref" : "#/components/schemas/indexsettingsintervalmonth"
+        }, {
+          "$ref" : "#/components/schemas/indexsettingsintervalweek"
+        }, {
+          "$ref" : "#/components/schemas/indexsettingsintervalyear"
+        } ]
+      },
+      "dataexporterconfigtypedatadog" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type datadog"
+      },
+      "seccominfotokenversionurl" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Sec com info token version url"
+      },
+      "samlsignaturealgorithmrsa_sha256" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "S a m l signature algorithm r s a-s h a256"
+      },
+      "pluginindex" : {
+        "type" : "object",
+        "properties" : {
+          "sink" : {
+            "type" : "number"
+          },
+          "preRoute" : {
+            "type" : "number"
+          },
+          "validateAccess" : {
+            "type" : "number"
+          },
+          "transformRequest" : {
+            "type" : "number"
+          },
+          "transformResponse" : {
+            "type" : "number"
+          },
+          "matchRoute" : {
+            "type" : "number"
+          },
+          "handlesTunnel" : {
+            "type" : "number"
+          },
+          "handlesWebsocket" : {
+            "type" : "number"
+          },
+          "handlesWebsocketBackend" : {
+            "type" : "number"
+          },
+          "callBackend" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Plugin index"
+      },
+      "queryhash" : {
+        "type" : "object",
+        "properties" : {
+          "queryName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Query hash",
+        "required" : [ "queryName" ]
+      },
+      "sign" : {
+        "type" : "object",
+        "properties" : {
+          "verificationSettings" : {
+            "$ref" : "#/components/schemas/verificationsettings"
+          },
+          "algoSettings" : {
+            "$ref" : "#/components/schemas/algosettings"
+          }
+        },
+        "title" : "Sign",
+        "required" : [ "verificationSettings", "algoSettings" ]
+      },
+      "apidocumentation" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "source" : {
+            "$ref" : "#/components/schemas/apidocumentationsource"
+          },
+          "home" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "logo" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "references" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationresourceref"
+            }
+          },
+          "resources" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationresource"
+            }
+          },
+          "navigation" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationsidebar"
+            }
+          },
+          "redirections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationredirection"
+            }
+          },
+          "footer" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "search" : {
+            "$ref" : "#/components/schemas/apidocumentationsearch"
+          },
+          "banner" : {
+            "$ref" : "#/components/schemas/apidocumentationresource"
+          },
+          "plans" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apidocumentationplan"
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Api documentation",
+        "required" : [ "enabled", "home", "logo", "references", "resources", "navigation", "redirections", "search", "plans", "metadata", "tags" ]
+      },
+      "pausenode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Pause node",
+        "required" : [ "json" ]
+      },
+      "canary" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "traffic" : {
+            "type" : "number"
+          },
+          "targets" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/target"
+            }
+          },
+          "root" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Canary",
+        "required" : [ "enabled", "traffic", "targets", "root" ]
+      },
+      "dataexporterconfigtypeelastic" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type elastic"
+      },
+      "ifthenelsenode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "If then else node",
+        "required" : [ "json" ]
+      },
+      "udpexportersettings" : {
+        "type" : "object",
+        "properties" : {
+          "host" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "port" : {
+            "type" : "number"
+          },
+          "unixSocket" : {
+            "type" : "boolean"
+          },
+          "connectTimeout" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          }
+        },
+        "title" : "U d p exporter settings",
+        "required" : [ "host", "port", "unixSocket", "connectTimeout" ]
+      },
+      "LetsEncryptCertBody" : {
+        "type" : "object",
+        "description" : "PEM encoded certificate"
+      },
+      "targetpredicate" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/alwaysmatch"
+        }, {
+          "$ref" : "#/components/schemas/datacentermatch"
+        }, {
+          "$ref" : "#/components/schemas/geolocationmatch"
+        }, {
+          "$ref" : "#/components/schemas/infraprovidermatch"
+        }, {
+          "$ref" : "#/components/schemas/networklocationmatch"
+        }, {
+          "$ref" : "#/components/schemas/rackmatch"
+        }, {
+          "$ref" : "#/components/schemas/regionmatch"
+        }, {
+          "$ref" : "#/components/schemas/zonematch"
+        } ]
+      },
+      "security.otoroshi.io.AdminSession" : {
+        "type" : "object",
+        "properties" : {
+          "randomId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "email" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "profile" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "token" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "authConfigId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "simpleLogin" : {
+            "type" : "boolean"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "expiredAt" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "lastRefresh" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "rights" : {
+            "$ref" : "#/components/schemas/userrights"
+          },
+          "adminEntityValidators" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/jsonvalidator"
+                }
+              }
+            }
+          },
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          }
+        },
+        "title" : "Back office user",
+        "required" : [ "randomId", "name", "email", "profile", "token", "authConfigId", "simpleLogin", "createdAt", "expiredAt", "lastRefresh", "tags", "metadata", "rights", "adminEntityValidators", "location" ]
+      },
+      "algosettings" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/esalgosettings"
+        }, {
+          "$ref" : "#/components/schemas/eskpalgosettings"
+        }, {
+          "$ref" : "#/components/schemas/hsalgosettings"
+        }, {
+          "$ref" : "#/components/schemas/jwksalgosettings"
+        }, {
+          "$ref" : "#/components/schemas/kidalgosettings"
+        }, {
+          "$ref" : "#/components/schemas/rsakpalgosettings"
+        }, {
+          "$ref" : "#/components/schemas/rsalgosettings"
+        } ]
+      },
+      "http-listeners.proxy.otoroshi.io.HttpListener" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
           },
           "id" : {
             "type" : "string",
@@ -19069,11 +20322,148 @@
             "type" : "string",
             "description" : "???"
           },
+          "privateKey" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Lets encrypt settings",
+        "required" : [ "enabled", "server", "emails", "contacts", "publicKey", "privateKey" ]
+      },
+      "basicauthconstraints" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "headerName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "queryName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "cookieName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "pathName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Basic auth constraints",
+        "required" : [ "enabled" ]
+      },
+      "loadbalancing" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/bestresponsetime"
+        }, {
+          "$ref" : "#/components/schemas/cookiehash"
+        }, {
+          "$ref" : "#/components/schemas/failover"
+        }, {
+          "$ref" : "#/components/schemas/headerhash"
+        }, {
+          "$ref" : "#/components/schemas/ipaddresshash"
+        }, {
+          "$ref" : "#/components/schemas/leastconnections"
+        }, {
+          "$ref" : "#/components/schemas/poweroftworandomchoices"
+        }, {
+          "$ref" : "#/components/schemas/queryhash"
+        }, {
+          "$ref" : "#/components/schemas/random"
+        }, {
+          "$ref" : "#/components/schemas/roundrobin"
+        }, {
+          "$ref" : "#/components/schemas/sticky"
+        }, {
+          "$ref" : "#/components/schemas/weightedbestresponsetime"
+        } ]
+      },
+      "jsnull" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Js null"
+      },
+      "inheader" : {
+        "type" : "object",
+        "properties" : {
           "name" : {
             "type" : "string",
             "description" : "???"
           },
-          "additionalHeaders" : {
+          "remove" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "In header",
+        "required" : [ "name", "remove" ]
+      },
+      "dataexporterconfigtypemetrics" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type metrics"
+      },
+      "geolocationsettings" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/ipstackgeolocationsettings"
+        }, {
+          "$ref" : "#/components/schemas/maxmindgeolocationsettings"
+        }, {
+          "$ref" : "#/components/schemas/nonegeolocationsettings"
+        } ]
+      },
+      "dataexporterconfigtypenewrelic" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type new relic"
+      },
+      "otoroshi.ssl.pki.models.GenKeyPairQuery" : {
+        "type" : "object",
+        "description" : "Settings for generating a keypair",
+        "properties" : {
+          "algo" : {
+            "type" : "string",
+            "description" : "Keypair algorithm"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Keypair size"
+          }
+        }
+      },
+      "jwt" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "J w t"
+      },
+      "organize.otoroshi.io.Tenant" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/tenantid"
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
@@ -19459,6 +20849,172 @@
             "type" : "boolean",
             "description" : "???"
           },
+          "code" : {
+            "type" : "number"
+          },
+          "to" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Redirection settings",
+        "required" : [ "enabled", "code", "to" ]
+      },
+      "nameidformatemailaddress" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Name i d format email address"
+      },
+      "zonematch" : {
+        "type" : "object",
+        "properties" : {
+          "zone" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Zone match",
+        "required" : [ "zone" ]
+      },
+      "dropnewngoverflowstrategy" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Drop new ng overflow strategy"
+      },
+      "noopnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Noop node",
+        "required" : [ "json" ]
+      },
+      "apikeyconstraints" : {
+        "type" : "object",
+        "properties" : {
+          "basicAuth" : {
+            "$ref" : "#/components/schemas/basicauthconstraints"
+          },
+          "customHeadersAuth" : {
+            "$ref" : "#/components/schemas/customheadersauthconstraints"
+          },
+          "clientIdAuth" : {
+            "$ref" : "#/components/schemas/clientidauthconstraints"
+          },
+          "jwtAuth" : {
+            "$ref" : "#/components/schemas/jwtauthconstraints"
+          },
+          "otoBearerAuth" : {
+            "$ref" : "#/components/schemas/otobearerconstraints"
+          },
+          "routing" : {
+            "$ref" : "#/components/schemas/apikeyroutematcher"
+          }
+        },
+        "title" : "Api key constraints",
+        "required" : [ "basicAuth", "customHeadersAuth", "clientIdAuth", "jwtAuth", "otoBearerAuth", "routing" ]
+      },
+      "headerhash" : {
+        "type" : "object",
+        "properties" : {
+          "headerName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Header hash",
+        "required" : [ "headerName" ]
+      },
+      "rulesrouteconfiguration" : {
+        "type" : "object",
+        "properties" : {
+          "states" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/rulestaterecord"
+            }
+          }
+        },
+        "title" : "Rules route configuration",
+        "required" : [ "states" ]
+      },
+      "outagestrategy" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/allservicespergroup"
+        }, {
+          "$ref" : "#/components/schemas/oneservicepergroup"
+        } ]
+      },
+      "oneinstanceperotoroshiinstance" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "One instance per otoroshi instance"
+      },
+      "globalscripts" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "transformersRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "transformersConfig" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "validatorRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "validatorConfig" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "preRouteRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "preRouteConfig" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "sinkRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "sinkConfig" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          },
+          "jobRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "jobConfig" : {
+            "$ref" : "#/components/schemas/jsvalue"
+          }
+        },
+        "title" : "Global scripts",
+        "required" : [ "enabled", "transformersRefs", "transformersConfig", "validatorRefs", "validatorConfig", "preRouteRefs", "preRouteConfig", "sinkRefs", "sinkConfig", "jobRefs", "jobConfig" ]
+      },
+      "defaultwscookie" : {
+        "type" : "object",
+        "properties" : {
           "name" : {
             "type" : "string",
             "description" : "???"
@@ -19524,10 +21080,26 @@
           },
           "metadata" : {
             "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "???"
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "port" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Target",
+        "required" : [ "host", "scheme", "weight", "protocol", "predicate", "mtlsConfig", "backup", "tags", "metadata" ]
+      },
+      "samlauthmoduleconfig" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
           },
           "port" : {
             "type" : "integer",
@@ -19562,9 +21134,318 @@
             "$ref" : "#/components/schemas/otoroshi.tcp.SniSettings",
             "description" : "???"
           }
+        },
+        "title" : "S3 configuration",
+        "required" : [ "bucket", "endpoint", "region", "access", "secret", "key", "chunkSize", "v4auth", "writeEvery", "acl", "pathStyleAccess" ]
+      },
+      "allservicespergroup" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "All services per group"
+      },
+      "flatmapnode" : {
+        "type" : "object",
+        "properties" : {
+          "json" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Flat map node",
+        "required" : [ "json" ]
+      },
+      "ngplugininstance" : {
+        "type" : "object",
+        "properties" : {
+          "plugin" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "debug" : {
+            "type" : "boolean"
+          },
+          "include" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "exclude" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "config" : {
+            "$ref" : "#/components/schemas/ngplugininstanceconfig"
+          },
+          "pluginIndex" : {
+            "$ref" : "#/components/schemas/pluginindex"
+          },
+          "instanceId" : {
+            "type" : "number"
+          },
+          "boundListeners" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Ng plugin instance",
+        "required" : [ "plugin", "enabled", "debug", "include", "exclude", "config", "instanceId", "boundListeners" ]
+      },
+      "tlsmodeenabled" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Tls mode enabled"
+      },
+      "otoroshiadmintypesimpleadmin" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Otoroshi admin type simple admin"
+      },
+      "oneinstanceperotoroshiworkerinstance" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "One instance per otoroshi worker instance"
+      },
+      "nameidformatkerberos" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Name i d format kerberos"
+      },
+      "apiremoved" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api removed"
+      },
+      "servicedescriptoridentifier" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Service descriptor identifier",
+        "required" : [ "id" ]
+      },
+      "customheadersauthconstraints" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "clientIdHeaderName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "clientSecretHeaderName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Custom headers auth constraints",
+        "required" : [ "enabled" ]
+      },
+      "localtime" : {
+        "type" : "object",
+        "properties" : {
+          "x$1" : {
+            "type" : "number"
+          },
+          "x$2" : {
+            "type" : "number"
+          },
+          "x$3" : {
+            "type" : "number"
+          }
+        },
+        "title" : "Local time",
+        "required" : [ "x$1", "x$2", "x$3" ]
+      },
+      "mappingsettings" : {
+        "type" : "object",
+        "properties" : {
+          "map" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "values" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "remove" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Mapping settings",
+        "required" : [ "map", "values", "remove" ]
+      },
+      "apipublished" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Api published"
+      },
+      "samlcanocalizationmethodexclusivewithcomments" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "S a m l canocalization method exclusive with comments"
+      },
+      "tlsmodedisabled" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Tls mode disabled"
+      },
+      "dataexporterconfigtypejms" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type j m s"
+      },
+      "dataexporterconfigtypesplunk" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type splunk"
+      },
+      "credential" : {
+        "type" : "object",
+        "properties" : {
+          "certificate" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "privateKey" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "certId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "useOtoroshiCertificate" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "Credential",
+        "required" : [ "useOtoroshiCertificate" ]
+      },
+      "emaillocation" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "email" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "title" : "Email location",
+        "required" : [ "name", "email" ]
+      },
+      "passthrough" : {
+        "type" : "object",
+        "properties" : {
+          "verificationSettings" : {
+            "$ref" : "#/components/schemas/verificationsettings"
+          }
+        },
+        "title" : "Pass through",
+        "required" : [ "verificationSettings" ]
+      },
+      "jwttokenlocation" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/incookie"
+        }, {
+          "$ref" : "#/components/schemas/inheader"
+        }, {
+          "$ref" : "#/components/schemas/inqueryparam"
+        } ]
+      },
+      "PemCertificateBody" : {
+        "type" : "string",
+        "description" : "PEM encoded certificate"
+      },
+      "otoroshi.ssl.pki.models.GenCsrResponse" : {
+        "type" : "object",
+        "description" : "Response for a csr generation operation",
+        "properties" : {
+          "csr" : {
+            "type" : "string",
+            "description" : "CSR (PEM encoded)"
+          },
+          "publicKey" : {
+            "type" : "string",
+            "description" : "Public key (PEM encoded)"
+          },
+          "privateKey" : {
+            "type" : "string",
+            "description" : "Private key (PEM encoded)"
+          }
         }
       },
-      "ErrorResponse" : {
+      "datadogcallsettings" : {
+        "type" : "object",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "headers" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "token" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "ddsource" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "ddtags" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "service" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "hostname" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "timeout" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "tlsConfig" : {
+            "$ref" : "#/components/schemas/ngtlsconfig"
+          }
+        },
+        "title" : "Datadog call settings",
+        "required" : [ "url", "headers", "timeout", "tlsConfig" ]
+      },
+      "defaultwsproxyserver" : {
         "type" : "object",
         "description" : "error response"
       },

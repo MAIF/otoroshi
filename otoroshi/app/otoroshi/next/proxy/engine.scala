@@ -2921,7 +2921,14 @@ class ProxyEngine() extends RequestHandler {
         new WebsocketEngine(route, ctxPlugins, rawRequest, request, finalTarget, attrs)
         //new WebsocketEngine(route, NgContextualPlugins.empty(rawRequest), rawRequest, request, finalTarget, attrs)
       } else {
-        new WebsocketEngine(NgRoute.empty, NgContextualPlugins.empty(rawRequest), rawRequest, request, finalTarget, attrs)
+        new WebsocketEngine(
+          NgRoute.empty,
+          NgContextualPlugins.empty(rawRequest),
+          rawRequest,
+          request,
+          finalTarget,
+          attrs
+        )
       }
       val ctx      = NgWebsocketPluginContext(
         snowflake = snowflake,

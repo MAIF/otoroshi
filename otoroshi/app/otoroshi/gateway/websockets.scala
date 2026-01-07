@@ -29,7 +29,14 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.utils.udp.*
 import otoroshi.utils.{TypedMap, UrlSanitizer}
 import play.api.Logger
-import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{
+  CloseMessage,
+  PingMessage,
+  PongMessage,
+  BinaryMessage => PlayWSBinaryMessage,
+  Message => PlayWSMessage,
+  TextMessage => PlayWSTextMessage
+}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.*
@@ -614,7 +621,22 @@ object WebSocketProxyActor {
       env: Env,
       cb: Option[Function[play.api.http.websocket.Message, Unit]] = None
   ) =
-    Props(new WebSocketProxyActor(url, out, headers, rawRequest, request, descriptor, route, ctxPlugins, target, attrs, env, cb))
+    Props(
+      new WebSocketProxyActor(
+        url,
+        out,
+        headers,
+        rawRequest,
+        request,
+        descriptor,
+        route,
+        ctxPlugins,
+        target,
+        attrs,
+        env,
+        cb
+      )
+    )
 
   def wsCall(
               url: String,
@@ -648,10 +670,10 @@ object WebSocketProxyActor {
       case (key, value) =>
         Seq(RawHeader(key, value))
     }
-    val protocol = headers.find(_._1.toLowerCase == "sec-websocket-protocol").map(_._2)
-    val request = _headers.foldLeft[WebSocketRequest](WebSocketRequest(url))((r, header) =>
-      r.copy(extraHeaders = r.extraHeaders :+ header)
-    ).copy(subprotocol = protocol)
+    val protocol                             = headers.find(_._1.toLowerCase == "sec-websocket-protocol").map(_._2)
+    val request                              = _headers
+      .foldLeft[WebSocketRequest](WebSocketRequest(url))((r, header) => r.copy(extraHeaders = r.extraHeaders :+ header))
+      .copy(subprotocol = protocol)
     // WARN: DOES NOT MAKE USE OF WS PLUGINS BECAUSE OF THE LIMITS OF THE AKKA STREAM SINK API
     val flow = Flow.fromSinkAndSourceMat(
       Sink.asPublisher[org.apache.pekko.http.scaladsl.model.ws.Message](fanout = false),
@@ -795,10 +817,12 @@ class WebSocketProxyActor(
         case (key, value) =>
           Seq(RawHeader(key, value))
       }
-      val protocol = headers.find(_._1.toLowerCase == "sec-websocket-protocol").map(_._2)
-      val request                   = _headers.foldLeft[WebSocketRequest](WebSocketRequest(url))((r, header) =>
-        r.copy(extraHeaders = r.extraHeaders :+ header)
-      ).copy(subprotocol = protocol)
+      val protocol                  = headers.find(_._1.toLowerCase == "sec-websocket-protocol").map(_._2)
+      val request                   = _headers
+        .foldLeft[WebSocketRequest](WebSocketRequest(url))((r, header) =>
+          r.copy(extraHeaders = r.extraHeaders :+ header)
+        )
+        .copy(subprotocol = protocol)
       val (connected, materialized) = env.gatewayClient.ws(
         request = request,
         targetOpt = Some(target),
@@ -851,8 +875,8 @@ class WebSocketProxyActor(
             .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
         }
       )
-      materialized._1.andThen {
-        case Failure(e) => logger.error(s"[WEBSOCKET] mat error", e)
+      materialized._1.andThen { case Failure(e) =>
+        logger.error(s"[WEBSOCKET] mat error", e)
       }
       queueRef.set(materialized._2)
       connected.andThen {
@@ -903,7 +927,7 @@ class WebSocketProxyActor(
             }
           case Right(msg)  => 
             if (cb.isDefined) {
-              msg.asPlay.map { msg => cb.foreach(f => f(msg))}
+              msg.asPlay.map { msg => cb.foreach(f => f(msg)) }
             }
             msg.asAkka.map { msg =>
               if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from client: $msg")

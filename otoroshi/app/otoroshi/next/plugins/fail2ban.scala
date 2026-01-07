@@ -10,6 +10,7 @@ import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
+import java.net.InetAddress
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.*
@@ -45,7 +46,7 @@ object StatusCodeRange                         {
 }
 
 case class Fail2BanConfig(
-    identifier: String = "${req.ip}",
+    identifier: String = "${route.id}-${req.ip}",
     detectTimeMs: FiniteDuration = 10.minute,
     banTimeMs: FiniteDuration = 3.hour,
     maxRetry: Int = 4,
@@ -102,7 +103,7 @@ object Fail2BanConfig {
   )
 
   def configSchema: JsObject = Json.obj(
-    "identifier"   -> Json.obj("type" -> "string", "label" -> "Client identifier", "default" -> "${req.ip}"),
+    "identifier"   -> Json.obj("type" -> "string", "label" -> "Client identifier", "default" -> "${route.id}-${req.ip}"),
     "detect_time"  -> Json.obj("type" -> "string", "label" -> "Detection window", "default" -> "60s"),
     "ban_time"     -> Json.obj("type" -> "string", "label" -> "Ban time", "default" -> "15m"),
     "max_retry"    -> Json.obj("type" -> "number", "label" -> "Max retries", "default" -> 5),
@@ -285,7 +286,9 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
     val ip   = conf.identifier.evaluateEl(ctx.attrs)
-    val now  = System.currentTimeMillis()
+
+    val now = System.currentTimeMillis()
+
     if (conf.isIgnored(ip)) {
       NgAccess.NgAllowed.vfuture
     } else if (conf.isBlocked(ip)) {

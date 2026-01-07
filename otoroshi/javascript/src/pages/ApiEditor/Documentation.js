@@ -7,6 +7,7 @@ import MonacoEditor from '@monaco-editor/react';
 import { Form } from '../../components/inputs/Form';
 
 import { useDraftOfAPI, VersionBadge } from './index';
+import { PillButton } from '../../components/PillButton';
 
 function ApiDocumentationResource(props) {
   const flow = [
@@ -52,9 +53,9 @@ function ApiDocumentationResource(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -121,9 +122,9 @@ function ApiDocumentationPlan(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -160,9 +161,9 @@ function ApiDocumentationResourceRef(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -191,9 +192,9 @@ function ApiDocumentationRedirection(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -228,9 +229,9 @@ function ApiDocumentationSidebarItem(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -255,9 +256,9 @@ function ApiDocumentationSidebar(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -266,11 +267,14 @@ function ApiDocumentationSidebar(props) {
 }
 
 export function Documentation(props) {
-  const params = useParams();
   const [showJson, setShowJson] = useState(false);
   const { item, updateItem } = useDraftOfAPI();
   const [code, setCode] = useState('');
   const [newItem, setNewItem] = useState(null);
+
+  useEffect(() => {
+    props.setTitle(undefined)
+  }, [])
 
   useEffect(() => {
     if (item && code === '') {
@@ -389,20 +393,17 @@ export function Documentation(props) {
     <>
       <PageTitle title="Documentation" {...props}>
         <div className="btn-group" style={{ marginRight: 10 }}>
-          <button
-            type="button"
-            className={`btn btn-primary ${showJson ? '' : 'active'}`}
-            onClick={(e) => setShowJson(!showJson)}
-          >
-            Form
-          </button>
-          <button
-            type="button"
-            className={`btn btn-primary ${showJson ? 'active' : ''}`}
-            onClick={(e) => setShowJson(!showJson)}
-          >
-            Json editor
-          </button>
+          <PillButton
+            className="mx-auto"
+            rightEnabled={!showJson}
+            leftText="Form"
+            rightText="Json editor"
+            onChange={() => {
+              setShowJson(!showJson)
+              if (!showJson) {
+                setCode(JSON.stringify(newItem || {}, null, 2))
+              }
+            }} />
         </div>
         <FeedbackButton
           type="success"
@@ -435,7 +436,7 @@ export function Documentation(props) {
           onChange={(newValue) => {
             try {
               setNewItem(JSON.parse(newValue));
-            } catch (e) {}
+            } catch (e) { }
           }}
         />
       )}
