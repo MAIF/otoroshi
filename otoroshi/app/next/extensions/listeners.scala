@@ -140,8 +140,8 @@ case class HttpListener(
         .applyOnIf(config.http2)(seq => seq :+ "h2")
         .applyOnIf(config.h2c)(seq => seq :+ "h2c")
         .applyOnIf(config.http3)(seq => seq :+ "h3")
-      HttpListener.logger.info(s"starting ${kind} http listener '${id}' on ${if (config.tls) "https"
-      else "http"}://${config.host}:(${config.port}/${config.exposedPort}) - ${protocols.mkString("/")}")
+      val msg = s"starting ${kind} http listener '${id}' on ${if (config.tls) "https" else "http"}://${config.host}:(${config.port}/${config.exposedPort}) - ${protocols.mkString("/")}"
+      HttpListener.logger.info(msg)
       val nettyConfig = toNettyConfig(env)
       val server      = new ReactorNettyServer(nettyConfig, env).start(env.handlerRef.get())
       cache(server)
