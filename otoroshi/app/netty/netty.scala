@@ -98,7 +98,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
     result.header.headers.map { case (key, value) =>
       if (key != "otoroshi-netty-trailers") headers.add(key, value)
     }
-    if (bresponse.contentType.contains("application/grpc")) {
+    if (bresponse.contentType.exists(_.contains("application/grpc"))) {
       headers.add(HttpHeaderNames.TRAILER, "grpc-status, grpc-message")
     }
     bresponse.contentType.foreach(ct => headers.add("Content-Type", ct))
