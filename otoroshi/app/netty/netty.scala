@@ -442,7 +442,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
       val (groupHttp, groupHttps) = createEventLoops(config.id == HttpListenerNames.Experimental)
       // val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = createEventLoops()
 
-      if (config.id == "classic") {
+      if (config.id == HttpListenerNames.Experimental) {
         if (config.http3.enabled) logger.info(s"  https://${config.host}:${config.http3.port} (HTTP/3)")
         logger.info(s"  https://${config.host}:${config.httpsPort} (HTTP/1.1, HTTP/2)")
         logger.info(s"  http://${config.host}:${config.httpPort}  (HTTP/1.1, HTTP/2 H2C)")
