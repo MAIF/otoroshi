@@ -3,6 +3,7 @@ ARG IMG_FROM
 FROM $IMG_FROM
 
 LABEL maintainer "MAIF <oss@maif.fr>"
+LABEL maintainer="Cloud APIM <contact@cloud-apim.com>"
 
 RUN mkdir -p /usr/app
 
