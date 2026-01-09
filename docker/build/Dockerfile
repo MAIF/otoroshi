@@ -18,7 +18,7 @@ RUN set -eux; \
 WORKDIR /usr/app
 
 COPY --chown=otoroshi:otoroshi ./otoroshi.jar /usr/app/otoroshi.jar
-COPY --chown=otoroshi:otoroshi ./entrypoint-jar-nr.sh /usr/app/entrypoint-jar.sh
+COPY --chown=otoroshi:otoroshi ./entrypoint-jar.sh /usr/app/entrypoint-jar.sh
 
 RUN chmod +x /usr/app/entrypoint-jar.sh
 
