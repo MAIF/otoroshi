@@ -2,9 +2,6 @@ ARG IMG_FROM=eclipse-temurin:21
 
 FROM ${IMG_FROM}
 
-LABEL maintainer="MAIF <oss@maif.fr>"
-LABEL maintainer="Cloud APIM <contact@cloud-apim.com>"
-
 # user/group (for volumes)
 ARG OTOROSHI_UID=10001
 ARG OTOROSHI_GID=10001
