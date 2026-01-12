@@ -48,6 +48,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikeys - passApikeyToBackend" in {
       new ApikeysTests(this).passApikeyToBackend()
     }
+    "Apikeys - wipe backend disabled and default custom headers" in {
+      new ApikeysTests(this).wipeBackendDisabledAndDefaultCustomHeaders()
+    }
     "Apikeys - passApikeyToBackend with custom headers" in {
       new ApikeysTests(this).passApikeyToBackendWithCustomHeaders()
     }

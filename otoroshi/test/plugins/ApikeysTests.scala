@@ -18,6 +18,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.WSAuthScheme
 
 class ApikeysTests(parent: PluginsTestSpec) {
   import parent._
@@ -112,6 +113,46 @@ class ApikeysTests(parent: PluginsTestSpec) {
     authorizedCall.status mustBe Status.OK
     getInHeader(authorizedCall, "otoroshi-client-id").isDefined mustBe true
     getInHeader(authorizedCall, "otoroshi-client-secret").isDefined mustBe true
+
+    deleteOtoroshiApiKey(apikey).futureValue
+    deleteOtoroshiRoute(route).futureValue
+  }
+
+  def wipeBackendDisabledAndDefaultCustomHeaders() = {
+    val route = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OverrideHost]
+        ),
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[ApikeyCalls],
+          config = NgPluginInstanceConfig(
+            NgApikeyCallsConfig(
+              wipeBackendRequest = false
+            ).json.as[JsObject]
+          )
+        )
+      )
+    ).futureValue
+
+    val apikey = ApiKey(
+      clientId = s"client-${IdGenerator.uuid}",
+      clientSecret = "1234",
+      clientName = s"name-${IdGenerator.uuid}",
+      authorizedEntities = Seq(RouteIdentifier(route.id))
+    )
+    createOtoroshiApiKey(apikey).futureValue
+
+    val authorizedCall = ws
+      .url(s"http://127.0.0.1:$port/api")
+      .withAuth(apikey.clientId, apikey.clientSecret, WSAuthScheme.BASIC)
+      .withHttpHeaders(
+        "Host" -> route.frontend.domains.head.domain
+      )
+      .get()
+      .futureValue
+
+    authorizedCall.status mustBe Status.OK
 
     deleteOtoroshiApiKey(apikey).futureValue
     deleteOtoroshiRoute(route).futureValue
