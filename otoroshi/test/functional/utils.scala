@@ -1721,7 +1721,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       target: Option[NgTarget] = None,
       rawResult: Option[HttpRequest => (Int, String, List[HttpHeader])] = None,
       customOtoroshiPort: Option[Int] = None,
-      id: String = IdGenerator.uuid
+      id: String = IdGenerator.uuid,
+      backendHostname: Option[String] = None,
   ): Future[NgRoute] = {
 
     var _target: Option[TargetService] = None
@@ -1777,7 +1778,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
         targets = Seq(
           target.getOrElse(
             NgTarget(
-              hostname = "127.0.0.1",
+              hostname = backendHostname.getOrElse("127.0.0.1"),
               port = _target.get.port,
               id = "local.target",
               tls = https

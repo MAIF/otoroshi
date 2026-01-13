@@ -105,6 +105,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Override Location Header: redirect to domain path" in {
       new OverrideLocationHeaderTests(this).redirectToDomainAndPath()
     }
+    "Override Location Header: redirect to domain path wit matching hostnames" in {
+      new OverrideLocationHeaderTests(this).redirectToDomainAndPathWithMatchingHostnames()
+    }
     "Security Txt" in {
       new SecurityTxtTests(this)
     }

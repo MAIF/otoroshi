@@ -106,9 +106,45 @@ class OverrideHost extends NgRequestTransformer {
   }
 }
 
+case class OverrideLocationHeaderConfig(matchingHostnames: Seq[String] = Seq.empty) extends NgPluginConfig {
+  def json: JsValue = Json.obj(
+    "matching_hostnames" -> matchingHostnames
+  )
+  def matches(hostname: String): Boolean = {
+    matchingHostnames.contains(hostname)
+  }
+}
+
+object OverrideLocationHeaderConfig {
+  val default = OverrideLocationHeaderConfig()
+  val format = new Format[OverrideLocationHeaderConfig] {
+    override def reads(json: JsValue): JsResult[OverrideLocationHeaderConfig] = Try {
+      OverrideLocationHeaderConfig(
+        matchingHostnames = json.select("matching_hostnames").asOpt[Seq[String]].getOrElse(Seq.empty)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: OverrideLocationHeaderConfig): JsValue = o.json
+  }
+  val configFlow: Seq[String]        = Seq("matching_hostnames")
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "matching_hostnames" -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Matching hostnames",
+        "props" -> Json.obj(
+          "label"  -> "Matching hostnames",
+        )
+      )
+    )
+  )
+}
+
 class OverrideLocationHeader extends NgRequestTransformer {
 
-  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
@@ -116,30 +152,33 @@ class OverrideLocationHeader extends NgRequestTransformer {
   override def core: Boolean                               = true
   override def usesCallbacks: Boolean                      = false
   override def transformsRequest: Boolean                  = false
-  override def transformsResponse: Boolean                 = false
+  override def transformsResponse: Boolean                 = true
   override def transformsError: Boolean                    = false
   override def isTransformRequestAsync: Boolean            = false
   override def isTransformResponseAsync: Boolean           = true
   override def name: String                                = "Override Location header"
   override def description: Option[String]                 =
-    "This plugin override the current Location header with the Host of the backend target".some
-  override def defaultConfigObject: Option[NgPluginConfig] = None
+    "This plugin override the current Location header with the current frontend host if the location start with the Host of the backend target".some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(OverrideLocationHeaderConfig.default)
   override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String] = OverrideLocationHeaderConfig.configFlow
+  override def configSchema: Option[JsObject] = OverrideLocationHeaderConfig.configSchema
 
-  override def transformResponseSync(
+  override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     ctx.attrs.get(Keys.BackendKey) match {
-      case None          => ctx.otoroshiResponse.right
+      case None          => ctx.otoroshiResponse.rightf
       case Some(backend) => {
         val status = ctx.otoroshiResponse.status
         if ((status > 299 && status < 400) || status == 201) {
           ctx.otoroshiResponse.header("Location") match {
-            case None                                                                                   => ctx.otoroshiResponse.right
+            case None                                                                                   => ctx.otoroshiResponse.rightf
             case Some(location) if !(location.startsWith("http://") || location.startsWith("https://")) =>
-              ctx.otoroshiResponse.right
+              ctx.otoroshiResponse.rightf
             case Some(location)                                                                         => {
-              val backendHost     = TargetExpressionLanguage(
+              val config = ctx.cachedConfig(internalName)(OverrideLocationHeaderConfig.format).getOrElse(OverrideLocationHeaderConfig.default)
+              val backendHost = TargetExpressionLanguage(
                 backend.hostname,
                 Some(ctx.request),
                 ctx.route.serviceDescriptor.some,
@@ -152,7 +191,7 @@ class OverrideLocationHeader extends NgRequestTransformer {
               )
               val oldLocation     = Uri(location)
               val oldLocationHost = oldLocation.authority.host.toString()
-              if (oldLocationHost.equalsIgnoreCase(backendHost)) {
+              if (oldLocationHost.equalsIgnoreCase(backendHost) || config.matches(oldLocationHost)) {
                 val frontendHost =
                   Option(ctx.request.domain)
                     .filterNot(_.isBlank)
@@ -160,14 +199,14 @@ class OverrideLocationHeader extends NgRequestTransformer {
                 val newLocation  =
                   oldLocation.copy(authority = oldLocation.authority.copy(host = Uri.Host(frontendHost))).toString()
                 val headers      = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
-                ctx.otoroshiResponse.copy(headers = headers).right
+                ctx.otoroshiResponse.copy(headers = headers).rightf
               } else {
-                ctx.otoroshiResponse.right
+                ctx.otoroshiResponse.rightf
               }
             }
           }
         } else {
-          ctx.otoroshiResponse.right
+          ctx.otoroshiResponse.rightf
         }
       }
     }
