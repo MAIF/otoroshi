@@ -515,7 +515,6 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
     try {
       val resourcePath = Paths.get(getClass.getResource("/kubernetes").toURI).toString
 
-      // Copy build artifacts
       dockerClient.copyFileToContainer(MountableFile.forHostPath("/tmp/otoroshi.jar"), "/build/otoroshi.jar")
       dockerClient.copyFileToContainer(
         MountableFile.forHostPath(s"$resourcePath/entrypoint-jar.sh"),
@@ -523,23 +522,20 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       )
       dockerClient.copyFileToContainer(MountableFile.forHostPath(s"$resourcePath/Dockerfile"), "/build/Dockerfile")
 
-      // Build
       println(s"Building Docker image: $imageName:latest")
       val buildResult = dockerClient.execInContainer("docker", "build", "-t", s"$imageName:latest", "/build")
       if (buildResult.getExitCode != 0) {
         throw new RuntimeException(s"Docker build failed: ${buildResult.getStderr}")
       }
 
-      // Save to tar
       val saveResult =
         dockerClient.execInContainer("docker", "save", "-o", s"/tmp/$imageName.tar", s"$imageName:latest")
       if (saveResult.getExitCode != 0) {
         throw new RuntimeException(s"Docker save failed: ${saveResult.getStderr}")
       }
 
-      // Copy to host
       dockerClient.copyFileFromContainer(s"/tmp/$imageName.tar", s"/tmp/$imageName.tar")
-      println(s"✓ Image saved to /tmp/$imageName.tar")
+      println(s"Image saved to /tmp/$imageName.tar")
 
     } finally {
       dockerClient.stop()
@@ -599,6 +595,38 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       _                <- applyManifest(kubectlContainer, s"tmp/$leaderFilename", namespace)
       _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
       _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
+      _                <- cleanup(k3sContainer, kubectlContainer)
+    } yield ()
+
+    workflow.andThen { case _ => sbtContainer.foreach(_.stop()) }
+  }
+
+  def triggerScannerJob(): Future[Unit] = {
+    val imageName = "otoroshi-local"
+    val namespace = "foo"
+
+    val sbtContainer = buildOtoroshiJar()
+
+    buildAndSaveDockerImage(imageName)
+
+    val k3sContainer = deployK3s(Some(s"$imageName:latest"))
+
+    val workflow = for {
+      token            <- mintToken(k3sContainer)
+      _                <- callReadyz(k3sContainer, token)
+      _                <- importImageToK3s(k3sContainer, imageName)
+      kubectlContainer <- createKubectl(k3sContainer)
+      _                <- applyManifest(kubectlContainer, "namespace.yaml")
+      _                <- applyManifest(kubectlContainer, "common/serviceAccount.yaml", namespace)
+      _                <- applyManifest(kubectlContainer, "common/crds.yaml")
+      _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
+      _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
+      leaderFilename   <- prepareManifest("leader.yaml", s"$imageName:latest")
+      _                <- applyManifest(kubectlContainer, s"tmp/$leaderFilename", namespace)
+      _                <- applyManifest(kubectlContainer, "kubernetes-scanner.yaml", namespace)
+      _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
+      _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
+      _                <- call(k3sContainer, "Wait leader health ...", "k3s-scanner.k3s.local", "/")
       _                <- cleanup(k3sContainer, kubectlContainer)
     } yield ()
 

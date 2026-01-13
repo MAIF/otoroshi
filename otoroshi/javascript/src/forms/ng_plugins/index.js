@@ -146,6 +146,7 @@ import WebsocketSizeValidator from './WebsocketSizeValidator';
 import WebsocketTypeValidator from './WebsocketTypeValidator';
 import JqWebsocketMessageTransformer from './JqWebsocketMessageTransformer';
 import ZipFileBackend from './ZipFileBackend';
+import KubernetesNamespaceScanBackend from './KubernetesNamespaceScanBackend';
 
 import NgApiFrontend from './NgApiFrontend';
 import NgApiBackend from './NgApiBackend';
@@ -203,6 +204,7 @@ const pluginsArray = [
   JwtSigner,
   JwtVerification,
   JwtVerificationOnly,
+  KubernetesNamespaceScanBackend,
   MaintenanceMode,
   MissingHeadersIn,
   MissingHeadersOut,

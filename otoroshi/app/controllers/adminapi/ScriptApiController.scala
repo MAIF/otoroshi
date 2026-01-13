@@ -6,7 +6,11 @@ import otoroshi.env.Env
 import otoroshi.models.RightsChecker.Anyone
 import otoroshi.next.plugins.WasmJob
 import otoroshi.next.workflow.WorkflowJob
+import otoroshi.plugins.jobs.kubernetes.{KubernetesCRDsJob, KubernetesConfig}
 import otoroshi.script._
+import otoroshi.security.IdGenerator
+import otoroshi.utils.TypedMap
+import otoroshi.utils.config.ConfigUtils
 import otoroshi.utils.controllers.{
   ApiError,
   BulkControllerHelper,

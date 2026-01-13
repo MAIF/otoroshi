@@ -683,5 +683,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .build()
         .futureValue(Timeout(Span(30, Minutes)))
     }
+    "Kubernetes integration - trigger scanner job" in {
+      new KubernetesIntegrationTests(this)
+        .triggerScannerJob()
+        .futureValue(Timeout(Span(30, Minutes)))
+    }
   }
 }
