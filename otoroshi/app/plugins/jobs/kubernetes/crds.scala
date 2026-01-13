@@ -17,6 +17,7 @@ import otoroshi.next.extensions.KubernetesHelper
 import otoroshi.next.models.{NgDomainAndPath, NgRoute, NgRouteComposition, NgTarget, StoredNgBackend}
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
+import otoroshi.plugins.jobs.kubernetes.KubernetesCRDsJob.SyncReport
 import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.pki.models.GenCsrQuery
@@ -163,7 +164,10 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     }
   }
 
-  def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Unit = {
     if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting namespaces watch ...")
       implicit val mat = env.otoroshiMaterializer
@@ -207,7 +211,11 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
           val now = System.currentTimeMillis()
           if ((lastWatchSync.get() + (conf.watchGracePeriodSeconds * 1000L)) < now) { // 10 sec
             if (logger.isDebugEnabled) logger.debug(s"sync triggered by a group of ${group.size} events")
-            KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
+
+            if (conf.crds)
+              KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
+
+            ()
           }
         })
     } else if (!config.watch) {
@@ -243,7 +251,9 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
           KubernetesCRDsJob.patchMutatingAdmissionWebhook(conf, ctx)
           KubernetesCRDsJob.createWebhookCerts(conf, ctx)
           KubernetesCRDsJob.createMeshCerts(conf, ctx)
-          KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
+          KubernetesCRDsJob
+            .syncCRDs(conf, ctx.attrs, !stopCommand.get())
+            .flatMap(_ => ().future)
         } else {
           ().future
         }
@@ -256,7 +266,9 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         KubernetesCRDsJob.patchMutatingAdmissionWebhook(conf, ctx)
         KubernetesCRDsJob.createWebhookCerts(conf, ctx)
         KubernetesCRDsJob.createMeshCerts(conf, ctx)
-        KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
+        KubernetesCRDsJob
+          .syncCRDs(conf, ctx.attrs, !stopCommand.get())
+          .flatMap(_ => ().future)
       }
     } else {
       ().future
@@ -1564,73 +1576,214 @@ object KubernetesCRDsJob {
     }
   }
 
-  def importCRDEntities(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext)(implicit
+  case class SyncReport(
+      totalEntities: Int,
+      successCount: Int,
+      failureCount: Int,
+      durationMs: Long,
+      entityResults: Seq[EntitySyncResult]
+  ) {
+    def toJson: JsValue = Json.obj(
+      "total_entities" -> totalEntities,
+      "success_count"  -> successCount,
+      "failure_count"  -> failureCount,
+      "duration_ms"    -> durationMs,
+      "results"        -> entityResults.map(_.toJson)
+    )
+  }
+
+  case class EntitySyncResult(
+      entityType: String,
+      entityName: String,
+      status: SyncStatus,
+      errorMessage: Option[String] = None
+  ) {
+    def toJson: JsValue = Json.obj(
+      "entity_type" -> entityType,
+      "entity_name" -> entityName,
+      "status"      -> status.toJson,
+      "error"       -> errorMessage
+    )
+  }
+
+  sealed trait SyncStatus {
+    def toJson: JsValue = this match {
+      case SyncStatus.Success => JsString("success")
+      case SyncStatus.Failed  => JsString("failed")
+      case SyncStatus.Skipped => JsString("skipped")
+    }
+  }
+
+  object SyncStatus {
+    case object Success extends SyncStatus
+    case object Failed  extends SyncStatus
+    case object Skipped extends SyncStatus
+  }
+
+  def importCRDEntities(
+      conf: KubernetesConfig,
+      attrs: TypedMap,
+      clientSupport: ClientSupport,
+      ctx: CRDContext,
+      verboseLogging: Boolean = false
+  )(implicit
       env: Env,
       ec: ExecutionContext
-  ): Future[Unit] = {
+  ): Future[SyncReport] = {
     implicit val mat = env.otoroshiMaterializer
+
     if (ctx.kubernetes.globalConfigs.size > 1) {
       Future.failed(new RuntimeException("There can only be one GlobalConfig entity !"))
     } else {
       def certSave(cert: Cert): Future[Boolean] = {
         if (cert.chain.trim.isEmpty) {
-          logger.info(s"certificate chain for '${cert.id}' is empty, will not import it !")
+          if (verboseLogging) {
+            logger.info(s"certificate '${cert.id}' has empty chain, skipping import")
+          } else {
+            logger.info(s"certificate chain for '${cert.id}' is empty, will not import it !")
+          }
           false.future
         } else {
           cert.save()
         }
       }
-      val entities = (
-        compareAndSave(ctx.kubernetes.globalConfigs)(ctx.otoroshi.globalConfigs, _ => "global", _.save()) ++
+
+      case class EntityBatch[T](
+          entityType: String,
+          entities: Seq[(T, () => Future[Boolean])]
+      )
+
+      val entityBatches = Seq(
+        EntityBatch(
+          "GlobalConfig",
+          compareAndSave(ctx.kubernetes.globalConfigs)(ctx.otoroshi.globalConfigs, _ => "global", _.save())
+        ),
+        EntityBatch(
+          "SimpleAdmin",
           compareAndSave(ctx.kubernetes.simpleAdmins)(
             ctx.otoroshi.simpleAdmins,
             v => v.username,
             v => env.datastores.simpleAdminDataStore.registerUser(v)
-          ) ++
-          compareAndSave(ctx.kubernetes.dataExporters)(ctx.otoroshi.dataExporters, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.tenants)(ctx.otoroshi.tenants, _.id.value, _.save()) ++
-          compareAndSave(ctx.kubernetes.teams)(ctx.otoroshi.teams, _.id.value, _.save()) ++
-          compareAndSave(ctx.kubernetes.serviceGroups)(ctx.otoroshi.serviceGroups, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.certificates)(ctx.otoroshi.certificates, _.id, certSave) ++
-          compareAndSave(ctx.kubernetes.jwtVerifiers)(ctx.otoroshi.jwtVerifiers, _.asGlobal.id, _.asGlobal.save()) ++
-          compareAndSave(ctx.kubernetes.authModules)(ctx.otoroshi.authModules, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.scripts)(ctx.otoroshi.scripts, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.wasmPlugins)(ctx.otoroshi.wasmPlugins, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.tcpServices)(ctx.otoroshi.tcpServices, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.serviceDescriptors)(ctx.otoroshi.serviceDescriptors, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.apiKeys)(ctx.otoroshi.apiKeys, _.clientId, _.save()) ++
-          compareAndSave(ctx.kubernetes.routes)(ctx.otoroshi.routes, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.routesCompositions)(ctx.otoroshi.routeCompositions, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.backends)(ctx.otoroshi.backends, _.id, _.save()) ++ (
-            ctx.kubernetes.extRes.map { case (resource, values) =>
-              compareAndSave(values)(
-                ctx.otoroshi.extRes.apply(resource),
-                v => v.select("id").asString,
-                v =>
-                  resource.access
-                    .create(
-                      resource.version.name,
-                      resource.singularName,
-                      v.select("id").asOptString,
-                      v,
-                      WriteAction.Update,
-                      None
-                    )
-                    .map(_.isRight)
-              )
-            }.flatten
           )
-      ).toList
-      logger.info(s"Will now sync ${entities.size} entities !")
-      Source(entities)
-        .mapAsync(1) { entity =>
-          entity._2().recover { case _ => false }.andThen {
-            case Failure(e) => logger.error(s"failed to save resource ${entity._1}", e)
-            case Success(_) =>
+        ),
+        EntityBatch(
+          "DataExporter",
+          compareAndSave(ctx.kubernetes.dataExporters)(ctx.otoroshi.dataExporters, _.id, _.save())
+        ),
+        EntityBatch("Tenant", compareAndSave(ctx.kubernetes.tenants)(ctx.otoroshi.tenants, _.id.value, _.save())),
+        EntityBatch("Team", compareAndSave(ctx.kubernetes.teams)(ctx.otoroshi.teams, _.id.value, _.save())),
+        EntityBatch(
+          "ServiceGroup",
+          compareAndSave(ctx.kubernetes.serviceGroups)(ctx.otoroshi.serviceGroups, _.id, _.save())
+        ),
+        EntityBatch(
+          "Certificate",
+          compareAndSave(ctx.kubernetes.certificates)(ctx.otoroshi.certificates, _.id, certSave)
+        ),
+        EntityBatch(
+          "JwtVerifier",
+          compareAndSave(ctx.kubernetes.jwtVerifiers)(ctx.otoroshi.jwtVerifiers, _.asGlobal.id, _.asGlobal.save())
+        ),
+        EntityBatch("AuthModule", compareAndSave(ctx.kubernetes.authModules)(ctx.otoroshi.authModules, _.id, _.save())),
+        EntityBatch("Script", compareAndSave(ctx.kubernetes.scripts)(ctx.otoroshi.scripts, _.id, _.save())),
+        EntityBatch("WasmPlugin", compareAndSave(ctx.kubernetes.wasmPlugins)(ctx.otoroshi.wasmPlugins, _.id, _.save())),
+        EntityBatch("TcpService", compareAndSave(ctx.kubernetes.tcpServices)(ctx.otoroshi.tcpServices, _.id, _.save())),
+        EntityBatch(
+          "ServiceDescriptor",
+          compareAndSave(ctx.kubernetes.serviceDescriptors)(ctx.otoroshi.serviceDescriptors, _.id, _.save())
+        ),
+        EntityBatch("ApiKey", compareAndSave(ctx.kubernetes.apiKeys)(ctx.otoroshi.apiKeys, _.clientId, _.save())),
+        EntityBatch("Route", compareAndSave(ctx.kubernetes.routes)(ctx.otoroshi.routes, _.id, _.save())),
+        EntityBatch(
+          "RouteComposition",
+          compareAndSave(ctx.kubernetes.routesCompositions)(ctx.otoroshi.routeCompositions, _.id, _.save())
+        ),
+        EntityBatch("Backend", compareAndSave(ctx.kubernetes.backends)(ctx.otoroshi.backends, _.id, _.save()))
+      ) ++ ctx.kubernetes.extRes.map { case (resource, values) =>
+        EntityBatch(
+          s"${resource.singularName}",
+          compareAndSave(values)(
+            ctx.otoroshi.extRes.apply(resource),
+            v => v.select("id").asString,
+            v =>
+              resource.access
+                .create(
+                  resource.version.name,
+                  resource.singularName,
+                  v.select("id").asOptString,
+                  v,
+                  WriteAction.Update,
+                  None
+                )
+                .map(_.isRight)
+          )
+        )
+      }
+
+      val allEntities = entityBatches.flatMap { batch =>
+        batch.entities.map { case (name, save) =>
+          (batch.entityType, name, save)
+        }
+      }.toList
+
+      val totalCount = allEntities.size
+
+      if (verboseLogging) {
+        logger.info(s"starting sync of $totalCount entities across ${entityBatches.count(_.entities.nonEmpty)} types")
+        entityBatches.filter(_.entities.nonEmpty).foreach { batch =>
+          logger.info(s"  ${batch.entityType}: ${batch.entities.size} entities")
+        }
+      } else {
+        logger.info(s"Will now sync ${totalCount} entities !")
+      }
+
+      val startTime    = if (verboseLogging) System.currentTimeMillis() else 0L
+      var successCount = 0
+      var failureCount = 0
+      val results      = scala.collection.mutable.ArrayBuffer[EntitySyncResult]()
+
+      Source(allEntities)
+        .mapAsync(1) { case (entityType, entityName, saveFn) =>
+          val futureResult: Future[Boolean] = saveFn()
+          futureResult.recover { case _ => false }.andThen {
+            case Failure(e)     =>
+              failureCount += 1
+              results += EntitySyncResult(entityType, entityName.toString, SyncStatus.Failed, Some(e.getMessage))
+              if (verboseLogging) {
+                logger.error(s"failed to sync $entityType '$entityName': ${e.getMessage}")
+              } else {
+                logger.error(s"failed to save resource ${entityName}", e)
+              }
+            case Success(true)  =>
+              successCount += 1
+              results += EntitySyncResult(entityType, entityName.toString, SyncStatus.Success)
+              if (verboseLogging) {
+                logger.info(s"synced $entityType '$entityName'")
+              }
+            case Success(false) =>
+              failureCount += 1
+              results += EntitySyncResult(entityType, entityName.toString, SyncStatus.Skipped)
+              if (verboseLogging) {
+                logger.warn(s"skipped $entityType '$entityName'")
+              }
           }
         }
         .runWith(Sink.ignore)
-        .map(_ => ())
+        .map { _ =>
+          val duration = if (verboseLogging) System.currentTimeMillis() - startTime else 0L
+          if (verboseLogging) {
+            logger.info(
+              s"sync completed in ${duration}ms: $successCount succeeded, $failureCount failed/skipped out of $totalCount total"
+            )
+          }
+          SyncReport(
+            totalEntities = totalCount,
+            successCount = successCount,
+            failureCount = failureCount,
+            durationMs = duration,
+            entityResults = results
+          )
+        }
     }
   }
 
@@ -2030,20 +2183,28 @@ object KubernetesCRDsJob {
     }
   }
 
-  def syncCRDs(_conf: KubernetesConfig, attrs: TypedMap, jobRunning: => Boolean)(implicit
+  def syncCRDs(
+      _conf: KubernetesConfig,
+      attrs: TypedMap,
+      jobRunning: => Boolean,
+      namespaces: Option[Seq[String]] = None,
+      verboseLogging: Boolean = false
+  )(implicit
       env: Env,
       ec: ExecutionContext
-  ): Future[Unit] =
+  ): Future[Option[SyncReport]] =
     env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.crds.sync") {
       val _client = new KubernetesClient(_conf, env)
       if (!jobRunning) {
         shouldRunNext.set(false)
         running.set(false)
       }
-      if (jobRunning && _conf.crds && running.compareAndSet(false, true)) {
+      if (jobRunning && running.compareAndSet(false, true)) {
         shouldRunNext.set(false)
         logger.info(s"Sync. otoroshi CRDs at ${DateTime.now()}")
-        getNamespaces(_client, _conf)
+        namespaces
+          .map(_.vfuture)
+          .getOrElse(getNamespaces(_client, _conf))
           .flatMap { namespaces =>
             logger.info(s"otoroshi will sync CRDs for the following namespaces: [ ${namespaces.mkString(", ")} ]")
             val conf   = _conf.copy(namespaces = namespaces)
@@ -2054,42 +2215,42 @@ object KubernetesCRDsJob {
               val certsToExport   = new AtomicReference[Seq[(String, String, Cert)]](Seq.empty)
               val updatedSecrets  = new AtomicReference[Seq[(String, String)]](Seq.empty)
               for {
-                _   <- ().future
-                _    = logger.info("starting sync !")
-                ctx <- context(
-                         conf,
-                         attrs,
-                         clientSupport,
-                         (ns, n, apk) => apiKeysToExport.getAndUpdate(s => s :+ (ns, n, apk)),
-                         (ns, n, cert) => certsToExport.getAndUpdate(c => c :+ (ns, n, cert))
-                       )
-                _    = warnAboutServiceDescriptorUsage(ctx)
-                _    = logger.info("importing CRDs entities")
-                _   <- importCRDEntities(conf, attrs, clientSupport, ctx)
-                _    = logger.info("deleting outdated entities")
-                _   <- deleteOutDatedEntities(conf, attrs, ctx)
-                _    = logger.info("exporting apikeys as secrets")
-                _   <- exportApiKeys(conf, attrs, clientSupport, ctx, apiKeysToExport.get(), updatedSecrets)
-                _    = logger.info("exporting certs as secrets")
-                _   <- exportCerts(conf, attrs, clientSupport, ctx, certsToExport.get(), updatedSecrets)
-                _    = logger.info("deleting unused secrets")
-                _   <- deleteOutDatedSecrets(conf, attrs, clientSupport, ctx, updatedSecrets)
-                _    = logger.info("restarting dependant deployments")
-                _   <- restartDependantDeployments(conf, attrs, clientSupport, ctx, updatedSecrets.get())
-                _    = logger.info("sync done !")
-              } yield ()
+                _          <- ().future
+                _           = logger.info("starting sync !")
+                ctx        <- context(
+                                conf,
+                                attrs,
+                                clientSupport,
+                                (ns, n, apk) => apiKeysToExport.getAndUpdate(s => s :+ (ns, n, apk)),
+                                (ns, n, cert) => certsToExport.getAndUpdate(c => c :+ (ns, n, cert))
+                              )
+                _           = warnAboutServiceDescriptorUsage(ctx)
+                _           = logger.info("importing CRDs entities")
+                syncReport <- importCRDEntities(conf, attrs, clientSupport, ctx, verboseLogging)
+                _           = logger.info("deleting outdated entities")
+                _          <- deleteOutDatedEntities(conf, attrs, ctx)
+                _           = logger.info("exporting apikeys as secrets")
+                _          <- exportApiKeys(conf, attrs, clientSupport, ctx, apiKeysToExport.get(), updatedSecrets)
+                _           = logger.info("exporting certs as secrets")
+                _          <- exportCerts(conf, attrs, clientSupport, ctx, certsToExport.get(), updatedSecrets)
+                _           = logger.info("deleting unused secrets")
+                _          <- deleteOutDatedSecrets(conf, attrs, clientSupport, ctx, updatedSecrets)
+                _           = logger.info("restarting dependant deployments")
+                _          <- restartDependantDeployments(conf, attrs, clientSupport, ctx, updatedSecrets.get())
+                _           = logger.info("sync done !")
+              } yield syncReport
             }
           }
-          .flatMap { _ =>
+          .flatMap { syncReport =>
             if (shouldRunNext.get()) {
               shouldRunNext.set(false)
               logger.info("restart job right now because sync was asked during sync ")
               env.otoroshiScheduler.scheduleOnce(_conf.watchGracePeriodSeconds.seconds) {
                 syncCRDs(_conf, attrs, jobRunning)
               }
-              ().future
+              syncReport.some.future
             } else {
-              ().future
+              syncReport.some.future
             }
           }
           .andThen {
@@ -2102,7 +2263,7 @@ object KubernetesCRDsJob {
       } else {
         logger.info("Job already running, scheduling after ")
         shouldRunNext.set(true)
-        ().future
+        None.future
       }
     }
 
