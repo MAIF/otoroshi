@@ -146,6 +146,7 @@ import WebsocketSizeValidator from './WebsocketSizeValidator';
 import WebsocketTypeValidator from './WebsocketTypeValidator';
 import JqWebsocketMessageTransformer from './JqWebsocketMessageTransformer';
 import ZipFileBackend from './ZipFileBackend';
+import GrpcWebProxyPlugin from './GrpcWeb';
 
 import NgApiFrontend from './NgApiFrontend';
 import NgApiBackend from './NgApiBackend';
@@ -302,6 +303,7 @@ const pluginsArray = [
   WasmWebsocketTransformer,
   JqWebsocketMessageTransformer,
   ZipFileBackend,
+  GrpcWebProxyPlugin
 ];
 
 export function addPluginForm(plugin) {
