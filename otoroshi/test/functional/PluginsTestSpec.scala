@@ -695,7 +695,6 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       new GrpcWebTests(this)
         .authorizationRules()
         .futureValue
-//      (Timeout(Span(5, Minutes)))
     }
   }
 }
