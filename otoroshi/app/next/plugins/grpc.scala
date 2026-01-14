@@ -5,6 +5,7 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
+import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
@@ -56,24 +57,20 @@ object GrpcWebConfig {
     val servicePath = parts(0) // e.g., "helloworld.Greeter"
     val method      = parts(1) // e.g., "SayHello"
 
-    // Extract service name (last part after dot)
     val serviceName = if (servicePath.contains(".")) {
       servicePath.substring(servicePath.lastIndexOf(".") + 1)
     } else {
       servicePath
     }
 
-    // 1. Check blocked methods first (highest priority)
     if (config.blockedMethods.nonEmpty) {
       if (config.blockedMethods.contains(method)) {
         return false
       }
     }
 
-    // 2. Check allowed services (if configured)
     if (config.allowServices.nonEmpty) {
       val serviceAllowed = config.allowServices.exists { allowed =>
-        // Exact match or prefix match
         servicePath == allowed ||
         servicePath.startsWith(allowed + ".") ||
         serviceName == allowed
@@ -84,7 +81,6 @@ object GrpcWebConfig {
       }
     }
 
-    // 3. Check allowed methods (if configured)
     if (config.allowMethods.nonEmpty) {
       if (!config.allowMethods.contains(method)) {
         return false
@@ -119,7 +115,14 @@ class GrpcWebProxyPlugin extends NgRequestTransformer {
     if (!contentType.contains("application/grpc-web")) {
       ctx.otoroshiRequest.rightf
     } else if (!GrpcWebConfig.validateGrpcPath(ctx.request.path, config)) {
-      Results.Forbidden(Json.obj("error" -> "You're not authorized here !")).leftf
+      Results.Ok
+        .withHeaders(
+          HeaderNames.CONTENT_TYPE -> "application/grpc-web+proto",
+          "grpc-status"            -> "403",
+          "grpc-message"           -> "You're not authorized here!"
+        )
+        .as("application/grpc-web+proto")
+        .leftf
     } else {
       val body = if (isGrpcWebText) {
         ctx.otoroshiRequest.body

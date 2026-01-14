@@ -21,14 +21,8 @@ export default {
     },
   },
   config_flow: [
-    {
-      type: 'group',
-      name: 'gRPC Service Authorization',
-      fields: [
-        'allow_services',
-        'allow_methods',
-        'blocked_methods',
-      ],
-    },
+    'allow_services',
+    'allow_methods',
+    'blocked_methods'
   ],
 };
