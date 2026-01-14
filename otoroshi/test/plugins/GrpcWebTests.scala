@@ -4,6 +4,7 @@ import com.dimafeng.testcontainers.GenericContainer
 import com.github.dockerjava.api.model.{Bind, Volume}
 import functional.PluginsTestSpec
 import io.netty.buffer.Unpooled
+import io.netty.handler.codec.http.HttpHeaders
 import org.testcontainers.utility.MountableFile
 import otoroshi.models.HttpProtocols
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
@@ -61,9 +62,16 @@ class GrpcWebTests(parent: PluginsTestSpec) {
       throw new RuntimeException(s"Docker build failed: ${buildResult.getStderr}")
     }
 
-    println(s"Image saved to /tmp/$imageName.tar")
-
     dockerClient.stop()
+  }
+
+  def encodeHelloRequest(name: String): Array[Byte] = {
+    val nameBytes = name.getBytes("UTF-8")
+    val out       = new Array[Byte](2 + nameBytes.length)
+    out(0) = ((1 << 3) | 2).toByte // field 1, wire type 2 (string)
+    out(1) = nameBytes.length.toByte
+    System.arraycopy(nameBytes, 0, out, 2, nameBytes.length)
+    out
   }
 
   def run() = {
@@ -90,15 +98,6 @@ class GrpcWebTests(parent: PluginsTestSpec) {
         protocol = HttpProtocols.HTTP_2_0
       ).some
     ).futureValue
-
-    def encodeHelloRequest(name: String): Array[Byte] = {
-      val nameBytes = name.getBytes("UTF-8")
-      val out       = new Array[Byte](2 + nameBytes.length)
-      out(0) = ((1 << 3) | 2).toByte // field 1, wire type 2 (string)
-      out(1) = nameBytes.length.toByte
-      System.arraycopy(nameBytes, 0, out, 2, nameBytes.length)
-      out
-    }
 
     val name    = "World"
     val payload = encodeHelloRequest(name)
@@ -151,6 +150,92 @@ class GrpcWebTests(parent: PluginsTestSpec) {
         println(s"Body: $body")
         new String(Base64.getUrlDecoder.decode(body), StandardCharsets.UTF_8).contains("Hello! World") mustBe true
         cleanup()
+      }
+  }
+
+  def authorizationRules() = {
+    buildAndSaveDockerImage("grpc-server")
+
+    val grpcServer = GenericContainer("grpc-server", exposedPorts = Seq(8082))
+
+    grpcServer.start()
+
+    val route = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[GrpcWebProxyPlugin],
+          config = NgPluginInstanceConfig(
+            GrpcWebConfig(
+              blockedMethods = Seq("SayHello")
+            ).json.as[JsObject]
+          )
+        )
+      ),
+      target = NgTarget(
+        hostname = grpcServer.host,
+        port = grpcServer.mappedPort(8082),
+        id = "grpc-target",
+        tls = false,
+        protocol = HttpProtocols.HTTP_2_0
+      ).some
+    ).futureValue
+
+    val name    = "World"
+    val payload = encodeHelloRequest(name)
+
+    val grpcFrame = {
+      val buf = Unpooled.buffer(5 + payload.length)
+      buf.writeByte(0)
+      buf.writeInt(payload.length)
+      buf.writeBytes(payload)
+      buf
+    }
+
+    val grpcWebPayload = {
+      val bytes = new Array[Byte](grpcFrame.readableBytes())
+      grpcFrame.readBytes(bytes)
+      Base64.getEncoder.encodeToString(bytes)
+    }
+
+    val pureNettyClient = HttpClient
+      .create()
+      .host(route.frontend.domains.head.domain)
+      .port(port)
+      .protocol(reactor.netty.http.HttpProtocol.HTTP11)
+
+    val responseFuture: Future[HttpHeaders] = {
+      val promise = Promise[HttpHeaders]()
+      pureNettyClient
+        .headers { h =>
+          h.set("content-type", "application/grpc-web-text")
+          h.set("accept", "application/grpc-web-text")
+          h.set("x-grpc-web", "1")
+        }
+        .post()
+        .uri("/helloworld.Greeter/SayHello")
+        .send(ByteBufFlux.fromString(Mono.just(grpcWebPayload)))
+        .responseSingle((res, _) => {
+          Mono.just(res.responseHeaders())
+        })
+        .doOnNext(result => promise.success(result))
+        .doOnError(error => promise.failure(error))
+        .subscribe()
+      promise.future
+    }
+
+    def cleanup(): Future[Unit] = Future {
+      deleteOtoroshiRoute(route).futureValue
+      grpcServer.stop()
+    }
+
+    responseFuture
+      .map { headers =>
+        headers.get("grpc-status") mustBe "403"
+        headers.get("grpc-message") mustBe "You're not authorized here!"
+        cleanup()
+      }
+      .recover { case error =>
+        println(error)
       }
   }
 }

@@ -686,10 +686,16 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .build()
         .futureValue(Timeout(Span(30, Minutes)))
     }
-    "GrpWeb plugin" in {
+    "gRPC Web plugin" in {
       new GrpcWebTests(this)
         .run()
         .futureValue(Timeout(Span(30, Minutes)))
+    }
+    "gRPC Web plugin should apply authorization rules" in {
+      new GrpcWebTests(this)
+        .authorizationRules()
+        .futureValue
+//      (Timeout(Span(5, Minutes)))
     }
   }
 }
