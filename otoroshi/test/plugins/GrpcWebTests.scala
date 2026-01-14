@@ -1,24 +1,24 @@
 package plugins
 
-import akka.http.scaladsl.model.headers.RawHeader
-import com.auth0.jwt.algorithms.Algorithm
 import com.dimafeng.testcontainers.GenericContainer
 import com.github.dockerjava.api.model.{Bind, Volume}
 import functional.PluginsTestSpec
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import io.netty.buffer.Unpooled
 import org.testcontainers.utility.MountableFile
-import otoroshi.models.{HSAlgoSettings, SecComVersionV2}
-import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
+import otoroshi.models.HttpProtocols
+import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
 import otoroshi.next.plugins._
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
-import play.api.http.Status
-import play.api.libs.json.{JsObject, Json}
+import otoroshi.utils.syntax.implicits.BetterSyntax
+import play.api.libs.json.JsObject
+import reactor.core.publisher.Mono
+import reactor.netty.ByteBufFlux
+import reactor.netty.http.client.HttpClient
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
-import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
+import java.util.Base64
+import scala.concurrent.{Future, Promise}
 
 class GrpcWebTests(parent: PluginsTestSpec) {
 
@@ -66,60 +66,91 @@ class GrpcWebTests(parent: PluginsTestSpec) {
     dockerClient.stop()
   }
 
-  buildAndSaveDockerImage("grpc-server")
+  def run() = {
+    buildAndSaveDockerImage("grpc-server")
 
-  val grpcServer = GenericContainer("grpc-server", Seq(8082))
+    val grpcServer = GenericContainer("grpc-server", exposedPorts = Seq(8082))
 
-  grpcServer.start()
+    grpcServer.start()
 
-  Thread.sleep(500000)
+    val route = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[GrpcWebProxyPlugin],
+          config = NgPluginInstanceConfig(
+            GrpcWebConfig().json.as[JsObject]
+          )
+        )
+      ),
+      target = NgTarget(
+        hostname = grpcServer.host,
+        port = grpcServer.mappedPort(8082),
+        id = "grpc-target",
+        tls = false,
+        protocol = HttpProtocols.HTTP_2_0
+      ).some
+    ).futureValue
 
-//    val route = createLocalRoute(
-//      Seq(
-//        NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
-//        NgPluginInstance(
-//          plugin = NgPluginHelper.pluginId[GrpcWebProxyPlugin],
-//          config = NgPluginInstanceConfig(
-//            GrpcWebConfig(
-//            ).json.as[JsObject]
-//          )
-//        )
-//      ),
-//      rawResult = Some(req => {
-//        val tokenBody           = req.headers.find(_.name() == "foo").get.value().split("\\.")(1)
-//        val requestTokenPayload = Json
-//          .parse(ApacheBase64.decodeBase64(tokenBody))
-//          .as[JsObject]
-//        val rawPayload          = requestTokenPayload
-//          .deepMerge(Json.obj("aud" -> "Otoroshi", "state-resp" -> requestTokenPayload.selectAsString("state")))
-//        val headerJson          = Json.obj("alg" -> "HS256", "typ" -> "JWT")
-//        val header              =
-//          ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
-//        val payload             =
-//          ApacheBase64.encodeBase64URLSafeString(Json.stringify(rawPayload).getBytes(StandardCharsets.UTF_8))
-//        val content             = String.format("%s.%s", header, payload)
-//        val signatureBytes      =
-//          Algorithm
-//            .HMAC256("verysecret")
-//            .sign(
-//              header.getBytes(StandardCharsets.UTF_8),
-//              payload.getBytes(StandardCharsets.UTF_8)
-//            )
-//        val signature           = ApacheBase64.encodeBase64URLSafeString(signatureBytes)
-//
-//        val signedToken = s"$content.$signature"
-//        (200, "", List(RawHeader("bar", signedToken)))
-//      })
-//    ).futureValue
-//
-//    val resp = ws
-//      .url(s"http://127.0.0.1:$port/api/users")
-//      .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-//      .get()
-//      .futureValue
-//
-//    resp.status mustBe Status.OK
-//
-//    deleteOtoroshiRoute(route).futureValue
+    def encodeHelloRequest(name: String): Array[Byte] = {
+      val nameBytes = name.getBytes("UTF-8")
+      val out       = new Array[Byte](2 + nameBytes.length)
+      out(0) = ((1 << 3) | 2).toByte // field 1, wire type 2 (string)
+      out(1) = nameBytes.length.toByte
+      System.arraycopy(nameBytes, 0, out, 2, nameBytes.length)
+      out
+    }
 
+    val name    = "World"
+    val payload = encodeHelloRequest(name)
+
+    val grpcFrame = {
+      val buf = Unpooled.buffer(5 + payload.length)
+      buf.writeByte(0)
+      buf.writeInt(payload.length)
+      buf.writeBytes(payload)
+      buf
+    }
+
+    val grpcWebPayload = {
+      val bytes = new Array[Byte](grpcFrame.readableBytes())
+      grpcFrame.readBytes(bytes)
+      Base64.getEncoder.encodeToString(bytes)
+    }
+
+    val pureNettyClient = HttpClient
+      .create()
+      .host(route.frontend.domains.head.domain)
+      .port(port)
+      .protocol(reactor.netty.http.HttpProtocol.HTTP11)
+
+    val responseFuture: Future[String] = {
+      val promise = Promise[String]()
+      pureNettyClient
+        .headers { h =>
+          h.set("content-type", "application/grpc-web-text")
+          h.set("accept", "application/grpc-web-text")
+          h.set("x-grpc-web", "1")
+        }
+        .post()
+        .uri("/helloworld.Greeter/SayHello")
+        .send(ByteBufFlux.fromString(Mono.just(grpcWebPayload)))
+        .responseSingle((res, content) => content.asString())
+        .doOnNext(result => promise.success(result))
+        .doOnError(error => promise.failure(error))
+        .subscribe()
+      promise.future
+    }
+
+    def cleanup(): Future[Unit] = Future {
+      deleteOtoroshiRoute(route).futureValue
+      grpcServer.stop()
+    }
+
+    responseFuture
+      .map { case body =>
+        println(s"Body: $body")
+        new String(Base64.getUrlDecoder.decode(body), StandardCharsets.UTF_8).contains("Hello! World") mustBe true
+        cleanup()
+      }
+  }
 }
