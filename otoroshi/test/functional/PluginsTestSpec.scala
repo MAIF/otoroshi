@@ -105,6 +105,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Override Location Header: redirect to domain path" in {
       new OverrideLocationHeaderTests(this).redirectToDomainAndPath()
     }
+    "Override Location Header: redirect to domain path wit matching hostnames" in {
+      new OverrideLocationHeaderTests(this).redirectToDomainAndPathWithMatchingHostnames()
+    }
     "Security Txt" in {
       new SecurityTxtTests(this)
     }
@@ -684,6 +687,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Kubernetes integration - build at runtime" in {
       new KubernetesIntegrationTests(this)
         .build()
+        .futureValue(Timeout(Span(30, Minutes)))
+    }
+    "Kubernetes integration - trigger scanner job" in {
+      new KubernetesIntegrationTests(this)
+        .triggerScannerJob()
         .futureValue(Timeout(Span(30, Minutes)))
     }
     "gRPC Web plugin" in {

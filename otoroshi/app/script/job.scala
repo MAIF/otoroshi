@@ -111,8 +111,9 @@ case class JobId(id: String)
 
 trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListener { self =>
 
-  private val refId   = new AtomicReference[String](s"cp:${self.getClass.getName}")
-  private val promise = Promise[Unit]
+  private val refId = new AtomicReference[String](s"cp:${self.getClass.getName}")
+//  private val promise = Promise[Unit]
+  val promise       = Promise[Unit]
 
   final override def pluginType: PluginType = PluginType.JobType
 
@@ -222,6 +223,15 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     val manager = env.jobManager
     manager.registerJob(this)
     manager.startIfPossible(this)
+    promise.future.andThen { case _ =>
+      manager.unregisterJob(this)
+    }(manager.jobExecutor)
+  }
+
+  final def runOnceWithConfiguration()(implicit env: Env): Future[Unit] = {
+    val manager = env.jobManager
+    manager.registerJob(this)
+    manager.runOnceWithConfiguration(this)
     promise.future.andThen { case _ =>
       manager.unregisterJob(this)
     }(manager.jobExecutor)
@@ -582,6 +592,28 @@ case class RegisteredJobContext(
       }
     }
   }
+
+  def runOnceWithConfiguration(config: GlobalConfig, env: Env): Future[Unit] = {
+    Option(ref.get()).flatten match {
+      case Some(_) => ().vfuture
+      case None    =>
+        val ctx = JobContext(
+          snowflake = runId.get(),
+          attrs = attrs,
+          globalConfig = ConfigUtils.mergeOpt(
+            env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+            env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+          ),
+          actorSystem = actorSystem,
+          scheduler = actorSystem.scheduler
+        )
+        job
+          .jobRunHook(ctx)
+//          .flatMap { _ =>
+//            job.stop(env)
+//          }
+    }
+  }
 }
 
 object JobManager {
@@ -635,6 +667,12 @@ class JobManager(env: Env) {
   private[script] def startIfPossible(job: Job): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registeredJobs.get(job.uniqueId).foreach(_.startIfPossible(config, env))
+    }
+  }
+
+  private[script] def runOnceWithConfiguration(job: Job): Unit = {
+    env.datastores.globalConfigDataStore.singleton().map { config =>
+      registeredJobs.get(job.uniqueId).foreach(_.runOnceWithConfiguration(config, env))
     }
   }
 
