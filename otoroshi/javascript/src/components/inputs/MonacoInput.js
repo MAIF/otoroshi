@@ -37,11 +37,13 @@ export class MonacoInput extends Component {
 
   render() {
     let code = this.state.value || this.props.value;
+    console.log(typeof code);
+    console.log(code);
 
     const options = {
       automaticLayout: true,
       selectOnLineNumbers: true,
-      minimap: { enabled: true },
+      minimap: { enabled: false },
       lineNumbers: 'on',
       glyphMargin: false,
       folding: true,
