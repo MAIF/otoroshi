@@ -4,9 +4,10 @@ import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{AdditionalHeadersIn, EchoBackend, IzanamiV2Proxy, IzanamiV2ProxyConfig, NgHeaderValuesConfig, OverrideHost}
+import otoroshi.ssl.DynamicSSLEngineProvider.base64Decode
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
-import play.api.libs.json.{JsObject, JsValue}
+import play.api.libs.json.{JsObject, JsValue, Json}
 
 import scala.concurrent.Future
 
@@ -113,6 +114,36 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
     (responseBody \ "query" \ "context").as[String] mustEqual "prod/mobile"
     (responseBody \ "headers" \ "Izanami-Client-Id").as[String] mustEqual "client-id"
     (responseBody \ "headers" \ "Izanami-Client-Secret").as[String] mustEqual "client-secret"
+
+    teardown(Seq(route, targetRoute))
+  }
+
+  def bodyShouldBePassedOnPostQueries() = {
+    val (route, targetRoute) = setup(
+      IzanamiV2ProxyConfig(
+        url = s"http://izanami.oto.tools:$port",
+        clientId = "client-id",
+        clientSecret = "client-secret",
+      )
+    )
+
+    val inputBody = Json.obj("hello" -> "world")
+    val resp = ws
+      .url(s"http://127.0.0.1:$port/features?features=bar")
+      .withHttpHeaders(
+        "Host" -> route.frontend.domains.head.domain
+      )
+      .post(inputBody)
+      .futureValue
+
+    resp.status mustBe Status.OK
+
+    val responseBody: JsValue = resp.json
+    responseBody.selectAsString("path") mustEqual "/api/v2/features"
+    (responseBody \ "query" \ "features").as[String] mustEqual "bar"
+    (responseBody \ "headers" \ "Izanami-Client-Id").as[String] mustEqual "client-id"
+    (responseBody \ "headers" \ "Izanami-Client-Secret").as[String] mustEqual "client-secret"
+    Json.parse(base64Decode((responseBody \ "body").as[String])) mustEqual inputBody
 
     teardown(Seq(route, targetRoute))
   }
