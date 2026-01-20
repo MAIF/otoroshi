@@ -2,12 +2,14 @@ package otoroshi.next.plugins
 
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api._
+import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.IdGenerator
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
@@ -18,8 +20,12 @@ import play.api.libs.json._
 import play.api.libs.ws.{WSAuthScheme, WSCookie}
 import play.api.mvc.{Cookie, Result, Results}
 
+import java.io.File
+import java.nio.file.Files
+import java.util.zip.ZipFile
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util._
 
 case class NgIzanamiV1ProxyConfig(
@@ -486,5 +492,40 @@ class NgIzanamiV1Canary extends NgRequestTransformer {
     } getOrElse {
       ctx.otoroshiResponse.rightf
     }
+  }
+}
+
+class IzanamiV2Proxy extends NgBackendCall {
+
+  override def useDelegates: Boolean  = true
+  override def multiInstance: Boolean = true
+  override def core: Boolean          = false
+
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(ZipFileBackendConfig.default)
+  override def name: String                                = "Izanami V2 proxy"
+  override def description: Option[String]                 = "This plugin exposed Izanami routes".some
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Integrations)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config = ctx.cachedConfig(internalName)(ZipFileBackendConfig.format).getOrElse(ZipFileBackendConfig.default)
+
+    BackendCallResponse(
+      NgPluginHttpResponse(
+        200,
+        Map("Content-Type" -> "application/json", "Transfer-Encoding" -> "chunked"),
+        Seq.empty,
+        ByteString(Json.stringify(Json.obj("foo" -> "bar"))).chunks(16 * 1024)
+      ),
+      None
+    ).rightf
   }
 }
