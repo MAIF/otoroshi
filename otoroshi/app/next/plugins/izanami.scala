@@ -573,8 +573,13 @@ class IzanamiV2Proxy extends NgBackendCall {
 
     val queryPart = ctx.request.queryParams
       .applyOnWithOpt(config.context)((map, izaCtx) => {
-        // TODO don't replace subcontextes
-        map + ("context" -> applyExpressionLangage(izaCtx, ctx))
+        val shouldReplaceContext = map.get("context")
+          .forall(requestCtx => !requestCtx.dropWhile(_ == '/').startsWith(izaCtx.dropWhile(_ == '/')))
+        if(shouldReplaceContext) {
+          map + ("context" -> applyExpressionLangage(izaCtx, ctx))
+        } else {
+          map
+        }
       })
       .map { case (key, value) =>
         s"${key}=${value}"
