@@ -540,7 +540,7 @@ class IzanamiV2Proxy extends NgBackendCall {
 
   override def defaultConfigObject: Option[NgPluginConfig] = Some(IzanamiV2ProxyConfig())
   override def name: String                                = "Izanami V2 proxy"
-  override def description: Option[String]                 = "This plugin exposed Izanami routes".some
+  override def description: Option[String]                 = "This plugin exposes Izanami routes".some
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)

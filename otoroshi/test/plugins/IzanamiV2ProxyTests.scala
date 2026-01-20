@@ -70,7 +70,7 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
     teardown(Seq(route, targetRoute))
   }
 
-  def contextShouldBeUsed() = {
+  def contextShouldBeUsedWhenNeeded() = {
     val (route, targetRoute) = setup(
       IzanamiV2ProxyConfig(
         url = s"http://izanami.oto.tools:$port",
@@ -80,7 +80,7 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
       )
     )
 
-    val resp = ws
+    var resp = ws
       .url(s"http://127.0.0.1:$port/features?features=bar")
       .withHttpHeaders(
         "Host" -> route.frontend.domains.head.domain
@@ -90,27 +90,14 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
 
     resp.status mustBe Status.OK
 
-    val responseBody: JsValue = resp.json
+    var responseBody: JsValue = resp.json
     responseBody.selectAsString("path") mustEqual "/api/v2/features"
     (responseBody \ "query" \ "features").as[String] mustEqual "bar"
     (responseBody \ "query" \ "context").as[String] mustEqual "prod"
     (responseBody \ "headers" \ "Izanami-Client-Id").as[String] mustEqual "client-id"
     (responseBody \ "headers" \ "Izanami-Client-Secret").as[String] mustEqual "client-secret"
 
-    teardown(Seq(route, targetRoute))
-  }
-
-  def childContextShouldNotBeOverwritten() = {
-    val (route, targetRoute) = setup(
-      IzanamiV2ProxyConfig(
-        url = s"http://izanami.oto.tools:$port",
-        clientId = "client-id",
-        clientSecret = "client-secret",
-        context = Some("prod")
-      )
-    )
-
-    val resp = ws
+    resp = ws
       .url(s"http://127.0.0.1:$port/features?features=baz&context=prod/mobile")
       .withHttpHeaders(
         "Host" -> route.frontend.domains.head.domain
@@ -120,7 +107,7 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
 
     resp.status mustBe Status.OK
 
-    val responseBody: JsValue = resp.json
+    responseBody = resp.json
     responseBody.selectAsString("path") mustEqual "/api/v2/features"
     (responseBody \ "query" \ "features").as[String] mustEqual "baz"
     (responseBody \ "query" \ "context").as[String] mustEqual "prod/mobile"

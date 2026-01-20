@@ -94,6 +94,8 @@ export default {
     context: {
       label: "Izanami context (optional)",
       type: "string",
+      help:
+        "Izanami context, will overwrite incoming context\nexcept if incoming context is a subcontext of this one.",
     },
   },
   config_flow: ["url", "clientId", "clientSecret", "context", "timeout", "tls"],
