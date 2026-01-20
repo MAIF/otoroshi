@@ -500,7 +500,14 @@ case class IzanamiV2ProxyConfig(
     timeout: FiniteDuration = 5000.millis,
     context: Option[String] = None
 ) extends NgPluginConfig {
-  override def json: JsValue = Json.obj()
+  override def json: JsValue = Json.obj(
+    "tls"          -> NgTlsConfig.format.writes(tls),
+    "url"          -> url,
+    "clientId"     -> clientId,
+    "clientSecret" -> clientSecret,
+    "context"      -> context,
+    "timeout"      -> timeout.toMillis
+  )
 }
 
 object IzanamiV2ProxyConfig {
@@ -521,16 +528,7 @@ object IzanamiV2ProxyConfig {
       case Success(c) => JsSuccess(c)
     }
 
-    override def writes(o: IzanamiV2ProxyConfig): JsValue = {
-      Json.obj(
-        "tls"          -> NgTlsConfig.format.writes(o.tls),
-        "url"          -> o.url,
-        "clientId"     -> o.clientId,
-        "clientSecret" -> o.clientSecret,
-        "context"      -> o.context,
-        "timeout"      -> o.timeout.toMillis
-      )
-    }
+    override def writes(o: IzanamiV2ProxyConfig): JsValue = o.json
   }
 }
 

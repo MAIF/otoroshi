@@ -704,5 +704,14 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .authorizationRules()
         .futureValue
     }
+    "izanami v2 proxy - should call izanami correctly" in {
+      new IzanamiV2ProxyTests(this).izanamiCallShouldBeCorrect()
+    }
+    "izanami v2 proxy - should add request context if specified" in {
+      new IzanamiV2ProxyTests(this).contextShouldBeUsed()
+    }
+    "izanami v2 proxy - should not override context if request context is child of specified one" in {
+      new IzanamiV2ProxyTests(this).childContextShouldNotBeOverwritten()
+    }
   }
 }
