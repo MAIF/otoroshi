@@ -148,6 +148,7 @@ import JqWebsocketMessageTransformer from './JqWebsocketMessageTransformer';
 import ZipFileBackend from './ZipFileBackend';
 import GrpcWebProxyPlugin from './GrpcWeb';
 import KubernetesNamespaceScanBackend from './KubernetesNamespaceScanBackend';
+import LocalTokenBucket from './LocalTokenBucket'
 
 import NgApiFrontend from './NgApiFrontend';
 import NgApiBackend from './NgApiBackend';
@@ -206,6 +207,7 @@ const pluginsArray = [
   JwtVerification,
   JwtVerificationOnly,
   KubernetesNamespaceScanBackend,
+  LocalTokenBucket,
   MaintenanceMode,
   MissingHeadersIn,
   MissingHeadersOut,

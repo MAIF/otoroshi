@@ -704,5 +704,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .authorizationRules()
         .futureValue
     }
+    "Local token bucket" in {
+      new LocalTokenBucketTests(this)
+        .run()
+        .futureValue
+    }
   }
 }

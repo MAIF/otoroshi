@@ -71,6 +71,8 @@ class NgProxyState(env: Env) {
   private val routesByDomain    = new UnboundedTrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
 
+  val rateLimiter = new RateLimiter(env)
+
   def enableReportFor(id: String): Unit = {
     tryItEnabledReports.put(id, ())
   }
