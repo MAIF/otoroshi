@@ -710,5 +710,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "izanami v2 proxy - should add request context if specified" in {
       new IzanamiV2ProxyTests(this).contextShouldBeUsedWhenNeeded()
     }
+    "OIDCJwtVerifier" in {
+      new OIDCJwtVerifierTests(this).verifyOIDC()
+    }
   }
 }
