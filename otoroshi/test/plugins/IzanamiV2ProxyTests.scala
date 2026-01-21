@@ -51,7 +51,7 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
       )
     )
 
-    val resp = ws
+    var resp = ws
       .url(s"http://127.0.0.1:$port/features?features=foo")
       .withHttpHeaders(
         "Host" -> route.frontend.domains.head.domain
@@ -61,12 +61,31 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
 
     resp.status mustBe Status.OK
 
-    val responseBody: JsValue = resp.json
+    var responseBody: JsValue = resp.json
     responseBody.selectAsString("path") mustEqual "/api/v2/features"
     (responseBody \ "query" \ "features").as[String] mustEqual "foo"
-    //(responseBody \ "query" \ "context").as[String] mustEqual "prod"
     (responseBody \ "headers" \ "Izanami-Client-Id").as[String] mustEqual "client-id"
     (responseBody \ "headers" \ "Izanami-Client-Secret").as[String] mustEqual "client-secret"
+
+
+    val inputBody = Json.obj("hello" -> "world")
+    resp = ws
+      .url(s"http://127.0.0.1:$port/features?features=bar")
+      .withHttpHeaders(
+        "Host" -> route.frontend.domains.head.domain
+      )
+      .post(inputBody)
+      .futureValue
+
+    resp.status mustBe Status.OK
+
+    responseBody = resp.json
+    responseBody.selectAsString("path") mustEqual "/api/v2/features"
+    (responseBody \ "query" \ "features").as[String] mustEqual "bar"
+    (responseBody \ "headers" \ "Izanami-Client-Id").as[String] mustEqual "client-id"
+    (responseBody \ "headers" \ "Izanami-Client-Secret").as[String] mustEqual "client-secret"
+    Json.parse(base64Decode((responseBody \ "body").as[String])) mustEqual inputBody
+
 
     teardown(Seq(route, targetRoute))
   }
@@ -114,36 +133,6 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
     (responseBody \ "query" \ "context").as[String] mustEqual "prod/mobile"
     (responseBody \ "headers" \ "Izanami-Client-Id").as[String] mustEqual "client-id"
     (responseBody \ "headers" \ "Izanami-Client-Secret").as[String] mustEqual "client-secret"
-
-    teardown(Seq(route, targetRoute))
-  }
-
-  def bodyShouldBePassedOnPostQueries() = {
-    val (route, targetRoute) = setup(
-      IzanamiV2ProxyConfig(
-        url = s"http://izanami.oto.tools:$port",
-        clientId = "client-id",
-        clientSecret = "client-secret",
-      )
-    )
-
-    val inputBody = Json.obj("hello" -> "world")
-    val resp = ws
-      .url(s"http://127.0.0.1:$port/features?features=bar")
-      .withHttpHeaders(
-        "Host" -> route.frontend.domains.head.domain
-      )
-      .post(inputBody)
-      .futureValue
-
-    resp.status mustBe Status.OK
-
-    val responseBody: JsValue = resp.json
-    responseBody.selectAsString("path") mustEqual "/api/v2/features"
-    (responseBody \ "query" \ "features").as[String] mustEqual "bar"
-    (responseBody \ "headers" \ "Izanami-Client-Id").as[String] mustEqual "client-id"
-    (responseBody \ "headers" \ "Izanami-Client-Secret").as[String] mustEqual "client-secret"
-    Json.parse(base64Decode((responseBody \ "body").as[String])) mustEqual inputBody
 
     teardown(Seq(route, targetRoute))
   }
