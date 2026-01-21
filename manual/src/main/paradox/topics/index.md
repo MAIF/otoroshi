@@ -28,6 +28,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Otoroshi workflows](./workflows.md)
 * @ref:[Circuit Breaker](./circuit-breaker.md)
 * @ref:[Understanding GatewayEvent Durations in Otoroshi](./durations.md)
+* @ref:[Workflows Editor](./workflows-editor.md)
 
 
 @@@ index
@@ -58,5 +59,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Otoroshi workflows](./workflows.md)
 * [Circuit Breaker](./circuit-breaker.md)
 * [Understanding GatewayEvent Durations in Otoroshi](./durations.md)
+* [Workflows Editor](./workflows-editor.md)
 
 @@@

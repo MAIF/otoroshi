@@ -369,7 +369,8 @@ export function setupWorkflowsExtension(registerExtension) {
             defaultSortDesc: false,
             fetchItems: this.client.findAllWithPagination,
             updateItem: (content) => this.client.update(content),
-            createItem: (content) => this.client.create(content),
+            createItem: (content) => this.client.create(content)
+              .then(item => this.props.history.push(`/extensions/workflows/${item.id}/designer`)),
             deleteItem: this.client.delete,
             navigateTo: (item) =>
               this.props.history.push(`/extensions/workflows/${item.id}/designer`),

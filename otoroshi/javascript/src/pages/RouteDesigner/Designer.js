@@ -603,7 +603,7 @@ class Designer extends React.Component {
         categories,
         plugins,
         oldPlugins,
-        metadataPlugins,
+        allPlugins,
         ports,
         routeTemplates,
       ]) => {
@@ -617,36 +617,47 @@ class Designer extends React.Component {
 
         const formattedPlugins = [
           ...plugins.map((p) => ({
-            ...(metadataPlugins.find((metaPlugin) => metaPlugin.id === p.id) || {}),
+            ...(allPlugins.find((metaPlugin) => metaPlugin.id === p.id) || {}),
             ...p,
           })),
           ...oldPlugins.map((p) => ({
             ...p,
             legacy: true,
           })),
-          ...metadataPlugins //.filter((p) => p.no_js_form),
+          ...allPlugins.filter((p) => p.no_js_form),
         ]
           .filter(this.filterSpecificPlugin)
           .map((plugin) => ({
             ...plugin,
             config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
             config: plugin.default_config || plugin.defaultConfig,
-          }));
-          
+          }))
+
         const routePlugins = route.plugins
-          .filter((ref) =>
-            formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
-          )
-          .map((ref) => ({
-            ...ref,
-            plugin_index: Object.fromEntries(
-              Object.entries(ref.plugin_index || {}).map(([key, v]) => [
-                firstLetterUppercase(camelCase(key)),
-                v,
-              ])
-            ),
-            ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin),
-          }));
+          .map((ref) => {
+            const existingPlugin = formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
+
+            if (existingPlugin) {
+              return {
+                ...ref,
+                plugin_index: Object.fromEntries(
+                  Object.entries(ref.plugin_index || {}).map(([key, v]) => [
+                    firstLetterUppercase(camelCase(key)),
+                    v,
+                  ])
+                ),
+                ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
+              }
+            } else {
+              return {
+                ...ref,
+                id: ref.plugin?.split(".").slice(-1)[0].replace(/([a-z])([A-Z])/g, "$1 $2"),
+                config_schema: {},
+                config_flow: []
+              }
+            }
+          });
+
         const pluginsWithNodeId = this.generateInternalNodeId(routePlugins);
 
         let routeWithNodeId = {
@@ -1213,6 +1224,38 @@ class Designer extends React.Component {
     return this.state.route.plugins.find((plugin) => plugin.nodeId === value.nodeId)?.enabled;
   };
 
+  renderUnknownNodes = () => {
+    const unknowns = this.state.nodes.filter(r => !r.plugin_steps || !r.plugin_steps.length)
+
+    if (!unknowns.length)
+      return null
+
+    return <>
+      <span
+        className="badge bg-warning text-dark"
+        style={{
+          cursor: 'pointer',
+        }}>
+        Unknown nodes
+      </span>
+      <Hr highlighted={!this.state.selectedNode} />
+      {unknowns.map((unknown, i) => {
+        return <NodeElement
+          onUp={(e) => { }}
+          onDown={(e) => { }}
+          enabled={this.isPluginEnabled(unknown)}
+          element={unknown}
+          key={`${unknown.nodeId}-inbound-${i}`}
+          selectedNode={this.state.selectedNode}
+          setSelectedNode={() => {
+            if (!this.state.alertModal.show) this.setState({ selectedNode: unknown });
+          }}
+          onRemove={this.removeNode}
+        />
+      })}
+    </>
+  }
+
   renderInBound = () => {
     let steps = [...REQUEST_STEPS_FLOW];
 
@@ -1618,6 +1661,7 @@ class Designer extends React.Component {
                             this.setState({ selectedNode: frontend });
                         }}
                       />
+                      {this.renderUnknownNodes()}
                       {this.renderInBound()}
                       <Hr highlighted={!selectedNode} flex={true} />
                     </InBoundFlow>
