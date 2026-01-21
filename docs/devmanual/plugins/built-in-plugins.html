@@ -97,6 +97,7 @@ latest
     <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
+    <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -225,6 +226,7 @@ latest
     <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
+    <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -1019,6 +1021,23 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;response_path&quot; : null,
   &quot;response_filter&quot; : null
 }
+</code></pre></div><div id="otoroshi.next.plugins.GrpcWebProxyPlugin" class="ng-plugin plugin-hidden pl">
+<h2><a href="#grpc-web-proxy" name="grpc-web-proxy" class="anchor"><span class="anchor-link"></span></a>gRPC-Web Proxy</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>TransformRequest</code></li>
+  <li><code>TransformResponse</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.GrpcWebProxyPlugin</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Proxies gRPC-Web requests to gRPC backend - Envoy compatible</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;allowed_services&quot; : [ ],
+  &quot;allow_methods&quot; : [ ],
+  &quot;blocked_methods&quot; : [ ]
+}
 </code></pre></div><div id="otoroshi.next.plugins.GzipResponseCompressor" class="ng-plugin plugin-hidden pl">
 <h2><a href="#gzip-compression" name="gzip-compression" class="anchor"><span class="anchor-link"></span></a>Gzip compression</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -1150,6 +1169,31 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;addresses&quot; : [ ]
+}
+</code></pre></div><div id="otoroshi.next.plugins.IzanamiV2Proxy" class="ng-plugin plugin-hidden pl">
+<h2><a href="#izanami-v2-proxy" name="izanami-v2-proxy" class="anchor"><span class="anchor-link"></span></a>Izanami V2 proxy</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.IzanamiV2Proxy</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin exposes Izanami routes</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;tls&quot; : {
+    &quot;certs&quot; : [ ],
+    &quot;trusted_certs&quot; : [ ],
+    &quot;enabled&quot; : false,
+    &quot;loose&quot; : false,
+    &quot;trust_all&quot; : false
+  },
+  &quot;url&quot; : &quot;&quot;,
+  &quot;clientId&quot; : &quot;&quot;,
+  &quot;clientSecret&quot; : &quot;&quot;,
+  &quot;context&quot; : null,
+  &quot;timeout&quot; : 5000
 }
 </code></pre></div><div id="otoroshi.next.plugins.JQ" class="ng-plugin plugin-hidden pl">
 <h2><a href="#jq" name="jq" class="anchor"><span class="anchor-link"></span></a>JQ</h2>
@@ -1348,6 +1392,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;custom_response_status&quot; : 401,
   &quot;custom_response_headers&quot; : { },
   &quot;custom_response_body&quot; : &quot;{\&quot;error\&quot;:\&quot;unauthorized\&quot;}&quot;
+}
+</code></pre></div><div id="otoroshi.next.plugins.KubernetesNamespaceScanBackend" class="ng-plugin plugin-hidden pl">
+<h2><a href="#kubernetes-namespace-scanner" name="kubernetes-namespace-scanner" class="anchor"><span class="anchor-link"></span></a>Kubernetes Namespace Scanner</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.KubernetesNamespaceScanBackend</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Triggers Kubernetes CRD controller to scan specified namespaces</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;namespaces&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.LimitHeaderInTooLong" class="ng-plugin plugin-hidden pl">
 <h2><a href="#limit-headers-in-too-long" name="limit-headers-in-too-long" class="anchor"><span class="anchor-link"></span></a>Limit headers in too long</h2>
@@ -2656,12 +2714,17 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#override-location-header" name="override-location-header" class="anchor"><span class="anchor-link"></span></a>Override Location header</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
-  <li><code>TransformRequest</code></li>
+  <li><code>TransformResponse</code></li>
 </ul>
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.OverrideLocationHeader</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin override the current Location header with the Host of the backend target</p></div><div id="otoroshi.next.plugins.PolyfillIoDetector" class="ng-plugin plugin-hidden pl">
+<p>This plugin override the current Location header with the current frontend host if the location start with the Host of the backend target</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;matching_hostnames&quot; : [ ]
+}
+</code></pre></div><div id="otoroshi.next.plugins.PolyfillIoDetector" class="ng-plugin plugin-hidden pl">
 <h2><a href="#cdn-polyfill-io-detector" name="cdn-polyfill-io-detector" class="anchor"><span class="anchor-link"></span></a>cdn.polyfill.io detector</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -3291,8 +3354,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin can split a portion of the traffic to canary backends between two dates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;start&quot; : &quot;2026-01-07T13:12:21.800Z&quot;,
-  &quot;stop&quot; : &quot;2026-01-08T13:12:21.821Z&quot;,
+  &quot;start&quot; : &quot;2026-01-21T15:02:59.002Z&quot;,
+  &quot;stop&quot; : &quot;2026-01-22T15:02:59.021Z&quot;,
   &quot;increment_percent&quot; : 1,
   &quot;targets&quot; : [ ],
   &quot;root&quot; : &quot;/&quot;
@@ -4264,6 +4327,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#graphql-composer" class="header">GraphQL Composer</a></li>
     <li><a href="../plugins/built-in-plugins.html#graphql-proxy" class="header">GraphQL Proxy</a></li>
     <li><a href="../plugins/built-in-plugins.html#graphql-query-to-rest" class="header">GraphQL Query to REST</a></li>
+    <li><a href="../plugins/built-in-plugins.html#grpc-web-proxy" class="header">gRPC-Web Proxy</a></li>
     <li><a href="../plugins/built-in-plugins.html#gzip-compression" class="header">Gzip compression</a></li>
     <li><a href="../plugins/built-in-plugins.html#hmac-caller-plugin" class="header">HMAC caller plugin</a></li>
     <li><a href="../plugins/built-in-plugins.html#hmac-access-validator" class="header">HMAC access validator</a></li>
@@ -4272,6 +4336,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#image-replacer" class="header">Image replacer</a></li>
     <li><a href="../plugins/built-in-plugins.html#ip-allowed-list" class="header">IP allowed list</a></li>
     <li><a href="../plugins/built-in-plugins.html#ip-block-list" class="header">IP block list</a></li>
+    <li><a href="../plugins/built-in-plugins.html#izanami-v2-proxy" class="header">Izanami V2 proxy</a></li>
     <li><a href="../plugins/built-in-plugins.html#jq" class="header">JQ</a></li>
     <li><a href="../plugins/built-in-plugins.html#jq-transform-request" class="header">JQ transform request</a></li>
     <li><a href="../plugins/built-in-plugins.html#jq-transform-response" class="header">JQ transform response</a></li>
@@ -4283,6 +4348,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#jwt-signer" class="header">Jwt signer</a></li>
     <li><a href="../plugins/built-in-plugins.html#jwt-verifiers" class="header">Jwt verifiers</a></li>
     <li><a href="../plugins/built-in-plugins.html#jwt-verification-only" class="header">Jwt verification only</a></li>
+    <li><a href="../plugins/built-in-plugins.html#kubernetes-namespace-scanner" class="header">Kubernetes Namespace Scanner</a></li>
     <li><a href="../plugins/built-in-plugins.html#limit-headers-in-too-long" class="header">Limit headers in too long</a></li>
     <li><a href="../plugins/built-in-plugins.html#limit-headers-out-too-long" class="header">Limit headers out too long</a></li>
     <li><a href="../plugins/built-in-plugins.html#maintenance-mode" class="header">Maintenance mode</a></li>
