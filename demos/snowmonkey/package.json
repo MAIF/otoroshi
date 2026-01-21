@@ -16,7 +16,7 @@
     "express": "4.19.2",
     "faker": "5.1.0",
     "http-parser-js": "0.5.2",
-    "lodash": "4.17.21",
+    "lodash": "4.17.23",
     "minimist": "1.2.6",
     "moment": "2.29.4",
     "node-fetch": "2.6.7",
