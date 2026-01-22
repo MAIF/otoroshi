@@ -22,6 +22,7 @@ import otoroshi.jobs.updates.Version
 import otoroshi.models._
 import otoroshi.next.extensions.{AdminExtensionConfig, AdminExtensionId, AdminExtensions}
 import otoroshi.next.models.NgRoute
+import otoroshi.next.plugins.RateLimiter
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.next.tunnel.{TunnelAgent, TunnelManager}
 import otoroshi.next.utils.Vaults
@@ -1163,6 +1164,8 @@ class Env(
   }
 
   lazy val proxyState = new NgProxyState(this)
+
+  lazy val rateLimiter = new RateLimiter(this)
 
   lazy val http2ClientProxyEnabled = configuration
     .getOptionalWithFileSupport[Boolean]("otoroshi.next.experimental.http2-client-proxy.enabled")
