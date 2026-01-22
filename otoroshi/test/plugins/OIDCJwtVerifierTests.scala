@@ -40,17 +40,17 @@ class OIDCJwtVerifierTests(parent: PluginsTestSpec) {
         )
       )
     ).futureValue
-    val resp = ws
+
+    ws
       .url(s"http://127.0.0.1:$port/")
       .withHttpHeaders(
         "Host" -> route.frontend.domains.head.domain
       )
       .get()
       .futureValue
+      .status mustBe Status.BAD_REQUEST
 
-    resp.status mustBe Status.BAD_REQUEST
-
-    val resp2 = ws
+    ws
       .url(s"http://127.0.0.1:$port/")
       .withHttpHeaders(
         "Host" -> route.frontend.domains.head.domain,
@@ -58,8 +58,16 @@ class OIDCJwtVerifierTests(parent: PluginsTestSpec) {
       )
       .get()
       .futureValue
+      .status mustBe Status.OK
 
-    resp2.status mustBe Status.OK
+    ws
+      .url(s"http://127.0.0.1:$port/?access_token=${token}")
+      .withHttpHeaders(
+        "Host" -> route.frontend.domains.head.domain,
+      )
+      .get()
+      .futureValue
+      .status mustBe Status.OK
 
     deleteOtoroshiRoute(route).futureValue
   }

@@ -818,7 +818,8 @@ object OIDCJwtVerifierConfig {
     "custom_response",
     "custom_response_status",
     "custom_response_headers",
-    "custom_response_body"
+    "custom_response_body",
+    "source",
   )
   val configSchema: Option[JsObject] = Some(
     Json.obj(
@@ -838,6 +839,11 @@ object OIDCJwtVerifierConfig {
         "type" -> "code",
         "label" -> "Custom error body",
         "props" -> Json.obj("editorOnly" -> true)
+      ),
+      "source" -> Json.obj(
+        "type" -> "any",
+        "label" -> "JWT Source",
+        "props" -> Json.obj("height" -> 200)
       ),
       "ref" -> Json.obj(
         "type"  -> "select",
@@ -904,10 +910,17 @@ class OIDCJwtVerifier extends NgAccessValidator {
           case None => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "auth. module not found"))).vfuture
           case Some(m) => m match {
             case oidcModule: OAuth2ModuleConfig if oidcModule.jwtVerifier.isDefined => {
-              val verifier = LocalJwtVerifier().copy(enabled = true, algoSettings = oidcModule.jwtVerifier.get, source = config.source.getOrElse(InHeader("Authorization", "Bearer ")))
-              verifier.source.token(ctx.request) match {
+              val verifier = LocalJwtVerifier()
+                .copy(
+                  enabled = true,
+                  algoSettings = oidcModule.jwtVerifier.get,
+                )
+              val sources = config.source.map(s => Seq(s)).getOrElse(Seq(InHeader("Authorization", "Bearer "), InQueryParam("access_token")))
+              sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst {
+                case Some(tuple) => tuple
+              } match {
                 case None  => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "token not found"))).vfuture
-                case _     => verifier.verifyGen[NgAccess](
+                case Some((source, _)) => verifier.copy(source = source).verifyGen[NgAccess](
                     ctx.request,
                     ctx.route.legacy,
                     ctx.apikey,
