@@ -24,8 +24,7 @@ import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.AllowedQuota
-import otoroshi.next.plugins.api.NgAccess
+import otoroshi.next.plugins.{AllowedQuota, ThrottlingStrategyConfig}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, Unauthorized}
@@ -204,6 +203,7 @@ case class ApiKey(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     allowClientIdOnly: Boolean = false,
+    throttlingStrategy: Option[ThrottlingStrategyConfig] = None,
     throttlingQuota: Long = RemainingQuotas.MaxValue,
     dailyQuota: Long = RemainingQuotas.MaxValue,
     monthlyQuota: Long = RemainingQuotas.MaxValue,
@@ -440,6 +440,7 @@ object ApiKey {
         "enabled"                 -> enabled, //apk.enabled,
         "readOnly"                -> apk.readOnly,
         "allowClientIdOnly"       -> apk.allowClientIdOnly,
+        "throttlingStrategy"      -> apk.throttlingStrategy.map(_.json),
         "throttlingQuota"         -> apk.throttlingQuota,
         "dailyQuota"              -> apk.dailyQuota,
         "monthlyQuota"            -> apk.monthlyQuota,
@@ -501,6 +502,7 @@ object ApiKey {
             enabled = enabled,
             readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
             allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
+            throttlingStrategy = json.select("throttlingStrategy").asOpt(ThrottlingStrategyConfig.fmt),
             throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
             dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
             monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
@@ -2390,18 +2392,14 @@ object ApiKeyHelper {
               route = route,
               apiKey = apikey.some,
               user = None,
-              throttlingStrategy = None
+              throttlingStrategy = apikey.throttlingStrategy
             )
             if (incrementQuotas) {
               strategy
                 .checkAndIncrement(
                   apikey.clientId,
                   1,
-                  AllowedQuota(
-                    window = apikey.throttlingQuota,
-                    daily = apikey.dailyQuota,
-                    monthly = apikey.monthlyQuota
-                  )
+                  apikey.throttlingStrategy.map(_.quota).getOrElse(AllowedQuota())
                 )
                 .flatMap {
                   case result if result.allowed =>

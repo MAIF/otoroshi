@@ -12,6 +12,7 @@ import { firstLetterUppercase, unsecuredCopyToClipboard } from '../util';
 import { DraftEditorContainer } from '../components/Drafts/DraftEditor';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
+import { NgForm } from '../components/nginputs';
 
 const FIELDS_SELECTOR = 'otoroshi-fields-selector';
 
@@ -56,9 +57,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-          this.props.rawValue.clientId +
-          '/bearer?newSecret=' +
-          this.props.rawValue.clientSecret,
+        this.props.rawValue.clientId +
+        '/bearer?newSecret=' +
+        this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -255,11 +256,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${
-            rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${
-            rawValue.clientSecret
-          }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${rawValue.clientId
+            }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${rawValue.clientSecret
+            }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -414,6 +413,127 @@ function CopyFromLineItem({ item }) {
   );
 }
 
+function LocalTokensBucketStrategyConfig({ value, onChange }) {
+  return <NgForm value={value}
+    onChange={onChange}
+    schema={{
+      bucketKey: {
+        type: 'string',
+        label: 'Bucket key',
+        props: {
+          help: 'Raw value or expression language'
+        }
+      },
+      capacity: {
+        type: 'number',
+        label: 'Bucket capacity',
+        props: {
+          defaultValue: 300
+        }
+      },
+      refillRequestIntervalMs: {
+        type: 'number',
+        label: 'Refill request interval (ms)',
+        props: {
+          defaultValue: 50
+        }
+      },
+      refillRequestedTokens: {
+        type: 'number',
+        label: 'Refill requested tokens',
+        props: {
+          defaultValue: 50
+        }
+      },
+      example: {
+        renderer: () => {
+          const { capacity = 300, refillRequestIntervalMs = 50, refillRequestedTokens = 50 } = value || {};
+          const refillsPerSecond = 1000 / refillRequestIntervalMs;
+          const tokensPerSecond = refillsPerSecond * refillRequestedTokens;
+          const timeToFillBucket = capacity / tokensPerSecond;
+          return (
+            <div className='row mb-3'>
+              <label className='col-xs-12 col-sm-2 col-form-label'>Example</label>
+              <div className='col-sm-10'>
+                <p className='m-1'>With these settings, the bucket refills <b>{refillRequestedTokens}</b> tokens every <b>{refillRequestIntervalMs}ms</b></p>
+                <p className='m-1'>which means <b>{tokensPerSecond.toFixed(0)}</b> requests/second.</p>
+                <p className='m-1'>Starting from empty, the bucket fills to capacity ({capacity}) in <b>{timeToFillBucket.toFixed(2)}s</b>.</p>
+              </div>
+            </div>
+          );
+        }
+      },
+      quota: {
+        type: 'form',
+        collapsable: false,
+        label: 'Allowed Quota',
+        schema: {
+          daily: {
+            type: 'number',
+            label: 'Daily',
+          },
+          monthly: {
+            type: 'number',
+            label: 'Monthly',
+          }
+        },
+        flow: ['daily', 'monthly']
+      }
+    }} />
+}
+function LegacyThrottlingStrategyConfig({ value, onChange }) {
+  return <NgForm value={value}
+    onChange={onChange}
+    schema={{
+      quota: {
+        type: 'form',
+        collapsable: false,
+        label: 'Allowed Quota',
+        schema: {
+          window: {
+            type: 'number',
+          },
+          daily: {
+            type: 'number',
+          },
+          monthly: {
+            type: 'number',
+          }
+        },
+        flow: ['window', 'daily', 'monthly']
+      }
+    }} />
+}
+
+function ThrottlingStrategy({ value, onChange }) {
+  const strategies = {
+    LegacyThrottlingStrategyConfig,
+    LocalTokensBucketStrategyConfig
+  };
+
+  const Component = strategies[value.id]
+
+  return <>
+    <NgForm schema={{
+      id: {
+        type: 'select',
+        label: 'Strategy',
+        props: {
+          defaultValue: 'LegacyThrottlingStrategyConfig',
+          options: [
+            { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
+            { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
+          ],
+        },
+      }
+    }}
+      value={value}
+      onChange={onChange} />
+
+    {Component && <Component value={value} onChange={onChange} />}
+  </>
+}
+
 class DailyRemainingQuotas extends Component {
   state = {
     quotas: null,
@@ -545,6 +665,12 @@ const ApiKeysConstants = {
       type: DailyRemainingQuotas,
       props: {
         onRoutes: that.props.onRoutes,
+        label: '',
+      },
+    },
+    throttlingStrategy: {
+      type: ThrottlingStrategy,
+      props: {
         label: '',
       },
     },
@@ -837,9 +963,8 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${
-                that.state.service ? that.state.service.id : '-'
-              }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
+                }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -881,7 +1006,9 @@ const ApiKeysConstants = {
     'curlCommand',
     'basicAuth',
     'curlCommandWithBasicAuth',
-    '>>>Quotas',
+    '>>>Throttling strategy',
+    'throttlingStrategy',
+    '>>>Legacy Quotas',
     'throttlingQuota',
     'dailyQuota',
     'monthlyQuota',
@@ -926,8 +1053,8 @@ export class ServiceApiKeysPage extends Component {
     const fu = this.onRoutes
       ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
       : nextClient
-          .forEntityNext(nextClient.ENTITIES.SERVICES)
-          .findById(this.props.params.serviceId);
+        .forEntityNext(nextClient.ENTITIES.SERVICES)
+        .findById(this.props.params.serviceId);
     fu.then((service) => {
       this.onRoutes
         ? this.props.setTitle(this.props.title || `Routes Apikeys`)
@@ -987,7 +1114,7 @@ export class ServiceApiKeysPage extends Component {
           selfUrl={
             this.onRoutes
               ? // ? `services/${this.props.params.routeId}/apikeys`
-                `routes/${this.props.params.routeId}/apikeys`
+              `routes/${this.props.params.routeId}/apikeys`
               : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
           }
           defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}

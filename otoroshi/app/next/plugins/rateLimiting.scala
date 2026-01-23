@@ -21,7 +21,20 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
-import play.api.libs.json.{Format, JsError, JsObject, JsResult, JsSuccess, JsValue, Json}
+import play.api.libs.json.{
+  Format,
+  JsArray,
+  JsBoolean,
+  JsError,
+  JsNull,
+  JsNumber,
+  JsObject,
+  JsResult,
+  JsString,
+  JsSuccess,
+  JsValue,
+  Json
+}
 import play.api.mvc.RequestHeader
 import play.api.mvc.Results.TooManyRequests
 
@@ -39,9 +52,10 @@ case class LocalTokensBucketStrategyConfig(
     quota: AllowedQuota = AllowedQuota()
 ) extends ThrottlingStrategyConfig
     with NgPluginConfig {
-  def `type` = "local-tokens-bucket"
+  def id = "LocalTokensBucketStrategyConfig"
 
-  override def json(): JsValue = Json.obj(
+  override def json: JsValue = Json.obj(
+    "id"                      -> id,
     "bucketKey"               -> bucketKey,
     "capacity"                -> capacity,
     "refillRequestIntervalMs" -> refillRequestIntervalMs,
@@ -51,23 +65,25 @@ case class LocalTokensBucketStrategyConfig(
 
   def refillRatePerSecond: Double =
     (refillRequestedTokens.toDouble * 1000.0) / refillRequestIntervalMs.toDouble
+
+  override def fmt: Format[ThrottlingStrategyConfig] =
+    LocalTokensBucketStrategyConfig.format.asInstanceOf[Format[ThrottlingStrategyConfig]]
 }
 
 object LocalTokensBucketStrategyConfig {
   val format = new Format[LocalTokensBucketStrategyConfig] {
     override def reads(json: JsValue): JsResult[LocalTokensBucketStrategyConfig] = Try {
       LocalTokensBucketStrategyConfig(
-        bucketKey = json.selectAsOptString("bucketKey").getOrElse(""),
-        capacity = json.selectAsLong("capacity"),
-        refillRequestIntervalMs = json.selectAsLong("refillRequestIntervalMs"),
-        refillRequestedTokens = json.selectAsLong("refillRequestedTokens"),
-        quota = json.select("quota").as(AllowedQuota.fmt)
+        capacity = json.selectAsOptLong("capacity").getOrElse(300),
+        refillRequestIntervalMs = json.selectAsOptLong("refillRequestIntervalMs").getOrElse(50),
+        refillRequestedTokens = json.selectAsOptLong("refillRequestedTokens").getOrElse(50),
+        quota = json.select("quota").asOpt(AllowedQuota.fmt).getOrElse(AllowedQuota())
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
       case Success(value)     => JsSuccess(value)
     }
-    override def writes(o: LocalTokensBucketStrategyConfig): JsValue             = o.json()
+    override def writes(o: LocalTokensBucketStrategyConfig): JsValue             = o.json
   }
 }
 
@@ -114,24 +130,40 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
     FastFuture.successful(())
   }
 
+  private def getState(key: String, tokensAfter: Double, allowedQuotas: AllowedQuota)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[QuotaState] = {
+    super
+      .check(key, allowedQuotas)
+      .map(dailyAndMonthlyQuota => {
+        QuotaState(
+          window = Quota(
+            limit = config.capacity,
+            consumed = (config.refillRequestedTokens - tokensAfter).toLong,
+            resetsAt = System.currentTimeMillis() + (tokensAfter / config.refillRatePerSecond * 1000).toLong
+          ),
+          daily = dailyAndMonthlyQuota.quotas.daily,
+          monthly = dailyAndMonthlyQuota.quotas.monthly
+        )
+      })
+  }
+
   override def check(key: String, allowedQuotas: AllowedQuota)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[ThrottlingResult] = {
     val tokensAfter = memoryBucket.get()
 
-    val hadEnoughTokens = tokensAfter >= 0
+    getState(key, tokensAfter, allowedQuotas)
+      .map(state => {
+        val hadEnoughTokens = tokensAfter >= 0 && state.withinLimits
 
-    ThrottlingResult(
-      allowed = hadEnoughTokens,
-      quotas = QuotaState(
-        window = Quota(
-          limit = config.capacity,
-          consumed = (config.refillRequestedTokens - tokensAfter).toLong,
-          resetsAt = System.currentTimeMillis() + (tokensAfter / config.refillRatePerSecond * 1000).toLong
+        ThrottlingResult(
+          allowed = hadEnoughTokens,
+          quotas = state
         )
-      )
-    ).future
+      })
   }
 
   override def checkAndIncrement(
@@ -139,70 +171,95 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
       increment: Long,
       allowedQuotas: AllowedQuota
   )(implicit env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
-    val tokensAfter = memoryBucket.updateAndGet { current =>
-      if (current >= increment) {
-        current - increment
-      } else {
-        current
-      }
-    }
-
-    val hadEnoughTokens = tokensAfter >= 0
-
-    if (hadEnoughTokens) {
-      ThrottlingResult(
-        allowed = true,
-        quotas = QuotaState(
-          window = Quota(
-            limit = config.capacity,
-            consumed = (config.refillRequestedTokens - tokensAfter).toLong,
-            resetsAt = System.currentTimeMillis() + (tokensAfter / config.refillRatePerSecond * 1000).toLong
-          )
-        )
-      ).future
-    } else {
-      // Not enough tokens, try refill then retry
-      askForRefill().flatMap { _ =>
-        val tokensAfterRefill = memoryBucket.updateAndGet { current =>
-          if (current >= increment) current - increment else current
+    askForRefill().flatMap { _ =>
+      val tokensAfter = memoryBucket.updateAndGet { current =>
+        if (current >= increment) {
+          current - increment
+        } else {
+          current
         }
-
-        val allowed = tokensAfterRefill >= 0
-
-        ThrottlingResult(
-          allowed = allowed,
-          quotas = QuotaState(
-            window = Quota(
-              limit = config.capacity,
-              consumed =
-                if (allowed) (config.refillRequestedTokens - tokensAfterRefill).toLong
-                else config.refillRequestedTokens,
-              resetsAt = System.currentTimeMillis() + 1000
-            )
-          )
-        ).future
       }
+
+      getState(key, tokensAfter, allowedQuotas)
+        .flatMap(currentState => {
+          val hadEnoughTokens = tokensAfter >= 0 && currentState.withinLimits
+
+          if (hadEnoughTokens) {
+            super
+              .incrementDailyAndMonthly(key, increment)
+              .map { case (dailyCalls, monthyCalls) =>
+                ThrottlingResult(
+                  allowed = true,
+                  quotas = currentState.copy(
+                    daily = currentState.daily.copy(consumed = dailyCalls),
+                    monthly = currentState.monthly.copy(consumed = monthyCalls)
+                  )
+                )
+              }
+          } else
+            ThrottlingResult(allowed = false, quotas = currentState).future
+        })
     }
   }
 
-  override def reset(key: String)(implicit ec: ExecutionContext): Future[Unit] = ???
+  override def reset(key: String)(implicit env: Env, ec: ExecutionContext): Future[QuotaState] = {
+    val redisCli = env.datastores.redis
 
-  override def key: String = bucketId
+    val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
+    val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
+    val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+    val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
+
+    for {
+      _ <- redisCli.set(dailyQuotaKey(key), "0")
+      _ <- redisCli.pttl(dailyQuotaKey(key)).filter(_ > -1).recoverWith { case _ =>
+             redisCli.expire(dailyQuotaKey(key), (toDayEnd / 1000).toInt)
+           }
+      _ <- redisCli.set(monthlyQuotaKey(key), "0")
+      _ <- redisCli.pttl(monthlyQuotaKey(key)).filter(_ > -1).recoverWith { case _ =>
+             redisCli.expire(monthlyQuotaKey(key), (toMonthEnd / 1000).toInt)
+           }
+    } yield QuotaState(
+      window = Quota(limit = config.quota.window, consumed = 0, resetsAt = 0),
+      daily = Quota(limit = config.quota.daily, consumed = 0, resetsAt = dayEnd.getMillis),
+      monthly = Quota(limit = config.quota.monthly, consumed = 0, resetsAt = monthEnd.getMillis)
+    )
+  }
 }
 
-case class LegacyThrottlingStrategy(clientId: String) extends ThrottlingStrategy {
+case class LegacyThrottlingStrategy(clientId: String, config: LegacyThrottlingStrategyConfig)
+    extends ThrottlingStrategy {
 
   override def totalCallsKey(name: String)(implicit env: Env): String   = s"${env.storageRoot}:apikey:quotas:global:$name"
   override def dailyQuotaKey(name: String)(implicit env: Env): String   = s"${env.storageRoot}:apikey:quotas:daily:$name"
   override def monthlyQuotaKey(name: String)(implicit env: Env): String =
     s"${env.storageRoot}:apikey:quotas:monthly:$name"
   override def throttlingKey(name: String)(implicit env: Env): String   = s"${env.storageRoot}:apikey:quotas:second:$name"
+}
 
-  override def reset(key: String)(implicit ec: ExecutionContext): Future[Unit] = ???
+case class LegacyThrottlingStrategyConfig(quota: AllowedQuota = AllowedQuota())
+    extends ThrottlingStrategyConfig
+    with NgPluginConfig {
+  def id = "LegacyThrottlingStrategyConfig"
 
-  override def config: ThrottlingStrategyConfig = ???
+  override def json: JsValue = Json.obj("quota" -> quota.json, "id" -> id)
 
-  override def key: String = clientId
+  override def fmt: Format[ThrottlingStrategyConfig] =
+    LegacyThrottlingStrategyConfig.format.asInstanceOf[Format[ThrottlingStrategyConfig]]
+}
+
+object LegacyThrottlingStrategyConfig {
+  val format = new Format[LegacyThrottlingStrategyConfig] {
+    override def reads(json: JsValue): JsResult[LegacyThrottlingStrategyConfig] = Try {
+      LegacyThrottlingStrategyConfig(
+        quota = json.select("quota").as(AllowedQuota.fmt)
+      )
+    } match {
+      case Failure(exception) => JsError(exception.getMessage)
+      case Success(value)     => JsSuccess(value)
+    }
+    override def writes(o: LegacyThrottlingStrategyConfig): JsValue             = o.json
+  }
 }
 
 class LocalTokenBucket extends NgAccessValidator {
@@ -266,10 +323,29 @@ case class ThrottlingResult(
 )
 
 trait ThrottlingStrategyConfig {
-  def `type`: String
+  def id: String
   def json: JsValue
-
   def quota: AllowedQuota
+  def fmt: Format[ThrottlingStrategyConfig]
+}
+
+object ThrottlingStrategyConfig {
+  val fmt = new Format[ThrottlingStrategyConfig] {
+
+    override def reads(json: JsValue): JsResult[ThrottlingStrategyConfig] = {
+      json match {
+        case JsNull => JsError("null value")
+        case value  =>
+          value.selectAsOptString("id") match {
+            case Some("LocalTokensBucketStrategyConfig") => LocalTokensBucketStrategyConfig.format.reads(value)
+            case Some("LegacyThrottlingStrategyConfig")  => LegacyThrottlingStrategyConfig.format.reads(value)
+            case None                                    => JsError("unknown type")
+          }
+      }
+    }
+
+    override def writes(o: ThrottlingStrategyConfig): JsValue = o.json
+  }
 }
 
 case class AllowedQuota(
@@ -289,9 +365,9 @@ object AllowedQuota {
 
     override def reads(json: JsValue): JsResult[AllowedQuota] = Try {
       AllowedQuota(
-        window = json.selectAsLong("window"),
-        daily = json.selectAsLong("daily"),
-        monthly = json.selectAsLong("monthly")
+        window = json.selectAsOptLong("window").getOrElse(Long.MaxValue),
+        daily = json.selectAsOptLong("daily").getOrElse(Long.MaxValue),
+        monthly = json.selectAsOptLong("monthly").getOrElse(Long.MaxValue)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -336,39 +412,30 @@ object Quota {
 }
 
 trait ThrottlingStrategy {
-  def throttlingKey(name: String)(implicit env: Env): String   =
+  def throttlingKey(name: String)(implicit env: Env): String =
     s"${env.storageRoot}:ratelimiter:quotas:window:$name"
-  def dailyQuotaKey(name: String)(implicit env: Env): String   =
+
+  def dailyQuotaKey(name: String)(implicit env: Env): String =
     s"${env.storageRoot}:ratelimiter:quotas:daily:$name"
+
   def monthlyQuotaKey(name: String)(implicit env: Env): String =
     s"${env.storageRoot}:ratelimiter:quotas:monthly:$name"
-  def totalCallsKey(name: String)(implicit env: Env): String   =
+
+  def totalCallsKey(name: String)(implicit env: Env): String =
     s"${env.storageRoot}:ratelimiter:quotas:global:$name"
 
-  def checkAndIncrement(
-      key: String,
-      increment: Long,
-      allowedQuotas: AllowedQuota
-  )(implicit env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
+  def incrementDailyAndMonthly(key: String, increment: Long)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[(Long, Long)] = {
     val redisCli = env.datastores.redis
 
-    // Calculate reset timestamps
-    val now        = System.currentTimeMillis()
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
     val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
 
-    env.clusterAgent.incrementApi(key, increment)
-
     for {
-      secCalls  <- redisCli.incrby(throttlingKey(key), increment)
-      windowTTL <- redisCli.pttl(throttlingKey(key)).flatMap {
-                     case -1  =>
-                       redisCli.expire(throttlingKey(key), env.throttlingWindow).map(_ => env.throttlingWindow * 1000L)
-                     case ttl => Future.successful(ttl)
-                   }
-
       dailyCalls <- redisCli.incrby(dailyQuotaKey(key), increment)
       _          <- redisCli.pttl(dailyQuotaKey(key)).flatMap {
                       case -1 => redisCli.expire(dailyQuotaKey(key), (toDayEnd / 1000).toInt)
@@ -380,6 +447,35 @@ trait ThrottlingStrategy {
                         case -1 => redisCli.expire(monthlyQuotaKey(key), (toMonthEnd / 1000).toInt)
                         case _  => Future.successful(())
                       }
+    } yield {
+      println("dailyCalls", dailyCalls, "monthlyCalls", monthlyCalls)
+      (dailyCalls, monthlyCalls)
+    }
+  }
+
+  def checkAndIncrement(
+      key: String,
+      increment: Long,
+      allowedQuotas: AllowedQuota
+  )(implicit env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
+    val redisCli = env.datastores.redis
+
+    // Calculate reset timestamps
+    val now      = System.currentTimeMillis()
+    val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
+    val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+
+    env.clusterAgent.incrementApi(key, increment)
+
+    for {
+      secCalls  <- redisCli.incrby(throttlingKey(key), increment)
+      windowTTL <- redisCli.pttl(throttlingKey(key)).flatMap {
+                     case -1  =>
+                       redisCli.expire(throttlingKey(key), env.throttlingWindow).map(_ => env.throttlingWindow * 1000L)
+                     case ttl => Future.successful(ttl)
+                   }
+
+      dailyAndMonthlyCalls <- incrementDailyAndMonthly(key, increment)
 
       _ <- redisCli.incrby(totalCallsKey(key), increment)
     } yield {
@@ -391,12 +487,12 @@ trait ThrottlingStrategy {
         ),
         daily = Quota(
           limit = allowedQuotas.daily,
-          consumed = dailyCalls,
+          consumed = dailyAndMonthlyCalls._1,
           resetsAt = dayEnd.getMillis
         ),
         monthly = Quota(
           limit = allowedQuotas.monthly,
-          consumed = monthlyCalls,
+          consumed = dailyAndMonthlyCalls._2,
           resetsAt = monthEnd.getMillis
         )
       )
@@ -404,6 +500,43 @@ trait ThrottlingStrategy {
       ThrottlingResult(
         allowed = state.withinLimits,
         quotas = state
+      )
+    }
+  }
+
+  def quotas(key: String)(implicit ec: ExecutionContext, env: Env): Future[QuotaState] = {
+    val redisCli = env.datastores.redis
+
+    val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
+    val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+    val now      = System.currentTimeMillis()
+
+    for {
+      throttlingCallsPerWindow <- redisCli.get(throttlingKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+      dailyCalls               <- redisCli.get(dailyQuotaKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+      monthlyCalls             <- redisCli.get(monthlyQuotaKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+      windowTTL                <- redisCli.pttl(throttlingKey(key)).flatMap {
+                                    case -1  =>
+                                      redisCli.expire(throttlingKey(key), env.throttlingWindow).map(_ => env.throttlingWindow * 1000L)
+                                    case ttl => Future.successful(ttl)
+                                  }
+    } yield {
+      QuotaState(
+        window = Quota(
+          limit = config.quota.window,
+          consumed = throttlingCallsPerWindow,
+          resetsAt = now + windowTTL
+        ),
+        daily = Quota(
+          limit = config.quota.daily,
+          consumed = dailyCalls,
+          resetsAt = dayEnd.getMillis
+        ),
+        monthly = Quota(
+          limit = config.quota.monthly,
+          consumed = monthlyCalls,
+          resetsAt = monthEnd.getMillis
+        )
       )
     }
   }
@@ -450,36 +583,65 @@ trait ThrottlingStrategy {
     }
   }
 
-  def reset(key: String)(implicit ec: ExecutionContext): Future[Unit]
-  def config: ThrottlingStrategyConfig
+  def reset(key: String)(implicit env: Env, ec: ExecutionContext): Future[QuotaState] = {
+    val redisCli = env.datastores.redis
 
-  def key: String
+    val now        = System.currentTimeMillis()
+    val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
+    val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
+    val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+    val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
+
+    for {
+      windowTTL <- redisCli.pttl(throttlingKey(key)).flatMap {
+                     case -1  =>
+                       redisCli.expire(throttlingKey(key), env.throttlingWindow).map(_ => env.throttlingWindow * 1000L)
+                     case ttl => Future.successful(ttl)
+                   }
+      _         <- redisCli.set(totalCallsKey(key), "0")
+      _         <- redisCli.pttl(throttlingKey(key)).filter(_ > -1).recoverWith { case _ =>
+                     redisCli.expire(throttlingKey(key), env.throttlingWindow)
+                   }
+      _         <- redisCli.set(dailyQuotaKey(key), "0")
+      _         <- redisCli.pttl(dailyQuotaKey(key)).filter(_ > -1).recoverWith { case _ =>
+                     redisCli.expire(dailyQuotaKey(key), (toDayEnd / 1000).toInt)
+                   }
+      _         <- redisCli.set(monthlyQuotaKey(key), "0")
+      _         <- redisCli.pttl(monthlyQuotaKey(key)).filter(_ > -1).recoverWith { case _ =>
+                     redisCli.expire(monthlyQuotaKey(key), (toMonthEnd / 1000).toInt)
+                   }
+    } yield QuotaState(
+      window = Quota(limit = config.quota.window, consumed = 0, resetsAt = now + windowTTL),
+      daily = Quota(limit = config.quota.daily, consumed = 0, resetsAt = dayEnd.getMillis),
+      monthly = Quota(limit = config.quota.monthly, consumed = 0, resetsAt = monthEnd.getMillis)
+    )
+  }
+
+  def config: ThrottlingStrategyConfig
 }
 
 object ThrottlingStrategy {
   def apply(config: ThrottlingStrategyConfig, key: String)(implicit env: Env) = {
     val conf = config.json
-    config.`type` match {
-      case "local-tokens-bucket" =>
+
+    config.id match {
+      case "LocalTokensBucketStrategyConfig" =>
         LocalTokensBucketStrategy(
           key,
-          LocalTokensBucketStrategyConfig(
-            bucketKey = conf.selectAsOptString("bucketKey").getOrElse(""),
-            capacity = conf.selectAsLong("capacity"),
-            refillRequestIntervalMs = conf.selectAsLong("refillRequestIntervalMs"),
-            refillRequestedTokens = conf.selectAsLong("refillRequestedTokens")
-          )
+          LocalTokensBucketStrategyConfig.format
+            .reads(conf)
+            .getOrElse(LocalTokensBucketStrategyConfig())
         )
     }
   }
 
-  def default(clientId: String) = LegacyThrottlingStrategy(clientId)
+  def default(clientId: String) = LegacyThrottlingStrategy(clientId, LegacyThrottlingStrategyConfig())
 }
 
 class RateLimiter(env: Env) {
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
-  val buckets = new UnboundedTrieMap[String, ThrottlingStrategy]()
+  val strategies = new UnboundedTrieMap[String, ThrottlingStrategy]()
 
   private def getKey(
       key: String,
@@ -503,7 +665,7 @@ class RateLimiter(env: Env) {
   }
 
   def getOrCreate(
-      bucketKey: String,
+      value: String,
       req: Option[RequestHeader] = None,
       attrs: TypedMap,
       route: Option[NgRoute] = None,
@@ -511,12 +673,22 @@ class RateLimiter(env: Env) {
       user: Option[PrivateAppsUser] = None,
       throttlingStrategy: Option[ThrottlingStrategyConfig]
   ): ThrottlingStrategy = {
-    val key = getKey(bucketKey, req, attrs, route, apiKey, user)
-    buckets.getOrElseUpdate(
-      key,
-      throttlingStrategy
-        .map(strategy => ThrottlingStrategy.apply(strategy, key)(env))
-        .getOrElse(ThrottlingStrategy.default(key))
-    )
+
+    val key = getKey(value, req, attrs, route, apiKey, user)
+
+    throttlingStrategy match {
+      case Some(config) => getOrCreateWithConfig(key, config)
+      case None         => strategies.getOrElse(key, ThrottlingStrategy.default(key))
+    }
+  }
+
+  private def getOrCreateWithConfig(key: String, config: ThrottlingStrategyConfig): ThrottlingStrategy = {
+    strategies.get(key) match {
+      case Some(strategy) if strategy.config.id == config.id => strategy
+      case _                                                 =>
+        val newStrategy = ThrottlingStrategy.apply(config, key)(env)
+        strategies.put(key, newStrategy)
+        newStrategy
+    }
   }
 }
