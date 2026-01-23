@@ -52,6 +52,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikeys - passApikeyToBackend" in {
       new ApikeysTests(this).passApikeyToBackend()
     }
+    "Apikeys - wipe backend disabled and default custom headers" in {
+      new ApikeysTests(this).wipeBackendDisabledAndDefaultCustomHeaders()
+    }
     "Apikeys - passApikeyToBackend with custom headers" in {
       new ApikeysTests(this).passApikeyToBackendWithCustomHeaders()
     }
@@ -106,8 +109,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Override Location Header: redirect to domain path" in {
       new OverrideLocationHeaderTests(this).redirectToDomainAndPath()
     }
-    "Override Location Header: redirect to domain path and follow redirect" in {
-      new OverrideLocationHeaderTests(this).redirectToDomainAndPathFollowRedirect()
+    "Override Location Header: redirect to domain path wit matching hostnames" in {
+      new OverrideLocationHeaderTests(this).redirectToDomainAndPathWithMatchingHostnames()
     }
     "Security Txt" in {
       new SecurityTxtTests(this)
@@ -689,6 +692,30 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
       new KubernetesIntegrationTests(this)
         .build()
         .futureValue(Timeout(Span(30, Minutes)))
+    }
+    "Kubernetes integration - trigger scanner job" in {
+      new KubernetesIntegrationTests(this)
+        .triggerScannerJob()
+        .futureValue(Timeout(Span(30, Minutes)))
+    }
+    "gRPC Web plugin" in {
+      new GrpcWebTests(this)
+        .run()
+        .futureValue(Timeout(Span(30, Minutes)))
+    }
+    "gRPC Web plugin should apply authorization rules" in {
+      new GrpcWebTests(this)
+        .authorizationRules()
+        .futureValue
+    }
+    "izanami v2 proxy - should call izanami correctly" in {
+      new IzanamiV2ProxyTests(this).izanamiCallShouldBeCorrect()
+    }
+    "izanami v2 proxy - should add request context if specified" in {
+      new IzanamiV2ProxyTests(this).contextShouldBeUsedWhenNeeded()
+    }
+    "OIDCJwtVerifier" in {
+      new OIDCJwtVerifierTests(this).verifyOIDC()
     }
   }
 }

@@ -48,6 +48,22 @@ build_jar_template_version () {
   docker tag "otoroshi-correto-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION"
 }
 
+build_jar_template_version_root () {
+  OTO_VERSION="$1"
+  JDK_VERSION="$2"
+  echo "build version $OTO_VERSION with jdk $JDK_VERSION and root user"
+  docker build --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile-root -t "otoroshi-root-jdk$JDK_VERSION" .
+  docker tag "otoroshi-root-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-root-jdk$JDK_VERSION"
+}
+
+build_jar_template_version_nonroot () {
+  OTO_VERSION="$1"
+  JDK_VERSION="$2"
+  echo "build version $OTO_VERSION with jdk $JDK_VERSION and nonroot user"
+  docker build --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "otoroshi-nonroot-jdk$JDK_VERSION" .
+  docker tag "otoroshi-nonroot-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-nonroot-jdk$JDK_VERSION"
+}
+
 build_and_push_jar_template_version_multi_arch () {
   OTO_VERSION="$1"
   JDK_VERSION="$2"
@@ -167,6 +183,16 @@ case "${1}" in
     ;;
   setup-docker)
     setup_docker_builder
+    ;;
+  build-root)
+    copy_build
+    build_jar_template_version_root "dev" "21"
+    cleanup
+    ;;
+  build-nonroot)
+    copy_build
+    build_jar_template_version_nonroot "dev" "21"
+    cleanup
     ;;
   *)
     echo "Build otoroshi docker images"

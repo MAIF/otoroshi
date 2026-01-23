@@ -102,7 +102,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
     result.header.headers.map { case (key, value) =>
       if (key != "otoroshi-netty-trailers") headers.add(key, value)
     }
-    if (bresponse.contentType.contains("application/grpc")) {
+    if (bresponse.contentType.exists(_.contains("application/grpc"))) {
       headers.add(HttpHeaderNames.TRAILER, "grpc-status, grpc-message")
     }
     bresponse.contentType.foreach(ct => headers.add("Content-Type", ct))
@@ -441,7 +441,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
       val (groupHttp, groupHttps) = createEventLoops(config.id == HttpListenerNames.Experimental)
       // val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = createEventLoops()
 
-      if (config.id == "classic") {
+      if (config.id == HttpListenerNames.Experimental) {
         if (config.http3.enabled) logger.info(s"  https://${config.host}:${config.http3.port} (HTTP/3)")
         logger.info(s"  https://${config.host}:${config.httpsPort} (HTTP/1.1, HTTP/2)")
         logger.info(s"  http://${config.host}:${config.httpPort}  (HTTP/1.1, HTTP/2 H2C)")

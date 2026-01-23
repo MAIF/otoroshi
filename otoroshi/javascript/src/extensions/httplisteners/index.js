@@ -171,7 +171,7 @@ export function setupHttpListenersExtension(registerExtension) {
       }
 
       client = BackOfficeServices.apisClient(
-        'http-listeners.extensions.otoroshi.io',
+        'http-listeners.proxy.otoroshi.io',
         'v1',
         'http-listeners'
       );

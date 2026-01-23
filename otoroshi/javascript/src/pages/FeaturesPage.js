@@ -3,8 +3,25 @@ import { Link } from 'react-router-dom';
 import _ from 'lodash';
 import { icon as snowmonkeyIcon } from '../components/SnowMonkeyConfig.js';
 
+function mergeByTitle(items) {
+  const map = new Map();
+  for (const item of items) {
+    if (!map.has(item.title)) {
+      map.set(item.title, {
+        ...item,
+        features: [...(item.features || [])],
+      });
+    } else {
+      const existing = map.get(item.title);
+      existing.features.push(...(item.features || []));
+    }
+  }
+
+  return Array.from(map.values());
+}
+
 export const graph = (env) => {
-  return [
+  const links = [
     {
       title: 'Tooling',
       description: 'Some tools to help you with otoroshi',
@@ -378,8 +395,9 @@ export const graph = (env) => {
         },
       ],
     },
-    ...Otoroshi.extensions().flatMap((ext) => ext.categories || []),
+    ...Otoroshi.extensions().flatMap((ext) => ext.categories || [])
   ];
+  return mergeByTitle(links);
 };
 
 const AutoLink = (props) => {

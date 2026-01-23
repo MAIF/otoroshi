@@ -8,6 +8,7 @@ import {
   NumberInput,
   LabelInput,
   DateTimeInput,
+  MonacoInput,
 } from '.';
 // import { NgBoxBooleanRenderer } from '../nginputs/inputs';
 import { Location } from '../Location';
@@ -248,6 +249,16 @@ export class Form extends Component {
               key={name}
               value={this.getValue(name, '')}
               type="password"
+              {...props}
+              onChange={(v) => this.changeValue(name, v)}
+            />
+          );
+        } else if (type === 'monaco') {
+          component = (
+            <MonacoInput
+              disabled={disabled}
+              key={name}
+              value={this.getValue(name, '')}
               {...props}
               onChange={(v) => this.changeValue(name, v)}
             />
