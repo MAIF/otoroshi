@@ -20,7 +20,6 @@ import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 import play.api.libs.ws.WSBodyWritables.given
 import play.api.mvc.{RequestHeader, Result, Results}
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.el.JwtExpressionLanguage
@@ -786,7 +785,7 @@ case class OIDCJwtVerifierConfig(ref: Option[String] = None,
     if (customResponse) {
       val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
       val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
-      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
     } else {
       None
     }

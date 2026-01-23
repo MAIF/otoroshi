@@ -23,7 +23,7 @@ import scala.concurrent.{Future, Promise}
 
 class GrpcWebTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{*, given}
 
   def buildAndSaveDockerImage(imageName: String) = {
     val dockerClient = GenericContainer("docker:27-cli")

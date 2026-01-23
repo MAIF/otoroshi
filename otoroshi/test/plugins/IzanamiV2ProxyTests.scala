@@ -8,11 +8,12 @@ import otoroshi.ssl.DynamicSSLEngineProvider.base64Decode
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
 import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.ws.WSBodyWritables.writeableOf_JsValue
 
 import scala.concurrent.Future
 
 class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{*, given}
 
   private def setup(config: IzanamiV2ProxyConfig): (NgRoute, NgRoute) = {
     val targetRoute = createRouteWithExternalTarget(

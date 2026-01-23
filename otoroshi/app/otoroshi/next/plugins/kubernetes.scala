@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{
   BackendCallResponse,
@@ -81,11 +81,11 @@ class KubernetesNamespaceScanBackend extends NgBackendCall {
       ).rightf
     } else {
       val jobCtx    = createJobContext(env)
-      val k8sConfig = KubernetesConfig.theConfig(jobCtx)
+      val k8sConfig = KubernetesConfig.theConfig(jobCtx)(using env, ec)
 
       initializeKubernetesResources(k8sConfig, jobCtx)
 
-      syncNamespaces(k8sConfig, jobCtx, scanConfig.namespaces)
+      syncNamespaces(k8sConfig, jobCtx, scanConfig.namespaces)(using ec, env)
     }
   }
 

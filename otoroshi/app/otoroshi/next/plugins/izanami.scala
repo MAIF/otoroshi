@@ -591,7 +591,7 @@ class IzanamiV2Proxy extends NgBackendCall {
       )
 
     val method   = ctx.request.method
-    val response = if (method == "GET") {
+    val response: Future[Either[NgProxyEngineError, play.api.libs.ws.WSResponse]] = if (method == "GET") {
       baseRequest.get().map(r => r.right)
     } else if (method == "POST") {
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
@@ -614,19 +614,18 @@ class IzanamiV2Proxy extends NgBackendCall {
 
     response.map {
       case Left(err)   => Left(err)
-      case Right(resp) => {
+      case Right(resp) =>
         Right(
           BackendCallResponse(
             NgPluginHttpResponse(
               resp.status,
-              resp.headers.mapValues(_.last),
+              resp.headers.view.mapValues(_.last).toMap,
               Seq.empty,
               ByteString(Json.stringify(resp.json)).chunks(16 * 1024)
             ),
             None
           )
         )
-      }
     }
   }
 }

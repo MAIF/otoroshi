@@ -12,7 +12,7 @@ import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class OIDCJwtVerifierTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{*, given}
 
   def verifyOIDC() = {
     val token = JWT.create().withIssuer("foo").sign(Algorithm.HMAC256("secret"))

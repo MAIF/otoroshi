@@ -231,7 +231,7 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     manager.runOnceWithConfiguration(this)
     promise.future.andThen { case _ =>
       manager.unregisterJob(this)
-    }(manager.jobExecutor)
+    }(using manager.jobExecutor)
   }
 
   final def auditJson(ctx: JobContext)(using env: Env): JsValue =

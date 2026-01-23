@@ -1,5 +1,6 @@
 package otoroshi.next.plugins
 
+
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
@@ -168,7 +169,7 @@ class OverrideLocationHeader extends NgRequestTransformer {
       ctx: NgTransformerResponseContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     ctx.attrs.get(Keys.BackendKey) match {
-      case None          => ctx.otoroshiResponse.right
+      case None          => ctx.otoroshiResponse.rightf
       case Some(backend) =>
         val status = ctx.otoroshiResponse.status
         if ((status > 299 && status < 400) || status == 201) {

@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
@@ -105,7 +105,7 @@ class GrpcWebProxyPlugin extends NgRequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
 
     val config = ctx
-      .cachedConfig(internalName)(GrpcWebConfig.fmt.reads)
+      .cachedConfig(internalName)(GrpcWebConfig.fmt)
       .getOrElse(GrpcWebConfig())
 
     val contentType   = ctx.request.headers.get("Content-Type").getOrElse("")

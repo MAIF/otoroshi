@@ -8,6 +8,7 @@ import otoroshi.next.plugins.{OverrideHost, OverrideLocationHeader, OverrideLoca
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.http.Status
 import play.api.libs.json.Json
+import play.api.libs.ws.WSBodyReadables.readableAsString
 
 class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
   import parent.{*, given}
@@ -125,8 +126,8 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
 
-    resp.status mustBe Status.OK
-    resp.body mustBe Json.stringify(Json.obj("message" -> "reached the target route"))
+    resp.status.mustBe(Status.OK)
+    resp.body.mustBe(Json.stringify(Json.obj("message" -> "reached the target route")))
     getOutHeader(resp2, "Location") mustBe Some(s"http://foo.oto.tools:$port/foo")
 
     deleteOtoroshiRoute(route).futureValue
@@ -184,8 +185,8 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
 
-    resp.status mustBe Status.OK
-    resp.body mustBe Json.stringify(Json.obj("message" -> "reached the target route"))
+    resp.status.mustBe(Status.OK)
+    resp.body.mustBe(Json.stringify(Json.obj("message" -> "reached the target route")))
     getOutHeader(resp2, "Location") mustBe Some(s"http://foo.oto.tools:$port/foo")
 
     deleteOtoroshiRoute(route).futureValue

@@ -13,6 +13,7 @@ import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.config.ConfigUtils
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.controllers.{
   ApiError,
   BulkControllerHelper,

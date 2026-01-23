@@ -1774,7 +1774,7 @@ object KubernetesCRDsJob {
             successCount = successCount,
             failureCount = failureCount,
             durationMs = duration,
-            entityResults = results
+            entityResults = results.toSeq
           )
         }
     }
