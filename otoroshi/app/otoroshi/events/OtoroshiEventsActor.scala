@@ -1,6 +1,6 @@
 package otoroshi.events
 
-import com.sksamuel.pulsar4s.Producer
+import org.apache.pulsar.client.api.Producer as ApacheProducer
 import com.spotify.metrics.core.MetricId
 import io.netty.channel.ChannelOption
 import io.netty.channel.unix.DomainSocketAddress
@@ -1130,7 +1130,7 @@ object Exporters {
   class PulsarExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
       extends DefaultDataExporter(config)(using ec, env) {
 
-    val clientRef = new AtomicReference[Producer[JsValue]]()
+    val clientRef = new AtomicReference[ApacheProducer[JsValue]]()
 
     override def start(): Future[Unit] = {
       exporter[PulsarConfig].foreach { eec =>
@@ -1140,7 +1140,12 @@ object Exporters {
     }
 
     override def stop(): Future[Unit] = {
-      Option(clientRef.get()).map(_.closeAsync).getOrElse(FastFuture.successful(()))
+      Option(clientRef.get()).map { p =>
+        Future {
+          p.closeAsync().get()
+          ()
+        }(using ec)
+      }.getOrElse(FastFuture.successful(()))
     }
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
@@ -1150,7 +1155,10 @@ object Exporters {
           start()
         }
         Source(events.toList)
-          .mapAsync(10)(evt => cli.sendAsync(evt))
+          .mapAsync(10)(evt => Future {
+            cli.sendAsync(evt).get()
+            ()
+          }(using ec))
           .runWith(Sink.ignore)(using env.analyticsMaterializer)
           .map(_ => ExportResult.ExportResultSuccess)
       } getOrElse {

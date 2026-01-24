@@ -10,7 +10,6 @@ import otoroshi.api.schema.*
 import java.time.*
 import java.util.UUID
 import scala.reflect.ClassTag
-import scala.reflect.runtime.universe.*
 import scala.util.Try
 
 // Test data models

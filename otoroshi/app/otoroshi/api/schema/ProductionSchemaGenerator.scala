@@ -72,8 +72,8 @@ class ProductionSchemaGenerator(
     generateFullSchema(clazz)
   }
 
-  def createSchema[T: ClassTag]: JValue = {
-    createSchema(summon[ClassTag[T]].runtimeClass)
+  def createSchema[T](using ct: ClassTag[T]): JValue = {
+    createSchema(ct.runtimeClass)
   }
 
   private def generateFullSchema(clazz: Class[?]): JValue = {
