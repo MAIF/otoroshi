@@ -55,17 +55,17 @@ enablePlugins(PlayScala)
 disablePlugins(PlayFilters)
 
 lazy val scalaLangVersion   = "3.7.4"
-val playVersion             = "3.0.9"
+val playVersion             = "3.0.10"
 val metricsVersion          = "4.2.37"
 val acme4jVersion           = "3.5.1"
 val prometheusVersion       = "0.16.0"
 val playJsonVersion         = "3.0.6"
 val webAuthnVersion         = "2.7.0"
-val kubernetesVersion       = "24.0.0"
+val kubernetesVersion       = "25.0.0"
 val bouncyCastleVersion     = "1.83"
 val bouncyCastleExtVersion  = "1.78.1"
 val pulsarVersion           = "2.12.0.1"
-val openTelemetryVersion    = "1.56.0"
+val openTelemetryVersion    = "1.58.0"
 val jacksonVersion          = "2.19.2"
 val pekkoVersion            = "1.3.0"
 val pekkoHttpVersion        = "1.3.0"
@@ -219,7 +219,7 @@ libraryDependencies ++= Seq(
     "com.clever-cloud.pulsar4s"       %% "pulsar4s-play-json"                        % pulsarVersion excludeAll (excludesJackson *),
     "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                             % pulsarVersion excludeAll (excludesJackson *),
     "com.clever-cloud.pulsar4s"       %% "pulsar4s-pekko-streams"                    % pulsarVersion excludeAll (excludesJackson *),
-    "org.jsoup"                        % "jsoup"                                     % "1.21.2",
+    "org.jsoup"                        % "jsoup"                                     % "1.22.1",
     "org.biscuitsec"                   % "biscuit"                                   % "4.0.1",
     "org.opensaml"                     % "opensaml-core"                             % "4.0.1",
     "org.opensaml"                     % "opensaml-saml-api"                         % "4.0.1",
@@ -249,14 +249,13 @@ libraryDependencies ++= Seq(
     "io.opentelemetry"                 % "opentelemetry-exporter-sender-okhttp"      % openTelemetryVersion excludeAll (excludesJackson *),
     "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"        % "2.22.0-alpha" excludeAll (excludesJackson *),
     "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.793" excludeAll (excludesJackson *),
-    "org.apache.logging.log4j"         % "log4j-api"                                 % "2.25.2",
+    "org.apache.logging.log4j"         % "log4j-api"                                 % "2.25.3",
     "org.sangria-graphql"             %% "sangria"                                   % "4.2.15",
     "org.bigtesting"                   % "routd"                                     % "1.0.7",
     "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
     "io.azam.ulidj"                    % "ulidj"                                     % "2.0.0",
     "fr.maif"                         %% "wasm4s"                                    % "5.0.3" classifier "bundle",
-    "com.google.crypto.tink"           % "tink"                                      % "1.19.0",
-    "org.reflections"                  % "reflections"                               % "0.10.2",
+    "com.google.crypto.tink"           % "tink"                                      % "1.20.0",
     "org.json4s"                      %% "json4s-jackson"                            % "4.0.7",
     "org.json4s"                      %% "json4s-ast"                                % "4.0.7",
     "org.json4s"                      %% "json4s-ext"                                % "4.0.7",
@@ -277,7 +276,7 @@ libraryDependencies ++= Seq(
     "com.networknt"                    % "json-schema-validator"                     % "1.5.8" excludeAll (excludeSlf4jAndJackson *),
     "jakarta.jms"                      % "jakarta.jms-api"                           % "3.1.0",
     "org.apache.activemq"              % "artemis-jakarta-client"                    % "2.44.0" excludeAll (excludeSlf4jAndJackson *),
-  "com.dimafeng"                    %% "testcontainers-scala-scalatest"            % "0.44.0" % Test,
+  "com.dimafeng"                    %% "testcontainers-scala-scalatest"            % "0.44.1" % Test,
   "com.microsoft.playwright"         % "playwright"                                % "1.57.0" % Test
 )
 
@@ -415,7 +414,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.env=dev",
   "-Dotoroshi.http.port=9999",
   "-Dotoroshi.https.port=9998",
-  "-Dotoroshi.liveJs=true",
+  "-Dotoroshi.liveJs=false",
   "-Dotoroshi.adminPassword=password",
   "-Dotoroshi.domain=oto.tools",
   "-Dotoroshi.events.maxSize=0",
@@ -446,7 +445,7 @@ reStart / javaOptions ++= Seq(
 //  "-Dotoroshi.loggers.otoroshi-plugins-kubernetes-crds-sync=OFF",
 //  "-Dotoroshi.loggers.otoroshi-plugins-kubernetes-cert-sync=OFF",
 //  "-Dotoroshi.loggers.otoroshi-plugins-kubernetes-crds-controller-job=OFF",
-  "-Dotoroshi.options.enable-json-media-type-with-open-charset=true",
+  "-Dotoroshi.options.enable-json-media-type-with-open-charset=true", // now using proper Pekko ParserSettings API instead of reflection
   "-Dotoroshi.next.state-sync-interval=1000",
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   "-DVAULT_VALUE=admin-api-apikey-secret",
