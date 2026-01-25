@@ -552,6 +552,29 @@ trait NgRouter extends NgPlugin {
   def findRoute(ctx: NgRouterContext)(implicit env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = None
 }
 
+trait RequestTransformerErrors {
+
+  def request: RequestHeader
+  def route: NgRoute
+  def attrs: TypedMap
+  def report: NgExecutionReport
+
+  def errorResponse[A](status: Results.Status, message: String)(implicit env: Env, ec: ExecutionContext): Future[Either[Result, A]] = {
+    Errors
+      .craftResponseResult(
+        message = message,
+        status = status,
+        req = request,
+        maybeDescriptor = None,
+        maybeCauseId = None,
+        duration = report.getDurationNow(),
+        overhead = report.getOverheadInNow(),
+        attrs = attrs,
+        maybeRoute = route.some
+      ).map(r => Left(r))
+  }
+}
+
 case class NgBeforeRequestContext(
     snowflake: String,
     route: NgRoute,
@@ -605,7 +628,7 @@ case class NgTransformerRequestContext(
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerRequestContext, Boolean, JsValue, Unit],
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"        -> snowflake,
     "raw_request"      -> rawRequest.json,
@@ -654,7 +677,7 @@ case class NgTransformerResponseContext(
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerResponseContext, Boolean, JsValue, Unit],
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"         -> snowflake,
     "raw_response"      -> rawResponse.json,
@@ -703,7 +726,7 @@ case class NgTransformerErrorContext(
     attrs: TypedMap,
     report: NgExecutionReport,
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"         -> snowflake,
     "maybe_cause_id"    -> maybeCauseId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -780,6 +803,30 @@ trait NgRequestTransformer extends NgPlugin {
   }
 }
 
+trait NgAccessContextErrors {
+
+  def request: RequestHeader
+  def route: NgRoute
+  def attrs: TypedMap
+  def report: NgExecutionReport
+
+  def deniedAccess(status: Results.Status, message: String)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    Errors
+      .craftResponseResult(
+        message = message,
+        status = status,
+        req = request,
+        maybeDescriptor = None,
+        maybeCauseId = None,
+        duration = report.getDurationNow(),
+        overhead = report.getOverheadInNow(),
+        attrs = attrs,
+        maybeRoute = route.some
+      )
+      .map(r => NgAccess.NgDenied(r))
+  }
+}
+
 case class NgAccessContext(
     snowflake: String,
     request: RequestHeader,
@@ -793,7 +840,7 @@ case class NgAccessContext(
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgAccessContext, Boolean, JsValue, Unit],
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext with NgAccessContextErrors with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
     "apikey"        -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
