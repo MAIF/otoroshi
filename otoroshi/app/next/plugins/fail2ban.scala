@@ -272,6 +272,7 @@ object Fail2BanState {
 object Fail2BanPlugin {
   val Fail2BanTriggerStatusKey = TypedKey[Int]("otoroshi.plugins.Fail2BanPlugin.Fail2BanTriggerStatus")
   val Fail2BanTriggerKey = TypedKey[String]("otoroshi.plugins.Fail2BanPlugin.Fail2BanTrigger")
+  val Fail2BanAlreadyCountedKey = TypedKey[Boolean]("otoroshi.plugins.Fail2BanPlugin.Fail2BanAlreadyCounted")
 }
 
 class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
@@ -324,6 +325,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
         "message"          -> s"You are temporarily banned due to too many failed requests.",
         "retry_in_seconds" -> remain
       )
+      ctx.attrs.put(Fail2BanPlugin.Fail2BanAlreadyCountedKey -> true)
       NgAccess.NgDenied(Results.Forbidden(body)).vfuture
     } else {
       NgAccess.NgAllowed.vfuture
@@ -349,7 +351,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
         val now     = System.currentTimeMillis()
         val counter = Fail2BanState.counterFor(ip)
         val n       = counter.increment(now, conf.detectTimeMs.toMillis)
-
+        ctx.attrs.put(Fail2BanPlugin.Fail2BanAlreadyCountedKey -> true)
         if (n >= conf.maxRetry) {
           Fail2BanState.ban(ip, (now + conf.banTimeMs.toMillis).millis)
           counter.reset()
@@ -377,7 +379,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
         val now     = System.currentTimeMillis()
         val counter = Fail2BanState.counterFor(ip)
         val n       = counter.increment(now, conf.detectTimeMs.toMillis)
-
+        ctx.attrs.put(Fail2BanPlugin.Fail2BanAlreadyCountedKey -> true)
         if (n >= conf.maxRetry) {
           Fail2BanState.ban(ip, (now + conf.banTimeMs.toMillis).millis)
           counter.reset()
@@ -392,7 +394,8 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
     val ip   = conf.identifier.evaluateEl(ctx.attrs)
-    if (!conf.isIgnored(ip) && !conf.isBlocked(ip)) {
+    val alreadyCounted = ctx.attrs.get(Fail2BanPlugin.Fail2BanAlreadyCountedKey).contains(true)
+    if (!conf.isIgnored(ip) && !conf.isBlocked(ip) && !alreadyCounted) {
       ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).map { elCtx =>
         val pathAndQuery = ctx.request.thePath
         val ctxStatus = elCtx.get("fail2ban-trigger-status").map(_.toInt).orElse(ctx.attrs.get(Fail2BanPlugin.Fail2BanTriggerStatusKey))
