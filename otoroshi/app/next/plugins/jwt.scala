@@ -796,6 +796,7 @@ class JweExtractor extends NgAccessValidator with NgRequestTransformer {
 
 case class OIDCJwtVerifierConfig(ref: Option[String] = None,
                                  source: Option[JwtTokenLocation] = None,
+                                 user: Boolean = false,
                                  customResponse: Boolean = false,
                                  customResponseStatus: Int = 401,
                                  customResponseHeaders: Map[String, String] = Map.empty,
@@ -815,6 +816,7 @@ case class OIDCJwtVerifierConfig(ref: Option[String] = None,
 object OIDCJwtVerifierConfig {
   val configFlow = Seq(
     "ref",
+    "user",
     "custom_response",
     "custom_response_status",
     "custom_response_headers",
@@ -823,6 +825,10 @@ object OIDCJwtVerifierConfig {
   )
   val configSchema: Option[JsObject] = Some(
     Json.obj(
+      "user" -> Json.obj(
+        "type" -> "bool",
+        "label" -> "Use as connected user",
+      ),
       "custom_response" -> Json.obj(
         "type" -> "bool",
         "label" -> "Custom error",
@@ -862,6 +868,7 @@ object OIDCJwtVerifierConfig {
     override def reads(json: JsValue): JsResult[OIDCJwtVerifierConfig] = Try {
       OIDCJwtVerifierConfig(
         ref = json.select("ref").asOpt[String],
+        user = json.select("user").asOptBoolean.getOrElse(false),
         source = json.select("source").asOpt[JsObject].flatMap(o => JwtTokenLocation.fromJson(o).toOption),
         customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
         customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
@@ -910,6 +917,7 @@ class OIDCJwtVerifier extends NgAccessValidator {
           case None => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "auth. module not found"))).vfuture
           case Some(m) => m match {
             case oidcModule: OAuth2ModuleConfig if oidcModule.jwtVerifier.isDefined => {
+              val customResult = config.asResult
               val verifier = LocalJwtVerifier()
                 .copy(
                   enabled = true,
@@ -919,8 +927,8 @@ class OIDCJwtVerifier extends NgAccessValidator {
               sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst {
                 case Some(tuple) => tuple
               } match {
-                case None  => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "token not found"))).vfuture
-                case Some((source, _)) => verifier.copy(source = source).verifyGen[NgAccess](
+                case None => NgAccess.NgDenied(customResult.getOrElse(Results.BadRequest(Json.obj("error" -> "token not found")))).vfuture
+                case Some((source, token)) => verifier.copy(source = source).verifyGen[NgAccess](
                     ctx.request,
                     ctx.route.legacy,
                     ctx.apikey,
@@ -928,9 +936,19 @@ class OIDCJwtVerifier extends NgAccessValidator {
                     ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
                     ctx.attrs
                 ) { _ =>
-                  NgAccess.NgAllowed.rightf
+                  if (config.user) {
+                    OIDCAuthToken.getSession(ctx, oidcModule, OIDCAuthTokenConfig(
+                      ref = config.ref.get,
+                      opaque = false,
+                      fetchUserProfile = true,
+                      validateAudience = false,
+                      headerName = "Authorization",
+                    ), Some(token))
+                  } else {
+                    NgAccess.NgAllowed.rightf
+                  }
                 }.map {
-                  case Left(result) => NgAccess.NgDenied(result)
+                  case Left(result) => NgAccess.NgDenied(customResult.getOrElse(result))
                   case Right(r) => r
                 }
               }

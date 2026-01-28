@@ -410,31 +410,15 @@ object OIDCAuthTokenConfig {
   }
 }
 
-class OIDCAuthToken extends NgAccessValidator {
-
-  override def multiInstance: Boolean                      = true
-  override def name: String                                = "OIDC access_token authentication"
-  override def defaultConfigObject: Option[NgPluginConfig] = OIDCAuthTokenConfig.default.some
-
-  override def description: Option[String] =
-    s"""This plugin will authenticate a user based on it's OIDC access_token""".stripMargin.some
-
-  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-
-  override def noJsForm: Boolean              = true
-  override def configFlow: Seq[String]        = OIDCAuthTokenConfig.configFlow
-  override def configSchema: Option[JsObject] = OIDCAuthTokenConfig.configSchema
-
-  private def getSession(ctx: NgAccessContext, oauth2Config: OAuth2ModuleConfig, config: OIDCAuthTokenConfig)(implicit
-      env: Env,
-      ec: ExecutionContext
-  ) = {
+object OIDCAuthToken {
+  def getSession(ctx: NgAccessContext, oauth2Config: OAuth2ModuleConfig, config: OIDCAuthTokenConfig, maybeToken: Option[String] = None)(implicit
+                                                                                                               env: Env,
+                                                                                                               ec: ExecutionContext
+  ): Future[Either[Result, NgAccess]] = {
 
     val authModule =
       oauth2Config.authModule(env.datastores.globalConfigDataStore.latest()).asInstanceOf[GenericOauth2Module]
-    val token      = ctx.request.headers.get(config.headerName).flatMap(v => v.split(" ").lastOption).getOrElse("")
+    val token      = maybeToken.orElse(ctx.request.headers.get(config.headerName).flatMap(v => v.split(" ").lastOption)).getOrElse("")
     val tokenHash  = token.sha256
 
     def createSession(): Future[Either[Result, NgAccess]] = {
@@ -633,6 +617,24 @@ class OIDCAuthToken extends NgAccessValidator {
         }
       }
   }
+}
+
+class OIDCAuthToken extends NgAccessValidator {
+
+  override def multiInstance: Boolean                      = true
+  override def name: String                                = "OIDC access_token authentication"
+  override def defaultConfigObject: Option[NgPluginConfig] = OIDCAuthTokenConfig.default.some
+
+  override def description: Option[String] =
+    s"""This plugin will authenticate a user based on it's OIDC access_token""".stripMargin.some
+
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+
+  override def noJsForm: Boolean              = true
+  override def configFlow: Seq[String]        = OIDCAuthTokenConfig.configFlow
+  override def configSchema: Option[JsObject] = OIDCAuthTokenConfig.configSchema
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
@@ -653,7 +655,7 @@ class OIDCAuthToken extends NgAccessValidator {
       }
       case Some(authModuleConfig) if config.opaque  => {
         val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
-        getSession(ctx, oauth2Config, config).flatMap {
+        OIDCAuthToken.getSession(ctx, oauth2Config, config).flatMap {
           case Left(err) => NgAccess.NgDenied.apply(err).vfuture
           case Right(v)  => v.vfuture
         }
@@ -687,7 +689,7 @@ class OIDCAuthToken extends NgAccessValidator {
                 elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
                 attrs = ctx.attrs
               ) { _ =>
-                getSession(ctx, oauth2Config, config)
+                OIDCAuthToken.getSession(ctx, oauth2Config, config)
               }
               .flatMap {
                 case Left(err) => NgAccess.NgDenied.apply(err).vfuture
