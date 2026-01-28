@@ -4544,6 +4544,44 @@ This plugin injects headers containing tokens and profile from current OIDC prov
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OIDCJwtVerifier }
+
+## OIDC JWT verification
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OIDCJwtVerifier`
+
+### Description
+
+This plugin verifies the current request jwt token against OIDC JWT verification settings living in an OIDC auth. module
+
+
+
+### Default configuration
+
+```json
+{
+  "ref" : null,
+  "source" : null,
+  "custom_response" : false,
+  "custom_response_status" : 401,
+  "custom_response_headers" : { },
+  "custom_response_body" : "{\"error\":\"unauthorized\"}"
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OpenFGAValidator }
 
 ## OpenFGA validator
@@ -6294,8 +6332,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2026-01-21T16:08:50.881Z",
-  "stop" : "2026-01-22T16:08:50.901Z",
+  "start" : "2026-01-28T16:54:15.559Z",
+  "stop" : "2026-01-29T16:54:15.580Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
