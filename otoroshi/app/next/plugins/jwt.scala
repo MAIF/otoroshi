@@ -8,11 +8,29 @@ import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.{EncryptionMethod, JOSEException, JWEAlgorithm, JWEHeader, JWEObject, Payload}
 import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
 import otoroshi.env.Env
-import otoroshi.models.{ApiKey, DefaultToken, InCookie, InHeader, InQueryParam, JwtTokenLocation, LocalJwtVerifier, OutputMode, PrivateAppsUser, RefJwtVerifier, ServiceDescriptor}
+import otoroshi.models.{
+  ApiKey,
+  DefaultToken,
+  InCookie,
+  InHeader,
+  InQueryParam,
+  JwtTokenLocation,
+  LocalJwtVerifier,
+  OutputMode,
+  PrivateAppsUser,
+  RefJwtVerifier,
+  ServiceDescriptor
+}
 import otoroshi.next.plugins.Keys.JwtInjectionKey
 import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterMapOfStringAndB, BetterString, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{
+  BetterJsReadable,
+  BetterJsValue,
+  BetterMapOfStringAndB,
+  BetterString,
+  BetterSyntax
+}
 import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.{RequestHeader, Result, Results}
@@ -794,13 +812,15 @@ class JweExtractor extends NgAccessValidator with NgRequestTransformer {
   }
 }
 
-case class OIDCJwtVerifierConfig(ref: Option[String] = None,
-                                 source: Option[JwtTokenLocation] = None,
-                                 user: Boolean = false,
-                                 customResponse: Boolean = false,
-                                 customResponseStatus: Int = 401,
-                                 customResponseHeaders: Map[String, String] = Map.empty,
-                                 customResponseBody: String = Json.obj("error" -> "unauthorized").stringify) extends NgPluginConfig {
+case class OIDCJwtVerifierConfig(
+    ref: Option[String] = None,
+    source: Option[JwtTokenLocation] = None,
+    user: Boolean = false,
+    customResponse: Boolean = false,
+    customResponseStatus: Int = 401,
+    customResponseHeaders: Map[String, String] = Map.empty,
+    customResponseBody: String = Json.obj("error" -> "unauthorized").stringify
+) extends NgPluginConfig {
   def json: JsValue = OIDCJwtVerifierConfig.format.writes(this)
   def asResult: Option[Result] = {
     if (customResponse) {
@@ -814,44 +834,44 @@ case class OIDCJwtVerifierConfig(ref: Option[String] = None,
 }
 
 object OIDCJwtVerifierConfig {
-  val configFlow = Seq(
+  val configFlow                     = Seq(
     "ref",
     "user",
     "custom_response",
     "custom_response_status",
     "custom_response_headers",
     "custom_response_body",
-    "source",
+    "source"
   )
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "user" -> Json.obj(
-        "type" -> "bool",
-        "label" -> "Use as connected user",
+      "user"                    -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Use as connected user"
       ),
-      "custom_response" -> Json.obj(
-        "type" -> "bool",
-        "label" -> "Custom error",
+      "custom_response"         -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Custom error"
       ),
-      "custom_response_status" -> Json.obj(
-        "type" -> "number",
-        "label" -> "Custom error status",
+      "custom_response_status"  -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Custom error status"
       ),
       "custom_response_headers" -> Json.obj(
-        "type" -> "object",
-        "label" -> "Custom error headers",
+        "type"  -> "object",
+        "label" -> "Custom error headers"
       ),
-      "custom_response_body" -> Json.obj(
-        "type" -> "code",
+      "custom_response_body"    -> Json.obj(
+        "type"  -> "code",
         "label" -> "Custom error body",
         "props" -> Json.obj("editorOnly" -> true)
       ),
-      "source" -> Json.obj(
-        "type" -> "any",
+      "source"                  -> Json.obj(
+        "type"  -> "any",
         "label" -> "JWT Source",
         "props" -> Json.obj("height" -> 200)
       ),
-      "ref" -> Json.obj(
+      "ref"                     -> Json.obj(
         "type"  -> "select",
         "label" -> s"Auth. modules",
         "props" -> Json.obj(
@@ -864,7 +884,7 @@ object OIDCJwtVerifierConfig {
       )
     )
   )
-  val format = new Format[OIDCJwtVerifierConfig] {
+  val format                         = new Format[OIDCJwtVerifierConfig] {
     override def reads(json: JsValue): JsResult[OIDCJwtVerifierConfig] = Try {
       OIDCJwtVerifierConfig(
         ref = json.select("ref").asOpt[String],
@@ -880,9 +900,9 @@ object OIDCJwtVerifierConfig {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: OIDCJwtVerifierConfig): JsValue = Json.obj(
+    override def writes(o: OIDCJwtVerifierConfig): JsValue             = Json.obj(
       "ref"                     -> o.ref.map(_.json).getOrElse(JsNull).asValue,
-      "source"                     -> o.source.map(_.asJson).getOrElse(JsNull).asValue,
+      "source"                  -> o.source.map(_.asJson).getOrElse(JsNull).asValue,
       "custom_response"         -> o.customResponse,
       "custom_response_status"  -> o.customResponseStatus,
       "custom_response_headers" -> o.customResponseHeaders,
@@ -894,67 +914,89 @@ object OIDCJwtVerifierConfig {
 class OIDCJwtVerifier extends NgAccessValidator {
 
   override def defaultConfigObject: Option[NgPluginConfig] = OIDCJwtVerifierConfig().some
-  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
-  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean      = true
-  override def core: Boolean               = true
-  override def isAccessAsync: Boolean            = true
-  override def name: String                      = "OIDC JWT verification"
-  override def description: Option[String]       =
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def isAccessAsync: Boolean                      = true
+  override def name: String                                = "OIDC JWT verification"
+  override def description: Option[String]                 =
     "This plugin verifies the current request jwt token against OIDC JWT verification settings living in an OIDC auth. module".some
 
-  override def noJsForm: Boolean = true
-  override def configFlow: Seq[String] = OIDCJwtVerifierConfig.configFlow
+  override def noJsForm: Boolean              = true
+  override def configFlow: Seq[String]        = OIDCJwtVerifierConfig.configFlow
   override def configSchema: Option[JsObject] = OIDCJwtVerifierConfig.configSchema
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(OIDCJwtVerifierConfig.format).getOrElse(OIDCJwtVerifierConfig())
     config.ref match {
-      case None => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "no auth. module setup"))).vfuture
+      case None               => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "no auth. module setup"))).vfuture
       case Some(authModuleId) =>
         env.proxyState.authModule(authModuleId) match {
-          case None => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "auth. module not found"))).vfuture
-          case Some(m) => m match {
-            case oidcModule: OAuth2ModuleConfig if oidcModule.jwtVerifier.isDefined => {
-              val customResult = config.asResult
-              val verifier = LocalJwtVerifier()
-                .copy(
-                  enabled = true,
-                  algoSettings = oidcModule.jwtVerifier.get,
-                )
-              val sources = config.source.map(s => Seq(s)).getOrElse(Seq(InHeader("Authorization", "Bearer "), InQueryParam("access_token")))
-              sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst {
-                case Some(tuple) => tuple
-              } match {
-                case None => NgAccess.NgDenied(customResult.getOrElse(Results.BadRequest(Json.obj("error" -> "token not found")))).vfuture
-                case Some((source, token)) => verifier.copy(source = source).verifyGen[NgAccess](
-                    ctx.request,
-                    ctx.route.legacy,
-                    ctx.apikey,
-                    ctx.user,
-                    ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-                    ctx.attrs
-                ) { _ =>
-                  if (config.user) {
-                    OIDCAuthToken.getSession(ctx, oidcModule, OIDCAuthTokenConfig(
-                      ref = config.ref.get,
-                      opaque = false,
-                      fetchUserProfile = true,
-                      validateAudience = false,
-                      headerName = "Authorization",
-                    ), Some(token))
-                  } else {
-                    NgAccess.NgAllowed.rightf
-                  }
-                }.map {
-                  case Left(result) => NgAccess.NgDenied(customResult.getOrElse(result))
-                  case Right(r) => r
+          case None    => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "auth. module not found"))).vfuture
+          case Some(m) =>
+            m match {
+              case oidcModule: OAuth2ModuleConfig if oidcModule.jwtVerifier.isDefined => {
+                val customResult = config.asResult
+                val verifier     = LocalJwtVerifier()
+                  .copy(
+                    enabled = true,
+                    algoSettings = oidcModule.jwtVerifier.get
+                  )
+                val sources      = config.source
+                  .map(s => Seq(s))
+                  .getOrElse(Seq(InHeader("Authorization", "Bearer "), InQueryParam("access_token")))
+                sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
+                  tuple
+                } match {
+                  case None                  =>
+                    NgAccess
+                      .NgDenied(customResult.getOrElse(Results.BadRequest(Json.obj("error" -> "token not found"))))
+                      .vfuture
+                  case Some((source, token)) =>
+                    verifier
+                      .copy(source = source)
+                      .verifyGen[NgAccess](
+                        ctx.request,
+                        ctx.route.legacy,
+                        ctx.apikey,
+                        ctx.user,
+                        ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+                        ctx.attrs
+                      ) { _ =>
+                        if (config.user) {
+                          OIDCAuthToken.getSession(
+                            ctx,
+                            oidcModule,
+                            OIDCAuthTokenConfig(
+                              ref = config.ref.get,
+                              opaque = false,
+                              fetchUserProfile = true,
+                              validateAudience = false,
+                              headerName = "Authorization"
+                            ),
+                            Some(token)
+                          )
+                        } else {
+                          NgAccess.NgAllowed.rightf
+                        }
+                      }
+                      .map {
+                        case Left(result) => NgAccess.NgDenied(customResult.getOrElse(result))
+                        case Right(r)     => r
+                      }
                 }
               }
+              case _                                                                  =>
+                NgAccess
+                  .NgDenied(
+                    Results.BadRequest(
+                      Json.obj("error" -> "auth. module not an oidc module or does not have jwt verification settings")
+                    )
+                  )
+                  .vfuture
             }
-            case _ => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "auth. module not an oidc module or does not have jwt verification settings"))).vfuture
-          }
         }
     }
   }

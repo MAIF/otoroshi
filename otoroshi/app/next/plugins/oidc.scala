@@ -411,14 +411,20 @@ object OIDCAuthTokenConfig {
 }
 
 object OIDCAuthToken {
-  def getSession(ctx: NgAccessContext, oauth2Config: OAuth2ModuleConfig, config: OIDCAuthTokenConfig, maybeToken: Option[String] = None)(implicit
-                                                                                                               env: Env,
-                                                                                                               ec: ExecutionContext
+  def getSession(
+      ctx: NgAccessContext,
+      oauth2Config: OAuth2ModuleConfig,
+      config: OIDCAuthTokenConfig,
+      maybeToken: Option[String] = None
+  )(implicit
+      env: Env,
+      ec: ExecutionContext
   ): Future[Either[Result, NgAccess]] = {
 
     val authModule =
       oauth2Config.authModule(env.datastores.globalConfigDataStore.latest()).asInstanceOf[GenericOauth2Module]
-    val token      = maybeToken.orElse(ctx.request.headers.get(config.headerName).flatMap(v => v.split(" ").lastOption)).getOrElse("")
+    val token      =
+      maybeToken.orElse(ctx.request.headers.get(config.headerName).flatMap(v => v.split(" ").lastOption)).getOrElse("")
     val tokenHash  = token.sha256
 
     def createSession(): Future[Either[Result, NgAccess]] = {

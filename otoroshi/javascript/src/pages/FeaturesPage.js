@@ -395,7 +395,7 @@ export const graph = (env) => {
         },
       ],
     },
-    ...Otoroshi.extensions().flatMap((ext) => ext.categories || [])
+    ...Otoroshi.extensions().flatMap((ext) => ext.categories || []),
   ];
   return mergeByTitle(links);
 };

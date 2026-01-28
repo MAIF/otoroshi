@@ -108,9 +108,11 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
         ),
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideLocationHeader],
-          config = NgPluginInstanceConfig(OverrideLocationHeaderConfig(
-            matchingHostnames = Seq("backend.oto.tools")
-          ).json.asObject)
+          config = NgPluginInstanceConfig(
+            OverrideLocationHeaderConfig(
+              matchingHostnames = Seq("backend.oto.tools")
+            ).json.asObject
+          )
         )
       ),
       responseStatus = Status.FOUND,

@@ -53,9 +53,9 @@ function ApiDocumentationResource(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -122,9 +122,9 @@ function ApiDocumentationPlan(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -161,9 +161,9 @@ function ApiDocumentationResourceRef(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -192,9 +192,9 @@ function ApiDocumentationRedirection(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -229,9 +229,9 @@ function ApiDocumentationSidebarItem(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -256,9 +256,9 @@ function ApiDocumentationSidebar(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -273,8 +273,8 @@ export function Documentation(props) {
   const [newItem, setNewItem] = useState(null);
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   useEffect(() => {
     if (item && code === '') {
@@ -399,11 +399,12 @@ export function Documentation(props) {
             leftText="Form"
             rightText="Json editor"
             onChange={() => {
-              setShowJson(!showJson)
+              setShowJson(!showJson);
               if (!showJson) {
-                setCode(JSON.stringify(newItem || {}, null, 2))
+                setCode(JSON.stringify(newItem || {}, null, 2));
               }
-            }} />
+            }}
+          />
         </div>
         <FeedbackButton
           type="success"
@@ -436,7 +437,7 @@ export function Documentation(props) {
           onChange={(newValue) => {
             try {
               setNewItem(JSON.parse(newValue));
-            } catch (e) { }
+            } catch (e) {}
           }}
         />
       )}

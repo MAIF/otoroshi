@@ -270,8 +270,8 @@ object Fail2BanState {
 }
 
 object Fail2BanPlugin {
-  val Fail2BanTriggerStatusKey = TypedKey[Int]("otoroshi.plugins.Fail2BanPlugin.Fail2BanTriggerStatus")
-  val Fail2BanTriggerKey = TypedKey[String]("otoroshi.plugins.Fail2BanPlugin.Fail2BanTrigger")
+  val Fail2BanTriggerStatusKey  = TypedKey[Int]("otoroshi.plugins.Fail2BanPlugin.Fail2BanTriggerStatus")
+  val Fail2BanTriggerKey        = TypedKey[String]("otoroshi.plugins.Fail2BanPlugin.Fail2BanTrigger")
   val Fail2BanAlreadyCountedKey = TypedKey[Boolean]("otoroshi.plugins.Fail2BanPlugin.Fail2BanAlreadyCounted")
 }
 
@@ -389,17 +389,22 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
     }
   }
 
-  override def afterRequest(ctx: NgAfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    val conf = ctx
+  override def afterRequest(
+      ctx: NgAfterRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    val conf           = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
-    val ip   = conf.identifier.evaluateEl(ctx.attrs)
+    val ip             = conf.identifier.evaluateEl(ctx.attrs)
     val alreadyCounted = ctx.attrs.get(Fail2BanPlugin.Fail2BanAlreadyCountedKey).contains(true)
     if (!conf.isIgnored(ip) && !conf.isBlocked(ip) && !alreadyCounted) {
       ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).map { elCtx =>
-        val pathAndQuery = ctx.request.thePath
-        val ctxStatus = elCtx.get("fail2ban-trigger-status").map(_.toInt).orElse(ctx.attrs.get(Fail2BanPlugin.Fail2BanTriggerStatusKey))
-        val ctxTrigger = elCtx.get("fail2ban-trigger").orElse(ctx.attrs.get(Fail2BanPlugin.Fail2BanTriggerKey))
+        val pathAndQuery  = ctx.request.thePath
+        val ctxStatus     = elCtx
+          .get("fail2ban-trigger-status")
+          .map(_.toInt)
+          .orElse(ctx.attrs.get(Fail2BanPlugin.Fail2BanTriggerStatusKey))
+        val ctxTrigger    = elCtx.get("fail2ban-trigger").orElse(ctx.attrs.get(Fail2BanPlugin.Fail2BanTriggerKey))
         val ctxStatusPass = ctxStatus.isDefined && conf.isUrlInScope(pathAndQuery) && conf.isFailedStatus(ctxStatus.get)
         if (ctxStatusPass || ctxTrigger.isDefined) {
           val now     = System.currentTimeMillis()

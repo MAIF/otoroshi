@@ -358,8 +358,8 @@ function SubscriptionDesigner(props) {
   const { item } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   const rawSubscription = useQuery(
     ['getSubscription', params.subscriptionId],
@@ -485,8 +485,8 @@ function NewSubscription(props) {
   const { item, version } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   useQuery(
     ['getTemplate'],
@@ -600,8 +600,8 @@ function RouteDesigner(props) {
   );
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   useEffect(() => {
     if (item && backendsQuery.data !== undefined) {
@@ -761,7 +761,7 @@ const ROUTE_FORM_SETTINGS = {
       collapsable: true,
       collapsed: false,
       name: '2. Add your domains',
-      fields: ['frontend']
+      fields: ['frontend'],
     },
     {
       type: 'group',
@@ -812,8 +812,8 @@ function NewRoute(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   useEffect(() => {
     if (item && !backendsQuery.isLoading && !schema) {
@@ -1189,8 +1189,8 @@ function NewConsumer(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   const savePlan = () => {
     return updateItem({
@@ -1239,8 +1239,8 @@ function ConsumerDesigner(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   useEffect(() => {
     if (item && !consumer) {
@@ -1498,8 +1498,8 @@ function NewBackend(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   const saveBackend = () => {
     return updateItem({
@@ -1608,7 +1608,7 @@ function EditBackend(props) {
   const [backend, setBackend] = useState();
 
   useEffect(() => {
-    props.setTitle(undefined)
+    props.setTitle(undefined);
     if (item && !backend) {
       setBackend(item.backends.find((item) => item.id === params.backendId));
     }
@@ -2573,21 +2573,21 @@ function NewAPI(props) {
     step === 0
       ? ['picker']
       : [
-        'location',
-        choice === 'openapi'
-          ? {
-            type: 'group',
-            name: 'OpenAPI',
-            collapsable: false,
-            fields: ['openapi', 'domain', 'action', 'serverURL', 'root'],
-          }
-          : {
-            type: 'group',
-            name: 'Informations',
-            collapsable: false,
-            fields: ['id', 'name', 'description'],
-          },
-      ];
+          'location',
+          choice === 'openapi'
+            ? {
+                type: 'group',
+                name: 'OpenAPI',
+                collapsable: false,
+                fields: ['openapi', 'domain', 'action', 'serverURL', 'root'],
+              }
+            : {
+                type: 'group',
+                name: 'Informations',
+                collapsable: false,
+                fields: ['id', 'name', 'description'],
+              },
+        ];
 
   const createApi = () => {
     if (choice === 'fromScratch') {
@@ -2802,8 +2802,8 @@ function FlowDesigner(props) {
       <Designer
         history={history}
         value={flow}
-        setValue={(value) => setFlow({ ...value || {} })}
-        setSaveButton={() => { }}
+        setValue={(value) => setFlow({ ...(value || {}) })}
+        setSaveButton={() => {}}
       />
     </div>
   );
@@ -3324,8 +3324,8 @@ function Dashboard(props) {
   const location = useLocation();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   const { item, draft, draftWrapper, version, api } = useDraftOfAPI();
 
@@ -3337,7 +3337,10 @@ function Dashboard(props) {
   const hasTestingEnabled = item && item.testing.enabled;
 
   const isStaging = item && item.state === API_STATE.STAGING;
-  const showGettingStarted = item && item.state !== API_STATE.DEPRECATED && (!hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging);
+  const showGettingStarted =
+    item &&
+    item.state !== API_STATE.DEPRECATED &&
+    (!hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging);
 
   const getStep = () => {
     return (
@@ -3417,7 +3420,7 @@ function Dashboard(props) {
               />
             )}
 
-            {currentStep >= 3 && (item?.state !== API_STATE.PUBLISHED) && (
+            {currentStep >= 3 && item?.state !== API_STATE.PUBLISHED && (
               <ObjectiveCard
                 onClick={() => publishAPI(draft, item, history)}
                 title="Deploy your API"
@@ -3685,14 +3688,14 @@ function RouteItem({ item, api, ports }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-        <span
-          key={`frontendmethod-${i}`}
-          className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}
-        >
-          {m}
-        </span>
-      ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}
+          >
+            {m}
+          </span>
+        ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');

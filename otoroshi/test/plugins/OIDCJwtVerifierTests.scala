@@ -7,7 +7,13 @@ import otoroshi.auth.{GenericOauth2Module, GenericOauth2ModuleConfig, SessionCoo
 import otoroshi.models.{AlgoSettings, HSAlgoSettings}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{NgServiceQuotas, NgServiceQuotasConfig, OIDCJwtVerifier, OIDCJwtVerifierConfig, OverrideHost}
+import otoroshi.next.plugins.{
+  NgServiceQuotas,
+  NgServiceQuotasConfig,
+  OIDCJwtVerifier,
+  OIDCJwtVerifierConfig,
+  OverrideHost
+}
 import play.api.http.Status
 import play.api.libs.json.JsObject
 
@@ -15,7 +21,7 @@ class OIDCJwtVerifierTests(parent: PluginsTestSpec) {
   import parent._
 
   def verifyOIDC() = {
-    val token = JWT.create().withIssuer("foo").sign(Algorithm.HMAC256("secret"))
+    val token      = JWT.create().withIssuer("foo").sign(Algorithm.HMAC256("secret"))
     val authModule = GenericOauth2ModuleConfig(
       id = "auth_oidc",
       name = "auth_oidc",
@@ -27,7 +33,7 @@ class OIDCJwtVerifierTests(parent: PluginsTestSpec) {
       jwtVerifier = Some(HSAlgoSettings(256, "secret"))
     )
     createAuthModule(authModule).futureValue
-    val route = createRouteWithExternalTarget(
+    val route      = createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
         NgPluginInstance(
@@ -53,7 +59,7 @@ class OIDCJwtVerifierTests(parent: PluginsTestSpec) {
     ws
       .url(s"http://127.0.0.1:$port/")
       .withHttpHeaders(
-        "Host" -> route.frontend.domains.head.domain,
+        "Host"          -> route.frontend.domains.head.domain,
         "Authorization" -> s"Bearer ${token}"
       )
       .get()
@@ -63,7 +69,7 @@ class OIDCJwtVerifierTests(parent: PluginsTestSpec) {
     ws
       .url(s"http://127.0.0.1:$port/?access_token=${token}")
       .withHttpHeaders(
-        "Host" -> route.frontend.domains.head.domain,
+        "Host" -> route.frontend.domains.head.domain
       )
       .get()
       .futureValue

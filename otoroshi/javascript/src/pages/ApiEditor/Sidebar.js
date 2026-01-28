@@ -111,9 +111,8 @@ export default (props) => {
   const params = props.params;
 
   // const apiId = getApiId(location.pathname)
-  const currentTab = location.pathname.split('/')[3]
+  const currentTab = location.pathname.split('/')[3];
   const noneTabIsActive = !LINKS().find((r) => r.tab?.toLowerCase() === currentTab?.toLowerCase());
-
 
   const isOnApisHome = location.pathname.endsWith('/apis');
   const isOnNewAPIView = location.pathname.endsWith(`${params.apiId}/new`);
@@ -237,8 +236,9 @@ export default (props) => {
                     search: location.search,
                   }}
                   {...(tooltip || {})}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
-                    } m-0 ${isActive(tab)}`}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                    openedSidebar ? 'ms-3' : ''
+                  } m-0 ${isActive(tab)}`}
                 >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className={`fas ${icon}`} />
