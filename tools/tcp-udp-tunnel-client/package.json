@@ -16,7 +16,7 @@
     "faker": "5.1.0",
     "https-proxy-agent": "5.0.0",
     "inquirer": "7.3.3",
-    "lodash": "4.17.21",
+    "lodash": "4.17.23",
     "minimist": "1.2.6",
     "moment": "2.29.4",
     "node-fetch": "2.6.7",
