@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:40211",
+    "url" : "http://otoroshi-api.oto.tools:35393",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
