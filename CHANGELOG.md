@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.12.0] - 2026-01-28
+
+
+https://github.com/MAIF/otoroshi/milestone/134?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.11.0...v17.12.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.12.0
+
+
+### Added 
+
+- Support Monaco editor in classic forms (#2407 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support JWT verification based on the settings of an OIDC auth. module (#2410 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Provider helpers to create customizable errors in plugins (#2422 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Allow Fail2Ban to be triggered by other plugins that can't use `requestError` phase (#2423 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OIDCJwtVerifier can be used to populate the current user session (#2426 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Always display plugins, even if missing from the JS plugins list (#2406 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+### Changed 
+
+- Add `USERS.md` in the Otoroshi repository (#2409 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Otoroshi containers should run with a non root user (#2399 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- Release process does not publish helm chart (#2425 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Bad name used for netty experimental server (#2400 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Bad group name used for dynamic http-listeners (#2401 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- bad content-type check when proxying grpc request (#2402 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OverrideLocationHeader plugin was badly configured + description was wrong (#2403 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [17.11.0] - 2025-12-31
 
 
