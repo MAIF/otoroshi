@@ -1104,6 +1104,25 @@ class Env(
     // FastFuture.successful(())
   })
 
+  lazy val confJwksIncludeAlgorithms =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.jwks.include-algorithms").getOrElse(true)
+  lazy val confJwksRsaAlgorithms: Seq[com.nimbusds.jose.Algorithm] =
+    configuration.getOptionalWithFileSupport[String]("otoroshi.jwks.rsa-algorithms")
+      .map(_.split(",").map(_.trim).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)).toSeq)
+      .getOrElse(Seq(
+        com.nimbusds.jose.JWSAlgorithm.RS256,
+        com.nimbusds.jose.JWSAlgorithm.RS384,
+        com.nimbusds.jose.JWSAlgorithm.RS512,
+      ))
+  lazy val confJwksEsAlgorithms: Seq[com.nimbusds.jose.Algorithm] =
+    configuration.getOptionalWithFileSupport[String]("otoroshi.jwks.es-algorithms")
+      .map(_.split(",").map(_.trim).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)).toSeq)
+      .getOrElse(Seq(
+        com.nimbusds.jose.JWSAlgorithm.ES256,
+        com.nimbusds.jose.JWSAlgorithm.ES384,
+        com.nimbusds.jose.JWSAlgorithm.ES512,
+      ))
+
   lazy val port = getHttpPort.getOrElse(
     configuration
       .getOptionalWithFileSupport[Int]("play.server.http.port")

@@ -487,28 +487,53 @@ class OtoroshiInfos extends NgRequestTransformer {
   }
 }
 
-case class PossibleCerts(certIds: Seq[String]) extends NgPluginConfig {
+case class PossibleCerts(
+    certIds: Seq[String],
+    includeAlgorithms: Boolean,
+    rsaAlgorithms: Seq[com.nimbusds.jose.Algorithm],
+    esAlgorithms: Seq[com.nimbusds.jose.Algorithm]
+) extends NgPluginConfig {
   override def json: JsValue = PossibleCerts.format.writes(this)
 }
 
 object PossibleCerts {
-  val default                        = PossibleCerts(Seq.empty)
+  val default                        = PossibleCerts(Seq.empty, true, Seq.empty, Seq.empty)
   val format                         = new Format[PossibleCerts] {
     override def writes(o: PossibleCerts): JsValue             = Json.obj(
-      "cert_ids" -> o.certIds
+      "cert_ids" -> o.certIds,
+      "include_algorithms" -> o.includeAlgorithms,
+      "rsa_algorithms" -> JsArray(o.rsaAlgorithms.map(_.getName.json)),
+      "es_algorithms" -> JsArray(o.esAlgorithms.map(_.getName.json)),
     )
     override def reads(json: JsValue): JsResult[PossibleCerts] = Try {
       PossibleCerts(
-        certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty)
+        certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty),
+        includeAlgorithms = json.select("include_algorithms").asOptBoolean.getOrElse(true),
+        rsaAlgorithms = json.select("rsa_algorithms").asOpt[Seq[String]].getOrElse(Seq.empty).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)),
+        esAlgorithms = json.select("es_algorithms").asOpt[Seq[String]].getOrElse(Seq.empty).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)),
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
   }
-  val configFlow: Seq[String]        = Seq("cert_ids")
+  val configFlow: Seq[String]        = Seq("cert_ids", "include_algorithms", "rsa_algorithms", "es_algorithms")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
+      "include_algorithms" -> Json.obj(
+        "type" -> "boolean",
+        "label" -> "Include algorithms",
+      ),
+      "es_algorithms" -> Json.obj(
+        "type" -> "string",
+        "array" -> true,
+        "label" -> "ES algorithms",
+      ),
+      "rsa_algorithms" -> Json.obj(
+        "type" -> "string",
+        "array" -> true,
+        "label" -> "RSA algorithms",
+      ),
       "cert_ids" -> Json.obj(
         "type"  -> "select",
         "array" -> true,
@@ -631,7 +656,7 @@ class OtoroshiJWKSEndpoint extends NgBackendCall {
       mat: Materializer
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(PossibleCerts.format).getOrElse(PossibleCerts.default)
-    JWKSHelper.jwks(ctx.rawRequest, config.certIds).map {
+    JWKSHelper.jwks(ctx.rawRequest, config.certIds, false, config.includeAlgorithms, config.rsaAlgorithms, config.esAlgorithms).map {
       case Left(body)  => Results.NotFound(body)
       case Right(keys) => Results.Ok(Json.obj("keys" -> JsArray(keys)))
     } map { res =>

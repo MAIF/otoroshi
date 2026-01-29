@@ -167,7 +167,7 @@ class NgClientCredentials extends NgRequestSink {
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
-    JWKSHelper.jwks(ctx.request, conf.defaultKeyPair.some.toSeq).map {
+    JWKSHelper.jwks(ctx.request, conf.defaultKeyPair.some.toSeq, true, env.confJwksIncludeAlgorithms, env.confJwksRsaAlgorithms, env.confJwksEsAlgorithms).map {
       case Left(body)  => Results.NotFound(body)
       case Right(keys) => Results.Ok(Json.obj("keys" -> JsArray(keys)))
     }
