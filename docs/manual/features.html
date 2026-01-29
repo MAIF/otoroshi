@@ -326,140 +326,197 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h1><a href="#features" name="features" class="anchor"><span class="anchor-link"></span></a>Features</h1>
 <p><strong>Traffic Management</strong></p>
 <ul>
-  <li>Can proxy any HTTP(s) service (apis, webapps, websocket, etc)</li>
+  <li>Can proxy any HTTP(s) service (APIs, webapps, websocket, etc)</li>
   <li>Can proxy any TCP service (app, database, etc)</li>
-  <li>Can proxy any GRPC service</li>
-  <li>Multiple load-balancing options:
+  <li>Can proxy any gRPC service (using a netty listener), also gRPC-Web support</li>
+  <li>Can proxy any GraphQL service (proxy, query composition, and schema-first backend)</li>
+  <li>Full WebSocket support with message validation, transformation, and mirroring</li>
+  <li>End-to-end HTTP/1.1 support</li>
+  <li>End-to-end HTTP/2 support (including H2C cleartext)</li>
+  <li>End-to-end HTTP/3 support (QUIC)</li>
+  <li>Multiple load balancing options:
     <ul>
-      <li>RoundRobin</li>
-      <li>Random, Sticky</li>
-      <li>Ip address hash</li>
+      <li>Round Robin</li>
+      <li>Random</li>
+      <li>Sticky (cookie-based session affinity)</li>
+      <li>IP Address Hash</li>
       <li>Best Response Time</li>
+      <li>Weighted Best Response Time</li>
+      <li>Least Connections</li>
+      <li>Power of Two Random Choices</li>
+      <li>Header Hash (consistent hashing on a request header)</li>
+      <li>Cookie Hash (consistent hashing on a cookie value)</li>
+      <li>Query Hash (consistent hashing on a query parameter)</li>
     </ul>
   </li>
+  <li>Backend Failover targets support</li>
   <li>Distributed in-flight request limiting</li>
   <li>Distributed rate limiting</li>
-  <li>End-to-end HTTP/1.1 support</li>
-  <li>End-to-end H2 support</li>
-  <li>End-to-end H3 support</li>
-  <li>Traffic mirroring</li>
-  <li>Traffic capture</li>
-  <li>Canary deployments</li>
-  <li>Relay routing</li>
-  <li>Tunnels for easier network exposition</li>
-  <li>Error templates</li>
+  <li>Per-IP, per-API key, per-route, and custom throttling and quotas</li>
+  <li>Request and response bandwidth throttling</li>
+  <li>Request and response body size limiting</li>
+  <li>Traffic mirroring to secondary backends</li>
+  <li>Traffic capture (GoReplay format)</li>
+  <li>Canary deployments (percentage-based and time-controlled)</li>
+  <li>Relay routing across network zones</li>
+  <li>Tunnels for easier network exposition (TCP, UDP, WebSocket-based)</li>
+  <li>Custom error templates</li>
 </ul>
 <p><strong>Routing</strong></p>
 <ul>
-  <li>Router can support ten of thousands of concurrent routes</li>
-  <li>Router support path params extraction (can be regex validated)</li>
-  <li>Routing based on
+  <li>Router can support tens of thousands of concurrent routes</li>
+  <li>Router supports path parameter extraction (with regex validation)</li>
+  <li>Routing based on:
     <ul>
-      <li>method</li>
+      <li>HTTP method</li>
       <li>hostname (exact, wildcard)</li>
-      <li>path (exact, wildcard)</li>
+      <li>path (exact, prefix, wildcard)</li>
       <li>header values (exact, regex, wildcard)</li>
       <li>query param values (exact, regex, wildcard)</li>
+      <li>cookie values</li>
     </ul>
   </li>
-  <li>Support full url rewriting</li>
+  <li>Full URL rewriting</li>
+  <li>Path stripping</li>
+  <li>Target predicates (route to specific backends based on geolocation, cloud region, datacenter, rack, etc)</li>
 </ul>
 <p><strong>Routes customization</strong></p>
 <ul>
-  <li>Dozens of built-in middlewares (policies/plugins)
+  <li>Over 200 built-in middlewares (plugins) covering:
     <ul>
-      <li>circuit breakers</li>
-      <li>automatic retries</li>
-      <li>buffering</li>
-      <li>gzip</li>
-      <li>headers manipulation</li>
-      <li>cors</li>
-      <li>body transformation</li>
-      <li>graphql gateway</li>
+      <li>circuit breakers (with configurable thresholds)</li>
+      <li>automatic retries (with exponential backoff)</li>
+      <li>response caching</li>
+      <li>gzip and brotli compression</li>
+      <li>request and response headers manipulation</li>
+      <li>request and response cookies manipulation</li>
+      <li>CORS handling</li>
+      <li>body transformation (jq, regex, XML/JSON conversion, SOAP)</li>
+      <li>query string transformation</li>
+      <li>GraphQL composition</li>
+      <li>HTML patching</li>
+      <li>redirection</li>
+      <li>maintenance and build modes</li>
+      <li>static responses and mocks</li>
       <li>etc</li>
     </ul>
   </li>
-  <li>Support middlewares compiled to WASM (using extism)</li>
-  <li>Support Open Policy Agent policies for traffic control</li>
-  <li>Write your own custom middlewares
+  <li>Support middlewares compiled to WASM (using Extism)</li>
+  <li>Support Open Policy Agent policies for traffic control (via WASM)</li>
+  <li>Visual workflow engine for building complex processing pipelines</li>
+  <li>Write your own custom middlewares:
     <ul>
-      <li>in scala deployed as jar files</li>
+      <li>in Scala deployed as jar files</li>
       <li>in whatever language you want that can be compiled to WASM</li>
     </ul>
   </li>
 </ul>
-<p><strong>Routes Monitoring</strong></p>
+<p><strong>Security</strong></p>
 <ul>
-  <li>Active healthchecks</li>
-  <li>Route state for the last 90 days</li>
-  <li>Calls tracing using W3C trace context</li>
-  <li>Export alerts and events to external database
-    <ul>
-      <li>file</li>
-      <li>S3</li>
-      <li>elastic</li>
-      <li>pulsar</li>
-      <li>kafka</li>
-      <li>webhook</li>
-      <li>mailer</li>
-      <li>logger</li>
-    </ul>
-  </li>
-  <li>Real-time traffic metrics</li>
-  <li>Real-time traffic metrics (Datadog, Prometheus, StatsD)</li>
-</ul>
-<p><strong>Services discovery</strong></p>
-<ul>
-  <li>through DNS</li>
-  <li>through Eureka 2</li>
-  <li>through Kubernetes API</li>
-  <li>through custom otoroshi protocol</li>
+  <li>Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support</li>
+  <li>IP address allow and block lists (with CIDR support)</li>
+  <li>Domain name allow and block lists</li>
+  <li>Fail2Ban-style automatic IP banning</li>
+  <li>Geolocation-based access control (MaxMind, IPStack)</li>
+  <li>Time-restricted access control</li>
+  <li>Log4Shell and React2Shell vulnerability detection</li>
+  <li>Security headers injection (HSTS, CSP, X-Frame-Options, X-XSS-Protection, X-Content-Type-Options)</li>
+  <li>security.txt endpoint (RFC 9116)</li>
+  <li>robots.txt handling</li>
 </ul>
 <p><strong>API security</strong></p>
 <ul>
-  <li>Access management with apikeys and quotas</li>
-  <li>Automatic apikeys secrets rotation</li>
+  <li>Access management with API keys and quotas</li>
+  <li>Multiple API key extraction methods (header, query param, cookie, bearer token, basic auth, JWT)</li>
+  <li>Automatic API key secrets rotation</li>
+  <li>Mandatory tags and metadata validation on API keys</li>
   <li>HTTPS and TLS</li>
   <li>End-to-end mTLS calls</li>
-  <li>Routing constraints</li>
-  <li>Routing restrictions</li>
-  <li>JWT tokens validation and manipulation
+  <li>Routing constraints and restrictions</li>
+  <li>Public/private path separation</li>
+  <li>JWT token validation and manipulation
     <ul>
-      <li>can support multiple validator on the same routes</li>
+      <li>Multiple validators on the same route</li>
+      <li>JWE (encrypted JWT) support</li>
+      <li>JWT signing</li>
     </ul>
   </li>
+  <li>HMAC request signing and validation</li>
+  <li>Biscuit token extraction and validation (datalog-based authorization)</li>
+  <li>OpenFGA fine-grained authorization</li>
+  <li>Role-based access control (RBAC)</li>
+  <li>Context validation (JSON path-based claims validation)</li>
 </ul>
-<p><strong>Administration UI</strong></p>
+<p><strong>Monitoring and observability</strong></p>
 <ul>
-  <li>Manage and organize all resources</li>
-  <li>Secured users access with Authentication module</li>
-  <li>Audited users actions</li>
-  <li>Dynamic changes at runtime without full reload</li>
-  <li>Test your routes without any external tools</li>
+  <li>Active health checks (with customizable healthy/unhealthy status codes and regex body checks)</li>
+  <li>Route state for the last 90 days</li>
+  <li>Calls tracing using W3C Trace Context</li>
+  <li>Real-time traffic metrics</li>
+  <li>Prometheus metrics export</li>
+  <li>OpenTelemetry metrics and logs export (OTLP)</li>
+  <li>Datadog, StatsD metrics export</li>
+  <li>Export alerts and events to external systems:
+    <ul>
+      <li>Elasticsearch</li>
+      <li>Apache Kafka</li>
+      <li>Apache Pulsar</li>
+      <li>Webhook (HTTP)</li>
+      <li>File</li>
+      <li>S3</li>
+      <li>Mailer (Mailgun, Mailjet, Sendgrid, generic SMTP)</li>
+      <li>Console / Logger</li>
+      <li>Splunk</li>
+      <li>Datadog</li>
+      <li>New Relic</li>
+      <li>GoReplay (file and S3)</li>
+      <li>TCP / UDP / Syslog</li>
+      <li>JMS</li>
+      <li>WASM-based custom exporter</li>
+      <li>Workflow-based custom exporter</li>
+    </ul>
+  </li>
+  <li>GreenScore: ecological scoring of API routes based on efficiency rules</li>
 </ul>
-<p><strong>Webapp authentication and security</strong></p>
+<p><strong>Services discovery</strong></p>
 <ul>
-  <li>OAuth2.0/2.1 authentication</li>
+  <li>Through DNS</li>
+  <li>Through Eureka (internal and external)</li>
+  <li>Through Kubernetes API (namespace scanning)</li>
+  <li>Through custom Otoroshi protocol (self-registration)</li>
+  <li>Through Tailscale network</li>
+</ul>
+<p><strong>Authentication</strong></p>
+<ul>
+  <li>OAuth 2.0/2.1 authentication (with PKCE support)</li>
   <li>OpenID Connect (OIDC) authentication</li>
-  <li>LDAP authentication</li>
+  <li>LDAP authentication (with nested groups)</li>
   <li>JWT authentication</li>
   <li>OAuth 1.0a authentication</li>
   <li>SAML V2 authentication</li>
+  <li>Basic authentication (username/password)</li>
+  <li>WebAuthn / FIDO2 passwordless authentication</li>
+  <li>Auth0 passwordless flow</li>
+  <li>WASM-based custom authentication</li>
   <li>Internal users management</li>
-  <li>Secret vaults support
-    <ul>
-      <li>Environment variables</li>
-      <li>Hashicorp Vault</li>
-      <li>Azure key vault</li>
-      <li>AWS secret manager</li>
-      <li>Google secret manager</li>
-      <li>Kubernetes secrets</li>
-      <li>Izanami</li>
-      <li>Spring Cloud Config</li>
-      <li>Http</li>
-      <li>Local</li>
-    </ul>
-  </li>
+  <li>Multi-authentication module chaining</li>
+  <li>Client credentials OAuth2 flow with token endpoint</li>
+</ul>
+<p><strong>Secret vaults support</strong></p>
+<ul>
+  <li>Environment variables</li>
+  <li>Hashicorp Vault</li>
+  <li>Azure Key Vault</li>
+  <li>AWS Secrets Manager</li>
+  <li>Google Cloud Secret Manager</li>
+  <li>Alibaba Cloud Secret Manager</li>
+  <li>Kubernetes Secrets</li>
+  <li>Izanami (v1)</li>
+  <li>Infisical</li>
+  <li>Spring Cloud Config</li>
+  <li>HTTP (generic endpoint)</li>
+  <li>Local (file-based)</li>
+  <li>Extensible via admin extensions</li>
 </ul>
 <p><strong>Certificates management</strong></p>
 <ul>
@@ -467,54 +524,81 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Dynamic TLS termination</li>
   <li>Internal PKI
     <ul>
-      <li>generate self signed certificates/CAs</li>
-      <li>generate/sign certificates/CAs/subCAs</li>
-      <li>AIA</li>
+      <li>generate self-signed certificates/CAs</li>
+      <li>generate/sign certificates/CAs/sub-CAs</li>
+      <li>AIA (Authority Information Access)</li>
       <li>OCSP responder</li>
       <li>import P12/certificate bundles</li>
     </ul>
   </li>
   <li>ACME / Let&rsquo;s Encrypt support</li>
   <li>On-the-fly certificate generation based on a CA certificate without request loss</li>
-  <li>JWKS exposition for public keypair</li>
+  <li>JWKS exposition for public key pairs</li>
   <li>Default certificate</li>
   <li>Customize mTLS trusted CAs in the TLS handshake</li>
+  <li>Tailscale certificates integration</li>
 </ul>
 <p><strong>Clustering</strong></p>
 <ul>
-  <li>based on a control plane/data plane pattern</li>
-  <li>encrypted communication</li>
-  <li>backup capabilities to allow data plane to start without control plane reachable to improve resilience</li>
-  <li>relay routing to forward traffic from one network zone to others</li>
-  <li>distributed web authentication accross nodes</li>
+  <li>Based on a control plane / data plane pattern</li>
+  <li>Encrypted communication between nodes</li>
+  <li>Backup capabilities allowing data planes to start without control plane (improved resilience)</li>
+  <li>Relay routing to forward traffic across network zones</li>
+  <li>Distributed web authentication across nodes</li>
 </ul>
-<p><strong>Performances and testing</strong></p>
+<p><strong>Static content and backends</strong></p>
 <ul>
-  <li>Chaos engineering</li>
-  <li>Horizontal Scalability or clustering</li>
-  <li>Canary testing</li>
-  <li>Http client in UI</li>
-  <li>Request debugging</li>
-  <li>Traffic capture</li>
+  <li>Serve static files from local filesystem</li>
+  <li>Serve static files from Amazon S3</li>
+  <li>Serve static files from ZIP archives</li>
+  <li>Echo backend for debugging</li>
+  <li>Static response / mock backends</li>
+</ul>
+<p><strong>Administration UI</strong></p>
+<ul>
+  <li>Manage and organize all resources</li>
+  <li>Secured user access with authentication module</li>
+  <li>Audited user actions</li>
+  <li>Dynamic changes at runtime without full reload</li>
+  <li>Test your routes without any external tools</li>
+  <li>Visual workflow designer with step-by-step debugger</li>
+  <li>Extensible via admin extensions (custom entities, routes, frontend modules)</li>
 </ul>
 <p><strong>Kubernetes integration</strong></p>
 <ul>
   <li>Standard Ingress controller</li>
-  <li>Custom Ingress controller
+  <li>Custom Ingress controller with CRD support
     <ul>
       <li>Manage Otoroshi resources from Kubernetes</li>
     </ul>
   </li>
-  <li>Validation of resources via webhook</li>
-  <li>Service Mesh for easy service-to-service communication (based on Kubernetes sidecars)</li>
+  <li>Validation of resources via admission webhook</li>
+  <li>Sidecar injection for service mesh</li>
+  <li>Bidirectional TLS certificate synchronization (Kubernetes secrets &lt;-&gt; Otoroshi certificates)</li>
+</ul>
+<p><strong>Dynamic HTTP listeners</strong></p>
+<ul>
+  <li>Create and manage additional HTTP listeners on custom ports</li>
+  <li>Multi-protocol support (HTTP/1.1, HTTP/2, HTTP/3, H2C)</li>
+  <li>Dynamic configuration without restart</li>
+  <li>TLS and mTLS support per listener</li>
+</ul>
+<p><strong>Storage backends</strong></p>
+<ul>
+  <li>Redis (via Lettuce)</li>
+  <li>PostgreSQL (via Reactive PG)</li>
+  <li>Cassandra</li>
+  <li>In-memory (with file persistence)</li>
+  <li>S3</li>
+  <li>HTTP</li>
 </ul>
 <p><strong>Organize</strong></p>
 <ul>
-  <li>multi-organizations</li>
-  <li>multi-teams</li>
-  <li>routes groups</li>
+  <li>Multi-organizations</li>
+  <li>Multi-teams</li>
+  <li>Routes groups</li>
 </ul>
-<p><strong>Developpers portal</strong></p>
+<p><strong>Developers portal</strong></p>
 <ul>
   <li>Using <a href="https://maif.github.io/daikoku/manual/index.html" title="Daikoku" target="_blank" rel="noopener noreferrer">Daikoku</a></li>
 </ul>
