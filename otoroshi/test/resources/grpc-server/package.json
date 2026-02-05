@@ -11,7 +11,7 @@
     "grpc-web": "~2.0.2",
     "lodash": "~4.17.0",
     "parcel": "^2.16.3",
-    "webpack": "5.101.3",
+    "webpack": "5.104.1",
     "webpack-cli": "~5.1.1"
   },
   "dependencies": {
