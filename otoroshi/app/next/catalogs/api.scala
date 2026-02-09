@@ -10,6 +10,8 @@ import play.api.libs.json.JsError.toJson
 import play.api.libs.json._
 import play.api.mvc.Results
 
+import otoroshi.utils.yaml.Yaml
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -78,6 +80,38 @@ object RemoteContentParser {
         logger.warn(s"Unsupported content format from source $sourceName")
         Seq.empty
     }
+  }
+
+  def parseRawContent(rawContent: String, sourceName: String, allResources: Seq[Resource]): Seq[RemoteEntity] = {
+    Try(Json.parse(rawContent)).toOption match {
+      case Some(json) => parse(json, sourceName, allResources)
+      case None       =>
+        splitContent(rawContent).filter(_.trim.nonEmpty).flatMap { doc =>
+          Yaml.parse(doc) match {
+            case Some(json) => parse(json, sourceName, allResources)
+            case None       =>
+              logger.warn(s"Cannot parse content from $sourceName as JSON or YAML")
+              Seq.empty
+          }
+        }
+    }
+  }
+
+  private def splitContent(content: String): Seq[String] = {
+    var out     = Seq.empty[String]
+    var current = Seq.empty[String]
+    val lines   = content.split("\n")
+    lines.foreach { line =>
+      if (line.trim == "---") {
+        out = out :+ current.mkString("\n")
+        current = Seq.empty[String]
+      } else {
+        current = current :+ line
+      }
+    }
+    if (current.nonEmpty)
+      out = out :+ current.mkString("\n")
+    out
   }
 
   private def parseExportFormat(obj: JsObject, sourceName: String, allResources: Seq[Resource]): Seq[RemoteEntity] = {
