@@ -1,0 +1,426 @@
+import React, { Component } from 'react';
+import { v4 as uuid } from 'uuid';
+import * as BackOfficeServices from '../../services/BackOfficeServices';
+import { Table } from '../../components/inputs/Table';
+
+const extensionId = 'otoroshi.extensions.RemoteCatalogs';
+
+function DeployButton({ rawValue }) {
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+
+  const handleDeploy = () => {
+    if (!rawValue || !rawValue.id) return;
+    setLoading(true);
+    setResult(null);
+    fetch('/bo/api/extensions/remote-catalogs/_deploy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([{ id: rawValue.id, args: rawValue.test_deploy_args || {} }]),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        setResult({ success: true, data });
+        setLoading(false);
+      })
+      .catch((e) => {
+        setResult({ success: false, error: e.message });
+        setLoading(false);
+      });
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        className="btn btn-success btn-sm"
+        disabled={loading}
+        onClick={handleDeploy}
+        style={{ marginRight: 10 }}
+      >
+        {loading ? (
+          <i className="fas fa-spinner fa-spin" />
+        ) : (
+          <i className="fas fa-play" />
+        )}{' '}
+        Deploy now
+      </button>
+      {result && result.success && (
+        <pre
+          style={{
+            marginTop: 10,
+            maxHeight: 300,
+            overflow: 'auto',
+            fontSize: 12,
+            background: '#1b1b2f',
+            color: '#a8ff78',
+            padding: 10,
+            borderRadius: 4,
+          }}
+        >
+          {JSON.stringify(result.data, null, 2)}
+        </pre>
+      )}
+      {result && !result.success && (
+        <div className="alert alert-danger" style={{ marginTop: 10 }}>
+          {result.error}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TestButton({ rawValue }) {
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+
+  const handleTest = () => {
+    if (!rawValue || !rawValue.id) return;
+    setLoading(true);
+    setResult(null);
+    fetch('/bo/api/extensions/remote-catalogs/_test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: rawValue.id, args: rawValue.test_deploy_args || {} }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        setResult({ success: true, data });
+        setLoading(false);
+      })
+      .catch((e) => {
+        setResult({ success: false, error: e.message });
+        setLoading(false);
+      });
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        className="btn btn-info btn-sm"
+        disabled={loading}
+        onClick={handleTest}
+      >
+        {loading ? (
+          <i className="fas fa-spinner fa-spin" />
+        ) : (
+          <i className="fas fa-vial" />
+        )}{' '}
+        Test / Dry run
+      </button>
+      {result && result.success && (
+        <pre
+          style={{
+            marginTop: 10,
+            maxHeight: 300,
+            overflow: 'auto',
+            fontSize: 12,
+            background: '#1b1b2f',
+            color: '#78d6ff',
+            padding: 10,
+            borderRadius: 4,
+          }}
+        >
+          {JSON.stringify(result.data, null, 2)}
+        </pre>
+      )}
+      {result && !result.success && (
+        <div className="alert alert-danger" style={{ marginTop: 10 }}>
+          {result.error}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function setupRemoteCatalogsExtension(registerExtension) {
+  registerExtension(extensionId, true, (ctx) => {
+    class RemoteCatalogsPage extends Component {
+      formSchema = {
+        _loc: {
+          type: 'location',
+          props: {},
+        },
+        id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
+        name: {
+          type: 'string',
+          props: { label: 'Name', placeholder: 'My Remote Catalog' },
+        },
+        description: {
+          type: 'string',
+          props: { label: 'Description', placeholder: 'Description of the catalog' },
+        },
+        metadata: {
+          type: 'object',
+          props: { label: 'Metadata' },
+        },
+        tags: {
+          type: 'array',
+          props: { label: 'Tags' },
+        },
+        enabled: {
+          type: 'bool',
+          props: { label: 'Enabled' },
+        },
+        source_kind: {
+          type: 'select',
+          props: {
+            label: 'Source kind',
+            possibleValues: [
+              { label: 'HTTP', value: 'http' },
+              { label: 'File', value: 'file' },
+              { label: 'GitHub', value: 'github' },
+              { label: 'GitLab', value: 'gitlab' },
+              { label: 'S3', value: 's3' },
+            ],
+          },
+        },
+        source_config: {
+          type: 'jsonobjectcode',
+          props: { label: 'Source configuration' },
+        },
+        'scheduling.enabled': {
+          type: 'bool',
+          props: { label: 'Scheduling enabled' },
+        },
+        'scheduling.kind': {
+          type: 'select',
+          props: {
+            label: 'Job kind',
+            possibleValues: [
+              { label: 'Scheduled Every', value: 'ScheduledEvery' },
+              { label: 'Scheduled Once', value: 'ScheduledOnce' },
+              { label: 'Cron', value: 'Cron' },
+            ],
+          },
+        },
+        'scheduling.instantiation': {
+          type: 'select',
+          props: {
+            label: 'Job instantiation',
+            possibleValues: [
+              {
+                label: 'One per Otoroshi instance',
+                value: 'OneInstancePerOtoroshiInstance',
+              },
+              {
+                label: 'One per Otoroshi cluster',
+                value: 'OneInstancePerOtoroshiCluster',
+              },
+              {
+                label: 'One per Otoroshi leader instance',
+                value: 'OneInstancePerOtoroshiLeaderInstance',
+              },
+              {
+                label: 'One per Otoroshi worker instance',
+                value: 'OneInstancePerOtoroshiWorkerInstance',
+              },
+            ],
+          },
+        },
+        'scheduling.initial_delay': {
+          type: 'number',
+          props: { label: 'Initial delay (ms)', placeholder: '10000' },
+        },
+        'scheduling.interval': {
+          type: 'number',
+          props: { label: 'Interval (ms)', placeholder: '60000' },
+        },
+        'scheduling.cron_expression': {
+          type: 'string',
+          props: { label: 'Cron expression', placeholder: '0 */5 * * * ?' },
+        },
+        'scheduling.deploy_args': {
+          type: 'jsonobjectcode',
+          props: { label: 'Scheduled deploy args' },
+        },
+        test_deploy_args: {
+          type: 'jsonobjectcode',
+          props: { label: 'Test deploy args' },
+        },
+        deploy_action: {
+          type: 'form',
+          props: { label: 'Deploy' },
+          render: (props) =>
+            React.createElement(DeployButton, { rawValue: props.rawValue }),
+        },
+        test_action: {
+          type: 'form',
+          props: { label: 'Test' },
+          render: (props) =>
+            React.createElement(TestButton, { rawValue: props.rawValue }),
+        },
+      };
+
+      columns = [
+        {
+          title: 'Name',
+          filterId: 'name',
+          content: (item) => item.name,
+        },
+        {
+          title: 'Source',
+          filterId: 'source_kind',
+          content: (item) => item.source_kind,
+        },
+        {
+          title: 'Enabled',
+          filterId: 'enabled',
+          content: (item) => item.enabled,
+          cell: (v, item) =>
+            item.enabled ? (
+              <span className="badge bg-success">yes</span>
+            ) : (
+              <span className="badge bg-danger">no</span>
+            ),
+        },
+        {
+          title: 'Scheduled',
+          filterId: 'scheduled',
+          content: (item) => item.scheduling && item.scheduling.enabled,
+          cell: (v, item) =>
+            item.scheduling && item.scheduling.enabled ? (
+              <span className="badge bg-success">yes</span>
+            ) : (
+              <span className="badge bg-warning">no</span>
+            ),
+        },
+      ];
+
+      formFlow = [
+        '_loc',
+        'id',
+        'name',
+        'description',
+        'tags',
+        'metadata',
+        '<<<Source',
+        'enabled',
+        'source_kind',
+        'source_config',
+        '<<<Scheduling',
+        'scheduling.enabled',
+        'scheduling.kind',
+        'scheduling.instantiation',
+        'scheduling.initial_delay',
+        'scheduling.interval',
+        'scheduling.cron_expression',
+        'scheduling.deploy_args',
+        '<<<Test & Deploy',
+        'test_deploy_args',
+        'deploy_action',
+        'test_action',
+      ];
+
+      componentDidMount() {
+        this.props.setTitle(`All Remote Catalogs`);
+      }
+
+      client = BackOfficeServices.apisClient(
+        'catalogs.otoroshi.io',
+        'v1',
+        'remote-catalogs'
+      );
+
+      render() {
+        return React.createElement(
+          Table,
+          {
+            parentProps: this.props,
+            selfUrl: 'extensions/remote-catalogs',
+            defaultTitle: 'All Remote Catalogs',
+            defaultValue: () => ({
+              id: 'remote-catalog_' + uuid(),
+              name: 'New Remote Catalog',
+              description: 'A new remote catalog',
+              tags: [],
+              metadata: {},
+              enabled: true,
+              source_kind: 'http',
+              source_config: {},
+              scheduling: {
+                enabled: false,
+                kind: 'ScheduledEvery',
+                instantiation: 'OneInstancePerOtoroshiInstance',
+                initial_delay: null,
+                interval: 60000,
+                cron_expression: null,
+                deploy_args: {},
+              },
+              test_deploy_args: {},
+            }),
+            itemName: 'Remote Catalog',
+            formSchema: this.formSchema,
+            formFlow: this.formFlow,
+            columns: this.columns,
+            stayAfterSave: true,
+            fetchItems: (paginationState) => this.client.findAll(),
+            updateItem: this.client.update,
+            deleteItem: this.client.delete,
+            createItem: this.client.create,
+            navigateTo: (item) => {
+              window.location = `/bo/dashboard/extensions/remote-catalogs/edit/${item.id}`;
+            },
+            itemUrl: (item) =>
+              `/bo/dashboard/extensions/remote-catalogs/edit/${item.id}`,
+            showActions: true,
+            showLink: true,
+            rowNavigation: true,
+            extractKey: (item) => item.id,
+            export: true,
+            kubernetesKind: 'catalogs.otoroshi.io/RemoteCatalog',
+          },
+          null
+        );
+      }
+    }
+
+    return {
+      id: extensionId,
+      sidebarItems: [],
+      creationItems: [],
+      dangerZoneParts: [],
+      features: [
+        {
+          title: 'Remote Catalogs',
+          description: 'All your Remote Catalogs',
+          img: 'cloud-download-alt',
+          link: '/extensions/remote-catalogs',
+          display: () => true,
+          icon: () => 'fa-cloud-download-alt',
+        },
+      ],
+      searchItems: [
+        {
+          action: () => {
+            window.location.href = `/bo/dashboard/extensions/remote-catalogs`;
+          },
+          env: <span className="fas fa-cloud-download-alt" />,
+          label: 'Remote Catalogs',
+          value: 'remote-catalogs',
+        },
+      ],
+      routes: [
+        {
+          path: '/extensions/remote-catalogs/:taction/:titem',
+          component: (props) => {
+            return <RemoteCatalogsPage {...props} />;
+          },
+        },
+        {
+          path: '/extensions/remote-catalogs/:taction',
+          component: (props) => {
+            return <RemoteCatalogsPage {...props} />;
+          },
+        },
+        {
+          path: '/extensions/remote-catalogs',
+          component: (props) => {
+            return <RemoteCatalogsPage {...props} />;
+          },
+        },
+      ],
+    };
+  });
+}
