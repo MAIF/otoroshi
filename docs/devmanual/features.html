@@ -68,6 +68,7 @@ latest
     <li><a href="entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
   </ul></li>
   <li><a href="topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -98,6 +99,7 @@ latest
     <li><a href="topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
     <li><a href="topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
   </ul></li>
   <li><a href="quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
@@ -201,6 +203,7 @@ latest
     <li><a href="entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
   </ul></li>
   <li><a href="topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -231,6 +234,7 @@ latest
     <li><a href="topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
     <li><a href="topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
   </ul></li>
   <li><a href="quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
@@ -582,6 +586,43 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Multi-protocol support (HTTP/1.1, HTTP/2, HTTP/3, H2C)</li>
   <li>Dynamic configuration without restart</li>
   <li>TLS and mTLS support per listener</li>
+</ul>
+<p><strong>Infrastructure as Code / GitOps</strong></p>
+<ul>
+  <li>Remote Catalogs: declarative entity management from trusted external sources
+    <ul>
+      <li>Supported sources:
+        <ul>
+          <li>GitHub (including GitHub Enterprise)</li>
+          <li>GitLab (including self-hosted)</li>
+          <li>Bitbucket Cloud</li>
+          <li>Generic Git repositories (HTTPS and SSH)</li>
+          <li>Amazon S3 (and S3-compatible storage)</li>
+          <li>HTTP endpoints</li>
+          <li>Consul KV</li>
+          <li>Local filesystem
+            <ul>
+              <li>with possible pre-deploy sync command</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li>Full reconciliation engine (create, update, delete) with desired state convergence</li>
+      <li>Automatic deployment via scheduled polling (fixed interval or cron expression)</li>
+      <li>Webhook-triggered deployment from GitHub, GitLab, and Bitbucket push events</li>
+      <li>Dry-run mode to preview changes before applying</li>
+      <li>Undeploy to cleanly remove all entities managed by a catalog</li>
+      <li>Support for JSON and YAML entity definitions (including multi-document YAML)</li>
+      <li>Deploy listing files for fine-grained control over which files to import</li>
+      <li>Route plugins for programmatic deployment (single, batch, webhook)</li>
+    </ul>
+  </li>
+  <li><code>otoroshictl</code> CLI tool
+    <ul>
+      <li>Sync configuration with Otoroshi clusters</li>
+      <li>Push-based IaC, very similar to what <code>kubectl apply</code> can do</li>
+    </ul>
+  </li>
 </ul>
 <p><strong>Storage backends</strong></p>
 <ul>
