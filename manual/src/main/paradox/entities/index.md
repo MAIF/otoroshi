@@ -175,6 +175,24 @@ Any entity has the following properties
 @ref:[View](./wasm-plugins.md)
 @@@
 
+@@@div { .entities }
+<img src="../imgs/entities-services.png">
+<div>
+<span>Error Templates</span>
+<span>Customize error pages for your services</span>
+</div>
+@ref:[View](./error-templates.md)
+@@@
+
+@@@div { .entities }
+<img src="../imgs/entities-security.png">
+<div>
+<span>Otoroshi Admins</span>
+<span>Manage backoffice admin users</span>
+</div>
+@ref:[View](./otoroshi-admins.md)
+@@@
+
 @@@ index
 
 * [Routes](./routes.md)
@@ -195,5 +213,7 @@ Any entity has the following properties
 * [HTTP Listeners](./http-listeners.md)
 * [Workflows](./workflows.md)
 * [WASM Plugins](./wasm-plugins.md)
+* [Error Templates](./error-templates.md)
+* [Otoroshi Admins](./otoroshi-admins.md)
 
 @@@
