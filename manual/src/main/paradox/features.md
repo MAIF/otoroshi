@@ -257,7 +257,8 @@
     * Deploy listing files for fine-grained control over which files to import
     * Route plugins for programmatic deployment (single, batch, webhook)
 * `otoroshictl` CLI tool 
-    * push configuration to Otoroshi clusters (push-based IaC, similar to `kubectl apply`)
+    * Sync configuration with Otoroshi clusters
+    * Push-based IaC, very similar to what `kubectl apply` can do.
 
 **Storage backends**
 
