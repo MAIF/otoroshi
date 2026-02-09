@@ -61,6 +61,7 @@ object CatalogSources {
     registerSource("github", new CatalogSourceGithub())
     registerSource("gitlab", new CatalogSourceGitlab())
     registerSource("s3", new CatalogSourceS3())
+    registerSource("git", new CatalogSourceGit())
   }
 
   def registerSource(name: String, source: CatalogSource): Unit = {

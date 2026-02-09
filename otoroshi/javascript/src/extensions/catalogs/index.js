@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { v4 as uuid } from 'uuid';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs/Table';
+import _ from 'lodash';
 
 const extensionId = 'otoroshi.extensions.RemoteCatalogs';
 
@@ -213,13 +214,14 @@ export function setupRemoteCatalogsExtension(registerExtension) {
           type: 'select',
           props: {
             label: 'Source kind',
-            possibleValues: [
+            possibleValues: _.sortBy([
               { label: 'HTTP', value: 'http' },
               { label: 'File', value: 'file' },
               { label: 'GitHub', value: 'github' },
               { label: 'GitLab', value: 'gitlab' },
               { label: 'S3', value: 's3' },
-            ],
+              { label: 'Git', value: 'git' },
+            ], i => i.label)
           },
         },
         // File source fields
@@ -257,10 +259,10 @@ export function setupRemoteCatalogsExtension(registerExtension) {
           type: 'string',
           props: { label: 'Branch', placeholder: 'main' },
         },
-        'source_config.path': {
-          type: 'string',
-          props: { label: 'Path', placeholder: 'entities/ or entities/deploy.json' },
-        },
+        //'source_config.path': {
+        //  type: 'string',
+        //  props: { label: 'Path', placeholder: 'entities/ or entities/deploy.json' },
+        //},
         'source_config.token': {
           type: 'password',
           props: { label: 'Token', placeholder: 'ghp_xxx or glpat-xxx' },
@@ -268,6 +270,15 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         'source_config.base_url': {
           type: 'string',
           props: { label: 'API base URL', placeholder: 'https://api.github.com or https://gitlab.com' },
+        },
+        // Git source fields
+        'source_config.ssh_private_key_path': {
+          type: 'string',
+          props: { label: 'SSH private key path', placeholder: '/path/to/id_rsa' },
+        },
+        'source_config.username': {
+          type: 'string',
+          props: { label: 'Username', placeholder: 'git username for HTTPS auth' },
         },
         // S3 source fields
         'source_config.bucket': {
@@ -443,6 +454,13 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.path' : null,
         (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.token' : null,
         (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.base_url' : null,
+
+        state.source_kind === 'git' ? 'source_config.repo' : null,
+        state.source_kind === 'git' ? 'source_config.branch' : null,
+        state.source_kind === 'git' ? 'source_config.path' : null,
+        state.source_kind === 'git' ? 'source_config.token' : null,
+        state.source_kind === 'git' ? 'source_config.username' : null,
+        state.source_kind === 'git' ? 'source_config.ssh_private_key_path' : null,
 
         state.source_kind === 's3' ? 'source_config.bucket' : null,
         state.source_kind === 's3' ? 'source_config.key' : null,

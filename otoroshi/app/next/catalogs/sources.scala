@@ -16,7 +16,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
@@ -653,6 +653,152 @@ class CatalogSourceS3 extends CatalogSource {
               (Right(SourceUtils.parseEntityContent(rawContent, s"s3://$bucket/$key", allRes)): Either[JsValue, Seq[RemoteEntity]]).vfuture
           }
       }
+    }
+  }
+}
+
+class CatalogSourceGit extends CatalogSource {
+
+  import scala.sys.process._
+
+  private val logger = Logger("otoroshi-remote-catalog-source-git")
+
+  override def sourceKind: String       = "git"
+  override def supportsWebhook: Boolean = false
+
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
+    Json.obj("error" -> "git source does not support webhooks").leftf
+
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, JsObject]] =
+    Json.obj("error" -> "git source does not support webhooks").leftf
+
+  private def repoDir(catalog: RemoteCatalog): File = {
+    val base = new File(System.getProperty("java.io.tmpdir"), "otoroshi-remote-catalogs-git")
+    base.mkdirs()
+    new File(base, catalog.id.replace("/", "_").replace(":", "_"))
+  }
+
+  private def buildRepoUrl(config: JsObject): String = {
+    val repo     = config.select("repo").asOpt[String].getOrElse("")
+    val token    = config.select("token").asOpt[String].getOrElse("")
+    val username = config.select("username").asOpt[String].getOrElse("")
+    if (token.nonEmpty && repo.startsWith("https://")) {
+      val afterScheme = repo.stripPrefix("https://")
+      if (username.nonEmpty) {
+        s"https://$username:$token@$afterScheme"
+      } else {
+        s"https://$token@$afterScheme"
+      }
+    } else {
+      repo
+    }
+  }
+
+  private def sshEnv(config: JsObject): Seq[(String, String)] = {
+    val sshPrivateKeyPath = config.select("ssh_private_key_path").asOpt[String].getOrElse("")
+    if (sshPrivateKeyPath.nonEmpty) {
+      Seq("GIT_SSH_COMMAND" -> s"ssh -i $sshPrivateKeyPath -o StrictHostKeyChecking=no")
+    } else {
+      Seq.empty
+    }
+  }
+
+  private def runGit(args: Seq[String], cwd: Option[File], config: JsObject): Either[String, String] = {
+    Try {
+      var stdout = ""
+      var stderr = ""
+      val processLogger = ProcessLogger(
+        out => { stdout = stdout + out + "\n" },
+        err => { stderr = stderr + err + "\n" }
+      )
+      val envVars = sshEnv(config)
+      val cmd     = Process(Seq("git") ++ args, cwd, envVars: _*)
+      val code    = cmd.!(processLogger)
+      if (code != 0) {
+        Left(s"git ${args.head} failed (exit $code): ${stderr.take(500)}")
+      } else {
+        Right(stdout)
+      }
+    }.getOrElse(Left(s"git ${args.head} execution failed"))
+  }
+
+  private def cloneOrPull(catalog: RemoteCatalog): Either[String, File] = {
+    val config = catalog.sourceConfig
+    val branch = config.select("branch").asOpt[String].getOrElse("main")
+    val dir    = repoDir(catalog)
+    val gitDir = new File(dir, ".git")
+
+    if (gitDir.isDirectory) {
+      for {
+        _ <- runGit(Seq("fetch", "--all"), Some(dir), config)
+        _ <- runGit(Seq("checkout", branch), Some(dir), config)
+        _ <- runGit(Seq("reset", "--hard", s"origin/$branch"), Some(dir), config)
+      } yield dir
+    } else {
+      val repoUrl = buildRepoUrl(config)
+      runGit(
+        Seq("clone", "--branch", branch, "--single-branch", "--depth", "1", repoUrl, dir.getAbsolutePath),
+        None,
+        config
+      ).map(_ => dir)
+    }
+  }
+
+  private def readLocalEntities(baseDir: File, path: String, allRes: Seq[Resource]): Either[JsValue, Seq[RemoteEntity]] = {
+    Try {
+      val target = if (path.isEmpty || path == "/" || path == ".") baseDir else new File(baseDir, path)
+      if (target.isDirectory) {
+        val entityFiles = target.listFiles().filter(f => f.isFile && SourceUtils.isEntityFile(f.getName)).toSeq
+        val entities = entityFiles.flatMap { f =>
+          val rawContent = new String(Files.readAllBytes(f.toPath), StandardCharsets.UTF_8)
+          SourceUtils.parseEntityContent(rawContent, s"git://${f.getPath}", allRes)
+        }
+        Right(entities): Either[JsValue, Seq[RemoteEntity]]
+      } else if (target.isFile) {
+        val rawContent = new String(Files.readAllBytes(target.toPath), StandardCharsets.UTF_8)
+        SourceUtils.isDeployListing(rawContent) match {
+          case Some(arr) =>
+            val basePath = target.getParentFile.getAbsolutePath
+            val entities: Seq[RemoteEntity] = arr.value.flatMap(_.asOpt[String]).flatMap { relativePath =>
+              Try {
+                val relFile    = new File(basePath, relativePath)
+                val relContent = new String(Files.readAllBytes(relFile.toPath), StandardCharsets.UTF_8)
+                SourceUtils.parseEntityContent(relContent, s"git://${relFile.getPath}", allRes)
+              }.getOrElse {
+                logger.warn(s"Cannot read file $relativePath from git repo")
+                Seq.empty[RemoteEntity]
+              }
+            }
+            Right(entities): Either[JsValue, Seq[RemoteEntity]]
+          case None =>
+            Right(SourceUtils.parseEntityContent(rawContent, s"git://${target.getPath}", allRes)): Either[JsValue, Seq[RemoteEntity]]
+        }
+      } else {
+        Left(Json.obj("error" -> s"Path not found in repo: $path")): Either[JsValue, Seq[RemoteEntity]]
+      }
+    }.getOrElse {
+      Left(Json.obj("error" -> s"Error reading path $path from git repo")): Either[JsValue, Seq[RemoteEntity]]
+    }
+  }
+
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+    val path   = catalog.sourceConfig.select("path").asOpt[String].getOrElse("").stripPrefix("/")
+    val allRes = env.allResources.resources ++ env.adminExtensions.resources()
+
+    cloneOrPull(catalog) match {
+      case Left(err)  =>
+        (Left(Json.obj("error" -> err)): Either[JsValue, Seq[RemoteEntity]]).vfuture
+      case Right(dir) =>
+        readLocalEntities(dir, path, allRes).vfuture
     }
   }
 }
