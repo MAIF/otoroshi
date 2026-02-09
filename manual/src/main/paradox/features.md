@@ -258,7 +258,7 @@
     * Route plugins for programmatic deployment (single, batch, webhook)
 * `otoroshictl` CLI tool 
     * Sync configuration with Otoroshi clusters
-    * Push-based IaC, very similar to what `kubectl apply` can do.
+    * Push-based IaC, very similar to what `kubectl apply` can do
 
 **Storage backends**
 
