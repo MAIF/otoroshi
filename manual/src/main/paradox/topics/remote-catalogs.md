@@ -86,16 +86,16 @@ When configuring a source, the `path` parameter determines how entities are fetc
 
 - **File path** (e.g., `entities/routes.json`): fetches a single file and parses it for entities
 - **Directory path** (e.g., `entities/`): lists all `.json`, `.yaml`, and `.yml` files in the directory and parses each one
-- **Deploy listing file** (e.g., `deploy.json`): a JSON file containing an array of relative file paths to fetch
+- **Catalog listing file** (e.g., `catalog.json`): a JSON file containing an array of relative file paths to fetch
 
-A deploy listing file looks like this:
+A catalog listing file looks like this:
 
 ```json
 [
-  "routes/route1.json",
-  "routes/route2.yaml",
-  "backends/backend1.json",
-  "apikeys/key1.yaml"
+  "./routes/route1.json",
+  "./route2.yaml",
+  "./backends/backend1.json",
+  "./apikeys/key1.yaml"
 ]
 ```
 
