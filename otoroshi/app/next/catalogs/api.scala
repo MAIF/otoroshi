@@ -175,6 +175,7 @@ class RemoteCatalogEngine(env: Env) {
       Json.obj("error" -> s"Catalog ${catalog.id} is already being deployed").leftf
     } else {
       deployingCatalogs.put(catalog.id, true)
+      logger.info(s"deploying catalog ${catalog.id} / ${catalog.sourceKind}")
       doFetchAndReconcile(catalog, args, dryRun = false).andThen { case _ =>
         deployingCatalogs.remove(catalog.id)
       }
