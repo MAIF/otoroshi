@@ -222,6 +222,79 @@ export function setupRemoteCatalogsExtension(registerExtension) {
             ],
           },
         },
+        // File source fields
+        'source_config.path': {
+          type: 'string',
+          props: { label: 'File path', placeholder: '/path/to/entities or /path/to/deploy.json' },
+        },
+        'source_config.pre_command': {
+          type: 'array',
+          props: { 
+            label: 'Pre-command', 
+            help: 'Command parts to run before fetch (e.g. git, pull, or rsync, or rclone, etc)',
+            placeholder: 'Command parts to run before fetch (e.g. git, pull)' 
+          },
+        },
+        // HTTP source fields
+        'source_config.url': {
+          type: 'string',
+          props: { label: 'URL', placeholder: 'https://example.com/entities/deploy.json' },
+        },
+        'source_config.headers': {
+          type: 'object',
+          props: { label: 'Headers' },
+        },
+        'source_config.timeout': {
+          type: 'number',
+          props: { label: 'Timeout (ms)', placeholder: '30000' },
+        },
+        // GitHub / GitLab source fields
+        'source_config.repo': {
+          type: 'string',
+          props: { label: 'Repository URL', placeholder: 'https://github.com/owner/repo.git' },
+        },
+        'source_config.branch': {
+          type: 'string',
+          props: { label: 'Branch', placeholder: 'main' },
+        },
+        'source_config.path': {
+          type: 'string',
+          props: { label: 'Path', placeholder: 'entities/ or entities/deploy.json' },
+        },
+        'source_config.token': {
+          type: 'password',
+          props: { label: 'Token', placeholder: 'ghp_xxx or glpat-xxx' },
+        },
+        'source_config.base_url': {
+          type: 'string',
+          props: { label: 'API base URL', placeholder: 'https://api.github.com or https://gitlab.com' },
+        },
+        // S3 source fields
+        'source_config.bucket': {
+          type: 'string',
+          props: { label: 'Bucket', placeholder: 'my-bucket' },
+        },
+        'source_config.key': {
+          type: 'string',
+          props: { label: 'Key', placeholder: 'path/to/deploy.json' },
+        },
+        'source_config.region': {
+          type: 'string',
+          props: { label: 'Region', placeholder: 'eu-west-1' },
+        },
+        'source_config.access': {
+          type: 'string',
+          props: { label: 'Access key', placeholder: 'AKIA...' },
+        },
+        'source_config.secret': {
+          type: 'password',
+          props: { label: 'Secret key', placeholder: '***' },
+        },
+        'source_config.endpoint': {
+          type: 'string',
+          props: { label: 'Endpoint', placeholder: 'https://s3.amazonaws.com' },
+        },
+        // Raw source config
         source_config: {
           type: 'jsonobjectcode',
           props: { label: 'Source configuration' },
@@ -338,30 +411,28 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         '<<<Source',
         'enabled',
         'source_kind',
-        'source_kind.',
 
-        'source_kind.pre_command',
-        'source_kind.path',
-        
-        'source_kind.url',
-        'source_kind.headers',
-        'source_kind.timeout',
+        state.source_kind === 'file' ? 'source_config.path' : null,
+        state.source_kind === 'file' ? 'source_config.pre_command' : null,
 
-        'source_kind.repo',
-        'source_kind.branch',
-        'source_kind.path',
-        'source_kind.token',
+        state.source_kind === 'http' ? 'source_config.url' : null,
+        state.source_kind === 'http' ? 'source_config.headers' : null,
+        state.source_kind === 'http' ? 'source_config.timeout' : null,
 
-        'source_kind.base_url',
+        (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.repo' : null,
+        (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.branch' : null,
+        (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.path' : null,
+        (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.token' : null,
+        (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.base_url' : null,
 
-        'source_kind.bucket',
-        'source_kind.key',
-        'source_kind.region',
-        'source_kind.access',
-        'source_kind.secret',
-        'source_kind.endpoint',
+        state.source_kind === 's3' ? 'source_config.bucket' : null,
+        state.source_kind === 's3' ? 'source_config.key' : null,
+        state.source_kind === 's3' ? 'source_config.region' : null,
+        state.source_kind === 's3' ? 'source_config.access' : null,
+        state.source_kind === 's3' ? 'source_config.secret' : null,
+        state.source_kind === 's3' ? 'source_config.endpoint' : null,
 
-        '<<<Source raw config.',
+        '>>>Source raw config.',
         'source_config',
         '>>>Scheduling',
         'scheduling.enabled',
