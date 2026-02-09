@@ -18,7 +18,7 @@ When a catalog is deployed, Otoroshi fetches the entity definitions from the rem
 
 ## Entity format
 
-Remote entities can be defined in JSON or YAML format. Multi-document YAML files (using `---` as separator) are supported. Each entity must contain at least an `id` field and a `kind` field. The `kind` field should match one of the existing Otoroshi resource kinds (e.g., `Route`, `Backend`, `ApiKey`, `Certificate`, etc.). You can also use the fully qualified kind with group prefix, like `proxy.otoroshi.io/Route`.
+Remote entities can be defined in JSON or YAML format. Multi-document YAML files (using `---` as separator) are supported. Each entity must contain at least an `id` field and a `kind` field. The `kind` field should match one of the existing Otoroshi resource kinds (e.g., `Route`, `Backend`, `ApiKey`, `Certificate`, etc.). You can also use the fully qualified kind with group prefix, like `proxy.otoroshi.io/Route`. This is the RECOMMENDED format to perform well !
 
 ```json
 {
