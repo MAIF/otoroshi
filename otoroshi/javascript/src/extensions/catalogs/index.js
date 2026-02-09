@@ -251,7 +251,7 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         // GitHub / GitLab source fields
         'source_config.repo': {
           type: 'string',
-          props: { label: 'Repository URL', placeholder: 'https://github.com/owner/repo.git' },
+          props: { label: 'Repository', placeholder: 'owner/repo' },
         },
         'source_config.branch': {
           type: 'string',
