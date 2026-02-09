@@ -148,6 +148,33 @@ Any entity has the following properties
 @ref:[View](./remote-catalogs.md)
 @@@
 
+@@@div { .entities }
+<img src="../imgs/entities-plugins.png">
+<div>
+<span>HTTP Listeners</span>
+<span>Serve traffic on custom ports</span>
+</div>
+@ref:[View](./http-listeners.md)
+@@@
+
+@@@div { .entities }
+<img src="../imgs/entities-plugins.png">
+<div>
+<span>Workflows</span>
+<span>Build automation pipelines</span>
+</div>
+@ref:[View](./workflows.md)
+@@@
+
+@@@div { .entities }
+<img src="../imgs/entities-plugins.png">
+<div>
+<span>WASM Plugins</span>
+<span>Reusable WebAssembly plugin configurations</span>
+</div>
+@ref:[View](./wasm-plugins.md)
+@@@
+
 @@@ index
 
 * [Routes](./routes.md)
@@ -165,5 +192,8 @@ Any entity has the following properties
 * [TCP services](./tcp-services.md)
 * [Service descriptors](./service-descriptors.md)
 * [Remote Catalogs](./remote-catalogs.md)
+* [HTTP Listeners](./http-listeners.md)
+* [Workflows](./workflows.md)
+* [WASM Plugins](./wasm-plugins.md)
 
 @@@
