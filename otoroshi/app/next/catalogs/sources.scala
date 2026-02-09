@@ -264,10 +264,10 @@ class CatalogSourceGithub extends CatalogSource {
     ) ++ (if (token.nonEmpty) Seq("Authorization" -> s"token $token") else Seq.empty)
   }
 
-  private def fetchFileContent(owner: String, repo: String, filePath: String, branch: String, token: String, env: Env)(
+  private def fetchFileContent(apiBase: String, owner: String, repo: String, filePath: String, branch: String, token: String, env: Env)(
       implicit ec: ExecutionContext
   ): Future[Either[JsValue, String]] = {
-    val apiUrl = s"https://api.github.com/repos/$owner/$repo/contents/$filePath"
+    val apiUrl = s"$apiBase/repos/$owner/$repo/contents/$filePath"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
@@ -286,10 +286,10 @@ class CatalogSourceGithub extends CatalogSource {
       }
   }
 
-  private def listDirectory(owner: String, repo: String, dirPath: String, branch: String, token: String, env: Env)(
+  private def listDirectory(apiBase: String, owner: String, repo: String, dirPath: String, branch: String, token: String, env: Env)(
       implicit ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
-    val apiUrl = s"https://api.github.com/repos/$owner/$repo/contents/$dirPath"
+    val apiUrl = s"$apiBase/repos/$owner/$repo/contents/$dirPath"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
@@ -351,6 +351,7 @@ class CatalogSourceGithub extends CatalogSource {
     val branch  = catalog.sourceConfig.select("branch").asOpt[String].getOrElse("main")
     val path    = catalog.sourceConfig.select("path").asOpt[String].getOrElse("/").stripPrefix("/")
     val token   = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
+    val apiBase = catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://api.github.com").stripSuffix("/")
 
     parseRepo(repoUrl) match {
       case None                =>
@@ -358,7 +359,7 @@ class CatalogSourceGithub extends CatalogSource {
       case Some((owner, repo)) =>
         val allRes = env.allResources.resources ++ env.adminExtensions.resources()
         if (SourceUtils.hasFileExtension(path)) {
-          fetchFileContent(owner, repo, path, branch, token, env).flatMap {
+          fetchFileContent(apiBase, owner, repo, path, branch, token, env).flatMap {
             case Left(err)         => err.leftf
             case Right(rawContent) =>
               SourceUtils.isDeployListing(rawContent) match {
@@ -368,7 +369,7 @@ class CatalogSourceGithub extends CatalogSource {
                     arr,
                     relativePath => {
                       val fullPath = if (basePath.nonEmpty) s"$basePath/$relativePath" else relativePath
-                      fetchFileContent(owner, repo, fullPath, branch, token, env)
+                      fetchFileContent(apiBase, owner, repo, fullPath, branch, token, env)
                     },
                     s"github://$owner/$repo/$path@$branch",
                     allRes
@@ -378,12 +379,12 @@ class CatalogSourceGithub extends CatalogSource {
               }
           }
         } else {
-          listDirectory(owner, repo, path, branch, token, env).flatMap {
+          listDirectory(apiBase, owner, repo, path, branch, token, env).flatMap {
             case Left(err)    => err.leftf
             case Right(files) =>
               files
                 .mapAsync { filePath =>
-                  fetchFileContent(owner, repo, filePath, branch, token, env).map {
+                  fetchFileContent(apiBase, owner, repo, filePath, branch, token, env).map {
                     case Left(err)         =>
                       logger.warn(s"Error fetching $filePath: ${err.toString}")
                       Seq.empty[RemoteEntity]
