@@ -222,6 +222,7 @@ export function setupRemoteCatalogsExtension(registerExtension) {
               { label: 'S3', value: 's3' },
               { label: 'Git', value: 'git' },
               { label: 'Bitbucket', value: 'bitbucket' },
+              { label: 'Consul KV', value: 'consulkv' },
             ], i => i.label)
           },
         },
@@ -280,6 +281,19 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         'source_config.username': {
           type: 'string',
           props: { label: 'Username', placeholder: 'git username for HTTPS auth' },
+        },
+        // Consul KV source fields
+        // 'source_config.endpoint': {
+        //   type: 'string',
+        //   props: { label: 'Endpoint', placeholder: 'http://localhost:8500' },
+        // },
+        'source_config.prefix': {
+          type: 'string',
+          props: { label: 'Prefix', placeholder: 'otoroshi/entities/' },
+        },
+        'source_config.dc': {
+          type: 'string',
+          props: { label: 'Datacenter', placeholder: 'dc1 (optional)' },
         },
         // S3 source fields
         'source_config.bucket': {
@@ -469,6 +483,11 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         state.source_kind === 'git' ? 'source_config.token' : null,
         state.source_kind === 'git' ? 'source_config.username' : null,
         state.source_kind === 'git' ? 'source_config.ssh_private_key_path' : null,
+
+        state.source_kind === 'consulkv' ? 'source_config.endpoint' : null,
+        state.source_kind === 'consulkv' ? 'source_config.prefix' : null,
+        state.source_kind === 'consulkv' ? 'source_config.token' : null,
+        state.source_kind === 'consulkv' ? 'source_config.dc' : null,
 
         state.source_kind === 's3' ? 'source_config.bucket' : null,
         state.source_kind === 's3' ? 'source_config.key' : null,

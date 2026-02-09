@@ -657,6 +657,140 @@ class CatalogSourceS3 extends CatalogSource {
   }
 }
 
+class CatalogSourceConsulKv extends CatalogSource {
+
+  private val logger = Logger("otoroshi-remote-catalog-source-consulkv")
+
+  override def sourceKind: String       = "consulkv"
+  override def supportsWebhook: Boolean = false
+
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
+    Json.obj("error" -> "consulkv source does not support webhooks").leftf
+
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, JsObject]] =
+    Json.obj("error" -> "consulkv source does not support webhooks").leftf
+
+  private def consulHeaders(token: String): Seq[(String, String)] = {
+    Seq("User-Agent" -> "Otoroshi-Remote-Catalogs") ++
+      (if (token.nonEmpty) Seq("X-Consul-Token" -> token) else Seq.empty)
+  }
+
+  private def fetchRawKey(endpoint: String, key: String, token: String, dc: String, env: Env)(implicit
+      ec: ExecutionContext
+  ): Future[Either[JsValue, String]] = {
+    val params = Seq("raw" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
+    env.Ws
+      .url(s"$endpoint/v1/kv/$key")
+      .withQueryStringParameters(params: _*)
+      .withHttpHeaders(consulHeaders(token): _*)
+      .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          Right(resp.body): Either[JsValue, String]
+        } else {
+          Left(Json.obj("error" -> s"Consul KV returned ${resp.status} for key $key")): Either[JsValue, String]
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error fetching key $key from Consul: ${e.getMessage}")): Either[JsValue, String]
+      }
+  }
+
+  private def listKeys(endpoint: String, prefix: String, token: String, dc: String, env: Env)(implicit
+      ec: ExecutionContext
+  ): Future[Either[JsValue, Seq[String]]] = {
+    val cleanPrefix = prefix.stripSuffix("/") + "/"
+    val params      = Seq("keys" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
+    env.Ws
+      .url(s"$endpoint/v1/kv/$cleanPrefix")
+      .withQueryStringParameters(params: _*)
+      .withHttpHeaders(consulHeaders(token): _*)
+      .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          resp.json match {
+            case arr: JsArray =>
+              val keys = arr.value.flatMap(_.asOpt[String]).filter { key =>
+                val name = key.split("/").lastOption.getOrElse("")
+                name.nonEmpty && SourceUtils.isEntityFile(name)
+              }
+              Right(keys): Either[JsValue, Seq[String]]
+            case _ =>
+              Left(Json.obj("error" -> "Consul KV did not return an array for key listing")): Either[JsValue, Seq[String]]
+          }
+        } else if (resp.status == 404) {
+          Right(Seq.empty[String]): Either[JsValue, Seq[String]]
+        } else {
+          Left(Json.obj("error" -> s"Consul KV returned ${resp.status} for prefix listing")): Either[JsValue, Seq[String]]
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error listing keys from Consul: ${e.getMessage}")): Either[JsValue, Seq[String]]
+      }
+  }
+
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+    val endpoint = catalog.sourceConfig.select("endpoint").asOpt[String].getOrElse("http://localhost:8500").stripSuffix("/")
+    val prefix   = catalog.sourceConfig.select("prefix").asOpt[String].getOrElse("").stripPrefix("/")
+    val token    = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
+    val dc       = catalog.sourceConfig.select("dc").asOpt[String].getOrElse("")
+
+    if (prefix.isEmpty) {
+      Json.obj("error" -> "Consul KV prefix is required").leftf
+    } else {
+      val allRes = env.allResources.resources ++ env.adminExtensions.resources()
+      if (SourceUtils.hasFileExtension(prefix)) {
+        fetchRawKey(endpoint, prefix, token, dc, env).flatMap {
+          case Left(err)         => err.leftf
+          case Right(rawContent) =>
+            SourceUtils.isDeployListing(rawContent) match {
+              case Some(arr) =>
+                val basePrefix = if (prefix.contains("/")) prefix.substring(0, prefix.lastIndexOf('/')) else ""
+                SourceUtils.resolveDeployListing(
+                  arr,
+                  relativePath => {
+                    val fullKey = if (basePrefix.nonEmpty) s"$basePrefix/$relativePath" else relativePath
+                    fetchRawKey(endpoint, fullKey, token, dc, env)
+                  },
+                  s"consul://$endpoint/$prefix",
+                  allRes
+                )
+              case None =>
+                (Right(SourceUtils.parseEntityContent(rawContent, s"consul://$endpoint/$prefix", allRes)): Either[JsValue, Seq[RemoteEntity]]).vfuture
+            }
+        }
+      } else {
+        listKeys(endpoint, prefix, token, dc, env).flatMap {
+          case Left(err)    => err.leftf
+          case Right(keys)  =>
+            keys
+              .mapAsync { key =>
+                fetchRawKey(endpoint, key, token, dc, env).map {
+                  case Left(err)         =>
+                    logger.warn(s"Error fetching key $key: ${err.toString}")
+                    Seq.empty[RemoteEntity]
+                  case Right(rawContent) =>
+                    SourceUtils.parseEntityContent(rawContent, s"consul://$endpoint/$key", allRes)
+                }
+              }
+              .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+        }
+      }
+    }
+  }
+}
+
 class CatalogSourceBitbucket extends CatalogSource {
 
   private val logger = Logger("otoroshi-remote-catalog-source-bitbucket")
