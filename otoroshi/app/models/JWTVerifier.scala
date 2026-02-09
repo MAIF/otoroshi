@@ -545,6 +545,8 @@ case class JWKSAlgoSettings(
                   }.toMap
                   //println(s"keys: ${keys.mkString(",")}")
                   JWKSAlgoSettings.cache.put(url, (stop, keys, false))
+                  //println(s"exists kid: ${keys.contains(kid)}")
+                  //println(s"exist alg+kid: ${keys.contains(alg+kid)}")
                   keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
                     case Some(jwk) =>
                       logger.info(

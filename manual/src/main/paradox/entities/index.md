@@ -139,6 +139,15 @@ Any entity has the following properties
 @ref:[View](./service-descriptors.md)
 @@@
 
+@@@div { .entities }
+<img src="../imgs/entities-plugins.png">
+<div>
+<span>Remote Catalogs</span>
+<span>Sync entities from remote sources</span>
+</div>
+@ref:[View](./remote-catalogs.md)
+@@@
+
 @@@ index
 
 * [Routes](./routes.md)
@@ -155,5 +164,6 @@ Any entity has the following properties
 * [Data exporters](./data-exporters.md)
 * [TCP services](./tcp-services.md)
 * [Service descriptors](./service-descriptors.md)
+* [Remote Catalogs](./remote-catalogs.md)
 
 @@@

@@ -235,6 +235,31 @@
 * Dynamic configuration without restart
 * TLS and mTLS support per listener
 
+**Infrastructure as Code / GitOps**
+
+* Remote Catalogs: declarative entity management from trusted external sources
+    * Supported sources:
+        * GitHub (including GitHub Enterprise)
+        * GitLab (including self-hosted)
+        * Bitbucket Cloud
+        * Generic Git repositories (HTTPS and SSH)
+        * Amazon S3 (and S3-compatible storage)
+        * HTTP endpoints
+        * Consul KV
+        * Local filesystem
+            * with possible pre-deploy sync command
+    * Full reconciliation engine (create, update, delete) with desired state convergence
+    * Automatic deployment via scheduled polling (fixed interval or cron expression)
+    * Webhook-triggered deployment from GitHub, GitLab, and Bitbucket push events
+    * Dry-run mode to preview changes before applying
+    * Undeploy to cleanly remove all entities managed by a catalog
+    * Support for JSON and YAML entity definitions (including multi-document YAML)
+    * Deploy listing files for fine-grained control over which files to import
+    * Route plugins for programmatic deployment (single, batch, webhook)
+* `otoroshictl` CLI tool 
+    * Sync configuration with Otoroshi clusters
+    * Push-based IaC, very similar to what `kubectl apply` can do.
+
 **Storage backends**
 
 * Redis (via Lettuce)

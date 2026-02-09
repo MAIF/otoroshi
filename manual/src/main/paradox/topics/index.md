@@ -29,6 +29,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Circuit Breaker](./circuit-breaker.md)
 * @ref:[Understanding GatewayEvent Durations in Otoroshi](./durations.md)
 * @ref:[Workflows Editor](./workflows-editor.md)
+* @ref:[Remote Catalogs](./remote-catalogs.md)
 
 
 @@@ index
@@ -60,5 +61,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Circuit Breaker](./circuit-breaker.md)
 * [Understanding GatewayEvent Durations in Otoroshi](./durations.md)
 * [Workflows Editor](./workflows-editor.md)
+* [Remote Catalogs](./remote-catalogs.md)
 
 @@@

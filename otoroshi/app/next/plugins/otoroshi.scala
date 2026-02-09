@@ -497,7 +497,7 @@ case class PossibleCerts(
 }
 
 object PossibleCerts {
-  val default                        = PossibleCerts(Seq.empty, true, Seq.empty, Seq.empty)
+  val default                        = PossibleCerts(Seq.empty, false, Seq.empty, Seq.empty)
   val format                         = new Format[PossibleCerts] {
     override def writes(o: PossibleCerts): JsValue             = Json.obj(
       "cert_ids" -> o.certIds,
@@ -508,7 +508,7 @@ object PossibleCerts {
     override def reads(json: JsValue): JsResult[PossibleCerts] = Try {
       PossibleCerts(
         certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty),
-        includeAlgorithms = json.select("include_algorithms").asOptBoolean.getOrElse(true),
+        includeAlgorithms = json.select("include_algorithms").asOptBoolean.getOrElse(false),
         rsaAlgorithms = json.select("rsa_algorithms").asOpt[Seq[String]].getOrElse(Seq.empty).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)),
         esAlgorithms = json.select("es_algorithms").asOpt[Seq[String]].getOrElse(Seq.empty).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)),
       )

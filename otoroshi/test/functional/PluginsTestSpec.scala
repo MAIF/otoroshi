@@ -713,5 +713,14 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "OIDCJwtVerifier" in {
       new OIDCJwtVerifierTests(this).verifyOIDC()
     }
+    "Remote Catalogs - deploy with admin API" in {
+      new RemoteCatalogsTests(this).deployWithAdminApi()
+    }
+    "Remote Catalogs - deploy with plugin" in {
+      new RemoteCatalogsTests(this).deployWithPlugin()
+    }
+    "Remote Catalogs - deploy many with plugin" in {
+      new RemoteCatalogsTests(this).deployManyWithPlugin()
+    }
   }
 }
