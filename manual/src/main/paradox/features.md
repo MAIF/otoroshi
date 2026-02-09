@@ -255,6 +255,7 @@
 * Support for JSON and YAML entity definitions (including multi-document YAML)
 * Deploy listing files for fine-grained control over which files to import
 * Route plugins for programmatic deployment (single, batch, webhook)
+* `otoroshictl` CLI tool to push configuration to Otoroshi clusters (push-based IaC, similar to `kubectl apply`)
 
 **Storage backends**
 
