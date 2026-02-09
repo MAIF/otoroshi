@@ -221,6 +221,7 @@ export function setupRemoteCatalogsExtension(registerExtension) {
               { label: 'GitLab', value: 'gitlab' },
               { label: 'S3', value: 's3' },
               { label: 'Git', value: 'git' },
+              { label: 'Bitbucket', value: 'bitbucket' },
             ], i => i.label)
           },
         },
@@ -454,6 +455,13 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.path' : null,
         (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.token' : null,
         (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.base_url' : null,
+
+        state.source_kind === 'bitbucket' ? 'source_config.repo' : null,
+        state.source_kind === 'bitbucket' ? 'source_config.branch' : null,
+        state.source_kind === 'bitbucket' ? 'source_config.path' : null,
+        state.source_kind === 'bitbucket' ? 'source_config.token' : null,
+        state.source_kind === 'bitbucket' ? 'source_config.username' : null,
+        state.source_kind === 'bitbucket' ? 'source_config.base_url' : null,
 
         state.source_kind === 'git' ? 'source_config.repo' : null,
         state.source_kind === 'git' ? 'source_config.branch' : null,
