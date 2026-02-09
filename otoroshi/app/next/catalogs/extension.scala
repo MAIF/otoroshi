@@ -240,6 +240,12 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
         path = "/api/extensions/remote-catalogs/_deploy",
         wantsBody = true,
         handle = (ctx, req, apikey, optBody) => handleDeploy(optBody)
+      ),
+      AdminExtensionAdminApiRoute(
+        method = "POST",
+        path = "/api/extensions/remote-catalogs/_undeploy",
+        wantsBody = true,
+        handle = (ctx, req, apikey, optBody) => handleUndeploy(optBody)
       )
     )
   }
@@ -256,6 +262,12 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
       path = "/extensions/remote-catalogs/_test",
       wantsBody = true,
       handle = (ctx, req, user, body) => handleTest(body)
+    ),
+    AdminExtensionBackofficeAuthRoute(
+      method = "POST",
+      path = "/extensions/remote-catalogs/_undeploy",
+      wantsBody = true,
+      handle = (ctx, req, user, body) => handleUndeploy(body)
     )
   )
 
@@ -308,6 +320,34 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
                 case Right(report) => Results.Ok(report.json)
               }
           }
+        }
+    }
+  }
+
+  private def handleUndeploy(optBody: Option[Source[ByteString, _]]): Future[Result] = {
+    implicit val ec  = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
+    implicit val ev  = env
+    optBody match {
+      case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
+      case Some(body) =>
+        body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+          val payload  = bodyRaw.utf8String.parseJson
+          val catalogs = payload.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          catalogs
+            .mapAsync { item =>
+              val catalogId = item.select("id").asString
+              states.catalog(catalogId) match {
+                case None          =>
+                  Json.obj("catalog_id" -> catalogId, "error" -> "catalog not found").vfuture
+                case Some(catalog) =>
+                  engine.undeploy(catalog).map {
+                    case Left(err)     => Json.obj("catalog_id" -> catalogId, "error" -> err)
+                    case Right(report) => report.json
+                  }
+              }
+            }
+            .map(results => Results.Ok(JsArray(results)))
         }
     }
   }

@@ -192,6 +192,62 @@ class RemoteCatalogEngine(env: Env) {
     doFetchAndReconcile(catalog, args, dryRun = true)
   }
 
+  def undeploy(catalog: RemoteCatalog)(implicit
+      ec: ExecutionContext,
+      ev: Env
+  ): Future[Either[JsValue, DeployReport]] = {
+    if (deployingCatalogs.contains(catalog.id)) {
+      Json.obj("error" -> s"Catalog ${catalog.id} is currently being deployed").leftf
+    } else {
+      deployingCatalogs.put(catalog.id, true)
+      logger.info(s"undeploying catalog ${catalog.id}")
+      doUndeploy(catalog).andThen { case _ =>
+        deployingCatalogs.remove(catalog.id)
+      }
+    }
+  }
+
+  private def doUndeploy(catalog: RemoteCatalog)(implicit
+      ec: ExecutionContext,
+      ev: Env
+  ): Future[Either[JsValue, DeployReport]] = {
+    val metadataKey  = s"remote_catalog=${catalog.id}"
+    val allResources = findAllResources()
+    allResources
+      .mapAsync { resource =>
+        Try {
+          val allEntities = resource.access.allJson()
+          val managedEntities = allEntities.filter { json =>
+            json.select("metadata").asOpt[Map[String, String]]
+              .exists(_.get("created_by").contains(metadataKey))
+          }
+          if (managedEntities.isEmpty) {
+            ReconcileResult(resource.groupKind, 0, 0, 0, Seq.empty).vfuture
+          } else {
+            val idsToDelete = managedEntities.map { json =>
+              json.select("id").asOpt[String]
+                .orElse(json.select("clientId").asOpt[String])
+                .orElse(json.select("serviceId").asOpt[String])
+                .getOrElse("")
+            }
+            resource.access.deleteMany(resource.version.name, idsToDelete).map { _ =>
+              ReconcileResult(resource.groupKind, 0, 0, managedEntities.size, Seq.empty)
+            }
+          }
+        }.getOrElse {
+          ReconcileResult(resource.groupKind, 0, 0, 0, Seq(s"Failed to undeploy ${resource.groupKind}")).vfuture
+        }
+      }
+      .map { results =>
+        val nonEmpty = results.filter(r => r.deleted > 0 || r.errors.nonEmpty)
+        Right(DeployReport(
+          catalogId = catalog.id,
+          results = nonEmpty,
+          timestamp = DateTime.now()
+        )): Either[JsValue, DeployReport]
+      }
+  }
+
   private def doFetchAndReconcile(catalog: RemoteCatalog, args: JsObject, dryRun: Boolean)(implicit
       ec: ExecutionContext,
       ev: Env

@@ -179,6 +179,90 @@ export function setupRemoteCatalogsExtension(registerExtension) {
       }
     }
 
+    class UndeployButton extends Component {
+      state = {
+        loading: false,
+        result: null,
+      };
+
+      handleUndeploy = () => {
+        const { rawValue } = this.props;
+        if (!rawValue || !rawValue.id) return;
+        if (!window.confirm('Are you sure you want to undeploy all entities managed by this catalog?')) return;
+        this.setState({ loading: true, result: null }, () => {
+          fetch('/extensions/remote-catalogs/_undeploy', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify([{ id: rawValue.id }]),
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              this.setState({ result: { success: true, data }, loading: false });
+            })
+            .catch((e) => {
+              this.setState({
+                result: { success: false, error: e.message },
+                loading: false,
+              });
+            });
+        });
+      };
+
+      render() {
+        const { loading, result } = this.state;
+        return (
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label" />
+            <div className="col-sm-10">
+              <div className="btn-group" style={{ marginBottom: 10 }}>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  disabled={loading}
+                  onClick={this.handleUndeploy}
+                >
+                  {loading ? (
+                    <i className="fas fa-spinner fa-spin" />
+                  ) : (
+                    <i className="fas fa-trash" />
+                  )}{' '}
+                  Undeploy
+                </button>
+                {result && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => this.setState({ result: null })}
+                  >
+                    <i className="fas fa-times" /> Clear
+                  </button>
+                )}
+              </div>
+              {result && result.success && (
+                <pre
+                  style={{
+                    maxHeight: 400,
+                    overflow: 'auto',
+                    fontSize: 12,
+                    background: 'var(--bg-color_level2, #1b1b2f)',
+                    color: 'var(--color_level2, #ff7878)',
+                    padding: 10,
+                    borderRadius: 4,
+                  }}
+                >
+                  {JSON.stringify(result.data, null, 2)}
+                </pre>
+              )}
+              {result && !result.success && (
+                <div className="alert alert-danger">{result.error}</div>
+              )}
+            </div>
+          </div>
+        );
+      }
+    }
+
     class RemoteCatalogsPage extends Component {
       formSchema = {
         _loc: {
@@ -365,6 +449,9 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         test_action: {
           type: TestButton,
         },
+        undeploy_action: {
+          type: UndeployButton,
+        },
       };
 
       columns = [
@@ -444,6 +531,51 @@ export function setupRemoteCatalogsExtension(registerExtension) {
             );
           },
         },
+        {
+          title: 'Undeploy',
+          style: { textAlign: 'center', width: 80 },
+          notFilterable: true,
+          content: () => '',
+          cell: (v, item) => {
+            return (
+              <button
+                type="button"
+                className="btn btn-sm btn-danger"
+                title="Undeploy all entities from this catalog"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (this._undeploying === item.id) return;
+                  if (!window.confirm(`Undeploy all entities managed by "${item.name}"?`)) return;
+                  this._undeploying = item.id;
+                  this.forceUpdate();
+                  fetch('/extensions/remote-catalogs/_undeploy', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify([{ id: item.id }]),
+                  })
+                    .then((r) => r.json())
+                    .then((data) => {
+                      this._undeploying = null;
+                      this.forceUpdate();
+                      if (window.toast) window.toast('Undeploy success', `Catalog "${item.name}" undeployed successfully`, 'success');
+                    })
+                    .catch((err) => {
+                      this._undeploying = null;
+                      this.forceUpdate();
+                      if (window.toast) window.toast('Undeploy error', err.message, 'error');
+                    });
+                }}
+              >
+                {this._undeploying === item.id ? (
+                  <i className="fas fa-spinner fa-spin" />
+                ) : (
+                  <i className="fas fa-trash" />
+                )}
+              </button>
+            );
+          },
+        },
       ];
 
       formFlow = (state) => [
@@ -509,6 +641,7 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         'test_deploy_args',
         'test_action',
         'deploy_action',
+        'undeploy_action',
       ].filter(i => !!i);
 
       componentDidMount() {
