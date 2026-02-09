@@ -1,6 +1,8 @@
 # Remote Catalogs
 
-Remote Catalogs is a feature that allows Otoroshi to synchronize entities (routes, backends, apikeys, certificates, etc.) from remote sources. It acts as an infrastructure-as-code mechanism where Otoroshi pulls entity definitions from external locations and deploys them locally, with full reconciliation to keep things in sync.
+Remote Catalogs brings **Infrastructure as Code (IaC)** and **GitOps** capabilities to Otoroshi. It allows you to define your API gateway configuration (routes, backends, apikeys, certificates, etc.) as declarative files stored in Git repositories, S3 buckets, Consul KV, or any HTTP endpoint, and have Otoroshi automatically synchronize and reconcile the desired state.
+
+This enables DevOps teams to manage their API gateway configuration using the same workflows they use for application code: version control, pull requests, code review, CI/CD pipelines, and automated deployments. Changes pushed to a Git repository can be automatically deployed to Otoroshi via webhooks or scheduled polling, ensuring that the running configuration always matches the declared state.
 
 ## How it works
 
@@ -8,9 +10,9 @@ A Remote Catalog is an entity that defines:
 
 - A **source** where entity definitions are stored (GitHub, GitLab, Bitbucket, S3, HTTP, local file, Git repository, Consul KV)
 - An optional **scheduling** configuration to automatically sync entities at regular intervals
-- A **reconciliation** mechanism that creates, updates, and deletes local entities to match the remote state
+- A **reconciliation** engine that creates, updates, and deletes local entities to match the remote desired state
 
-When a catalog is deployed, Otoroshi fetches the entity definitions from the remote source, then reconciles them with the local state. Entities managed by a catalog are tagged with a `created_by` metadata field set to `remote_catalog=<catalog_id>`, which allows Otoroshi to track which entities belong to which catalog.
+When a catalog is deployed, Otoroshi fetches the entity definitions from the remote source, then reconciles them with the local state using a declarative approach similar to tools like Terraform or Kubernetes: the remote source represents the desired state, and Otoroshi converges towards it. Entities managed by a catalog are tagged with a `created_by` metadata field set to `remote_catalog=<catalog_id>`, which allows Otoroshi to track ownership and lifecycle of managed entities.
 
 ## Entity format
 
