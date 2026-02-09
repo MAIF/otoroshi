@@ -407,11 +407,12 @@ class CatalogSourceGitlab extends CatalogSource {
   override def supportsWebhook: Boolean = true
 
   private def parseProjectPath(repoUrl: String): Option[String] = {
-    Try {
-      val url  = new java.net.URL(repoUrl.stripSuffix(".git"))
-      val path = url.getPath.stripPrefix("/").stripSuffix("/")
-      if (path.nonEmpty) Some(path) else None
-    }.getOrElse(None)
+    //Try {
+    //  val url  = new java.net.URL(repoUrl.stripSuffix(".git"))
+    //  val path = url.getPath.stripPrefix("/").stripSuffix("/")
+    //  if (path.nonEmpty) Some(path) else None
+    //}.getOrElse(None)
+    repoUrl.some
   }
 
   private def gitlabHeaders(token: String): Seq[(String, String)] = {
@@ -427,8 +428,7 @@ class CatalogSourceGitlab extends CatalogSource {
       token: String,
       env: Env
   )(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
-    val encodedFile = java.net.URLEncoder.encode(filePath, "UTF-8")
-    val apiUrl      = s"$baseUrl/api/v4/projects/$encodedProject/repository/files/$encodedFile/raw"
+    val apiUrl      = s"$baseUrl/api/v4/projects/$encodedProject/repository/files/$filePath/raw"
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
