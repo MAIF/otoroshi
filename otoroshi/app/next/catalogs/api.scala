@@ -1,7 +1,7 @@
 package otoroshi.next.catalogs
 
 import org.joda.time.DateTime
-import otoroshi.api.Resource
+import otoroshi.api.{Resource, WriteAction}
 import otoroshi.env.Env
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
@@ -9,7 +9,6 @@ import play.api.Logger
 import play.api.libs.json.JsError.toJson
 import play.api.libs.json._
 import play.api.mvc.Results
-
 import otoroshi.utils.yaml.Yaml
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -260,18 +259,18 @@ class RemoteCatalogEngine(env: Env) {
             ().vfuture
           case JsSuccess(body, _) => {
             val enrichedJson = enrichWithMetadata(body.asObject, metadataKey)
-            (resource.access.one(entityId) match {
+            (resource.access.oneJson(entityId) match {
               case None    =>
                 created += 1
                 if (!dryRun) {
-                  ev.datastores.rawDataStore.set(key, enrichedJson.stringify.byteString, None).map(_ => ())
+                  resource.access.create(resource.version.name, resource.singularName, entityId.some, enrichedJson, WriteAction.Create, None).map(_ => ())
                 } else {
                   ().vfuture
                 }
-              case Some(_) =>
+              case Some(old) =>
                 updated += 1
                 if (!dryRun) {
-                  ev.datastores.rawDataStore.set(key, enrichedJson.stringify.byteString, None).map(_ => ())
+                  resource.access.create(resource.version.name, resource.singularName, entityId.some, enrichedJson, WriteAction.Update, old.some).map(_ => ())
                 } else {
                   ().vfuture
                 }
@@ -313,14 +312,13 @@ class RemoteCatalogEngine(env: Env) {
       } else if (dryRun) {
         toDelete.size.vfuture
       } else {
-        val keysToDelete = toDelete.map { json =>
-          val entityId = json.select("id").asOpt[String]
+        val idsToDelete = toDelete.map { json =>
+          json.select("id").asOpt[String]
             .orElse(json.select("clientId").asOpt[String])
             .orElse(json.select("serviceId").asOpt[String])
             .getOrElse("")
-          resource.access.key(entityId)
         }
-        ev.datastores.rawDataStore.del(keysToDelete).map(_ => toDelete.size)
+        resource.access.deleteMany(resource.version.name, idsToDelete).map(_ => toDelete.size)
       }
     }.getOrElse {
       logger.warn(s"Failed to handle deletions for kind $kind, catalog ${catalog.id}")
