@@ -374,6 +374,50 @@ export function setupRemoteCatalogsExtension(registerExtension) {
               <span className="badge bg-warning">no</span>
             ),
         },
+        {
+          title: 'Deploy',
+          style: { textAlign: 'center', width: 80 },
+          notFilterable: true,
+          content: () => '',
+          cell: (v, item) => {
+            return (
+              <button
+                type="button"
+                className="btn btn-sm btn-success"
+                title="Deploy now"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (this._deploying === item.id) return;
+                  this._deploying = item.id;
+                  this.forceUpdate();
+                  fetch('/extensions/remote-catalogs/_deploy', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify([{ id: item.id, args: {} }]),
+                  })
+                    .then((r) => r.json())
+                    .then((data) => {
+                      this._deploying = null;
+                      this.forceUpdate();
+                      if (window.toast) window.toast('Deploy success', `Catalog "${item.name}" deployed successfully`, 'success');
+                    })
+                    .catch((err) => {
+                      this._deploying = null;
+                      this.forceUpdate();
+                      if (window.toast) window.toast('Deploy error', err.message, 'error');
+                    });
+                }}
+              >
+                {this._deploying === item.id ? (
+                  <i className="fas fa-spinner fa-spin" />
+                ) : (
+                  <i className="fas fa-play" />
+                )}
+              </button>
+            );
+          },
+        },
       ];
 
       formFlow = (state) => [
