@@ -309,32 +309,7 @@ export function setupRemoteCatalogsExtension(registerExtension) {
             label: 'Job kind',
             possibleValues: [
               { label: 'Scheduled Every', value: 'ScheduledEvery' },
-              { label: 'Scheduled Once', value: 'ScheduledOnce' },
               { label: 'Cron', value: 'Cron' },
-            ],
-          },
-        },
-        'scheduling.instantiation': {
-          type: 'select',
-          props: {
-            label: 'Job instantiation',
-            possibleValues: [
-              {
-                label: 'One per Otoroshi instance',
-                value: 'OneInstancePerOtoroshiInstance',
-              },
-              {
-                label: 'One per Otoroshi cluster',
-                value: 'OneInstancePerOtoroshiCluster',
-              },
-              {
-                label: 'One per Otoroshi leader instance',
-                value: 'OneInstancePerOtoroshiLeaderInstance',
-              },
-              {
-                label: 'One per Otoroshi worker instance',
-                value: 'OneInstancePerOtoroshiWorkerInstance',
-              },
             ],
           },
         },
@@ -437,10 +412,9 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         '>>>Scheduling',
         'scheduling.enabled',
         'scheduling.kind',
-        'scheduling.instantiation',
-        'scheduling.initial_delay',
-        'scheduling.interval',
-        'scheduling.cron_expression',
+        state.scheduling.kind === 'ScheduledEvery' ? 'scheduling.initial_delay' : null,
+        state.scheduling.kind === 'ScheduledEvery' ? 'scheduling.interval' : null,
+        state.scheduling.kind === 'Cron' ? 'scheduling.cron_expression' : null,
         'scheduling.deploy_args',
         '>>>Test & Deploy',
         'test_deploy_args',
