@@ -495,7 +495,9 @@ curl -X DELETE 'http://otoroshi-api.oto.tools:8080/apis/catalogs.otoroshi.io/v1/
 
 ## Backoffice UI
 
-Remote catalogs can be managed from the Otoroshi admin backoffice. Navigate to the extensions section and select "Remote Catalogs". From there you can:
+Remote catalogs can be managed from the Otoroshi admin backoffice. 
+Navigate to the extensions section and select "Remote Catalogs". 
+From there you can:
 
 - Create, edit, and delete remote catalogs
 - Configure the source type and source-specific settings
