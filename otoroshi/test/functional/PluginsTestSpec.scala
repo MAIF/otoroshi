@@ -719,5 +719,8 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Remote Catalogs - deploy with plugin" in {
       new RemoteCatalogsTests(this).deployWithPlugin()
     }
+    "Remote Catalogs - deploy many with plugin" in {
+      new RemoteCatalogsTests(this).deployManyWithPlugin()
+    }
   }
 }
