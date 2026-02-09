@@ -20,52 +20,39 @@ export default {
       type: 'number'
     },
     example: {
-      renderer: () => {
-        return <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-4 border border-purple-200">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">Rate Limit Behavior</h3>
-
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Capacity</span>
-              <span className="text-lg font-bold text-slate-800">{capacity} tokens</span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Refill Rate</span>
-              <span className="text-lg font-bold text-purple-600">{refillRate.toFixed(2)} req/s</span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Refill Interval</span>
-              <span className="text-lg font-bold text-slate-800">{(refillInterval / 1000).toFixed(1)}s</span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Tokens per Refill</span>
-              <span className="text-lg font-bold text-slate-800">{refillAmount}</span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Burst Duration</span>
-              <span className="text-lg font-bold text-slate-800">{burstDuration.toFixed(1)}s</span>
-            </div>
-
-            <div className="pt-3 border-t border-purple-200">
-              <p className="text-xs text-slate-600 leading-relaxed">
-                <strong className="text-slate-800">Allows:</strong> {capacity} immediate requests (burst),
-                then sustains <strong className="text-purple-600">{refillRate.toFixed(2)}</strong> requests/second
-              </p>
-            </div>
-
-            <div className="pt-2 bg-slate-100 rounded p-2">
-              <p className="text-xs font-mono text-slate-600">
-                refillRate = ({refillAmount} × 1000) ÷ {refillInterval} = {refillRate.toFixed(2)} tokens/s
-              </p>
+      renderer: props => {
+        const { capacity = 300, refillRequestIntervalMs = 50, refillRequestedTokens = 50 } = props.rootValue || {};
+        const refillsPerSecond = 1000 / refillRequestIntervalMs;
+        const tokensPerSecond = refillsPerSecond * refillRequestedTokens;
+        const timeToFillBucket = capacity / tokensPerSecond;
+        return (
+          <div className='row mb-3'>
+            <label className='col-xs-12 col-sm-2 col-form-label'>Example</label>
+            <div className='col-sm-10'>
+              <p className='m-1'>With these settings, the bucket refills <b>{refillRequestedTokens}</b> tokens every <b>{refillRequestIntervalMs}ms</b></p>
+              <p className='m-1'>which means <b>{tokensPerSecond.toFixed(2)}</b> requests/second.</p>
+              <p className='m-1'>Starting from empty, the bucket fills to capacity ({capacity}) in <b>{timeToFillBucket.toFixed(2)}s</b>.</p>
             </div>
           </div>
-        </div>
+        );
       }
+    },
+    quota: {
+      type: 'form',
+      collapsable: false,
+      label: 'Allowed Quota',
+      schema: {
+        daily: {
+          type: 'number',
+          label: 'Daily',
+        },
+        monthly: {
+          type: 'number',
+          label: 'Monthly',
+        }
+      },
+      flow: ['daily', 'monthly']
     }
   },
-  config_flow: ['bucketKey', 'capacity', 'refillRequestIntervalMs', 'refillRequestedTokens', 'example'],
+  config_flow: ['bucketKey', 'capacity', 'refillRequestIntervalMs', 'refillRequestedTokens', 'example', 'quota'],
 };

@@ -417,13 +417,6 @@ function LocalTokensBucketStrategyConfig({ value, onChange }) {
   return <NgForm value={value}
     onChange={onChange}
     schema={{
-      bucketKey: {
-        type: 'string',
-        label: 'Bucket key',
-        props: {
-          help: 'Raw value or expression language'
-        }
-      },
       capacity: {
         type: 'number',
         label: 'Bucket capacity',
@@ -456,7 +449,7 @@ function LocalTokensBucketStrategyConfig({ value, onChange }) {
               <label className='col-xs-12 col-sm-2 col-form-label'>Example</label>
               <div className='col-sm-10'>
                 <p className='m-1'>With these settings, the bucket refills <b>{refillRequestedTokens}</b> tokens every <b>{refillRequestIntervalMs}ms</b></p>
-                <p className='m-1'>which means <b>{tokensPerSecond.toFixed(0)}</b> requests/second.</p>
+                <p className='m-1'>which means <b>{tokensPerSecond.toFixed(2)}</b> requests/second.</p>
                 <p className='m-1'>Starting from empty, the bucket fills to capacity ({capacity}) in <b>{timeToFillBucket.toFixed(2)}s</b>.</p>
               </div>
             </div>
@@ -479,7 +472,7 @@ function LocalTokensBucketStrategyConfig({ value, onChange }) {
         },
         flow: ['daily', 'monthly']
       }
-    }} />
+    }}/>
 }
 function LegacyThrottlingStrategyConfig({ value, onChange }) {
   return <NgForm value={value}

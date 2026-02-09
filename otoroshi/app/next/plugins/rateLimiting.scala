@@ -8,33 +8,12 @@ import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, PrivateAppsUser, RemainingQuotas}
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api.{
-  NgAccess,
-  NgAccessContext,
-  NgAccessValidator,
-  NgPluginCategory,
-  NgPluginConfig,
-  NgPluginVisibility,
-  NgStep
-}
+import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsBoolean,
-  JsError,
-  JsNull,
-  JsNumber,
-  JsObject,
-  JsResult,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json
-}
+import play.api.libs.json._
 import play.api.mvc.RequestHeader
 import play.api.mvc.Results.TooManyRequests
 
@@ -92,9 +71,8 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
   private val lastLeaderRequestTimeMs = new AtomicReference[Option[Long]](None)
-  private val memoryBucket            = new AtomicReference[Double](config.capacity.toDouble)
   private val bucketRef               = new AtomicReference[LocalBucket](
-    LocalBucket(key = bucketId, tokens = 0, lastRefillMs = System.currentTimeMillis())
+    LocalBucket(key = bucketId, tokens = config.capacity.toDouble, lastRefillMs = System.currentTimeMillis())
   )
 
   private def askForRefill(): Future[Unit] = {
@@ -117,9 +95,8 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
         val availableTokens = Math.min(config.refillRequestedTokens, newBucketTokens)
 
         if (availableTokens >= 1) {
-          memoryBucket.set(availableTokens)
           println(s"Refilling bucket ${oldBucket.key} with ${availableTokens.toInt} tokens")
-          oldBucket.copy(tokens = newBucketTokens - availableTokens, lastRefillMs = currentTimeMs)
+          oldBucket.copy(tokens = availableTokens, lastRefillMs = currentTimeMs)
         } else {
           println("NO MORE TOKENS")
           oldBucket
@@ -130,34 +107,46 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
     FastFuture.successful(())
   }
 
-  private def getState(key: String, tokensAfter: Double, allowedQuotas: AllowedQuota)(implicit
+  private def getDailyAndMonthlyQuotas(key: String, allowedQuotas: AllowedQuota)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
-    super
-      .check(key, allowedQuotas)
-      .map(dailyAndMonthlyQuota => {
-        QuotaState(
-          window = Quota(
-            limit = config.capacity,
-            consumed = (config.refillRequestedTokens - tokensAfter).toLong,
-            resetsAt = System.currentTimeMillis() + (tokensAfter / config.refillRatePerSecond * 1000).toLong
-          ),
-          daily = dailyAndMonthlyQuota.quotas.daily,
-          monthly = dailyAndMonthlyQuota.quotas.monthly
-        )
-      })
+    val redisCli = env.datastores.redis
+
+    val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
+    val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+
+    for {
+      dailyCalls   <- redisCli.get(dailyQuotaKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+      monthlyCalls <- redisCli.get(monthlyQuotaKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+    } yield {
+      val daily   = Quota(
+        limit = allowedQuotas.daily,
+        consumed = dailyCalls,
+        resetsAt = dayEnd.getMillis
+      )
+      val monthly = Quota(
+        limit = allowedQuotas.monthly,
+        consumed = monthlyCalls,
+        resetsAt = monthEnd.getMillis
+      )
+
+      QuotaState(
+        window = Quota(),
+        daily = daily,
+        monthly = monthly
+      )
+    }
   }
 
   override def check(key: String, allowedQuotas: AllowedQuota)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[ThrottlingResult] = {
-    val tokensAfter = memoryBucket.get()
-
-    getState(key, tokensAfter, allowedQuotas)
+    getDailyAndMonthlyQuotas(key, allowedQuotas)
       .map(state => {
-        val hadEnoughTokens = tokensAfter >= 0 && state.withinLimits
+        val tokensAfter     = bucketRef.get().tokens
+        val hadEnoughTokens = tokensAfter > 0 && state.daily.withinLimit && state.monthly.withinLimit
 
         ThrottlingResult(
           allowed = hadEnoughTokens,
@@ -172,17 +161,14 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
       allowedQuotas: AllowedQuota
   )(implicit env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
     askForRefill().flatMap { _ =>
-      val tokensAfter = memoryBucket.updateAndGet { current =>
-        if (current >= increment) {
-          current - increment
-        } else {
-          current
-        }
-      }
-
-      getState(key, tokensAfter, allowedQuotas)
+      getDailyAndMonthlyQuotas(key, allowedQuotas)
         .flatMap(currentState => {
-          val hadEnoughTokens = tokensAfter >= 0 && currentState.withinLimits
+          val tokensAfter = bucketRef.updateAndGet { current =>
+            current.copy(tokens = current.tokens - increment)
+          }
+
+          val hadEnoughTokens =
+            tokensAfter.tokens >= 0 && currentState.daily.withinLimit && currentState.monthly.withinLimit
 
           if (hadEnoughTokens) {
             super
@@ -294,7 +280,7 @@ class LocalTokenBucket extends NgAccessValidator {
     )
 
     strategy
-      .checkAndIncrement(key, 1, config.quota)
+      .checkAndIncrement(key, 1, config.quota.copy(window = config.capacity))
       .flatMap { throttlingResult =>
         if (!throttlingResult.allowed)
           Errors
@@ -398,12 +384,12 @@ case class QuotaState(
 }
 
 case class Quota(
-    limit: Long,
-    consumed: Long,
-    resetsAt: Long
+    limit: Long = Long.MaxValue,
+    consumed: Long = Long.MaxValue,
+    resetsAt: Long = Long.MaxValue
 ) {
   def remaining: Long      = Math.max(0, limit - consumed)
-  def withinLimit: Boolean = consumed <= limit
+  def withinLimit: Boolean = consumed < (limit + 1)
   def exceeded: Boolean    = consumed > limit
 }
 
