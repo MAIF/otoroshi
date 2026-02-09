@@ -4,6 +4,99 @@ Otoroshi next provides some plugins out of the box. Here is the available plugin
 
 <div id="plugins-container"></div>
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeployMany }
+
+## Remote Catalog Deploy Many
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.catalogs.RemoteCatalogDeployMany`
+
+### Description
+
+This plugin deploys entities from multiple remote catalogs
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeploySingle }
+
+## Remote Catalog Deploy Single
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.catalogs.RemoteCatalogDeploySingle`
+
+### Description
+
+This plugin deploys entities from a single remote catalog
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeployWebhook }
+
+## Remote Catalog Deploy Webhook
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.catalogs.RemoteCatalogDeployWebhook`
+
+### Description
+
+This plugin handles webhooks from Git providers to deploy entities from remote catalogs
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AdditionalCookieIn }
 
 ## Additional cookies in
@@ -4652,7 +4745,10 @@ This plugin provide an endpoint to return Otoroshi Authority Information Access 
 
 ```json
 {
-  "cert_ids" : [ ]
+  "cert_ids" : [ ],
+  "include_algorithms" : false,
+  "rsa_algorithms" : [ ],
+  "es_algorithms" : [ ]
 }
 ```
 
@@ -4828,7 +4924,10 @@ This plugin provide an endpoint to return Otoroshi JWKS data
 
 ```json
 {
-  "cert_ids" : [ ]
+  "cert_ids" : [ ],
+  "include_algorithms" : false,
+  "rsa_algorithms" : [ ],
+  "es_algorithms" : [ ]
 }
 ```
 
@@ -4894,7 +4993,10 @@ This plugin provide an endpoint to act as the Otoroshi OCSP Responder
 
 ```json
 {
-  "cert_ids" : [ ]
+  "cert_ids" : [ ],
+  "include_algorithms" : false,
+  "rsa_algorithms" : [ ],
+  "es_algorithms" : [ ]
 }
 ```
 
@@ -6332,8 +6434,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2026-01-29T14:04:34.519Z",
-  "stop" : "2026-01-30T14:04:34.541Z",
+  "start" : "2026-02-09T21:36:17.234Z",
+  "stop" : "2026-02-10T21:36:17.254Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"

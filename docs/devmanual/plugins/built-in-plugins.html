@@ -340,7 +340,43 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#built-in-plugins" name="built-in-plugins" class="anchor"><span class="anchor-link"></span></a>Built-in plugins</h1>
 <p>Otoroshi next provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration</p>
-<div id="plugins-container"></div><div id="otoroshi.next.plugins.AdditionalCookieIn" class="ng-plugin plugin-hidden pl">
+<div id="plugins-container"></div><div id="otoroshi.next.catalogs.RemoteCatalogDeployMany" class="ng-plugin plugin-hidden pl">
+<h2><a href="#remote-catalog-deploy-many" name="remote-catalog-deploy-many" class="anchor"><span class="anchor-link"></span></a>Remote Catalog Deploy Many</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.catalogs.RemoteCatalogDeployMany</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin deploys entities from multiple remote catalogs</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{ }
+</code></pre></div><div id="otoroshi.next.catalogs.RemoteCatalogDeploySingle" class="ng-plugin plugin-hidden pl">
+<h2><a href="#remote-catalog-deploy-single" name="remote-catalog-deploy-single" class="anchor"><span class="anchor-link"></span></a>Remote Catalog Deploy Single</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.catalogs.RemoteCatalogDeploySingle</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin deploys entities from a single remote catalog</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{ }
+</code></pre></div><div id="otoroshi.next.catalogs.RemoteCatalogDeployWebhook" class="ng-plugin plugin-hidden pl">
+<h2><a href="#remote-catalog-deploy-webhook" name="remote-catalog-deploy-webhook" class="anchor"><span class="anchor-link"></span></a>Remote Catalog Deploy Webhook</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.catalogs.RemoteCatalogDeployWebhook</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin handles webhooks from Git providers to deploy entities from remote catalogs</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{ }
+</code></pre></div><div id="otoroshi.next.plugins.AdditionalCookieIn" class="ng-plugin plugin-hidden pl">
 <h2><a href="#additional-cookies-in" name="additional-cookies-in" class="anchor"><span class="anchor-link"></span></a>Additional cookies in</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -2625,7 +2661,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin provide an endpoint to return Otoroshi Authority Information Access for your certificates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;cert_ids&quot; : [ ]
+  &quot;cert_ids&quot; : [ ],
+  &quot;include_algorithms&quot; : false,
+  &quot;rsa_algorithms&quot; : [ ],
+  &quot;es_algorithms&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.OtoroshiChallenge" class="ng-plugin plugin-hidden pl">
 <h2><a href="#otoroshi-challenge-token" name="otoroshi-challenge-token" class="anchor"><span class="anchor-link"></span></a>Otoroshi challenge token</h2>
@@ -2712,7 +2751,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin provide an endpoint to return Otoroshi JWKS data</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;cert_ids&quot; : [ ]
+  &quot;cert_ids&quot; : [ ],
+  &quot;include_algorithms&quot; : false,
+  &quot;rsa_algorithms&quot; : [ ],
+  &quot;es_algorithms&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.OtoroshiMetricsEndpoint" class="ng-plugin plugin-hidden pl">
 <h2><a href="#otoroshi-metrics-endpoint" name="otoroshi-metrics-endpoint" class="anchor"><span class="anchor-link"></span></a>Otoroshi Metrics endpoint</h2>
@@ -2740,7 +2782,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin provide an endpoint to act as the Otoroshi OCSP Responder</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;cert_ids&quot; : [ ]
+  &quot;cert_ids&quot; : [ ],
+  &quot;include_algorithms&quot; : false,
+  &quot;rsa_algorithms&quot; : [ ],
+  &quot;es_algorithms&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.OverrideHost" class="ng-plugin plugin-hidden pl">
 <h2><a href="#override-host-header" name="override-host-header" class="anchor"><span class="anchor-link"></span></a>Override host header</h2>
@@ -3395,8 +3440,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin can split a portion of the traffic to canary backends between two dates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;start&quot; : &quot;2026-01-29T14:04:34.519Z&quot;,
-  &quot;stop&quot; : &quot;2026-01-30T14:04:34.541Z&quot;,
+  &quot;start&quot; : &quot;2026-02-09T21:36:17.234Z&quot;,
+  &quot;stop&quot; : &quot;2026-02-10T21:36:17.254Z&quot;,
   &quot;increment_percent&quot; : 1,
   &quot;targets&quot; : [ ],
   &quot;root&quot; : &quot;/&quot;
@@ -4330,6 +4375,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../plugins/built-in-plugins.html#built-in-plugins" class="header">Built-in plugins</a>
   <ul>
+    <li><a href="../plugins/built-in-plugins.html#remote-catalog-deploy-many" class="header">Remote Catalog Deploy Many</a></li>
+    <li><a href="../plugins/built-in-plugins.html#remote-catalog-deploy-single" class="header">Remote Catalog Deploy Single</a></li>
+    <li><a href="../plugins/built-in-plugins.html#remote-catalog-deploy-webhook" class="header">Remote Catalog Deploy Webhook</a></li>
     <li><a href="../plugins/built-in-plugins.html#additional-cookies-in" class="header">Additional cookies in</a></li>
     <li><a href="../plugins/built-in-plugins.html#additional-cookies-out" class="header">Additional cookies out</a></li>
     <li><a href="../plugins/built-in-plugins.html#additional-headers-in" class="header">Additional headers in</a></li>
