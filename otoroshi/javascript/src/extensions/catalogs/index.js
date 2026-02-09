@@ -5,144 +5,190 @@ import { Table } from '../../components/inputs/Table';
 
 const extensionId = 'otoroshi.extensions.RemoteCatalogs';
 
-function DeployButton({ rawValue }) {
-  const [loading, setLoading] = React.useState(false);
-  const [result, setResult] = React.useState(null);
-
-  const handleDeploy = () => {
-    if (!rawValue || !rawValue.id) return;
-    setLoading(true);
-    setResult(null);
-    fetch('/bo/api/extensions/remote-catalogs/_deploy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify([{ id: rawValue.id, args: rawValue.test_deploy_args || {} }]),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        setResult({ success: true, data });
-        setLoading(false);
-      })
-      .catch((e) => {
-        setResult({ success: false, error: e.message });
-        setLoading(false);
-      });
-  };
-
-  return (
-    <div>
-      <button
-        type="button"
-        className="btn btn-success btn-sm"
-        disabled={loading}
-        onClick={handleDeploy}
-        style={{ marginRight: 10 }}
-      >
-        {loading ? (
-          <i className="fas fa-spinner fa-spin" />
-        ) : (
-          <i className="fas fa-play" />
-        )}{' '}
-        Deploy now
-      </button>
-      {result && result.success && (
-        <pre
-          style={{
-            marginTop: 10,
-            maxHeight: 300,
-            overflow: 'auto',
-            fontSize: 12,
-            background: '#1b1b2f',
-            color: '#a8ff78',
-            padding: 10,
-            borderRadius: 4,
-          }}
-        >
-          {JSON.stringify(result.data, null, 2)}
-        </pre>
-      )}
-      {result && !result.success && (
-        <div className="alert alert-danger" style={{ marginTop: 10 }}>
-          {result.error}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TestButton({ rawValue }) {
-  const [loading, setLoading] = React.useState(false);
-  const [result, setResult] = React.useState(null);
-
-  const handleTest = () => {
-    if (!rawValue || !rawValue.id) return;
-    setLoading(true);
-    setResult(null);
-    fetch('/bo/api/extensions/remote-catalogs/_test', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: rawValue.id, args: rawValue.test_deploy_args || {} }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        setResult({ success: true, data });
-        setLoading(false);
-      })
-      .catch((e) => {
-        setResult({ success: false, error: e.message });
-        setLoading(false);
-      });
-  };
-
-  return (
-    <div>
-      <button
-        type="button"
-        className="btn btn-info btn-sm"
-        disabled={loading}
-        onClick={handleTest}
-      >
-        {loading ? (
-          <i className="fas fa-spinner fa-spin" />
-        ) : (
-          <i className="fas fa-vial" />
-        )}{' '}
-        Test / Dry run
-      </button>
-      {result && result.success && (
-        <pre
-          style={{
-            marginTop: 10,
-            maxHeight: 300,
-            overflow: 'auto',
-            fontSize: 12,
-            background: '#1b1b2f',
-            color: '#78d6ff',
-            padding: 10,
-            borderRadius: 4,
-          }}
-        >
-          {JSON.stringify(result.data, null, 2)}
-        </pre>
-      )}
-      {result && !result.success && (
-        <div className="alert alert-danger" style={{ marginTop: 10 }}>
-          {result.error}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function setupRemoteCatalogsExtension(registerExtension) {
   registerExtension(extensionId, true, (ctx) => {
+    class DeployButton extends Component {
+      state = {
+        loading: false,
+        result: null,
+      };
+
+      handleDeploy = () => {
+        const { rawValue } = this.props;
+        if (!rawValue || !rawValue.id) return;
+        this.setState({ loading: true, result: null }, () => {
+          fetch('/extensions/remote-catalogs/_deploy', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify([
+              { id: rawValue.id, args: rawValue.test_deploy_args || {} },
+            ]),
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              this.setState({ result: { success: true, data }, loading: false });
+            })
+            .catch((e) => {
+              this.setState({
+                result: { success: false, error: e.message },
+                loading: false,
+              });
+            });
+        });
+      };
+
+      render() {
+        const { loading, result } = this.state;
+        return (
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label" />
+            <div className="col-sm-10">
+              <div className="btn-group" style={{ marginBottom: 10 }}>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  disabled={loading}
+                  onClick={this.handleDeploy}
+                >
+                  {loading ? (
+                    <i className="fas fa-spinner fa-spin" />
+                  ) : (
+                    <i className="fas fa-play" />
+                  )}{' '}
+                  Deploy now
+                </button>
+                {result && (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => this.setState({ result: null })}
+                  >
+                    <i className="fas fa-times" /> Clear
+                  </button>
+                )}
+              </div>
+              {result && result.success && (
+                <pre
+                  style={{
+                    maxHeight: 400,
+                    overflow: 'auto',
+                    fontSize: 12,
+                    background: 'var(--bg-color_level2, #1b1b2f)',
+                    color: 'var(--color_level2, #a8ff78)',
+                    padding: 10,
+                    borderRadius: 4,
+                  }}
+                >
+                  {JSON.stringify(result.data, null, 2)}
+                </pre>
+              )}
+              {result && !result.success && (
+                <div className="alert alert-danger">{result.error}</div>
+              )}
+            </div>
+          </div>
+        );
+      }
+    }
+
+    class TestButton extends Component {
+      state = {
+        loading: false,
+        result: null,
+      };
+
+      handleTest = () => {
+        const { rawValue } = this.props;
+        if (!rawValue || !rawValue.id) return;
+        this.setState({ loading: true, result: null }, () => {
+          fetch('/extensions/remote-catalogs/_test', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: rawValue.id,
+              args: rawValue.test_deploy_args || {},
+            }),
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              this.setState({ result: { success: true, data }, loading: false });
+            })
+            .catch((e) => {
+              this.setState({
+                result: { success: false, error: e.message },
+                loading: false,
+              });
+            });
+        });
+      };
+
+      render() {
+        const { loading, result } = this.state;
+        return (
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label" />
+            <div className="col-sm-10">
+              <div className="btn-group" style={{ marginBottom: 10 }}>
+                <button
+                  type="button"
+                  className="btn btn-info"
+                  disabled={loading}
+                  onClick={this.handleTest}
+                >
+                  {loading ? (
+                    <i className="fas fa-spinner fa-spin" />
+                  ) : (
+                    <i className="fas fa-vial" />
+                  )}{' '}
+                  Test / Dry run
+                </button>
+                {result && (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => this.setState({ result: null })}
+                  >
+                    <i className="fas fa-times" /> Clear
+                  </button>
+                )}
+              </div>
+              {result && result.success && (
+                <pre
+                  style={{
+                    maxHeight: 400,
+                    overflow: 'auto',
+                    fontSize: 12,
+                    background: 'var(--bg-color_level2, #1b1b2f)',
+                    color: 'var(--color_level2, #78d6ff)',
+                    padding: 10,
+                    borderRadius: 4,
+                  }}
+                >
+                  {JSON.stringify(result.data, null, 2)}
+                </pre>
+              )}
+              {result && !result.success && (
+                <div className="alert alert-danger">{result.error}</div>
+              )}
+            </div>
+          </div>
+        );
+      }
+    }
+
     class RemoteCatalogsPage extends Component {
       formSchema = {
         _loc: {
           type: 'location',
           props: {},
         },
-        id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
+        id: {
+          type: 'string',
+          disabled: true,
+          props: { label: 'Id', placeholder: '---' },
+        },
         name: {
           type: 'string',
           props: { label: 'Name', placeholder: 'My Remote Catalog' },
@@ -240,16 +286,10 @@ export function setupRemoteCatalogsExtension(registerExtension) {
           props: { label: 'Test deploy args' },
         },
         deploy_action: {
-          type: 'form',
-          props: { label: 'Deploy' },
-          render: (props) =>
-            React.createElement(DeployButton, { rawValue: props.rawValue }),
+          type: DeployButton,
         },
         test_action: {
-          type: 'form',
-          props: { label: 'Test' },
-          render: (props) =>
-            React.createElement(TestButton, { rawValue: props.rawValue }),
+          type: TestButton,
         },
       };
 
@@ -309,8 +349,8 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         'scheduling.deploy_args',
         '<<<Test & Deploy',
         'test_deploy_args',
-        'deploy_action',
         'test_action',
+        'deploy_action',
       ];
 
       componentDidMount() {
