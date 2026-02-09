@@ -3,7 +3,8 @@
 Remote Catalogs brings **Infrastructure as Code (IaC)** and **GitOps** capabilities to Otoroshi. 
 It allows you to define your API gateway configuration (routes, backends, apikeys, certificates, etc.) as declarative files stored in Git repositories, S3 buckets, Consul KV, or any HTTP endpoint, and have Otoroshi automatically synchronize and reconcile the desired state.
 
-This enables DevOps teams to manage their API gateway configuration using the same workflows they use for application code: version control, pull requests, code review, CI/CD pipelines, and automated deployments. Changes pushed to a Git repository can be automatically deployed to Otoroshi via webhooks or scheduled polling, ensuring that the running configuration always matches the declared state.
+This enables DevOps teams to manage their API gateway configuration using the same workflows they use for application code: version control, pull requests, code review, CI/CD pipelines, and automated deployments. 
+Changes pushed to a Git repository can be automatically deployed to Otoroshi via webhooks or scheduled polling, ensuring that the running configuration always matches the declared state.
 
 ## How it works
 
