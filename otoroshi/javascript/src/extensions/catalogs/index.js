@@ -328,7 +328,7 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         },
       ];
 
-      formFlow = [
+      formFlow = (state) => [
         '_loc',
         'id',
         'name',
@@ -338,8 +338,32 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         '<<<Source',
         'enabled',
         'source_kind',
+        'source_kind.',
+
+        'source_kind.pre_command',
+        'source_kind.path',
+        
+        'source_kind.url',
+        'source_kind.headers',
+        'source_kind.timeout',
+
+        'source_kind.repo',
+        'source_kind.branch',
+        'source_kind.path',
+        'source_kind.token',
+
+        'source_kind.base_url',
+
+        'source_kind.bucket',
+        'source_kind.key',
+        'source_kind.region',
+        'source_kind.access',
+        'source_kind.secret',
+        'source_kind.endpoint',
+
+        '<<<Source raw config.',
         'source_config',
-        '<<<Scheduling',
+        '>>>Scheduling',
         'scheduling.enabled',
         'scheduling.kind',
         'scheduling.instantiation',
@@ -347,11 +371,11 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         'scheduling.interval',
         'scheduling.cron_expression',
         'scheduling.deploy_args',
-        '<<<Test & Deploy',
+        '>>>Test & Deploy',
         'test_deploy_args',
         'test_action',
         'deploy_action',
-      ];
+      ].filter(i => !!i);
 
       componentDidMount() {
         this.props.setTitle(`All Remote Catalogs`);

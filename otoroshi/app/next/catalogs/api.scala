@@ -18,18 +18,21 @@ import scala.util.Try
 case class RemoteEntity(id: String, kind: String, source: String, syncAt: DateTime, content: JsObject)
 
 object RemoteEntity {
-  def fromJson(kind: String, source: String, json: JsObject): RemoteEntity = {
-    val id = json.select("id").asOpt[String]
-      .orElse(json.select("clientId").asOpt[String])
-      .orElse(json.select("serviceId").asOpt[String])
-      .getOrElse(s"unknown_${System.nanoTime()}")
-    RemoteEntity(
-      id = id,
-      kind = kind,
-      source = source,
-      syncAt = DateTime.now(),
-      content = json
-    )
+  def fromJson(source: String, json: JsObject): Option[RemoteEntity] = {
+    for {
+      entityId <- json.select("id").asOpt[String]
+        .orElse(json.select("clientId").asOpt[String])
+        .orElse(json.select("serviceId").asOpt[String])
+      kind <- json.select("kind").asOpt[String]
+    } yield {
+      RemoteEntity(
+        id = entityId,
+        kind = kind,
+        source = source,
+        syncAt = DateTime.now(),
+        content = json
+      )
+    }
   }
 }
 
@@ -74,8 +77,8 @@ object RemoteContentParser {
 
   def parse(content: JsValue, sourceName: String, allResources: Seq[Resource]): Seq[RemoteEntity] = {
     content match {
-      case obj: JsObject => parseExportFormat(obj, sourceName, allResources)
-      case arr: JsArray  => parseArrayFormat(arr, sourceName)
+      case obj: JsObject => parseObject(obj, sourceName, allResources)
+      case arr: JsArray  => parseArray(arr, sourceName)
       case _             =>
         logger.warn(s"Unsupported content format from source $sourceName")
         Seq.empty
@@ -114,19 +117,13 @@ object RemoteContentParser {
     out
   }
 
-  private def parseExportFormat(obj: JsObject, sourceName: String, allResources: Seq[Resource]): Seq[RemoteEntity] = {
-    allResources.flatMap { resource =>
-      obj.select(resource.pluralName).asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { entityJson =>
-        RemoteEntity.fromJson(resource.kind, sourceName, entityJson)
-      }
-    }
+  private def parseObject(obj: JsObject, sourceName: String, allResources: Seq[Resource]): Seq[RemoteEntity] = {
+    RemoteEntity.fromJson(sourceName, obj).toSeq
   }
 
-  private def parseArrayFormat(arr: JsArray, sourceName: String): Seq[RemoteEntity] = {
+  private def parseArray(arr: JsArray, sourceName: String): Seq[RemoteEntity] = {
     arr.value.flatMap {
-      case obj: JsObject =>
-        val kind = obj.select("kind").asOpt[String].getOrElse("Unknown")
-        Some(RemoteEntity.fromJson(kind, sourceName, obj))
+      case obj: JsObject => RemoteEntity.fromJson(sourceName, obj)
       case _             => None
     }
   }
@@ -161,9 +158,14 @@ class RemoteCatalogEngine(env: Env) {
 
   private def findResource(kind: String): Option[Resource] = {
     val resources = findAllResources()
-    resources.find(r => r.kind == kind)
-      .orElse(resources.find(r => r.groupKind == kind))
-      .orElse(resources.find(r => r.pluralName == kind))
+    if (kind.contains("/")) {
+      val parts = kind.split("/")
+      val group = parts(0)
+      val kd = parts(1)
+      resources.find(r => r.kind == kd && r.group == group)
+    } else {
+      resources.find(r => r.kind == kind)
+    }
   }
 
   def deploy(catalog: RemoteCatalog, args: JsObject)(implicit
@@ -206,10 +208,12 @@ class RemoteCatalogEngine(env: Env) {
       ec: ExecutionContext,
       ev: Env
   ): Future[DeployReport] = {
-    val grouped = remoteEntities.groupBy(_.kind)
-    grouped.toSeq
-      .mapAsync { case (kind, entities) =>
-        reconcileKind(catalog, kind, entities, dryRun)
+    val grouped = env.allResources.resources
+      .map(resource => (resource, remoteEntities.filter(re => re.kind == resource.groupKind || re.kind == resource.kind)))
+      .filter(_._2.nonEmpty)
+    grouped
+      .mapAsync { case (resource, entities) =>
+        reconcileResource(catalog, resource.groupKind, resource, entities, dryRun)
       }
       .map { results =>
         DeployReport(
