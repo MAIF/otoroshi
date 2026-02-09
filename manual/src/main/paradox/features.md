@@ -247,6 +247,7 @@
         * HTTP endpoints
         * Consul KV
         * Local filesystem
+            * with possible pre-deploy sync command
     * Full reconciliation engine (create, update, delete) with desired state convergence
     * Automatic deployment via scheduled polling (fixed interval or cron expression)
     * Webhook-triggered deployment from GitHub, GitLab, and Bitbucket push events
