@@ -89,131 +89,13 @@ echo ""
 
 # ─── 4. Deploy Otoroshi ─────────────────────────────────────────────────────
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+export OTOROSHI_IMAGE
+export OTOROSHI_NAMESPACE="${NAMESPACE}"
+
 echo "Deploying Otoroshi (image: ${OTOROSHI_IMAGE})..."
-kubectl apply -n "${NAMESPACE}" -f - <<EOF
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: otoroshi
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: otoroshi
-  template:
-    metadata:
-      labels:
-        app: otoroshi
-    spec:
-      serviceAccountName: otoroshi-admin-user
-      terminationGracePeriodSeconds: 60
-      containers:
-      - name: otoroshi
-        image: ${OTOROSHI_IMAGE}
-        imagePullPolicy: Never
-        ports:
-        - containerPort: 8080
-          name: http
-        - containerPort: 8443
-          name: https
-        env:
-        - name: APP_STORAGE_ROOT
-          value: otoroshi
-        - name: APP_STORAGE
-          value: inmemory
-        - name: APP_DOMAIN
-          value: oto.tools
-        - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
-          value: password
-        - name: ADMIN_API_CLIENT_ID
-          value: admin-api-apikey-id
-        - name: ADMIN_API_CLIENT_SECRET
-          value: admin-api-apikey-secret
-        - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
-          value: otoroshi-api.${NAMESPACE}.svc.cluster.local
-        - name: OTOROSHI_SECRET
-          value: secret
-        - name: OTOROSHI_EXPOSED_PORTS_HTTP
-          value: "8080"
-        - name: OTOROSHI_EXPOSED_PORTS_HTTPS
-          value: "8443"
-        - name: HEALTH_LIMIT
-          value: "5000"
-        - name: SSL_OUTSIDE_CLIENT_AUTH
-          value: Want
-        - name: HTTPS_WANT_CLIENT_AUTH
-          value: "true"
-        - name: OTOROSHI_INITIAL_CUSTOMIZATION
-          value: >
-            {
-              "config": {
-                "scripts": {
-                  "enabled": true,
-                  "jobRefs": [
-                    "cp:otoroshi.plugins.jobs.kubernetes.KubernetesGatewayApiControllerJob"
-                  ],
-                  "jobConfig": {
-                    "KubernetesConfig": {
-                      "trust": false,
-                      "namespaces": ["*"],
-                      "labels": {},
-                      "namespacesLabels": {},
-                      "defaultGroup": "default",
-                      "ingresses": false,
-                      "crds": true,
-                      "kubeLeader": false,
-                      "restartDependantDeployments": false,
-                      "watch": false,
-                      "syncIntervalSeconds": 60,
-                      "otoroshiServiceName": "otoroshi-service",
-                      "otoroshiNamespace": "${NAMESPACE}",
-                      "clusterDomain": "cluster.local",
-                      "gatewayApi": true,
-                      "gatewayApiControllerName": "otoroshi.io/gateway-controller",
-                      "gatewayApiHttpListenerPort": 8080,
-                      "gatewayApiHttpsListenerPort": 8443,
-                      "gatewayApiSyncIntervalSeconds": 30
-                    }
-                  }
-                }
-              }
-            }
-        - name: JAVA_OPTS
-          value: '-Xms1g -Xmx2g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0'
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          failureThreshold: 5
-        livenessProbe:
-          httpGet:
-            path: /live
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          failureThreshold: 5
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: otoroshi-service
-spec:
-  type: NodePort
-  selector:
-    app: otoroshi
-  ports:
-  - port: 8080
-    name: http
-    targetPort: http
-    nodePort: 30080
-  - port: 8443
-    name: https
-    targetPort: https
-    nodePort: 30443
-EOF
+envsubst '${OTOROSHI_IMAGE} ${OTOROSHI_NAMESPACE}' < "${SCRIPT_DIR}/otoroshi-deployment.yaml" | kubectl apply -n "${NAMESPACE}" -f -
 echo ""
 
 # ─── 5. Deploy a test backend (echo server) ─────────────────────────────────
@@ -314,7 +196,7 @@ echo "  Watch the pod:  kubectl -n ${NAMESPACE} get pods -w"
 echo "  Pod logs:       kubectl -n ${NAMESPACE} logs -f deploy/otoroshi"
 echo ""
 echo "  Once ready, test the echo route:"
-echo "    curl http://echo.oto.tools:9880/"
+echo "    curl -H 'Host: echo.oto.tools' http://localhost:9880"
 echo ""
 echo "  Otoroshi backoffice:"
 echo "    https://otoroshi.oto.tools:9880/bo/dashboard
