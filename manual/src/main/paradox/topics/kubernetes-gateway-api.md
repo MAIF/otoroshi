@@ -3,7 +3,7 @@
 Starting from version 17.13.0, Otoroshi supports the [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) specification (v1.4, `gateway.networking.k8s.io/v1`). This feature enables you to define routing rules using standard Gateway API resources (`GatewayClass`, `Gateway`, `HTTPRoute`) and have Otoroshi automatically convert them into native `NgRoute` entities.
 
 @@@ warning
-This feature is currently in **MVP** stage. It covers the core HTTPRoute use cases but does not yet implement the full specification. See the [current limitations](#current-limitations) section for details.
+This feature is currently in **experimental** stage. It covers the core HTTPRoute use cases but does not yet implement the full specification. See the [current limitations](#current-limitations) section for details.
 @@@
 
 ## How it works
@@ -325,7 +325,7 @@ The controller updates the `status` subresource on each Gateway API object:
 
 ## Current limitations
 
-The following features are **not yet implemented** in the current MVP:
+The following features are **not yet implemented** in the current experiments:
 
 | Feature | Status | Notes |
 |---------|--------|-------|
