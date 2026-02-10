@@ -32,10 +32,11 @@ object GatewayApiConverter {
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
       referenceGrants: Seq[KubernetesReferenceGrant],
+      namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): Seq[NgRoute] = {
 
-    val matchingGateways = resolveParentRefs(httpRoute.parentRefs, httpRoute.namespace, gateways, conf)
+    val matchingGateways = resolveParentRefs(httpRoute.parentRefs, httpRoute.namespace, gateways, namespaces, conf)
     if (matchingGateways.isEmpty) {
       logger.warn(s"HTTPRoute ${httpRoute.path} has no matching gateways")
       return Seq.empty
@@ -63,10 +64,11 @@ object GatewayApiConverter {
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
       referenceGrants: Seq[KubernetesReferenceGrant],
+      namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): Seq[NgRoute] = {
 
-    val matchingGateways = resolveParentRefs(grpcRoute.parentRefs, grpcRoute.namespace, gateways, conf)
+    val matchingGateways = resolveParentRefs(grpcRoute.parentRefs, grpcRoute.namespace, gateways, namespaces, conf)
     if (matchingGateways.isEmpty) {
       logger.warn(s"GRPCRoute ${grpcRoute.path} has no matching gateways")
       return Seq.empty
@@ -89,6 +91,7 @@ object GatewayApiConverter {
       parentRefs: Seq[HTTPRouteParentRef],
       routeNamespace: String,
       gateways: Seq[KubernetesGateway],
+      namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   ): Seq[(KubernetesGateway, GatewayListener)] = {
     parentRefs.flatMap { parentRef =>
@@ -100,7 +103,7 @@ object GatewayApiConverter {
           case None     => gw.listeners
         }
         listeners
-          .filter(l => isListenerAcceptingRoute(l, routeNamespace, gw))
+          .filter(l => isListenerAcceptingRoute(l, routeNamespace, gw, namespaces))
           .map(l => (gw, l))
       }
     }
@@ -111,25 +114,66 @@ object GatewayApiConverter {
    * Implements allowedRoutes.namespaces.from:
    * - "Same" (default): same namespace as the Gateway
    * - "All": all namespaces
-   * - "Selector": by label selector (TODO: implement label matching)
+   * - "Selector": by label selector (matchLabels + matchExpressions)
    */
   private def isListenerAcceptingRoute(
       listener: GatewayListener,
       routeNamespace: String,
-      gateway: KubernetesGateway
+      gateway: KubernetesGateway,
+      namespaces: Seq[KubernetesNamespace]
   ): Boolean = {
     listener.allowedRoutesNamespacesFrom match {
       case "All"      => true
       case "Same"     => routeNamespace == gateway.namespace
       case "Selector" =>
-        // TODO: implement label selector matching for allowedRoutes.namespaces.from: Selector
-        logger.warn(
-          s"Gateway ${gateway.path} listener ${listener.name} uses namespace selector, " +
-            "defaulting to allow all (not yet implemented)"
-        )
-        true
+        listener.allowedRoutesNamespacesSelector match {
+          case None =>
+            // No selector means match all namespaces (per K8s convention: empty selector matches everything)
+            true
+          case Some(selector) =>
+            namespaces.find(_.name == routeNamespace) match {
+              case None =>
+                logger.warn(s"Namespace $routeNamespace not found, rejecting route for listener ${listener.name}")
+                false
+              case Some(ns) =>
+                matchesLabelSelector(ns.labels, selector)
+            }
+        }
       case _ => false
     }
+  }
+
+  /**
+   * Evaluates a Kubernetes label selector against a set of labels.
+   * Supports both matchLabels and matchExpressions.
+   *
+   * matchLabels: simple key=value equality (all must match)
+   * matchExpressions: operators In, NotIn, Exists, DoesNotExist
+   */
+  private def matchesLabelSelector(labels: Map[String, String], selector: JsObject): Boolean = {
+    val matchLabels = (selector \ "matchLabels").asOpt[Map[String, String]].getOrElse(Map.empty)
+    val matchExpressions = (selector \ "matchExpressions").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+
+    val labelsMatch = matchLabels.forall { case (key, value) =>
+      labels.get(key).contains(value)
+    }
+
+    val expressionsMatch = matchExpressions.forall { expr =>
+      val key      = (expr \ "key").as[String]
+      val operator = (expr \ "operator").as[String]
+      val values   = (expr \ "values").asOpt[Seq[String]].getOrElse(Seq.empty)
+      operator match {
+        case "In"            => labels.get(key).exists(values.contains)
+        case "NotIn"         => labels.get(key).forall(v => !values.contains(v))
+        case "Exists"        => labels.contains(key)
+        case "DoesNotExist"  => !labels.contains(key)
+        case other =>
+          logger.warn(s"Unknown label selector operator: $other")
+          false
+      }
+    }
+
+    labelsMatch && expressionsMatch
   }
 
   /**

@@ -171,7 +171,30 @@ spec:
 |-------|----------|
 | `Same` (default) | Only routes in the same namespace as the Gateway |
 | `All` | Routes from any namespace |
-| `Selector` | Routes from namespaces matching a label selector (not yet implemented) |
+| `Selector` | Routes from namespaces matching a label selector |
+
+When using `Selector`, you provide a standard Kubernetes label selector under `allowedRoutes.namespaces.selector`. Both `matchLabels` and `matchExpressions` are supported:
+
+```yaml
+listeners:
+- name: http
+  protocol: HTTP
+  port: 8080
+  allowedRoutes:
+    namespaces:
+      from: Selector
+      selector:
+        matchLabels:
+          shared-gateway-access: "true"
+        matchExpressions:
+        - key: environment
+          operator: In
+          values: ["staging", "production"]
+```
+
+This listener only accepts routes from namespaces that have the label `shared-gateway-access: "true"` **and** an `environment` label with value `staging` or `production`.
+
+Supported `matchExpressions` operators: `In`, `NotIn`, `Exists`, `DoesNotExist`.
 
 ### Step 3: Create an HTTPRoute
 
@@ -395,7 +418,6 @@ The following features are **not yet implemented** in the current experiments:
 | TLSRoute | Not implemented | Experimental in Gateway API spec |
 | TCPRoute / UDPRoute | Not implemented | Experimental in Gateway API spec |
 | ReferenceGrant enforcement | Not enforced | Cross-namespace backend refs are allowed without validation. ReferenceGrant resources are fetched but not checked. This is a critical security feature planned for the next iteration. |
-| Namespace label selector | Not implemented | `allowedRoutes.namespaces.from: Selector` is not yet supported |
 | RequestMirror filter | Not implemented | Traffic mirroring is not yet available |
 | ExtensionRef filter | Not implemented | Custom filter extensions |
 | Gateway addresses | Not implemented | The `spec.addresses` field is ignored |

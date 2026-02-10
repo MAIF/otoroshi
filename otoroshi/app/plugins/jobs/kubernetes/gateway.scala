@@ -27,7 +27,6 @@ import scala.util.{Failure, Success, Try}
 //       to Otoroshi Cert entities (reuse KubernetesCertSyncJob pattern)
 //
 // ROUTE TYPES:
-// - [x] GRPCRoute support (gateway.networking.k8s.io/v1) — targets use HTTP/2
 // - [ ] TLSRoute support (gateway.networking.k8s.io/v1alpha2)
 // - [ ] TCPRoute support (gateway.networking.k8s.io/v1alpha2)
 // - [ ] UDPRoute support (gateway.networking.k8s.io/v1alpha2)
@@ -45,7 +44,6 @@ import scala.util.{Failure, Success, Try}
 // - [ ] Conflict detection on listener hostname/port collisions
 //
 // ADVANCED:
-// - [ ] Label selector matching for allowedRoutes.namespaces.from: Selector
 // - [ ] BackendTLSPolicy support
 // - [ ] Watch mode (event-driven sync instead of periodic polling)
 // - [ ] Endpoint slice resolution (instead of clusterIP only)
@@ -183,6 +181,7 @@ object KubernetesGatewayApiJob {
         httpRoutes      <- client.fetchHTTPRoutes()
         grpcRoutes      <- client.fetchGRPCRoutes()
         referenceGrants <- client.fetchReferenceGrants()
+        namespaces      <- client.fetchNamespacesAndFilterLabels()
         services        <- client.fetchServices()
         endpoints       <- client.fetchEndpoints()
 
@@ -201,12 +200,12 @@ object KubernetesGatewayApiJob {
 
         // ─── Phase 4: Reconcile HTTPRoutes ──────────────────────
         httpGeneratedRoutes <- reconcileHTTPRoutes(
-          client, httpRoutes, acceptedGateways, services, endpoints, referenceGrants, conf
+          client, httpRoutes, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
         )
 
         // ─── Phase 5: Reconcile GRPCRoutes ──────────────────────
         grpcGeneratedRoutes <- reconcileGRPCRoutes(
-          client, grpcRoutes, acceptedGateways, services, endpoints, referenceGrants, conf
+          client, grpcRoutes, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
         )
 
         generatedRoutes = httpGeneratedRoutes ++ grpcGeneratedRoutes
@@ -356,6 +355,7 @@ object KubernetesGatewayApiJob {
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
       referenceGrants: Seq[KubernetesReferenceGrant],
+      namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
     implicit val mat = env.otoroshiMaterializer
@@ -363,7 +363,7 @@ object KubernetesGatewayApiJob {
     Source(httpRoutes.toList)
       .mapAsync(1) { httpRoute =>
         val generatedRoutes = GatewayApiConverter.httpRouteToNgRoutes(
-          httpRoute, acceptedGateways, services, endpoints, referenceGrants, conf
+          httpRoute, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
         )
 
         val parentStatuses = httpRoute.parentRefs.map { parentRef =>
@@ -416,6 +416,7 @@ object KubernetesGatewayApiJob {
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
       referenceGrants: Seq[KubernetesReferenceGrant],
+      namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
     implicit val mat = env.otoroshiMaterializer
@@ -423,7 +424,7 @@ object KubernetesGatewayApiJob {
     Source(grpcRoutes.toList)
       .mapAsync(1) { grpcRoute =>
         val generatedRoutes = GatewayApiConverter.grpcRouteToNgRoutes(
-          grpcRoute, acceptedGateways, services, endpoints, referenceGrants, conf
+          grpcRoute, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
         )
 
         val parentStatuses = grpcRoute.parentRefs.map { parentRef =>
