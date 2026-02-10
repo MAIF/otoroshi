@@ -1275,4 +1275,194 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .filterNot(_.isEmpty)
       .takeWhile(_ => !stop)
   }
+
+  // ─── Gateway API: Fetch methods ──────────────────────────────────────────
+
+  def fetchGatewayClasses(): Future[Seq[KubernetesGatewayClass]] = {
+    // GatewayClass is cluster-scoped, no namespace in the path
+    val cli: WSRequest = client(s"/apis/gateway.networking.k8s.io/v1/gatewayclasses", false)
+    cli
+      .addHttpHeaders("Accept" -> "application/json")
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          (resp.json \ "items").as[JsArray].value.map(item => KubernetesGatewayClass(item)).toSeq
+        } else if (resp.status == 403) {
+          KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/gatewayclasses")
+          resp.ignore()
+          Seq.empty
+        } else if (resp.status == 404) {
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition(
+            "gateway.networking.k8s.io/gatewayclasses"
+          )
+          resp.ignore()
+          Seq.empty
+        } else {
+          resp.ignore()
+          logger.debug(s"bad http status while fetching gatewayclasses: ${resp.status}")
+          Seq.empty
+        }
+      }
+  }
+
+  def fetchGateways(): Future[Seq[KubernetesGateway]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1/gateways"
+        else s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/gateways"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesGateway(item)).toSeq)
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/gateways")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition(
+                "gateway.networking.k8s.io/gateways"
+              )
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching gateways: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  def fetchHTTPRoutes(): Future[Seq[KubernetesHTTPRoute]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1/httproutes"
+        else s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/httproutes"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesHTTPRoute(item)).toSeq)
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/httproutes")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition(
+                "gateway.networking.k8s.io/httproutes"
+              )
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching httproutes: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  def fetchReferenceGrants(): Future[Seq[KubernetesReferenceGrant]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1beta1/referencegrants"
+        else s"/apis/gateway.networking.k8s.io/v1beta1/namespaces/$namespace/referencegrants"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels(
+                (resp.json \ "items").as[JsArray].value.map(item => KubernetesReferenceGrant(item)).toSeq
+              )
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/referencegrants")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              // ReferenceGrant CRDs may not be installed, that's fine for MVP
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching referencegrants: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  // ─── Gateway API: Status update methods ──────────────────────────────────
+
+  def updateGatewayClassStatus(name: String, status: JsObject): Future[Option[JsValue]] = {
+    val cli: WSRequest = client(
+      s"/apis/gateway.networking.k8s.io/v1/gatewayclasses/$name/status",
+      false
+    )
+    cli
+      .addHttpHeaders(
+        "Accept"       -> "application/json",
+        "Content-Type" -> "application/merge-patch+json"
+      )
+      .patch(Json.obj("status" -> status))
+      .map { resp =>
+        if (resp.status == 200 || resp.status == 201) Some(resp.json)
+        else {
+          resp.ignore()
+          logger.debug(s"failed to update GatewayClass status for $name: ${resp.status}")
+          None
+        }
+      }
+  }
+
+  def updateGatewayStatus(namespace: String, name: String, status: JsObject): Future[Option[JsValue]] = {
+    val cli: WSRequest = client(
+      s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/gateways/$name/status",
+      false
+    )
+    cli
+      .addHttpHeaders(
+        "Accept"       -> "application/json",
+        "Content-Type" -> "application/merge-patch+json"
+      )
+      .patch(Json.obj("status" -> status))
+      .map { resp =>
+        if (resp.status == 200 || resp.status == 201) Some(resp.json)
+        else {
+          resp.ignore()
+          logger.debug(s"failed to update Gateway status for $namespace/$name: ${resp.status}")
+          None
+        }
+      }
+  }
+
+  def updateHTTPRouteStatus(namespace: String, name: String, status: JsObject): Future[Option[JsValue]] = {
+    val cli: WSRequest = client(
+      s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/httproutes/$name/status",
+      false
+    )
+    cli
+      .addHttpHeaders(
+        "Accept"       -> "application/json",
+        "Content-Type" -> "application/merge-patch+json"
+      )
+      .patch(Json.obj("status" -> status))
+      .map { resp =>
+        if (resp.status == 200 || resp.status == 201) Some(resp.json)
+        else {
+          resp.ignore()
+          logger.debug(s"failed to update HTTPRoute status for $namespace/$name: ${resp.status}")
+          None
+        }
+      }
+  }
 }

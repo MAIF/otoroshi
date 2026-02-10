@@ -75,7 +75,12 @@ case class KubernetesConfig(
     triggerKey: Option[String],
     triggerHost: Option[String],
     triggerPath: Option[String],
-    templates: JsObject
+    templates: JsObject,
+    gatewayApi: Boolean,
+    gatewayApiControllerName: String,
+    gatewayApiHttpListenerPort: Int,
+    gatewayApiHttpsListenerPort: Int,
+    gatewayApiSyncIntervalSeconds: Long
 )
 
 object KubernetesConfig {
@@ -271,7 +276,13 @@ object KubernetesConfig {
           kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           connectionTimeout = conf.select("connectionTimeout").asOpt[Long].getOrElse(5000L),
           idleTimeout = conf.select("idleTimeout").asOpt[Long].getOrElse(30000L),
-          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L)
+          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
+          gatewayApi = (conf \ "gatewayApi").asOpt[Boolean].getOrElse(false),
+          gatewayApiControllerName = (conf \ "gatewayApiControllerName").asOpt[String]
+            .getOrElse("otoroshi.io/gateway-controller"),
+          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].getOrElse(8080),
+          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort").asOpt[Int].getOrElse(8443),
+          gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L)
         )
       }
       case None             => {
@@ -367,7 +378,13 @@ object KubernetesConfig {
           kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           connectionTimeout = conf.select("connectionTimeout").asOpt[Long].getOrElse(5000L),
           idleTimeout = conf.select("idleTimeout").asOpt[Long].getOrElse(30000L),
-          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L)
+          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
+          gatewayApi = (conf \ "gatewayApi").asOpt[Boolean].getOrElse(false),
+          gatewayApiControllerName = (conf \ "gatewayApiControllerName").asOpt[String]
+            .getOrElse("otoroshi.io/gateway-controller"),
+          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].getOrElse(8080),
+          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort").asOpt[Int].getOrElse(8443),
+          gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L)
         )
       }
     }
@@ -421,6 +438,11 @@ object KubernetesConfig {
         "connectionTimeout"                    -> 5000,
         "idleTimeout"                          -> 30000,
         "callAndStreamTimeout"                 -> 30000,
+        "gatewayApi"                           -> false,
+        "gatewayApiControllerName"             -> "otoroshi.io/gateway-controller",
+        "gatewayApiHttpListenerPort"           -> 8080,
+        "gatewayApiHttpsListenerPort"          -> 8443,
+        "gatewayApiSyncIntervalSeconds"        -> 60,
         "templates"                            -> Json.obj(
           "service-group"      -> Json.obj(),
           "service-descriptor" -> Json.obj(),
@@ -500,6 +522,12 @@ object KubernetesConfig {
       "kubeDnsOperatorCoreDnsNamespace",
       "kubeDnsOperatorCoreDnsName",
       "kubeDnsOperatorCoreDnsPort",
+      ">>>Gateway API",
+      "gatewayApi",
+      "gatewayApiControllerName",
+      "gatewayApiHttpListenerPort",
+      "gatewayApiHttpsListenerPort",
+      "gatewayApiSyncIntervalSeconds",
       ">>>client settings",
       "connectionTimeout",
       "idleTimeout",
@@ -789,6 +817,36 @@ object KubernetesConfig {
       "Kube dns port number",
       "Kube dns port number".some,
       more = Json.obj("placeholder" -> "5353")
+    )
+
+    ++ makeFormField("gatewayApi", "bool", "Enable Gateway API", "Enable Kubernetes Gateway API controller".some)
+    ++ makeFormField(
+      "gatewayApiControllerName",
+      "string",
+      "Controller name",
+      "The controller name used in GatewayClass resources".some,
+      more = Json.obj("placeholder" -> "otoroshi.io/gateway-controller")
+    )
+    ++ makeFormField(
+      "gatewayApiHttpListenerPort",
+      "number",
+      "HTTP listener port",
+      "The HTTP port that Otoroshi actually listens on (for Gateway listener validation)".some,
+      more = Json.obj("placeholder" -> "8080")
+    )
+    ++ makeFormField(
+      "gatewayApiHttpsListenerPort",
+      "number",
+      "HTTPS listener port",
+      "The HTTPS port that Otoroshi actually listens on (for Gateway listener validation)".some,
+      more = Json.obj("placeholder" -> "8443")
+    )
+    ++ makeFormField(
+      "gatewayApiSyncIntervalSeconds",
+      "number",
+      "Sync interval",
+      "Number of seconds between Gateway API syncs".some,
+      more = Json.obj("suffix" -> "seconds")
     )
   )
 }
