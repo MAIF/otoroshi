@@ -20,11 +20,6 @@ import scala.util.{Failure, Success, Try}
 // ─────────────────────────────────────────────────────────────────────────────
 // TODO — Remaining work for full Gateway API compliance
 //
-// ROUTE TYPES:
-// - [ ] TLSRoute support (gateway.networking.k8s.io/v1alpha2)
-// - [ ] TCPRoute support (gateway.networking.k8s.io/v1alpha2)
-// - [ ] UDPRoute support (gateway.networking.k8s.io/v1alpha2)
-//
 // FILTERS:
 // - [ ] RequestMirror filter support
 // - [ ] ExtensionRef filter support
