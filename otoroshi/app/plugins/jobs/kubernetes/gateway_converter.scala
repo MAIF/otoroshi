@@ -9,6 +9,25 @@ import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
 
+/**
+ * Result of converting a Gateway API route (HTTPRoute or GRPCRoute) to NgRoutes.
+ *
+ * In addition to the generated routes, this result carries information about
+ * backend reference resolution failures. This allows the reconciliation loop
+ * in gateway.scala to set precise status conditions on the route:
+ *   - ResolvedRefs=True when all backend refs are resolved
+ *   - ResolvedRefs=False, reason=RefNotPermitted when a cross-namespace ref is denied
+ *   - ResolvedRefs=False, reason=BackendNotFound when a Service doesn't exist
+ *
+ * @param routes           The NgRoute entities generated from the route's rules
+ * @param refNotPermitted  true if at least one cross-namespace backendRef was denied
+ *                         because no matching ReferenceGrant exists in the target namespace
+ */
+case class RouteConversionResult(
+  routes: Seq[NgRoute],
+  refNotPermitted: Boolean
+)
+
 object GatewayApiConverter {
 
   private val logger = Logger("otoroshi-plugins-kubernetes-gateway-api-converter")
@@ -24,7 +43,10 @@ object GatewayApiConverter {
    * The ID of each generated route follows the pattern:
    *   "kubernetes-gateway-api-{namespace}-{httproute-name}-rule-{ruleIndex}"
    *
-   * @param referenceGrants passed through for future cross-namespace enforcement (MVP: not enforced)
+   * Cross-namespace backendRefs are subject to ReferenceGrant enforcement:
+   * any backendRef targeting a Service in a different namespace requires a
+   * matching ReferenceGrant in the target namespace. Denied refs are excluded
+   * from the generated targets and flagged in the result for status reporting.
    */
   def httpRouteToNgRoutes(
       httpRoute: KubernetesHTTPRoute,
@@ -34,19 +56,27 @@ object GatewayApiConverter {
       referenceGrants: Seq[KubernetesReferenceGrant],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
-  )(implicit env: Env, ec: ExecutionContext): Seq[NgRoute] = {
+  )(implicit env: Env, ec: ExecutionContext): RouteConversionResult = {
 
     val matchingGateways = resolveParentRefs(httpRoute.parentRefs, httpRoute.namespace, gateways, namespaces, conf)
     if (matchingGateways.isEmpty) {
       logger.warn(s"HTTPRoute ${httpRoute.path} has no matching gateways")
-      return Seq.empty
+      return RouteConversionResult(Seq.empty, refNotPermitted = false)
     }
 
     val effectiveHostnames = resolveEffectiveHostnames(httpRoute.hostnames, matchingGateways)
 
-    httpRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
+    val routes = httpRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
       ruleToNgRoute(httpRoute, rule, ruleIdx, effectiveHostnames, services, endpoints, referenceGrants, conf)
     }
+
+    // Check if any cross-namespace backendRef was denied due to missing ReferenceGrant.
+    // This is checked separately (without logging) to provide accurate status reporting
+    // without duplicating the warnings already emitted by isBackendRefAllowed in buildTargets.
+    val allBackendRefs = httpRoute.rules.flatMap(_.backendRefs)
+    val refDenied = hasDeniedCrossNamespaceRefs(allBackendRefs, httpRoute.namespace, "HTTPRoute", referenceGrants)
+
+    RouteConversionResult(routes, refNotPermitted = refDenied)
   }
 
   // ─── GRPCRoute conversion ────────────────────────────────────────────────
@@ -57,6 +87,8 @@ object GatewayApiConverter {
    * Similar to HTTPRoute conversion, but:
    * - gRPC method matching is mapped to HTTP/2 path: /{service}/{method}
    * - Backend targets use HTTP/2 protocol
+   *
+   * Cross-namespace backendRefs are subject to ReferenceGrant enforcement.
    */
   def grpcRouteToNgRoutes(
       grpcRoute: KubernetesGRPCRoute,
@@ -66,19 +98,24 @@ object GatewayApiConverter {
       referenceGrants: Seq[KubernetesReferenceGrant],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
-  )(implicit env: Env, ec: ExecutionContext): Seq[NgRoute] = {
+  )(implicit env: Env, ec: ExecutionContext): RouteConversionResult = {
 
     val matchingGateways = resolveParentRefs(grpcRoute.parentRefs, grpcRoute.namespace, gateways, namespaces, conf)
     if (matchingGateways.isEmpty) {
       logger.warn(s"GRPCRoute ${grpcRoute.path} has no matching gateways")
-      return Seq.empty
+      return RouteConversionResult(Seq.empty, refNotPermitted = false)
     }
 
     val effectiveHostnames = resolveEffectiveHostnames(grpcRoute.hostnames, matchingGateways)
 
-    grpcRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
+    val routes = grpcRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
       grpcRuleToNgRoute(grpcRoute, rule, ruleIdx, effectiveHostnames, services, endpoints, referenceGrants, conf)
     }
+
+    val allBackendRefs = grpcRoute.rules.flatMap(_.backendRefs)
+    val refDenied = hasDeniedCrossNamespaceRefs(allBackendRefs, grpcRoute.namespace, "GRPCRoute", referenceGrants)
+
+    RouteConversionResult(routes, refNotPermitted = refDenied)
   }
 
   // ─── Shared parent ref / hostname resolution ─────────────────────────────
@@ -489,7 +526,9 @@ object GatewayApiConverter {
   /**
    * Resolves backendRefs to NgTarget Otoroshi targets.
    *
-   * @param referenceGrants passed for future cross-namespace validation. Currently logs warnings only.
+   * Cross-namespace references are validated against ReferenceGrants.
+   * If a cross-namespace backendRef is denied (no matching ReferenceGrant),
+   * it is excluded from the returned targets.
    */
   private def buildTargets(
       httpRoute: KubernetesHTTPRoute,
@@ -533,19 +572,95 @@ object GatewayApiConverter {
     }
   }
 
+  // ─── ReferenceGrant enforcement ─────────────────────────────────────────────
+  //
+  // The Gateway API specification (GEP-709) defines ReferenceGrant as a security
+  // mechanism for cross-namespace references. When a route (HTTPRoute or GRPCRoute)
+  // references a backend Service in a different namespace, a ReferenceGrant resource
+  // must exist in the **target** namespace (where the Service lives) to explicitly
+  // allow this reference.
+  //
+  // Without a matching ReferenceGrant, the cross-namespace reference is denied and
+  // the backend is excluded from the generated NgRoute targets.
+  //
+  // ReferenceGrant matching rules:
+  //   1. The ReferenceGrant must reside in the same namespace as the referenced Service
+  //   2. Its `from` list must contain an entry matching:
+  //      - group: "gateway.networking.k8s.io"
+  //      - kind: the route kind ("HTTPRoute" or "GRPCRoute")
+  //      - namespace: the namespace of the route making the reference
+  //   3. Its `to` list must contain an entry matching:
+  //      - group: "" (core API group, for Services)
+  //      - kind: "Service"
+  //      - name: either the specific service name, or empty/absent (wildcard)
+  //
+  // Example: An HTTPRoute in namespace "frontend" wants to reference a Service
+  // "api-svc" in namespace "backend". The following ReferenceGrant in namespace
+  // "backend" would allow this:
+  //
+  //   apiVersion: gateway.networking.k8s.io/v1beta1
+  //   kind: ReferenceGrant
+  //   metadata:
+  //     name: allow-frontend-to-backend
+  //     namespace: backend
+  //   spec:
+  //     from:
+  //     - group: gateway.networking.k8s.io
+  //       kind: HTTPRoute
+  //       namespace: frontend
+  //     to:
+  //     - group: ""
+  //       kind: Service
+  //       name: api-svc
+  // ────────────────────────────────────────────────────────────────────────────
+
   /**
-   * Checks if a cross-namespace backendRef is allowed by ReferenceGrants.
+   * Core matching logic for ReferenceGrant validation (no logging).
    *
-   * MVP: Always returns true. Logs a warning if cross-namespace reference is detected
-   * without a matching ReferenceGrant.
+   * Checks whether a ReferenceGrant exists in the target namespace that permits
+   * the given route kind and namespace to reference the given backend Service.
    *
-   * TODO (CRITICAL): Implement real ReferenceGrant enforcement.
-   * When implementing, check:
-   *   - backendRef.namespace != routeNamespace (cross-namespace)
-   *   - Look for a ReferenceGrant in backendRef.namespace that allows
-   *     from: [{group: gateway.networking.k8s.io, kind: routeKind, namespace: routeNamespace}]
-   *     to: [{group: "", kind: Service}]
-   *   - If no matching grant found, return false and set status ResolvedRefs=False, reason=RefNotPermitted
+   * @param backendRef       The backend reference to validate
+   * @param routeNamespace   The namespace of the route making the reference
+   * @param routeKind        The kind of the route ("HTTPRoute" or "GRPCRoute")
+   * @param referenceGrants  All ReferenceGrant resources from the cluster
+   * @return true if a matching grant exists, false otherwise
+   */
+  private def hasMatchingReferenceGrant(
+      backendRef: HTTPRouteBackendRef,
+      routeNamespace: String,
+      routeKind: String,
+      referenceGrants: Seq[KubernetesReferenceGrant]
+  ): Boolean = {
+    val svcNamespace = backendRef.namespace.getOrElse(routeNamespace)
+    referenceGrants.exists { grant =>
+      // The grant must be in the Service's namespace (the "target" namespace)
+      grant.namespace == svcNamespace &&
+      // The "from" list must explicitly allow the route's kind and source namespace
+      grant.from.exists(f =>
+        f.group == "gateway.networking.k8s.io" &&
+        f.kind == routeKind &&
+        f.namespace == routeNamespace
+      ) &&
+      // The "to" list must explicitly allow referencing Services.
+      // If `name` is absent/empty in the grant, it acts as a wildcard (all Services allowed).
+      // If `name` is specified, it must match the backendRef's service name exactly.
+      grant.to.exists(t =>
+        t.group == "" &&
+        t.kind == "Service" &&
+        t.name.forall(_ == backendRef.name)
+      )
+    }
+  }
+
+  /**
+   * Checks if a cross-namespace backendRef is allowed, with logging.
+   *
+   * Same-namespace references are always allowed without any grant.
+   * Cross-namespace references require a matching ReferenceGrant in the target namespace.
+   *
+   * Called from buildTargets/buildGrpcTargets to filter out denied backends
+   * and log appropriate warnings.
    */
   private def isBackendRefAllowed(
       backendRef: HTTPRouteBackendRef,
@@ -555,32 +670,52 @@ object GatewayApiConverter {
       referenceGrants: Seq[KubernetesReferenceGrant]
   ): Boolean = {
     val svcNamespace = backendRef.namespace.getOrElse(routeNamespace)
-    if (svcNamespace != routeNamespace) {
-      // Cross-namespace reference detected
-      val hasGrant = referenceGrants.exists { grant =>
-        grant.namespace == svcNamespace &&
-        grant.from.exists(f =>
-          f.group == "gateway.networking.k8s.io" &&
-          f.kind == routeKind &&
-          f.namespace == routeNamespace
-        ) &&
-        grant.to.exists(t =>
-          t.group == "" &&
-          t.kind == "Service" &&
-          t.name.forall(_ == backendRef.name)
-        )
-      }
-      if (!hasGrant) {
-        logger.warn(
-          s"$routeKind $routePath references Service ${svcNamespace}/${backendRef.name} " +
-            s"across namespaces without a matching ReferenceGrant. " +
-            s"Allowing for now (MVP), but this should be enforced."
-        )
-      }
-      // MVP: always allow, enforcement will come later
+    // Same-namespace references are always allowed (no ReferenceGrant needed)
+    if (svcNamespace == routeNamespace) {
       true
     } else {
-      true
+      // Cross-namespace: check for a matching ReferenceGrant
+      val allowed = hasMatchingReferenceGrant(backendRef, routeNamespace, routeKind, referenceGrants)
+      if (!allowed) {
+        logger.warn(
+          s"$routeKind $routePath references Service ${svcNamespace}/${backendRef.name} " +
+            s"across namespaces but no matching ReferenceGrant was found in namespace $svcNamespace. " +
+            s"The backend reference is DENIED. To allow this, create a ReferenceGrant in " +
+            s"namespace $svcNamespace that permits $routeKind from namespace $routeNamespace."
+        )
+      } else {
+        logger.debug(
+          s"$routeKind $routePath cross-namespace reference to Service ${svcNamespace}/${backendRef.name} " +
+            s"is allowed by a ReferenceGrant in namespace $svcNamespace."
+        )
+      }
+      allowed
+    }
+  }
+
+  /**
+   * Checks whether any backendRef in the given list is a denied cross-namespace reference.
+   *
+   * This method is used (without logging) to determine the appropriate status condition
+   * for the route: if any ref is denied, the status should be ResolvedRefs=False
+   * with reason RefNotPermitted.
+   *
+   * It uses the same matching logic as isBackendRefAllowed (via hasMatchingReferenceGrant)
+   * but does not emit log messages to avoid duplicate warnings.
+   */
+  private def hasDeniedCrossNamespaceRefs(
+      backendRefs: Seq[HTTPRouteBackendRef],
+      routeNamespace: String,
+      routeKind: String,
+      referenceGrants: Seq[KubernetesReferenceGrant]
+  ): Boolean = {
+    backendRefs.exists { ref =>
+      val backendKind = ref.kind.getOrElse("Service")
+      val svcNamespace = ref.namespace.getOrElse(routeNamespace)
+      // Only check Service-kind refs that are actually cross-namespace
+      backendKind == "Service" &&
+      svcNamespace != routeNamespace &&
+      !hasMatchingReferenceGrant(ref, routeNamespace, routeKind, referenceGrants)
     }
   }
 

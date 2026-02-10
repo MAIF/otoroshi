@@ -21,8 +21,8 @@ import scala.util.{Failure, Success, Try}
 // TODO — Remaining work for full Gateway API compliance
 //
 // CRITICAL:
-// - [ ] ReferenceGrant enforcement: cross-namespace backendRef and certificateRef
-//       validation (see isBackendRefAllowed in gateway_converter.scala)
+// - [x] ReferenceGrant enforcement: cross-namespace backendRef validation
+//       (see isBackendRefAllowed / hasMatchingReferenceGrant in gateway_converter.scala)
 // - [ ] TLS certificate resolution: resolve Gateway listener certificateRefs
 //       to Otoroshi Cert entities (reuse KubernetesCertSyncJob pattern)
 //
@@ -362,15 +362,31 @@ object KubernetesGatewayApiJob {
 
     Source(httpRoutes.toList)
       .mapAsync(1) { httpRoute =>
-        val generatedRoutes = GatewayApiConverter.httpRouteToNgRoutes(
+        val result = GatewayApiConverter.httpRouteToNgRoutes(
           httpRoute, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
         )
+        val generatedRoutes = result.routes
 
         val parentStatuses = httpRoute.parentRefs.map { parentRef =>
           val gwNamespace = parentRef.namespace.getOrElse(httpRoute.namespace)
           val gatewayFound = acceptedGateways.exists(gw =>
             gw.name == parentRef.name && gw.namespace == gwNamespace
           )
+
+          // Determine the ResolvedRefs condition with precise reasons:
+          //   - RefNotPermitted: a cross-namespace backendRef was denied (missing ReferenceGrant)
+          //   - BackendNotFound: a backend Service could not be resolved
+          //   - ResolvedRefs: all references resolved successfully
+          val (resolvedStatus, resolvedReason, resolvedMessage) = if (result.refNotPermitted) {
+            ("False", "RefNotPermitted",
+              "One or more cross-namespace backend references are denied (missing ReferenceGrant)")
+          } else if (generatedRoutes.nonEmpty && generatedRoutes.exists(_.backend.targets.isEmpty)) {
+            ("False", "BackendNotFound",
+              "Some backend references could not be resolved to existing Services")
+          } else {
+            ("True", "ResolvedRefs", "All references resolved")
+          }
+
           Json.obj(
             "parentRef" -> Json.obj(
               "group"     -> "gateway.networking.k8s.io",
@@ -387,13 +403,7 @@ object KubernetesGatewayApiJob {
                 if (gatewayFound) "Route accepted"
                 else s"Gateway ${gwNamespace}/${parentRef.name} not found"
               ),
-              conditionJson(
-                "ResolvedRefs",
-                if (generatedRoutes.nonEmpty) "True" else "False",
-                if (generatedRoutes.nonEmpty) "ResolvedRefs" else "BackendNotFound",
-                if (generatedRoutes.nonEmpty) "All references resolved"
-                else "Some backend references could not be resolved"
-              )
+              conditionJson("ResolvedRefs", resolvedStatus, resolvedReason, resolvedMessage)
             )
           )
         }
@@ -423,15 +433,28 @@ object KubernetesGatewayApiJob {
 
     Source(grpcRoutes.toList)
       .mapAsync(1) { grpcRoute =>
-        val generatedRoutes = GatewayApiConverter.grpcRouteToNgRoutes(
+        val result = GatewayApiConverter.grpcRouteToNgRoutes(
           grpcRoute, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
         )
+        val generatedRoutes = result.routes
 
         val parentStatuses = grpcRoute.parentRefs.map { parentRef =>
           val gwNamespace = parentRef.namespace.getOrElse(grpcRoute.namespace)
           val gatewayFound = acceptedGateways.exists(gw =>
             gw.name == parentRef.name && gw.namespace == gwNamespace
           )
+
+          // Same ResolvedRefs logic as HTTPRoute (see reconcileHTTPRoutes)
+          val (resolvedStatus, resolvedReason, resolvedMessage) = if (result.refNotPermitted) {
+            ("False", "RefNotPermitted",
+              "One or more cross-namespace backend references are denied (missing ReferenceGrant)")
+          } else if (generatedRoutes.nonEmpty && generatedRoutes.exists(_.backend.targets.isEmpty)) {
+            ("False", "BackendNotFound",
+              "Some backend references could not be resolved to existing Services")
+          } else {
+            ("True", "ResolvedRefs", "All references resolved")
+          }
+
           Json.obj(
             "parentRef" -> Json.obj(
               "group"     -> "gateway.networking.k8s.io",
@@ -448,13 +471,7 @@ object KubernetesGatewayApiJob {
                 if (gatewayFound) "Route accepted"
                 else s"Gateway ${gwNamespace}/${parentRef.name} not found"
               ),
-              conditionJson(
-                "ResolvedRefs",
-                if (generatedRoutes.nonEmpty) "True" else "False",
-                if (generatedRoutes.nonEmpty) "ResolvedRefs" else "BackendNotFound",
-                if (generatedRoutes.nonEmpty) "All references resolved"
-                else "Some backend references could not be resolved"
-              )
+              conditionJson("ResolvedRefs", resolvedStatus, resolvedReason, resolvedMessage)
             )
           )
         }
