@@ -1,6 +1,6 @@
 # Kubernetes Gateway API support
 
-Starting from version 17.13.0, Otoroshi supports the [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) specification (v1.4, `gateway.networking.k8s.io/v1`). This feature enables you to define routing rules using standard Gateway API resources (`GatewayClass`, `Gateway`, `HTTPRoute`) and have Otoroshi automatically convert them into native `NgRoute` entities.
+Starting from version 17.13.0, Otoroshi supports the [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) specification (v1.4, `gateway.networking.k8s.io/v1`). This feature enables you to define routing rules using standard Gateway API resources (`GatewayClass`, `Gateway`, `HTTPRoute`, `GRPCRoute`) and have Otoroshi automatically convert them into native `NgRoute` entities.
 
 @@@ warning
 This feature is currently in **experimental** stage. It covers the core HTTPRoute use cases but does not yet implement the full specification. See the [current limitations](#current-limitations) section for details.
@@ -8,15 +8,16 @@ This feature is currently in **experimental** stage. It covers the core HTTPRout
 
 ## How it works
 
-Otoroshi implements the Gateway API using a **proxy-existing** approach: Otoroshi does not dynamically provision new listeners or ports based on Gateway resources. Instead, it validates that the `Gateway` listeners match Otoroshi's actual listening ports and uses hostnames, paths, and headers from `HTTPRoute` resources to generate `NgRoute` entities.
+Otoroshi implements the Gateway API using a **proxy-existing** approach: Otoroshi does not dynamically provision new listeners or ports based on Gateway resources. Instead, it validates that the `Gateway` listeners match Otoroshi's actual listening ports and uses hostnames, paths, and headers from `HTTPRoute` and `GRPCRoute` resources to generate `NgRoute` entities.
 
 The reconciliation loop runs as a background job and works as follows:
 
-1. **Fetch** all `GatewayClass`, `Gateway`, `HTTPRoute`, and `ReferenceGrant` resources from the Kubernetes API
+1. **Fetch** all `GatewayClass`, `Gateway`, `HTTPRoute`, `GRPCRoute`, and `ReferenceGrant` resources from the Kubernetes API
 2. **Reconcile GatewayClasses** — accept classes whose `controllerName` matches Otoroshi's configured controller name
 3. **Reconcile Gateways** — validate that listener ports and protocols are compatible with Otoroshi's actual ports
 4. **Convert HTTPRoutes** — for each rule in each HTTPRoute, generate one `NgRoute` with the appropriate frontend (domains, paths, headers), backend (targets resolved from Kubernetes Services), and plugins (from HTTPRoute filters)
-5. **Save routes** — upsert generated routes and delete orphaned ones that are no longer defined
+5. **Convert GRPCRoutes** — same as HTTPRoute but with gRPC method matching mapped to HTTP/2 paths (`/{service}/{method}`) and backend targets using HTTP/2 protocol
+6. **Save routes** — upsert generated routes and delete orphaned ones that are no longer defined
 
 All generated routes are tagged with `otoroshi-provider: kubernetes-gateway-api` metadata, making them easy to identify and ensuring clean garbage collection.
 
@@ -41,11 +42,11 @@ The Otoroshi ServiceAccount needs the following additional ClusterRole rules for
 ```yaml
 # Gateway API — read resources
 - apiGroups: [gateway.networking.k8s.io]
-  resources: [gatewayclasses, gateways, httproutes, referencegrants]
+  resources: [gatewayclasses, gateways, httproutes, grpcroutes, referencegrants]
   verbs: [get, list, watch]
 # Gateway API — update status subresources
 - apiGroups: [gateway.networking.k8s.io]
-  resources: [gatewayclasses/status, gateways/status, httproutes/status]
+  resources: [gatewayclasses/status, gateways/status, httproutes/status, grpcroutes/status]
   verbs: [get, update, patch]
 ```
 
@@ -162,7 +163,7 @@ spec:
 
 **Supported protocols**: `HTTP` and `HTTPS`. `TLS`, `TCP`, and `UDP` listeners are accepted in the manifest but will generate a `Detached` status condition as they are not yet implemented.
 
-**Listener hostname**: acts as a filter. Only HTTPRoutes with matching hostnames will be attached to this listener. Wildcard hostnames (e.g. `*.example.com`) are supported.
+**Listener hostname**: acts as a filter. Only HTTPRoutes and GRPCRoutes with matching hostnames will be attached to this listener. Wildcard hostnames (e.g. `*.example.com`) are supported.
 
 **allowedRoutes.namespaces.from**: controls which namespaces can attach routes to this listener.
 
@@ -300,20 +301,81 @@ filters:
 - **hostname**: changes the `Host` header sent to the backend
 - **path.type**: only `ReplacePrefixMatch` is currently supported. It strips the matched prefix and replaces it with the new value.
 
+## GRPCRoute support
+
+Otoroshi also supports `GRPCRoute` resources for routing gRPC traffic. GRPCRoute works similarly to HTTPRoute with the following differences:
+
+- gRPC method matching is mapped to HTTP/2 paths: `/{service}/{method}`
+- Backend targets automatically use the **HTTP/2** protocol
+- Generated routes are restricted to the `POST` HTTP method (as required by the gRPC protocol)
+
+@@@ note
+gRPC requires HTTP/2 support. Make sure Otoroshi is running with the Netty server backend, which supports HTTP/2 natively. You can enable it with the `OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ENABLED=true` environment variable.
+@@@
+
+### GRPCRoute example
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: grpc-route
+  namespace: default
+spec:
+  parentRefs:
+  - name: my-gateway
+    sectionName: http
+  hostnames:
+  - "grpc.example.com"
+  rules:
+  - matches:
+    - method:
+        service: com.example.UserService
+        method: GetUser
+    backendRefs:
+    - name: grpc-user-service
+      port: 50051
+  - matches:
+    - method:
+        service: com.example.OrderService
+    backendRefs:
+    - name: grpc-order-service
+      port: 50051
+```
+
+In this example:
+
+- The first rule matches requests to `com.example.UserService/GetUser` exactly (path `/com.example.UserService/GetUser`)
+- The second rule matches all methods on `com.example.OrderService` (path prefix `/com.example.OrderService/`)
+- Both backends are called using HTTP/2
+
+### gRPC method matching
+
+| Match | Generated path | Behavior |
+|-------|---------------|----------|
+| `service: com.example.Foo, method: Bar` | `/com.example.Foo/Bar` | Exact match on service and method |
+| `service: com.example.Foo` (no method) | `/com.example.Foo/` | Prefix match on all methods of the service |
+| No method match specified | `/` | Match all gRPC requests |
+
+### GRPCRoute filters
+
+GRPCRoute supports the same filter types as HTTPRoute: `RequestHeaderModifier`, `ResponseHeaderModifier`, `RequestRedirect`, and `URLRewrite`.
+
 ## Generated NgRoute structure
 
-Each HTTPRoute rule generates one `NgRoute` in Otoroshi with a deterministic ID:
+Each HTTPRoute or GRPCRoute rule generates one `NgRoute` in Otoroshi with a deterministic ID:
 
 ```
-kubernetes-gateway-api-{namespace}-{routeName}-rule-{ruleIndex}
+kubernetes-gateway-api-{namespace}-{routeName}-rule-{ruleIndex}         # HTTPRoute
+kubernetes-gateway-api-{namespace}-{routeName}-grpc-rule-{ruleIndex}    # GRPCRoute
 ```
 
 The generated route includes:
 
-- **Frontend**: domains built from effective hostnames + path, with method matching if specified
-- **Backend**: targets resolved from backendRefs using Kubernetes Service clusterIPs, with weighted load balancing
-- **Plugins**: converted from HTTPRoute filters (header modifiers, redirections, etc.)
-- **Metadata**: `otoroshi-provider: kubernetes-gateway-api`, plus `gateway-namespace`, `gateway-name`, `httproute-namespace`, `httproute-name` for traceability
+- **Frontend**: domains built from effective hostnames + path, with method matching if specified (gRPC routes are locked to POST)
+- **Backend**: targets resolved from backendRefs using Kubernetes Service clusterIPs, with weighted load balancing. GRPCRoute targets use HTTP/2.
+- **Plugins**: converted from route filters (header modifiers, redirections, etc.)
+- **Metadata**: `otoroshi-provider: kubernetes-gateway-api`, `gateway-api-kind: HTTPRoute` or `GRPCRoute`, plus `kubernetes-name`, `kubernetes-namespace` for traceability
 
 ## Status updates
 
@@ -322,6 +384,7 @@ The controller updates the `status` subresource on each Gateway API object:
 - **GatewayClass**: `Accepted: True` when the `controllerName` matches, `Accepted: False` otherwise
 - **Gateway**: `Accepted: True/False` based on gatewayClassName, `Programmed: True/False` per-listener based on port/protocol validation
 - **HTTPRoute**: per-parent conditions `Accepted: True/False` and `ResolvedRefs: True` when the route is successfully converted
+- **GRPCRoute**: same status conditions as HTTPRoute
 
 ## Current limitations
 
@@ -329,7 +392,6 @@ The following features are **not yet implemented** in the current experiments:
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| GRPCRoute | Not implemented | Planned for a future release |
 | TLSRoute | Not implemented | Planned for a future release |
 | TCPRoute / UDPRoute | Not implemented | Experimental in Gateway API spec |
 | ReferenceGrant enforcement | Not enforced | Cross-namespace backend refs are allowed without validation. ReferenceGrant resources are fetched but not checked. This is a critical security feature planned for the next iteration. |
@@ -342,7 +404,7 @@ The following features are **not yet implemented** in the current experiments:
 | Dynamic listener provisioning | Not planned | Otoroshi uses a proxy-existing approach; ports must be pre-configured |
 
 @@@ warning
-**ReferenceGrant enforcement** is the most critical missing feature for production use. Without it, any HTTPRoute can reference backend Services in any namespace, bypassing Kubernetes namespace isolation. The implementation is designed to support this easily in a future release — the `ReferenceGrant` resources are already fetched and passed through the conversion pipeline.
+**ReferenceGrant enforcement** is the most critical missing feature for production use. Without it, any HTTPRoute or GRPCRoute can reference backend Services in any namespace, bypassing Kubernetes namespace isolation. The implementation is designed to support this easily in a future release — the `ReferenceGrant` resources are already fetched and passed through the conversion pipeline.
 @@@
 
 ## Troubleshooting
@@ -360,6 +422,9 @@ kubectl get gateway my-gateway -n default -o yaml
 
 # HTTPRoute should show Accepted: True for each parent
 kubectl get httproute my-route -n default -o yaml
+
+# GRPCRoute should show Accepted: True for each parent
+kubectl get grpcroute my-grpc-route -n default -o yaml
 ```
 
 ### Check generated routes

@@ -1362,7 +1362,7 @@ spec:
 
 Starting from version 17.13.0, Otoroshi supports the [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) specification (v1.4). This is the standard Kubernetes API for managing ingress traffic, designed as the successor to the Ingress resource.
 
-With Gateway API support enabled, you can define `GatewayClass`, `Gateway`, and `HTTPRoute` resources in your cluster and Otoroshi will automatically convert them into native `NgRoute` entities. This allows you to use standard, portable Kubernetes manifests while benefiting from Otoroshi's full feature set.
+With Gateway API support enabled, you can define `GatewayClass`, `Gateway`, `HTTPRoute`, and `GRPCRoute` resources in your cluster and Otoroshi will automatically convert them into native `NgRoute` entities. This allows you to use standard, portable Kubernetes manifests while benefiting from Otoroshi's full feature set. GRPCRoute backends are automatically called using HTTP/2.
 
 ### Quick setup
 
@@ -1372,7 +1372,7 @@ First, install the Gateway API CRDs on your cluster:
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
 ```
 
-Make sure the Otoroshi ServiceAccount has RBAC permissions for Gateway API resources (`gatewayclasses`, `gateways`, `httproutes`, `referencegrants` and their status subresources).
+Make sure the Otoroshi ServiceAccount has RBAC permissions for Gateway API resources (`gatewayclasses`, `gateways`, `httproutes`, `grpcroutes`, `referencegrants` and their status subresources).
 
 Then enable the Gateway API controller job in your Otoroshi deployment configuration:
 
