@@ -1276,6 +1276,127 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .takeWhile(_ => !stop)
   }
 
+  def watchClusterResource(
+      resource: String,
+      api: String,
+      timeout: Int,
+      stop: => Boolean,
+      root: String = "/apis"
+  ): Source[Seq[ByteString], _] = {
+
+    import otoroshi.utils.http.Implicits._
+
+    val lastTime = new AtomicLong(0L)
+    val last     = new AtomicReference[String]("0")
+    Source
+      .repeat(())
+      .flatMapConcat { _ =>
+        val now = System.currentTimeMillis()
+        if ((lastTime.get() + 5000) > now) {
+          if (logger.isDebugEnabled) logger.debug("call too close, waiting for 5 secs")
+          Source.single(Source.empty).delay(5.seconds).flatMapConcat(v => v)
+        } else {
+          lastTime.set(now)
+          if (logger.isDebugEnabled)
+            logger.debug(s"watch on ${api} / ${resource} (cluster-scoped) for ${timeout} seconds ! ")
+          val cliStart: WSRequest                   = client(s"${root}/$api/$resource")
+          val f: Future[Source[Seq[ByteString], _]] = cliStart
+            .addHttpHeaders(
+              "Accept" -> "application/json"
+            )
+            .withMethod("GET")
+            .withRequestTimeout(timeout.seconds)
+            .get()
+            .flatMap { list =>
+              if (list.status == 200) {
+                val resourceVersionStart = (list.json \ "metadata" \ "resourceVersion").asOpt[String].getOrElse("0")
+                last.set(resourceVersionStart)
+                val cli: WSRequest       = client(
+                  s"${root}/$api/$resource?watch=1&resourceVersion=${last.get()}&timeoutSeconds=$timeout"
+                )
+                cli
+                  .addHttpHeaders(
+                    "Accept" -> "application/json"
+                  )
+                  .withMethod("GET")
+                  .withRequestTimeout(timeout.seconds)
+                  .stream()
+                  .map { resp =>
+                    if (resp.status == 200) {
+                      resp.bodyAsSource
+                        .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
+                        .map(_.utf8String)
+                        .filterNot(_.trim.isEmpty)
+                        .map { line =>
+                          val json            = Json.parse(line)
+                          val typ             = (json \ "type").asOpt[String]
+                          val name            = (json \ "object" \ "metadata" \ "name").asOpt[String]
+                          val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
+                          if (logger.isDebugEnabled)
+                            logger.debug(
+                              s"received event for ${api}/${resource} (cluster-scoped) - $typ - $name($resourceVersion)"
+                            )
+                          resourceVersion.foreach(v => last.set(v))
+                          ByteString(line)
+                        }
+                        .groupedWithin(1000, 2.seconds)
+                    } else {
+                      resp.ignore()
+                      Source.empty
+                    }
+                  }
+                  .recover { case e =>
+                    logger.error(s"error while watching ${api}/${resource} (cluster-scoped)", e)
+                    Source.empty
+                  }
+              } else if (list.status == 404) {
+                logger.error(s"resource ${resource} of api ${api} does not exist (cluster-scoped)")
+                list.ignore()
+                Source.empty.future
+              } else if (list.status == 403) {
+                KubernetesClientNotifications.registerForbiddenEntities(s"$api/$resource")
+                list.ignore()
+                Source.empty.future
+              } else {
+                list.ignore()
+                logger.error(
+                  s"error while trying to get ${resource} of api ${api} (cluster-scoped): ${list.status} - ${list.body}"
+                )
+                Source.empty.future
+              }
+            }
+            .recover { case e =>
+              logger.error(s"error while fetching latest version of ${api}/${resource} (cluster-scoped)", e)
+              Source.empty
+            }
+          Source.future(f).flatMapConcat(v => v)
+        }
+      }
+      .filterNot(_.isEmpty)
+      .takeWhile(_ => !stop)
+  }
+
+  def watchGatewayApiResources(
+      namespaces: Seq[String],
+      timeout: Int,
+      stop: => Boolean
+  ): Source[Seq[ByteString], _] = {
+    val gatewayClassSource = watchClusterResource("gatewayclasses", "gateway.networking.k8s.io/v1", timeout, stop)
+    val v1NamespacedSource = watchResources(
+      namespaces, Seq("gateways", "httproutes", "grpcroutes"), "gateway.networking.k8s.io/v1", timeout, stop
+    )
+    val referenceGrantSource = watchResources(
+      namespaces, Seq("referencegrants"), "gateway.networking.k8s.io/v1beta1", timeout, stop
+    )
+    val kubeSource = watchKubeResources(
+      namespaces, Seq("secrets", "services", "endpoints"), timeout, stop
+    )
+    gatewayClassSource
+      .merge(v1NamespacedSource)
+      .merge(referenceGrantSource)
+      .merge(kubeSource)
+  }
+
   // ─── Gateway API: Fetch methods ──────────────────────────────────────────
 
   def fetchGatewayClasses(): Future[Seq[KubernetesGatewayClass]] = {

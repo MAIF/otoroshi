@@ -22,6 +22,10 @@ The reconciliation loop runs as a background job and works as follows:
 
 All generated routes are tagged with `otoroshi-provider: kubernetes-gateway-api` metadata, making them easy to identify and ensuring clean garbage collection.
 
+### Watch mode
+
+When `watch` is enabled in the Kubernetes configuration, the Gateway API controller uses Kubernetes watch events to trigger synchronization in near-real-time instead of waiting for the next polling interval. This covers all Gateway API resources (`GatewayClass`, `Gateway`, `HTTPRoute`, `GRPCRoute`, `ReferenceGrant`) as well as related Kubernetes resources (`Secret`, `Service`, `Endpoints`). The `watchGracePeriodSeconds` setting prevents excessive syncs by enforcing a minimum delay between consecutive event-driven reconciliations.
+
 ## Prerequisites
 
 * Otoroshi 17.13.0 or later, deployed on Kubernetes

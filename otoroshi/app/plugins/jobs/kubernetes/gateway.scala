@@ -39,15 +39,17 @@ import scala.util.{Failure, Success, Try}
 //
 // ADVANCED:
 // - [ ] BackendTLSPolicy support
-// - [ ] Watch mode (event-driven sync instead of periodic polling)
 // - [ ] Endpoint slice resolution (instead of clusterIP only)
 // - [ ] Conformance test suite (gateway-api conformance tests)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class KubernetesGatewayApiControllerJob extends Job {
 
-  private val logger      = Logger("otoroshi-plugins-kubernetes-gateway-api-job")
-  private val stopCommand = new AtomicBoolean(false)
+  private val logger           = Logger("otoroshi-plugins-kubernetes-gateway-api-job")
+  private val stopCommand      = new AtomicBoolean(false)
+  private val watchCommand     = new AtomicBoolean(false)
+  private val lastWatchStopped = new AtomicBoolean(true)
+  private val lastWatchSync    = new AtomicLong(0L)
 
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
 
@@ -115,12 +117,18 @@ class KubernetesGatewayApiControllerJob extends Job {
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info("Starting Kubernetes Gateway API controller job")
     stopCommand.set(false)
+    lastWatchStopped.set(true)
+    watchCommand.set(false)
+    val conf = KubernetesConfig.theConfig(ctx)
+    handleWatch(conf, ctx)
     ().future
   }
 
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info("Stopping Kubernetes Gateway API controller job")
     stopCommand.set(true)
+    watchCommand.set(false)
+    lastWatchStopped.set(true)
     ().future
   }
 
@@ -130,9 +138,62 @@ class KubernetesGatewayApiControllerJob extends Job {
         logger.error(s"Failed to read KubernetesConfig: ${e.getMessage}")
         ().future
       case Success(conf) if conf.gatewayApi =>
+        handleWatch(conf, ctx)
         KubernetesGatewayApiJob.syncGatewayApi(conf, ctx.attrs, !stopCommand.get())
       case _ =>
         ().future
+    }
+  }
+  
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Seq[String]] = {
+    if (conf.namespacesLabels.isEmpty) {
+      conf.namespaces.future
+    } else {
+      client.fetchNamespacesAndFilterLabels().map { namespaces =>
+        namespaces.map(_.name)
+      }
+    }
+  }
+
+  def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
+    if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
+      logger.info("starting gateway api watch ...")
+      implicit val mat = env.otoroshiMaterializer
+      watchCommand.set(true)
+      lastWatchStopped.set(false)
+      env.otoroshiScheduler.scheduleOnce(5.minutes) {
+        logger.info("trigger stop gateway api watch after 5 min.")
+        watchCommand.set(false)
+        lastWatchStopped.set(true)
+      }
+      val conf         = KubernetesConfig.theConfig(ctx)
+      val client       = new KubernetesClient(conf, env)
+      val source       = Source
+        .future(getNamespaces(client, conf))
+        .flatMapConcat { nses =>
+          client.watchGatewayApiResources(nses, conf.watchTimeoutSeconds, !watchCommand.get())
+        }
+      source
+        .takeWhile(_ => !watchCommand.get())
+        .filterNot(_.isEmpty)
+        .alsoTo(Sink.onComplete { case _ =>
+          lastWatchStopped.set(true)
+        })
+        .runWith(Sink.foreach { group =>
+          val now = System.currentTimeMillis()
+          if ((lastWatchSync.get() + (conf.watchGracePeriodSeconds * 1000L)) < now) {
+            if (logger.isDebugEnabled) logger.debug(s"sync triggered by a group of ${group.size} events")
+            KubernetesGatewayApiJob.syncGatewayApi(conf, ctx.attrs, !stopCommand.get())
+          }
+        })
+    } else if (!config.watch) {
+      logger.info("stopping gateway api watch")
+      watchCommand.set(false)
+    } else {
+      logger.info(s"gateway api watching already ...")
     }
   }
 }
