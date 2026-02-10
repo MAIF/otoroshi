@@ -24,6 +24,10 @@ spec:
           name: http
         - containerPort: 8443
           name: https
+        - containerPort: 10049
+          name: http-netty
+        - containerPort: 10048
+          name: https-netty
         env:
         - name: APP_STORAGE_ROOT
           value: otoroshi
@@ -51,6 +55,14 @@ spec:
           value: Want
         - name: HTTPS_WANT_CLIENT_AUTH
           value: "true"
+        - name: OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ENABLED
+          value: "true"
+        - name: OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ACCESSLOG
+          value: "true"
+        - name: OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_EXPOSED_HTTP_PORT
+          value: "8080"
+        - name: OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_EXPOSED_HTTPS_PORT
+          value: "8443"
         - name: OTOROSHI_INITIAL_CUSTOMIZATION
           value: >
             {
@@ -114,9 +126,9 @@ spec:
   ports:
   - port: 8080
     name: http
-    targetPort: http
+    targetPort: http-netty
     nodePort: 30080
   - port: 8443
     name: https
-    targetPort: https
+    targetPort: https-netty
     nodePort: 30443
