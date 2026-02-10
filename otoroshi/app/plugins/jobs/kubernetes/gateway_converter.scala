@@ -242,8 +242,8 @@ object GatewayApiConverter {
       boundListeners = Seq.empty,
       frontend = NgFrontend(
         domains = domains,
-        headers = Map.empty,
-        query = Map.empty,
+        headers = rule.matches.flatMap(_.headers.map(o => (o.select("name").asString, o.select("value").asString))).toMap,
+        query = rule.matches.flatMap(_.queryParams.map(o => (o.select("name").asString, o.select("value").asString))).toMap,
         cookies = Map.empty,
         methods = methods,
         stripPath = stripPath,

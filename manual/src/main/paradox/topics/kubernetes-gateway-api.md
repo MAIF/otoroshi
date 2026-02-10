@@ -398,7 +398,6 @@ The following features are **not yet implemented** in the current experiments:
 | Namespace label selector | Not implemented | `allowedRoutes.namespaces.from: Selector` is not yet supported |
 | RequestMirror filter | Not implemented | Traffic mirroring is not yet available |
 | ExtensionRef filter | Not implemented | Custom filter extensions |
-| Header / query param matching | Not implemented | HTTPRoute `matches.headers` and `matches.queryParams` are parsed but not converted |
 | Gateway addresses | Not implemented | The `spec.addresses` field is ignored |
 | Listener TLS certificate binding | Not implemented | `tls.certificateRefs` are parsed but not bound to Otoroshi certificates |
 | Dynamic listener provisioning | Not planned | Otoroshi uses a proxy-existing approach; ports must be pre-configured |
