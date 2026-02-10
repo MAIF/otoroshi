@@ -65,11 +65,11 @@ rules:
     verbs: [get, list, watch]
   # Gateway API — read resources
   - apiGroups: [gateway.networking.k8s.io]
-    resources: [gatewayclasses, gateways, httproutes, referencegrants]
+    resources: [gatewayclasses, gateways, httproutes, grpcroutes, referencegrants]
     verbs: [get, list, watch]
   # Gateway API — update status subresources
   - apiGroups: [gateway.networking.k8s.io]
-    resources: [gatewayclasses/status, gateways/status, httproutes/status]
+    resources: [gatewayclasses/status, gateways/status, httproutes/status, grpcroutes/status]
     verbs: [get, update, patch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
