@@ -14,10 +14,11 @@ The reconciliation loop runs as a background job and works as follows:
 
 1. **Fetch** all `GatewayClass`, `Gateway`, `HTTPRoute`, `GRPCRoute`, and `ReferenceGrant` resources from the Kubernetes API
 2. **Reconcile GatewayClasses** — accept classes whose `controllerName` matches Otoroshi's configured controller name
-3. **Reconcile Gateways** — validate that listener ports and protocols are compatible with Otoroshi's actual ports
-4. **Convert HTTPRoutes** — for each rule in each HTTPRoute, generate one `NgRoute` with the appropriate frontend (domains, paths, headers), backend (targets resolved from Kubernetes Services with ReferenceGrant enforcement for cross-namespace refs), and plugins (from HTTPRoute filters)
-5. **Convert GRPCRoutes** — same as HTTPRoute but with gRPC method matching mapped to HTTP/2 paths (`/{service}/{method}`) and backend targets using HTTP/2 protocol
-6. **Save routes** — upsert generated routes and delete orphaned ones that are no longer defined
+3. **Resolve TLS certificates** — for HTTPS listeners with `certificateRefs`, check if the referenced TLS certificates are already in Otoroshi's cert store and import them from Kubernetes Secrets if needed
+4. **Reconcile Gateways** — validate that listener ports and protocols are compatible with Otoroshi's actual ports, and verify that TLS certificate references are resolved
+5. **Convert HTTPRoutes** — for each rule in each HTTPRoute, generate one `NgRoute` with the appropriate frontend (domains, paths, headers), backend (targets resolved from Kubernetes Services with ReferenceGrant enforcement for cross-namespace refs), and plugins (from HTTPRoute filters)
+6. **Convert GRPCRoutes** — same as HTTPRoute but with gRPC method matching mapped to HTTP/2 paths (`/{service}/{method}`) and backend targets using HTTP/2 protocol
+7. **Save routes** — upsert generated routes and delete orphaned ones that are no longer defined
 
 All generated routes are tagged with `otoroshi-provider: kubernetes-gateway-api` metadata, making them easy to identify and ensuring clean garbage collection.
 
@@ -324,6 +325,61 @@ filters:
 - **hostname**: changes the `Host` header sent to the backend
 - **path.type**: only `ReplacePrefixMatch` is currently supported. It strips the matched prefix and replaces it with the new value.
 
+## TLS certificate resolution
+
+HTTPS listeners can reference Kubernetes TLS Secrets via `tls.certificateRefs`. Otoroshi automatically resolves these references and imports the certificates into its certificate store so that they are available for SNI-based TLS termination.
+
+### How it works
+
+During each reconciliation cycle, for every HTTPS listener with `certificateRefs`:
+
+1. Otoroshi computes the expected certificate ID using the pattern `kubernetes-certs-import-{namespace}-{name}`
+2. If the certificate already exists in Otoroshi's store, no action is needed
+3. If the certificate is missing, Otoroshi fetches the Kubernetes Secret and imports it (the Secret must be of type `kubernetes.io/tls`)
+4. The listener status condition `ResolvedRefs` reflects whether all referenced certificates were successfully resolved
+
+### Example
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: tls-gateway
+  namespace: default
+spec:
+  gatewayClassName: otoroshi
+  listeners:
+  - name: https
+    protocol: HTTPS
+    port: 8443
+    hostname: "api.example.com"
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: api-tls-cert
+    allowedRoutes:
+      namespaces:
+        from: Same
+```
+
+The referenced Secret must exist in the same namespace (or the namespace specified in the ref) and contain valid TLS data:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: api-tls-cert
+  namespace: default
+type: kubernetes.io/tls
+data:
+  tls.crt: <base64-encoded certificate>
+  tls.key: <base64-encoded private key>
+```
+
+Once imported, Otoroshi uses its standard SNI matching to select the right certificate for incoming TLS connections — no additional configuration is needed on the route.
+
+If a referenced Secret does not exist or is not of type `kubernetes.io/tls`, the listener status will report `ResolvedRefs: False` with reason `InvalidCertificateRef`.
+
 ## GRPCRoute support
 
 Otoroshi also supports `GRPCRoute` resources for routing gRPC traffic. GRPCRoute works similarly to HTTPRoute with the following differences:
@@ -519,7 +575,6 @@ The following features are **not yet implemented** in the current experiments:
 | RequestMirror filter | Not implemented | Traffic mirroring is not yet available |
 | ExtensionRef filter | Not implemented | Custom filter extensions |
 | Gateway addresses | Not implemented | The `spec.addresses` field is ignored |
-| Listener TLS certificate binding | Not implemented | `tls.certificateRefs` are parsed but not bound to Otoroshi certificates |
 | Dynamic listener provisioning | Not planned | Otoroshi uses a proxy-existing approach; ports must be pre-configured |
 
 @@@ note

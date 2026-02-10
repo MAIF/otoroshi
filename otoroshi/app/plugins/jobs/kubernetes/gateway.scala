@@ -21,8 +21,6 @@ import scala.util.{Failure, Success, Try}
 // TODO — Remaining work for full Gateway API compliance
 //
 // CRITICAL:
-// - [ ] TLS certificate resolution: resolve Gateway listener certificateRefs
-//       to Otoroshi Cert entities (reuse KubernetesCertSyncJob pattern)
 //
 // ROUTE TYPES:
 // - [ ] TLSRoute support (gateway.networking.k8s.io/v1alpha2)
@@ -156,10 +154,11 @@ object KubernetesGatewayApiJob {
    * 2. Fetch associated k8s resources (Services, Endpoints, Secrets)
    * 3. Fetch existing Otoroshi managed routes
    * 4. Reconcile GatewayClass -> update status
-   * 5. Reconcile Gateway -> validate listeners, update status
-   * 6. Reconcile HTTPRoute -> convert to NgRoute, save
-   * 7. Reconcile GRPCRoute -> convert to NgRoute (HTTP/2 targets), save
-   * 8. Delete orphaned Otoroshi routes
+   * 5. Resolve TLS certificates from HTTPS listener certificateRefs
+   * 6. Reconcile Gateway -> validate listeners + cert refs, update status
+   * 7. Reconcile HTTPRoute -> convert to NgRoute, save
+   * 8. Reconcile GRPCRoute -> convert to NgRoute (HTTP/2 targets), save
+   * 9. Delete orphaned Otoroshi routes
    */
   def syncGatewayApi(
       conf: KubernetesConfig,
@@ -193,25 +192,28 @@ object KubernetesGatewayApiJob {
         // ─── Phase 2: Reconcile GatewayClasses ──────────────────
         _ <- reconcileGatewayClasses(client, gatewayClasses, conf)
 
-        // ─── Phase 3: Reconcile Gateways ────────────────────────
-        acceptedGateways <- reconcileGateways(client, gateways, gatewayClasses, conf)
+        // ─── Phase 3: Resolve TLS certificates ──────────────────
+        resolvedCerts <- resolveGatewayCertificates(client, gateways, gatewayClasses, conf)
 
-        // ─── Phase 4: Reconcile HTTPRoutes ──────────────────────
+        // ─── Phase 4: Reconcile Gateways ────────────────────────
+        acceptedGateways <- reconcileGateways(client, gateways, gatewayClasses, conf, resolvedCerts)
+
+        // ─── Phase 5: Reconcile HTTPRoutes ──────────────────────
         httpGeneratedRoutes <- reconcileHTTPRoutes(
           client, httpRoutes, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
         )
 
-        // ─── Phase 5: Reconcile GRPCRoutes ──────────────────────
+        // ─── Phase 6: Reconcile GRPCRoutes ──────────────────────
         grpcGeneratedRoutes <- reconcileGRPCRoutes(
           client, grpcRoutes, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
         )
 
         generatedRoutes = httpGeneratedRoutes ++ grpcGeneratedRoutes
 
-        // ─── Phase 6: Save generated routes ─────────────────────
+        // ─── Phase 7: Save generated routes ─────────────────────
         _ <- saveGeneratedRoutes(generatedRoutes, managedRoutes)
 
-        // ─── Phase 7: Delete orphaned routes ────────────────────
+        // ─── Phase 8: Delete orphaned routes ────────────────────
         _ <- deleteOrphanedRoutes(generatedRoutes, managedRoutes)
 
         _ = logger.info(s"Gateway API sync done: ${generatedRoutes.size} routes generated " +
@@ -257,13 +259,86 @@ object KubernetesGatewayApiJob {
       .map(_ => ())
   }
 
+  // ─── Resolve Gateway TLS Certificates ────────────────────────────────────
+
+  /**
+   * Resolve TLS certificateRefs from HTTPS listeners.
+   *
+   * For each certificateRef, checks if the cert already exists in Otoroshi's
+   * cert store (using the kubernetes-certs-import ID convention). If missing,
+   * fetches the K8s TLS Secret and imports it via KubernetesCertSyncJob.importCerts.
+   *
+   * @return set of resolved cert paths "namespace/name"
+   */
+  private def resolveGatewayCertificates(
+      client: KubernetesClient,
+      gateways: Seq[KubernetesGateway],
+      gatewayClasses: Seq[KubernetesGatewayClass],
+      conf: KubernetesConfig
+  )(implicit env: Env, ec: ExecutionContext): Future[Set[String]] = {
+    val acceptedClassNames = gatewayClasses
+      .filter(_.controllerName == conf.gatewayApiControllerName)
+      .map(_.name)
+      .toSet
+    val ourGateways = gateways.filter(gw => acceptedClassNames.contains(gw.gatewayClassName))
+
+    // Collect unique (namespace, name) pairs from HTTPS listener certificateRefs
+    val certRefs: Seq[(String, String)] = ourGateways.flatMap { gw =>
+      gw.listeners
+        .filter(_.protocol == "HTTPS")
+        .flatMap { listener =>
+          listener.certificateRefs.map { ref =>
+            val ns   = (ref \ "namespace").asOpt[String].getOrElse(gw.namespace)
+            val name = (ref \ "name").as[String]
+            (ns, name)
+          }
+        }
+    }.distinct
+
+    if (certRefs.isEmpty) {
+      Future.successful(Set.empty[String])
+    } else {
+      Future
+        .sequence(certRefs.map { case (namespace, name) =>
+          val certId = s"kubernetes-certs-import-$namespace-$name".slugifyWithSlash
+          val path   = s"$namespace/$name"
+          env.datastores.certificatesDataStore.findById(certId).flatMap {
+            case Some(_) =>
+              // Cert already present in Otoroshi
+              Future.successful(Some(path))
+            case None =>
+              // Try to fetch and import from K8s
+              client.fetchSecret(namespace, name).flatMap {
+                case Some(secret) if secret.theType == "kubernetes.io/tls" =>
+                  val certSecret = secret.cert
+                  KubernetesCertSyncJob.importCerts(Seq(certSecret)).map { _ =>
+                    logger.info(s"Imported TLS certificate $path for Gateway API listener")
+                    Some(path)
+                  }
+                case Some(secret) =>
+                  logger.warn(s"Secret $path is not of type kubernetes.io/tls (got ${secret.theType}), skipping")
+                  Future.successful(None)
+                case None =>
+                  logger.warn(s"TLS Secret $path not found in Kubernetes, cannot resolve certificateRef")
+                  Future.successful(None)
+              }
+          }.recover { case e =>
+            logger.error(s"Failed to resolve certificate $path: ${e.getMessage}")
+            None
+          }
+        })
+        .map(_.flatten.toSet)
+    }
+  }
+
   // ─── Reconcile Gateways ───────────────────────────────────────────────────
 
   private def reconcileGateways(
       client: KubernetesClient,
       gateways: Seq[KubernetesGateway],
       gatewayClasses: Seq[KubernetesGatewayClass],
-      conf: KubernetesConfig
+      conf: KubernetesConfig,
+      resolvedCerts: Set[String]
   )(implicit ec: ExecutionContext): Future[Seq[KubernetesGateway]] = {
     val acceptedClassNames = gatewayClasses
       .filter(_.controllerName == conf.gatewayApiControllerName)
@@ -281,11 +356,28 @@ object KubernetesGatewayApiJob {
           }
           val protocolOk = Seq("HTTP", "HTTPS").contains(listener.protocol)
 
+          // Check TLS certificate resolution for HTTPS listeners
+          val (refsResolved, refsReason, refsMessage) = if (listener.protocol == "HTTPS" && listener.certificateRefs.nonEmpty) {
+            val unresolvedRefs = listener.certificateRefs.filterNot { ref =>
+              val ns   = (ref \ "namespace").asOpt[String].getOrElse(gw.namespace)
+              val name = (ref \ "name").as[String]
+              resolvedCerts.contains(s"$ns/$name")
+            }
+            if (unresolvedRefs.isEmpty) {
+              ("True", "ResolvedRefs", "All references resolved")
+            } else {
+              val names = unresolvedRefs.map(r => (r \ "name").as[String]).mkString(", ")
+              ("False", "InvalidCertificateRef", s"Certificate(s) not found: $names")
+            }
+          } else {
+            ("True", "ResolvedRefs", "References resolved")
+          }
+
           val conditions = if (portOk && protocolOk) {
             Json.arr(
               conditionJson("Accepted", "True", "Accepted", "Listener accepted"),
               conditionJson("Programmed", "True", "Programmed", "Listener programmed"),
-              conditionJson("ResolvedRefs", "True", "ResolvedRefs", "References resolved")
+              conditionJson("ResolvedRefs", refsResolved, refsReason, refsMessage)
             )
           } else if (!protocolOk) {
             Json.arr(
