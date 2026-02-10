@@ -21,8 +21,6 @@ import scala.util.{Failure, Success, Try}
 // TODO — Remaining work for full Gateway API compliance
 //
 // CRITICAL:
-// - [x] ReferenceGrant enforcement: cross-namespace backendRef validation
-//       (see isBackendRefAllowed / hasMatchingReferenceGrant in gateway_converter.scala)
 // - [ ] TLS certificate resolution: resolve Gateway listener certificateRefs
 //       to Otoroshi Cert entities (reuse KubernetesCertSyncJob pattern)
 //
