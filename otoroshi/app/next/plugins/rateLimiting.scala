@@ -53,6 +53,7 @@ object LocalTokensBucketStrategyConfig {
   val format = new Format[LocalTokensBucketStrategyConfig] {
     override def reads(json: JsValue): JsResult[LocalTokensBucketStrategyConfig] = Try {
       LocalTokensBucketStrategyConfig(
+        bucketKey = json.selectAsOptString("bucketKey").getOrElse(IdGenerator.uuid),
         capacity = json.selectAsOptLong("capacity").getOrElse(300),
         refillRequestIntervalMs = json.selectAsOptLong("refillRequestIntervalMs").getOrElse(50),
         refillRequestedTokens = json.selectAsOptLong("refillRequestedTokens").getOrElse(50),
@@ -92,13 +93,10 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
 
         val tokensToAdd     = timeElapsedSec * config.refillRatePerSecond
         val newBucketTokens = Math.min(config.capacity, oldBucket.tokens + tokensToAdd)
-        val availableTokens = Math.min(config.refillRequestedTokens, newBucketTokens)
 
-        if (availableTokens >= 1) {
-          println(s"Refilling bucket ${oldBucket.key} with ${availableTokens.toInt} tokens")
-          oldBucket.copy(tokens = availableTokens, lastRefillMs = currentTimeMs)
+        if (tokensToAdd > 0) {
+          oldBucket.copy(tokens = newBucketTokens, lastRefillMs = currentTimeMs)
         } else {
-          println("NO MORE TOKENS")
           oldBucket
         }
       }
@@ -163,12 +161,16 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
     askForRefill().flatMap { _ =>
       getDailyAndMonthlyQuotas(key, allowedQuotas)
         .flatMap(currentState => {
-          val tokensAfter = bucketRef.updateAndGet { current =>
-            current.copy(tokens = current.tokens - increment)
+          val tokensBefore = bucketRef.getAndUpdate { current =>
+            if (current.tokens >= increment) {
+              current.copy(tokens = current.tokens - increment)
+            } else {
+              current
+            }
           }
 
           val hadEnoughTokens =
-            tokensAfter.tokens >= 0 && currentState.daily.withinLimit && currentState.monthly.withinLimit
+            tokensBefore.tokens >= increment && currentState.daily.withinLimit && currentState.monthly.withinLimit
 
           if (hadEnoughTokens) {
             super
@@ -267,7 +269,8 @@ class LocalTokenBucket extends NgAccessValidator {
       .cachedConfig(internalName)(LocalTokensBucketStrategyConfig.format)
       .getOrElse(LocalTokensBucketStrategyConfig())
 
-    val key = config.bucketKey
+    val key =
+      RateLimiterUtils.getKey(config.bucketKey, ctx.request.some, ctx.attrs, ctx.route.some, ctx.apikey, ctx.user)
 
     val strategy = env.rateLimiter.getOrCreate(
       key,
@@ -434,7 +437,6 @@ trait ThrottlingStrategy {
                         case _  => Future.successful(())
                       }
     } yield {
-      println("dailyCalls", dailyCalls, "monthlyCalls", monthlyCalls)
       (dailyCalls, monthlyCalls)
     }
   }
@@ -624,19 +626,15 @@ object ThrottlingStrategy {
   def default(clientId: String) = LegacyThrottlingStrategy(clientId, LegacyThrottlingStrategyConfig())
 }
 
-class RateLimiter(env: Env) {
-  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-
-  val strategies = new UnboundedTrieMap[String, ThrottlingStrategy]()
-
-  private def getKey(
+object RateLimiterUtils {
+  def getKey(
       key: String,
       req: Option[RequestHeader] = None,
       attrs: TypedMap,
       route: Option[NgRoute] = None,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-  ) = {
+  )(implicit env: Env) = {
     GlobalExpressionLanguage.apply(
       value = key,
       req = req.orElse(attrs.get(otoroshi.plugins.Keys.RequestKey)),
@@ -649,6 +647,12 @@ class RateLimiter(env: Env) {
       env = env
     )
   }
+}
+
+class RateLimiter(env: Env) {
+  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+
+  val strategies = new UnboundedTrieMap[String, ThrottlingStrategy]()
 
   def getOrCreate(
       value: String,
@@ -660,7 +664,7 @@ class RateLimiter(env: Env) {
       throttlingStrategy: Option[ThrottlingStrategyConfig]
   ): ThrottlingStrategy = {
 
-    val key = getKey(value, req, attrs, route, apiKey, user)
+    val key = RateLimiterUtils.getKey(value, req, attrs, route, apiKey, user)(env)
 
     throttlingStrategy match {
       case Some(config) => getOrCreateWithConfig(key, config)

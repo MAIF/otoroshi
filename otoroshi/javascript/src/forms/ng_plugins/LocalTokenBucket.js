@@ -31,7 +31,7 @@ export default {
             <div className='col-sm-10'>
               <p className='m-1'>With these settings, the bucket refills <b>{refillRequestedTokens}</b> tokens every <b>{refillRequestIntervalMs}ms</b></p>
               <p className='m-1'>which means <b>{tokensPerSecond.toFixed(2)}</b> requests/second.</p>
-              <p className='m-1'>Starting from empty, the bucket fills to capacity ({capacity}) in <b>{timeToFillBucket.toFixed(2)}s</b>.</p>
+              <p className='m-1'>Starting at full capacity, the bucket fills to capacity ({capacity}) in <b>{timeToFillBucket.toFixed(2)}s</b>.</p>
             </div>
           </div>
         );
