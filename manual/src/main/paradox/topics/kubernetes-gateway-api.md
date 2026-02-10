@@ -15,7 +15,7 @@ The reconciliation loop runs as a background job and works as follows:
 1. **Fetch** all `GatewayClass`, `Gateway`, `HTTPRoute`, `GRPCRoute`, and `ReferenceGrant` resources from the Kubernetes API
 2. **Reconcile GatewayClasses** — accept classes whose `controllerName` matches Otoroshi's configured controller name
 3. **Reconcile Gateways** — validate that listener ports and protocols are compatible with Otoroshi's actual ports
-4. **Convert HTTPRoutes** — for each rule in each HTTPRoute, generate one `NgRoute` with the appropriate frontend (domains, paths, headers), backend (targets resolved from Kubernetes Services), and plugins (from HTTPRoute filters)
+4. **Convert HTTPRoutes** — for each rule in each HTTPRoute, generate one `NgRoute` with the appropriate frontend (domains, paths, headers), backend (targets resolved from Kubernetes Services with ReferenceGrant enforcement for cross-namespace refs), and plugins (from HTTPRoute filters)
 5. **Convert GRPCRoutes** — same as HTTPRoute but with gRPC method matching mapped to HTTP/2 paths (`/{service}/{method}`) and backend targets using HTTP/2 protocol
 6. **Save routes** — upsert generated routes and delete orphaned ones that are no longer defined
 
@@ -384,6 +384,105 @@ In this example:
 
 GRPCRoute supports the same filter types as HTTPRoute: `RequestHeaderModifier`, `ResponseHeaderModifier`, `RequestRedirect`, and `URLRewrite`.
 
+## ReferenceGrant (cross-namespace references)
+
+By default, a route can only reference backend Services in **its own namespace**. To reference a Service in a different namespace, a `ReferenceGrant` resource must exist in the **target namespace** (where the Service lives) that explicitly allows the reference.
+
+This is a critical security feature that prevents routes in one namespace from accessing Services in another namespace without explicit permission from the target namespace owner.
+
+### How it works
+
+When converting an HTTPRoute or GRPCRoute, Otoroshi checks each `backendRef`:
+
+1. If the backend Service is in the **same namespace** as the route, the reference is always allowed
+2. If the backend Service is in a **different namespace**, Otoroshi looks for a `ReferenceGrant` in the target namespace that:
+    - Allows the route's kind (`HTTPRoute` or `GRPCRoute`) from the route's namespace (in the `from` list)
+    - Allows referencing `Service` resources, optionally restricted to a specific name (in the `to` list)
+3. If no matching `ReferenceGrant` is found, the backend reference is **denied** and excluded from the generated route's targets
+
+The route's status condition `ResolvedRefs` is set to `False` with reason `RefNotPermitted` when any backend reference is denied.
+
+### Example
+
+Consider an HTTPRoute in namespace `frontend` that needs to route traffic to a Service `api-svc` in namespace `backend`:
+
+```yaml
+# HTTPRoute in namespace "frontend"
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: frontend-to-backend
+  namespace: frontend
+spec:
+  parentRefs:
+  - name: my-gateway
+    namespace: default
+  hostnames:
+  - "app.example.com"
+  rules:
+  - backendRefs:
+    - name: api-svc
+      namespace: backend
+      port: 80
+```
+
+Without a ReferenceGrant, this cross-namespace reference would be **denied**. To allow it, create a ReferenceGrant in the `backend` namespace:
+
+```yaml
+# ReferenceGrant in namespace "backend" — allows HTTPRoutes from "frontend" to reference Services
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-frontend
+  namespace: backend
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: frontend
+  to:
+  - group: ""
+    kind: Service
+    name: api-svc    # optional: omit to allow all Services in this namespace
+```
+
+### Wildcard grants
+
+If the `name` field is omitted in the `to` entry, the grant allows referencing **all** Services in that namespace:
+
+```yaml
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: frontend
+  to:
+  - group: ""
+    kind: Service
+    # no name = wildcard, allows all Services
+```
+
+### Multiple sources
+
+A single ReferenceGrant can allow references from multiple namespaces and route kinds:
+
+```yaml
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: frontend
+  - group: gateway.networking.k8s.io
+    kind: GRPCRoute
+    namespace: frontend
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: monitoring
+  to:
+  - group: ""
+    kind: Service
+```
+
 ## Generated NgRoute structure
 
 Each HTTPRoute or GRPCRoute rule generates one `NgRoute` in Otoroshi with a deterministic ID:
@@ -406,7 +505,7 @@ The controller updates the `status` subresource on each Gateway API object:
 
 - **GatewayClass**: `Accepted: True` when the `controllerName` matches, `Accepted: False` otherwise
 - **Gateway**: `Accepted: True/False` based on gatewayClassName, `Programmed: True/False` per-listener based on port/protocol validation
-- **HTTPRoute**: per-parent conditions `Accepted: True/False` and `ResolvedRefs: True` when the route is successfully converted
+- **HTTPRoute**: per-parent conditions `Accepted: True/False` and `ResolvedRefs: True/False`. When `ResolvedRefs` is `False`, the reason indicates the cause: `RefNotPermitted` (missing ReferenceGrant for cross-namespace reference) or `BackendNotFound` (Service does not exist)
 - **GRPCRoute**: same status conditions as HTTPRoute
 
 ## Current limitations
@@ -417,15 +516,14 @@ The following features are **not yet implemented** in the current experiments:
 |---------|--------|-------|
 | TLSRoute | Not implemented | Experimental in Gateway API spec |
 | TCPRoute / UDPRoute | Not implemented | Experimental in Gateway API spec |
-| ReferenceGrant enforcement | Not enforced | Cross-namespace backend refs are allowed without validation. ReferenceGrant resources are fetched but not checked. This is a critical security feature planned for the next iteration. |
 | RequestMirror filter | Not implemented | Traffic mirroring is not yet available |
 | ExtensionRef filter | Not implemented | Custom filter extensions |
 | Gateway addresses | Not implemented | The `spec.addresses` field is ignored |
 | Listener TLS certificate binding | Not implemented | `tls.certificateRefs` are parsed but not bound to Otoroshi certificates |
 | Dynamic listener provisioning | Not planned | Otoroshi uses a proxy-existing approach; ports must be pre-configured |
 
-@@@ warning
-**ReferenceGrant enforcement** is the most critical missing feature for production use. Without it, any HTTPRoute or GRPCRoute can reference backend Services in any namespace, bypassing Kubernetes namespace isolation. The implementation is designed to support this easily in a future release — the `ReferenceGrant` resources are already fetched and passed through the conversion pipeline.
+@@@ note
+**ReferenceGrant enforcement** is active. Cross-namespace backend references require a `ReferenceGrant` in the target namespace. See the @ref:[ReferenceGrant section](#referencegrant-cross-namespace-references) for details and examples.
 @@@
 
 ## Troubleshooting
