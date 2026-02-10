@@ -392,7 +392,7 @@ The following features are **not yet implemented** in the current experiments:
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| TLSRoute | Not implemented | Planned for a future release |
+| TLSRoute | Not implemented | Experimental in Gateway API spec |
 | TCPRoute / UDPRoute | Not implemented | Experimental in Gateway API spec |
 | ReferenceGrant enforcement | Not enforced | Cross-namespace backend refs are allowed without validation. ReferenceGrant resources are fetched but not checked. This is a critical security feature planned for the next iteration. |
 | Namespace label selector | Not implemented | `allowedRoutes.namespaces.from: Selector` is not yet supported |
