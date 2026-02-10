@@ -463,11 +463,13 @@ function LocalTokensBucketStrategyConfig({ value, onChange }) {
         schema: {
           daily: {
             type: 'number',
-            label: 'Daily',
+            label: 'Daily Request Quota',
+            help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.'
           },
           monthly: {
             type: 'number',
-            label: 'Monthly',
+            label: 'Monthly Request Quota',
+            help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.'
           }
         },
         flow: ['daily', 'monthly']
@@ -485,12 +487,18 @@ function LegacyThrottlingStrategyConfig({ value, onChange }) {
         schema: {
           window: {
             type: 'number',
+            label: 'Request Quota',
+            help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.'
           },
           daily: {
             type: 'number',
+            label: 'Daily Request Quota',
+            help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.'
           },
           monthly: {
             type: 'number',
+            label: 'Monthly Request Quota',
+            help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.'
           }
         },
         flow: ['window', 'daily', 'monthly']
@@ -498,10 +506,46 @@ function LegacyThrottlingStrategyConfig({ value, onChange }) {
     }} />
 }
 
+function FixedWindowStrategyConfig({ value, onChange }) {
+  return <NgForm value={value}
+    onChange={onChange}
+    schema={{
+      quota: {
+        type: 'form',
+        collapsable: false,
+        label: 'Allowed Quota',
+        schema: {
+          window: {
+            type: 'number',
+            label: 'Request Quota',
+            help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.'
+          },
+          daily: {
+            type: 'number',
+            label: 'Daily Request Quota',
+            help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.'
+          },
+          monthly: {
+            type: 'number',
+            label: 'Monthly Request Quota',
+            help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.'
+          }
+        },
+        flow: ['window', 'daily', 'monthly']
+      },
+      windowDurationMs: {
+        type: 'number',
+        label: 'Window Duration (ms)',
+        help: 'The time span of each fixed window in milliseconds. Requests are counted within each window, and throttling limits are applied per window.'
+      }
+    }} />
+}
+
 function ThrottlingStrategy({ value, onChange }) {
   const strategies = {
     LegacyThrottlingStrategyConfig,
-    LocalTokensBucketStrategyConfig
+    LocalTokensBucketStrategyConfig,
+    FixedWindowStrategyConfig
   };
 
   const Component = strategies[value.id]
@@ -516,6 +560,7 @@ function ThrottlingStrategy({ value, onChange }) {
           options: [
             { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
             { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
+            { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
           ],
         },
       }

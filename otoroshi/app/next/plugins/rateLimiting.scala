@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class LocalBucket(key: String = "", var tokens: Double = 0, var lastRefillMs: Long)
+case class LocalBucket(var tokens: Double = 0, var lastRefillMs: Long)
 
 case class LocalTokensBucketStrategyConfig(
     bucketKey: String = IdGenerator.uuid,
@@ -73,7 +73,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
 
   private val lastLeaderRequestTimeMs = new AtomicReference[Option[Long]](None)
   private val bucketRef               = new AtomicReference[LocalBucket](
-    LocalBucket(key = bucketId, tokens = config.capacity.toDouble, lastRefillMs = System.currentTimeMillis())
+    LocalBucket(tokens = config.capacity.toDouble, lastRefillMs = System.currentTimeMillis())
   )
 
   private def askForRefill(): Future[Unit] = {
@@ -156,7 +156,8 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
   override def checkAndIncrement(
       key: String,
       increment: Long,
-      allowedQuotas: AllowedQuota
+      allowedQuotas: AllowedQuota,
+      expirationSeconds: Int
   )(implicit env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
     askForRefill().flatMap { _ =>
       getDailyAndMonthlyQuotas(key, allowedQuotas)
@@ -190,7 +191,10 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
     }
   }
 
-  override def reset(key: String)(implicit env: Env, ec: ExecutionContext): Future[QuotaState] = {
+  override def reset(key: String, expirationSeconds: Int)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[QuotaState] = {
     val redisCli = env.datastores.redis
 
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
@@ -223,6 +227,159 @@ case class LegacyThrottlingStrategy(clientId: String, config: LegacyThrottlingSt
   override def monthlyQuotaKey(name: String)(implicit env: Env): String =
     s"${env.storageRoot}:apikey:quotas:monthly:$name"
   override def throttlingKey(name: String)(implicit env: Env): String   = s"${env.storageRoot}:apikey:quotas:second:$name"
+}
+
+case class FixedWindowStrategyConfig(
+    windowDurationMs: Long = 10000L,
+    quota: AllowedQuota = AllowedQuota()
+) extends ThrottlingStrategyConfig
+    with NgPluginConfig {
+  def id = "FixedWindowStrategyConfig"
+
+  override def json: JsValue = Json.obj("id" -> id, "quota" -> quota.json, "windowDurationMs" -> windowDurationMs)
+
+  override def fmt: Format[ThrottlingStrategyConfig] =
+    FixedWindowStrategyConfig.format.asInstanceOf[Format[ThrottlingStrategyConfig]]
+}
+
+object FixedWindowStrategyConfig {
+  val format = new Format[FixedWindowStrategyConfig] {
+    override def reads(json: JsValue): JsResult[FixedWindowStrategyConfig] = Try {
+      FixedWindowStrategyConfig(
+        windowDurationMs = json.selectAsOptLong("windowDurationMs").getOrElse(10000L),
+        quota = json.select("quota").as(AllowedQuota.fmt)
+      )
+    } match {
+      case Failure(exception) => JsError(exception.getMessage)
+      case Success(value)     => JsSuccess(value)
+    }
+    override def writes(o: FixedWindowStrategyConfig): JsValue             = o.json
+  }
+}
+
+case class FixedWindowBucket(
+    windowStart: Long,
+    count: Long
+)
+
+case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConfig) extends ThrottlingStrategy {
+
+  private val bucketRef = new AtomicReference[FixedWindowBucket](
+    FixedWindowBucket(windowStart = System.currentTimeMillis(), count = 0)
+  )
+
+  private def getDailyAndMonthlyQuotas(key: String, allowedQuotas: AllowedQuota)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[QuotaState] = {
+    val redisCli = env.datastores.redis
+
+    val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
+    val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+
+    for {
+      dailyCalls   <- redisCli.get(dailyQuotaKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+      monthlyCalls <- redisCli.get(monthlyQuotaKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
+    } yield {
+      val daily   = Quota(
+        limit = allowedQuotas.daily,
+        consumed = dailyCalls,
+        resetsAt = dayEnd.getMillis
+      )
+      val monthly = Quota(
+        limit = allowedQuotas.monthly,
+        consumed = monthlyCalls,
+        resetsAt = monthEnd.getMillis
+      )
+
+      QuotaState(
+        window = Quota(),
+        daily = daily,
+        monthly = monthly
+      )
+    }
+  }
+
+  override def check(key: String, allowedQuotas: AllowedQuota)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[ThrottlingResult] = {
+    getDailyAndMonthlyQuotas(key, allowedQuotas)
+      .map(state => {
+        val tokensAfter     = bucketRef.get().count
+        val hadEnoughTokens = tokensAfter > 0 && state.daily.withinLimit && state.monthly.withinLimit
+
+        ThrottlingResult(
+          allowed = hadEnoughTokens,
+          quotas = state
+        )
+      })
+  }
+
+  override def checkAndIncrement(key: String, increment: Long, allowedQuotas: AllowedQuota, expirationSeconds: Int)(
+      implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[ThrottlingResult] = {
+    val now = System.currentTimeMillis()
+
+    val before = bucketRef.getAndUpdate { current =>
+      if (now - current.windowStart >= config.windowDurationMs) {
+        FixedWindowBucket(windowStart = now, count = 0)
+      } else if (current.count < config.quota.window) {
+        current.copy(count = current.count + 1)
+      } else {
+        current
+      }
+    }
+
+    val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
+    val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+
+    val allowed = before.count < config.quota.window
+
+    if (allowed) {
+      super
+        .incrementDailyAndMonthly(key, increment)
+        .map { case (dailyCalls, monthyCalls) =>
+          ThrottlingResult(
+            allowed = true,
+            quotas = QuotaState(
+              window = Quota(
+                limit = config.quota.window,
+                consumed = before.count + increment,
+                resetsAt = now + Math.max(0, (config.windowDurationMs - now - before.windowStart))
+              ),
+              daily = Quota(
+                limit = config.quota.daily,
+                consumed = dailyCalls,
+                resetsAt = dayEnd.getMillis
+              ),
+              monthly = Quota(
+                limit = config.quota.monthly,
+                consumed = monthyCalls,
+                resetsAt = monthEnd.getMillis
+              )
+            )
+          )
+        }
+    } else {
+      quotas(key, expirationSeconds)
+        .map(quotas =>
+          ThrottlingResult(
+            allowed = false,
+            quotas = quotas.copy(
+              window = Quota(
+                limit = config.quota.window,
+                consumed = before.count,
+                resetsAt = now + Math.max(0, config.windowDurationMs - now - before.windowStart)
+              )
+            )
+          )
+        )
+    }
+  }
+
 }
 
 case class LegacyThrottlingStrategyConfig(quota: AllowedQuota = AllowedQuota())
@@ -283,7 +440,7 @@ class LocalTokenBucket extends NgAccessValidator {
     )
 
     strategy
-      .checkAndIncrement(key, 1, config.quota.copy(window = config.capacity))
+      .checkAndIncrement(key, 1, config.quota.copy(window = config.capacity), expirationSeconds = env.throttlingWindow)
       .flatMap { throttlingResult =>
         if (!throttlingResult.allowed)
           Errors
@@ -328,6 +485,7 @@ object ThrottlingStrategyConfig {
           value.selectAsOptString("id") match {
             case Some("LocalTokensBucketStrategyConfig") => LocalTokensBucketStrategyConfig.format.reads(value)
             case Some("LegacyThrottlingStrategyConfig")  => LegacyThrottlingStrategyConfig.format.reads(value)
+            case Some("FixedWindowStrategyConfig")       => FixedWindowStrategyConfig.format.reads(value)
             case None                                    => JsError("unknown type")
           }
       }
@@ -444,7 +602,8 @@ trait ThrottlingStrategy {
   def checkAndIncrement(
       key: String,
       increment: Long,
-      allowedQuotas: AllowedQuota
+      allowedQuotas: AllowedQuota,
+      expirationSeconds: Int
   )(implicit env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
     val redisCli = env.datastores.redis
 
@@ -459,7 +618,7 @@ trait ThrottlingStrategy {
       secCalls  <- redisCli.incrby(throttlingKey(key), increment)
       windowTTL <- redisCli.pttl(throttlingKey(key)).flatMap {
                      case -1  =>
-                       redisCli.expire(throttlingKey(key), env.throttlingWindow).map(_ => env.throttlingWindow * 1000L)
+                       redisCli.expire(throttlingKey(key), expirationSeconds).map(_ => expirationSeconds * 1000L)
                      case ttl => Future.successful(ttl)
                    }
 
@@ -492,7 +651,7 @@ trait ThrottlingStrategy {
     }
   }
 
-  def quotas(key: String)(implicit ec: ExecutionContext, env: Env): Future[QuotaState] = {
+  def quotas(key: String, expirationSeconds: Int)(implicit ec: ExecutionContext, env: Env): Future[QuotaState] = {
     val redisCli = env.datastores.redis
 
     val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
@@ -505,7 +664,7 @@ trait ThrottlingStrategy {
       monthlyCalls             <- redisCli.get(monthlyQuotaKey(key)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
       windowTTL                <- redisCli.pttl(throttlingKey(key)).flatMap {
                                     case -1  =>
-                                      redisCli.expire(throttlingKey(key), env.throttlingWindow).map(_ => env.throttlingWindow * 1000L)
+                                      redisCli.expire(throttlingKey(key), expirationSeconds).map(_ => expirationSeconds * 1000L)
                                     case ttl => Future.successful(ttl)
                                   }
     } yield {
@@ -571,7 +730,7 @@ trait ThrottlingStrategy {
     }
   }
 
-  def reset(key: String)(implicit env: Env, ec: ExecutionContext): Future[QuotaState] = {
+  def reset(key: String, expirationSeconds: Int)(implicit env: Env, ec: ExecutionContext): Future[QuotaState] = {
     val redisCli = env.datastores.redis
 
     val now        = System.currentTimeMillis()
@@ -583,12 +742,12 @@ trait ThrottlingStrategy {
     for {
       windowTTL <- redisCli.pttl(throttlingKey(key)).flatMap {
                      case -1  =>
-                       redisCli.expire(throttlingKey(key), env.throttlingWindow).map(_ => env.throttlingWindow * 1000L)
+                       redisCli.expire(throttlingKey(key), expirationSeconds).map(_ => expirationSeconds * 1000L)
                      case ttl => Future.successful(ttl)
                    }
       _         <- redisCli.set(totalCallsKey(key), "0")
       _         <- redisCli.pttl(throttlingKey(key)).filter(_ > -1).recoverWith { case _ =>
-                     redisCli.expire(throttlingKey(key), env.throttlingWindow)
+                     redisCli.expire(throttlingKey(key), expirationSeconds)
                    }
       _         <- redisCli.set(dailyQuotaKey(key), "0")
       _         <- redisCli.pttl(dailyQuotaKey(key)).filter(_ > -1).recoverWith { case _ =>
@@ -619,6 +778,20 @@ object ThrottlingStrategy {
           LocalTokensBucketStrategyConfig.format
             .reads(conf)
             .getOrElse(LocalTokensBucketStrategyConfig())
+        )
+      case "FixedWindowStrategyConfig"       =>
+        FixedWindowStrategy(
+          key,
+          FixedWindowStrategyConfig.format
+            .reads(conf)
+            .getOrElse(FixedWindowStrategyConfig())
+        )
+      case "LegacyThrottlingStrategyConfig"  =>
+        LegacyThrottlingStrategy(
+          key,
+          LegacyThrottlingStrategyConfig.format
+            .reads(conf)
+            .getOrElse(LegacyThrottlingStrategyConfig())
         )
     }
   }

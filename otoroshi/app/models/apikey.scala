@@ -2399,7 +2399,8 @@ object ApiKeyHelper {
                 .checkAndIncrement(
                   apikey.clientId,
                   1,
-                  apikey.throttlingStrategy.map(_.quota).getOrElse(AllowedQuota())
+                  apikey.throttlingStrategy.map(_.quota).getOrElse(AllowedQuota()),
+                  env.throttlingWindow
                 )
                 .flatMap {
                   case result if result.allowed =>

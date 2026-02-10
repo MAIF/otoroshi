@@ -853,7 +853,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
             None,
             apiKey.throttlingStrategy
           )
-          strategy.quotas(clientId).map(rq => Ok(rq.legacy().toJson))
+          strategy.quotas(clientId, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))
 //          apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
         }
       }
@@ -880,7 +880,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
             None,
             apiKey.throttlingStrategy
           )
-          strategy.reset(clientId).map(rq => Ok(rq.legacy().toJson))
+          strategy.reset(clientId, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))
 //          env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
         }
       }
