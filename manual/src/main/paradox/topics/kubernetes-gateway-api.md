@@ -571,9 +571,10 @@ The following features are **not yet implemented** in the current experiments:
 | Feature | Status | Notes |
 |---------|--------|-------|
 | TLSRoute | Not implemented | Experimental in Gateway API spec |
-| TCPRoute / UDPRoute | Not implemented | Experimental in Gateway API spec |
+| TCPRoute | Not implemented | Experimental in Gateway API spec |
+| UDPRoute | Not implemented | Experimental in Gateway API spec |
 | RequestMirror filter | Not implemented | Traffic mirroring is not yet available |
-| ExtensionRef filter | Not implemented | Custom filter extensions |
+| ExtensionRef filter  | Not implemented | Custom filter extensions |
 | Gateway addresses | Not implemented | The `spec.addresses` field is ignored |
 | Dynamic listener provisioning | Not planned | Otoroshi uses a proxy-existing approach; ports must be pre-configured |
 
