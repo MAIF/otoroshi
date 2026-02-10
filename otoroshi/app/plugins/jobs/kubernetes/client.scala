@@ -1369,6 +1369,36 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
 
+  def fetchGRPCRoutes(): Future[Seq[KubernetesGRPCRoute]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1/grpcroutes"
+        else s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/grpcroutes"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesGRPCRoute(item)).toSeq)
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/grpcroutes")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              // GRPCRoute CRDs may not be installed
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching grpcroutes: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
   def fetchReferenceGrants(): Future[Seq[KubernetesReferenceGrant]] = {
     asyncSequence(config.namespaces.map { namespace =>
       val path =
@@ -1461,6 +1491,27 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         else {
           resp.ignore()
           logger.debug(s"failed to update HTTPRoute status for $namespace/$name: ${resp.status}")
+          None
+        }
+      }
+  }
+
+  def updateGRPCRouteStatus(namespace: String, name: String, status: JsObject): Future[Option[JsValue]] = {
+    val cli: WSRequest = client(
+      s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/grpcroutes/$name/status",
+      false
+    )
+    cli
+      .addHttpHeaders(
+        "Accept"       -> "application/json",
+        "Content-Type" -> "application/merge-patch+json"
+      )
+      .patch(Json.obj("status" -> status))
+      .map { resp =>
+        if (resp.status == 200 || resp.status == 201) Some(resp.json)
+        else {
+          resp.ignore()
+          logger.debug(s"failed to update GRPCRoute status for $namespace/$name: ${resp.status}")
           None
         }
       }

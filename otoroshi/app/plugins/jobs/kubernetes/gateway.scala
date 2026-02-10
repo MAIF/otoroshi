@@ -27,7 +27,7 @@ import scala.util.{Failure, Success, Try}
 //       to Otoroshi Cert entities (reuse KubernetesCertSyncJob pattern)
 //
 // ROUTE TYPES:
-// - [ ] GRPCRoute support (gateway.networking.k8s.io/v1)
+// - [x] GRPCRoute support (gateway.networking.k8s.io/v1) — targets use HTTP/2
 // - [ ] TLSRoute support (gateway.networking.k8s.io/v1alpha2)
 // - [ ] TCPRoute support (gateway.networking.k8s.io/v1alpha2)
 // - [ ] UDPRoute support (gateway.networking.k8s.io/v1alpha2)
@@ -72,7 +72,7 @@ class KubernetesGatewayApiControllerJob extends Job {
   override def description: Option[String] =
     Some(
       s"""This plugin enables Kubernetes Gateway API support.
-         |It watches GatewayClass, Gateway, and HTTPRoute resources
+         |It watches GatewayClass, Gateway, HTTPRoute, and GRPCRoute resources
          |and translates them into Otoroshi NgRoute entities.
          |
          |```json
@@ -162,7 +162,8 @@ object KubernetesGatewayApiJob {
    * 4. Reconcile GatewayClass -> update status
    * 5. Reconcile Gateway -> validate listeners, update status
    * 6. Reconcile HTTPRoute -> convert to NgRoute, save
-   * 7. Delete orphaned Otoroshi routes
+   * 7. Reconcile GRPCRoute -> convert to NgRoute (HTTP/2 targets), save
+   * 8. Delete orphaned Otoroshi routes
    */
   def syncGatewayApi(
       conf: KubernetesConfig,
@@ -180,6 +181,7 @@ object KubernetesGatewayApiJob {
         gatewayClasses  <- client.fetchGatewayClasses()
         gateways        <- client.fetchGateways()
         httpRoutes      <- client.fetchHTTPRoutes()
+        grpcRoutes      <- client.fetchGRPCRoutes()
         referenceGrants <- client.fetchReferenceGrants()
         services        <- client.fetchServices()
         endpoints       <- client.fetchEndpoints()
@@ -198,17 +200,25 @@ object KubernetesGatewayApiJob {
         acceptedGateways <- reconcileGateways(client, gateways, gatewayClasses, conf)
 
         // ─── Phase 4: Reconcile HTTPRoutes ──────────────────────
-        generatedRoutes <- reconcileHTTPRoutes(
+        httpGeneratedRoutes <- reconcileHTTPRoutes(
           client, httpRoutes, acceptedGateways, services, endpoints, referenceGrants, conf
         )
 
-        // ─── Phase 5: Save generated routes ─────────────────────
+        // ─── Phase 5: Reconcile GRPCRoutes ──────────────────────
+        grpcGeneratedRoutes <- reconcileGRPCRoutes(
+          client, grpcRoutes, acceptedGateways, services, endpoints, referenceGrants, conf
+        )
+
+        generatedRoutes = httpGeneratedRoutes ++ grpcGeneratedRoutes
+
+        // ─── Phase 6: Save generated routes ─────────────────────
         _ <- saveGeneratedRoutes(generatedRoutes, managedRoutes)
 
-        // ─── Phase 6: Delete orphaned routes ────────────────────
+        // ─── Phase 7: Delete orphaned routes ────────────────────
         _ <- deleteOrphanedRoutes(generatedRoutes, managedRoutes)
 
-        _ = logger.info(s"Gateway API sync done: ${generatedRoutes.size} routes generated")
+        _ = logger.info(s"Gateway API sync done: ${generatedRoutes.size} routes generated " +
+          s"(${httpGeneratedRoutes.size} HTTP, ${grpcGeneratedRoutes.size} gRPC)")
       } yield ()
 
       result.andThen {
@@ -308,7 +318,8 @@ object KubernetesGatewayApiJob {
             "conditions"     -> conditions,
             "attachedRoutes" -> 0, // TODO: compute actual attached routes count
             "supportedKinds" -> Json.arr(
-              Json.obj("group" -> "gateway.networking.k8s.io", "kind" -> "HTTPRoute")
+              Json.obj("group" -> "gateway.networking.k8s.io", "kind" -> "HTTPRoute"),
+              Json.obj("group" -> "gateway.networking.k8s.io", "kind" -> "GRPCRoute")
             )
           )
         }
@@ -390,6 +401,66 @@ object KubernetesGatewayApiJob {
         val routeStatus = Json.obj("parents" -> JsArray(parentStatuses))
         client
           .updateHTTPRouteStatus(httpRoute.namespace, httpRoute.name, routeStatus)
+          .map(_ => generatedRoutes)
+      }
+      .runWith(Sink.seq)
+      .map(_.flatten)
+  }
+
+  // ─── Reconcile GRPCRoutes ──────────────────────────────────────────────────
+
+  private def reconcileGRPCRoutes(
+      client: KubernetesClient,
+      grpcRoutes: Seq[KubernetesGRPCRoute],
+      acceptedGateways: Seq[KubernetesGateway],
+      services: Seq[KubernetesService],
+      endpoints: Seq[KubernetesEndpoint],
+      referenceGrants: Seq[KubernetesReferenceGrant],
+      conf: KubernetesConfig
+  )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
+    implicit val mat = env.otoroshiMaterializer
+
+    Source(grpcRoutes.toList)
+      .mapAsync(1) { grpcRoute =>
+        val generatedRoutes = GatewayApiConverter.grpcRouteToNgRoutes(
+          grpcRoute, acceptedGateways, services, endpoints, referenceGrants, conf
+        )
+
+        val parentStatuses = grpcRoute.parentRefs.map { parentRef =>
+          val gwNamespace = parentRef.namespace.getOrElse(grpcRoute.namespace)
+          val gatewayFound = acceptedGateways.exists(gw =>
+            gw.name == parentRef.name && gw.namespace == gwNamespace
+          )
+          Json.obj(
+            "parentRef" -> Json.obj(
+              "group"     -> "gateway.networking.k8s.io",
+              "kind"      -> "Gateway",
+              "namespace" -> gwNamespace,
+              "name"      -> parentRef.name
+            ),
+            "controllerName" -> conf.gatewayApiControllerName,
+            "conditions"     -> Json.arr(
+              conditionJson(
+                "Accepted",
+                if (gatewayFound) "True" else "False",
+                if (gatewayFound) "Accepted" else "NoMatchingParent",
+                if (gatewayFound) "Route accepted"
+                else s"Gateway ${gwNamespace}/${parentRef.name} not found"
+              ),
+              conditionJson(
+                "ResolvedRefs",
+                if (generatedRoutes.nonEmpty) "True" else "False",
+                if (generatedRoutes.nonEmpty) "ResolvedRefs" else "BackendNotFound",
+                if (generatedRoutes.nonEmpty) "All references resolved"
+                else "Some backend references could not be resolved"
+              )
+            )
+          )
+        }
+
+        val routeStatus = Json.obj("parents" -> JsArray(parentStatuses))
+        client
+          .updateGRPCRouteStatus(grpcRoute.namespace, grpcRoute.name, routeStatus)
           .map(_ => generatedRoutes)
       }
       .runWith(Sink.seq)

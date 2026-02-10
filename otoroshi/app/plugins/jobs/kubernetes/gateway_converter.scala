@@ -1,7 +1,7 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import otoroshi.env.Env
-import otoroshi.models.{EntityLocation, RoundRobin}
+import otoroshi.models.{EntityLocation, HttpProtocols, RoundRobin}
 import otoroshi.next.models._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -12,6 +12,8 @@ import scala.concurrent.ExecutionContext
 object GatewayApiConverter {
 
   private val logger = Logger("otoroshi-plugins-kubernetes-gateway-api-converter")
+
+  // ─── HTTPRoute conversion ──────────────────────────────────────────────────
 
   /**
    * Converts an HTTPRoute into one or more NgRoute Otoroshi routes.
@@ -33,29 +35,64 @@ object GatewayApiConverter {
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): Seq[NgRoute] = {
 
-    val matchingGateways = resolveParentRefs(httpRoute, gateways, conf)
+    val matchingGateways = resolveParentRefs(httpRoute.parentRefs, httpRoute.namespace, gateways, conf)
     if (matchingGateways.isEmpty) {
       logger.warn(s"HTTPRoute ${httpRoute.path} has no matching gateways")
       return Seq.empty
     }
 
-    val effectiveHostnames = resolveEffectiveHostnames(httpRoute, matchingGateways)
+    val effectiveHostnames = resolveEffectiveHostnames(httpRoute.hostnames, matchingGateways)
 
     httpRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
       ruleToNgRoute(httpRoute, rule, ruleIdx, effectiveHostnames, services, endpoints, referenceGrants, conf)
     }
   }
 
+  // ─── GRPCRoute conversion ────────────────────────────────────────────────
+
   /**
-   * Resolves the parentRefs of an HTTPRoute to the matching Gateways+Listeners.
+   * Converts a GRPCRoute into one or more NgRoute Otoroshi routes.
+   *
+   * Similar to HTTPRoute conversion, but:
+   * - gRPC method matching is mapped to HTTP/2 path: /{service}/{method}
+   * - Backend targets use HTTP/2 protocol
+   */
+  def grpcRouteToNgRoutes(
+      grpcRoute: KubernetesGRPCRoute,
+      gateways: Seq[KubernetesGateway],
+      services: Seq[KubernetesService],
+      endpoints: Seq[KubernetesEndpoint],
+      referenceGrants: Seq[KubernetesReferenceGrant],
+      conf: KubernetesConfig
+  )(implicit env: Env, ec: ExecutionContext): Seq[NgRoute] = {
+
+    val matchingGateways = resolveParentRefs(grpcRoute.parentRefs, grpcRoute.namespace, gateways, conf)
+    if (matchingGateways.isEmpty) {
+      logger.warn(s"GRPCRoute ${grpcRoute.path} has no matching gateways")
+      return Seq.empty
+    }
+
+    val effectiveHostnames = resolveEffectiveHostnames(grpcRoute.hostnames, matchingGateways)
+
+    grpcRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
+      grpcRuleToNgRoute(grpcRoute, rule, ruleIdx, effectiveHostnames, services, endpoints, referenceGrants, conf)
+    }
+  }
+
+  // ─── Shared parent ref / hostname resolution ─────────────────────────────
+
+  /**
+   * Resolves parentRefs to matching Gateways+Listeners.
+   * Shared by HTTPRoute and GRPCRoute conversion.
    */
   private def resolveParentRefs(
-      httpRoute: KubernetesHTTPRoute,
+      parentRefs: Seq[HTTPRouteParentRef],
+      routeNamespace: String,
       gateways: Seq[KubernetesGateway],
       conf: KubernetesConfig
   ): Seq[(KubernetesGateway, GatewayListener)] = {
-    httpRoute.parentRefs.flatMap { parentRef =>
-      val gwNamespace = parentRef.namespace.getOrElse(httpRoute.namespace)
+    parentRefs.flatMap { parentRef =>
+      val gwNamespace = parentRef.namespace.getOrElse(routeNamespace)
       val gateway     = gateways.find(gw => gw.name == parentRef.name && gw.namespace == gwNamespace)
       gateway.toSeq.flatMap { gw =>
         val listeners = parentRef.sectionName match {
@@ -63,14 +100,14 @@ object GatewayApiConverter {
           case None     => gw.listeners
         }
         listeners
-          .filter(l => isListenerAcceptingRoute(l, httpRoute, gw))
+          .filter(l => isListenerAcceptingRoute(l, routeNamespace, gw))
           .map(l => (gw, l))
       }
     }
   }
 
   /**
-   * Checks if a listener accepts routes from the given route's namespace.
+   * Checks if a listener accepts routes from the given namespace.
    * Implements allowedRoutes.namespaces.from:
    * - "Same" (default): same namespace as the Gateway
    * - "All": all namespaces
@@ -78,12 +115,12 @@ object GatewayApiConverter {
    */
   private def isListenerAcceptingRoute(
       listener: GatewayListener,
-      route: KubernetesHTTPRoute,
+      routeNamespace: String,
       gateway: KubernetesGateway
   ): Boolean = {
     listener.allowedRoutesNamespacesFrom match {
       case "All"      => true
-      case "Same"     => route.namespace == gateway.namespace
+      case "Same"     => routeNamespace == gateway.namespace
       case "Selector" =>
         // TODO: implement label selector matching for allowedRoutes.namespaces.from: Selector
         logger.warn(
@@ -97,22 +134,22 @@ object GatewayApiConverter {
 
   /**
    * Computes effective hostnames by intersecting:
-   * - HTTPRoute hostnames
+   * - Route hostnames (HTTPRoute or GRPCRoute)
    * - Listener hostnames from attached gateways
    */
   private def resolveEffectiveHostnames(
-      httpRoute: KubernetesHTTPRoute,
+      routeHostnames: Seq[String],
       matchingGateways: Seq[(KubernetesGateway, GatewayListener)]
   ): Seq[String] = {
     val listenerHostnames = matchingGateways.flatMap(_._2.hostname).distinct
-    if (httpRoute.hostnames.isEmpty && listenerHostnames.isEmpty) {
+    if (routeHostnames.isEmpty && listenerHostnames.isEmpty) {
       Seq("*")
-    } else if (httpRoute.hostnames.isEmpty) {
+    } else if (routeHostnames.isEmpty) {
       listenerHostnames
     } else if (listenerHostnames.isEmpty) {
-      httpRoute.hostnames
+      routeHostnames
     } else {
-      httpRoute.hostnames.filter { rh =>
+      routeHostnames.filter { rh =>
         listenerHostnames.exists(lh => hostnameMatches(lh, rh))
       }
     }
@@ -153,7 +190,7 @@ object GatewayApiConverter {
 
     val domains = buildDomains(effectiveHostnames, rule)
     val targets = buildTargets(httpRoute, rule, services, endpoints, referenceGrants)
-    val plugins = buildPlugins(rule)
+    val plugins = buildPlugins(rule.filters)
 
     if (targets.isEmpty) {
       logger.warn(s"HTTPRoute ${httpRoute.path} rule $ruleIdx has no resolvable backends")
@@ -227,6 +264,163 @@ object GatewayApiConverter {
     Seq(route)
   }
 
+  // ─── GRPCRoute rule conversion ─────────────────────────────────────────────
+
+  /**
+   * Converts a single GRPCRouteRule into NgRoute(s).
+   * gRPC method matching is mapped to path: /{service}/{method}
+   * Targets use HTTP/2 protocol.
+   */
+  private def grpcRuleToNgRoute(
+      grpcRoute: KubernetesGRPCRoute,
+      rule: GRPCRouteRule,
+      ruleIdx: Int,
+      effectiveHostnames: Seq[String],
+      services: Seq[KubernetesService],
+      endpoints: Seq[KubernetesEndpoint],
+      referenceGrants: Seq[KubernetesReferenceGrant],
+      conf: KubernetesConfig
+  )(implicit env: Env): Seq[NgRoute] = {
+
+    val routeId = s"kubernetes-gateway-api-${grpcRoute.namespace}-${grpcRoute.name}-grpc-rule-$ruleIdx"
+      .replace("/", "-")
+      .replace(".", "-")
+    val routeName = s"${grpcRoute.namespace}/${grpcRoute.name} grpc rule $ruleIdx"
+
+    val domains = buildGrpcDomains(effectiveHostnames, rule)
+    val targets = buildGrpcTargets(grpcRoute, rule, services, endpoints, referenceGrants)
+    val plugins = buildPlugins(rule.filters)
+
+    if (targets.isEmpty) {
+      logger.warn(s"GRPCRoute ${grpcRoute.path} rule $ruleIdx has no resolvable backends")
+    }
+
+    // Determine if path is exact based on gRPC method matching
+    val isExact = rule.matches.exists { m =>
+      m.method.exists(mm => mm.service.isDefined && mm.method.isDefined && mm.matchType == "Exact")
+    }
+
+    val route = NgRoute(
+      location = EntityLocation(),
+      id = routeId,
+      name = routeName,
+      description = s"Generated from Gateway API GRPCRoute ${grpcRoute.path}",
+      tags = Seq.empty,
+      metadata = Map(
+        "otoroshi-provider"    -> "kubernetes-gateway-api",
+        "kubernetes-name"      -> grpcRoute.name,
+        "kubernetes-namespace" -> grpcRoute.namespace,
+        "kubernetes-path"      -> grpcRoute.path,
+        "kubernetes-uid"       -> grpcRoute.uid,
+        "gateway-api-kind"     -> "GRPCRoute"
+      ),
+      enabled = true,
+      debugFlow = false,
+      capture = false,
+      exportReporting = false,
+      groups = Seq("default"),
+      boundListeners = Seq.empty,
+      frontend = NgFrontend(
+        domains = domains,
+        headers = Map.empty,
+        query = Map.empty,
+        cookies = Map.empty,
+        methods = Seq("POST"), // gRPC always uses POST
+        stripPath = false,
+        exact = isExact
+      ),
+      backend = NgBackend(
+        targets = targets,
+        root = "/",
+        rewrite = false,
+        loadBalancing = RoundRobin,
+        healthCheck = None,
+        client = NgClientConfig()
+      ),
+      backendRef = None,
+      plugins = plugins
+    )
+
+    Seq(route)
+  }
+
+  /**
+   * Builds domains for GRPCRoute from hostnames and gRPC method matching.
+   * gRPC uses HTTP/2 paths: /{service}/{method}
+   */
+  private def buildGrpcDomains(hostnames: Seq[String], rule: GRPCRouteRule): Seq[NgDomainAndPath] = {
+    val paths = rule.matches.flatMap { m =>
+      m.method match {
+        case Some(mm) =>
+          val svc    = mm.service.getOrElse("*")
+          val method = mm.method.getOrElse("*")
+          if (svc == "*" && method == "*") Seq("/")
+          else if (method == "*") Seq(s"/$svc/")
+          else Seq(s"/$svc/$method")
+        case None => Seq("/")
+      }
+    }.distinct
+
+    if (paths.isEmpty || paths == Seq("/")) {
+      hostnames.map(NgDomainAndPath.apply)
+    } else {
+      for {
+        hostname <- hostnames
+        path     <- paths
+      } yield {
+        if (path == "/") NgDomainAndPath(hostname)
+        else NgDomainAndPath(s"$hostname$path")
+      }
+    }
+  }
+
+  /**
+   * Resolves GRPCRoute backendRefs to NgTarget with HTTP/2 protocol.
+   */
+  private def buildGrpcTargets(
+      grpcRoute: KubernetesGRPCRoute,
+      rule: GRPCRouteRule,
+      services: Seq[KubernetesService],
+      endpoints: Seq[KubernetesEndpoint],
+      referenceGrants: Seq[KubernetesReferenceGrant]
+  ): Seq[NgTarget] = {
+    rule.backendRefs.flatMap { backendRef =>
+      val backendKind = backendRef.kind.getOrElse("Service")
+      if (backendKind != "Service") {
+        logger.warn(s"Unsupported backendRef kind: $backendKind in GRPCRoute ${grpcRoute.path}")
+        Seq.empty
+      } else {
+        val svcNamespace = backendRef.namespace.getOrElse(grpcRoute.namespace)
+
+        if (!isBackendRefAllowed(backendRef, grpcRoute.namespace, grpcRoute.path, "GRPCRoute", referenceGrants)) {
+          Seq.empty
+        } else {
+          val svcPath = s"$svcNamespace/${backendRef.name}"
+          val service = services.find(_.path == svcPath)
+          service match {
+            case Some(svc) =>
+              val port = backendRef.port.getOrElse(50051)
+              Seq(NgTarget(
+                id = s"${svcPath}:$port",
+                hostname = svc.clusterIP,
+                port = port,
+                tls = false,
+                weight = backendRef.weight,
+                protocol = HttpProtocols.HTTP_2_0,
+                predicate = otoroshi.models.AlwaysMatch,
+                ipAddress = None
+              ))
+            case None =>
+              logger.warn(s"Service $svcPath not found for backendRef in GRPCRoute ${grpcRoute.path}")
+              Seq.empty
+          }
+        }
+      }
+    }
+  }
+
+  // ─── HTTPRoute rule conversion ────────────────────────────────────────────
+
   /**
    * Builds domains (NgDomainAndPath) from hostnames and matches.
    *
@@ -268,8 +462,7 @@ object GatewayApiConverter {
       } else {
         val svcNamespace = backendRef.namespace.getOrElse(httpRoute.namespace)
 
-        // Check cross-namespace reference (future ReferenceGrant enforcement)
-        if (!isBackendRefAllowed(backendRef, httpRoute, referenceGrants)) {
+        if (!isBackendRefAllowed(backendRef, httpRoute.namespace, httpRoute.path, "HTTPRoute", referenceGrants)) {
           Seq.empty
         } else {
           val svcPath = s"$svcNamespace/${backendRef.name}"
@@ -283,7 +476,7 @@ object GatewayApiConverter {
                 port = port,
                 tls = false,
                 weight = backendRef.weight,
-                protocol = otoroshi.models.HttpProtocols.HTTP_1_1,
+                protocol = HttpProtocols.HTTP_1_1,
                 predicate = otoroshi.models.AlwaysMatch,
                 ipAddress = None
               ))
@@ -304,26 +497,28 @@ object GatewayApiConverter {
    *
    * TODO (CRITICAL): Implement real ReferenceGrant enforcement.
    * When implementing, check:
-   *   - backendRef.namespace != httpRoute.namespace (cross-namespace)
+   *   - backendRef.namespace != routeNamespace (cross-namespace)
    *   - Look for a ReferenceGrant in backendRef.namespace that allows
-   *     from: [{group: gateway.networking.k8s.io, kind: HTTPRoute, namespace: httpRoute.namespace}]
+   *     from: [{group: gateway.networking.k8s.io, kind: routeKind, namespace: routeNamespace}]
    *     to: [{group: "", kind: Service}]
    *   - If no matching grant found, return false and set status ResolvedRefs=False, reason=RefNotPermitted
    */
   private def isBackendRefAllowed(
       backendRef: HTTPRouteBackendRef,
-      httpRoute: KubernetesHTTPRoute,
+      routeNamespace: String,
+      routePath: String,
+      routeKind: String,
       referenceGrants: Seq[KubernetesReferenceGrant]
   ): Boolean = {
-    val svcNamespace = backendRef.namespace.getOrElse(httpRoute.namespace)
-    if (svcNamespace != httpRoute.namespace) {
+    val svcNamespace = backendRef.namespace.getOrElse(routeNamespace)
+    if (svcNamespace != routeNamespace) {
       // Cross-namespace reference detected
       val hasGrant = referenceGrants.exists { grant =>
         grant.namespace == svcNamespace &&
         grant.from.exists(f =>
           f.group == "gateway.networking.k8s.io" &&
-          f.kind == "HTTPRoute" &&
-          f.namespace == httpRoute.namespace
+          f.kind == routeKind &&
+          f.namespace == routeNamespace
         ) &&
         grant.to.exists(t =>
           t.group == "" &&
@@ -333,7 +528,7 @@ object GatewayApiConverter {
       }
       if (!hasGrant) {
         logger.warn(
-          s"HTTPRoute ${httpRoute.path} references Service ${svcNamespace}/${backendRef.name} " +
+          s"$routeKind $routePath references Service ${svcNamespace}/${backendRef.name} " +
             s"across namespaces without a matching ReferenceGrant. " +
             s"Allowing for now (MVP), but this should be enforced."
         )
@@ -356,8 +551,8 @@ object GatewayApiConverter {
    * - RequestRedirect -> Redirection
    * - URLRewrite (hostname) -> AdditionalHeadersIn with Host header
    */
-  private def buildPlugins(rule: HTTPRouteRule): NgPlugins = {
-    val plugins = rule.filters.flatMap { filter =>
+  private def buildPlugins(filters: Seq[HTTPRouteFilter]): NgPlugins = {
+    val plugins = filters.flatMap { filter =>
       filter.filterType match {
 
         case "RequestHeaderModifier" =>

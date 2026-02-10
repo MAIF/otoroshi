@@ -124,6 +124,50 @@ case class KubernetesHTTPRoute(raw: JsValue) extends KubernetesEntity {
     .map(HTTPRouteRule.apply)
 }
 
+// ─── GRPCRoute ──────────────────────────────────────────────────────────────
+
+case class GRPCRouteMethodMatch(raw: JsValue) {
+  lazy val service: Option[String] = (raw \ "service").asOpt[String]
+  lazy val method: Option[String]  = (raw \ "method").asOpt[String]
+  lazy val matchType: String       = (raw \ "type").asOpt[String].getOrElse("Exact")
+}
+
+case class GRPCRouteMatch(raw: JsValue) {
+  lazy val method: Option[GRPCRouteMethodMatch] =
+    (raw \ "method").asOpt[JsValue].map(GRPCRouteMethodMatch.apply)
+  lazy val headers: Seq[JsObject] =
+    (raw \ "headers").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+}
+
+case class GRPCRouteRule(raw: JsValue) {
+  lazy val matches: Seq[GRPCRouteMatch] = (raw \ "matches")
+    .asOpt[Seq[JsValue]]
+    .getOrElse(Seq(Json.obj())) // default: match all
+    .map(GRPCRouteMatch.apply)
+  lazy val filters: Seq[HTTPRouteFilter] = (raw \ "filters")
+    .asOpt[Seq[JsValue]]
+    .getOrElse(Seq.empty)
+    .map(HTTPRouteFilter.apply)
+  lazy val backendRefs: Seq[HTTPRouteBackendRef] = (raw \ "backendRefs")
+    .asOpt[Seq[JsValue]]
+    .getOrElse(Seq.empty)
+    .map(HTTPRouteBackendRef.apply)
+}
+
+case class KubernetesGRPCRoute(raw: JsValue) extends KubernetesEntity {
+  lazy val parentRefs: Seq[HTTPRouteParentRef] = spec.select("parentRefs")
+    .asOpt[Seq[JsValue]]
+    .getOrElse(Seq.empty)
+    .map(HTTPRouteParentRef.apply)
+  lazy val hostnames: Seq[String] = spec.select("hostnames")
+    .asOpt[Seq[String]]
+    .getOrElse(Seq.empty)
+  lazy val rules: Seq[GRPCRouteRule] = spec.select("rules")
+    .asOpt[Seq[JsValue]]
+    .getOrElse(Seq.empty)
+    .map(GRPCRouteRule.apply)
+}
+
 // ─── ReferenceGrant ─────────────────────────────────────────────────────────
 // Fetched for future enforcement of cross-namespace references (CRITICAL TODO).
 // See gateway-api-implementation-plan-claude.md "ReferenceGrant — Future enforcement design"
