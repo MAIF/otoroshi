@@ -21,7 +21,6 @@ import scala.util.{Failure, Success, Try}
 // TODO — Remaining work for full Gateway API compliance
 //
 // FILTERS:
-// - [ ] RequestMirror filter support
 // - [ ] ExtensionRef filter support
 //
 // STATUS:

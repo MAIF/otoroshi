@@ -271,7 +271,14 @@ object GatewayApiConverter {
 
     val domains = buildDomains(effectiveHostnames, rule)
     val targets = buildTargets(httpRoute, rule, services, endpoints, referenceGrants)
-    val plugins = buildPlugins(rule.filters)
+    val plugins = buildPlugins(
+      filters = rule.filters,
+      routeNamespace = httpRoute.namespace,
+      routePath = httpRoute.path,
+      services = services,
+      endpoints = endpoints,
+      referenceGrants = referenceGrants,
+    )
 
     if (targets.isEmpty) {
       logger.warn(s"HTTPRoute ${httpRoute.path} rule $ruleIdx has no resolvable backends")
@@ -370,7 +377,14 @@ object GatewayApiConverter {
 
     val domains = buildGrpcDomains(effectiveHostnames, rule)
     val targets = buildGrpcTargets(grpcRoute, rule, services, endpoints, referenceGrants)
-    val plugins = buildPlugins(rule.filters)
+    val plugins = buildPlugins(
+      filters = rule.filters,
+      routeNamespace = grpcRoute.namespace,
+      routePath = grpcRoute.path,
+      services = services,
+      endpoints = endpoints,
+      referenceGrants = referenceGrants,
+    )
 
     if (targets.isEmpty) {
       logger.warn(s"GRPCRoute ${grpcRoute.path} rule $ruleIdx has no resolvable backends")
@@ -572,6 +586,46 @@ object GatewayApiConverter {
     }
   }
 
+  private def buildTargetFromBackendRef(
+    routeNamespace: String,
+    routePath: String,
+    backendRef: HTTPRouteBackendRef,
+    services: Seq[KubernetesService],
+    endpoints: Seq[KubernetesEndpoint],
+    referenceGrants: Seq[KubernetesReferenceGrant]
+  ): Option[NgTarget] = {
+    val backendKind = backendRef.kind.getOrElse("Service")
+    if (backendKind != "Service") {
+      logger.warn(s"Unsupported backendRef kind: $backendKind in HTTPRoute ${routePath}")
+      None
+    } else {
+      val svcNamespace = backendRef.namespace.getOrElse(routeNamespace)
+      if (!isBackendRefAllowed(backendRef, routeNamespace, routePath, "HTTPRoute", referenceGrants)) {
+        None
+      } else {
+        val svcPath = s"$svcNamespace/${backendRef.name}"
+        val service = services.find(_.path == svcPath)
+        service match {
+          case Some(svc) =>
+            val port = backendRef.port.getOrElse(80)
+            NgTarget(
+              id = s"${svcPath}:$port",
+              hostname = svc.clusterIP,
+              port = port,
+              tls = false,
+              weight = backendRef.weight,
+              protocol = HttpProtocols.HTTP_1_1,
+              predicate = otoroshi.models.AlwaysMatch,
+              ipAddress = None
+            ).some
+          case None      =>
+            logger.warn(s"Service $svcPath not found for backendRef in HTTPRoute ${routePath}")
+            None
+        }
+      }
+    }
+  }
+
   // ─── ReferenceGrant enforcement ─────────────────────────────────────────────
   //
   // The Gateway API specification (GEP-709) defines ReferenceGrant as a security
@@ -730,7 +784,14 @@ object GatewayApiConverter {
    * - RequestRedirect -> Redirection
    * - URLRewrite (hostname) -> AdditionalHeadersIn with Host header
    */
-  private def buildPlugins(filters: Seq[HTTPRouteFilter]): NgPlugins = {
+  private def buildPlugins(
+      filters: Seq[HTTPRouteFilter],
+      routeNamespace: String,
+      routePath: String,
+      services: Seq[KubernetesService],
+      endpoints: Seq[KubernetesEndpoint],
+      referenceGrants: Seq[KubernetesReferenceGrant]
+  ): NgPlugins = {
     val plugins = filters.flatMap { filter =>
       filter.filterType match {
 
@@ -817,6 +878,34 @@ object GatewayApiConverter {
               )
             }
             // Path rewriting is handled in ruleToNgRoute via stripPath + backend.root
+          }
+
+        case "RequestMirror" =>
+          filter.requestMirror.toSeq.flatMap { rewrite =>
+            val percent = (rewrite \ "percent").asOpt[Int].map(_.toDouble)
+            val fraction = (rewrite \ "fraction").asOpt[JsObject]
+            val finalPercent: Double = percent.orElse {
+              for {
+                fr <- fraction
+                numerator <- (fr \ "numerator").asOpt[Int].map(_.toDouble)
+                denominator <- (fr \ "denominator").asOpt[Int].map(_.toDouble)
+              } yield numerator / denominator
+            }.getOrElse(100.0)
+            val backendRef = HTTPRouteBackendRef((rewrite \ "backendRef").asObject)
+            buildTargetFromBackendRef(routeNamespace, routePath, backendRef, services, endpoints, referenceGrants).map { target =>
+              NgPluginInstance(
+                plugin = "cp:otoroshi.next.plugins.NgTrafficMirroring",
+                enabled = true,
+                config = NgPluginInstanceConfig(Json.obj(
+                  "to"               -> target.baseUrl,
+                  "enabled"          -> true,
+                  "capture_response" -> false,
+                  "generate_events"  -> false,
+                  "headers"          -> Map.empty[String, String],
+                  "percentage"       -> finalPercent,
+                ))
+              )
+            }
           }
 
         case other =>
