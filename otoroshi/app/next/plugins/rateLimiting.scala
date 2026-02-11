@@ -486,7 +486,14 @@ class FixedWindow extends NgAccessValidator {
       .getOrElse(FixedWindowStrategyConfig())
 
     val key =
-      RateLimiterUtils.getKey(config.bucketKey, ctx.request.some, ctx.attrs, ctx.route.some, ctx.apikey, ctx.user)
+      RateLimiterUtils.getKey(
+        config.bucketKey.getOrElse(""),
+        ctx.request.some,
+        ctx.attrs,
+        ctx.route.some,
+        ctx.apikey,
+        ctx.user
+      )
 
     val strategy = env.rateLimiter.getOrCreate(
       key,
@@ -499,7 +506,12 @@ class FixedWindow extends NgAccessValidator {
     )
 
     strategy
-      .checkAndIncrement(key, 1, config.quota.copy(window = config.capacity), expirationSeconds = env.throttlingWindow)
+      .checkAndIncrement(
+        key,
+        1,
+        config.quota.copy(window = config.quota.window),
+        expirationSeconds = env.throttlingWindow
+      )
       .flatMap { throttlingResult =>
         if (!throttlingResult.allowed)
           Errors

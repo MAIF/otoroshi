@@ -510,6 +510,11 @@ function FixedWindowStrategyConfig({ value, onChange }) {
   return <NgForm value={value}
     onChange={onChange}
     schema={{
+      windowDurationMs: {
+        type: 'number',
+        label: 'Window Duration (ms)',
+        help: 'The time span of each fixed window in milliseconds. Requests are counted within each window, and throttling limits are applied per window.'
+      },
       quota: {
         type: 'form',
         collapsable: false,
@@ -532,11 +537,6 @@ function FixedWindowStrategyConfig({ value, onChange }) {
           }
         },
         flow: ['window', 'daily', 'monthly']
-      },
-      windowDurationMs: {
-        type: 'number',
-        label: 'Window Duration (ms)',
-        help: 'The time span of each fixed window in milliseconds. Requests are counted within each window, and throttling limits are applied per window.'
       }
     }} />
 }

@@ -152,6 +152,7 @@ import LocalTokenBucket from './LocalTokenBucket'
 
 import NgApiFrontend from './NgApiFrontend';
 import NgApiBackend from './NgApiBackend';
+import FixedWindow from './FixedWindow';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -179,6 +180,7 @@ const pluginsArray = [
   EurekaServerSink,
   EurekaTarget,
   ExternalEurekaTarget,
+  FixedWindow,
   ForceHttpsTraffic,
   ForwardedHeader,
   GlobalMaintenanceMode,
