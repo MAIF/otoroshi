@@ -517,39 +517,39 @@ object GatewayApiConverter {
       protocol: HttpProtocol,
       endpointSlices: Seq[KubernetesEndpointSlice]
   ): Option[Seq[NgTarget]] = {
-    val slices = endpointSlices.filter(es =>
-      es.namespace == serviceNamespace &&
-      es.serviceName.contains(serviceName)
-    )
-    if (slices.isEmpty) {
-      None
-    } else {
-      val targets = slices.flatMap { slice =>
-        // Resolve the actual port from the EndpointSlice port definitions.
-        // The backendRef specifies a port number; we match it against the
-        // EndpointSlice ports (which may remap to a different targetPort).
-        val resolvedPort = slice.ports
-          .find(p => p.port.contains(port))
-          .flatMap(_.port)
-          .getOrElse(port)
-
-        slice.endpoints.filter(_.ready).flatMap { ep =>
-          ep.addresses.map { address =>
-            NgTarget(
-              id = s"$serviceNamespace/$serviceName:$resolvedPort/$address",
-              hostname = address,
-              port = resolvedPort,
-              tls = false,
-              weight = weight,
-              protocol = protocol,
-              predicate = otoroshi.models.AlwaysMatch,
-              ipAddress = None
-            )
-          }
-        }
-      }
-      if (targets.isEmpty) None else Some(targets)
-    }
+    None // TODO: does not seems to work - FIXME
+    //val slices = endpointSlices.filter(es =>
+    //  es.namespace == serviceNamespace &&
+    //  es.serviceName.contains(serviceName)
+    //)
+    //if (slices.isEmpty) {
+    //  None
+    //} else {
+    //  val targets = slices.flatMap { slice =>
+    //    // Resolve the actual port from the EndpointSlice port definitions.
+    //    // The backendRef specifies a port number; we match it against the
+    //    // EndpointSlice ports (which may remap to a different targetPort).
+    //    val resolvedPort = slice.ports
+    //      .find(p => p.port.contains(port))
+    //      .flatMap(_.port)
+    //      .getOrElse(port)
+    //    slice.endpoints.filter(_.ready).flatMap { ep =>
+    //      ep.addresses.map { address =>
+    //        NgTarget(
+    //          id = s"$serviceNamespace/$serviceName:$resolvedPort/$address",
+    //          hostname = address,
+    //          port = resolvedPort,
+    //          tls = false,
+    //          weight = weight,
+    //          protocol = protocol,
+    //          predicate = otoroshi.models.AlwaysMatch,
+    //          ipAddress = None
+    //        )
+    //      }
+    //    }
+    //  }
+    //  if (targets.isEmpty) None else Some(targets)
+    //}
   }
 
   /**

@@ -498,8 +498,8 @@ object KubernetesGatewayApiJob {
       .sequence(ourGateways.map { gw =>
         val listenerStatuses = gw.listeners.map { listener =>
           val portOk = listener.protocol match {
-            case "HTTP"  => listener.port == conf.gatewayApiHttpListenerPort
-            case "HTTPS" => listener.port == conf.gatewayApiHttpsListenerPort
+            case "HTTP"  => conf.gatewayApiHttpListenerPort.contains(listener.port)
+            case "HTTPS" => conf.gatewayApiHttpsListenerPort.contains(listener.port)
             case _       => false
           }
           val protocolOk = Seq("HTTP", "HTTPS").contains(listener.protocol)
@@ -547,7 +547,7 @@ object KubernetesGatewayApiJob {
                 "False",
                 "PortUnavailable",
                 s"Port ${listener.port} does not match Otoroshi listener ports " +
-                  s"(HTTP:${conf.gatewayApiHttpListenerPort}, HTTPS:${conf.gatewayApiHttpsListenerPort})",
+                  s"(HTTP:${conf.gatewayApiHttpListenerPort.mkString(",")}, HTTPS:${conf.gatewayApiHttpsListenerPort.mkString(",")})",
                 gwGeneration
               ),
               conditionJson("Programmed", "False", "Invalid", "Listener not programmed", gwGeneration)
