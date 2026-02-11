@@ -17,14 +17,6 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TODO — Remaining work for full Gateway API compliance
-//
-// ADVANCED:
-// - [x] Support otoroshi specific settings on routes through json serialized annotations (mostly route flags and additional_plugins array)
-// - [ ] Conformance test suite (gateway-api conformance tests)
-// ─────────────────────────────────────────────────────────────────────────────
-
 class KubernetesGatewayApiControllerJob extends Job {
 
   private val logger           = Logger("otoroshi-plugins-kubernetes-gateway-api-job")
