@@ -78,8 +78,8 @@ case class KubernetesConfig(
     templates: JsObject,
     gatewayApi: Boolean,
     gatewayApiControllerName: String,
-    gatewayApiHttpListenerPort: Int,
-    gatewayApiHttpsListenerPort: Int,
+    gatewayApiHttpListenerPort: Seq[Int],
+    gatewayApiHttpsListenerPort: Seq[Int],
     gatewayApiSyncIntervalSeconds: Long
 )
 
@@ -280,8 +280,14 @@ object KubernetesConfig {
           gatewayApi = (conf \ "gatewayApi").asOpt[Boolean].getOrElse(false),
           gatewayApiControllerName = (conf \ "gatewayApiControllerName").asOpt[String]
             .getOrElse("otoroshi.io/gateway-controller"),
-          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].getOrElse(8080),
-          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort").asOpt[Int].getOrElse(8443),
+          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].map(v => Seq(v))
+            .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
+            .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[Seq[Int]])
+            .getOrElse(Seq(8080)),
+          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort").asOpt[Int].map(v => Seq(v))
+            .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
+            .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
+            .getOrElse(Seq(8443)),
           gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L)
         )
       }
@@ -382,8 +388,14 @@ object KubernetesConfig {
           gatewayApi = (conf \ "gatewayApi").asOpt[Boolean].getOrElse(false),
           gatewayApiControllerName = (conf \ "gatewayApiControllerName").asOpt[String]
             .getOrElse("otoroshi.io/gateway-controller"),
-          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].getOrElse(8080),
-          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort").asOpt[Int].getOrElse(8443),
+          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].map(v => Seq(v))
+            .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
+            .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[Seq[Int]])
+            .getOrElse(Seq(8080)),
+          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort").asOpt[Int].map(v => Seq(v))
+            .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
+            .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
+            .getOrElse(Seq(8443)),
           gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L)
         )
       }
