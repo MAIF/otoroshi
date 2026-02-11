@@ -23,7 +23,6 @@ import scala.util.{Failure, Success, Try}
 // STATUS:
 // - [ ] Gateway addresses status (report Otoroshi's external IP/hostname)
 // - [ ] Listener attachedRoutes count in Gateway status
-// - [ ] observedGeneration tracking on all status conditions
 // - [ ] Conflict detection on listener hostname/port collisions
 //
 // ADVANCED:
@@ -518,11 +517,13 @@ object KubernetesGatewayApiJob {
             ("True", "ResolvedRefs", "References resolved")
           }
 
+          val gwGeneration = gw.raw.select("metadata").select("generation").asOpt[Long]
+
           val conditions = if (portOk && protocolOk) {
             Json.arr(
-              conditionJson("Accepted", "True", "Accepted", "Listener accepted"),
-              conditionJson("Programmed", "True", "Programmed", "Listener programmed"),
-              conditionJson("ResolvedRefs", refsResolved, refsReason, refsMessage)
+              conditionJson("Accepted", "True", "Accepted", "Listener accepted", gwGeneration),
+              conditionJson("Programmed", "True", "Programmed", "Listener programmed", gwGeneration),
+              conditionJson("ResolvedRefs", refsResolved, refsReason, refsMessage, gwGeneration)
             )
           } else if (!protocolOk) {
             Json.arr(
@@ -530,9 +531,10 @@ object KubernetesGatewayApiJob {
                 "Accepted",
                 "False",
                 "UnsupportedProtocol",
-                s"Protocol ${listener.protocol} not supported"
+                s"Protocol ${listener.protocol} not supported",
+                gwGeneration
               ),
-              conditionJson("Programmed", "False", "Invalid", "Listener not programmed")
+              conditionJson("Programmed", "False", "Invalid", "Listener not programmed", gwGeneration)
             )
           } else {
             Json.arr(
@@ -541,9 +543,10 @@ object KubernetesGatewayApiJob {
                 "False",
                 "PortUnavailable",
                 s"Port ${listener.port} does not match Otoroshi listener ports " +
-                  s"(HTTP:${conf.gatewayApiHttpListenerPort}, HTTPS:${conf.gatewayApiHttpsListenerPort})"
+                  s"(HTTP:${conf.gatewayApiHttpListenerPort}, HTTPS:${conf.gatewayApiHttpsListenerPort})",
+                gwGeneration
               ),
-              conditionJson("Programmed", "False", "Invalid", "Listener not programmed")
+              conditionJson("Programmed", "False", "Invalid", "Listener not programmed", gwGeneration)
             )
           }
 
@@ -559,19 +562,22 @@ object KubernetesGatewayApiJob {
         }
 
         val gatewayAccepted = listenerStatuses.nonEmpty
+        val gwGen = gw.raw.select("metadata").select("generation").asOpt[Long]
         val gatewayStatus = Json.obj(
           "conditions" -> Json.arr(
             conditionJson(
               "Accepted",
               if (gatewayAccepted) "True" else "False",
               if (gatewayAccepted) "Accepted" else "NotReconciled",
-              if (gatewayAccepted) "Gateway accepted by Otoroshi" else "No valid listeners"
+              if (gatewayAccepted) "Gateway accepted by Otoroshi" else "No valid listeners",
+              gwGen
             ),
             conditionJson(
               "Programmed",
               if (gatewayAccepted) "True" else "False",
               if (gatewayAccepted) "Programmed" else "NotReconciled",
-              if (gatewayAccepted) "Gateway programmed" else "Gateway not programmed"
+              if (gatewayAccepted) "Gateway programmed" else "Gateway not programmed",
+              gwGen
             )
           ),
           "listeners" -> JsArray(listenerStatuses)
@@ -606,6 +612,7 @@ object KubernetesGatewayApiJob {
         )
         val generatedRoutes = result.routes
 
+        val httpRouteGen = httpRoute.raw.select("metadata").select("generation").asOpt[Long]
         val parentStatuses = httpRoute.parentRefs.map { parentRef =>
           val gwNamespace = parentRef.namespace.getOrElse(httpRoute.namespace)
           val gatewayFound = acceptedGateways.exists(gw =>
@@ -640,9 +647,10 @@ object KubernetesGatewayApiJob {
                 if (gatewayFound) "True" else "False",
                 if (gatewayFound) "Accepted" else "NoMatchingParent",
                 if (gatewayFound) "Route accepted"
-                else s"Gateway ${gwNamespace}/${parentRef.name} not found"
+                else s"Gateway ${gwNamespace}/${parentRef.name} not found",
+                httpRouteGen
               ),
-              conditionJson("ResolvedRefs", resolvedStatus, resolvedReason, resolvedMessage)
+              conditionJson("ResolvedRefs", resolvedStatus, resolvedReason, resolvedMessage, httpRouteGen)
             )
           )
         }
@@ -681,6 +689,7 @@ object KubernetesGatewayApiJob {
         )
         val generatedRoutes = result.routes
 
+        val grpcRouteGen = grpcRoute.raw.select("metadata").select("generation").asOpt[Long]
         val parentStatuses = grpcRoute.parentRefs.map { parentRef =>
           val gwNamespace = parentRef.namespace.getOrElse(grpcRoute.namespace)
           val gatewayFound = acceptedGateways.exists(gw =>
@@ -712,9 +721,10 @@ object KubernetesGatewayApiJob {
                 if (gatewayFound) "True" else "False",
                 if (gatewayFound) "Accepted" else "NoMatchingParent",
                 if (gatewayFound) "Route accepted"
-                else s"Gateway ${gwNamespace}/${parentRef.name} not found"
+                else s"Gateway ${gwNamespace}/${parentRef.name} not found",
+                grpcRouteGen
               ),
-              conditionJson("ResolvedRefs", resolvedStatus, resolvedReason, resolvedMessage)
+              conditionJson("ResolvedRefs", resolvedStatus, resolvedReason, resolvedMessage, grpcRouteGen)
             )
           )
         }
