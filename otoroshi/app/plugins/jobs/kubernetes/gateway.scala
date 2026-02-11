@@ -31,7 +31,7 @@ import scala.util.{Failure, Success, Try}
 //
 // ADVANCED:
 // - [ ] Endpoint slice resolution (instead of clusterIP only)
-// - [ ] Support otoroshi specific settings through annotations
+// - [ ] Support otoroshi specific settings through annotations (mostly flags and plugins)
 // - [ ] Conformance test suite (gateway-api conformance tests)
 // ─────────────────────────────────────────────────────────────────────────────
 
