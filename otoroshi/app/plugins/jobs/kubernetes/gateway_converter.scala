@@ -290,10 +290,10 @@ object GatewayApiConverter {
             val replacement = (pr \ "replacePrefixMatch").asOpt[String].getOrElse("/")
             (true, replacement)
           case Some(pr) if (pr \ "type").asOpt[String].contains("ReplaceFullPath") =>
-            logger.warn(
-              s"HTTPRoute ${httpRoute.path} rule $ruleIdx uses ReplaceFullPath which is not fully supported, " +
-                "using path as backend root"
-            )
+            // logger.warn(
+            //   s"HTTPRoute ${httpRoute.path} rule $ruleIdx uses ReplaceFullPath which is not fully supported, " +
+            //     "using path as backend root"
+            // )
             val replacement = (pr \ "replaceFullPath").asOpt[String].getOrElse("/")
             (false, replacement)
           case _ => (false, "/")

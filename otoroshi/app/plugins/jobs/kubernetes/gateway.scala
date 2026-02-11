@@ -23,8 +23,6 @@ import scala.util.{Failure, Success, Try}
 // FILTERS:
 // - [ ] RequestMirror filter support
 // - [ ] ExtensionRef filter support
-// - [ ] URLRewrite replaceFullPath (currently partial support)
-// - [ ] URLRewrite complex replacePrefixMatch patterns
 //
 // STATUS:
 // - [ ] Gateway addresses status (report Otoroshi's external IP/hostname)
