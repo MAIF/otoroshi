@@ -26,7 +26,7 @@ rules:
     verbs: [get, list, watch]
   # Gateway API — read resources
   - apiGroups: [gateway.networking.k8s.io]
-    resources: [gatewayclasses, gateways, httproutes, grpcroutes, referencegrants]
+    resources: [gatewayclasses, gateways, httproutes, grpcroutes, referencegrants, backendtlspolicies]
     verbs: [get, list, watch]
   # Gateway API — update status subresources
   - apiGroups: [gateway.networking.k8s.io]

@@ -1372,7 +1372,7 @@ First, install the Gateway API CRDs on your cluster:
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
 ```
 
-Make sure the Otoroshi ServiceAccount has RBAC permissions for Gateway API resources (`gatewayclasses`, `gateways`, `httproutes`, `grpcroutes`, `referencegrants` and their status subresources).
+Make sure the Otoroshi ServiceAccount has RBAC permissions for Gateway API resources (`gatewayclasses`, `gateways`, `httproutes`, `grpcroutes`, `referencegrants`, `backendtlspolicies` and their status subresources).
 
 Then enable the Gateway API controller job in your Otoroshi deployment configuration:
 
