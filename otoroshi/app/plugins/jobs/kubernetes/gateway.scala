@@ -32,6 +32,7 @@ import scala.util.{Failure, Success, Try}
 // ADVANCED:
 // - [ ] BackendTLSPolicy support
 // - [ ] Endpoint slice resolution (instead of clusterIP only)
+// - [ ] Support otoroshi specific settings through annotations
 // - [ ] Conformance test suite (gateway-api conformance tests)
 // ─────────────────────────────────────────────────────────────────────────────
 
