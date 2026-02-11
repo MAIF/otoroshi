@@ -221,3 +221,9 @@ case class KubernetesBackendTLSPolicy(raw: JsValue) extends KubernetesEntity {
     .asOpt[JsValue]
     .map(BackendTLSPolicyValidation.apply)
 }
+
+// ─── Plugin (proxy.otoroshi.io/v1) ──────────────────────────────────────────
+// Custom Otoroshi CRD for injecting NgPluginInstance via ExtensionRef filters.
+// The spec maps directly to NgPluginInstance.readFrom() fields.
+
+case class KubernetesPlugin(raw: JsValue) extends KubernetesEntity

@@ -1391,6 +1391,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     val backendTLSPolicySource = watchResources(
       namespaces, Seq("backendtlspolicies"), "gateway.networking.k8s.io/v1alpha3", timeout, stop
     )
+    val pluginSource = watchResources(
+      namespaces, Seq("plugins"), "proxy.otoroshi.io/v1", timeout, stop
+    )
     val kubeSource = watchKubeResources(
       namespaces, Seq("secrets", "services", "endpoints"), timeout, stop
     )
@@ -1398,6 +1401,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .merge(v1NamespacedSource)
       .merge(referenceGrantSource)
       .merge(backendTLSPolicySource)
+      .merge(pluginSource)
       .merge(kubeSource)
   }
 
@@ -1582,6 +1586,36 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             } else {
               resp.ignore()
               logger.debug(s"bad http status while fetching backendtlspolicies: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  def fetchPlugins(): Future[Seq[KubernetesPlugin]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/proxy.otoroshi.io/v1/plugins"
+        else s"/apis/proxy.otoroshi.io/v1/namespaces/$namespace/plugins"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesPlugin(item)).toSeq)
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("proxy.otoroshi.io/plugins")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              // Plugin CRDs may not be installed
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching plugins: ${resp.status}")
               Seq.empty
             }
           }

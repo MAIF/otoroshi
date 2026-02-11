@@ -330,6 +330,43 @@ filters:
 - **hostname**: changes the `Host` header sent to the backend
 - **path.type**: only `ReplacePrefixMatch` is currently supported. It strips the matched prefix and replaces it with the new value.
 
+### ExtensionRef
+
+Reference a custom Otoroshi `Plugin` resource to inject an arbitrary Otoroshi plugin into the route's plugin chain. This uses the `proxy.otoroshi.io/v1` CRD.
+
+First, create a `Plugin` resource whose `spec` maps to an Otoroshi `NgPluginInstance`:
+
+```yaml
+apiVersion: proxy.otoroshi.io/v1
+kind: Plugin
+metadata:
+  name: add-custom-headers
+  namespace: default
+spec:
+  plugin: "cp:otoroshi.next.plugins.AdditionalHeadersIn"
+  enabled: true
+  config:
+    headers:
+      X-Custom-From-Plugin: "hello-from-k8s"
+```
+
+Then reference it from an HTTPRoute or GRPCRoute filter:
+
+```yaml
+filters:
+- type: ExtensionRef
+  extensionRef:
+    group: proxy.otoroshi.io
+    kind: Plugin
+    name: add-custom-headers
+```
+
+The Plugin `spec` supports all `NgPluginInstance` fields: `plugin`, `enabled`, `debug`, `include`, `exclude`, `config`, `bound_listeners`, and `plugin_index`.
+
+@@@ note
+ExtensionRef only resolves Plugin resources in the **same namespace** as the route (per Gateway API specification). Only the `proxy.otoroshi.io/Plugin` group/kind is supported; other group/kind combinations will log a warning and be ignored.
+@@@
+
 ## TLS certificate resolution
 
 HTTPS listeners can reference Kubernetes TLS Secrets via `tls.certificateRefs`. Otoroshi automatically resolves these references and imports the certificates into its certificate store so that they are available for SNI-based TLS termination.
@@ -443,7 +480,7 @@ In this example:
 
 ### GRPCRoute filters
 
-GRPCRoute supports the same filter types as HTTPRoute: `RequestHeaderModifier`, `ResponseHeaderModifier`, `RequestRedirect`, and `URLRewrite`.
+GRPCRoute supports the same filter types as HTTPRoute: `RequestHeaderModifier`, `ResponseHeaderModifier`, `RequestRedirect`, `URLRewrite`, and `ExtensionRef`.
 
 ## BackendTLSPolicy (TLS to backend)
 
@@ -671,7 +708,6 @@ The following features are **not yet implemented** in the current experiments:
 | TLSRoute | Not implemented | Experimental in Gateway API spec |
 | TCPRoute | Not implemented | Experimental in Gateway API spec |
 | UDPRoute | Not implemented | Experimental in Gateway API spec |
-| ExtensionRef filter  | Not implemented | Custom filter extensions |
 | Gateway addresses | Not implemented | The `spec.addresses` field is ignored |
 | Dynamic listener provisioning | Not planned | Otoroshi uses a proxy-existing approach; ports must be pre-configured |
 

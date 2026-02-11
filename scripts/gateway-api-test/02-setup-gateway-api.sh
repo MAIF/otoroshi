@@ -21,6 +21,41 @@ echo "Installing Gateway API CRDs ${GATEWAY_API_VERSION} (standard channel)..."
 kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
 echo ""
 
+# ─── 1b. Install Otoroshi Plugin CRD (for ExtensionRef filter support) ────
+
+echo "Installing Otoroshi Plugin CRD..."
+kubectl apply -f - <<EOF
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: plugins.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  names:
+    kind: Plugin
+    plural: plugins
+    singular: plugin
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: false
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: object
+  - name: v1
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: object
+EOF
+echo ""
+
 # ─── 2. Create namespace ────────────────────────────────────────────────────
 
 echo "Creating namespace '${NAMESPACE}'..."

@@ -56,6 +56,7 @@ object GatewayApiConverter {
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String],
+      plugins: Seq[KubernetesPlugin],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): RouteConversionResult = {
@@ -70,7 +71,7 @@ object GatewayApiConverter {
 
     val routes = httpRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
       ruleToNgRoute(httpRoute, rule, ruleIdx, effectiveHostnames, services, endpoints,
-        referenceGrants, backendTLSPolicies, resolvedCaCertIds, conf)
+        referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, conf)
     }
 
     // Check if any cross-namespace backendRef was denied due to missing ReferenceGrant.
@@ -101,6 +102,7 @@ object GatewayApiConverter {
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String],
+      plugins: Seq[KubernetesPlugin],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): RouteConversionResult = {
@@ -115,7 +117,7 @@ object GatewayApiConverter {
 
     val routes = grpcRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
       grpcRuleToNgRoute(grpcRoute, rule, ruleIdx, effectiveHostnames, services, endpoints,
-        referenceGrants, backendTLSPolicies, resolvedCaCertIds, conf)
+        referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, conf)
     }
 
     val allBackendRefs = grpcRoute.rules.flatMap(_.backendRefs)
@@ -269,6 +271,7 @@ object GatewayApiConverter {
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String],
+      k8sPlugins: Seq[KubernetesPlugin],
       conf: KubernetesConfig
   )(implicit env: Env): Seq[NgRoute] = {
 
@@ -286,6 +289,7 @@ object GatewayApiConverter {
       services = services,
       endpoints = endpoints,
       referenceGrants = referenceGrants,
+      k8sPlugins = k8sPlugins,
     )
 
     if (targets.isEmpty) {
@@ -377,6 +381,7 @@ object GatewayApiConverter {
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String],
+      k8sPlugins: Seq[KubernetesPlugin],
       conf: KubernetesConfig
   )(implicit env: Env): Seq[NgRoute] = {
 
@@ -394,6 +399,7 @@ object GatewayApiConverter {
       services = services,
       endpoints = endpoints,
       referenceGrants = referenceGrants,
+      k8sPlugins = k8sPlugins,
     )
 
     if (targets.isEmpty) {
@@ -882,7 +888,8 @@ object GatewayApiConverter {
       routePath: String,
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
-      referenceGrants: Seq[KubernetesReferenceGrant]
+      referenceGrants: Seq[KubernetesReferenceGrant],
+      k8sPlugins: Seq[KubernetesPlugin] = Seq.empty
   ): NgPlugins = {
     val plugins = filters.flatMap { filter =>
       filter.filterType match {
@@ -997,6 +1004,24 @@ object GatewayApiConverter {
                   "percentage"       -> finalPercent,
                 ))
               )
+            }
+          }
+
+        case "ExtensionRef" =>
+          filter.extensionRef.toSeq.flatMap { ref =>
+            val group = (ref \ "group").asOpt[String].getOrElse("")
+            val kind  = (ref \ "kind").asOpt[String].getOrElse("")
+            val name  = (ref \ "name").as[String]
+            if (group == "proxy.otoroshi.io" && kind == "Plugin") {
+              k8sPlugins.find(p => p.name == name && p.namespace == routeNamespace) match {
+                case Some(plugin) => Seq(NgPluginInstance.readFrom(plugin.spec))
+                case None =>
+                  logger.warn(s"ExtensionRef Plugin '$name' not found in namespace $routeNamespace for $routePath")
+                  Seq.empty
+              }
+            } else {
+              logger.warn(s"Unsupported ExtensionRef group=$group kind=$kind in $routePath")
+              Seq.empty
             }
           }
 
