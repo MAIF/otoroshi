@@ -1394,6 +1394,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     val pluginSource = watchResources(
       namespaces, Seq("plugins"), "proxy.otoroshi.io/v1", timeout, stop
     )
+    val endpointSliceSource = watchResources(
+      namespaces, Seq("endpointslices"), "discovery.k8s.io/v1", timeout, stop
+    )
     val kubeSource = watchKubeResources(
       namespaces, Seq("secrets", "services", "endpoints"), timeout, stop
     )
@@ -1402,6 +1405,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .merge(referenceGrantSource)
       .merge(backendTLSPolicySource)
       .merge(pluginSource)
+      .merge(endpointSliceSource)
       .merge(kubeSource)
   }
 
@@ -1616,6 +1620,35 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             } else {
               resp.ignore()
               logger.debug(s"bad http status while fetching plugins: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  def fetchEndpointSlices(): Future[Seq[KubernetesEndpointSlice]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/discovery.k8s.io/v1/endpointslices"
+        else s"/apis/discovery.k8s.io/v1/namespaces/$namespace/endpointslices"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              (resp.json \ "items").as[JsArray].value.map(item => KubernetesEndpointSlice(item)).toSeq
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("discovery.k8s.io/endpointslices")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching endpointslices: ${resp.status}")
               Seq.empty
             }
           }

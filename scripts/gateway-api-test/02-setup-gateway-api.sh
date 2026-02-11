@@ -84,6 +84,10 @@ rules:
   - apiGroups: ["apps"]
     resources: [deployments]
     verbs: [get, list, watch]
+  # EndpointSlices for pod-level target resolution
+  - apiGroups: [discovery.k8s.io]
+    resources: [endpointslices]
+    verbs: [get, list, watch]
   - apiGroups: [""]
     resources: [secrets, configmaps]
     verbs: [update, create, delete]

@@ -26,7 +26,6 @@ import scala.util.{Failure, Success, Try}
 // - [ ] Conflict detection on listener hostname/port collisions
 //
 // ADVANCED:
-// - [ ] Endpoint slice resolution (instead of clusterIP only)
 // - [ ] Support otoroshi specific settings through annotations (mostly flags and additional plugins)
 // - [ ] Conformance test suite (gateway-api conformance tests)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -230,6 +229,7 @@ object KubernetesGatewayApiJob {
         namespaces          <- client.fetchNamespacesAndFilterLabels()
         services            <- client.fetchServices()
         endpoints           <- client.fetchEndpoints()
+        endpointSlices      <- client.fetchEndpointSlices()
 
         // Fetch existing Otoroshi routes managed by this provider
         existingRoutes <- if (conf.useProxyState) env.proxyState.allRoutes().vfuture
@@ -252,14 +252,14 @@ object KubernetesGatewayApiJob {
 
         // ─── Phase 5: Reconcile HTTPRoutes ──────────────────────
         httpGeneratedRoutes <- reconcileHTTPRoutes(
-          client, httpRoutes, acceptedGateways, services, endpoints, referenceGrants,
-          backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
+          client, httpRoutes, acceptedGateways, services, endpoints, endpointSlices,
+          referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
         )
 
         // ─── Phase 6: Reconcile GRPCRoutes ──────────────────────
         grpcGeneratedRoutes <- reconcileGRPCRoutes(
-          client, grpcRoutes, acceptedGateways, services, endpoints, referenceGrants,
-          backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
+          client, grpcRoutes, acceptedGateways, services, endpoints, endpointSlices,
+          referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
         )
 
         generatedRoutes = httpGeneratedRoutes ++ grpcGeneratedRoutes
@@ -595,6 +595,7 @@ object KubernetesGatewayApiJob {
       acceptedGateways: Seq[KubernetesGateway],
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
+      endpointSlices: Seq[KubernetesEndpointSlice],
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String],
@@ -607,8 +608,8 @@ object KubernetesGatewayApiJob {
     Source(httpRoutes.toList)
       .mapAsync(1) { httpRoute =>
         val result = GatewayApiConverter.httpRouteToNgRoutes(
-          httpRoute, acceptedGateways, services, endpoints, referenceGrants,
-          backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
+          httpRoute, acceptedGateways, services, endpoints, endpointSlices,
+          referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
         )
         val generatedRoutes = result.routes
 
@@ -672,6 +673,7 @@ object KubernetesGatewayApiJob {
       acceptedGateways: Seq[KubernetesGateway],
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
+      endpointSlices: Seq[KubernetesEndpointSlice],
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String],
@@ -684,8 +686,8 @@ object KubernetesGatewayApiJob {
     Source(grpcRoutes.toList)
       .mapAsync(1) { grpcRoute =>
         val result = GatewayApiConverter.grpcRouteToNgRoutes(
-          grpcRoute, acceptedGateways, services, endpoints, referenceGrants,
-          backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
+          grpcRoute, acceptedGateways, services, endpoints, endpointSlices,
+          referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
         )
         val generatedRoutes = result.routes
 

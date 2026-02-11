@@ -222,6 +222,39 @@ case class KubernetesBackendTLSPolicy(raw: JsValue) extends KubernetesEntity {
     .map(BackendTLSPolicyValidation.apply)
 }
 
+// ─── EndpointSlice (discovery.k8s.io/v1) ─────────────────────────────────────
+// Used to resolve pod IPs for backend targets instead of relying on clusterIP.
+// An EndpointSlice contains a subset of endpoints for a given Service.
+
+case class EndpointSliceEndpoint(raw: JsValue) {
+  lazy val addresses: Seq[String]  = (raw \ "addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val conditions: JsObject    = (raw \ "conditions").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val ready: Boolean          = (conditions \ "ready").asOpt[Boolean].getOrElse(true)
+  lazy val serving: Boolean        = (conditions \ "serving").asOpt[Boolean].getOrElse(ready)
+  lazy val nodeName: Option[String] = (raw \ "nodeName").asOpt[String]
+  lazy val targetRef: Option[JsObject] = (raw \ "targetRef").asOpt[JsObject]
+}
+
+case class EndpointSlicePort(raw: JsValue) {
+  lazy val name: Option[String]     = (raw \ "name").asOpt[String]
+  lazy val port: Option[Int]        = (raw \ "port").asOpt[Int]
+  lazy val protocol: Option[String] = (raw \ "protocol").asOpt[String] // TCP, UDP, SCTP
+  lazy val appProtocol: Option[String] = (raw \ "appProtocol").asOpt[String]
+}
+
+case class KubernetesEndpointSlice(raw: JsValue) extends KubernetesEntity {
+  lazy val addressType: String = (raw \ "addressType").asOpt[String].getOrElse("IPv4")
+  lazy val endpoints: Seq[EndpointSliceEndpoint] = (raw \ "endpoints")
+    .asOpt[Seq[JsValue]]
+    .getOrElse(Seq.empty)
+    .map(EndpointSliceEndpoint.apply)
+  lazy val ports: Seq[EndpointSlicePort] = (raw \ "ports")
+    .asOpt[Seq[JsValue]]
+    .getOrElse(Seq.empty)
+    .map(EndpointSlicePort.apply)
+  lazy val serviceName: Option[String] = labels.get("kubernetes.io/service-name")
+}
+
 // ─── Plugin (proxy.otoroshi.io/v1) ──────────────────────────────────────────
 // Custom Otoroshi CRD for injecting NgPluginInstance via ExtensionRef filters.
 // The spec maps directly to NgPluginInstance.readFrom() fields.

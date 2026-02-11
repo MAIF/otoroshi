@@ -1,7 +1,7 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import otoroshi.env.Env
-import otoroshi.models.{EntityLocation, HttpProtocols, RoundRobin}
+import otoroshi.models.{EntityLocation, HttpProtocol, HttpProtocols, RoundRobin}
 import otoroshi.next.models._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -53,6 +53,7 @@ object GatewayApiConverter {
       gateways: Seq[KubernetesGateway],
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
+      endpointSlices: Seq[KubernetesEndpointSlice],
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String],
@@ -71,7 +72,7 @@ object GatewayApiConverter {
 
     val routes = httpRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
       ruleToNgRoute(httpRoute, rule, ruleIdx, effectiveHostnames, services, endpoints,
-        referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, conf)
+        endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, conf)
     }
 
     // Check if any cross-namespace backendRef was denied due to missing ReferenceGrant.
@@ -99,6 +100,7 @@ object GatewayApiConverter {
       gateways: Seq[KubernetesGateway],
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
+      endpointSlices: Seq[KubernetesEndpointSlice],
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String],
@@ -117,7 +119,7 @@ object GatewayApiConverter {
 
     val routes = grpcRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
       grpcRuleToNgRoute(grpcRoute, rule, ruleIdx, effectiveHostnames, services, endpoints,
-        referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, conf)
+        endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, conf)
     }
 
     val allBackendRefs = grpcRoute.rules.flatMap(_.backendRefs)
@@ -268,6 +270,7 @@ object GatewayApiConverter {
       effectiveHostnames: Seq[String],
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
+      endpointSlices: Seq[KubernetesEndpointSlice],
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String],
@@ -281,13 +284,14 @@ object GatewayApiConverter {
     val routeName = s"${httpRoute.namespace}/${httpRoute.name} rule $ruleIdx"
 
     val domains = buildDomains(effectiveHostnames, rule)
-    val targets = buildTargets(httpRoute, rule, services, endpoints, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
+    val targets = buildTargets(httpRoute, rule, services, endpoints, endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
     val plugins = buildPlugins(
       filters = rule.filters,
       routeNamespace = httpRoute.namespace,
       routePath = httpRoute.path,
       services = services,
       endpoints = endpoints,
+      endpointSlices = endpointSlices,
       referenceGrants = referenceGrants,
       k8sPlugins = k8sPlugins,
     )
@@ -378,6 +382,7 @@ object GatewayApiConverter {
       effectiveHostnames: Seq[String],
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
+      endpointSlices: Seq[KubernetesEndpointSlice],
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String],
@@ -391,13 +396,14 @@ object GatewayApiConverter {
     val routeName = s"${grpcRoute.namespace}/${grpcRoute.name} grpc rule $ruleIdx"
 
     val domains = buildGrpcDomains(effectiveHostnames, rule)
-    val targets = buildGrpcTargets(grpcRoute, rule, services, endpoints, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
+    val targets = buildGrpcTargets(grpcRoute, rule, services, endpoints, endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
     val plugins = buildPlugins(
       filters = rule.filters,
       routeNamespace = grpcRoute.namespace,
       routePath = grpcRoute.path,
       services = services,
       endpoints = endpoints,
+      endpointSlices = endpointSlices,
       referenceGrants = referenceGrants,
       k8sPlugins = k8sPlugins,
     )
@@ -486,6 +492,67 @@ object GatewayApiConverter {
   }
 
   /**
+   * Resolves a Service to individual pod IP targets using EndpointSlices.
+   *
+   * EndpointSlices are matched by the label "kubernetes.io/service-name" which
+   * Kubernetes sets on all EndpointSlices automatically. Only ready endpoints
+   * are included.
+   *
+   * If no EndpointSlice is found for the service, returns None (caller falls
+   * back to clusterIP).
+   *
+   * @param serviceName      The service name
+   * @param serviceNamespace The service namespace
+   * @param port             The target port number from the backendRef
+   * @param weight           The backend weight
+   * @param protocol         HTTP protocol (HTTP_1_1 or HTTP_2_0)
+   * @param endpointSlices   All EndpointSlices from the cluster
+   * @return Some(targets) if EndpointSlices found, None to fall back to clusterIP
+   */
+  private def resolveEndpointSliceTargets(
+      serviceName: String,
+      serviceNamespace: String,
+      port: Int,
+      weight: Int,
+      protocol: HttpProtocol,
+      endpointSlices: Seq[KubernetesEndpointSlice]
+  ): Option[Seq[NgTarget]] = {
+    val slices = endpointSlices.filter(es =>
+      es.namespace == serviceNamespace &&
+      es.serviceName.contains(serviceName)
+    )
+    if (slices.isEmpty) {
+      None
+    } else {
+      val targets = slices.flatMap { slice =>
+        // Resolve the actual port from the EndpointSlice port definitions.
+        // The backendRef specifies a port number; we match it against the
+        // EndpointSlice ports (which may remap to a different targetPort).
+        val resolvedPort = slice.ports
+          .find(p => p.port.contains(port))
+          .flatMap(_.port)
+          .getOrElse(port)
+
+        slice.endpoints.filter(_.ready).flatMap { ep =>
+          ep.addresses.map { address =>
+            NgTarget(
+              id = s"$serviceNamespace/$serviceName:$resolvedPort/$address",
+              hostname = address,
+              port = resolvedPort,
+              tls = false,
+              weight = weight,
+              protocol = protocol,
+              predicate = otoroshi.models.AlwaysMatch,
+              ipAddress = None
+            )
+          }
+        }
+      }
+      if (targets.isEmpty) None else Some(targets)
+    }
+  }
+
+  /**
    * Resolves GRPCRoute backendRefs to NgTarget with HTTP/2 protocol.
    */
   private def buildGrpcTargets(
@@ -493,6 +560,7 @@ object GatewayApiConverter {
       rule: GRPCRouteRule,
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
+      endpointSlices: Seq[KubernetesEndpointSlice],
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String]
@@ -513,17 +581,22 @@ object GatewayApiConverter {
           service match {
             case Some(svc) =>
               val port = backendRef.port.getOrElse(50051)
-              val target = NgTarget(
-                id = s"${svcPath}:$port",
-                hostname = svc.clusterIP,
-                port = port,
-                tls = false,
-                weight = backendRef.weight,
-                protocol = HttpProtocols.HTTP_2_0,
-                predicate = otoroshi.models.AlwaysMatch,
-                ipAddress = None
-              )
-              Seq(applyBackendTLSPolicy(target, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds))
+              val targets = resolveEndpointSliceTargets(
+                backendRef.name, svcNamespace, port, backendRef.weight,
+                HttpProtocols.HTTP_2_0, endpointSlices
+              ).getOrElse {
+                Seq(NgTarget(
+                  id = s"${svcPath}:$port",
+                  hostname = svc.clusterIP,
+                  port = port,
+                  tls = false,
+                  weight = backendRef.weight,
+                  protocol = HttpProtocols.HTTP_2_0,
+                  predicate = otoroshi.models.AlwaysMatch,
+                  ipAddress = None
+                ))
+              }
+              targets.map(t => applyBackendTLSPolicy(t, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds))
             case None =>
               logger.warn(s"Service $svcPath not found for backendRef in GRPCRoute ${grpcRoute.path}")
               Seq.empty
@@ -641,6 +714,7 @@ object GatewayApiConverter {
       rule: HTTPRouteRule,
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
+      endpointSlices: Seq[KubernetesEndpointSlice],
       referenceGrants: Seq[KubernetesReferenceGrant],
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       resolvedCaCertIds: Map[String, String]
@@ -661,17 +735,22 @@ object GatewayApiConverter {
           service match {
             case Some(svc) =>
               val port = backendRef.port.getOrElse(80)
-              val target = NgTarget(
-                id = s"${svcPath}:$port",
-                hostname = svc.clusterIP,
-                port = port,
-                tls = false,
-                weight = backendRef.weight,
-                protocol = HttpProtocols.HTTP_1_1,
-                predicate = otoroshi.models.AlwaysMatch,
-                ipAddress = None
-              )
-              Seq(applyBackendTLSPolicy(target, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds))
+              val targets = resolveEndpointSliceTargets(
+                backendRef.name, svcNamespace, port, backendRef.weight,
+                HttpProtocols.HTTP_1_1, endpointSlices
+              ).getOrElse {
+                Seq(NgTarget(
+                  id = s"${svcPath}:$port",
+                  hostname = svc.clusterIP,
+                  port = port,
+                  tls = false,
+                  weight = backendRef.weight,
+                  protocol = HttpProtocols.HTTP_1_1,
+                  predicate = otoroshi.models.AlwaysMatch,
+                  ipAddress = None
+                ))
+              }
+              targets.map(t => applyBackendTLSPolicy(t, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds))
             case None      =>
               logger.warn(s"Service $svcPath not found for backendRef in HTTPRoute ${httpRoute.path}")
               Seq.empty
@@ -687,6 +766,7 @@ object GatewayApiConverter {
     backendRef: HTTPRouteBackendRef,
     services: Seq[KubernetesService],
     endpoints: Seq[KubernetesEndpoint],
+    endpointSlices: Seq[KubernetesEndpointSlice] = Seq.empty,
     referenceGrants: Seq[KubernetesReferenceGrant],
     backendTLSPolicies: Seq[KubernetesBackendTLSPolicy] = Seq.empty,
     resolvedCaCertIds: Map[String, String] = Map.empty
@@ -705,16 +785,21 @@ object GatewayApiConverter {
         service match {
           case Some(svc) =>
             val port = backendRef.port.getOrElse(80)
-            val target = NgTarget(
-              id = s"${svcPath}:$port",
-              hostname = svc.clusterIP,
-              port = port,
-              tls = false,
-              weight = backendRef.weight,
-              protocol = HttpProtocols.HTTP_1_1,
-              predicate = otoroshi.models.AlwaysMatch,
-              ipAddress = None
-            )
+            val target = resolveEndpointSliceTargets(
+              backendRef.name, svcNamespace, port, backendRef.weight,
+              HttpProtocols.HTTP_1_1, endpointSlices
+            ).flatMap(_.headOption).getOrElse {
+              NgTarget(
+                id = s"${svcPath}:$port",
+                hostname = svc.clusterIP,
+                port = port,
+                tls = false,
+                weight = backendRef.weight,
+                protocol = HttpProtocols.HTTP_1_1,
+                predicate = otoroshi.models.AlwaysMatch,
+                ipAddress = None
+              )
+            }
             applyBackendTLSPolicy(target, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds).some
           case None      =>
             logger.warn(s"Service $svcPath not found for backendRef in HTTPRoute ${routePath}")
@@ -888,6 +973,7 @@ object GatewayApiConverter {
       routePath: String,
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
+      endpointSlices: Seq[KubernetesEndpointSlice] = Seq.empty,
       referenceGrants: Seq[KubernetesReferenceGrant],
       k8sPlugins: Seq[KubernetesPlugin] = Seq.empty
   ): NgPlugins = {
@@ -991,7 +1077,7 @@ object GatewayApiConverter {
               } yield numerator / denominator
             }.getOrElse(100.0)
             val backendRef = HTTPRouteBackendRef((rewrite \ "backendRef").asObject)
-            buildTargetFromBackendRef(routeNamespace, routePath, backendRef, services, endpoints, referenceGrants).map { target =>
+            buildTargetFromBackendRef(routeNamespace, routePath, backendRef, services, endpoints, endpointSlices, referenceGrants).map { target =>
               NgPluginInstance(
                 plugin = "cp:otoroshi.next.plugins.NgTrafficMirroring",
                 enabled = true,
