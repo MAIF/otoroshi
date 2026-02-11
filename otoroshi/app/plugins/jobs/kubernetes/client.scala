@@ -1388,12 +1388,16 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     val referenceGrantSource = watchResources(
       namespaces, Seq("referencegrants"), "gateway.networking.k8s.io/v1beta1", timeout, stop
     )
+    val backendTLSPolicySource = watchResources(
+      namespaces, Seq("backendtlspolicies"), "gateway.networking.k8s.io/v1alpha3", timeout, stop
+    )
     val kubeSource = watchKubeResources(
       namespaces, Seq("secrets", "services", "endpoints"), timeout, stop
     )
     gatewayClassSource
       .merge(v1NamespacedSource)
       .merge(referenceGrantSource)
+      .merge(backendTLSPolicySource)
       .merge(kubeSource)
   }
 
@@ -1546,6 +1550,38 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             } else {
               resp.ignore()
               logger.debug(s"bad http status while fetching referencegrants: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  def fetchBackendTLSPolicies(): Future[Seq[KubernetesBackendTLSPolicy]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1alpha3/backendtlspolicies"
+        else s"/apis/gateway.networking.k8s.io/v1alpha3/namespaces/$namespace/backendtlspolicies"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels(
+                (resp.json \ "items").as[JsArray].value.map(item => KubernetesBackendTLSPolicy(item)).toSeq
+              )
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/backendtlspolicies")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              // BackendTLSPolicy CRDs may not be installed
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching backendtlspolicies: ${resp.status}")
               Seq.empty
             }
           }

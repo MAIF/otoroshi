@@ -12,19 +12,20 @@ Otoroshi implements the Gateway API using a **proxy-existing** approach: Otorosh
 
 The reconciliation loop runs as a background job and works as follows:
 
-1. **Fetch** all `GatewayClass`, `Gateway`, `HTTPRoute`, `GRPCRoute`, and `ReferenceGrant` resources from the Kubernetes API
+1. **Fetch** all `GatewayClass`, `Gateway`, `HTTPRoute`, `GRPCRoute`, `ReferenceGrant`, and `BackendTLSPolicy` resources from the Kubernetes API
 2. **Reconcile GatewayClasses** — accept classes whose `controllerName` matches Otoroshi's configured controller name
 3. **Resolve TLS certificates** — for HTTPS listeners with `certificateRefs`, check if the referenced TLS certificates are already in Otoroshi's cert store and import them from Kubernetes Secrets if needed
 4. **Reconcile Gateways** — validate that listener ports and protocols are compatible with Otoroshi's actual ports, and verify that TLS certificate references are resolved
-5. **Convert HTTPRoutes** — for each rule in each HTTPRoute, generate one `NgRoute` with the appropriate frontend (domains, paths, headers), backend (targets resolved from Kubernetes Services with ReferenceGrant enforcement for cross-namespace refs), and plugins (from HTTPRoute filters)
-6. **Convert GRPCRoutes** — same as HTTPRoute but with gRPC method matching mapped to HTTP/2 paths (`/{service}/{method}`) and backend targets using HTTP/2 protocol
-7. **Save routes** — upsert generated routes and delete orphaned ones that are no longer defined
+5. **Resolve BackendTLS CA certificates** — for each `BackendTLSPolicy` with `caCertificateRefs`, import the referenced CA certificates into Otoroshi's certificate store
+6. **Convert HTTPRoutes** — for each rule in each HTTPRoute, generate one `NgRoute` with the appropriate frontend (domains, paths, headers), backend (targets resolved from Kubernetes Services with ReferenceGrant enforcement and BackendTLSPolicy-based TLS configuration), and plugins (from HTTPRoute filters)
+7. **Convert GRPCRoutes** — same as HTTPRoute but with gRPC method matching mapped to HTTP/2 paths (`/{service}/{method}`) and backend targets using HTTP/2 protocol
+8. **Save routes** — upsert generated routes and delete orphaned ones that are no longer defined
 
 All generated routes are tagged with `otoroshi-provider: kubernetes-gateway-api` metadata, making them easy to identify and ensuring clean garbage collection.
 
 ### Watch mode
 
-When `watch` is enabled in the Kubernetes configuration, the Gateway API controller uses Kubernetes watch events to trigger synchronization in near-real-time instead of waiting for the next polling interval. This covers all Gateway API resources (`GatewayClass`, `Gateway`, `HTTPRoute`, `GRPCRoute`, `ReferenceGrant`) as well as related Kubernetes resources (`Secret`, `Service`, `Endpoints`). The `watchGracePeriodSeconds` setting prevents excessive syncs by enforcing a minimum delay between consecutive event-driven reconciliations.
+When `watch` is enabled in the Kubernetes configuration, the Gateway API controller uses Kubernetes watch events to trigger synchronization in near-real-time instead of waiting for the next polling interval. This covers all Gateway API resources (`GatewayClass`, `Gateway`, `HTTPRoute`, `GRPCRoute`, `ReferenceGrant`, `BackendTLSPolicy`) as well as related Kubernetes resources (`Secret`, `Service`, `Endpoints`). The `watchGracePeriodSeconds` setting prevents excessive syncs by enforcing a minimum delay between consecutive event-driven reconciliations.
 
 ## Prerequisites
 
@@ -47,7 +48,7 @@ The Otoroshi ServiceAccount needs the following additional ClusterRole rules for
 ```yaml
 # Gateway API — read resources
 - apiGroups: [gateway.networking.k8s.io]
-  resources: [gatewayclasses, gateways, httproutes, grpcroutes, referencegrants]
+  resources: [gatewayclasses, gateways, httproutes, grpcroutes, referencegrants, backendtlspolicies]
   verbs: [get, list, watch]
 # Gateway API — update status subresources
 - apiGroups: [gateway.networking.k8s.io]
@@ -444,6 +445,99 @@ In this example:
 
 GRPCRoute supports the same filter types as HTTPRoute: `RequestHeaderModifier`, `ResponseHeaderModifier`, `RequestRedirect`, and `URLRewrite`.
 
+## BackendTLSPolicy (TLS to backend)
+
+Otoroshi supports `BackendTLSPolicy` (v1alpha3) for configuring TLS connections from the gateway to backend services. When a BackendTLSPolicy targets a Service, Otoroshi will use TLS when connecting to that service's backends, with proper SNI hostname and CA certificate validation.
+
+### How it works
+
+During each reconciliation cycle, Otoroshi:
+
+1. Fetches all `BackendTLSPolicy` resources from the cluster
+2. For each policy's `caCertificateRefs`, resolves the referenced Kubernetes Secrets and imports them as CA certificates into Otoroshi's certificate store (using the ID pattern `kubernetes-certs-import-{namespace}-{name}`)
+3. When building backend targets for HTTPRoute or GRPCRoute rules, checks if a BackendTLSPolicy targets the backend Service
+4. If a policy matches, configures the target with:
+    - `tls: true` to enable HTTPS connections
+    - The policy's `validation.hostname` as the SNI hostname for the TLS handshake
+    - The Service's `clusterIP` as the actual TCP connection target
+    - CA certificates from `caCertificateRefs` for server certificate validation
+
+### Prerequisites
+
+BackendTLSPolicy requires the experimental channel Gateway API CRDs:
+
+```sh
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+```
+
+Additional RBAC rules are needed:
+
+```yaml
+- apiGroups: [gateway.networking.k8s.io]
+  resources: [backendtlspolicies]
+  verbs: [get, list, watch]
+```
+
+### Example
+
+```yaml
+# Secret containing the CA certificate for the backend service
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-ca
+  namespace: default
+type: Opaque
+data:
+  ca.crt: <base64-encoded CA certificate>
+---
+# BackendTLSPolicy targeting the backend service
+apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: backend-tls
+  namespace: default
+spec:
+  targetRefs:
+  - group: ""
+    kind: Service
+    name: my-backend-service
+  validation:
+    hostname: my-backend-service.default.svc.cluster.local
+    caCertificateRefs:
+    - group: ""
+      kind: Secret
+      name: backend-ca
+```
+
+With this configuration, when an HTTPRoute or GRPCRoute references `my-backend-service`, Otoroshi will:
+
+- Connect to the service using HTTPS
+- Send `my-backend-service.default.svc.cluster.local` as the SNI hostname
+- Validate the server certificate against the CA in the `backend-ca` Secret
+
+### wellKnownCACertificates
+
+Instead of providing explicit CA certificates, you can use the JVM's default trust store:
+
+```yaml
+spec:
+  targetRefs:
+  - group: ""
+    kind: Service
+    name: my-service
+  validation:
+    hostname: my-service.example.com
+    wellKnownCACertificates: "System"
+```
+
+When `wellKnownCACertificates` is set to `"System"`, no custom CA certificates are configured and the JVM's built-in trust store is used for server certificate validation.
+
+### Limitations
+
+- `subjectAltNames` validation is not supported (Otoroshi's TLS config has no SAN validation field). If specified, a debug warning is logged.
+- BackendTLSPolicy is a v1alpha3 API and may change in future Gateway API releases.
+
 ## ReferenceGrant (cross-namespace references)
 
 By default, a route can only reference backend Services in **its own namespace**. To reference a Service in a different namespace, a `ReferenceGrant` resource must exist in the **target namespace** (where the Service lives) that explicitly allows the reference.
@@ -555,7 +649,7 @@ kubernetes-gateway-api-{namespace}-{routeName}-grpc-rule-{ruleIndex}    # GRPCRo
 The generated route includes:
 
 - **Frontend**: domains built from effective hostnames + path, with method matching if specified (gRPC routes are locked to POST)
-- **Backend**: targets resolved from backendRefs using Kubernetes Service clusterIPs, with weighted load balancing. GRPCRoute targets use HTTP/2.
+- **Backend**: targets resolved from backendRefs using Kubernetes Service clusterIPs, with weighted load balancing. GRPCRoute targets use HTTP/2. When a BackendTLSPolicy targets the service, TLS is enabled with SNI and CA validation.
 - **Plugins**: converted from route filters (header modifiers, redirections, etc.)
 - **Metadata**: `otoroshi-provider: kubernetes-gateway-api`, `gateway-api-kind: HTTPRoute` or `GRPCRoute`, plus `kubernetes-name`, `kubernetes-namespace` for traceability
 

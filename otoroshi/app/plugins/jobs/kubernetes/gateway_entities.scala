@@ -194,3 +194,30 @@ case class KubernetesReferenceGrant(raw: JsValue) extends KubernetesEntity {
     .getOrElse(Seq.empty)
     .map(ReferenceGrantTo.apply)
 }
+
+// ─── BackendTLSPolicy ──────────────────────────────────────────────────────
+// Defines TLS validation parameters for connections from the gateway to backend
+// services. See https://gateway-api.sigs.k8s.io/api-types/backendtlspolicy/
+
+case class BackendTLSPolicyTargetRef(raw: JsValue) {
+  lazy val group: String = (raw \ "group").asOpt[String].getOrElse("")
+  lazy val kind: String  = (raw \ "kind").asOpt[String].getOrElse("Service")
+  lazy val name: String  = (raw \ "name").as[String]
+}
+
+case class BackendTLSPolicyValidation(raw: JsValue) {
+  lazy val hostname: String                        = (raw \ "hostname").as[String]
+  lazy val caCertificateRefs: Seq[JsObject]        = (raw \ "caCertificateRefs").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+  lazy val wellKnownCACertificates: Option[String]  = (raw \ "wellKnownCACertificates").asOpt[String]
+  lazy val subjectAltNames: Seq[JsObject]          = (raw \ "subjectAltNames").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+}
+
+case class KubernetesBackendTLSPolicy(raw: JsValue) extends KubernetesEntity {
+  lazy val targetRefs: Seq[BackendTLSPolicyTargetRef] = spec.select("targetRefs")
+    .asOpt[Seq[JsValue]]
+    .getOrElse(Seq.empty)
+    .map(BackendTLSPolicyTargetRef.apply)
+  lazy val validation: Option[BackendTLSPolicyValidation] = spec.select("validation")
+    .asOpt[JsValue]
+    .map(BackendTLSPolicyValidation.apply)
+}

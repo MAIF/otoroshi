@@ -30,7 +30,6 @@ import scala.util.{Failure, Success, Try}
 // - [ ] Conflict detection on listener hostname/port collisions
 //
 // ADVANCED:
-// - [ ] BackendTLSPolicy support
 // - [ ] Endpoint slice resolution (instead of clusterIP only)
 // - [ ] Support otoroshi specific settings through annotations
 // - [ ] Conformance test suite (gateway-api conformance tests)
@@ -228,11 +227,12 @@ object KubernetesGatewayApiJob {
         gatewayClasses  <- client.fetchGatewayClasses()
         gateways        <- client.fetchGateways()
         httpRoutes      <- client.fetchHTTPRoutes()
-        grpcRoutes      <- client.fetchGRPCRoutes()
-        referenceGrants <- client.fetchReferenceGrants()
-        namespaces      <- client.fetchNamespacesAndFilterLabels()
-        services        <- client.fetchServices()
-        endpoints       <- client.fetchEndpoints()
+        grpcRoutes          <- client.fetchGRPCRoutes()
+        referenceGrants     <- client.fetchReferenceGrants()
+        backendTLSPolicies  <- client.fetchBackendTLSPolicies()
+        namespaces          <- client.fetchNamespacesAndFilterLabels()
+        services            <- client.fetchServices()
+        endpoints           <- client.fetchEndpoints()
 
         // Fetch existing Otoroshi routes managed by this provider
         existingRoutes <- if (conf.useProxyState) env.proxyState.allRoutes().vfuture
@@ -250,14 +250,19 @@ object KubernetesGatewayApiJob {
         // ─── Phase 4: Reconcile Gateways ────────────────────────
         acceptedGateways <- reconcileGateways(client, gateways, gatewayClasses, conf, resolvedCerts)
 
+        // ─── Phase 4.5: Resolve BackendTLS CA certificates ──────
+        resolvedCaCertIds <- resolveBackendTLSCACertificates(client, backendTLSPolicies, conf)
+
         // ─── Phase 5: Reconcile HTTPRoutes ──────────────────────
         httpGeneratedRoutes <- reconcileHTTPRoutes(
-          client, httpRoutes, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
+          client, httpRoutes, acceptedGateways, services, endpoints, referenceGrants,
+          backendTLSPolicies, resolvedCaCertIds, namespaces, conf
         )
 
         // ─── Phase 6: Reconcile GRPCRoutes ──────────────────────
         grpcGeneratedRoutes <- reconcileGRPCRoutes(
-          client, grpcRoutes, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
+          client, grpcRoutes, acceptedGateways, services, endpoints, referenceGrants,
+          backendTLSPolicies, resolvedCaCertIds, namespaces, conf
         )
 
         generatedRoutes = httpGeneratedRoutes ++ grpcGeneratedRoutes
@@ -383,6 +388,96 @@ object KubernetesGatewayApiJob {
     }
   }
 
+  // ─── Resolve BackendTLS CA Certificates ───────────────────────────────────
+
+  /**
+   * Resolve CA certificates referenced by BackendTLSPolicy resources.
+   *
+   * For each unique caCertificateRef across all policies, checks if the cert
+   * already exists in Otoroshi's cert store (using the kubernetes-certs-import
+   * ID convention). If missing, fetches the K8s Secret and imports the CA
+   * certificate (ca.crt field).
+   *
+   * @return map of "namespace/secretName" -> Otoroshi cert ID
+   */
+  private def resolveBackendTLSCACertificates(
+      client: KubernetesClient,
+      backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
+      conf: KubernetesConfig
+  )(implicit env: Env, ec: ExecutionContext): Future[Map[String, String]] = {
+
+    // Collect unique (namespace, name) pairs from all caCertificateRefs
+    val certRefs: Seq[(String, String)] = backendTLSPolicies.flatMap { policy =>
+      policy.validation.toSeq.flatMap { v =>
+        v.caCertificateRefs.map { ref =>
+          val ns   = (ref \ "namespace").asOpt[String].getOrElse(policy.namespace)
+          val name = (ref \ "name").as[String]
+          (ns, name)
+        }
+      }
+    }.distinct
+
+    if (certRefs.isEmpty) {
+      Future.successful(Map.empty[String, String])
+    } else {
+      Future
+        .sequence(certRefs.map { case (namespace, name) =>
+          val certId = s"kubernetes-certs-import-$namespace-$name".slugifyWithSlash
+          val path   = s"$namespace/$name"
+          env.datastores.certificatesDataStore.findById(certId).flatMap {
+            case Some(_) =>
+              // CA cert already present in Otoroshi
+              Future.successful(Some(path -> certId))
+            case None =>
+              // Try to fetch the K8s Secret and import the CA certificate
+              client.fetchSecret(namespace, name).flatMap {
+                case Some(secret) =>
+                  val caCrt = secret.data.get("ca.crt")
+                    .orElse(secret.data.get("tls.crt")) // fallback to tls.crt if ca.crt not present
+                  caCrt match {
+                    case Some(certPem) =>
+                      import otoroshi.ssl.Cert
+                      val newCert = Cert(
+                        id = certId,
+                        name = s"K8s BackendTLS CA $namespace/$name",
+                        description = s"CA certificate imported from BackendTLSPolicy for $namespace/$name",
+                        chain = certPem,
+                        privateKey = "",
+                        caRef = None,
+                        autoRenew = false,
+                        client = false,
+                        exposed = false,
+                        revoked = false
+                      ).enrich().copy(
+                        ca = true,
+                        entityMetadata = Map(
+                          "otoroshi-provider"    -> "kubernetes-gateway-api",
+                          "kubernetes-name"      -> name,
+                          "kubernetes-namespace" -> namespace,
+                          "kubernetes-path"      -> path
+                        )
+                      )
+                      newCert.save().map { _ =>
+                        logger.info(s"Imported CA certificate $path for BackendTLSPolicy")
+                        Some(path -> certId)
+                      }
+                    case None =>
+                      logger.warn(s"Secret $path has no ca.crt or tls.crt data, cannot import CA certificate")
+                      Future.successful(None)
+                  }
+                case None =>
+                  logger.warn(s"Secret $path not found in Kubernetes, cannot resolve BackendTLSPolicy caCertificateRef")
+                  Future.successful(None)
+              }
+          }.recover { case e =>
+            logger.error(s"Failed to resolve BackendTLS CA certificate $path: ${e.getMessage}")
+            None
+          }
+        })
+        .map(_.flatten.toMap)
+    }
+  }
+
   // ─── Reconcile Gateways ───────────────────────────────────────────────────
 
   private def reconcileGateways(
@@ -497,6 +592,8 @@ object KubernetesGatewayApiJob {
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
       referenceGrants: Seq[KubernetesReferenceGrant],
+      backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
+      resolvedCaCertIds: Map[String, String],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
@@ -505,7 +602,8 @@ object KubernetesGatewayApiJob {
     Source(httpRoutes.toList)
       .mapAsync(1) { httpRoute =>
         val result = GatewayApiConverter.httpRouteToNgRoutes(
-          httpRoute, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
+          httpRoute, acceptedGateways, services, endpoints, referenceGrants,
+          backendTLSPolicies, resolvedCaCertIds, namespaces, conf
         )
         val generatedRoutes = result.routes
 
@@ -568,6 +666,8 @@ object KubernetesGatewayApiJob {
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
       referenceGrants: Seq[KubernetesReferenceGrant],
+      backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
+      resolvedCaCertIds: Map[String, String],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
@@ -576,7 +676,8 @@ object KubernetesGatewayApiJob {
     Source(grpcRoutes.toList)
       .mapAsync(1) { grpcRoute =>
         val result = GatewayApiConverter.grpcRouteToNgRoutes(
-          grpcRoute, acceptedGateways, services, endpoints, referenceGrants, namespaces, conf
+          grpcRoute, acceptedGateways, services, endpoints, referenceGrants,
+          backendTLSPolicies, resolvedCaCertIds, namespaces, conf
         )
         val generatedRoutes = result.routes
 

@@ -54,6 +54,8 @@ object GatewayApiConverter {
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
       referenceGrants: Seq[KubernetesReferenceGrant],
+      backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
+      resolvedCaCertIds: Map[String, String],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): RouteConversionResult = {
@@ -67,7 +69,8 @@ object GatewayApiConverter {
     val effectiveHostnames = resolveEffectiveHostnames(httpRoute.hostnames, matchingGateways)
 
     val routes = httpRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
-      ruleToNgRoute(httpRoute, rule, ruleIdx, effectiveHostnames, services, endpoints, referenceGrants, conf)
+      ruleToNgRoute(httpRoute, rule, ruleIdx, effectiveHostnames, services, endpoints,
+        referenceGrants, backendTLSPolicies, resolvedCaCertIds, conf)
     }
 
     // Check if any cross-namespace backendRef was denied due to missing ReferenceGrant.
@@ -96,6 +99,8 @@ object GatewayApiConverter {
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
       referenceGrants: Seq[KubernetesReferenceGrant],
+      backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
+      resolvedCaCertIds: Map[String, String],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): RouteConversionResult = {
@@ -109,7 +114,8 @@ object GatewayApiConverter {
     val effectiveHostnames = resolveEffectiveHostnames(grpcRoute.hostnames, matchingGateways)
 
     val routes = grpcRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
-      grpcRuleToNgRoute(grpcRoute, rule, ruleIdx, effectiveHostnames, services, endpoints, referenceGrants, conf)
+      grpcRuleToNgRoute(grpcRoute, rule, ruleIdx, effectiveHostnames, services, endpoints,
+        referenceGrants, backendTLSPolicies, resolvedCaCertIds, conf)
     }
 
     val allBackendRefs = grpcRoute.rules.flatMap(_.backendRefs)
@@ -261,6 +267,8 @@ object GatewayApiConverter {
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
       referenceGrants: Seq[KubernetesReferenceGrant],
+      backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
+      resolvedCaCertIds: Map[String, String],
       conf: KubernetesConfig
   )(implicit env: Env): Seq[NgRoute] = {
 
@@ -270,7 +278,7 @@ object GatewayApiConverter {
     val routeName = s"${httpRoute.namespace}/${httpRoute.name} rule $ruleIdx"
 
     val domains = buildDomains(effectiveHostnames, rule)
-    val targets = buildTargets(httpRoute, rule, services, endpoints, referenceGrants)
+    val targets = buildTargets(httpRoute, rule, services, endpoints, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
     val plugins = buildPlugins(
       filters = rule.filters,
       routeNamespace = httpRoute.namespace,
@@ -367,6 +375,8 @@ object GatewayApiConverter {
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
       referenceGrants: Seq[KubernetesReferenceGrant],
+      backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
+      resolvedCaCertIds: Map[String, String],
       conf: KubernetesConfig
   )(implicit env: Env): Seq[NgRoute] = {
 
@@ -376,7 +386,7 @@ object GatewayApiConverter {
     val routeName = s"${grpcRoute.namespace}/${grpcRoute.name} grpc rule $ruleIdx"
 
     val domains = buildGrpcDomains(effectiveHostnames, rule)
-    val targets = buildGrpcTargets(grpcRoute, rule, services, endpoints, referenceGrants)
+    val targets = buildGrpcTargets(grpcRoute, rule, services, endpoints, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
     val plugins = buildPlugins(
       filters = rule.filters,
       routeNamespace = grpcRoute.namespace,
@@ -477,7 +487,9 @@ object GatewayApiConverter {
       rule: GRPCRouteRule,
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
-      referenceGrants: Seq[KubernetesReferenceGrant]
+      referenceGrants: Seq[KubernetesReferenceGrant],
+      backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
+      resolvedCaCertIds: Map[String, String]
   ): Seq[NgTarget] = {
     rule.backendRefs.flatMap { backendRef =>
       val backendKind = backendRef.kind.getOrElse("Service")
@@ -495,7 +507,7 @@ object GatewayApiConverter {
           service match {
             case Some(svc) =>
               val port = backendRef.port.getOrElse(50051)
-              Seq(NgTarget(
+              val target = NgTarget(
                 id = s"${svcPath}:$port",
                 hostname = svc.clusterIP,
                 port = port,
@@ -504,7 +516,8 @@ object GatewayApiConverter {
                 protocol = HttpProtocols.HTTP_2_0,
                 predicate = otoroshi.models.AlwaysMatch,
                 ipAddress = None
-              ))
+              )
+              Seq(applyBackendTLSPolicy(target, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds))
             case None =>
               logger.warn(s"Service $svcPath not found for backendRef in GRPCRoute ${grpcRoute.path}")
               Seq.empty
@@ -537,19 +550,94 @@ object GatewayApiConverter {
     }
   }
 
+  // ─── BackendTLSPolicy resolution ──────────────────────────────────────────
+
+  /**
+   * Finds a BackendTLSPolicy targeting the given service.
+   * Matches when the policy is in the same namespace as the service
+   * and has a targetRef with kind=Service and matching name.
+   */
+  private def findBackendTLSPolicy(
+      serviceName: String,
+      serviceNamespace: String,
+      policies: Seq[KubernetesBackendTLSPolicy]
+  ): Option[KubernetesBackendTLSPolicy] = {
+    policies.find { policy =>
+      policy.namespace == serviceNamespace &&
+      policy.targetRefs.exists(ref =>
+        ref.kind == "Service" && ref.name == serviceName
+      )
+    }
+  }
+
+  /**
+   * Applies BackendTLSPolicy to an NgTarget if a matching policy exists.
+   * Sets tls=true, hostname=validation.hostname (for SNI), ipAddress=clusterIP,
+   * and configures trustedCerts from resolved CA certificate IDs.
+   */
+  private def applyBackendTLSPolicy(
+      target: NgTarget,
+      serviceName: String,
+      serviceNamespace: String,
+      policies: Seq[KubernetesBackendTLSPolicy],
+      resolvedCaCertIds: Map[String, String]
+  ): NgTarget = {
+    findBackendTLSPolicy(serviceName, serviceNamespace, policies) match {
+      case None => target
+      case Some(policy) =>
+        policy.validation match {
+          case None => target
+          case Some(validation) =>
+            if (validation.subjectAltNames.nonEmpty) {
+              logger.debug(
+                s"BackendTLSPolicy ${policy.path} specifies subjectAltNames which are not supported by Otoroshi"
+              )
+            }
+            val trustedCerts: Seq[String] = if (validation.wellKnownCACertificates.contains("System")) {
+              // Use JVM system CAs — leave trustedCerts empty
+              Seq.empty
+            } else {
+              validation.caCertificateRefs.flatMap { ref =>
+                val ns   = (ref \ "namespace").asOpt[String].getOrElse(policy.namespace)
+                val name = (ref \ "name").as[String]
+                resolvedCaCertIds.get(s"$ns/$name")
+              }
+            }
+            target.copy(
+              tls = true,
+              hostname = validation.hostname,
+              ipAddress = Some(target.hostname), // original clusterIP becomes the TCP target
+              tlsConfig = NgTlsConfig(
+                trustedCerts = trustedCerts,
+                enabled = false,
+                loose = false,
+                trustAll = false
+              )
+            )
+        }
+    }
+  }
+
+  // ─── HTTPRoute target building ──────────────────────────────────────────
+
   /**
    * Resolves backendRefs to NgTarget Otoroshi targets.
    *
    * Cross-namespace references are validated against ReferenceGrants.
    * If a cross-namespace backendRef is denied (no matching ReferenceGrant),
    * it is excluded from the returned targets.
+   *
+   * When a BackendTLSPolicy matches a target service, TLS is enabled
+   * with SNI hostname and CA certificate validation.
    */
   private def buildTargets(
       httpRoute: KubernetesHTTPRoute,
       rule: HTTPRouteRule,
       services: Seq[KubernetesService],
       endpoints: Seq[KubernetesEndpoint],
-      referenceGrants: Seq[KubernetesReferenceGrant]
+      referenceGrants: Seq[KubernetesReferenceGrant],
+      backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
+      resolvedCaCertIds: Map[String, String]
   ): Seq[NgTarget] = {
     rule.backendRefs.flatMap { backendRef =>
       val backendKind = backendRef.kind.getOrElse("Service")
@@ -567,7 +655,7 @@ object GatewayApiConverter {
           service match {
             case Some(svc) =>
               val port = backendRef.port.getOrElse(80)
-              Seq(NgTarget(
+              val target = NgTarget(
                 id = s"${svcPath}:$port",
                 hostname = svc.clusterIP,
                 port = port,
@@ -576,7 +664,8 @@ object GatewayApiConverter {
                 protocol = HttpProtocols.HTTP_1_1,
                 predicate = otoroshi.models.AlwaysMatch,
                 ipAddress = None
-              ))
+              )
+              Seq(applyBackendTLSPolicy(target, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds))
             case None      =>
               logger.warn(s"Service $svcPath not found for backendRef in HTTPRoute ${httpRoute.path}")
               Seq.empty
@@ -592,7 +681,9 @@ object GatewayApiConverter {
     backendRef: HTTPRouteBackendRef,
     services: Seq[KubernetesService],
     endpoints: Seq[KubernetesEndpoint],
-    referenceGrants: Seq[KubernetesReferenceGrant]
+    referenceGrants: Seq[KubernetesReferenceGrant],
+    backendTLSPolicies: Seq[KubernetesBackendTLSPolicy] = Seq.empty,
+    resolvedCaCertIds: Map[String, String] = Map.empty
   ): Option[NgTarget] = {
     val backendKind = backendRef.kind.getOrElse("Service")
     if (backendKind != "Service") {
@@ -608,7 +699,7 @@ object GatewayApiConverter {
         service match {
           case Some(svc) =>
             val port = backendRef.port.getOrElse(80)
-            NgTarget(
+            val target = NgTarget(
               id = s"${svcPath}:$port",
               hostname = svc.clusterIP,
               port = port,
@@ -617,7 +708,8 @@ object GatewayApiConverter {
               protocol = HttpProtocols.HTTP_1_1,
               predicate = otoroshi.models.AlwaysMatch,
               ipAddress = None
-            ).some
+            )
+            applyBackendTLSPolicy(target, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds).some
           case None      =>
             logger.warn(s"Service $svcPath not found for backendRef in HTTPRoute ${routePath}")
             None
