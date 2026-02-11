@@ -230,13 +230,15 @@ case class LegacyThrottlingStrategy(clientId: String, config: LegacyThrottlingSt
 }
 
 case class FixedWindowStrategyConfig(
+    bucketKey: Option[String] = None,
     windowDurationMs: Long = 10000L,
     quota: AllowedQuota = AllowedQuota()
 ) extends ThrottlingStrategyConfig
     with NgPluginConfig {
   def id = "FixedWindowStrategyConfig"
 
-  override def json: JsValue = Json.obj("id" -> id, "quota" -> quota.json, "windowDurationMs" -> windowDurationMs)
+  override def json: JsValue                         =
+    Json.obj("id" -> id, "quota" -> quota.json, "windowDurationMs" -> windowDurationMs, "bucketKey" -> bucketKey)
 
   override def fmt: Format[ThrottlingStrategyConfig] =
     FixedWindowStrategyConfig.format.asInstanceOf[Format[ThrottlingStrategyConfig]]
@@ -247,7 +249,8 @@ object FixedWindowStrategyConfig {
     override def reads(json: JsValue): JsResult[FixedWindowStrategyConfig] = Try {
       FixedWindowStrategyConfig(
         windowDurationMs = json.selectAsOptLong("windowDurationMs").getOrElse(10000L),
-        quota = json.select("quota").as(AllowedQuota.fmt)
+        quota = json.select("quota").as(AllowedQuota.fmt),
+        bucketKey = json.selectAsOptString("bucketKey")
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -257,12 +260,12 @@ object FixedWindowStrategyConfig {
   }
 }
 
-case class FixedWindowBucket(
-    windowStart: Long,
-    count: Long
-)
-
 case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConfig) extends ThrottlingStrategy {
+
+  private case class FixedWindowBucket(
+      windowStart: Long,
+      count: Long
+  )
 
   private val bucketRef = new AtomicReference[FixedWindowBucket](
     FixedWindowBucket(windowStart = System.currentTimeMillis(), count = 0)
@@ -425,6 +428,62 @@ class LocalTokenBucket extends NgAccessValidator {
     val config = ctx
       .cachedConfig(internalName)(LocalTokensBucketStrategyConfig.format)
       .getOrElse(LocalTokensBucketStrategyConfig())
+
+    val key =
+      RateLimiterUtils.getKey(config.bucketKey, ctx.request.some, ctx.attrs, ctx.route.some, ctx.apikey, ctx.user)
+
+    val strategy = env.rateLimiter.getOrCreate(
+      key,
+      req = ctx.request.some,
+      attrs = ctx.attrs,
+      route = ctx.route.some,
+      apiKey = ctx.apikey,
+      user = ctx.user,
+      throttlingStrategy = config.some
+    )
+
+    strategy
+      .checkAndIncrement(key, 1, config.quota.copy(window = config.capacity), expirationSeconds = env.throttlingWindow)
+      .flatMap { throttlingResult =>
+        if (!throttlingResult.allowed)
+          Errors
+            .craftResponseResult(
+              "Too much requests",
+              TooManyRequests,
+              ctx.request,
+              None,
+              None,
+              duration = ctx.report.getDurationNow(),
+              overhead = ctx.report.getOverheadInNow(),
+              attrs = ctx.attrs,
+              maybeRoute = ctx.route.some
+            )
+            .map(e => NgAccess.NgDenied(e))
+        else {
+          NgAccess.NgAllowed.vfuture
+        }
+      }
+  }
+}
+
+class FixedWindow extends NgAccessValidator {
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean      = true
+  override def core: Boolean               = true
+  override def name: String                = "Fixed Window"
+  override def description: Option[String] =
+    "Fixed Window Throttling is a rate-limiting strategy that restricts each user to a maximum of M requests within a fixed time window (for example, 100 requests per minute).".some
+
+  override def defaultConfigObject: Option[NgPluginConfig] = FixedWindowStrategyConfig().some
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = ctx
+      .cachedConfig(internalName)(FixedWindowStrategyConfig.format)
+      .getOrElse(FixedWindowStrategyConfig())
 
     val key =
       RateLimiterUtils.getKey(config.bucketKey, ctx.request.some, ctx.attrs, ctx.route.some, ctx.apikey, ctx.user)
