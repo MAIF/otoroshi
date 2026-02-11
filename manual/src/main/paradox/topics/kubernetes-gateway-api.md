@@ -74,6 +74,8 @@ Gateway API support is controlled through the `KubernetesConfig` configuration b
 | `gatewayApiHttpListenerPort` | int | `8080` | The actual HTTP port Otoroshi listens on |
 | `gatewayApiHttpsListenerPort` | int | `8443` | The actual HTTPS port Otoroshi listens on |
 | `gatewayApiSyncIntervalSeconds` | long | `60` | How often (in seconds) the controller reconciles |
+| `gatewayApiGatewayServiceName` | string | *(empty)* | Kubernetes Service name to resolve for Gateway status addresses. If empty, falls back to `otoroshiServiceName` |
+| `gatewayApiAddresses` | array | `[]` | Static addresses for Gateway status. Overrides dynamic service resolution. Array of `{"type":"IPAddress","value":"x.x.x.x"}` or `{"type":"Hostname","value":"gw.example.com"}` objects |
 
 ### Using environment variable configuration
 
@@ -105,7 +107,9 @@ When deploying with `OTOROSHI_INITIAL_CUSTOMIZATION`, add the job reference and 
           "gatewayApiControllerName": "otoroshi.io/gateway-controller",
           "gatewayApiHttpListenerPort": 8080,
           "gatewayApiHttpsListenerPort": 8443,
-          "gatewayApiSyncIntervalSeconds": 30
+          "gatewayApiSyncIntervalSeconds": 30,
+          "gatewayApiGatewayServiceName": "",
+          "gatewayApiAddresses": []
         }
       }
     }
@@ -699,6 +703,45 @@ The controller updates the `status` subresource on each Gateway API object:
 - **HTTPRoute**: per-parent conditions `Accepted: True/False` and `ResolvedRefs: True/False`. When `ResolvedRefs` is `False`, the reason indicates the cause: `RefNotPermitted` (missing ReferenceGrant for cross-namespace reference) or `BackendNotFound` (Service does not exist)
 - **GRPCRoute**: same status conditions as HTTPRoute
 
+### Gateway addresses
+
+The controller reports the network addresses where the Gateway is reachable in the `status.addresses` field.
+This allows other tools and users to discover how to reach the gateway programmatically.
+
+**Resolution priority:**
+
+1. **Static addresses** (`gatewayApiAddresses`): if configured, these are used directly without any Kubernetes Service lookup.
+   Useful for bare-metal, NodePort setups, or when an external load balancer IP is known in advance.
+
+2. **Dynamic service resolution**: the controller looks up a Kubernetes Service to extract its addresses:
+   - The service is identified by `gatewayApiGatewayServiceName` (if set), otherwise `otoroshiServiceName`
+   - The namespace is always `otoroshiNamespace`
+   - For `LoadBalancer` services: IPs and hostnames from `status.loadBalancer.ingress` are reported
+   - For `ClusterIP` services (or when no LoadBalancer ingress is available): the `spec.clusterIP` is reported
+
+**Examples:**
+
+Static override (bare-metal with known external IP):
+
+```json
+{
+  "gatewayApiAddresses": [
+    {"type": "IPAddress", "value": "203.0.113.10"},
+    {"type": "Hostname", "value": "gateway.example.com"}
+  ]
+}
+```
+
+Dedicated LoadBalancer service for gateway traffic:
+
+```json
+{
+  "gatewayApiGatewayServiceName": "otoroshi-gateway-lb"
+}
+```
+
+Default behavior (uses `otoroshiServiceName`): no additional configuration needed.
+
 ## Current limitations
 
 The following features are **not yet implemented** in the current experiments:
@@ -708,7 +751,6 @@ The following features are **not yet implemented** in the current experiments:
 | TLSRoute | Not implemented | Experimental in Gateway API spec |
 | TCPRoute | Not implemented | Experimental in Gateway API spec |
 | UDPRoute | Not implemented | Experimental in Gateway API spec |
-| Gateway addresses | Not implemented | The `spec.addresses` field is ignored |
 | Dynamic listener provisioning | Not planned | Otoroshi uses a proxy-existing approach; ports must be pre-configured |
 
 @@@ note

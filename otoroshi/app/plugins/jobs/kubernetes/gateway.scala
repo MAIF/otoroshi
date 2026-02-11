@@ -21,7 +21,6 @@ import scala.util.{Failure, Success, Try}
 // TODO — Remaining work for full Gateway API compliance
 //
 // STATUS:
-// - [ ] Gateway addresses status (report Otoroshi's external IP/hostname)
 // - [ ] Conflict detection on listener hostname/port collisions
 //
 // ADVANCED:
@@ -478,6 +477,48 @@ object KubernetesGatewayApiJob {
 
   // ─── Reconcile Gateways ───────────────────────────────────────────────────
 
+  /**
+   * Resolves the addresses to report in Gateway status.
+   *
+   * Resolution priority:
+   * 1. Static addresses from `gatewayApiAddresses` config (if non-empty)
+   * 2. Dynamic resolution from the Kubernetes Service identified by
+   *    `gatewayApiGatewayServiceName` (or `otoroshiServiceName` fallback):
+   *    - LoadBalancer ingress IPs/hostnames from `status.loadBalancer.ingress`
+   *    - ClusterIP as last resort
+   * 3. Empty array if resolution fails
+   */
+  private def resolveGatewayAddresses(
+      client: KubernetesClient,
+      conf: KubernetesConfig
+  )(implicit ec: ExecutionContext): Future[JsArray] = {
+    if (conf.gatewayApiAddresses.nonEmpty) {
+      Future.successful(JsArray(conf.gatewayApiAddresses))
+    } else {
+      val svcName = conf.gatewayApiGatewayServiceName.getOrElse(conf.otoroshiServiceName)
+      val svcNamespace = conf.otoroshiNamespace
+      client.fetchService(svcNamespace, svcName).map {
+        case None =>
+          logger.warn(s"Gateway address resolution: Service $svcNamespace/$svcName not found")
+          Json.arr()
+        case Some(svc) =>
+          val lbIngress = svc.raw.select("status").select("loadBalancer").select("ingress")
+            .asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          if (lbIngress.nonEmpty) {
+            JsArray(lbIngress.flatMap { ingress =>
+              val ip = (ingress \ "ip").asOpt[String]
+              val hostname = (ingress \ "hostname").asOpt[String]
+              ip.map(v => Json.obj("type" -> "IPAddress", "value" -> v))
+                .orElse(hostname.map(v => Json.obj("type" -> "Hostname", "value" -> v)))
+            })
+          } else {
+            // Fallback to clusterIP
+            Json.arr(Json.obj("type" -> "IPAddress", "value" -> svc.clusterIP))
+          }
+      }
+    }
+  }
+
   private def reconcileGateways(
       client: KubernetesClient,
       gateways: Seq[KubernetesGateway],
@@ -494,6 +535,7 @@ object KubernetesGatewayApiJob {
       .toSet
     val ourGateways = gateways.filter(gw => acceptedClassNames.contains(gw.gatewayClassName))
 
+    resolveGatewayAddresses(client, conf).flatMap { addresses =>
     Future
       .sequence(ourGateways.map { gw =>
         val listenerStatuses = gw.listeners.map { listener =>
@@ -589,11 +631,13 @@ object KubernetesGatewayApiJob {
               gwGen
             )
           ),
-          "listeners" -> JsArray(listenerStatuses)
+          "addresses"  -> addresses,
+          "listeners"  -> JsArray(listenerStatuses)
         )
 
         client.updateGatewayStatus(gw.namespace, gw.name, gatewayStatus).map(_ => gw)
       })
+    }
   }
 
   /**

@@ -80,7 +80,9 @@ case class KubernetesConfig(
     gatewayApiControllerName: String,
     gatewayApiHttpListenerPort: Seq[Int],
     gatewayApiHttpsListenerPort: Seq[Int],
-    gatewayApiSyncIntervalSeconds: Long
+    gatewayApiSyncIntervalSeconds: Long,
+    gatewayApiAddresses: Seq[JsObject],
+    gatewayApiGatewayServiceName: Option[String]
 )
 
 object KubernetesConfig {
@@ -283,12 +285,14 @@ object KubernetesConfig {
           gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].map(v => Seq(v))
             .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
             .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[Seq[Int]])
-            .getOrElse(Seq(8080)),
+            .getOrElse(Seq(80, 8080)),
           gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort").asOpt[Int].map(v => Seq(v))
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
-            .getOrElse(Seq(8443)),
-          gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L)
+            .getOrElse(Seq(443, 8443)),
+          gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L),
+          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
+          gatewayApiGatewayServiceName = (conf \ "gatewayApiGatewayServiceName").asOpt[String].filter(_.nonEmpty)
         )
       }
       case None             => {
@@ -391,12 +395,14 @@ object KubernetesConfig {
           gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].map(v => Seq(v))
             .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
             .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[Seq[Int]])
-            .getOrElse(Seq(8080)),
+            .getOrElse(Seq(80, 8080)),
           gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort").asOpt[Int].map(v => Seq(v))
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
-            .getOrElse(Seq(8443)),
-          gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L)
+            .getOrElse(Seq(443, 8443)),
+          gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L),
+          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
+          gatewayApiGatewayServiceName = (conf \ "gatewayApiGatewayServiceName").asOpt[String].filter(_.nonEmpty)
         )
       }
     }
@@ -452,9 +458,11 @@ object KubernetesConfig {
         "callAndStreamTimeout"                 -> 30000,
         "gatewayApi"                           -> false,
         "gatewayApiControllerName"             -> "otoroshi.io/gateway-controller",
-        "gatewayApiHttpListenerPort"           -> 8080,
-        "gatewayApiHttpsListenerPort"          -> 8443,
+        "gatewayApiHttpListenerPort"           -> Seq(80, 8080),
+        "gatewayApiHttpsListenerPort"          -> Seq(443, 8443),
         "gatewayApiSyncIntervalSeconds"        -> 60,
+        "gatewayApiAddresses"                  -> Json.arr(),
+        "gatewayApiGatewayServiceName"         -> "",
         "templates"                            -> Json.obj(
           "service-group"      -> Json.obj(),
           "service-descriptor" -> Json.obj(),
@@ -540,6 +548,8 @@ object KubernetesConfig {
       "gatewayApiHttpListenerPort",
       "gatewayApiHttpsListenerPort",
       "gatewayApiSyncIntervalSeconds",
+      "gatewayApiAddresses",
+      "gatewayApiGatewayServiceName",
       ">>>client settings",
       "connectionTimeout",
       "idleTimeout",
@@ -859,6 +869,20 @@ object KubernetesConfig {
       "Sync interval",
       "Number of seconds between Gateway API syncs".some,
       more = Json.obj("suffix" -> "seconds")
+    )
+    ++ makeFormField(
+      "gatewayApiGatewayServiceName",
+      "string",
+      "Gateway service name",
+      "Kubernetes Service name to resolve for Gateway status addresses. If empty, uses otoroshiServiceName".some,
+      more = Json.obj("placeholder" -> "otoroshi-gateway-service")
+    )
+    ++ makeFormField(
+      "gatewayApiAddresses",
+      "string",
+      "Static addresses (JSON)",
+      "Static addresses for Gateway status (overrides service resolution). JSON array of {type,value} objects".some,
+      more = Json.obj("placeholder" -> """[{"type":"IPAddress","value":"1.2.3.4"}]""")
     )
   )
 }
