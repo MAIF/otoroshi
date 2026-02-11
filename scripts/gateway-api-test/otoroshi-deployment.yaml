@@ -90,8 +90,8 @@ spec:
                       "clusterDomain": "cluster.local",
                       "gatewayApi": true,
                       "gatewayApiControllerName": "otoroshi.io/gateway-controller",
-                      "gatewayApiHttpListenerPort": 8080,
-                      "gatewayApiHttpsListenerPort": 8443,
+                      "gatewayApiHttpListenerPort": 80,
+                      "gatewayApiHttpsListenerPort": 443,
                       "gatewayApiSyncIntervalSeconds": 30
                     }
                   }

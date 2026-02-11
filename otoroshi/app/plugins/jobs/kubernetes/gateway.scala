@@ -22,7 +22,6 @@ import scala.util.{Failure, Success, Try}
 //
 // STATUS:
 // - [ ] Gateway addresses status (report Otoroshi's external IP/hostname)
-// - [ ] Listener attachedRoutes count in Gateway status
 // - [ ] Conflict detection on listener hostname/port collisions
 //
 // ADVANCED:
@@ -245,7 +244,9 @@ object KubernetesGatewayApiJob {
         resolvedCerts <- resolveGatewayCertificates(client, gateways, gatewayClasses, conf)
 
         // ─── Phase 4: Reconcile Gateways ────────────────────────
-        acceptedGateways <- reconcileGateways(client, gateways, gatewayClasses, conf, resolvedCerts)
+        acceptedGateways <- reconcileGateways(
+          client, gateways, gatewayClasses, httpRoutes, grpcRoutes, namespaces, conf, resolvedCerts
+        )
 
         // ─── Phase 4.5: Resolve BackendTLS CA certificates ──────
         resolvedCaCertIds <- resolveBackendTLSCACertificates(client, backendTLSPolicies, conf)
@@ -481,6 +482,9 @@ object KubernetesGatewayApiJob {
       client: KubernetesClient,
       gateways: Seq[KubernetesGateway],
       gatewayClasses: Seq[KubernetesGatewayClass],
+      httpRoutes: Seq[KubernetesHTTPRoute],
+      grpcRoutes: Seq[KubernetesGRPCRoute],
+      namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig,
       resolvedCerts: Set[String]
   )(implicit ec: ExecutionContext): Future[Seq[KubernetesGateway]] = {
@@ -550,10 +554,15 @@ object KubernetesGatewayApiJob {
             )
           }
 
+          // Count routes attached to this specific listener.
+          // A route is attached if its parentRef matches this gateway and listener,
+          // and the listener's allowedRoutes accepts routes from the route's namespace.
+          val attachedRouteCount = countAttachedRoutes(gw, listener, httpRoutes, grpcRoutes, namespaces)
+
           Json.obj(
             "name"           -> listener.name,
             "conditions"     -> conditions,
-            "attachedRoutes" -> 0, // TODO: compute actual attached routes count
+            "attachedRoutes" -> attachedRouteCount,
             "supportedKinds" -> Json.arr(
               Json.obj("group" -> "gateway.networking.k8s.io", "kind" -> "HTTPRoute"),
               Json.obj("group" -> "gateway.networking.k8s.io", "kind" -> "GRPCRoute")
@@ -585,6 +594,52 @@ object KubernetesGatewayApiJob {
 
         client.updateGatewayStatus(gw.namespace, gw.name, gatewayStatus).map(_ => gw)
       })
+  }
+
+  /**
+   * Counts how many routes (HTTPRoute + GRPCRoute) are attached to a specific listener.
+   *
+   * A route is considered attached to a listener when:
+   * 1. One of its parentRefs matches the gateway name and namespace
+   * 2. If parentRef.sectionName is set, it must match the listener name
+   * 3. The listener's allowedRoutes accepts the route's namespace
+   */
+  private def countAttachedRoutes(
+      gw: KubernetesGateway,
+      listener: GatewayListener,
+      httpRoutes: Seq[KubernetesHTTPRoute],
+      grpcRoutes: Seq[KubernetesGRPCRoute],
+      namespaces: Seq[KubernetesNamespace]
+  ): Int = {
+    def routeAttaches(parentRefs: Seq[HTTPRouteParentRef], routeNamespace: String): Boolean = {
+      parentRefs.exists { ref =>
+        val refGwNamespace = ref.namespace.getOrElse(routeNamespace)
+        val gwMatches = ref.name == gw.name && refGwNamespace == gw.namespace
+        val listenerMatches = ref.sectionName match {
+          case Some(sn) => sn == listener.name
+          case None     => true // no sectionName means all listeners
+        }
+        val namespaceAllowed = listener.allowedRoutesNamespacesFrom match {
+          case "All"  => true
+          case "Same" => routeNamespace == gw.namespace
+          case "Selector" =>
+            listener.allowedRoutesNamespacesSelector match {
+              case None => true
+              case Some(selector) =>
+                namespaces.find(_.name == routeNamespace).exists { ns =>
+                  val matchLabels = (selector \ "matchLabels").asOpt[Map[String, String]].getOrElse(Map.empty)
+                  matchLabels.forall { case (k, v) => ns.labels.get(k).contains(v) }
+                }
+            }
+          case _ => false
+        }
+        gwMatches && listenerMatches && namespaceAllowed
+      }
+    }
+
+    val httpCount = httpRoutes.count(r => routeAttaches(r.parentRefs, r.namespace))
+    val grpcCount = grpcRoutes.count(r => routeAttaches(r.parentRefs, r.namespace))
+    httpCount + grpcCount
   }
 
   // ─── Reconcile HTTPRoutes ─────────────────────────────────────────────────
