@@ -21,7 +21,7 @@ import scala.util.{Failure, Success, Try}
 // TODO — Remaining work for full Gateway API compliance
 //
 // ADVANCED:
-// - [ ] Support otoroshi specific settings through annotations (mostly flags and additional plugins)
+// - [x] Support otoroshi specific settings on routes through json serialized annotations (mostly route flags and additional_plugins array)
 // - [ ] Conformance test suite (gateway-api conformance tests)
 // ─────────────────────────────────────────────────────────────────────────────
 

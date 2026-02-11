@@ -8,6 +8,7 @@ import play.api.Logger
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 /**
  * Result of converting a Gateway API route (HTTPRoute or GRPCRoute) to NgRoutes.
@@ -365,7 +366,7 @@ object GatewayApiConverter {
       plugins = plugins
     )
 
-    Seq(route)
+    Seq(applyOtoroshiAnnotations(route, httpRoute))
   }
 
   // ─── GRPCRoute rule conversion ─────────────────────────────────────────────
@@ -458,7 +459,82 @@ object GatewayApiConverter {
       plugins = plugins
     )
 
-    Seq(route)
+    Seq(applyOtoroshiAnnotations(route, grpcRoute))
+  }
+
+  // ─── Otoroshi annotation support ──────────────────────────────────────────
+  //
+  // Annotations on HTTPRoute/GRPCRoute resources allow users to configure
+  // Otoroshi-specific settings that are not part of the Gateway API spec.
+  //
+  // Supported annotations (prefix: proxy.otoroshi.io/):
+  //   route-plugins          JSON array of NgPluginInstance objects to append
+  //   route-flags            JSON object: {enabled, debugFlow, capture, exportReporting}
+  //   route-groups           JSON array of Otoroshi group IDs
+  //   route-bound-listeners  JSON array of Otoroshi listener IDs
+  //   route-metadata         JSON object of additional key/value metadata
+  // ────────────────────────────────────────────────────────────────────────────
+
+  private val ANNOTATION_PREFIX = "proxy.otoroshi.io/"
+
+  /**
+   * Applies Otoroshi-specific annotations to a generated NgRoute.
+   *
+   * Reads annotations from the source Kubernetes entity (HTTPRoute or GRPCRoute)
+   * and overrides the corresponding fields on the generated route.
+   */
+  private def applyOtoroshiAnnotations(route: NgRoute, entity: KubernetesEntity): NgRoute = {
+    val annots = entity.annotations
+
+    // route-flags: override boolean flags on the route
+    val flagged = annots.get(s"${ANNOTATION_PREFIX}route-flags")
+      .flatMap(v => Try(Json.parse(v)).toOption)
+      .flatMap(_.asOpt[JsObject]) match {
+      case Some(flags) =>
+        route.copy(
+          enabled = (flags \ "enabled").asOpt[Boolean].getOrElse(route.enabled),
+          debugFlow = (flags \ "debugFlow").asOpt[Boolean].getOrElse(route.debugFlow),
+          capture = (flags \ "capture").asOpt[Boolean].getOrElse(route.capture),
+          exportReporting = (flags \ "exportReporting").asOpt[Boolean].getOrElse(route.exportReporting)
+        )
+      case None => route
+    }
+
+    // route-groups: override Otoroshi groups
+    val grouped = annots.get(s"${ANNOTATION_PREFIX}route-groups")
+      .flatMap(v => Try(Json.parse(v)).toOption)
+      .flatMap(_.asOpt[Seq[String]]) match {
+      case Some(groups) if groups.nonEmpty => flagged.copy(groups = groups)
+      case _ => flagged
+    }
+
+    // route-bound-listeners: override bound listeners
+    val listenered = annots.get(s"${ANNOTATION_PREFIX}route-bound-listeners")
+      .flatMap(v => Try(Json.parse(v)).toOption)
+      .flatMap(_.asOpt[Seq[String]]) match {
+      case Some(listeners) if listeners.nonEmpty => grouped.copy(boundListeners = listeners)
+      case _ => grouped
+    }
+
+    // route-metadata: merge additional metadata
+    val metadated = annots.get(s"${ANNOTATION_PREFIX}route-metadata")
+      .flatMap(v => Try(Json.parse(v)).toOption)
+      .flatMap(_.asOpt[Map[String, String]]) match {
+      case Some(extra) if extra.nonEmpty => listenered.copy(metadata = listenered.metadata ++ extra)
+      case _ => listenered
+    }
+
+    // route-plugins: append additional plugin instances
+    val plugined = annots.get(s"${ANNOTATION_PREFIX}route-plugins")
+      .flatMap(v => Try(Json.parse(v)).toOption)
+      .flatMap(_.asOpt[JsArray]) match {
+      case Some(arr) =>
+        val extraPlugins = arr.value.map(NgPluginInstance.readFrom)
+        metadated.copy(plugins = NgPlugins(metadated.plugins.slots ++ extraPlugins))
+      case None => metadated
+    }
+
+    plugined
   }
 
   /**

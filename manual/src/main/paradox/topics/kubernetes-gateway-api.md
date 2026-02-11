@@ -371,6 +371,113 @@ The Plugin `spec` supports all `NgPluginInstance` fields: `plugin`, `enabled`, `
 ExtensionRef only resolves Plugin resources in the **same namespace** as the route (per Gateway API specification). Only the `proxy.otoroshi.io/Plugin` group/kind is supported; other group/kind combinations will log a warning and be ignored.
 @@@
 
+## Otoroshi-specific annotations
+
+While the Gateway API specification covers common routing patterns, you may need Otoroshi-specific settings that are not part of the standard. Otoroshi supports a set of annotations on `HTTPRoute` and `GRPCRoute` resources that let you customize the generated `NgRoute` without leaving the Kubernetes-native workflow.
+
+All annotations use the prefix `proxy.otoroshi.io/` and expect JSON-encoded values.
+
+### Supported annotations
+
+| Annotation | Type | Description |
+|------------|------|-------------|
+| `proxy.otoroshi.io/route-plugins` | JSON array | Additional `NgPluginInstance` objects to append to the route's plugin chain |
+| `proxy.otoroshi.io/route-flags` | JSON object | Override route boolean flags: `enabled`, `debugFlow`, `capture`, `exportReporting` |
+| `proxy.otoroshi.io/route-groups` | JSON array | Override the Otoroshi group IDs for the route |
+| `proxy.otoroshi.io/route-bound-listeners` | JSON array | Override the Otoroshi bound listener IDs for the route |
+| `proxy.otoroshi.io/route-metadata` | JSON object | Additional key/value metadata merged into the route's metadata |
+
+### Adding plugins via annotations
+
+The `route-plugins` annotation lets you inject Otoroshi plugins into a route without using ExtensionRef filters. This is useful when you want to add plugins that apply to all rules of a route, or when you prefer annotations over CRD-based Plugin resources.
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-route
+  namespace: default
+  annotations:
+    proxy.otoroshi.io/route-plugins: |
+      [
+        {
+          "plugin": "cp:otoroshi.next.plugins.AdditionalHeadersIn",
+          "enabled": true,
+          "config": {
+            "headers": {
+              "X-Injected-By": "annotation"
+            }
+          }
+        },
+        {
+          "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
+          "enabled": true,
+          "config": {}
+        }
+      ]
+spec:
+  parentRefs:
+  - name: my-gateway
+  hostnames:
+  - "api.example.com"
+  rules:
+  - backendRefs:
+    - name: my-service
+      port: 80
+```
+
+Plugins added via annotations are **appended** after any plugins generated from route filters (RequestHeaderModifier, ResponseHeaderModifier, ExtensionRef, etc.).
+
+### Controlling route flags
+
+The `route-flags` annotation lets you override boolean flags on the generated route:
+
+```yaml
+metadata:
+  annotations:
+    proxy.otoroshi.io/route-flags: |
+      {
+        "enabled": true,
+        "debugFlow": true,
+        "capture": false,
+        "exportReporting": true
+      }
+```
+
+All fields are optional — only the specified flags are overridden, others keep their default values.
+
+### Setting groups and bound listeners
+
+Override which Otoroshi groups or listeners the route belongs to:
+
+```yaml
+metadata:
+  annotations:
+    proxy.otoroshi.io/route-groups: '["my-group-1", "my-group-2"]'
+    proxy.otoroshi.io/route-bound-listeners: '["listener_0"]'
+```
+
+### Adding metadata
+
+Merge additional key/value pairs into the route's metadata:
+
+```yaml
+metadata:
+  annotations:
+    proxy.otoroshi.io/route-metadata: |
+      {
+        "team": "platform",
+        "cost-center": "engineering",
+        "sla": "99.9"
+      }
+```
+
+These metadata entries are merged with the default metadata that Otoroshi sets on generated routes (`otoroshi-provider`, `gateway-api-kind`, etc.).
+
+@@@ warning
+Annotation values must be valid JSON. If a JSON parse error occurs, the annotation is silently ignored and the route is generated with default values. Check the Otoroshi logs for any warnings.
+@@@
+
 ## TLS certificate resolution
 
 HTTPS listeners can reference Kubernetes TLS Secrets via `tls.certificateRefs`. Otoroshi automatically resolves these references and imports the certificates into its certificate store so that they are available for SNI-based TLS termination.
