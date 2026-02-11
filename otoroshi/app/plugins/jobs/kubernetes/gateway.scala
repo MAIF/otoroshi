@@ -20,9 +20,6 @@ import scala.util.{Failure, Success, Try}
 // ─────────────────────────────────────────────────────────────────────────────
 // TODO — Remaining work for full Gateway API compliance
 //
-// STATUS:
-// - [ ] Conflict detection on listener hostname/port collisions
-//
 // ADVANCED:
 // - [ ] Support otoroshi specific settings through annotations (mostly flags and additional plugins)
 // - [ ] Conformance test suite (gateway-api conformance tests)
@@ -565,7 +562,10 @@ object KubernetesGatewayApiJob {
 
           val gwGeneration = gw.raw.select("metadata").select("generation").asOpt[Long]
 
-          val conditions = if (portOk && protocolOk) {
+          // Detect conflicts with other listeners on the same Gateway
+          val conflict = detectListenerConflict(listener, gw.listeners)
+
+          val baseConditions = if (portOk && protocolOk) {
             Json.arr(
               conditionJson("Accepted", "True", "Accepted", "Listener accepted", gwGeneration),
               conditionJson("Programmed", "True", "Programmed", "Listener programmed", gwGeneration),
@@ -594,6 +594,13 @@ object KubernetesGatewayApiJob {
               ),
               conditionJson("Programmed", "False", "Invalid", "Listener not programmed", gwGeneration)
             )
+          }
+
+          val conditions = conflict match {
+            case Some((reason, message)) =>
+              baseConditions :+ conditionJson("Conflicted", "True", reason, message, gwGeneration)
+            case None =>
+              baseConditions :+ conditionJson("Conflicted", "False", "NoConflicts", "No conflicts", gwGeneration)
           }
 
           // Count routes attached to this specific listener.
@@ -638,6 +645,72 @@ object KubernetesGatewayApiJob {
         client.updateGatewayStatus(gw.namespace, gw.name, gatewayStatus).map(_ => gw)
       })
     }
+  }
+
+  /**
+   * Detects conflicts between a listener and the other listeners on the same Gateway.
+   *
+   * Per the Gateway API spec, a listener is conflicted when another listener on the
+   * same Gateway uses the same port with:
+   * - A different protocol (ProtocolConflict)
+   * - An overlapping hostname (HostnameConflict): exact match, or wildcard overlap
+   *   (e.g. `*.example.com` overlaps with `foo.example.com`)
+   *
+   * @return Some((reason, message)) if a conflict is detected, None otherwise
+   */
+  private def detectListenerConflict(
+      listener: GatewayListener,
+      allListeners: Seq[GatewayListener]
+  ): Option[(String, String)] = {
+    val others = allListeners.filter(_.name != listener.name)
+    val samePort = others.filter(_.port == listener.port)
+    if (samePort.isEmpty) return None
+
+    // Check protocol conflicts: same port, different protocol
+    val protocolConflicts = samePort.filter(_.protocol != listener.protocol)
+    if (protocolConflicts.nonEmpty) {
+      val names = protocolConflicts.map(l => s"${l.name}(${l.protocol})").mkString(", ")
+      return Some(("ProtocolConflict",
+        s"Listener ${listener.name} (${listener.protocol}) conflicts with listeners on same port ${listener.port}: $names"))
+    }
+
+    // Check hostname conflicts: same port, same protocol, overlapping hostnames
+    val samePortAndProtocol = samePort.filter(_.protocol == listener.protocol)
+    val hostnameConflicts = samePortAndProtocol.filter { other =>
+      hostnamesOverlap(listener.hostname, other.hostname)
+    }
+    if (hostnameConflicts.nonEmpty) {
+      val names = hostnameConflicts.map(l => s"${l.name}(${l.hostname.getOrElse("*")})").mkString(", ")
+      return Some(("HostnameConflict",
+        s"Listener ${listener.name} (${listener.hostname.getOrElse("*")}) has overlapping hostname with: $names"))
+    }
+
+    None
+  }
+
+  /**
+   * Checks if two listener hostnames overlap.
+   *
+   * Overlap rules:
+   * - None (no hostname = match all) overlaps with everything
+   * - Exact match: "foo.example.com" overlaps with "foo.example.com"
+   * - Wildcard overlap: "*.example.com" overlaps with "foo.example.com" and vice versa
+   * - Wildcard vs wildcard: "*.example.com" overlaps with "*.example.com"
+   */
+  private def hostnamesOverlap(a: Option[String], b: Option[String]): Boolean = {
+    (a, b) match {
+      case (None, _) | (_, None)             => true // no hostname means match-all
+      case (Some(ha), Some(hb)) if ha == hb  => true // exact match
+      case (Some(ha), Some(hb))              =>
+        wildcardMatches(ha, hb) || wildcardMatches(hb, ha)
+    }
+  }
+
+  private def wildcardMatches(pattern: String, hostname: String): Boolean = {
+    if (pattern.startsWith("*.")) {
+      val suffix = pattern.substring(1) // ".example.com"
+      hostname.endsWith(suffix) && !hostname.substring(0, hostname.length - suffix.length).contains(".")
+    } else false
   }
 
   /**
