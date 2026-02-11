@@ -1176,6 +1176,7 @@ object GatewayApiConverter {
             val name  = (ref \ "name").as[String]
             if (group == "proxy.otoroshi.io" && kind == "Plugin") {
               k8sPlugins.find(p => p.name == name && p.namespace == routeNamespace) match {
+                case Some(plugin) if plugin.spec.select("plugins").isDefined => plugin.spec.select("plugins").as[Seq[JsObject]].map(o => NgPluginInstance.readFrom(o))
                 case Some(plugin) => Seq(NgPluginInstance.readFrom(plugin.spec))
                 case None =>
                   logger.warn(s"ExtensionRef Plugin '$name' not found in namespace $routeNamespace for $routePath")
