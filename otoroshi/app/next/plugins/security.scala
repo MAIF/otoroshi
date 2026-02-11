@@ -220,6 +220,73 @@ object HstsConf {
   }
 }
 
+sealed trait ReferrerPolicy {
+  def json: JsValue
+}
+object ReferrerPolicy       {
+  case object NO_REFERRER                     extends ReferrerPolicy {
+    def json: JsValue = JsString("no-referrer")
+  }
+  case object NO_REFERRER_WHEN_DOWNGRADE      extends ReferrerPolicy {
+    def json: JsValue = JsString("no-referrer-when-downgrade")
+  }
+  case object ORIGIN                          extends ReferrerPolicy {
+    def json: JsValue = JsString("origin")
+  }
+  case object ORIGIN_WHEN_CROSS_ORIGIN        extends ReferrerPolicy {
+    def json: JsValue = JsString("origin-when-cross-origin")
+  }
+  case object SAME_ORIGIN                     extends ReferrerPolicy {
+    def json: JsValue = JsString("same-origin")
+  }
+  case object STRICT_ORIGIN                   extends ReferrerPolicy {
+    def json: JsValue = JsString("strict-origin")
+  }
+  case object STRICT_ORIGIN_WHEN_CROSS_ORIGIN extends ReferrerPolicy {
+    def json: JsValue = JsString("strict-origin-when-cross-origin")
+  }
+  case object UNSAFE_URL                      extends ReferrerPolicy {
+    def json: JsValue = JsString("unsafe-url")
+  }
+  case object DISABLED                        extends ReferrerPolicy {
+    def json: JsValue = JsString("DISABLED")
+  }
+  def fromString(s: String): ReferrerPolicy = s.toLowerCase match {
+    case "no-referrer"                     => NO_REFERRER
+    case "no-referrer-when-downgrade"      => NO_REFERRER_WHEN_DOWNGRADE
+    case "origin"                          => ORIGIN
+    case "origin-when-cross-origin"        => ORIGIN_WHEN_CROSS_ORIGIN
+    case "same-origin"                     => SAME_ORIGIN
+    case "strict-origin"                   => STRICT_ORIGIN
+    case "strict-origin-when-cross-origin" => STRICT_ORIGIN_WHEN_CROSS_ORIGIN
+    case "unsafe-url"                      => UNSAFE_URL
+    case _                                 => DISABLED
+  }
+}
+
+final case class PermissionsPolicyConf(enabled: Boolean, policy: String) {
+  def json: JsValue = PermissionsPolicyConf.format.writes(this)
+}
+
+object PermissionsPolicyConf {
+  val format = new Format[PermissionsPolicyConf] {
+    override def reads(json: JsValue): JsResult[PermissionsPolicyConf] = Try {
+      PermissionsPolicyConf(
+        enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+        policy = (json \ "policy").asOpt[String].getOrElse("")
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+
+    override def writes(o: PermissionsPolicyConf): JsValue = Json.obj(
+      "enabled" -> o.enabled,
+      "policy"  -> o.policy
+    )
+  }
+}
+
 final case class CspConf(mode: CspMode, csp: String) {
   def json: JsValue = CspConf.format.writes(this)
 }
@@ -248,8 +315,10 @@ object SecurityHeadersPluginConfig {
     "frame_options",
     "xss_protection",
     "content_type_options",
+    "referrer_policy",
     "hsts",
-    "csp"
+    "csp",
+    "permissions_policy"
   )
   val configSchema: Option[JsObject] = Some(
     Json.obj(
@@ -279,6 +348,23 @@ object SecurityHeadersPluginConfig {
       "content_type_options" -> Json.obj(
         "type"  -> "bool",
         "label" -> s"X-Content-Type-Options"
+      ),
+      "referrer_policy"      -> Json.obj(
+        "type"  -> "select",
+        "label" -> s"Referrer-Policy",
+        "props" -> Json.obj(
+          "options" -> Json.arr(
+            Json.obj("label" -> "no-referrer", "value"                     -> "no-referrer"),
+            Json.obj("label" -> "no-referrer-when-downgrade", "value"      -> "no-referrer-when-downgrade"),
+            Json.obj("label" -> "origin", "value"                          -> "origin"),
+            Json.obj("label" -> "origin-when-cross-origin", "value"        -> "origin-when-cross-origin"),
+            Json.obj("label" -> "same-origin", "value"                     -> "same-origin"),
+            Json.obj("label" -> "strict-origin", "value"                   -> "strict-origin"),
+            Json.obj("label" -> "strict-origin-when-cross-origin", "value" -> "strict-origin-when-cross-origin"),
+            Json.obj("label" -> "unsafe-url", "value"                      -> "unsafe-url"),
+            Json.obj("label" -> "DISABLED", "value"                        -> "DISABLED")
+          )
+        )
       ),
       "csp"                  -> Json.obj(
         "label"       -> "Content Security Policy",
@@ -332,6 +418,23 @@ object SecurityHeadersPluginConfig {
           )
         ),
         "flow"        -> Json.arr("enabled", "include_subdomains", "max_age", "preload", "on_http")
+      ),
+      "permissions_policy"   -> Json.obj(
+        "label"       -> "Permissions Policy",
+        "type"        -> "form",
+        "collapsable" -> true,
+        "collapsed"   -> true,
+        "schema"      -> Json.obj(
+          "enabled" -> Json.obj(
+            "type"  -> "bool",
+            "label" -> "Enabled"
+          ),
+          "policy"  -> Json.obj(
+            "type"  -> "string",
+            "label" -> s"Permissions-Policy"
+          )
+        ),
+        "flow"        -> Json.arr("enabled", "policy")
       )
     )
   )
@@ -340,7 +443,9 @@ object SecurityHeadersPluginConfig {
     xssProtection = XssProtection.DISABLED,
     contentTypeOptions = false,
     hsts = HstsConf(false, false, 3600L, false, false),
-    csp = CspConf(CspMode.DISABLED, "")
+    csp = CspConf(CspMode.DISABLED, ""),
+    referrerPolicy = ReferrerPolicy.DISABLED,
+    permissionsPolicy = PermissionsPolicyConf(false, "")
   )
   val format                         = new Format[SecurityHeadersPluginConfig] {
 
@@ -358,7 +463,17 @@ object SecurityHeadersPluginConfig {
           .select("csp")
           .asOpt[JsObject]
           .flatMap(o => CspConf.format.reads(o).asOpt)
-          .getOrElse(SecurityHeadersPluginConfig.default.csp)
+          .getOrElse(SecurityHeadersPluginConfig.default.csp),
+        referrerPolicy = json
+          .select("referrer_policy")
+          .asOpt[String]
+          .map(ReferrerPolicy.fromString)
+          .getOrElse(SecurityHeadersPluginConfig.default.referrerPolicy),
+        permissionsPolicy = json
+          .select("permissions_policy")
+          .asOpt[JsObject]
+          .flatMap(o => PermissionsPolicyConf.format.reads(o).asOpt)
+          .getOrElse(SecurityHeadersPluginConfig.default.permissionsPolicy)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -370,7 +485,9 @@ object SecurityHeadersPluginConfig {
       "xss_protection"       -> o.xssProtection.json,
       "content_type_options" -> o.contentTypeOptions,
       "hsts"                 -> o.hsts.json,
-      "csp"                  -> o.csp.json
+      "csp"                  -> o.csp.json,
+      "referrer_policy"      -> o.referrerPolicy.json,
+      "permissions_policy"   -> o.permissionsPolicy.json
     )
   }
 }
@@ -380,7 +497,9 @@ case class SecurityHeadersPluginConfig(
     xssProtection: XssProtection,
     contentTypeOptions: Boolean,
     hsts: HstsConf,
-    csp: CspConf
+    csp: CspConf,
+    referrerPolicy: ReferrerPolicy,
+    permissionsPolicy: PermissionsPolicyConf
 ) extends NgPluginConfig {
   def json: JsValue = SecurityHeadersPluginConfig.format.writes(this)
 }
@@ -389,7 +508,7 @@ class SecurityHeadersPlugin extends NgRequestTransformer {
 
   override def name: String                                = "Security Headers"
   override def description: Option[String]                 = Some(
-    "Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options)"
+    "Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)"
   )
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Security)
   override def defaultConfigObject: Option[NgPluginConfig] = Some(SecurityHeadersPluginConfig.default)
@@ -431,10 +550,19 @@ class SecurityHeadersPlugin extends NgRequestTransformer {
       val preload = if (conf.hsts.preload) "; preload" else ""
       withNosniff + ("Strict-Transport-Security" -> (base + sub + preload))
     } else withNosniff - "Strict-Transport-Security"
-    val finalHeaders = conf.csp.mode match {
+    val withCsp      = conf.csp.mode match {
       case CspMode.DISABLED    => withHsts - "Content-Security-Policy" - "Content-Security-Policy-Report-Only"
       case CspMode.ENABLED     => withHsts + ("Content-Security-Policy"             -> conf.csp.csp.trim)
       case CspMode.REPORT_ONLY => withHsts + ("Content-Security-Policy-Report-Only" -> conf.csp.csp.trim)
+    }
+    val withReferrer = conf.referrerPolicy match {
+      case ReferrerPolicy.DISABLED => withCsp - "Referrer-Policy"
+      case other                   => withCsp + ("Referrer-Policy" -> other.json.as[String])
+    }
+    val finalHeaders = if (conf.permissionsPolicy.enabled && conf.permissionsPolicy.policy.trim.nonEmpty) {
+      withReferrer + ("Permissions-Policy" -> conf.permissionsPolicy.policy.trim)
+    } else {
+      withReferrer - "Permissions-Policy"
     }
     ctx.otoroshiResponse.copy(headers = finalHeaders).rightf
   }

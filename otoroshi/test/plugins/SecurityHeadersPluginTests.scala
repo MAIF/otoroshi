@@ -29,7 +29,9 @@ class SecurityHeadersPluginTests(parent: PluginsTestSpec) {
               preload = true,
               onHttp = true
             ),
-            csp = CspConf(ENABLED, "default-src none; script-src self; connect-src self; img-src self; style-src self;")
+            csp = CspConf(ENABLED, "default-src none; script-src self; connect-src self; img-src self; style-src self;"),
+            referrerPolicy = ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
+            permissionsPolicy = PermissionsPolicyConf(true, "camera=(), microphone=(), geolocation=()")
           ).json.as[JsObject]
         )
       )
@@ -57,6 +59,8 @@ class SecurityHeadersPluginTests(parent: PluginsTestSpec) {
   headers(
     "Content-Security-Policy"
   ) mustBe "default-src none; script-src self; connect-src self; img-src self; style-src self;"
+  headers("Referrer-Policy") mustBe "strict-origin-when-cross-origin"
+  headers("Permissions-Policy") mustBe "camera=(), microphone=(), geolocation=()"
 
   deleteOtoroshiRoute(route).futureValue
 }
