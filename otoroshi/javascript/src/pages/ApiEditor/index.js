@@ -21,6 +21,7 @@ import { NgDotsRenderer, NgForm, NgSelectRenderer } from '../../components/nginp
 import { BackendForm } from '../RouteDesigner/BackendNode';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
+import InfoCollapse from '../../components/InfoCollapse';
 import moment from 'moment';
 import semver from 'semver';
 
@@ -1329,7 +1330,7 @@ function Routes(props) {
 
   useEffect(() => {
     props.setTitle({
-      value: 'Routes',
+      value: 'HTTP Routes',
       noThumbtack: true,
       children: <VersionBadge />,
     });
@@ -2573,21 +2574,21 @@ function NewAPI(props) {
     step === 0
       ? ['picker']
       : [
-          'location',
-          choice === 'openapi'
-            ? {
-                type: 'group',
-                name: 'OpenAPI',
-                collapsable: false,
-                fields: ['openapi', 'domain', 'action', 'serverURL', 'root'],
-              }
-            : {
-                type: 'group',
-                name: 'Informations',
-                collapsable: false,
-                fields: ['id', 'name', 'description'],
-              },
-        ];
+        'location',
+        choice === 'openapi'
+          ? {
+            type: 'group',
+            name: 'OpenAPI',
+            collapsable: false,
+            fields: ['openapi', 'domain', 'action', 'serverURL', 'root'],
+          }
+          : {
+            type: 'group',
+            name: 'Informations',
+            collapsable: false,
+            fields: ['id', 'name', 'description'],
+          },
+      ];
 
   const createApi = () => {
     if (choice === 'fromScratch') {
@@ -2642,11 +2643,6 @@ function Apis(props) {
     props.setTitle({
       value: 'APIs',
       noThumbtack: true,
-      children: (
-        <div className="m-0 ms-2" style={{ fontSize: '1rem' }}>
-          <span className="badge bg-xs bg-warning">ALPHA</span>
-        </div>
-      ),
     });
   }, []);
 
@@ -2686,6 +2682,30 @@ function Apis(props) {
 
   return (
     <>
+      <InfoCollapse title="What is an API?">
+        <p>
+          An API is one of the <strong>core entities</strong> of Otoroshi's API Management, alongside HTTP Routes.
+          While a HTTP route handles a single routing rule, an API lets you <strong>aggregate multiple routes together</strong> and
+          manage them as a unified whole — same security policies, same plugins, same dashboard.
+        </p>
+        <p>
+          Think of it as a higher-level abstraction that brings structure and governance to your routes.
+          Here is what you can do with APIs:
+        </p>
+        <ul>
+          <li><strong>Group routes under one umbrella</strong> — combine multiple routes (e.g. <code>/users</code>, <code>/products</code>, <code>/orders</code>) into a single API with shared configuration.</li>
+          <li><strong>Apply consistent security</strong> — enforce the same authentication, rate limiting, and access control policies across all routes of the API.</li>
+          <li><strong>Share plugins and patterns</strong> — define plugin chains once at the API level and have them apply to every route, avoiding duplication.</li>
+          <li><strong>Unified dashboard</strong> — monitor traffic, errors, and performance for all routes of the API from a single view.</li>
+          <li><strong>Version and deploy</strong> — manage the lifecycle of your API with versioned deployments, making it easy to evolve your API over time.</li>
+          <li><strong>Draft and production modes</strong> — work on a draft version of your API, test it, and promote it to production when ready — without impacting live traffic.</li>
+          <li><strong>Manage consumers and subscriptions</strong> — control who can access your API, issue API keys, and track consumer usage.</li>
+        </ul>
+        <p>
+          APIs give you the power to operate at scale — instead of managing dozens of individual routes,
+          you manage a single API entity with full control over its lifecycle, security, and observability.
+        </p>
+      </InfoCollapse>
       <Table
         parentProps={{ params }}
         navigateTo={(item) => historyPush(history, location, `/apis/${item.id}`)}
@@ -2803,7 +2823,7 @@ function FlowDesigner(props) {
         history={history}
         value={flow}
         setValue={(value) => setFlow({ ...(value || {}) })}
-        setSaveButton={() => {}}
+        setSaveButton={() => { }}
       />
     </div>
   );
@@ -3688,14 +3708,14 @@ function RouteItem({ item, api, ports }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}
+        >
+          {m}
+        </span>
+      ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');

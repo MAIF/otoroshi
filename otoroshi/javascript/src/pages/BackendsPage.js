@@ -3,6 +3,7 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { nextClient } from '../services/BackOfficeServices';
 import { Table, Form } from '../components/inputs';
 import { schemas } from './RouteDesigner/form';
+import InfoCollapse from '../components/InfoCollapse';
 
 export class BackendsPage extends Component {
   formSchema = {
@@ -46,7 +47,30 @@ export class BackendsPage extends Component {
 
   render() {
     const client = nextClient.forEntity(nextClient.ENTITIES.BACKENDS);
-    return (
+    return <>
+      <InfoCollapse title="What is a Backend?">
+        <p>
+          A Backend is a <strong>reusable configuration</strong> that defines how Otoroshi connects to your upstream services.
+          Instead of configuring the same HTTP client settings on every route, you define a backend once
+          and share it across multiple HTTP Routes and APIs.
+        </p>
+        <p>
+          This makes it easy to centralize and standardize how your gateway talks to your infrastructure.
+          Here is what you can configure in a backend:
+        </p>
+        <ul>
+          <li><strong>Targets</strong> — define one or more upstream servers with hostname, port, TLS settings, HTTP protocol (HTTP/1.1, HTTP/2, HTTP/3), fixed IP addresses, and load balancing weights.</li>
+          <li><strong>Load balancing</strong> — choose how traffic is distributed across targets (round-robin, random, weighted, best response time, etc.).</li>
+          <li><strong>HTTP client settings</strong> — configure timeouts, connection pools, retry policies, and other client-level options in one place.</li>
+          <li><strong>TLS configuration</strong> — manage TLS/mTLS settings per target for secure communication with your upstream services.</li>
+          <li><strong>Health checks</strong> — monitor the availability of your targets and automatically route traffic away from unhealthy ones.</li>
+          <li><strong>URL rewriting</strong> — set a root path and control how the request URL is rewritten before reaching the backend.</li>
+        </ul>
+        <p>
+          By mutualizing backend configurations, you avoid duplication, reduce errors,
+          and can update connection settings for all related routes from a single place.
+        </p>
+      </InfoCollapse>
       <Table
         parentProps={this.props}
         selfUrl="backends"
@@ -90,6 +114,6 @@ export class BackendsPage extends Component {
           );
         }}
       />
-    );
+    </>
   }
 }

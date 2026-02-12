@@ -5,6 +5,7 @@ import faker from 'faker';
 import { AuthModuleConfig, Oauth2ModuleConfig } from '../components/AuthModuleConfig';
 import { Button } from '../components/Button';
 import { ClassifiedForms } from '../forms';
+import InfoCollapse from '../components/InfoCollapse';
 
 export class AuthModuleConfigsPage extends Component {
   state = {
@@ -54,6 +55,30 @@ export class AuthModuleConfigsPage extends Component {
             disableSelectMode={true}
           />
         )}
+        <InfoCollapse title="What is an Authentication Module?">
+          <p>
+            An Authentication Module lets you <strong>secure the Otoroshi admin UI, your HTTP Routes, and your APIs</strong> using
+            either a built-in in-memory user store or an external identity provider.
+          </p>
+          <p>
+            Otoroshi supports a wide range of protocols and providers out of the box:
+          </p>
+          <ul>
+            <li><strong>In-memory</strong> — a simple, built-in user directory for quick setups and testing.</li>
+            <li><strong>LDAP</strong> — connect to your enterprise directory (Active Directory, OpenLDAP, etc.).</li>
+            <li><strong>OAuth2 / OpenID Connect</strong> — integrate with providers like Keycloak, Auth0, Google, GitHub, or any OIDC-compliant server.</li>
+            <li><strong>SAML 2.0</strong> — connect to enterprise identity providers like PingFederate, ADFS, or Okta.</li>
+          </ul>
+          <p>
+            Beyond simple authentication, modules unlock powerful capabilities:
+          </p>
+          <ul>
+            <li><strong>Single Sign-On (SSO)</strong> — share one module across multiple HTTP Routes and APIs so users authenticate once and access everything seamlessly.</li>
+            <li><strong>Cluster-wide</strong> — sessions are replicated across all nodes in the cluster, so authentication works consistently in multi-node deployments.</li>
+            <li><strong>Session administration</strong> — view, monitor, and revoke active user sessions from the admin UI.</li>
+            <li><strong>Runtime customization</strong> — modify module configuration on the fly without restart or redeployment.</li>
+          </ul>
+        </InfoCollapse>
         <Table
           parentProps={this.props}
           selfUrl="auth-configs"

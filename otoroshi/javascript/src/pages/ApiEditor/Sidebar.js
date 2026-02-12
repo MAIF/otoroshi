@@ -144,9 +144,6 @@ export default (props) => {
             <div className="d-flex align-items-center">
               {' '}
               {openedSidebar ? 'APIs' : ''}
-              <div className="m-0 ms-2" style={{ fontSize: '1rem' }}>
-                <span className="badge bg-xs bg-warning">ALPHA</span>
-              </div>
             </div>
           </Link>
         </li>

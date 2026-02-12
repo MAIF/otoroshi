@@ -82,8 +82,8 @@ export const graph = (env) => {
           link: '/services',
         },
         {
-          title: 'Routes',
-          description: 'All your routes',
+          title: 'HTTP Routes',
+          description: 'All your HTTP routes',
           img: 'routes',
           display: () => true,
           icon: () => 'fa-road',
@@ -219,7 +219,6 @@ export const graph = (env) => {
           img: 'routes',
           icon: () => 'fa-brush',
           link: '/apis',
-          tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
         },
       ],
     },

@@ -19,7 +19,7 @@ export class NotFoundPage extends Component {
     //   value: 'Routes',
     // },
     {
-      label: 'Routes',
+      label: 'HTTP Routes',
       icon: 'fa-road',
       action: () => this.routeTo('/routes'),
     },
