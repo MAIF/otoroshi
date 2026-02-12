@@ -9,14 +9,15 @@ set -euo pipefail
 kubectl api-resources --namespaced -o name | xargs -n 1 kubectl delete -n "gateway-conformance-app-backend" --all --ignore-not-found
 kubectl delete pvc -n "gateway-conformance-app-backend" --all --ignore-not-found
 kubectl delete secret,configmap -n "gateway-conformance-app-backend" --all --ignore-not-found
-kubectl delete namespace gateway-conformance-app-backend
 
 kubectl api-resources --namespaced -o name | xargs -n 1 kubectl delete -n "gateway-conformance-infra" --all --ignore-not-found 
 kubectl delete pvc -n "gateway-conformance-infra" --all --ignore-not-found
 kubectl delete secret,configmap -n "gateway-conformance-infra" --all --ignore-not-found
-kubectl delete namespace gateway-conformance-infra
 
 kubectl api-resources --namespaced -o name | xargs -n 1 kubectl delete -n "gateway-conformance-web-backend" --all --ignore-not-found
 kubectl delete pvc -n "gateway-conformance-web-backend" --all --ignore-not-found
 kubectl delete secret,configmap -n "gateway-conformance-web-backend" --all --ignore-not-found
+
+kubectl delete namespace gateway-conformance-app-backend
+kubectl delete namespace gateway-conformance-infra
 kubectl delete namespace gateway-conformance-web-backend

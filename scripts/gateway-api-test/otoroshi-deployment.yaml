@@ -93,13 +93,8 @@ spec:
                       "gatewayApiControllerName": "otoroshi.io/gateway-controller",
                       "gatewayApiHttpListenerPort": [8080, 80],
                       "gatewayApiHttpsListenerPort": [8443, 443],
-                      "gatewayApiSyncIntervalSeconds": 30,
-                      "gatewayApiAddresses": [
-                        {
-                          "type": "IPAddress",
-                          "value": "127.0.0.1"
-                        }
-                      ]
+                      "gatewayApiSyncIntervalSeconds": 10,
+                      "gatewayApiAddresses": []
                     }
                   }
                 }
