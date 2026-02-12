@@ -3,4 +3,5 @@ cd gateway-api
 
 go test ./conformance -timeout 30m0s -v -run TestConformance -args -debug \
     --gateway-class=gateway-conformance \
+    -run-test HTTPRouteMatching \
     --supported-features=Gateway,HTTPRoute,GRPCRoute 

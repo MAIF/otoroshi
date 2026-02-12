@@ -347,8 +347,22 @@ object GatewayApiConverter {
       boundListeners = Seq.empty,
       frontend = NgFrontend(
         domains = domains,
-        headers = rule.matches.flatMap(_.headers.map(o => (o.select("name").asString, o.select("value").asString))).toMap,
-        query = rule.matches.flatMap(_.queryParams.map(o => (o.select("name").asString, o.select("value").asString))).toMap,
+        headers = rule.matches.flatMap { m =>
+          m.headers.map { o =>
+            o.select("type").asOpt[String] match {
+              case Some("RegularExpression") => (o.select("name").asString, s"Regex(${o.select("value").asString})")
+              case _ => (o.select("name").asString, o.select("value").asString)
+            }
+          }
+        }.toMap,
+        query = rule.matches.flatMap { m =>
+          m.queryParams.map { o =>
+            o.select("type").asOpt[String] match {
+              case Some("RegularExpression") => (o.select("name").asString, s"Regex(${o.select("value").asString})")
+              case _ => (o.select("name").asString, o.select("value").asString)
+            }
+          }
+        }.toMap,
         cookies = Map.empty,
         methods = methods,
         stripPath = stripPath,
@@ -440,7 +454,14 @@ object GatewayApiConverter {
       boundListeners = Seq.empty,
       frontend = NgFrontend(
         domains = domains,
-        headers = Map.empty,
+        headers = rule.matches.flatMap { m =>
+          m.headers.map { o =>
+            o.select("type").asOpt[String] match {
+              case Some("RegularExpression") => (o.select("name").asString, s"Regex(${o.select("value").asString})")
+              case _ => (o.select("name").asString, o.select("value").asString)
+            }
+          }
+        }.toMap,
         query = Map.empty,
         cookies = Map.empty,
         methods = Seq("POST"), // gRPC always uses POST
@@ -691,13 +712,16 @@ object GatewayApiConverter {
    * For Exact "/api/v1" with hostname "app.example.com" -> "app.example.com/api/v1"
    */
   private def buildDomains(hostnames: Seq[String], rule: HTTPRouteRule): Seq[NgDomainAndPath] = {
-    if (rule.matches.isEmpty || rule.matches.forall(m => m.pathValue == "/")) {
+    val matches = rule.matches.filter(_.isPath)
+    if (matches.isEmpty || matches.forall(m => m.pathValue == "/")) {
       hostnames.map(NgDomainAndPath.apply)
     } else {
+      println(s"buildDomains: ${hostnames}, ${rule.raw.stringify}")
       for {
         hostname <- hostnames
-        m        <- rule.matches
+        m        <- matches
       } yield {
+        println(s"yield - hostname: ${hostname}, matches: ${m.pathTypeOpt} - ${m.pathValue} - ${m.raw.stringify}")
         val path = m.pathValue
         if (path == "/") NgDomainAndPath(hostname)
         else NgDomainAndPath(s"$hostname$path")

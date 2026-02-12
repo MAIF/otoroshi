@@ -9,6 +9,7 @@ import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.yaml.Yaml
 import play.api.Logger
 import play.api.libs.json._
 
@@ -968,5 +969,112 @@ object KubernetesGatewayApiJob {
       case Some(gen) => base ++ Json.obj("observedGeneration" -> gen)
       case None      => base
     }
+  }
+}
+
+object KubernetesGatewayApiJobTest {
+  def functionTestRouteConversion()(implicit env: Env, ec: ExecutionContext): Unit = {
+    val result = GatewayApiConverter.httpRouteToNgRoutes(
+      httpRoute = KubernetesHTTPRoute(Yaml.parse(
+        """apiVersion: gateway.networking.k8s.io/v1
+          |kind: HTTPRoute
+          |metadata:
+          |  uid: gateway-conformance-infra/matching
+          |  name: matching
+          |  namespace: gateway-conformance-infra
+          |spec:
+          |  parentRefs:
+          |  - name: same-namespace
+          |  rules:
+          |  # - matches:
+          |  #   - path:
+          |  #       type: PathPrefix
+          |  #       value: /
+          |  #   - headers:
+          |  #     - name: version
+          |  #       value: one
+          |  #   backendRefs:
+          |  #   - name: infra-backend-v1
+          |  #     port: 8080
+          |  - matches:
+          |    - path:
+          |        type: PathPrefix
+          |        value: /v2
+          |    - headers:
+          |      - name: version
+          |        value: two
+          |    backendRefs:
+          |    - name: infra-backend-v2
+          |      port: 8080
+          |""".stripMargin).get),
+      gateways = Seq(KubernetesGateway(Yaml.parse(
+        s"""apiVersion: gateway.networking.k8s.io/v1beta1
+           |kind: Gateway
+           |metadata:
+           |  uid: gateway-conformance-infra/same-namespace
+           |  name: same-namespace
+           |  namespace: gateway-conformance-infra
+           |spec:
+           |  gatewayClassName: "gateway-conformance"
+           |  listeners:
+           |  - name: http
+           |    port: 80
+           |    protocol: HTTP
+           |    allowedRoutes:
+           |      namespaces:
+           |        from: Same
+           |""".stripMargin).get)),
+      services = Seq(KubernetesService(Yaml.parse(
+        s"""apiVersion: v1
+           |kind: Service
+           |metadata:
+           |  uid: gateway-conformance-infra/infra-backend-v1
+           |  name: infra-backend-v1
+           |  namespace: gateway-conformance-infra
+           |spec:
+           |  clusterIP: 1.1.1.1
+           |  selector:
+           |    app: infra-backend-v1
+           |  ports:
+           |  - name: first-port
+           |    protocol: TCP
+           |    port: 8080
+           |    targetPort: 3000
+           |  - name: second-port
+           |    protocol: TCP
+           |    appProtocol: kubernetes.io/h2c
+           |    port: 8081
+           |    targetPort: 3001
+           |  - name: third-port
+           |    protocol: TCP
+           |    appProtocol: kubernetes.io/ws
+           |    port: 8082
+           |    targetPort: 3000
+           |""".stripMargin).get), KubernetesService(Yaml.parse(
+        s"""apiVersion: v1
+           |kind: Service
+           |metadata:
+           |  uid: gateway-conformance-infra/infra-backend-v2
+           |  name: infra-backend-v2
+           |  namespace: gateway-conformance-infra
+           |spec:
+           |  clusterIP: 1.1.1.2
+           |  selector:
+           |    app: infra-backend-v2
+           |  ports:
+           |  - protocol: TCP
+           |    port: 8080
+           |    targetPort: 3000
+           |""".stripMargin).get)),
+      endpoints = Seq.empty,
+      endpointSlices = Seq.empty,
+      referenceGrants = Seq.empty,
+      backendTLSPolicies = Seq.empty,
+      resolvedCaCertIds = Map.empty,
+      plugins = Seq.empty,
+      namespaces = Seq.empty,
+      conf = KubernetesConfig.theConfig(KubernetesConfig.defaultConfig)
+    )
+    result.routes.foreach(_.json.prettify.debugPrintln)
   }
 }
