@@ -46,6 +46,10 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 The Otoroshi ServiceAccount needs the following additional ClusterRole rules for Gateway API resources:
 
 ```yaml
+# EndpointSlices for pod-level target resolution
+- apiGroups: [discovery.k8s.io]
+  resources: [endpointslices]
+  verbs: [get, list, watch]
 # Gateway API — read resources
 - apiGroups: [gateway.networking.k8s.io]
   resources: [gatewayclasses, gateways, httproutes, grpcroutes, referencegrants, backendtlspolicies]
@@ -56,7 +60,44 @@ The Otoroshi ServiceAccount needs the following additional ClusterRole rules for
   verbs: [get, update, patch]
 ```
 
+or from github
+
+```sh
+kubectl apply -f https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/rbac-gateway.yaml
+```
+
 These rules must be added to the existing `otoroshi-admin-user` ClusterRole alongside the existing rules for core resources, ingresses, and Otoroshi CRDs.
+
+### Otoroshi CRDS
+
+```yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: plugins.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  names:
+    kind: Plugin
+    plural: plugins
+    singular: plugin
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: object
+```
+
+or from github
+
+```sh
+kubectl apply -f https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/crds-gateway.yaml
+```
 
 ## Enabling Gateway API support
 
@@ -105,6 +146,7 @@ When deploying with `OTOROSHI_INITIAL_CUSTOMIZATION`, add the job reference and 
           "otoroshiNamespace": "otoroshi",
           "clusterDomain": "cluster.local",
           "gatewayApi": true,
+          "gatewayApiWatch": true,
           "gatewayApiControllerName": "otoroshi.io/gateway-controller",
           "gatewayApiHttpListenerPort": 8080,
           "gatewayApiHttpsListenerPort": 8443,

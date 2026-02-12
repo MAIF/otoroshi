@@ -10,14 +10,6 @@ spec:
     singular: plugin
   scope: Namespaced
   versions:
-  - name: v1alpha1
-    served: false
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: object
   - name: v1
     served: true
     storage: true
