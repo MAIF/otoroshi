@@ -279,108 +279,106 @@ object GatewayApiConverter {
       conf: KubernetesConfig
   )(implicit env: Env): Seq[NgRoute] = {
 
-    val routeId = s"kubernetes-gateway-api-${httpRoute.namespace}-${httpRoute.name}-rule-$ruleIdx"
-      .replace("/", "-")
-      .replace(".", "-")
-    val routeName = s"${httpRoute.namespace}/${httpRoute.name} rule $ruleIdx"
+    rule.matches.zipWithIndex.flatMap { case (mtch, mtchIdx) =>
 
-    val domains = buildDomains(effectiveHostnames, rule)
-    val targets = buildTargets(httpRoute, rule, services, endpoints, endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
-    val plugins = buildPlugins(
-      filters = rule.filters,
-      routeNamespace = httpRoute.namespace,
-      routePath = httpRoute.path,
-      services = services,
-      endpoints = endpoints,
-      endpointSlices = endpointSlices,
-      referenceGrants = referenceGrants,
-      k8sPlugins = k8sPlugins,
-    )
+      val routeId = s"kubernetes-gateway-api-${httpRoute.namespace}-${httpRoute.name}-rule-$ruleIdx-match-${mtchIdx}"
+        .replace("/", "-")
+        .replace(".", "-")
+      val routeName = s"${httpRoute.namespace}/${httpRoute.name} rule $ruleIdx match $mtchIdx"
 
-    if (targets.isEmpty) {
-      logger.warn(s"HTTPRoute ${httpRoute.path} rule $ruleIdx has no resolvable backends")
-    }
+      val domains = buildDomains(effectiveHostnames, rule, mtch)
+      val targets = buildTargets(httpRoute, rule, services, endpoints, endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
+      val plugins = buildPlugins(
+        filters = rule.filters,
+        routeNamespace = httpRoute.namespace,
+        routePath = httpRoute.path,
+        services = services,
+        endpoints = endpoints,
+        endpointSlices = endpointSlices,
+        referenceGrants = referenceGrants,
+        k8sPlugins = k8sPlugins,
+      )
 
-    val isExact  = rule.matches.exists(_.pathType == "Exact")
-    val methods  = rule.matches.flatMap(_.method).distinct
+      if (targets.isEmpty) {
+        logger.warn(s"HTTPRoute ${httpRoute.path} rule $ruleIdx has no resolvable backends")
+      }
 
-    // Check for URLRewrite path rewriting
-    val urlRewriteFilter = rule.filters.find(_.filterType == "URLRewrite")
-    val (stripPath, backendRoot) = urlRewriteFilter.flatMap(_.urlRewrite) match {
-      case Some(rewrite) =>
-        val pathRewrite = (rewrite \ "path").asOpt[JsObject]
-        pathRewrite match {
-          case Some(pr) if (pr \ "type").asOpt[String].contains("ReplacePrefixMatch") =>
-            val replacement = (pr \ "replacePrefixMatch").asOpt[String].getOrElse("/")
-            (true, replacement)
-          case Some(pr) if (pr \ "type").asOpt[String].contains("ReplaceFullPath") =>
-            // logger.warn(
-            //   s"HTTPRoute ${httpRoute.path} rule $ruleIdx uses ReplaceFullPath which is not fully supported, " +
-            //     "using path as backend root"
-            // )
-            val replacement = (pr \ "replaceFullPath").asOpt[String].getOrElse("/")
-            (false, replacement)
-          case _ => (false, "/")
-        }
-      case None => (false, "/")
-    }
+      val isExact = mtch.pathType == "Exact"
+      val methods = mtch.method.toSeq
 
-    val route = NgRoute(
-      location = EntityLocation(),
-      id = routeId,
-      name = routeName,
-      description = s"Generated from Gateway API HTTPRoute ${httpRoute.path}",
-      tags = Seq.empty,
-      metadata = Map(
-        "otoroshi-provider"    -> "kubernetes-gateway-api",
-        "kubernetes-name"      -> httpRoute.name,
-        "kubernetes-namespace" -> httpRoute.namespace,
-        "kubernetes-path"      -> httpRoute.path,
-        "kubernetes-uid"       -> httpRoute.uid,
-        "gateway-api-kind"     -> "HTTPRoute"
-      ),
-      enabled = true,
-      debugFlow = false,
-      capture = false,
-      exportReporting = false,
-      groups = Seq("default"),
-      boundListeners = Seq.empty,
-      frontend = NgFrontend(
-        domains = domains,
-        headers = rule.matches.flatMap { m =>
-          m.headers.map { o =>
+      // Check for URLRewrite path rewriting
+      val urlRewriteFilter = rule.filters.find(_.filterType == "URLRewrite")
+      val (stripPath, backendRoot) = urlRewriteFilter.flatMap(_.urlRewrite) match {
+        case Some(rewrite) =>
+          val pathRewrite = (rewrite \ "path").asOpt[JsObject]
+          pathRewrite match {
+            case Some(pr) if (pr \ "type").asOpt[String].contains("ReplacePrefixMatch") =>
+              val replacement = (pr \ "replacePrefixMatch").asOpt[String].getOrElse("/")
+              (true, replacement)
+            case Some(pr) if (pr \ "type").asOpt[String].contains("ReplaceFullPath") =>
+              // logger.warn(
+              //   s"HTTPRoute ${httpRoute.path} rule $ruleIdx uses ReplaceFullPath which is not fully supported, " +
+              //     "using path as backend root"
+              // )
+              val replacement = (pr \ "replaceFullPath").asOpt[String].getOrElse("/")
+              (false, replacement)
+            case _ => (false, "/")
+          }
+        case None => (false, "/")
+      }
+
+      val route = NgRoute(
+        location = EntityLocation(),
+        id = routeId,
+        name = routeName,
+        description = s"Generated from Gateway API HTTPRoute ${httpRoute.path}",
+        tags = Seq.empty,
+        metadata = Map(
+          "otoroshi-provider" -> "kubernetes-gateway-api",
+          "kubernetes-name" -> httpRoute.name,
+          "kubernetes-namespace" -> httpRoute.namespace,
+          "kubernetes-path" -> httpRoute.path,
+          "kubernetes-uid" -> httpRoute.uid,
+          "gateway-api-kind" -> "HTTPRoute"
+        ),
+        enabled = true,
+        debugFlow = false,
+        capture = false,
+        exportReporting = false,
+        groups = Seq("default"),
+        boundListeners = Seq.empty,
+        frontend = NgFrontend(
+          domains = domains,
+          headers = mtch.headers.map { o =>
             o.select("type").asOpt[String] match {
               case Some("RegularExpression") => (o.select("name").asString, s"Regex(${o.select("value").asString})")
               case _ => (o.select("name").asString, o.select("value").asString)
             }
-          }
-        }.toMap,
-        query = rule.matches.flatMap { m =>
-          m.queryParams.map { o =>
+          }.toMap,
+          query = mtch.queryParams.map { o =>
             o.select("type").asOpt[String] match {
               case Some("RegularExpression") => (o.select("name").asString, s"Regex(${o.select("value").asString})")
               case _ => (o.select("name").asString, o.select("value").asString)
             }
-          }
-        }.toMap,
-        cookies = Map.empty,
-        methods = methods,
-        stripPath = stripPath,
-        exact = isExact
-      ),
-      backend = NgBackend(
-        targets = targets,
-        root = backendRoot,
-        rewrite = false,
-        loadBalancing = RoundRobin,
-        healthCheck = None,
-        client = NgClientConfig()
-      ),
-      backendRef = None,
-      plugins = plugins
-    )
-
-    Seq(applyOtoroshiAnnotations(route, httpRoute))
+          }.toMap,
+          cookies = Map.empty,
+          methods = methods,
+          stripPath = stripPath,
+          exact = isExact
+        ),
+        backend = NgBackend(
+          targets = targets,
+          root = backendRoot,
+          rewrite = false,
+          loadBalancing = RoundRobin,
+          healthCheck = None,
+          client = NgClientConfig()
+        ),
+        backendRef = None,
+        plugins = plugins
+      )
+      Seq(applyOtoroshiAnnotations(route, httpRoute))
+    }
   }
 
   // ─── GRPCRoute rule conversion ─────────────────────────────────────────────
@@ -405,82 +403,81 @@ object GatewayApiConverter {
       conf: KubernetesConfig
   )(implicit env: Env): Seq[NgRoute] = {
 
-    val routeId = s"kubernetes-gateway-api-${grpcRoute.namespace}-${grpcRoute.name}-grpc-rule-$ruleIdx"
-      .replace("/", "-")
-      .replace(".", "-")
-    val routeName = s"${grpcRoute.namespace}/${grpcRoute.name} grpc rule $ruleIdx"
+    rule.matches.zipWithIndex.flatMap { case (mtch, mtchIdx) =>
 
-    val domains = buildGrpcDomains(effectiveHostnames, rule)
-    val targets = buildGrpcTargets(grpcRoute, rule, services, endpoints, endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
-    val plugins = buildPlugins(
-      filters = rule.filters,
-      routeNamespace = grpcRoute.namespace,
-      routePath = grpcRoute.path,
-      services = services,
-      endpoints = endpoints,
-      endpointSlices = endpointSlices,
-      referenceGrants = referenceGrants,
-      k8sPlugins = k8sPlugins,
-    )
+      val routeId = s"kubernetes-gateway-api-${grpcRoute.namespace}-${grpcRoute.name}-grpc-rule-$ruleIdx-match-${mtchIdx}"
+        .replace("/", "-")
+        .replace(".", "-")
+      val routeName = s"${grpcRoute.namespace}/${grpcRoute.name} grpc rule $ruleIdx"
 
-    if (targets.isEmpty) {
-      logger.warn(s"GRPCRoute ${grpcRoute.path} rule $ruleIdx has no resolvable backends")
-    }
+      val domains = buildGrpcDomains(effectiveHostnames, rule, mtch)
+      val targets = buildGrpcTargets(grpcRoute, rule, services, endpoints, endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
+      val plugins = buildPlugins(
+        filters = rule.filters,
+        routeNamespace = grpcRoute.namespace,
+        routePath = grpcRoute.path,
+        services = services,
+        endpoints = endpoints,
+        endpointSlices = endpointSlices,
+        referenceGrants = referenceGrants,
+        k8sPlugins = k8sPlugins,
+      )
 
-    // Determine if path is exact based on gRPC method matching
-    val isExact = rule.matches.exists { m =>
-      m.method.exists(mm => mm.service.isDefined && mm.method.isDefined && mm.matchType == "Exact")
-    }
+      if (targets.isEmpty) {
+        logger.warn(s"GRPCRoute ${grpcRoute.path} rule $ruleIdx has no resolvable backends")
+      }
 
-    val route = NgRoute(
-      location = EntityLocation(),
-      id = routeId,
-      name = routeName,
-      description = s"Generated from Gateway API GRPCRoute ${grpcRoute.path}",
-      tags = Seq.empty,
-      metadata = Map(
-        "otoroshi-provider"    -> "kubernetes-gateway-api",
-        "kubernetes-name"      -> grpcRoute.name,
-        "kubernetes-namespace" -> grpcRoute.namespace,
-        "kubernetes-path"      -> grpcRoute.path,
-        "kubernetes-uid"       -> grpcRoute.uid,
-        "gateway-api-kind"     -> "GRPCRoute"
-      ),
-      enabled = true,
-      debugFlow = false,
-      capture = false,
-      exportReporting = false,
-      groups = Seq("default"),
-      boundListeners = Seq.empty,
-      frontend = NgFrontend(
-        domains = domains,
-        headers = rule.matches.flatMap { m =>
-          m.headers.map { o =>
+      // Determine if path is exact based on gRPC method matching
+      val isExact = mtch.method.exists(mm => mm.service.isDefined && mm.method.isDefined && mm.matchType == "Exact")
+
+      val route = NgRoute(
+        location = EntityLocation(),
+        id = routeId,
+        name = routeName,
+        description = s"Generated from Gateway API GRPCRoute ${grpcRoute.path}",
+        tags = Seq.empty,
+        metadata = Map(
+          "otoroshi-provider" -> "kubernetes-gateway-api",
+          "kubernetes-name" -> grpcRoute.name,
+          "kubernetes-namespace" -> grpcRoute.namespace,
+          "kubernetes-path" -> grpcRoute.path,
+          "kubernetes-uid" -> grpcRoute.uid,
+          "gateway-api-kind" -> "GRPCRoute"
+        ),
+        enabled = true,
+        debugFlow = false,
+        capture = false,
+        exportReporting = false,
+        groups = Seq("default"),
+        boundListeners = Seq.empty,
+        frontend = NgFrontend(
+          domains = domains,
+          headers = mtch.headers.map { o =>
             o.select("type").asOpt[String] match {
               case Some("RegularExpression") => (o.select("name").asString, s"Regex(${o.select("value").asString})")
               case _ => (o.select("name").asString, o.select("value").asString)
             }
-          }
-        }.toMap,
-        query = Map.empty,
-        cookies = Map.empty,
-        methods = Seq("POST"), // gRPC always uses POST
-        stripPath = false,
-        exact = isExact
-      ),
-      backend = NgBackend(
-        targets = targets,
-        root = "/",
-        rewrite = false,
-        loadBalancing = RoundRobin,
-        healthCheck = None,
-        client = NgClientConfig()
-      ),
-      backendRef = None,
-      plugins = plugins
-    )
+          }.toMap,
+          query = Map.empty,
+          cookies = Map.empty,
+          methods = Seq("POST"), // gRPC always uses POST
+          stripPath = false,
+          exact = isExact
+        ),
+        backend = NgBackend(
+          targets = targets,
+          root = "/",
+          rewrite = false,
+          loadBalancing = RoundRobin,
+          healthCheck = None,
+          client = NgClientConfig()
+        ),
+        backendRef = None,
+        plugins = plugins
+      )
 
-    Seq(applyOtoroshiAnnotations(route, grpcRoute))
+      Seq(applyOtoroshiAnnotations(route, grpcRoute))
+    }
   }
 
   // ─── Otoroshi annotation support ──────────────────────────────────────────
@@ -562,18 +559,16 @@ object GatewayApiConverter {
    * Builds domains for GRPCRoute from hostnames and gRPC method matching.
    * gRPC uses HTTP/2 paths: /{service}/{method}
    */
-  private def buildGrpcDomains(hostnames: Seq[String], rule: GRPCRouteRule): Seq[NgDomainAndPath] = {
-    val paths = rule.matches.flatMap { m =>
-      m.method match {
-        case Some(mm) =>
-          val svc    = mm.service.getOrElse("*")
-          val method = mm.method.getOrElse("*")
-          if (svc == "*" && method == "*") Seq("/")
-          else if (method == "*") Seq(s"/$svc/")
-          else Seq(s"/$svc/$method")
-        case None => Seq("/")
-      }
-    }.distinct
+  private def buildGrpcDomains(hostnames: Seq[String], rule: GRPCRouteRule, m: GRPCRouteMatch): Seq[NgDomainAndPath] = {
+    val paths = (m.method match {
+      case Some(mm) =>
+        val svc    = mm.service.getOrElse("*")
+        val method = mm.method.getOrElse("*")
+        if (svc == "*" && method == "*") Seq("/")
+        else if (method == "*") Seq(s"/$svc/")
+        else Seq(s"/$svc/$method")
+      case None => Seq("/")
+    }).distinct
 
     if (paths.isEmpty || paths == Seq("/")) {
       hostnames.map(NgDomainAndPath.apply)
@@ -711,15 +706,13 @@ object GatewayApiConverter {
    * For PathPrefix "/api" with hostname "app.example.com" -> "app.example.com/api"
    * For Exact "/api/v1" with hostname "app.example.com" -> "app.example.com/api/v1"
    */
-  private def buildDomains(hostnames: Seq[String], rule: HTTPRouteRule): Seq[NgDomainAndPath] = {
-    val matches = rule.matches.filter(_.isPath)
-    if (matches.isEmpty || matches.forall(m => m.pathValue == "/")) {
+  private def buildDomains(hostnames: Seq[String], rule: HTTPRouteRule, m: HTTPRouteMatch): Seq[NgDomainAndPath] = {
+    if (m.pathValue == "/") {
       hostnames.map(NgDomainAndPath.apply)
     } else {
       println(s"buildDomains: ${hostnames}, ${rule.raw.stringify}")
       for {
         hostname <- hostnames
-        m        <- matches
       } yield {
         println(s"yield - hostname: ${hostname}, matches: ${m.pathTypeOpt} - ${m.pathValue} - ${m.raw.stringify}")
         val path = m.pathValue
