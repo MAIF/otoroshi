@@ -70,6 +70,7 @@ Gateway API support is controlled through the `KubernetesConfig` configuration b
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `gatewayApi` | boolean | `false` | Enable/disable the Gateway API controller |
+| `gatewayApiWatch` | boolean | `true` | Enable/disable the Gateway API controller watch mode |
 | `gatewayApiControllerName` | string | `otoroshi.io/gateway-controller` | The controller name to match in GatewayClass resources |
 | `gatewayApiHttpListenerPort` | int | `8080` | The actual HTTP port Otoroshi listens on |
 | `gatewayApiHttpsListenerPort` | int | `8443` | The actual HTTPS port Otoroshi listens on |
