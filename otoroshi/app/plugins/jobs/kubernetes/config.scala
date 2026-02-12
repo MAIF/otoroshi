@@ -77,6 +77,7 @@ case class KubernetesConfig(
     triggerPath: Option[String],
     templates: JsObject,
     gatewayApi: Boolean,
+    gatewayApiWatch: Boolean,
     gatewayApiControllerName: String,
     gatewayApiHttpListenerPort: Seq[Int],
     gatewayApiHttpsListenerPort: Seq[Int],
@@ -280,6 +281,7 @@ object KubernetesConfig {
           idleTimeout = conf.select("idleTimeout").asOpt[Long].getOrElse(30000L),
           callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
           gatewayApi = (conf \ "gatewayApi").asOpt[Boolean].getOrElse(false),
+          gatewayApiWatch = (conf \ "gatewayApiWatch").asOpt[Boolean].getOrElse(true),
           gatewayApiControllerName = (conf \ "gatewayApiControllerName").asOpt[String]
             .getOrElse("otoroshi.io/gateway-controller"),
           gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].map(v => Seq(v))
@@ -390,6 +392,7 @@ object KubernetesConfig {
           idleTimeout = conf.select("idleTimeout").asOpt[Long].getOrElse(30000L),
           callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
           gatewayApi = (conf \ "gatewayApi").asOpt[Boolean].getOrElse(false),
+          gatewayApiWatch = (conf \ "gatewayApiWatch").asOpt[Boolean].getOrElse(true),
           gatewayApiControllerName = (conf \ "gatewayApiControllerName").asOpt[String]
             .getOrElse("otoroshi.io/gateway-controller"),
           gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].map(v => Seq(v))
@@ -457,6 +460,7 @@ object KubernetesConfig {
         "idleTimeout"                          -> 30000,
         "callAndStreamTimeout"                 -> 30000,
         "gatewayApi"                           -> false,
+        "gatewayApiWatch"                      -> true,
         "gatewayApiControllerName"             -> "otoroshi.io/gateway-controller",
         "gatewayApiHttpListenerPort"           -> Seq(80, 8080),
         "gatewayApiHttpsListenerPort"          -> Seq(443, 8443),

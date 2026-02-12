@@ -133,7 +133,7 @@ class KubernetesGatewayApiControllerJob extends Job {
   }
 
   def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
-    if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
+    if (config.gatewayApiWatch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting gateway api watch ...")
       implicit val mat = env.otoroshiMaterializer
       watchCommand.set(true)
@@ -163,7 +163,7 @@ class KubernetesGatewayApiControllerJob extends Job {
             KubernetesGatewayApiJob.syncGatewayApi(conf, ctx.attrs, !stopCommand.get())
           }
         })
-    } else if (!config.watch) {
+    } else if (!config.gatewayApiWatch) {
       logger.info("stopping gateway api watch")
       watchCommand.set(false)
     } else {
