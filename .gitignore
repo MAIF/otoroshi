@@ -32,3 +32,4 @@ otoroshi/javascript/stats.json
 *.iml
 CLAUDE.md
 _doc-research
+gateway-api-conformance-suite

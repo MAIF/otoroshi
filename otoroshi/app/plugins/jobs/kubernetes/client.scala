@@ -1275,4 +1275,469 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .filterNot(_.isEmpty)
       .takeWhile(_ => !stop)
   }
+
+  def watchClusterResource(
+      resource: String,
+      api: String,
+      timeout: Int,
+      stop: => Boolean,
+      root: String = "/apis"
+  ): Source[Seq[ByteString], _] = {
+
+    import otoroshi.utils.http.Implicits._
+
+    val lastTime = new AtomicLong(0L)
+    val last     = new AtomicReference[String]("0")
+    Source
+      .repeat(())
+      .flatMapConcat { _ =>
+        val now = System.currentTimeMillis()
+        if ((lastTime.get() + 5000) > now) {
+          if (logger.isDebugEnabled) logger.debug("call too close, waiting for 5 secs")
+          Source.single(Source.empty).delay(5.seconds).flatMapConcat(v => v)
+        } else {
+          lastTime.set(now)
+          if (logger.isDebugEnabled)
+            logger.debug(s"watch on ${api} / ${resource} (cluster-scoped) for ${timeout} seconds ! ")
+          val cliStart: WSRequest                   = client(s"${root}/$api/$resource")
+          val f: Future[Source[Seq[ByteString], _]] = cliStart
+            .addHttpHeaders(
+              "Accept" -> "application/json"
+            )
+            .withMethod("GET")
+            .withRequestTimeout(timeout.seconds)
+            .get()
+            .flatMap { list =>
+              if (list.status == 200) {
+                val resourceVersionStart = (list.json \ "metadata" \ "resourceVersion").asOpt[String].getOrElse("0")
+                last.set(resourceVersionStart)
+                val cli: WSRequest       = client(
+                  s"${root}/$api/$resource?watch=1&resourceVersion=${last.get()}&timeoutSeconds=$timeout"
+                )
+                cli
+                  .addHttpHeaders(
+                    "Accept" -> "application/json"
+                  )
+                  .withMethod("GET")
+                  .withRequestTimeout(timeout.seconds)
+                  .stream()
+                  .map { resp =>
+                    if (resp.status == 200) {
+                      resp.bodyAsSource
+                        .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
+                        .map(_.utf8String)
+                        .filterNot(_.trim.isEmpty)
+                        .map { line =>
+                          val json            = Json.parse(line)
+                          val typ             = (json \ "type").asOpt[String]
+                          val name            = (json \ "object" \ "metadata" \ "name").asOpt[String]
+                          val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
+                          if (logger.isDebugEnabled)
+                            logger.debug(
+                              s"received event for ${api}/${resource} (cluster-scoped) - $typ - $name($resourceVersion)"
+                            )
+                          resourceVersion.foreach(v => last.set(v))
+                          ByteString(line)
+                        }
+                        .groupedWithin(1000, 2.seconds)
+                    } else {
+                      resp.ignore()
+                      Source.empty
+                    }
+                  }
+                  .recover { case e =>
+                    logger.error(s"error while watching ${api}/${resource} (cluster-scoped)", e)
+                    Source.empty
+                  }
+              } else if (list.status == 404) {
+                logger.error(s"resource ${resource} of api ${api} does not exist (cluster-scoped)")
+                list.ignore()
+                Source.empty.future
+              } else if (list.status == 403) {
+                KubernetesClientNotifications.registerForbiddenEntities(s"$api/$resource")
+                list.ignore()
+                Source.empty.future
+              } else {
+                list.ignore()
+                logger.error(
+                  s"error while trying to get ${resource} of api ${api} (cluster-scoped): ${list.status} - ${list.body}"
+                )
+                Source.empty.future
+              }
+            }
+            .recover { case e =>
+              logger.error(s"error while fetching latest version of ${api}/${resource} (cluster-scoped)", e)
+              Source.empty
+            }
+          Source.future(f).flatMapConcat(v => v)
+        }
+      }
+      .filterNot(_.isEmpty)
+      .takeWhile(_ => !stop)
+  }
+
+  def watchGatewayApiResources(
+      namespaces: Seq[String],
+      timeout: Int,
+      stop: => Boolean
+  ): Source[Seq[ByteString], _] = {
+    val gatewayClassSource = watchClusterResource("gatewayclasses", "gateway.networking.k8s.io/v1", timeout, stop)
+    val v1NamespacedSource = watchResources(
+      namespaces, Seq("gateways", "httproutes", "grpcroutes"), "gateway.networking.k8s.io/v1", timeout, stop
+    )
+    val referenceGrantSource = watchResources(
+      namespaces, Seq("referencegrants"), "gateway.networking.k8s.io/v1beta1", timeout, stop
+    )
+    val backendTLSPolicySource = watchResources(
+      namespaces, Seq("backendtlspolicies"), "gateway.networking.k8s.io/v1alpha3", timeout, stop
+    )
+    val pluginSource = watchResources(
+      namespaces, Seq("plugins"), "proxy.otoroshi.io/v1", timeout, stop
+    )
+    val endpointSliceSource = watchResources(
+      namespaces, Seq("endpointslices"), "discovery.k8s.io/v1", timeout, stop
+    )
+    val kubeSource = watchKubeResources(
+      namespaces, Seq("secrets", "services", "endpoints"), timeout, stop
+    )
+    gatewayClassSource
+      .merge(v1NamespacedSource)
+      .merge(referenceGrantSource)
+      .merge(backendTLSPolicySource)
+      .merge(pluginSource)
+      .merge(endpointSliceSource)
+      .merge(kubeSource)
+  }
+
+  // ─── Gateway API: Fetch methods ──────────────────────────────────────────
+
+  def fetchGatewayClasses(): Future[Seq[KubernetesGatewayClass]] = {
+    // GatewayClass is cluster-scoped, no namespace in the path
+    val cli: WSRequest = client(s"/apis/gateway.networking.k8s.io/v1/gatewayclasses", false)
+    cli
+      .addHttpHeaders("Accept" -> "application/json")
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          (resp.json \ "items").as[JsArray].value.map(item => KubernetesGatewayClass(item)).toSeq
+        } else if (resp.status == 403) {
+          KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/gatewayclasses")
+          resp.ignore()
+          Seq.empty
+        } else if (resp.status == 404) {
+          KubernetesClientNotifications.registerMissionCustomResourceDefinition(
+            "gateway.networking.k8s.io/gatewayclasses"
+          )
+          resp.ignore()
+          Seq.empty
+        } else {
+          resp.ignore()
+          logger.debug(s"bad http status while fetching gatewayclasses: ${resp.status}")
+          Seq.empty
+        }
+      }
+  }
+
+  def fetchGateways(): Future[Seq[KubernetesGateway]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1/gateways"
+        else s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/gateways"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesGateway(item)).toSeq)
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/gateways")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition(
+                "gateway.networking.k8s.io/gateways"
+              )
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching gateways: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  def fetchHTTPRoutes(): Future[Seq[KubernetesHTTPRoute]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1/httproutes"
+        else s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/httproutes"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesHTTPRoute(item)).toSeq)
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/httproutes")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition(
+                "gateway.networking.k8s.io/httproutes"
+              )
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching httproutes: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  def fetchGRPCRoutes(): Future[Seq[KubernetesGRPCRoute]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1/grpcroutes"
+        else s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/grpcroutes"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesGRPCRoute(item)).toSeq)
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/grpcroutes")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              // GRPCRoute CRDs may not be installed
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching grpcroutes: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  def fetchReferenceGrants(): Future[Seq[KubernetesReferenceGrant]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1beta1/referencegrants"
+        else s"/apis/gateway.networking.k8s.io/v1beta1/namespaces/$namespace/referencegrants"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels(
+                (resp.json \ "items").as[JsArray].value.map(item => KubernetesReferenceGrant(item)).toSeq
+              )
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/referencegrants")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              // ReferenceGrant CRDs may not be installed, that's fine for MVP
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching referencegrants: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  def fetchBackendTLSPolicies(): Future[Seq[KubernetesBackendTLSPolicy]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1alpha3/backendtlspolicies"
+        else s"/apis/gateway.networking.k8s.io/v1alpha3/namespaces/$namespace/backendtlspolicies"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels(
+                (resp.json \ "items").as[JsArray].value.map(item => KubernetesBackendTLSPolicy(item)).toSeq
+              )
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/backendtlspolicies")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              // BackendTLSPolicy CRDs may not be installed
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching backendtlspolicies: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  def fetchPlugins(): Future[Seq[KubernetesPlugin]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/proxy.otoroshi.io/v1/plugins"
+        else s"/apis/proxy.otoroshi.io/v1/namespaces/$namespace/plugins"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesPlugin(item)).toSeq)
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("proxy.otoroshi.io/plugins")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              // Plugin CRDs may not be installed
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching plugins: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  def fetchEndpointSlices(): Future[Seq[KubernetesEndpointSlice]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val path =
+        if (namespace == "*") s"/apis/discovery.k8s.io/v1/endpointslices"
+        else s"/apis/discovery.k8s.io/v1/namespaces/$namespace/endpointslices"
+      val cli: WSRequest = client(path)
+      () =>
+        cli
+          .addHttpHeaders("Accept" -> "application/json")
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              (resp.json \ "items").as[JsArray].value.map(item => KubernetesEndpointSlice(item)).toSeq
+            } else if (resp.status == 403) {
+              KubernetesClientNotifications.registerForbiddenEntities("discovery.k8s.io/endpointslices")
+              resp.ignore()
+              Seq.empty
+            } else if (resp.status == 404) {
+              resp.ignore()
+              Seq.empty
+            } else {
+              resp.ignore()
+              logger.debug(s"bad http status while fetching endpointslices: ${resp.status}")
+              Seq.empty
+            }
+          }
+    }).map(_.flatten)
+  }
+
+  // ─── Gateway API: Status update methods ──────────────────────────────────
+
+  def updateGatewayClassStatus(name: String, status: JsObject): Future[Option[JsValue]] = {
+    val cli: WSRequest = client(
+      s"/apis/gateway.networking.k8s.io/v1/gatewayclasses/$name/status",
+      false
+    )
+    cli
+      .addHttpHeaders(
+        "Accept"       -> "application/json",
+        "Content-Type" -> "application/merge-patch+json"
+      )
+      .patch(Json.obj("status" -> status))
+      .map { resp =>
+        if (resp.status == 200 || resp.status == 201) Some(resp.json)
+        else {
+          resp.ignore()
+          logger.debug(s"failed to update GatewayClass status for $name: ${resp.status}")
+          None
+        }
+      }
+  }
+
+  def updateGatewayStatus(namespace: String, name: String, status: JsObject): Future[Option[JsValue]] = {
+    val cli: WSRequest = client(
+      s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/gateways/$name/status",
+      false
+    )
+    cli
+      .addHttpHeaders(
+        "Accept"       -> "application/json",
+        "Content-Type" -> "application/merge-patch+json"
+      )
+      .patch(Json.obj("status" -> status))
+      .map { resp =>
+        if (resp.status == 200 || resp.status == 201) Some(resp.json)
+        else {
+          resp.ignore()
+          logger.debug(s"failed to update Gateway status for $namespace/$name: ${resp.status}")
+          None
+        }
+      }
+  }
+
+  def updateHTTPRouteStatus(namespace: String, name: String, status: JsObject): Future[Option[JsValue]] = {
+    val cli: WSRequest = client(
+      s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/httproutes/$name/status",
+      false
+    )
+    cli
+      .addHttpHeaders(
+        "Accept"       -> "application/json",
+        "Content-Type" -> "application/merge-patch+json"
+      )
+      .patch(Json.obj("status" -> status))
+      .map { resp =>
+        if (resp.status == 200 || resp.status == 201) Some(resp.json)
+        else {
+          resp.ignore()
+          logger.debug(s"failed to update HTTPRoute status for $namespace/$name: ${resp.status}")
+          None
+        }
+      }
+  }
+
+  def updateGRPCRouteStatus(namespace: String, name: String, status: JsObject): Future[Option[JsValue]] = {
+    val cli: WSRequest = client(
+      s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/grpcroutes/$name/status",
+      false
+    )
+    cli
+      .addHttpHeaders(
+        "Accept"       -> "application/json",
+        "Content-Type" -> "application/merge-patch+json"
+      )
+      .patch(Json.obj("status" -> status))
+      .map { resp =>
+        if (resp.status == 200 || resp.status == 201) Some(resp.json)
+        else {
+          resp.ignore()
+          logger.debug(s"failed to update GRPCRoute status for $namespace/$name: ${resp.status}")
+          None
+        }
+      }
+  }
 }

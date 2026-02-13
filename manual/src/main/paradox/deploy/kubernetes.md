@@ -1353,8 +1353,103 @@ kind: ApiKey
 metadata:
   name: http-app-2-apikey-3
 spec:
-  exportSecret: true 
+  exportSecret: true
   secretName: secret-3
   daikokuToken: RShQrvINByiuieiaCBwIZfGFgdPu7tIJEN5gdV8N8YeH4RI9ErPYJzkuFyAkZ2xy
 ```
 
+## Kubernetes Gateway API
+
+Starting from version 17.13.0, Otoroshi supports the [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) specification (v1.4). This is the standard Kubernetes API for managing ingress traffic, designed as the successor to the Ingress resource.
+
+With Gateway API support enabled, you can define `GatewayClass`, `Gateway`, `HTTPRoute`, and `GRPCRoute` resources in your cluster and Otoroshi will automatically convert them into native `NgRoute` entities. This allows you to use standard, portable Kubernetes manifests while benefiting from Otoroshi's full feature set. GRPCRoute backends are automatically called using HTTP/2.
+
+### Quick setup
+
+First, install the Gateway API CRDs on your cluster:
+
+```sh
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+```
+
+Make sure the Otoroshi ServiceAccount has RBAC permissions for Gateway API resources (`gatewayclasses`, `gateways`, `httproutes`, `grpcroutes`, `referencegrants`, `backendtlspolicies` and their status subresources).
+
+Then enable the Gateway API controller job in your Otoroshi deployment configuration:
+
+```json
+{
+  "config": {
+    "scripts": {
+      "enabled": true,
+      "jobRefs": [
+        "cp:otoroshi.plugins.jobs.kubernetes.KubernetesGatewayApiControllerJob"
+      ],
+      "jobConfig": {
+        "KubernetesConfig": {
+          "namespaces": ["*"],
+          "gatewayApi": true,
+          "gatewayApiControllerName": "otoroshi.io/gateway-controller",
+          "gatewayApiHttpListenerPort": 8080,
+          "gatewayApiHttpsListenerPort": 8443,
+          "gatewayApiSyncIntervalSeconds": 30
+        }
+      }
+    }
+  }
+}
+```
+
+Once configured, you can create Gateway API resources:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: otoroshi
+spec:
+  controllerName: otoroshi.io/gateway-controller
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-gateway
+  namespace: default
+spec:
+  gatewayClassName: otoroshi
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 8080
+    hostname: "*.my.domain"
+    allowedRoutes:
+      namespaces:
+        from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-route
+  namespace: default
+spec:
+  parentRefs:
+  - name: my-gateway
+    sectionName: http
+  hostnames:
+  - "api.my.domain"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: my-service
+      port: 80
+```
+
+Otoroshi will automatically create an `NgRoute` that forwards traffic for `api.my.domain` to `my-service:80`.
+
+@@@ note
+The Gateway API controller can run alongside the existing CRDs controller. Both share the same `KubernetesConfig` configuration block.
+@@@
+
+For the full documentation — including supported filters, configuration reference, current limitations, and troubleshooting — see @ref:[Kubernetes Gateway API support](../topics/kubernetes-gateway-api.md).

@@ -32,7 +32,8 @@ case class NgTrafficMirroringConfig(
         "enabled"          -> true,
         "capture_response" -> false,
         "generate_events"  -> false,
-        "headers"          -> Map.empty[String, String]
+        "headers"          -> Map.empty[String, String],
+        "percentage"       -> 100.0,
       )
     )
 ) extends NgPluginConfig {
@@ -41,7 +42,9 @@ case class NgTrafficMirroringConfig(
     "enabled"          -> legacy.enabled,
     "capture_response" -> legacy.shouldCaptureResponse,
     "generate_events"  -> legacy.generateEvents,
-    "headers"          -> legacy.headers
+    "headers"          -> legacy.headers,
+    "salt"             -> legacy.salt,
+    "percentage"       -> legacy.percentage,
   )
 }
 
@@ -271,7 +274,7 @@ class NgTrafficMirroring extends NgRequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val cfg = ctx.cachedConfig(internalName)(NgTrafficMirroringConfig.format).getOrElse(NgTrafficMirroringConfig())
 
-    if (cfg.legacy.shouldBeMirrored(ctx.request)) {
+    if (cfg.legacy.shouldBeMirrored(ctx.route.id, ctx.request)) {
       val done       = Promise[Unit]
       val mirrorDone = Promise[Unit]
       val context    = NgRequestContext(
