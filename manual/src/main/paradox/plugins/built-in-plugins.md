@@ -4251,7 +4251,9 @@ This plugin will mirror every request to other targets
   "enabled" : true,
   "capture_response" : false,
   "generate_events" : false,
-  "headers" : { }
+  "headers" : { },
+  "salt" : "none",
+  "percentage" : 100
 }
 ```
 
@@ -6079,7 +6081,7 @@ This plugin is able to call SOAP actions and expose it as a rest endpoint
 
 ### Description
 
-Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options)
+Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
 
 
 
@@ -6100,6 +6102,11 @@ Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protecti
   "csp" : {
     "mode" : "DISABLED",
     "csp" : ""
+  },
+  "referrer_policy" : "DISABLED",
+  "permissions_policy" : {
+    "enabled" : false,
+    "policy" : ""
   }
 }
 ```
@@ -6434,8 +6441,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2026-02-11T10:36:11.096Z",
-  "stop" : "2026-02-12T10:36:11.117Z",
+  "start" : "2026-02-13T11:00:10.425Z",
+  "stop" : "2026-02-14T11:00:10.446Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
