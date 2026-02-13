@@ -578,6 +578,7 @@ object GatewayApiConverter {
         path     <- paths
       } yield {
         if (path == "/") NgDomainAndPath(hostname)
+        else if (m.method.exists(_.matchIsRegex)) NgDomainAndPath(s"$hostname$path") // TODO: not an actual regex match FIXME
         else NgDomainAndPath(s"$hostname$path")
       }
     }
@@ -717,6 +718,10 @@ object GatewayApiConverter {
         //println(s"yield - hostname: ${hostname}, matches: ${m.pathTypeOpt} - ${m.pathValue} - ${m.raw.stringify}")
         val path = m.pathValue
         if (path == "/") NgDomainAndPath(hostname)
+        else if (m.pathIsExact) NgDomainAndPath(s"$hostname$path")
+        else if (m.pathIsRegex) NgDomainAndPath(s"$hostname$path") // TODO: not a regex, FIXME
+        else if (path.endsWith("/") && m.pathIsPathPrefix) NgDomainAndPath(s"$hostname$path")
+        else if (!path.endsWith("/") && m.pathIsPathPrefix) NgDomainAndPath(s"$hostname$path/")
         else NgDomainAndPath(s"$hostname$path")
       }
     }

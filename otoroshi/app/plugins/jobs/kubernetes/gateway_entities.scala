@@ -68,8 +68,12 @@ case class HTTPRouteMatch(raw: JsValue) {
   lazy val headers: Seq[JsObject]          = (raw \ "headers").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
   lazy val queryParams: Seq[JsObject]      = (raw \ "queryParams").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
   lazy val method: Option[String]          = (raw \ "method").asOpt[String]
-  lazy val pathType: String  = path.flatMap(p => (p \ "type").asOpt[String]).getOrElse("PathPrefix")
+  lazy val pathTypeOpt: Option[String]     = path.flatMap(p => (p \ "type").asOpt[String])
+  lazy val pathType: String  = pathTypeOpt.getOrElse("PathPrefix")
   lazy val pathValue: String = path.flatMap(p => (p \ "value").asOpt[String]).getOrElse("/")
+  lazy val pathIsExact: Boolean = pathTypeOpt.contains("Exact")
+  lazy val pathIsRegex: Boolean = pathTypeOpt.contains("RegularExpression")
+  lazy val pathIsPathPrefix: Boolean = pathTypeOpt.contains("PathPrefix")
 }
 
 case class HTTPRouteBackendRef(raw: JsValue) {
@@ -129,6 +133,8 @@ case class GRPCRouteMethodMatch(raw: JsValue) {
   lazy val service: Option[String] = (raw \ "service").asOpt[String]
   lazy val method: Option[String]  = (raw \ "method").asOpt[String]
   lazy val matchType: String       = (raw \ "type").asOpt[String].getOrElse("Exact")
+  lazy val matchIsExact: Boolean   = matchType == "Exact" 
+  lazy val matchIsRegex: Boolean   = matchType == "RegularExpression" 
 }
 
 case class GRPCRouteMatch(raw: JsValue) {
